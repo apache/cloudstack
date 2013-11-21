@@ -2380,10 +2380,10 @@ public class Upgrade410to420 implements DbUpgrade {
             storeDetailInsert = conn.prepareStatement("INSERT INTO `cloud`.`image_store_details` (store_id, name, value) values(?, ?, ?)");
 
             // migrate S3 to image_store
-            storeInsert =
-                conn.prepareStatement("INSERT INTO `cloud`.`image_store` (uuid, name, image_provider_name, protocol, scope, role, created) values(?, ?, 'S3', ?, 'REGION', 'Image', ?)");
-            s3Query =
-                conn.prepareStatement("select id, uuid, access_key, secret_key, end_point, bucket, https, connection_timeout, max_error_retry, socket_timeout, created from `cloud`.`s3`");
+            storeInsert = conn.prepareStatement("INSERT INTO `cloud`.`image_store` (uuid, name, image_provider_name, protocol, scope, role, created) " +
+                "values(?, ?, 'S3', ?, 'REGION', 'Image', ?)");
+            s3Query = conn.prepareStatement("select id, uuid, access_key, secret_key, end_point, bucket, https, connection_timeout, " +
+                "max_error_retry, socket_timeout, created from `cloud`.`s3`");
             rs = s3Query.executeQuery();
 
             while (rs.next()) {

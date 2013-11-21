@@ -65,14 +65,17 @@ public class AssignVMCmd extends BaseCmd {
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = NetworkResponse.class,
-               description = "list of new network ids in which the moved VM will participate. In case no network ids are provided the VM will be part of the default network for that zone. In case there is no network yet created for the new account the default network will be created.")
+               description = "list of new network ids in which the moved VM will participate. In case no network ids are provided the VM will be part of the default network for that zone. "
+                   +
+                   "In case there is no network yet created for the new account the default network will be created.")
     private List<Long> networkIds;
 
     @Parameter(name = ApiConstants.SECURITY_GROUP_IDS,
                type = CommandType.LIST,
                collectionType = CommandType.UUID,
                entityType = SecurityGroupResponse.class,
-               description = "list of security group ids to be applied on the virtual machine. In case no security groups are provided the VM is part of the default security group.")
+               description = "list of security group ids to be applied on the virtual machine. " +
+                   "In case no security groups are provided the VM is part of the default security group.")
     private List<Long> securityGroupIdList;
 
     /////////////////////////////////////////////////////
@@ -117,7 +120,7 @@ public class AssignVMCmd extends BaseCmd {
             }
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", userVm).get(0);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } catch (Exception e) {
             e.printStackTrace();
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm " + e.getMessage());

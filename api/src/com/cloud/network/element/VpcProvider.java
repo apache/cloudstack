@@ -21,7 +21,6 @@ import java.util.List;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
@@ -33,7 +32,6 @@ public interface VpcProvider extends NetworkElement {
     /**
      * Start vpc element as specified
      * @param vpc fully specified vpc configuration.
-     * @throws InsufficientNetworkCapacityException TODO
      */
     boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
         InsufficientCapacityException;

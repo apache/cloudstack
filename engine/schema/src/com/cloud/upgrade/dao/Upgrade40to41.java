@@ -109,8 +109,8 @@ public class Upgrade40to41 implements DbUpgrade {
         ResultSet rsNw = null;
         try {
             // update the existing ingress rules traffic type
-            pstmt =
-                conn.prepareStatement("update `cloud`.`firewall_rules`  set traffic_type='Ingress' where purpose='Firewall' and ip_address_id is not null and traffic_type is null");
+            pstmt = conn.prepareStatement("update `cloud`.`firewall_rules`  set traffic_type='Ingress' where purpose='Firewall' and ip_address_id is " +
+                "not null and traffic_type is null");
             s_logger.debug("Updating firewall Ingress rule traffic type: " + pstmt);
             pstmt.executeUpdate();
 
@@ -120,8 +120,9 @@ public class Upgrade40to41 implements DbUpgrade {
                 long netId = rs.getLong(1);
                 //When upgraded from 2.2.14 to 3.0.6 guest_type is updated to Isolated in the 2214to30 clean up sql. clean up executes
                 //after this. So checking for Isolated OR Virtual
-                pstmt =
-                    conn.prepareStatement("select account_id, domain_id FROM `cloud`.`networks` where (guest_type='Isolated' OR guest_type='Virtual') and traffic_type='Guest' and vpc_id is NULL and (state='implemented' OR state='Shutdown') and id=? ");
+                pstmt = conn.prepareStatement("select account_id, domain_id FROM `cloud`.`networks` where (guest_type='Isolated' OR " +
+                    "guest_type='Virtual') and traffic_type='Guest' and vpc_id is NULL and " +
+                    "(state='implemented' OR state='Shutdown') and id=? ");
                 pstmt.setLong(1, netId);
                 s_logger.debug("Getting account_id, domain_id from networks table: " + pstmt);
                 rsNw = pstmt.executeQuery();
@@ -132,8 +133,7 @@ public class Upgrade40to41 implements DbUpgrade {
 
                     //Add new rule for the existing networks
                     s_logger.debug("Adding default egress firewall rule for network " + netId);
-                    pstmt =
-                        conn.prepareStatement("INSERT INTO firewall_rules (uuid, state, protocol, purpose, account_id, domain_id, network_id, xid, created,  traffic_type) VALUES (?, 'Active', 'all', 'Firewall', ?, ?, ?, ?, now(), 'Egress')");
+                    pstmt = conn.prepareStatement("INSERT INTO firewall_rules (uuid, state, protocol, purpose, account_id, domain_id, network_id, xid, created,  traffic_type) VALUES (?, 'Active', 'all', 'Firewall', ?, ?, ?, ?, now(), 'Egress')");
                     pstmt.setString(1, UUID.randomUUID().toString());
                     pstmt.setLong(2, accountId);
                     pstmt.setLong(3, domainId);

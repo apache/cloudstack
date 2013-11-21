@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
@@ -250,8 +249,6 @@ public interface ManagementService {
      * @param cmd
      *            -- upload certificate cmd
      * @return -- returns a string on success
-     * @throws ServerApiException
-     *             -- even if one of the console proxy patching fails, we throw back this exception
      */
     String uploadCertificate(UploadCustomCertificateCmd cmd);
 

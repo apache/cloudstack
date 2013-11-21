@@ -154,7 +154,8 @@ public class CloudOrchestrator implements OrchestrationService {
         int speed, long memory, Long diskSize, List<String> computeTags, List<String> rootDiskTags, Map<String, NicProfile> networkNicMap, DeploymentPlan plan,
         Long rootDiskSize) throws InsufficientCapacityException {
 
-        // VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks, vmEntityManager);
+        // VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks,
+        // vmEntityManager);
 
         LinkedHashMap<NetworkVO, NicProfile> networkIpMap = new LinkedHashMap<NetworkVO, NicProfile>();
         for (String uuid : networkNicMap.keySet()) {

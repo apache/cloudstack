@@ -658,9 +658,6 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
         return null;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#prepareNic(com.cloud.vm.VirtualMachineProfile, com.cloud.deploy.DeployDestination, com.cloud.vm.ReservationContext, long, com.cloud.network.NetworkVO)
-     */
     @Override
     public NicProfile prepareNic(VirtualMachineProfile vmProfile, DeployDestination dest, ReservationContext context, long nicId, Network network)
         throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException,

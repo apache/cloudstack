@@ -113,8 +113,8 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
     @DB
     public void addIpRange(long dcId, long podId, String start, String end) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        String insertSql =
-            "INSERT INTO `cloud`.`op_dc_ip_address_alloc` (ip_address, data_center_id, pod_id, mac_address) VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?))";
+        String insertSql = "INSERT INTO `cloud`.`op_dc_ip_address_alloc` (ip_address, data_center_id, pod_id, mac_address) " +
+            "VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?))";
         String updateSql = "UPDATE `cloud`.`data_center` set mac_address = mac_address+1 where id=?";
         PreparedStatement stmt = null;
 

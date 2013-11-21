@@ -39,13 +39,13 @@ public class UsageVmDiskDaoImpl extends GenericDaoBase<UsageVmDiskVO, Long> impl
     private static final String SELECT_LATEST_STATS =
         "SELECT uvd.account_id, uvd.zone_id, uvd.vm_id, uvd.volume_id, uvd.io_read, uvd.io_write, uvd.agg_io_read, uvd.agg_io_write, "
             + "uvd.bytes_read, uvd.bytes_write, uvd.agg_bytes_read, uvd.agg_bytes_write, uvd.event_time_millis "
-            + "FROM cloud_usage.usage_vm_disk uvd INNER JOIN (SELECT vmdiskusage.account_id as acct_id, vmdiskusage.zone_id as z_id, max(vmdiskusage.event_time_millis) as max_date "
-            + "FROM cloud_usage.usage_vm_disk vmdiskusage " + "GROUP BY vmdiskusage.account_id, vmdiskusage.zone_id "
+            + "FROM cloud_usage.usage_vm_disk uvd INNER JOIN (SELECT vmdiskusage.account_id as acct_id, vmdiskusage.zone_id as z_id, max(vmdiskusage.event_time_millis) as "
+            + "max_date FROM cloud_usage.usage_vm_disk vmdiskusage " + "GROUP BY vmdiskusage.account_id, vmdiskusage.zone_id "
             + ") joinnet on uvd.account_id = joinnet.acct_id and uvd.zone_id = joinnet.z_id and uvd.event_time_millis = joinnet.max_date";
     private static final String DELETE_OLD_STATS = "DELETE FROM cloud_usage.usage_vm_disk WHERE event_time_millis < ?";
 
-    private static final String INSERT_USAGE_VM_DISK =
-        "INSERT INTO cloud_usage.usage_vm_disk (account_id, zone_id, vm_id, volume_id, io_read, io_write, agg_io_read, agg_io_write, bytes_read, bytes_write, agg_bytes_read, agg_bytes_write, event_time_millis) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
+    private static final String INSERT_USAGE_VM_DISK = "INSERT INTO cloud_usage.usage_vm_disk (account_id, zone_id, vm_id, volume_id, io_read, io_write, agg_io_read," +
+        " agg_io_write, bytes_read, bytes_write, agg_bytes_read, agg_bytes_write, event_time_millis) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
     public UsageVmDiskDaoImpl() {
     }

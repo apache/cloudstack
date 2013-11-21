@@ -163,10 +163,10 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     *     */
     private static final String LIST_CLUSTERS_CROSSING_THRESHOLD =
         "SELECT clusterList.cluster_id "
-            + "FROM (    SELECT cluster.cluster_id cluster_id, ( (sum(cluster.used) + sum(cluster.reserved) + ?)/sum(cluster.total) ) ratio, cluster.configValue value "
-            + "FROM (    SELECT capacity.cluster_id cluster_id, capacity.used_capacity used, capacity.reserved_capacity reserved, capacity.total_capacity * overcommit.value total, "
+            + "FROM (SELECT cluster.cluster_id cluster_id, ( (sum(cluster.used) + sum(cluster.reserved) + ?)/sum(cluster.total) ) ratio, cluster.configValue value "
+            + "FROM (SELECT capacity.cluster_id cluster_id, capacity.used_capacity used, capacity.reserved_capacity reserved, capacity.total_capacity * overcommit.value total, "
             + "CASE (SELECT count(*) FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ? ) "
-            + "WHEN 1 THEN (    CASE WHEN (SELECT details.value FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ?) is NULL "
+            + "WHEN 1 THEN (CASE WHEN (SELECT details.value FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ?) is NULL "
             + "THEN (SELECT config.value FROM `cloud`.`configuration` config WHERE config.name = ?)"
             + "ELSE (SELECT details.value FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ? ) END )"
             + "ELSE (    SELECT config.value FROM `cloud`.`configuration` config WHERE config.name = ?) " + "END configValue "
@@ -561,7 +561,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
         public SummedCapacity(long sumUsed, long sumReserved, long sumTotal, short capacityType, Long clusterId, Long podId, Long zoneId) {
             this(sumUsed, sumReserved, sumTotal, capacityType, clusterId, podId);
-            this.dcId = zoneId;
+            dcId = zoneId;
         }
 
         public SummedCapacity(long sumUsed, long sumTotal, float percentUsed, short capacityType, Long zoneId, Long podId, Long clusterId) {
@@ -572,7 +572,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             this.capacityType = capacityType;
             this.clusterId = clusterId;
             this.podId = podId;
-            this.dcId = zoneId;
+            dcId = zoneId;
         }
 
         public SummedCapacity(long sumUsed, long sumReserved, long sumTotal, float percentUsed, short capacityType, Long zoneId, Long podId, Long clusterId) {

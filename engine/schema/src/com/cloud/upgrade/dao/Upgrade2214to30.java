@@ -183,26 +183,29 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                     if (vnet != null) {
                         //check if any vnet is allocated and guest networks are using vnets.
                         PreparedStatement pstmt4 =
-                            conn.prepareStatement("SELECT v.* FROM `cloud`.`op_dc_vnet_alloc` v JOIN `cloud`.`networks` n ON CONCAT('vlan://' , v.vnet) = n.broadcast_uri WHERE v.taken IS NOT NULL AND v.data_center_id = ? AND n.removed IS NULL");
+                            conn.prepareStatement("SELECT v.* FROM `cloud`.`op_dc_vnet_alloc` v JOIN `cloud`.`networks` n ON CONCAT('vlan://' , v.vnet) = " +
+                                "n.broadcast_uri WHERE v.taken IS NOT NULL AND v.data_center_id = ? AND n.removed IS NULL");
                         pstmt4.setLong(1, zoneId);
                         ResultSet rsVNet = pstmt4.executeQuery();
 
                         if (rsVNet.next()) {
-                            String message =
-                                "Cannot upgrade. Your setup has multiple Physical Networks and is using guest Vnet that is assigned wrongly. To upgrade, first correct the setup by doing the following: \n"
-                                    + "1. Please rollback to your 2.2.14 setup\n"
-                                    + "2. Please stop all VMs using isolated(virtual) networks through CloudStack\n"
-                                    + "3. Run following query to find if any networks still have nics allocated:\n\t"
-                                    + "a) check if any virtual guest networks still have allocated nics by running:\n\t"
-                                    + "SELECT DISTINCT op.id from `cloud`.`op_networks` op JOIN `cloud`.`networks` n on op.id=n.id WHERE nics_count != 0 AND guest_type = 'Virtual';\n\t"
-                                    + "b) If this returns any networkd ids, then ensure that all VMs are stopped, no new VM is being started, and then shutdown management server\n\t"
-                                    + "c) Clean up the nics count for the 'virtual' network id's returned in step (a) by running this:\n\t"
-                                    + "UPDATE `cloud`.`op_networks` SET nics_count = 0 WHERE  id = <enter id of virtual network>\n\t"
-                                    + "d) Restart management server and wait for all networks to shutdown. [Networks shutdown will be determined by network.gc.interval and network.gc.wait seconds] \n"
-                                    + "4. Please ensure all networks are shutdown and all guest Vnet's are free.\n"
-                                    + "5. Run upgrade. This will allocate all your guest vnet range to first physical network.  \n"
-                                    + "6. Reconfigure the vnet ranges for each physical network as desired by using updatePhysicalNetwork API \n"
-                                    + "7. Start all your VMs";
+                            String message = "Cannot upgrade. Your setup has multiple Physical Networks and is using guest "
+                                + "Vnet that is assigned wrongly. To upgrade, first correct the setup by doing the following: \n"
+                                + "1. Please rollback to your 2.2.14 setup\n"
+                                + "2. Please stop all VMs using isolated(virtual) networks through CloudStack\n"
+                                + "3. Run following query to find if any networks still have nics allocated:\n\t"
+                                + "a) check if any virtual guest networks still have allocated nics by running:\n\t"
+                                + "SELECT DISTINCT op.id from `cloud`.`op_networks` op JOIN `cloud`.`networks` n on "
+                                + "op.id=n.id WHERE nics_count != 0 AND guest_type = 'Virtual';\n\t"
+                                + "b) If this returns any networkd ids, then ensure that all VMs are stopped, no new VM is being started, and then shutdown management server\n\t"
+                                + "c) Clean up the nics count for the 'virtual' network id's returned in step (a) by running this:\n\t"
+                                + "UPDATE `cloud`.`op_networks` SET nics_count = 0 WHERE  id = <enter id of virtual network>\n\t"
+                                + "d) Restart management server and wait for all networks to shutdown. [Networks shutdown will be "
+                                + "determined by network.gc.interval and network.gc.wait seconds] \n"
+                                + "4. Please ensure all networks are shutdown and all guest Vnet's are free.\n"
+                                + "5. Run upgrade. This will allocate all your guest vnet range to first physical network.  \n"
+                                + "6. Reconfigure the vnet ranges for each physical network as desired by using updatePhysicalNetwork API \n"
+                                + "7. Start all your VMs";
 
                             s_logger.error(message);
 

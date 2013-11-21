@@ -58,7 +58,8 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID,
                type = CommandType.UUID,
                entityType = DomainResponse.class,
-               description = "the domain ID with which the VLAN IP range is associated.  If used with the account parameter, returns all VLAN IP ranges for that account in the specified domain.")
+               description = "the domain ID with which the VLAN IP range is associated.  If used with the account parameter, " +
+                   "returns all VLAN IP ranges for that account in the specified domain.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VlanIpRangeResponse.class, required = false, description = "the ID of the VLAN IP range")
@@ -151,6 +152,6 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
 
         response.setResponses(vlanResponses, vlans.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

@@ -31,9 +31,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     protected org.apache.axis2.description.AxisOperation[] _operations;
 
     //hashmaps to keep the fault mapping
-    private java.util.HashMap faultExceptionNameMap = new java.util.HashMap();
-    private java.util.HashMap faultExceptionClassNameMap = new java.util.HashMap();
-    private java.util.HashMap faultMessageMap = new java.util.HashMap();
+    private final java.util.HashMap faultExceptionNameMap = new java.util.HashMap();
+    private final java.util.HashMap faultExceptionClassNameMap = new java.util.HashMap();
+    private final java.util.HashMap faultMessageMap = new java.util.HashMap();
 
     private static int counter = 0;
 
@@ -366,6 +366,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         _operationClient.addMessageContext(_messageContext);
 
         _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+            @Override
             public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
@@ -380,6 +381,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onError(java.lang.Exception error) {
                 if (error instanceof org.apache.axis2.AxisFault) {
                     org.apache.axis2.AxisFault f = (org.apache.axis2.AxisFault)error;
@@ -432,11 +434,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onFault(org.apache.axis2.context.MessageContext faultContext) {
                 org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
                 onError(fault);
             }
 
+            @Override
             public void onComplete() {
                 try {
                     _messageContext.getTransportOut().getSender().cleanup(_messageContext);
@@ -598,6 +602,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         _operationClient.addMessageContext(_messageContext);
 
         _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+            @Override
             public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
@@ -611,6 +616,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onError(java.lang.Exception error) {
                 if (error instanceof org.apache.axis2.AxisFault) {
                     org.apache.axis2.AxisFault f = (org.apache.axis2.AxisFault)error;
@@ -663,11 +669,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onFault(org.apache.axis2.context.MessageContext faultContext) {
                 org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
                 onError(fault);
             }
 
+            @Override
             public void onComplete() {
                 try {
                     _messageContext.getTransportOut().getSender().cleanup(_messageContext);
@@ -830,6 +838,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         _operationClient.addMessageContext(_messageContext);
 
         _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+            @Override
             public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
@@ -844,6 +853,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onError(java.lang.Exception error) {
                 if (error instanceof org.apache.axis2.AxisFault) {
                     org.apache.axis2.AxisFault f = (org.apache.axis2.AxisFault)error;
@@ -896,11 +906,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onFault(org.apache.axis2.context.MessageContext faultContext) {
                 org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
                 onError(fault);
             }
 
+            @Override
             public void onComplete() {
                 try {
                     _messageContext.getTransportOut().getSender().cleanup(_messageContext);
@@ -1062,6 +1074,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         _operationClient.addMessageContext(_messageContext);
 
         _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+            @Override
             public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
@@ -1075,6 +1088,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onError(java.lang.Exception error) {
                 if (error instanceof org.apache.axis2.AxisFault) {
                     org.apache.axis2.AxisFault f = (org.apache.axis2.AxisFault)error;
@@ -1127,11 +1141,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onFault(org.apache.axis2.context.MessageContext faultContext) {
                 org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
                 onError(fault);
             }
 
+            @Override
             public void onComplete() {
                 try {
                     _messageContext.getTransportOut().getSender().cleanup(_messageContext);
@@ -1293,6 +1309,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         _operationClient.addMessageContext(_messageContext);
 
         _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+            @Override
             public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
@@ -1306,6 +1323,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onError(java.lang.Exception error) {
                 if (error instanceof org.apache.axis2.AxisFault) {
                     org.apache.axis2.AxisFault f = (org.apache.axis2.AxisFault)error;
@@ -1358,11 +1376,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onFault(org.apache.axis2.context.MessageContext faultContext) {
                 org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
                 onError(fault);
             }
 
+            @Override
             public void onComplete() {
                 try {
                     _messageContext.getTransportOut().getSender().cleanup(_messageContext);
@@ -1524,6 +1544,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         _operationClient.addMessageContext(_messageContext);
 
         _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+            @Override
             public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
@@ -1537,6 +1558,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onError(java.lang.Exception error) {
                 if (error instanceof org.apache.axis2.AxisFault) {
                     org.apache.axis2.AxisFault f = (org.apache.axis2.AxisFault)error;
@@ -1589,11 +1611,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onFault(org.apache.axis2.context.MessageContext faultContext) {
                 org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
                 onError(fault);
             }
 
+            @Override
             public void onComplete() {
                 try {
                     _messageContext.getTransportOut().getSender().cleanup(_messageContext);
@@ -1755,6 +1779,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         _operationClient.addMessageContext(_messageContext);
 
         _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+            @Override
             public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
@@ -1768,6 +1793,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onError(java.lang.Exception error) {
                 if (error instanceof org.apache.axis2.AxisFault) {
                     org.apache.axis2.AxisFault f = (org.apache.axis2.AxisFault)error;
@@ -1820,11 +1846,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onFault(org.apache.axis2.context.MessageContext faultContext) {
                 org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
                 onError(fault);
             }
 
+            @Override
             public void onComplete() {
                 try {
                     _messageContext.getTransportOut().getSender().cleanup(_messageContext);
@@ -1986,6 +2014,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         _operationClient.addMessageContext(_messageContext);
 
         _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+            @Override
             public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
@@ -1999,6 +2028,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onError(java.lang.Exception error) {
                 if (error instanceof org.apache.axis2.AxisFault) {
                     org.apache.axis2.AxisFault f = (org.apache.axis2.AxisFault)error;
@@ -2051,11 +2081,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onFault(org.apache.axis2.context.MessageContext faultContext) {
                 org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
                 onError(fault);
             }
 
+            @Override
             public void onComplete() {
                 try {
                     _messageContext.getTransportOut().getSender().cleanup(_messageContext);
@@ -2217,6 +2249,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         _operationClient.addMessageContext(_messageContext);
 
         _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+            @Override
             public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
@@ -2230,6 +2263,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onError(java.lang.Exception error) {
                 if (error instanceof org.apache.axis2.AxisFault) {
                     org.apache.axis2.AxisFault f = (org.apache.axis2.AxisFault)error;
@@ -2282,11 +2316,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onFault(org.apache.axis2.context.MessageContext faultContext) {
                 org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
                 onError(fault);
             }
 
+            @Override
             public void onComplete() {
                 try {
                     _messageContext.getTransportOut().getSender().cleanup(_messageContext);
@@ -2448,6 +2484,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         _operationClient.addMessageContext(_messageContext);
 
         _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+            @Override
             public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
@@ -2462,6 +2499,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onError(java.lang.Exception error) {
                 if (error instanceof org.apache.axis2.AxisFault) {
                     org.apache.axis2.AxisFault f = (org.apache.axis2.AxisFault)error;
@@ -2514,11 +2552,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onFault(org.apache.axis2.context.MessageContext faultContext) {
                 org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
                 onError(fault);
             }
 
+            @Override
             public void onComplete() {
                 try {
                     _messageContext.getTransportOut().getSender().cleanup(_messageContext);
@@ -2681,6 +2721,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         _operationClient.addMessageContext(_messageContext);
 
         _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+            @Override
             public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
@@ -2695,6 +2736,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onError(java.lang.Exception error) {
                 if (error instanceof org.apache.axis2.AxisFault) {
                     org.apache.axis2.AxisFault f = (org.apache.axis2.AxisFault)error;
@@ -2747,11 +2789,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onFault(org.apache.axis2.context.MessageContext faultContext) {
                 org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
                 onError(fault);
             }
 
+            @Override
             public void onComplete() {
                 try {
                     _messageContext.getTransportOut().getSender().cleanup(_messageContext);
@@ -2913,6 +2957,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         _operationClient.addMessageContext(_messageContext);
 
         _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+            @Override
             public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
@@ -2926,6 +2971,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onError(java.lang.Exception error) {
                 if (error instanceof org.apache.axis2.AxisFault) {
                     org.apache.axis2.AxisFault f = (org.apache.axis2.AxisFault)error;
@@ -2978,11 +3024,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onFault(org.apache.axis2.context.MessageContext faultContext) {
                 org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
                 onError(fault);
             }
 
+            @Override
             public void onComplete() {
                 try {
                     _messageContext.getTransportOut().getSender().cleanup(_messageContext);
@@ -3145,6 +3193,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         _operationClient.addMessageContext(_messageContext);
 
         _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+            @Override
             public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
@@ -3159,6 +3208,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onError(java.lang.Exception error) {
                 if (error instanceof org.apache.axis2.AxisFault) {
                     org.apache.axis2.AxisFault f = (org.apache.axis2.AxisFault)error;
@@ -3211,11 +3261,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onFault(org.apache.axis2.context.MessageContext faultContext) {
                 org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
                 onError(fault);
             }
 
+            @Override
             public void onComplete() {
                 try {
                     _messageContext.getTransportOut().getSender().cleanup(_messageContext);
@@ -3378,6 +3430,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         _operationClient.addMessageContext(_messageContext);
 
         _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+            @Override
             public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
@@ -3392,6 +3445,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onError(java.lang.Exception error) {
                 if (error instanceof org.apache.axis2.AxisFault) {
                     org.apache.axis2.AxisFault f = (org.apache.axis2.AxisFault)error;
@@ -3444,11 +3498,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onFault(org.apache.axis2.context.MessageContext faultContext) {
                 org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
                 onError(fault);
             }
 
+            @Override
             public void onComplete() {
                 try {
                     _messageContext.getTransportOut().getSender().cleanup(_messageContext);
@@ -3610,6 +3666,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         _operationClient.addMessageContext(_messageContext);
 
         _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+            @Override
             public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
@@ -3623,6 +3680,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onError(java.lang.Exception error) {
                 if (error instanceof org.apache.axis2.AxisFault) {
                     org.apache.axis2.AxisFault f = (org.apache.axis2.AxisFault)error;
@@ -3675,11 +3733,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onFault(org.apache.axis2.context.MessageContext faultContext) {
                 org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
                 onError(fault);
             }
 
+            @Override
             public void onComplete() {
                 try {
                     _messageContext.getTransportOut().getSender().cleanup(_messageContext);
@@ -3841,6 +3901,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         _operationClient.addMessageContext(_messageContext);
 
         _operationClient.setCallback(new org.apache.axis2.client.async.AxisCallback() {
+            @Override
             public void onMessage(org.apache.axis2.context.MessageContext resultContext) {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
@@ -3854,6 +3915,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onError(java.lang.Exception error) {
                 if (error instanceof org.apache.axis2.AxisFault) {
                     org.apache.axis2.AxisFault f = (org.apache.axis2.AxisFault)error;
@@ -3906,11 +3968,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 }
             }
 
+            @Override
             public void onFault(org.apache.axis2.context.MessageContext faultContext) {
                 org.apache.axis2.AxisFault fault = org.apache.axis2.util.Utils.getInboundFaultFromMessageContext(faultContext);
                 onError(fault);
             }
 
+            @Override
             public void onComplete() {
                 try {
                     _messageContext.getTransportOut().getSender().cleanup(_messageContext);
@@ -3944,7 +4008,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         return returnMap;
     }
 
-    private javax.xml.namespace.QName[] opNameArray = null;
+    private final javax.xml.namespace.QName[] opNameArray = null;
 
     private boolean optimizeContent(javax.xml.namespace.QName opName) {
 
@@ -4005,7 +4069,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAWSAccessKeyId = param;
+            localAWSAccessKeyId = param;
 
         }
 
@@ -4043,7 +4107,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localTimestamp = param;
+            localTimestamp = param;
 
         }
 
@@ -4081,7 +4145,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localSignature = param;
+            localSignature = param;
 
         }
 
@@ -4111,6 +4175,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     ListAllMyBuckets.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -4119,12 +4184,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -4406,6 +4473,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -4597,7 +4665,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setName(java.lang.String param) {
 
-            this.localName = param;
+            localName = param;
 
         }
 
@@ -4621,7 +4689,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setCreationDate(java.util.Calendar param) {
 
-            this.localCreationDate = param;
+            localCreationDate = param;
 
         }
 
@@ -4651,6 +4719,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     ListAllMyBucketsEntry.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -4659,12 +4728,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -4912,6 +4983,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -5100,7 +5172,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localMetadata = param;
+            localMetadata = param;
         }
 
         /**
@@ -5117,7 +5189,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             java.util.List list = org.apache.axis2.databinding.utils.ConverterUtil.toList(localMetadata);
             list.add(param);
-            this.localMetadata = (MetadataEntry[])list.toArray(new MetadataEntry[list.size()]);
+            localMetadata = (MetadataEntry[])list.toArray(new MetadataEntry[list.size()]);
 
         }
 
@@ -5141,7 +5213,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setName(java.lang.String param) {
 
-            this.localName = param;
+            localName = param;
 
         }
 
@@ -5165,7 +5237,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setPrefix(java.lang.String param) {
 
-            this.localPrefix = param;
+            localPrefix = param;
 
         }
 
@@ -5189,7 +5261,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setMarker(java.lang.String param) {
 
-            this.localMarker = param;
+            localMarker = param;
 
         }
 
@@ -5227,7 +5299,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localNextMarker = param;
+            localNextMarker = param;
 
         }
 
@@ -5251,7 +5323,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setMaxKeys(int param) {
 
-            this.localMaxKeys = param;
+            localMaxKeys = param;
 
         }
 
@@ -5289,7 +5361,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localDelimiter = param;
+            localDelimiter = param;
 
         }
 
@@ -5313,7 +5385,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setIsTruncated(boolean param) {
 
-            this.localIsTruncated = param;
+            localIsTruncated = param;
 
         }
 
@@ -5361,7 +5433,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localContents = param;
+            localContents = param;
         }
 
         /**
@@ -5378,7 +5450,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             java.util.List list = org.apache.axis2.databinding.utils.ConverterUtil.toList(localContents);
             list.add(param);
-            this.localContents = (ListEntry[])list.toArray(new ListEntry[list.size()]);
+            localContents = (ListEntry[])list.toArray(new ListEntry[list.size()]);
 
         }
 
@@ -5426,7 +5498,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCommonPrefixes = param;
+            localCommonPrefixes = param;
         }
 
         /**
@@ -5443,7 +5515,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             java.util.List list = org.apache.axis2.databinding.utils.ConverterUtil.toList(localCommonPrefixes);
             list.add(param);
-            this.localCommonPrefixes = (PrefixEntry[])list.toArray(new PrefixEntry[list.size()]);
+            localCommonPrefixes = (PrefixEntry[])list.toArray(new PrefixEntry[list.size()]);
 
         }
 
@@ -5473,6 +5545,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     ListBucketResult.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -5481,12 +5554,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -5941,6 +6016,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -6414,7 +6490,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setBucket(java.lang.String param) {
 
-            this.localBucket = param;
+            localBucket = param;
 
         }
 
@@ -6438,7 +6514,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setKey(java.lang.String param) {
 
-            this.localKey = param;
+            localKey = param;
 
         }
 
@@ -6476,7 +6552,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAWSAccessKeyId = param;
+            localAWSAccessKeyId = param;
 
         }
 
@@ -6514,7 +6590,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localTimestamp = param;
+            localTimestamp = param;
 
         }
 
@@ -6552,7 +6628,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localSignature = param;
+            localSignature = param;
 
         }
 
@@ -6590,7 +6666,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCredential = param;
+            localCredential = param;
 
         }
 
@@ -6620,6 +6696,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     DeleteObject.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -6628,12 +6705,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -7012,6 +7091,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -7304,7 +7384,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localBucket = param;
+            localBucket = param;
         }
 
         /**
@@ -7321,7 +7401,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             java.util.List list = org.apache.axis2.databinding.utils.ConverterUtil.toList(localBucket);
             list.add(param);
-            this.localBucket = (ListAllMyBucketsEntry[])list.toArray(new ListAllMyBucketsEntry[list.size()]);
+            localBucket = (ListAllMyBucketsEntry[])list.toArray(new ListAllMyBucketsEntry[list.size()]);
 
         }
 
@@ -7351,6 +7431,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     ListAllMyBucketsList.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -7359,12 +7440,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -7565,6 +7648,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -7739,7 +7823,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setBucket(java.lang.String param) {
 
-            this.localBucket = param;
+            localBucket = param;
 
         }
 
@@ -7763,7 +7847,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setKey(java.lang.String param) {
 
-            this.localKey = param;
+            localKey = param;
 
         }
 
@@ -7815,7 +7899,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localMetadata = param;
+            localMetadata = param;
         }
 
         /**
@@ -7832,7 +7916,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             java.util.List list = org.apache.axis2.databinding.utils.ConverterUtil.toList(localMetadata);
             list.add(param);
-            this.localMetadata = (MetadataEntry[])list.toArray(new MetadataEntry[list.size()]);
+            localMetadata = (MetadataEntry[])list.toArray(new MetadataEntry[list.size()]);
 
         }
 
@@ -7856,7 +7940,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setData(javax.activation.DataHandler param) {
 
-            this.localData = param;
+            localData = param;
 
         }
 
@@ -7880,7 +7964,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setContentLength(long param) {
 
-            this.localContentLength = param;
+            localContentLength = param;
 
         }
 
@@ -7918,7 +8002,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAccessControlList = param;
+            localAccessControlList = param;
 
         }
 
@@ -7956,7 +8040,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localStorageClass = param;
+            localStorageClass = param;
 
         }
 
@@ -7994,7 +8078,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAWSAccessKeyId = param;
+            localAWSAccessKeyId = param;
 
         }
 
@@ -8032,7 +8116,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localTimestamp = param;
+            localTimestamp = param;
 
         }
 
@@ -8070,7 +8154,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localSignature = param;
+            localSignature = param;
 
         }
 
@@ -8108,7 +8192,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCredential = param;
+            localCredential = param;
 
         }
 
@@ -8138,6 +8222,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     PutObjectInline.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -8146,12 +8231,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -8613,6 +8700,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -8862,7 +8950,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                                     new javax.xml.namespace.QName(org.apache.axiom.om.impl.MTOMConstants.XOP_NAMESPACE_URI,
                                         org.apache.axiom.om.impl.MTOMConstants.XOP_INCLUDE))) {
                                 java.lang.String id = org.apache.axiom.om.util.ElementHelper.getContentID(reader, "UTF-8");
-                                object.setData(((org.apache.axiom.soap.impl.builder.MTOMStAXSOAPModelBuilder)((org.apache.axiom.om.impl.llom.OMStAXWrapper)reader).getBuilder()).getDataHandler(id));
+                                object.setData(((org.apache.axiom.soap.impl.builder.MTOMStAXSOAPModelBuilder)((org.apache.axiom.om.impl.llom.OMStAXWrapper)reader)
+                                    .getBuilder()).getDataHandler(id));
                                 reader.next();
 
                                 reader.next();
@@ -9054,7 +9143,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setBucketName(java.lang.String param) {
 
-            this.localBucketName = param;
+            localBucketName = param;
 
         }
 
@@ -9084,6 +9173,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     CreateBucketResult.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -9092,12 +9182,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -9313,6 +9405,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -9451,7 +9544,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setCode(int param) {
 
-            this.localCode = param;
+            localCode = param;
 
         }
 
@@ -9475,7 +9568,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setDescription(java.lang.String param) {
 
-            this.localDescription = param;
+            localDescription = param;
 
         }
 
@@ -9505,6 +9598,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     Status.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -9513,12 +9607,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -9763,6 +9859,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -9920,7 +10017,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setCreateBucketReturn(CreateBucketResult param) {
 
-            this.localCreateBucketReturn = param;
+            localCreateBucketReturn = param;
 
         }
 
@@ -9950,6 +10047,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     CreateBucketResponse.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -9958,12 +10056,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -10152,6 +10252,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -10285,7 +10386,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setBucket(java.lang.String param) {
 
-            this.localBucket = param;
+            localBucket = param;
 
         }
 
@@ -10309,7 +10410,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setKey(java.lang.String param) {
 
-            this.localKey = param;
+            localKey = param;
 
         }
 
@@ -10333,7 +10434,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setGetMetadata(boolean param) {
 
-            this.localGetMetadata = param;
+            localGetMetadata = param;
 
         }
 
@@ -10357,7 +10458,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setGetData(boolean param) {
 
-            this.localGetData = param;
+            localGetData = param;
 
         }
 
@@ -10381,7 +10482,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setInlineData(boolean param) {
 
-            this.localInlineData = param;
+            localInlineData = param;
 
         }
 
@@ -10420,7 +10521,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 localByteRangeStartTracker = true;
             }
 
-            this.localByteRangeStart = param;
+            localByteRangeStart = param;
 
         }
 
@@ -10459,7 +10560,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 localByteRangeEndTracker = true;
             }
 
-            this.localByteRangeEnd = param;
+            localByteRangeEnd = param;
 
         }
 
@@ -10497,7 +10598,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localIfModifiedSince = param;
+            localIfModifiedSince = param;
 
         }
 
@@ -10535,7 +10636,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localIfUnmodifiedSince = param;
+            localIfUnmodifiedSince = param;
 
         }
 
@@ -10587,7 +10688,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localIfMatch = param;
+            localIfMatch = param;
         }
 
         /**
@@ -10604,7 +10705,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             java.util.List list = org.apache.axis2.databinding.utils.ConverterUtil.toList(localIfMatch);
             list.add(param);
-            this.localIfMatch = (java.lang.String[])list.toArray(new java.lang.String[list.size()]);
+            localIfMatch = (java.lang.String[])list.toArray(new java.lang.String[list.size()]);
 
         }
 
@@ -10656,7 +10757,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localIfNoneMatch = param;
+            localIfNoneMatch = param;
         }
 
         /**
@@ -10673,7 +10774,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             java.util.List list = org.apache.axis2.databinding.utils.ConverterUtil.toList(localIfNoneMatch);
             list.add(param);
-            this.localIfNoneMatch = (java.lang.String[])list.toArray(new java.lang.String[list.size()]);
+            localIfNoneMatch = (java.lang.String[])list.toArray(new java.lang.String[list.size()]);
 
         }
 
@@ -10712,7 +10813,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 localReturnCompleteObjectOnConditionFailureTracker = true;
             }
 
-            this.localReturnCompleteObjectOnConditionFailure = param;
+            localReturnCompleteObjectOnConditionFailure = param;
 
         }
 
@@ -10750,7 +10851,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAWSAccessKeyId = param;
+            localAWSAccessKeyId = param;
 
         }
 
@@ -10788,7 +10889,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localTimestamp = param;
+            localTimestamp = param;
 
         }
 
@@ -10826,7 +10927,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localSignature = param;
+            localSignature = param;
 
         }
 
@@ -10864,7 +10965,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCredential = param;
+            localCredential = param;
 
         }
 
@@ -10894,6 +10995,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     GetObjectExtended.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -10902,12 +11004,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -11615,6 +11719,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -12200,7 +12305,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setListAllMyBucketsResponse(ListAllMyBucketsResult param) {
 
-            this.localListAllMyBucketsResponse = param;
+            localListAllMyBucketsResponse = param;
 
         }
 
@@ -12230,6 +12335,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     ListAllMyBucketsResponse.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -12238,12 +12344,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -12433,6 +12541,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -12567,7 +12676,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setBucket(java.lang.String param) {
 
-            this.localBucket = param;
+            localBucket = param;
 
         }
 
@@ -12605,7 +12714,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAccessControlList = param;
+            localAccessControlList = param;
 
         }
 
@@ -12643,7 +12752,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAWSAccessKeyId = param;
+            localAWSAccessKeyId = param;
 
         }
 
@@ -12681,7 +12790,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localTimestamp = param;
+            localTimestamp = param;
 
         }
 
@@ -12719,7 +12828,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localSignature = param;
+            localSignature = param;
 
         }
 
@@ -12757,7 +12866,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCredential = param;
+            localCredential = param;
 
         }
 
@@ -12787,6 +12896,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     SetBucketAccessControlPolicy.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -12795,12 +12905,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -13153,6 +13265,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -13416,7 +13529,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setGetObjectAccessControlPolicyResponse(AccessControlPolicy param) {
 
-            this.localGetObjectAccessControlPolicyResponse = param;
+            localGetObjectAccessControlPolicyResponse = param;
 
         }
 
@@ -13446,6 +13559,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     GetObjectAccessControlPolicyResponse.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -13454,12 +13568,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -13649,6 +13765,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -13782,7 +13899,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setDeleteObjectResponse(Status param) {
 
-            this.localDeleteObjectResponse = param;
+            localDeleteObjectResponse = param;
 
         }
 
@@ -13812,6 +13929,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     DeleteObjectResponse.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -13820,12 +13938,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -14014,6 +14134,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -14148,7 +14269,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setBucket(java.lang.String param) {
 
-            this.localBucket = param;
+            localBucket = param;
 
         }
 
@@ -14186,7 +14307,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAWSAccessKeyId = param;
+            localAWSAccessKeyId = param;
 
         }
 
@@ -14224,7 +14345,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localTimestamp = param;
+            localTimestamp = param;
 
         }
 
@@ -14262,7 +14383,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localSignature = param;
+            localSignature = param;
 
         }
 
@@ -14300,7 +14421,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCredential = param;
+            localCredential = param;
 
         }
 
@@ -14330,6 +14451,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     GetBucketLoggingStatus.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -14338,12 +14460,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -14690,6 +14814,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -14932,7 +15057,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setTargetBucket(java.lang.String param) {
 
-            this.localTargetBucket = param;
+            localTargetBucket = param;
 
         }
 
@@ -14956,7 +15081,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setTargetPrefix(java.lang.String param) {
 
-            this.localTargetPrefix = param;
+            localTargetPrefix = param;
 
         }
 
@@ -14994,7 +15119,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localTargetGrants = param;
+            localTargetGrants = param;
 
         }
 
@@ -15024,6 +15149,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     LoggingSettings.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -15032,12 +15158,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -15290,6 +15418,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -15628,7 +15757,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setBucket(java.lang.String param) {
 
-            this.localBucket = param;
+            localBucket = param;
 
         }
 
@@ -15666,7 +15795,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAWSAccessKeyId = param;
+            localAWSAccessKeyId = param;
 
         }
 
@@ -15704,7 +15833,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localTimestamp = param;
+            localTimestamp = param;
 
         }
 
@@ -15742,7 +15871,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localSignature = param;
+            localSignature = param;
 
         }
 
@@ -15780,7 +15909,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCredential = param;
+            localCredential = param;
 
         }
 
@@ -15810,6 +15939,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     DeleteBucket.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -15818,12 +15948,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -16170,6 +16302,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -16409,7 +16542,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setDeleteBucketResponse(Status param) {
 
-            this.localDeleteBucketResponse = param;
+            localDeleteBucketResponse = param;
 
         }
 
@@ -16439,6 +16572,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     DeleteBucketResponse.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -16447,12 +16581,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -16641,6 +16777,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -16777,7 +16914,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setLastModified(java.util.Calendar param) {
 
-            this.localLastModified = param;
+            localLastModified = param;
 
         }
 
@@ -16801,7 +16938,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setETag(java.lang.String param) {
 
-            this.localETag = param;
+            localETag = param;
 
         }
 
@@ -16831,6 +16968,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     CopyObjectResult.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -16839,12 +16977,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -17092,6 +17232,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -17256,7 +17397,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setKey(java.lang.String param) {
 
-            this.localKey = param;
+            localKey = param;
 
         }
 
@@ -17280,7 +17421,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setLastModified(java.util.Calendar param) {
 
-            this.localLastModified = param;
+            localLastModified = param;
 
         }
 
@@ -17304,7 +17445,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setETag(java.lang.String param) {
 
-            this.localETag = param;
+            localETag = param;
 
         }
 
@@ -17328,7 +17469,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setSize(long param) {
 
-            this.localSize = param;
+            localSize = param;
 
         }
 
@@ -17366,7 +17507,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localOwner = param;
+            localOwner = param;
 
         }
 
@@ -17390,7 +17531,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setStorageClass(StorageClass param) {
 
-            this.localStorageClass = param;
+            localStorageClass = param;
 
         }
 
@@ -17420,6 +17561,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     ListEntry.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -17428,12 +17570,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -17752,6 +17896,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -18030,14 +18175,17 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             return localPermission;
         }
 
+        @Override
         public boolean equals(java.lang.Object obj) {
             return (obj == this);
         }
 
+        @Override
         public int hashCode() {
             return toString().hashCode();
         }
 
+        @Override
         public java.lang.String toString() {
 
             return localPermission.toString();
@@ -18070,6 +18218,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     Permission.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -18078,12 +18227,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -18276,6 +18427,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             //We can safely assume an element has only one type associated with it
@@ -18418,6 +18570,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     Grantee.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -18426,12 +18579,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -18615,6 +18770,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -18722,7 +18878,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setOwner(CanonicalUser param) {
 
-            this.localOwner = param;
+            localOwner = param;
 
         }
 
@@ -18746,7 +18902,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setBuckets(ListAllMyBucketsList param) {
 
-            this.localBuckets = param;
+            localBuckets = param;
 
         }
 
@@ -18776,6 +18932,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     ListAllMyBucketsResult.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -18784,12 +18941,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -18983,6 +19142,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -19138,7 +19298,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setSourceBucket(java.lang.String param) {
 
-            this.localSourceBucket = param;
+            localSourceBucket = param;
 
         }
 
@@ -19162,7 +19322,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setSourceKey(java.lang.String param) {
 
-            this.localSourceKey = param;
+            localSourceKey = param;
 
         }
 
@@ -19186,7 +19346,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setDestinationBucket(java.lang.String param) {
 
-            this.localDestinationBucket = param;
+            localDestinationBucket = param;
 
         }
 
@@ -19210,7 +19370,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setDestinationKey(java.lang.String param) {
 
-            this.localDestinationKey = param;
+            localDestinationKey = param;
 
         }
 
@@ -19248,7 +19408,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localMetadataDirective = param;
+            localMetadataDirective = param;
 
         }
 
@@ -19300,7 +19460,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localMetadata = param;
+            localMetadata = param;
         }
 
         /**
@@ -19317,7 +19477,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             java.util.List list = org.apache.axis2.databinding.utils.ConverterUtil.toList(localMetadata);
             list.add(param);
-            this.localMetadata = (MetadataEntry[])list.toArray(new MetadataEntry[list.size()]);
+            localMetadata = (MetadataEntry[])list.toArray(new MetadataEntry[list.size()]);
 
         }
 
@@ -19355,7 +19515,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAccessControlList = param;
+            localAccessControlList = param;
 
         }
 
@@ -19393,7 +19553,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCopySourceIfModifiedSince = param;
+            localCopySourceIfModifiedSince = param;
 
         }
 
@@ -19431,7 +19591,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCopySourceIfUnmodifiedSince = param;
+            localCopySourceIfUnmodifiedSince = param;
 
         }
 
@@ -19483,7 +19643,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCopySourceIfMatch = param;
+            localCopySourceIfMatch = param;
         }
 
         /**
@@ -19500,7 +19660,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             java.util.List list = org.apache.axis2.databinding.utils.ConverterUtil.toList(localCopySourceIfMatch);
             list.add(param);
-            this.localCopySourceIfMatch = (java.lang.String[])list.toArray(new java.lang.String[list.size()]);
+            localCopySourceIfMatch = (java.lang.String[])list.toArray(new java.lang.String[list.size()]);
 
         }
 
@@ -19552,7 +19712,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCopySourceIfNoneMatch = param;
+            localCopySourceIfNoneMatch = param;
         }
 
         /**
@@ -19569,7 +19729,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             java.util.List list = org.apache.axis2.databinding.utils.ConverterUtil.toList(localCopySourceIfNoneMatch);
             list.add(param);
-            this.localCopySourceIfNoneMatch = (java.lang.String[])list.toArray(new java.lang.String[list.size()]);
+            localCopySourceIfNoneMatch = (java.lang.String[])list.toArray(new java.lang.String[list.size()]);
 
         }
 
@@ -19607,7 +19767,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localStorageClass = param;
+            localStorageClass = param;
 
         }
 
@@ -19645,7 +19805,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAWSAccessKeyId = param;
+            localAWSAccessKeyId = param;
 
         }
 
@@ -19683,7 +19843,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localTimestamp = param;
+            localTimestamp = param;
 
         }
 
@@ -19721,7 +19881,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localSignature = param;
+            localSignature = param;
 
         }
 
@@ -19759,7 +19919,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCredential = param;
+            localCredential = param;
 
         }
 
@@ -19789,6 +19949,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     CopyObject.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -19797,12 +19958,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -20433,6 +20596,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -21085,7 +21249,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localLoggingEnabled = param;
+            localLoggingEnabled = param;
 
         }
 
@@ -21115,6 +21279,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     BucketLoggingStatus.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -21123,12 +21288,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -21317,6 +21484,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -21450,7 +21618,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setBucket(java.lang.String param) {
 
-            this.localBucket = param;
+            localBucket = param;
 
         }
 
@@ -21474,7 +21642,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setKey(java.lang.String param) {
 
-            this.localKey = param;
+            localKey = param;
 
         }
 
@@ -21526,7 +21694,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localMetadata = param;
+            localMetadata = param;
         }
 
         /**
@@ -21543,7 +21711,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             java.util.List list = org.apache.axis2.databinding.utils.ConverterUtil.toList(localMetadata);
             list.add(param);
-            this.localMetadata = (MetadataEntry[])list.toArray(new MetadataEntry[list.size()]);
+            localMetadata = (MetadataEntry[])list.toArray(new MetadataEntry[list.size()]);
 
         }
 
@@ -21567,7 +21735,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setContentLength(long param) {
 
-            this.localContentLength = param;
+            localContentLength = param;
 
         }
 
@@ -21605,7 +21773,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAccessControlList = param;
+            localAccessControlList = param;
 
         }
 
@@ -21643,7 +21811,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localStorageClass = param;
+            localStorageClass = param;
 
         }
 
@@ -21681,7 +21849,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAWSAccessKeyId = param;
+            localAWSAccessKeyId = param;
 
         }
 
@@ -21719,7 +21887,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localTimestamp = param;
+            localTimestamp = param;
 
         }
 
@@ -21757,7 +21925,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localSignature = param;
+            localSignature = param;
 
         }
 
@@ -21795,7 +21963,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCredential = param;
+            localCredential = param;
 
         }
 
@@ -21825,6 +21993,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     PutObject.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -21833,12 +22002,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -22275,6 +22446,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -22683,14 +22855,17 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             return localMetadataDirective;
         }
 
+        @Override
         public boolean equals(java.lang.Object obj) {
             return (obj == this);
         }
 
+        @Override
         public int hashCode() {
             return toString().hashCode();
         }
 
+        @Override
         public java.lang.String toString() {
 
             return localMetadataDirective.toString();
@@ -22723,6 +22898,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     MetadataDirective.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -22731,12 +22907,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -22929,6 +23107,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             //We can safely assume an element has only one type associated with it
@@ -23089,7 +23268,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localMetadata = param;
+            localMetadata = param;
         }
 
         /**
@@ -23106,7 +23285,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             java.util.List list = org.apache.axis2.databinding.utils.ConverterUtil.toList(localMetadata);
             list.add(param);
-            this.localMetadata = (MetadataEntry[])list.toArray(new MetadataEntry[list.size()]);
+            localMetadata = (MetadataEntry[])list.toArray(new MetadataEntry[list.size()]);
 
         }
 
@@ -23130,7 +23309,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setData(javax.activation.DataHandler param) {
 
-            this.localData = param;
+            localData = param;
 
         }
 
@@ -23154,7 +23333,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setLastModified(java.util.Calendar param) {
 
-            this.localLastModified = param;
+            localLastModified = param;
 
         }
 
@@ -23178,7 +23357,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setETag(java.lang.String param) {
 
-            this.localETag = param;
+            localETag = param;
 
         }
 
@@ -23203,11 +23382,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * @param factory
         * @return org.apache.axiom.om.OMElement
         */
+        @Override
         public org.apache.axiom.om.OMElement getOMElement(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory)
             throws org.apache.axis2.databinding.ADBException {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     GetObjectResult.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -23216,12 +23397,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -23512,6 +23695,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -23807,7 +23991,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setGrantee(Grantee param) {
 
-            this.localGrantee = param;
+            localGrantee = param;
 
         }
 
@@ -23831,7 +24015,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setPermission(Permission param) {
 
-            this.localPermission = param;
+            localPermission = param;
 
         }
 
@@ -23861,6 +24045,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     Grant.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -23869,12 +24054,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -24068,6 +24255,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -24224,7 +24412,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setGetBucketAccessControlPolicyResponse(AccessControlPolicy param) {
 
-            this.localGetBucketAccessControlPolicyResponse = param;
+            localGetBucketAccessControlPolicyResponse = param;
 
         }
 
@@ -24254,6 +24442,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     GetBucketAccessControlPolicyResponse.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -24262,12 +24451,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -24457,6 +24648,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -24597,6 +24789,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     SetObjectAccessControlPolicyResponse.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -24605,12 +24798,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -24794,6 +24989,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -24904,7 +25100,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setBucket(java.lang.String param) {
 
-            this.localBucket = param;
+            localBucket = param;
 
         }
 
@@ -24928,7 +25124,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setKey(java.lang.String param) {
 
-            this.localKey = param;
+            localKey = param;
 
         }
 
@@ -24952,7 +25148,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setAccessControlList(AccessControlList param) {
 
-            this.localAccessControlList = param;
+            localAccessControlList = param;
 
         }
 
@@ -24990,7 +25186,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAWSAccessKeyId = param;
+            localAWSAccessKeyId = param;
 
         }
 
@@ -25028,7 +25224,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localTimestamp = param;
+            localTimestamp = param;
 
         }
 
@@ -25066,7 +25262,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localSignature = param;
+            localSignature = param;
 
         }
 
@@ -25104,7 +25300,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCredential = param;
+            localCredential = param;
 
         }
 
@@ -25134,6 +25330,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     SetObjectAccessControlPolicy.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -25142,12 +25339,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -25531,6 +25730,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -25819,7 +26019,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setBucket(java.lang.String param) {
 
-            this.localBucket = param;
+            localBucket = param;
 
         }
 
@@ -25857,7 +26057,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localPrefix = param;
+            localPrefix = param;
 
         }
 
@@ -25895,7 +26095,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localMarker = param;
+            localMarker = param;
 
         }
 
@@ -25934,7 +26134,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 localMaxKeysTracker = true;
             }
 
-            this.localMaxKeys = param;
+            localMaxKeys = param;
 
         }
 
@@ -25972,7 +26172,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localDelimiter = param;
+            localDelimiter = param;
 
         }
 
@@ -26010,7 +26210,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAWSAccessKeyId = param;
+            localAWSAccessKeyId = param;
 
         }
 
@@ -26048,7 +26248,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localTimestamp = param;
+            localTimestamp = param;
 
         }
 
@@ -26086,7 +26286,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localSignature = param;
+            localSignature = param;
 
         }
 
@@ -26124,7 +26324,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCredential = param;
+            localCredential = param;
 
         }
 
@@ -26154,6 +26354,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     ListBucket.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -26162,12 +26363,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -26643,6 +26846,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -26987,7 +27191,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setName(java.lang.String param) {
 
-            this.localName = param;
+            localName = param;
 
         }
 
@@ -27011,7 +27215,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setValue(java.lang.String param) {
 
-            this.localValue = param;
+            localValue = param;
 
         }
 
@@ -27041,6 +27245,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     MetadataEntry.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -27049,12 +27254,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -27302,6 +27509,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -27464,7 +27672,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setBucket(java.lang.String param) {
 
-            this.localBucket = param;
+            localBucket = param;
 
         }
 
@@ -27502,7 +27710,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAWSAccessKeyId = param;
+            localAWSAccessKeyId = param;
 
         }
 
@@ -27540,7 +27748,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localTimestamp = param;
+            localTimestamp = param;
 
         }
 
@@ -27578,7 +27786,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localSignature = param;
+            localSignature = param;
 
         }
 
@@ -27616,7 +27824,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCredential = param;
+            localCredential = param;
 
         }
 
@@ -27646,6 +27854,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     GetBucketAccessControlPolicy.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -27654,12 +27863,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -28006,6 +28217,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -28246,7 +28458,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setGetObjectResponse(GetObjectResult param) {
 
-            this.localGetObjectResponse = param;
+            localGetObjectResponse = param;
 
         }
 
@@ -28276,6 +28488,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     GetObjectExtendedResponse.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -28284,12 +28497,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -28478,6 +28693,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -28622,14 +28838,17 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             return localStorageClass;
         }
 
+        @Override
         public boolean equals(java.lang.Object obj) {
             return (obj == this);
         }
 
+        @Override
         public int hashCode() {
             return toString().hashCode();
         }
 
+        @Override
         public java.lang.String toString() {
 
             return localStorageClass.toString();
@@ -28662,6 +28881,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     StorageClass.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -28670,12 +28890,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -28868,6 +29090,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             //We can safely assume an element has only one type associated with it
@@ -29004,7 +29227,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setETag(java.lang.String param) {
 
-            this.localETag = param;
+            localETag = param;
 
         }
 
@@ -29028,7 +29251,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setLastModified(java.util.Calendar param) {
 
-            this.localLastModified = param;
+            localLastModified = param;
 
         }
 
@@ -29058,6 +29281,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     PutObjectResult.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -29066,12 +29290,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -29319,6 +29545,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -29511,7 +29738,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localGrant = param;
+            localGrant = param;
         }
 
         /**
@@ -29528,7 +29755,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             java.util.List list = org.apache.axis2.databinding.utils.ConverterUtil.toList(localGrant);
             list.add(param);
-            this.localGrant = (Grant[])list.toArray(new Grant[list.size()]);
+            localGrant = (Grant[])list.toArray(new Grant[list.size()]);
 
         }
 
@@ -29558,6 +29785,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     AccessControlList.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -29566,12 +29794,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -29772,6 +30002,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -29946,7 +30177,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setListBucketResponse(ListBucketResult param) {
 
-            this.localListBucketResponse = param;
+            localListBucketResponse = param;
 
         }
 
@@ -29976,6 +30207,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     ListBucketResponse.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -29984,12 +30216,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -30178,6 +30412,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -30314,7 +30549,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setOwner(CanonicalUser param) {
 
-            this.localOwner = param;
+            localOwner = param;
 
         }
 
@@ -30338,7 +30573,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setAccessControlList(AccessControlList param) {
 
-            this.localAccessControlList = param;
+            localAccessControlList = param;
 
         }
 
@@ -30368,6 +30603,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     AccessControlPolicy.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -30376,12 +30612,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -30575,6 +30813,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -30733,7 +30972,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setPrefix(java.lang.String param) {
 
-            this.localPrefix = param;
+            localPrefix = param;
 
         }
 
@@ -30763,6 +31002,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     PrefixEntry.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -30771,12 +31011,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -30992,6 +31234,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -31128,7 +31371,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setBucket(java.lang.String param) {
 
-            this.localBucket = param;
+            localBucket = param;
 
         }
 
@@ -31152,7 +31395,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setKey(java.lang.String param) {
 
-            this.localKey = param;
+            localKey = param;
 
         }
 
@@ -31190,7 +31433,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAWSAccessKeyId = param;
+            localAWSAccessKeyId = param;
 
         }
 
@@ -31228,7 +31471,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localTimestamp = param;
+            localTimestamp = param;
 
         }
 
@@ -31266,7 +31509,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localSignature = param;
+            localSignature = param;
 
         }
 
@@ -31304,7 +31547,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCredential = param;
+            localCredential = param;
 
         }
 
@@ -31334,6 +31577,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     GetObjectAccessControlPolicy.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -31342,12 +31586,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -31726,6 +31972,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -31991,7 +32238,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setBucket(java.lang.String param) {
 
-            this.localBucket = param;
+            localBucket = param;
 
         }
 
@@ -32015,7 +32262,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setKey(java.lang.String param) {
 
-            this.localKey = param;
+            localKey = param;
 
         }
 
@@ -32039,7 +32286,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setGetMetadata(boolean param) {
 
-            this.localGetMetadata = param;
+            localGetMetadata = param;
 
         }
 
@@ -32063,7 +32310,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setGetData(boolean param) {
 
-            this.localGetData = param;
+            localGetData = param;
 
         }
 
@@ -32087,7 +32334,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setInlineData(boolean param) {
 
-            this.localInlineData = param;
+            localInlineData = param;
 
         }
 
@@ -32125,7 +32372,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAWSAccessKeyId = param;
+            localAWSAccessKeyId = param;
 
         }
 
@@ -32163,7 +32410,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localTimestamp = param;
+            localTimestamp = param;
 
         }
 
@@ -32201,7 +32448,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localSignature = param;
+            localSignature = param;
 
         }
 
@@ -32239,7 +32486,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCredential = param;
+            localCredential = param;
 
         }
 
@@ -32269,6 +32516,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     GetObject.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -32277,12 +32525,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -32748,6 +32998,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -33082,7 +33333,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setID(java.lang.String param) {
 
-            this.localID = param;
+            localID = param;
 
         }
 
@@ -33120,7 +33371,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localDisplayName = param;
+            localDisplayName = param;
 
         }
 
@@ -33145,11 +33396,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * @param factory
         * @return org.apache.axiom.om.OMElement
         */
+        @Override
         public org.apache.axiom.om.OMElement getOMElement(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory)
             throws org.apache.axis2.databinding.ADBException {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     CanonicalUser.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -33158,12 +33411,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -33407,6 +33662,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -33572,7 +33828,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setGetBucketLoggingStatusResponse(BucketLoggingStatus param) {
 
-            this.localGetBucketLoggingStatusResponse = param;
+            localGetBucketLoggingStatusResponse = param;
 
         }
 
@@ -33602,6 +33858,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     GetBucketLoggingStatusResponse.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -33610,12 +33867,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -33805,6 +34064,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -33941,7 +34201,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setStatus(Status param) {
 
-            this.localStatus = param;
+            localStatus = param;
 
         }
 
@@ -33971,6 +34231,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     Result.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -33979,12 +34240,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -34173,6 +34436,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -34305,7 +34569,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setCopyObjectResult(CopyObjectResult param) {
 
-            this.localCopyObjectResult = param;
+            localCopyObjectResult = param;
 
         }
 
@@ -34335,6 +34599,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     CopyObjectResponse.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -34343,12 +34608,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -34537,6 +34804,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -34669,7 +34937,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setGetObjectResponse(GetObjectResult param) {
 
-            this.localGetObjectResponse = param;
+            localGetObjectResponse = param;
 
         }
 
@@ -34699,6 +34967,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     GetObjectResponse.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -34707,12 +34976,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -34901,6 +35172,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -35034,7 +35306,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setPutObjectInlineResponse(PutObjectResult param) {
 
-            this.localPutObjectInlineResponse = param;
+            localPutObjectInlineResponse = param;
 
         }
 
@@ -35064,6 +35336,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     PutObjectInlineResponse.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -35072,12 +35345,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -35267,6 +35542,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -35400,7 +35676,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setBucket(java.lang.String param) {
 
-            this.localBucket = param;
+            localBucket = param;
 
         }
 
@@ -35438,7 +35714,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAccessControlList = param;
+            localAccessControlList = param;
 
         }
 
@@ -35476,7 +35752,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAWSAccessKeyId = param;
+            localAWSAccessKeyId = param;
 
         }
 
@@ -35514,7 +35790,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localTimestamp = param;
+            localTimestamp = param;
 
         }
 
@@ -35552,7 +35828,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localSignature = param;
+            localSignature = param;
 
         }
 
@@ -35582,6 +35858,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     CreateBucket.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -35590,12 +35867,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -35915,6 +36194,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -36151,7 +36431,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setPutObjectResponse(PutObjectResult param) {
 
-            this.localPutObjectResponse = param;
+            localPutObjectResponse = param;
 
         }
 
@@ -36181,6 +36461,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     PutObjectResponse.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -36189,12 +36470,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -36383,6 +36666,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -36515,7 +36799,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setLocation(org.apache.axis2.databinding.types.URI param) {
 
-            this.localLocation = param;
+            localLocation = param;
 
         }
 
@@ -36539,7 +36823,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setBucket(java.lang.String param) {
 
-            this.localBucket = param;
+            localBucket = param;
 
         }
 
@@ -36563,7 +36847,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setKey(java.lang.String param) {
 
-            this.localKey = param;
+            localKey = param;
 
         }
 
@@ -36587,7 +36871,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setETag(java.lang.String param) {
 
-            this.localETag = param;
+            localETag = param;
 
         }
 
@@ -36617,6 +36901,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     PostResponse.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -36625,12 +36910,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -36942,6 +37229,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -37162,6 +37450,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     SetBucketAccessControlPolicyResponse.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -37170,12 +37459,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -37359,6 +37650,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -37475,6 +37767,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     SetBucketLoggingStatusResponse.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -37483,12 +37776,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -37672,6 +37967,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -37785,11 +38081,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * @param factory
         * @return org.apache.axiom.om.OMElement
         */
+        @Override
         public org.apache.axiom.om.OMElement getOMElement(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory)
             throws org.apache.axis2.databinding.ADBException {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     User.this.serialize(parentQName, factory, xmlWriter);
                 }
@@ -37798,12 +38096,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -37983,6 +38283,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();
@@ -38091,7 +38392,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setBucket(java.lang.String param) {
 
-            this.localBucket = param;
+            localBucket = param;
 
         }
 
@@ -38129,7 +38430,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localAWSAccessKeyId = param;
+            localAWSAccessKeyId = param;
 
         }
 
@@ -38167,7 +38468,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localTimestamp = param;
+            localTimestamp = param;
 
         }
 
@@ -38205,7 +38506,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localSignature = param;
+            localSignature = param;
 
         }
 
@@ -38243,7 +38544,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             }
 
-            this.localCredential = param;
+            localCredential = param;
 
         }
 
@@ -38267,7 +38568,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
            */
         public void setBucketLoggingStatus(BucketLoggingStatus param) {
 
-            this.localBucketLoggingStatus = param;
+            localBucketLoggingStatus = param;
 
         }
 
@@ -38297,6 +38598,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, MY_QNAME) {
 
+                @Override
                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
                     SetBucketLoggingStatus.this.serialize(MY_QNAME, factory, xmlWriter);
                 }
@@ -38305,12 +38607,14 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
+        @Override
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
             org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
             org.apache.axis2.databinding.ADBException {
@@ -38662,6 +38966,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         * databinding method to get an XML representation of this object
         *
         */
+        @Override
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             java.util.ArrayList elementList = new java.util.ArrayList();

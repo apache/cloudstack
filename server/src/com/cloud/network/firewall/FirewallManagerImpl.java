@@ -399,13 +399,14 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
                 continue;
             } else if (!oneOfRulesIsFirewall &&
                 !(bothRulesFirewall && !duplicatedCidrs) &&
-                ((rule.getSourcePortStart().intValue() <= newRule.getSourcePortStart().intValue() && rule.getSourcePortEnd().intValue() >= newRule.getSourcePortStart()
-                    .intValue()) ||
-                    (rule.getSourcePortStart().intValue() <= newRule.getSourcePortEnd().intValue() && rule.getSourcePortEnd().intValue() >= newRule.getSourcePortEnd()
-                        .intValue()) ||
-                    (newRule.getSourcePortStart().intValue() <= rule.getSourcePortStart().intValue() && newRule.getSourcePortEnd().intValue() >= rule.getSourcePortStart()
-                        .intValue()) || (newRule.getSourcePortStart().intValue() <= rule.getSourcePortEnd().intValue() && newRule.getSourcePortEnd().intValue() >= rule.getSourcePortEnd()
-                    .intValue()))) {
+                ((rule.getSourcePortStart().intValue() <= newRule.getSourcePortStart().intValue() &&
+                    rule.getSourcePortEnd().intValue() >= newRule.getSourcePortStart().intValue()) ||
+                    (rule.getSourcePortStart().intValue() <= newRule.getSourcePortEnd().intValue() &&
+                    rule.getSourcePortEnd().intValue() >= newRule.getSourcePortEnd().intValue()) ||
+                    (newRule.getSourcePortStart().intValue() <= rule.getSourcePortStart().intValue() &&
+                    newRule.getSourcePortEnd().intValue() >= rule.getSourcePortStart().intValue()) ||
+                (newRule.getSourcePortStart().intValue() <= rule.getSourcePortEnd().intValue() &&
+                newRule.getSourcePortEnd().intValue() >= rule.getSourcePortEnd().intValue()))) {
 
                 // we allow port forwarding rules with the same parameters but different protocols
                 boolean allowPf =
@@ -928,7 +929,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
     @Inject
     public void setFirewallElements(List<FirewallServiceProvider> firewallElements) {
-        this._firewallElements = firewallElements;
+        _firewallElements = firewallElements;
     }
 
     public List<PortForwardingServiceProvider> getPfElements() {
@@ -937,7 +938,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
     @Inject
     public void setPfElements(List<PortForwardingServiceProvider> pfElements) {
-        this._pfElements = pfElements;
+        _pfElements = pfElements;
     }
 
     public List<StaticNatServiceProvider> getStaticNatElements() {
@@ -946,7 +947,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
     @Inject
     public void setStaticNatElements(List<StaticNatServiceProvider> staticNatElements) {
-        this._staticNatElements = staticNatElements;
+        _staticNatElements = staticNatElements;
     }
 
     public List<NetworkACLServiceProvider> getNetworkAclElements() {
@@ -955,7 +956,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
     @Inject
     public void setNetworkAclElements(List<NetworkACLServiceProvider> networkAclElements) {
-        this._networkAclElements = networkAclElements;
+        _networkAclElements = networkAclElements;
     }
 
 }

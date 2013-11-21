@@ -22,9 +22,9 @@ public class DhcpTO {
     String netmask;
     String startIpOfSubnet;
 
-    public DhcpTO(String routerIp, String gateway, String netmask, String StartIpOfSubnet) {
+    public DhcpTO(String routerIp, String gateway, String netmask, String startIpOfSubnet) {
         this.routerIp = routerIp;
-        this.startIpOfSubnet = StartIpOfSubnet;
+        this.startIpOfSubnet = startIpOfSubnet;
         this.gateway = gateway;
         this.netmask = netmask;
 

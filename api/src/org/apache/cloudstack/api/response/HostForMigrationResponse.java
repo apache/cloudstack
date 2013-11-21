@@ -188,7 +188,8 @@ public class HostForMigrationResponse extends BaseResponse {
     private Boolean hasEnoughCapacity;
 
     @SerializedName("suitableformigration")
-    @Param(description = "true if this host is suitable(has enough capacity and satisfies all conditions like hosttags, max guests vm limit etc) to migrate a VM to it , false otherwise")
+    @Param(description = "true if this host is suitable(has enough capacity and satisfies all conditions like hosttags, " +
+        "max guests vm limit etc) to migrate a VM to it , false otherwise")
     private Boolean suitableForMigration;
 
     @SerializedName("requiresStorageMotion")
@@ -209,7 +210,7 @@ public class HostForMigrationResponse extends BaseResponse {
 
     @Override
     public String getObjectId() {
-        return this.getId();
+        return getId();
     }
 
     public String getId() {

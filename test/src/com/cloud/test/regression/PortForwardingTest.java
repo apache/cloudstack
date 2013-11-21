@@ -29,15 +29,15 @@ public class PortForwardingTest extends TestCase {
     public static final Logger s_logger = Logger.getLogger(PortForwardingTest.class.getName());
 
     public PortForwardingTest() {
-        this.setClient();
-        this.setParam(new HashMap<String, String>());
+        setClient();
+        setParam(new HashMap<String, String>());
     }
 
     @Override
     public boolean executeTest() {
 
         int error = 0;
-        Element rootElement = this.getInputFile().get(0).getDocumentElement();
+        Element rootElement = getInputFile().get(0).getDocumentElement();
         NodeList commandLst = rootElement.getElementsByTagName("command");
 
         //Analyze each command, send request and build the array list of api commands
@@ -47,10 +47,10 @@ public class PortForwardingTest extends TestCase {
             Element fstElmnt = (Element)fstNode;
 
             //new command
-            ApiCommand api = new ApiCommand(fstElmnt, this.getParam(), this.getCommands());
+            ApiCommand api = new ApiCommand(fstElmnt, getParam(), getCommands());
 
             //send a command
-            api.sendCommand(this.getClient(), null);
+            api.sendCommand(getClient(), null);
 
             //verify the response of the command
             if ((api.getResponseType() != ResponseType.ERROR) && (api.getResponseCode() == 200)) {
@@ -70,7 +70,7 @@ public class PortForwardingTest extends TestCase {
                         s_logger.error("Test case " + api.getTestCaseInfo() + " failed. Non-empty response was expected. Command was sent with url " + api.getUrl());
                     else {
                         //set parameters for the future use
-                        if (api.setParam(this.getParam()) == false) {
+                        if (api.setParam(getParam()) == false) {
                             s_logger.error("Exiting the test...Command " + api.getName() +
                                 " didn't return parameters needed for the future use. The command was sent with url " + api.getUrl());
                             return false;
@@ -119,7 +119,8 @@ public class PortForwardingTest extends TestCase {
 //        //try all private ports
 //        for (String portValue : port) {
 //            try {
-//                String url = this.getHost() + ":8096/?command=createOrUpdateIpForwardingRule&account=" + this.getParam().get("accountname") + "&publicip=" + this.getParam().get("boundaryip") +
+//                String url = this.getHost() + ":8096/?command=createOrUpdateIpForwardingRule&account=" +
+//        this.getParam().get("accountname") + "&publicip=" + this.getParam().get("boundaryip") +
 //                "&privateip=" + this.getParam().get("vmipaddress") + "&publicport=22&protocol=tcp&privateport=" + portValue;
 //                HttpClient client = new HttpClient();
 //                HttpMethod method = new GetMethod(url);

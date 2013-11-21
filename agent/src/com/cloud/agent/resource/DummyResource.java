@@ -49,7 +49,7 @@ public class DummyResource implements ServerResource {
     Host.Type _type;
     boolean _negative;
     IAgentControl _agentControl;
-    private Map<String, Object> _params;
+    Map<String, Object> _params;
 
     @Override
     public void disconnected() {

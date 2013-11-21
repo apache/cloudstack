@@ -77,15 +77,15 @@ public class LoadBalancerTO {
     }
 
     public LoadBalancerTO(String id, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, boolean inline,
-            List<LbDestination> arg_destinations, List<LbStickinessPolicy> stickinessPolicies) {
+            List<LbDestination> argDestinations, List<LbStickinessPolicy> stickinessPolicies) {
 
-        this(id, srcIp, srcPort, protocol, algorithm, revoked, alreadyAdded, inline, arg_destinations, stickinessPolicies, null, null, null);
+        this(id, srcIp, srcPort, protocol, algorithm, revoked, alreadyAdded, inline, argDestinations, stickinessPolicies, null, null, null);
     }
 
     public LoadBalancerTO(String id, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, boolean inline,
-            List<LbDestination> arg_destinations, List<LbStickinessPolicy> stickinessPolicies, List<LbHealthCheckPolicy> healthCheckPolicies, LbSslCert sslCert,
+            List<LbDestination> argDestinations, List<LbStickinessPolicy> stickinessPolicies, List<LbHealthCheckPolicy> healthCheckPolicies, LbSslCert sslCert,
             String lbProtocol) {
-        this(id, srcIp, srcPort, protocol, algorithm, revoked, alreadyAdded, inline, arg_destinations);
+        this(id, srcIp, srcPort, protocol, algorithm, revoked, alreadyAdded, inline, argDestinations);
         this.stickinessPolicies = null;
         this.healthCheckPolicies = null;
         if (stickinessPolicies != null && stickinessPolicies.size() > 0) {

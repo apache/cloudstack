@@ -540,7 +540,6 @@ public class VmwareContext {
             vmware-6.log</a></td><td align="right">15-Aug-2010 00:11</td><td align="right">59742</td></tr>
             <tr><td><a href="/folder/Fedora%2dclone%2dtest/vmware%2d7%2elog?dcPath=cupertino&amp;dsName=NFS%20datastore">
             vmware-7.log</a></td><td align="right">15-Aug-2010 00:13</td><td align="right">59859</td></tr>
-            
             <tr><td><a href="/folder/Fedora%2dclone%2dtest/vmware%2elog?dcPath=cupertino&amp;dsName=NFS%20datastore">
             vmware.log</a></td><td align="right">15-Aug-2010 00:23</td><td align="right">47157</td></tr>
             <tr><th colspan="5"><hr></th></tr>

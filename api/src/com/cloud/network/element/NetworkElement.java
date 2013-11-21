@@ -53,7 +53,6 @@ public interface NetworkElement extends Adapter {
      * @param config fully specified network configuration.
      * @param offering network offering that originated the network configuration.
      * @return true if network configuration is now usable; false if not; null if not handled by this element.
-     * @throws InsufficientNetworkCapacityException TODO
      */
     boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
         ResourceUnavailableException, InsufficientCapacityException;
