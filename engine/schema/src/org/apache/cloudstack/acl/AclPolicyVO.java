@@ -21,6 +21,8 @@ import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -29,8 +31,8 @@ import javax.persistence.Table;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name = ("acl_group"))
-public class AclGroupVO implements AclGroup {
+@Table(name = ("acl_policy"))
+public class AclPolicyVO implements AclPolicy {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -57,14 +59,19 @@ public class AclGroupVO implements AclGroup {
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    public AclGroupVO() {
+    @Column(name = "policy_type")
+    @Enumerated(value = EnumType.STRING)
+    private AclPolicy.PolicyType policyType;
+
+    public AclPolicyVO() {
     	uuid = UUID.randomUUID().toString();
     }
 
-    public AclGroupVO(String name, String description) {
+    public AclPolicyVO(String name, String description) {
         this.name = name;
         this.description = description;
     	uuid = UUID.randomUUID().toString();
+        policyType = AclPolicy.PolicyType.Static;
     }
 
     @Override
@@ -82,19 +89,6 @@ public class AclGroupVO implements AclGroup {
         return description;
     }
 
-    @Override
-    public long getDomainId() {
-        return domainId;
-    }
-
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
-    }
-
-    @Override
-    public long getAccountId() {
-        return accountId;
-    }
 
     @Override
     public String getUuid() {
@@ -112,4 +106,27 @@ public class AclGroupVO implements AclGroup {
     public Date getCreated() {
         return created;
     }
+
+    @Override
+    public long getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(long domainId) {
+        this.domainId = domainId;
+    }
+
+    @Override
+    public long getAccountId() {
+        return accountId;
+    }
+
+    public AclPolicy.PolicyType getPolicyType() {
+        return policyType;
+    }
+
+    public void setPolicyType(AclPolicy.PolicyType policyType) {
+        this.policyType = policyType;
+    }
+
 }

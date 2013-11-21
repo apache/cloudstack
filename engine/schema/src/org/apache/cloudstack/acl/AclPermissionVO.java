@@ -17,39 +17,49 @@
 package org.apache.cloudstack.acl;
 
 import java.util.Date;
-import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name = ("acl_group"))
-public class AclGroupVO implements AclGroup {
+@Table(name = ("acl_permission"))
+public class AclPermissionVO implements AclPermission {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
 
-    @Column(name = "name")
-    private String name;
+    @Column(name = "action")
+    private String action;
 
-    @Column(name = "description")
-    private String description;
+    @Column(name = "resource_type")
+    private String entityType;
 
-    @Column(name = "uuid")
-    private String uuid;
+    @Column(name = "access_type")
+    @Enumerated(value = EnumType.STRING)
+    private AccessType accessType;
 
-    @Column(name = "domain_id")
-    private long domainId;
+    @Column(name = "scope")
+    @Enumerated(value = EnumType.STRING)
+    private PermissionScope scope;
 
-    @Column(name = "account_id")
-    private long accountId;
+    @Column(name = "scope_id")
+    private Long scopeId;
+
+    @Column(name = "permission")
+    @Enumerated(value = EnumType.STRING)
+    private Permission permission;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
@@ -57,52 +67,72 @@ public class AclGroupVO implements AclGroup {
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    public AclGroupVO() {
-    	uuid = UUID.randomUUID().toString();
+    public AclPermissionVO() {
+
     }
 
-    public AclGroupVO(String name, String description) {
-        this.name = name;
-        this.description = description;
-    	uuid = UUID.randomUUID().toString();
-    }
+
 
     @Override
     public long getId() {
         return id;
     }
 
-    @Override
-    public String getName() {
-        return name;
-    }
 
     @Override
-    public String getDescription() {
-        return description;
+    public String getEntityType() {
+        return entityType;
     }
 
     @Override
-    public long getDomainId() {
-        return domainId;
+    public AccessType getAccessType() {
+        return accessType;
     }
 
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
+
+    public void setEntityType(String entityType) {
+        this.entityType = entityType;
+    }
+
+    public void setAccessType(AccessType accessType) {
+        this.accessType = accessType;
     }
 
     @Override
-    public long getAccountId() {
-        return accountId;
+    public PermissionScope getScope() {
+        return scope;
+    }
+
+    public void setScope(PermissionScope scope) {
+        this.scope = scope;
+    }
+
+
+    @Override
+    public String getAction() {
+        return action;
     }
 
     @Override
-    public String getUuid() {
-    	return uuid;
+    public Long getScopeId() {
+        return scopeId;
     }
 
-    public void setUuid(String uuid) {
-    	this.uuid = uuid;
+    @Override
+    public Permission getPermission() {
+        return permission;
+    }
+
+    public void setAction(String action) {
+        this.action = action;
+    }
+
+    public void setScopeId(Long scopeId) {
+        this.scopeId = scopeId;
+    }
+
+    public void setPermission(Permission permission) {
+        this.permission = permission;
     }
 
     public Date getRemoved() {

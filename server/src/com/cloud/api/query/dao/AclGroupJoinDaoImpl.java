@@ -30,9 +30,7 @@ import org.springframework.stereotype.Component;
 import org.apache.cloudstack.acl.AclGroup;
 import org.apache.cloudstack.acl.AclGroupAccountMapVO;
 import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
-import org.apache.cloudstack.api.response.AclEntityPermissionResponse;
 import org.apache.cloudstack.api.response.AclGroupResponse;
-import org.apache.cloudstack.api.response.AclRoleResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.api.query.vo.AclGroupJoinVO;
@@ -80,46 +78,28 @@ public class AclGroupJoinDaoImpl extends GenericDaoBase<AclGroupJoinVO, Long> im
         response.setDescription(group.getDescription());
         response.setDomainId(group.getDomainUuid());
         response.setDomainName(group.getName());
-        if (group.getAccountId() > 0) {
-            response.addAccountId(group.getAccountUuid());
+        response.setAccountName(group.getAccountName());
+        if (group.getMemberAccountId() > 0) {
+            response.addMemberAccount(group.getMemberAccountName());
         }
-        if (group.getRoleId() > 0) {
-            AclRoleResponse roleResp = new AclRoleResponse();
-            roleResp.setId(group.getRoleUuid());
-            roleResp.setName(group.getRoleName());
-            response.addRole(roleResp);
+        if (group.getPolicyId() > 0) {
+            response.addPolicy(group.getPolicyName());
         }
-        if (group.getEntityId() > 0) {
-            AclEntityPermissionResponse permResp = new AclEntityPermissionResponse();
-            permResp.setEntityId(group.getEntityUuid());
-            permResp.setEntityType(group.getEntityType());
-            permResp.setAccessType(group.getAccessType().toString());
-            response.addPermission(permResp);
-        }
+
         response.setObjectName("aclgroup");
-        
 
         return response;
     }
 
     @Override
     public AclGroupResponse setAclGroupResponse(AclGroupResponse response, AclGroupJoinVO group) {
-        if (group.getAccountId() > 0) {
-            response.addAccountId(group.getAccountUuid());
+        if (group.getMemberAccountId() > 0) {
+            response.addMemberAccount(group.getMemberAccountName());
         }
-        if (group.getRoleId() > 0) {
-            AclRoleResponse roleResp = new AclRoleResponse();
-            roleResp.setId(group.getRoleUuid());
-            roleResp.setName(group.getRoleName());
-            response.addRole(roleResp);
+        if (group.getPolicyId() > 0) {
+            response.addPolicy(group.getPolicyName());
         }
-        if (group.getEntityId() > 0) {
-            AclEntityPermissionResponse permResp = new AclEntityPermissionResponse();
-            permResp.setEntityId(group.getEntityUuid());
-            permResp.setEntityType(group.getEntityType());
-            permResp.setAccessType(group.getAccessType().toString());
-            response.addPermission(permResp);
-        }
+
         return response;
     }
 

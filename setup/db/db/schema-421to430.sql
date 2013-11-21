@@ -325,31 +325,6 @@ CREATE TABLE `cloud`.`acl_group_account_map` (
   CONSTRAINT `fk_acl_group_vm_map__account_id` FOREIGN KEY(`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;        
 
-CREATE TABLE `cloud`.`acl_role` (
-  `id` bigint unsigned NOT NULL UNIQUE auto_increment,
-  `name` varchar(255) NOT NULL,
-  `description` varchar(255) default NULL,  
-  `uuid` varchar(40),
-  `domain_id` bigint unsigned NOT NULL,
-  `removed` datetime COMMENT 'date the role was removed',
-  `created` datetime COMMENT 'date the role was created',
-  `role_type` varchar(64) DEFAULT 'Static' COMMENT 'Static or Dynamic',
-  PRIMARY KEY  (`id`),
-  INDEX `i_acl_role__removed`(`removed`),
-  CONSTRAINT `uc_acl_role__uuid` UNIQUE (`uuid`)  
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
-
-
-CREATE TABLE `cloud`.`acl_group_role_map` (
-  `id` bigint unsigned NOT NULL auto_increment,
-  `group_id` bigint unsigned NOT NULL,
-  `role_id` bigint unsigned NOT NULL,
-  `removed` datetime COMMENT 'date the role was revoked from the group',
-  `created` datetime COMMENT 'date the role was granted to the group',   
-  PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_acl_group_role_map__group_id` FOREIGN KEY(`group_id`) REFERENCES `acl_group` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_acl_group_role_map__role_id` FOREIGN KEY(`role_id`) REFERENCES `acl_role` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;        
 
 CREATE TABLE `acl_policy` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -360,10 +335,11 @@ CREATE TABLE `acl_policy` (
   `account_id` bigint unsigned NOT NULL,  
   `removed` datetime DEFAULT NULL COMMENT 'date the role was removed',
   `created` datetime DEFAULT NULL COMMENT 'date the role was created',
+  `policy_type` varchar(64) DEFAULT 'Static' COMMENT 'Static or Dynamic',
   PRIMARY KEY (`id`),
   UNIQUE KEY `id` (`id`),
-  UNIQUE KEY `uc_acl_role__uuid` (`uuid`),
-  KEY `i_acl_role__removed` (`removed`)
+  UNIQUE KEY `uc_acl_policy__uuid` (`uuid`),
+  KEY `i_acl_policy__removed` (`removed`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
 CREATE TABLE `acl_group_policy_map` (
@@ -386,7 +362,7 @@ CREATE TABLE `acl_permission` (
   `scope_id` bigint(20) unsigned NOT NULL,
   `scope` varchar(40) DEFAULT NULL,
   `access_type` varchar(40) NOT NULL,
-  `permission` int(1) unsigned NOT NULL COMMENT '1 allowed, 0 for denied',
+  `permission`  varchar(40) NOT NULL COMMENT 'Allow or Deny',
   `removed` datetime DEFAULT NULL COMMENT 'date the permission was revoked',
   `created` datetime DEFAULT NULL COMMENT 'date the permission was granted',
   PRIMARY KEY (`id`),
@@ -406,100 +382,55 @@ CREATE TABLE `acl_policy_permission_map` (
   CONSTRAINT `fk_acl_policy_permission_map__permission_id` FOREIGN KEY (`permission_id`) REFERENCES `acl_permission` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
 
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created, role_type) VALUES (1, 'NORMAL', 'Domain user role', UUID(), 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created, role_type) VALUES (2, 'ADMIN', 'Root admin role', UUID(), 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created, role_type) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin role', UUID(), 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created, role_type) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin role', UUID(), 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created, role_type) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin role', UUID(), 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_role` (id, name, description, uuid, domain_id, created, role_type) VALUES (6, 'RESOURCE_OWNER', 'Resource owner role', UUID(), 1, Now(), 'Dynamic');
-
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, created) VALUES (1, 'NORMAL', 'Domain user group', UUID(), 1, Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, created) VALUES (2, 'ADMIN', 'Root admin group', UUID(), 1, Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, created) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin group', UUID(), 1, Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin group', UUID(), 1, Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, created) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin group', UUID(), 1, Now());
-
-CREATE TABLE `cloud`.`acl_api_permission` (
-  `id` bigint unsigned NOT NULL UNIQUE auto_increment,
-  `role_id` bigint unsigned NOT NULL,
-  `api` varchar(255) NOT NULL,
-  `removed` datetime COMMENT 'date the permission was revoked',
-  `created` datetime COMMENT 'date the permission was granted',  
-  PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_acl_api_permission__role_id` FOREIGN KEY(`role_id`) REFERENCES `acl_role` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`acl_entity_permission` (
-  `id` bigint unsigned NOT NULL UNIQUE auto_increment,
-  `group_id` bigint unsigned NOT NULL,
-  `entity_type` varchar(100) NOT NULL,
-  `entity_id` bigint unsigned NOT NULL,
-  `entity_uuid` varchar(40),  
-  `access_type` varchar(40) NOT NULL,
-  `permission` int(1) unsigned NOT NULL COMMENT '1 allowed, 0 for denied',
-  `removed` datetime COMMENT 'date the permission was revoked',
-  `created` datetime COMMENT 'date the permission was granted',   
-  PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_acl_entity_permission__group_id` FOREIGN KEY(`group_id`) REFERENCES `acl_group` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`acl_role_permission` (
-  `id` bigint unsigned NOT NULL UNIQUE auto_increment,
-  `role_id` bigint unsigned NOT NULL,
-  `entity_type` varchar(100) NOT NULL,
-  `access_type` varchar(40) NOT NULL,
-  `scope` varchar(100) NOT NULL,
-  `permission` int(1) unsigned NOT NULL COMMENT '1 allowed, 0 for denied',
-  PRIMARY KEY  (`id`),
-  CONSTRAINT `fk_acl_role_permission___role_id` FOREIGN KEY(`role_id`) REFERENCES `acl_role` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (1, 'NORMAL', 'Domain user role', UUID(), 1, 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (2, 'ADMIN', 'Root admin role', UUID(), 1, 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin role', UUID(), 1, 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin role', UUID(), 1, 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin role', UUID(), 1, 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (6, 'RESOURCE_OWNER', 'Resource owner role', UUID(), 1, 1, Now(), 'Dynamic');
 
 
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (6, '*', 'CreateEntry', 'ACCOUNT', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (6, '*', 'ListEntry', 'ACCOUNT', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (6, '*', 'ModifyEntry', 'ACCOUNT', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (6, '*', 'DeleteEntry', 'ACCOUNT', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (6, '*', 'OperateEntry', 'ACCOUNT', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (3, '*', 'CreateEntry', 'DOMAIN', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (3, '*', 'ListEntry', 'DOMAIN', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (3, '*', 'ModifyEntry', 'DOMAIN', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (3, '*', 'DeleteEntry', 'DOMAIN', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (3, '*', 'OperateEntry', 'DOMAIN', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (2, '*', 'CreateEntry', 'REGION', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (2, '*', 'ListEntry', 'REGION', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (2, '*', 'ModifyEntry', 'REGION', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (2, '*', 'DeleteEntry', 'REGION', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (2, '*', 'OperateEntry', 'REGION', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (1, '*', 'CreateEntry', 'ACCOUNT', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (1, '*', 'ListEntry', 'ACCOUNT', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (1, '*', 'ModifyEntry', 'ACCOUNT', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (1, '*', 'DeleteEntry', 'ACCOUNT', 1);
-INSERT IGNORE INTO `cloud`.`acl_role_permission` (role_id, entity_type, access_type, scope, permission) VALUES (1, '*', 'OperateEntry', 'ACCOUNT', 1);
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, account_id, created) VALUES (1, 'NORMAL', 'Domain user group', UUID(), 1, 1, Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, account_id, created) VALUES (2, 'ADMIN', 'Root admin group', UUID(), 1, 1, Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, account_id, created) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin group', UUID(), 1, 1, Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, account_id, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin group', UUID(), 1, 1, Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, account_id, created) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin group', UUID(), 1, 1, Now());
 
-DROP VIEW IF EXISTS `cloud`.`acl_role_view`;
-CREATE VIEW `cloud`.`acl_role_view` AS
+CREATE OR REPLACE VIEW `cloud`.`acl_policy_view` AS
     select 
-        acl_role.id id,
-        acl_role.uuid uuid,        
-        acl_role.name name,
-        acl_role.description description,
-        acl_role.removed removed,
-        acl_role.created created,
+        acl_policy.id id,
+        acl_policy.uuid uuid,        
+        acl_policy.name name,
+        acl_policy.description description,
+        acl_policy.removed removed,
+        acl_policy.created created,
         domain.id domain_id,
         domain.uuid domain_uuid,
         domain.name domain_name,
         domain.path domain_path,
-        acl_api_permission.api api_name
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name account_name,     
+        account.type account_type,  
+        acl_permission.action permission_action,
+        acl_permission.resource_type permission_entity_type,
+        acl_permission.scope permission_scope,
+        acl_permission.scope_id permission_scope_id,        
+        acl_permission.access_type permission_access_type,
+        acl_permission.permission permission_allow_deny
     from
-        `cloud`.`acl_role`
+        `cloud`.`acl_policy`
             inner join
-        `cloud`.`domain` ON acl_role.domain_id = domain.id
+        `cloud`.`domain` ON acl_policy.domain_id = domain.id
+            inner join
+        `cloud`.`account` ON acl_policy.account_id = account.id        
             left join
-        `cloud`.`acl_api_permission` ON acl_role.id = acl_api_permission.role_id;
- 
- 
-DROP VIEW IF EXISTS `cloud`.`acl_group_view`;
-CREATE VIEW `cloud`.`acl_group_view` AS
+        `cloud`.`acl_policy_permission_map` ON acl_policy.id = acl_policy_permission_map.policy_id            
+            left join
+        `cloud`.`acl_permission` ON acl_permission.id = acl_policy_permission_map.permission_id;          
+        
+         
+CREATE OR REPLACE VIEW `cloud`.`acl_group_view` AS
     select 
         acl_group.id id,
         acl_group.uuid uuid,        
@@ -511,30 +442,34 @@ CREATE VIEW `cloud`.`acl_group_view` AS
         domain.uuid domain_uuid,
         domain.name domain_name,
         domain.path domain_path,
-        acl_role.id role_id,
-        acl_role.uuid role_uuid,
-        acl_role.name role_name,
         account.id account_id,
         account.uuid account_uuid,
-        account.account_name account_name,
-        acl_entity_permission.entity_id entity_id,
-        acl_entity_permission.entity_uuid entity_uuid,
-        acl_entity_permission.entity_type entity_type,
-        acl_entity_permission.access_type access_type
+        account.account_name account_name,  
+        account.type account_type,
+        member_account.id member_account_id,
+        member_account.uuid member_account_uuid,
+        member_account.account_name member_account_name,      
+        acl_policy.id policy_id,
+        acl_policy.uuid policy_uuid,
+        acl_policy.name policy_name
     from
         `cloud`.`acl_group`
             inner join
         `cloud`.`domain` ON acl_group.domain_id = domain.id
+            inner join
+        `cloud`.`account` ON acl_group.account_id = account.id              
             left join
-        `cloud`.`acl_group_role_map` on acl_group.id = acl_group_role_map.group_id  
+        `cloud`.`acl_group_policy_map` ON acl_group.id = acl_group_policy_map.group_id  
             left join         
-        `cloud`.`acl_role` on acl_group_role_map.role_id = acl_role.id    
+        `cloud`.`acl_policy` ON acl_group_policy_map.policy_id = acl_policy.id  
+            left join
+        `cloud`.`acl_policy_permission_map` ON acl_group.id = acl_policy_permission_map.policy_id            
             left join
         `cloud`.`acl_group_account_map` ON acl_group.id = acl_group_account_map.group_id
             left join
-        `cloud`.`account` ON acl_group_account_map.account_id = account.id
-            left join
-         `cloud`.`acl_entity_permission` ON acl_group.id = acl_entity_permission.group_id;                         
+        `cloud`.`account` member_account ON acl_group_account_map.account_id = member_account.id;        
+
+                       
  
 DROP VIEW IF EXISTS `cloud`.`volume_view`;
 CREATE VIEW `cloud`.`volume_view` AS

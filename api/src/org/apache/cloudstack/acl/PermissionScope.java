@@ -1,6 +1,7 @@
 package org.apache.cloudstack.acl;
 
 public enum PermissionScope {
+    RESOURCE(0),
     ACCOUNT(1),
     DOMAIN(2),
     REGION(3);

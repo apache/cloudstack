@@ -19,9 +19,13 @@ package org.apache.cloudstack.acl;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface AclGroup extends ControlledEntity, InternalIdentity, Identity {
+public interface AclPolicy extends ControlledEntity, InternalIdentity, Identity {
 
     String getName();
 
     String getDescription();
+
+    public enum PolicyType {
+        Static, Dynamic
+    }
 }

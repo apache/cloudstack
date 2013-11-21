@@ -17,7 +17,6 @@
 package org.apache.cloudstack.acl;
 
 import java.util.Date;
-import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -26,30 +25,23 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name = ("acl_group"))
-public class AclGroupVO implements AclGroup {
+@Table(name = ("acl_policy_permission_map"))
+public class AclPolicyPermissionMapVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private long id;
+    private Long id;
 
-    @Column(name = "name")
-    private String name;
+    @Column(name = "policy_id")
+    private long aclPolicyId;
 
-    @Column(name = "description")
-    private String description;
-
-    @Column(name = "uuid")
-    private String uuid;
-
-    @Column(name = "domain_id")
-    private long domainId;
-
-    @Column(name = "account_id")
-    private long accountId;
+    @Column(name = "permission_id")
+    private long aclPermissionId;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
@@ -57,14 +49,12 @@ public class AclGroupVO implements AclGroup {
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    public AclGroupVO() {
-    	uuid = UUID.randomUUID().toString();
+    public AclPolicyPermissionMapVO() {
     }
 
-    public AclGroupVO(String name, String description) {
-        this.name = name;
-        this.description = description;
-    	uuid = UUID.randomUUID().toString();
+    public AclPolicyPermissionMapVO(long aclPolicyId, long aclPermissionId) {
+        this.aclPolicyId = aclPolicyId;
+        this.aclPermissionId = aclPermissionId;
     }
 
     @Override
@@ -72,37 +62,13 @@ public class AclGroupVO implements AclGroup {
         return id;
     }
 
-    @Override
-    public String getName() {
-        return name;
+
+    public long getAclPolicyId() {
+        return aclPolicyId;
     }
 
-    @Override
-    public String getDescription() {
-        return description;
-    }
-
-    @Override
-    public long getDomainId() {
-        return domainId;
-    }
-
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
-    }
-
-    @Override
-    public long getAccountId() {
-        return accountId;
-    }
-
-    @Override
-    public String getUuid() {
-    	return uuid;
-    }
-
-    public void setUuid(String uuid) {
-    	this.uuid = uuid;
+    public long getAclPermissionId() {
+        return aclPermissionId;
     }
 
     public Date getRemoved() {

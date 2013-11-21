@@ -21,7 +21,7 @@ import java.util.Set;
 
 import com.google.gson.annotations.SerializedName;
 
-import org.apache.cloudstack.acl.AclGroup;
+import org.apache.cloudstack.acl.AclPolicy;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -29,44 +29,39 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.serializer.Param;
 
 @SuppressWarnings("unused")
-@EntityReference(value = AclGroup.class)
-public class AclGroupResponse extends BaseResponse implements ControlledViewEntityResponse {
+@EntityReference(value = AclPolicy.class)
+public class AclPolicyResponse extends BaseResponse implements ControlledViewEntityResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "the ID of the acl group")
+    @Param(description = "the ID of the acl policy")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "the name of the acl group")
+    @Param(description = "the name of the acl policy")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "the description of the acl group")
+    @Param(description = "the description of the acl policy")
     private String description;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID of the acl group")
+    @Param(description = "the domain ID of the acl policy")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name of the acl role")
+    @Param(description = "the domain name of the acl policy")
     private String domainName;
 
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account owning the policy")
     private String accountName;
 
-    @SerializedName(ApiConstants.ACL_MEMBER_ACCOUNTS)
-    @Param(description = "account names assigned to this acl group ")
-    private Set<String> accountNameList;
+    @SerializedName(ApiConstants.ACL_PERMISSIONS)
+    @Param(description = "set of permissions for the acl policy")
+    private Set<AclPermissionResponse> permissionList;
 
-    @SerializedName(ApiConstants.ACL_POLICIES)
-    @Param(description = "acl policies attached to this acl group ")
-    private Set<String> policyNameList;
-
-    public AclGroupResponse() {
-        accountNameList = new LinkedHashSet<String>();
-        policyNameList = new LinkedHashSet<String>();
+    public AclPolicyResponse() {
+        permissionList = new LinkedHashSet<AclPermissionResponse>();
     }
 
     @Override
@@ -102,10 +97,21 @@ public class AclGroupResponse extends BaseResponse implements ControlledViewEnti
         this.domainName = domainName;
     }
 
+    public Set<AclPermissionResponse> getPermissionList() {
+        return permissionList;
+    }
+
+    public void setPermissionList(Set<AclPermissionResponse> perms) {
+        permissionList = perms;
+    }
+
+    public void addPermission(AclPermissionResponse perm) {
+        permissionList.add(perm);
+    }
+
     @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
-
     }
 
     @Override
@@ -118,26 +124,6 @@ public class AclGroupResponse extends BaseResponse implements ControlledViewEnti
     public void setProjectName(String projectName) {
         // TODO Auto-generated method stub
 
-    }
-
-    public void setMemberAccounts(Set<String> accts) {
-        accountNameList = accts;
-    }
-
-    public void addMemberAccount(String acct) {
-        accountNameList.add(acct);
-    }
-
-    public void setPolicyList(Set<String> policies) {
-        policyNameList = policies;
-    }
-
-    public void addPolicy(String policy) {
-        policyNameList.add(policy);
-    }
-
-    public Set<String> getPolicyList() {
-        return policyNameList;
     }
 
     @Override
@@ -156,7 +142,7 @@ public class AclGroupResponse extends BaseResponse implements ControlledViewEnti
             return false;
         if (getClass() != obj.getClass())
             return false;
-        AclGroupResponse other = (AclGroupResponse)obj;
+        AclPolicyResponse other = (AclPolicyResponse) obj;
         if (id == null) {
             if (other.id != null)
                 return false;
@@ -164,5 +150,7 @@ public class AclGroupResponse extends BaseResponse implements ControlledViewEnti
             return false;
         return true;
     }
+
+
 
 }

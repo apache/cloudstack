@@ -27,14 +27,16 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.AclPermission;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name = ("acl_group_view"))
-public class AclGroupJoinVO extends BaseViewVO implements ControlledViewEntity {
+@Table(name = ("acl_policy_view"))
+public class AclPolicyJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -61,21 +63,6 @@ public class AclGroupJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "domain_path")
     private String domainPath;
 
-    @Column(name = GenericDao.REMOVED_COLUMN)
-    private Date removed;
-
-    @Column(name = GenericDao.CREATED_COLUMN)
-    private Date created;
-
-    @Column(name = "policy_id")
-    private long policyId;
-
-    @Column(name = "policy_uuid")
-    private String policyUuid;
-
-    @Column(name = "policy_name")
-    private String policyName;
-
     @Column(name = "account_id")
     private long accountId;
 
@@ -88,33 +75,35 @@ public class AclGroupJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "account_type")
     private short accountType;
 
-    @Column(name = "member_account_id")
-    private long memberAccountId;
-
-    @Column(name = "member_account_uuid")
-    private String memberAccountUuid;
-
-    @Column(name = "member_account_name")
-    private String memberAccountName;
-
     @Column(name = "permission_action")
     private String permissionAction;
 
     @Column(name = "permission_entity_type")
-    private String permissionEntityType;
+    @Enumerated(value = EnumType.STRING)
+    private AclEntityType permissionEntityType;
 
     @Column(name = "permission_scope_id")
-    private long permissionScopeId;
+    private Long permissionScopeId;
 
     @Column(name = "permission_scope_type")
     @Enumerated(value = EnumType.STRING)
-    PermissionScope permissionScope;
+    private PermissionScope permissionScope;
 
     @Column(name = "permission_access_type")
     @Enumerated(value = EnumType.STRING)
-    AccessType permissionAccessType;
+    private AccessType permissionAccessType;
 
-    public AclGroupJoinVO() {
+    @Column(name = "permission_allow_deny")
+    @Enumerated(value = EnumType.STRING)
+    private AclPermission.Permission permissionAllowDeny;
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
+    private Date removed;
+
+    @Column(name = GenericDao.CREATED_COLUMN)
+    private Date created;
+
+    public AclPolicyJoinVO() {
     }
 
     @Override
@@ -156,27 +145,6 @@ public class AclGroupJoinVO extends BaseViewVO implements ControlledViewEntity {
         return domainPath;
     }
 
-
-    public Date getRemoved() {
-        return removed;
-    }
-
-    public Date getCreated() {
-        return created;
-    }
-
-    public long getPolicyId() {
-        return policyId;
-    }
-
-    public String getPolicyUuid() {
-        return policyUuid;
-    }
-
-    public String getPolicyName() {
-        return policyName;
-    }
-
     @Override
     public long getAccountId() {
         return accountId;
@@ -209,27 +177,24 @@ public class AclGroupJoinVO extends BaseViewVO implements ControlledViewEntity {
         return null;
     }
 
-    public long getMemberAccountId() {
-        return memberAccountId;
+    public Date getRemoved() {
+        return removed;
     }
 
-    public String getMemberAccountUuid() {
-        return memberAccountUuid;
+    public Date getCreated() {
+        return created;
     }
 
-    public String getMemberAccountName() {
-        return memberAccountName;
-    }
 
     public String getPermissionAction() {
         return permissionAction;
     }
 
-    public String getPermissionEntityType() {
+    public AclEntityType getPermissionEntityType() {
         return permissionEntityType;
     }
 
-    public long getPermissionScopeId() {
+    public Long getPermissionScopeId() {
         return permissionScopeId;
     }
 
@@ -241,5 +206,8 @@ public class AclGroupJoinVO extends BaseViewVO implements ControlledViewEntity {
         return permissionAccessType;
     }
 
+    public AclPermission.Permission getPermissionAllowDeny() {
+        return permissionAllowDeny;
+    }
 
 }
