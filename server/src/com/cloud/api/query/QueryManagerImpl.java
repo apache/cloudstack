@@ -1297,9 +1297,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             accountId = caller.getId();
         }
 
-        if (domainId == null && accountId == null && (caller.getType() == Account.ACCOUNT_TYPE_NORMAL || !listAll)) {
+        if (domainId == null && accountId == null && (_accountMgr.isNormalUser(caller.getId()) || !listAll)) {
             accountId = caller.getId();
-        } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || (isRecursive && !listAll)) {
+        } else if (_accountMgr.isDomainAdmin(caller.getId()) || (isRecursive && !listAll)) {
             DomainVO domain = _domainDao.findById(caller.getDomainId());
             path = domain.getPath();
         }
@@ -2290,7 +2290,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         List<Long> domainIds = null;
         // For non-root users, only return all offerings for the user's domain,
         // and everything above till root
-        if ((account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
+        if ((_accountMgr.isNormalUser(account.getId()) || _accountMgr.isDomainAdmin(account.getId()))
                 || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
             // find all domain Id up to root domain for this account
             domainIds = new ArrayList<Long>();
@@ -2436,7 +2436,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         // boolean includePublicOfferings = false;
-        if ((caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN)
+        if ((_accountMgr.isNormalUser(caller.getId()) || _accountMgr.isDomainAdmin(caller.getId()))
                 || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
             // For non-root users.
             if (isSystem) {
@@ -2570,7 +2570,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 // only list zones associated // with this domain, private zone
                 sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
 
-                if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                if (_accountMgr.isNormalUser(account.getId())) {
                     // accountId == null (zones dedicated to a domain) or
                     // accountId = caller
                     SearchCriteria<DataCenterJoinVO> sdc = _dcJoinDao.createSearchCriteria();
@@ -2580,7 +2580,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                     sc.addAnd("accountId", SearchCriteria.Op.SC, sdc);
                 }
 
-            } else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            } else if (_accountMgr.isNormalUser(account.getId())) {
                 // it was decided to return all zones for the user's domain, and
                 // everything above till root
                 // list all zones belonging to this domain, and all of its
@@ -2627,7 +2627,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                             dedicatedZoneIds.toArray(new Object[dedicatedZoneIds.size()]));
                 }
 
-            } else if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN
+            } else if (_accountMgr.isDomainAdmin(account.getId())
                     || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
                 // it was decided to return all zones for the domain admin, and
                 // everything above till root, as well as zones till the domain
@@ -2765,7 +2765,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         boolean listAll = false;
         if (templateFilter != null && templateFilter == TemplateFilter.all) {
-            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            if (_accountMgr.isNormalUser(caller.getId())) {
                 throw new InvalidParameterValueException("Filter " + TemplateFilter.all
                         + " can be specified by admin only");
             }
@@ -2869,7 +2869,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
             // add criteria for domain path in case of domain admin
             if ((templateFilter == TemplateFilter.self || templateFilter == TemplateFilter.selfexecutable)
-                    && (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)) {
+                    && (_accountMgr.isDomainAdmin(caller.getId()) || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)) {
                 sc.addAnd("domainPath", SearchCriteria.Op.LIKE, domain.getPath() + "%");
             }
 
@@ -3062,7 +3062,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         boolean listAll = false;
         if (isoFilter != null && isoFilter == TemplateFilter.all) {
-            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            if (_accountMgr.isNormalUser(caller.getId())) {
                 throw new InvalidParameterValueException("Filter " + TemplateFilter.all
                         + " can be specified by admin only");
             }

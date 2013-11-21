@@ -1941,12 +1941,12 @@ public class ApiResponseHelper implements ResponseGenerator {
         Account jobOwner = _accountMgr.getAccount(userJobOwner.getAccountId());
 
         //check permissions
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+        if (_accountMgr.isNormalUser(caller.getId())) {
             //regular user can see only jobs he owns
             if (caller.getId() != jobOwner.getId()) {
                 throw new PermissionDeniedException("Account " + caller + " is not authorized to see job id=" + job.getId());
             }
-        } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+        } else if (_accountMgr.isDomainAdmin(caller.getId())) {
             _accountMgr.checkAccess(caller, null, true, jobOwner);
         }
 

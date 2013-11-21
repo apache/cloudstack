@@ -4203,7 +4203,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // VV 1: verify the two users
         Account caller = CallContext.current().getCallingAccount();
         if (!_accountMgr.isRootAdmin(caller.getId())
-                && caller.getType() != Account.ACCOUNT_TYPE_DOMAIN_ADMIN) { // only
+                && !_accountMgr.isDomainAdmin(caller.getId())) { // only
             // root
             // admin
             // can

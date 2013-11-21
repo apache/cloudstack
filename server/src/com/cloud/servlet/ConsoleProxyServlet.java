@@ -480,7 +480,8 @@ public class ConsoleProxyServlet extends HttpServlet {
                         s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId()
                                 + " does not match the account id in session " + accountObj.getId() + " and caller is a normal user");
                     }
-                } else if(accountObj.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || accountObj.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) {
+                } else if (_accountMgr.isDomainAdmin(accountObj.getId())
+                        || accountObj.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) {
                     if(s_logger.isDebugEnabled()) {
                         s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId()
                                 + " does not match the account id in session " + accountObj.getId() + " and the domain-admin caller does not manage the target domain");

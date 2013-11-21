@@ -83,6 +83,22 @@ public class AclGroupAccountMapDaoImpl extends GenericDaoBase<AclGroupAccountMap
     }
 
     @Override
+    public AclGroupAccountMapVO findAccountInDomainAdminGroup(long accountId) {
+        SearchCriteria<AclGroupAccountMapVO> sc = _findByAccountAndGroupId.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("groupId", 3);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public AclGroupAccountMapVO findAccountInUserGroup(long accountId) {
+        SearchCriteria<AclGroupAccountMapVO> sc = _findByAccountAndGroupId.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("groupId", 1);
+        return findOneBy(sc);
+    }
+
+    @Override
     public AclGroupAccountMapVO findByGroupAndAccount(long groupId, long acctId) {
         SearchCriteria<AclGroupAccountMapVO> sc = _findByAccountAndGroupId.create();
         sc.setParameters("accountId", acctId);
@@ -100,5 +116,4 @@ public class AclGroupAccountMapDaoImpl extends GenericDaoBase<AclGroupAccountMap
             s_logger.debug("Removed account id=" + accountId + " from " + rowsRemoved + " groups");
         }
     }
-
 }

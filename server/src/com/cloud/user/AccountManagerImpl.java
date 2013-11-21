@@ -375,6 +375,26 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return false;
     }
 
+    @Override
+    public boolean isDomainAdmin(long accountId) {
+        // refer to account_group_map and check if account is in Domain 'Admin' group
+        AclGroupAccountMapVO domainAdminGroupMember = _aclGroupAccountDao.findAccountInDomainAdminGroup(accountId);
+        if (domainAdminGroupMember != null) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isNormalUser(long accountId) {
+        // refer to account_group_map and check if account is in 'User' group
+        AclGroupAccountMapVO user = _aclGroupAccountDao.findAccountInUserGroup(accountId);
+        if (user != null) {
+            return true;
+        }
+        return false;
+    }
+
     public boolean isResourceDomainAdmin(short accountType) {
         return (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN);
     }
@@ -2352,7 +2372,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (projectId != null) {
             if (!forProjectInvitation) {
                 if (projectId.longValue() == -1) {
-                    if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                    if (isNormalUser(caller.getId())) {
                         permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
                     } else {
                         domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.ListProjectResourcesOnly);
@@ -2516,4 +2536,5 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public UserAccount getUserByApiKey(String apiKey) {
         return _userAccountDao.getUserByApiKey(apiKey);
     }
+
 }

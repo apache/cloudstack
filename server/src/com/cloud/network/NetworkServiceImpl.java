@@ -1198,7 +1198,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         // Regular user can create Guest Isolated Source Nat enabled network only
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL
+        if (_accountMgr.isNormalUser(caller.getId())
                 && (ntwkOff.getTrafficType() != TrafficType.Guest || ntwkOff.getGuestType() != Network.GuestType.Isolated
                         && areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat))) {
             throw new InvalidParameterValueException("Regular user can create a network only from the network" +
@@ -1407,7 +1407,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         // 1) default is system to false if not specified
         // 2) reset parameter to false if it's specified by the regular user
-        if ((isSystem == null || caller.getType() == Account.ACCOUNT_TYPE_NORMAL) && id == null) {
+        if ((isSystem == null || _accountMgr.isNormalUser(caller.getId())) && id == null) {
             isSystem = false;
         }
 

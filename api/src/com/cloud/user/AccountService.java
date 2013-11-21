@@ -89,6 +89,10 @@ public interface AccountService {
 
     boolean isRootAdmin(long accountId);
 
+    boolean isDomainAdmin(long accountId);
+
+    boolean isNormalUser(long accountId);
+
     User getActiveUserByRegistrationToken(String registrationToken);
 
     void markUserRegistered(long userId);

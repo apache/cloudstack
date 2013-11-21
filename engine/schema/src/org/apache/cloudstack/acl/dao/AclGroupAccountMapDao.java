@@ -33,4 +33,8 @@ public interface AclGroupAccountMapDao extends GenericDao<AclGroupAccountMapVO, 
     AclGroupAccountMapVO findByGroupAndAccount(long groupId, long acctId);
 
     void removeAccountFromGroups(long accountId);
+
+    AclGroupAccountMapVO findAccountInDomainAdminGroup(long accountId);
+
+    AclGroupAccountMapVO findAccountInUserGroup(long accountId);
 }

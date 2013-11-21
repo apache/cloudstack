@@ -184,7 +184,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         Account owner = caller;
 
         //check if the user authorized to create the project
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL && !_allowUserToCreateProject) {
+        if (_accountMgr.isNormalUser(caller.getId()) && !_allowUserToCreateProject) {
             throw new PermissionDeniedException("Regular user is not permitted to create a project");
         }
 
@@ -432,7 +432,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         //ROOT admin always can access the project
         if (_accountMgr.isRootAdmin(caller.getId())) {
             return true;
-        } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+        } else if (_accountMgr.isDomainAdmin(caller.getId())) {
             Account owner = _accountMgr.getAccount(accountId);
             _accountMgr.checkAccess(caller, _domainDao.findById(owner.getDomainId()));
             return true;
@@ -446,7 +446,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         //ROOT admin always can access the project
         if (_accountMgr.isRootAdmin(caller.getId())) {
             return true;
-        } else if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+        } else if (_accountMgr.isDomainAdmin(caller.getId())) {
             Account owner = _accountMgr.getAccount(accountId);
             _accountMgr.checkAccess(caller, _domainDao.findById(owner.getDomainId()));
             return true;

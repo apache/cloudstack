@@ -896,7 +896,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         boolean result =true;
         List<Long> permittedAccountIds = new ArrayList<Long>();
 
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (_accountService.isNormalUser(caller.getId()) || caller.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             permittedAccountIds.add(caller.getId());
         } else {
             DomainVO domain = _domainDao.findById(caller.getDomainId());

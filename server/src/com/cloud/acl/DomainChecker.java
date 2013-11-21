@@ -72,7 +72,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         }
         long domainId = domain.getId();
         
-        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+        if (_accountService.isNormalUser(caller.getId())) {
             if (caller.getDomainId() != domainId) {
                 throw new PermissionDeniedException(caller + " does not have permission to operate within domain id=" + domain.getId());
             }
@@ -132,7 +132,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
         } else if (entity instanceof AffinityGroup) {
             return false;
         } else {
-            if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            if (_accountService.isNormalUser(caller.getId())) {
                 Account account = _accountDao.findById(entity.getAccountId());
                 
                 if (account != null && account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
@@ -172,7 +172,9 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 			}		
 			//if account is normal user or domain admin
 			//check if account's domain is a child of zone's domain (Note: This is made consistent with the list command for disk offering)
-            else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            else if (_accountService.isNormalUser(account.getId())
+                    || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
+                    || _accountService.isDomainAdmin(account.getId())) {
                 if (account.getDomainId() == dof.getDomainId()) {
 					return true; //disk offering and account at exact node
                 } else {
@@ -208,7 +210,9 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 			}		
 			//if account is normal user or domain admin
 			//check if account's domain is a child of zone's domain (Note: This is made consistent with the list command for service offering)
-            else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN || account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            else if (_accountService.isNormalUser(account.getId())
+                    || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
+                    || _accountService.isDomainAdmin(account.getId())) {
                 if (account.getDomainId() == so.getDomainId()) {
 					return true; //service offering and account at exact node
                 } else {
@@ -244,7 +248,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 			}		
 			//if account is normal user
 			//check if account's domain is a child of zone's domain
-            else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            else if (_accountService.isNormalUser(account.getId()) || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                 // if zone is dedicated to an account check that the accountId
                 // matches.
                 DedicatedResourceVO dedicatedZone = _dedicatedDao.findByZoneId(zone.getId());
@@ -280,7 +284,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 			}
 			//if account is domain admin
 			//check if the account's domain is either child of zone's domain, or if zone's domain is child of account's domain
-            else if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+            else if (_accountService.isDomainAdmin(account.getId())) {
                 if (account.getDomainId() == zone.getDomainId()) {
 					return true; //zone and account at exact node
                 } else {

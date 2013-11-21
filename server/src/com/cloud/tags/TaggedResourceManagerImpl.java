@@ -279,7 +279,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
                         Long accountId = accountDomainPair.first();
                         if (accountId != null) {
                             _accountMgr.checkAccess(caller, null, false, _accountMgr.getAccount(accountId));
-                        } else if (domainId != null && caller.getType() != Account.ACCOUNT_TYPE_NORMAL) {
+                        } else if (domainId != null && !_accountMgr.isNormalUser(caller.getId())) {
                             //check permissions;
                             _accountMgr.checkAccess(caller, _domainMgr.getDomain(domainId));
                         } else {
