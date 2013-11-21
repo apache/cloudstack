@@ -25,11 +25,11 @@ public class VolumeTypeBase implements VolumeType {
             return true;
         }
         if (that instanceof String) {
-            if (this.toString().equalsIgnoreCase((String) that)) {
+            if (this.toString().equalsIgnoreCase((String)that)) {
                 return true;
             }
         } else if (that instanceof VolumeTypeBase) {
-            VolumeTypeBase th = (VolumeTypeBase) that;
+            VolumeTypeBase th = (VolumeTypeBase)that;
             if (this.toString().equalsIgnoreCase(th.toString())) {
                 return true;
             }

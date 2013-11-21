@@ -37,13 +37,16 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.snapshot.VMSnapshot;
 
-@APICommand(name = "revertToVMSnapshot",description = "Revert VM from a vmsnapshot.", responseObject = UserVmResponse.class, since="4.2.0")
+@APICommand(name = "revertToVMSnapshot", description = "Revert VM from a vmsnapshot.", responseObject = UserVmResponse.class, since = "4.2.0")
 public class RevertToVMSnapshotCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger
-            .getLogger(RevertToVMSnapshotCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(RevertToVMSnapshotCmd.class.getName());
     private static final String s_name = "reverttovmsnapshotresponse";
 
-    @Parameter(name = ApiConstants.VM_SNAPSHOT_ID, type = CommandType.UUID, required = true,entityType=VMSnapshotResponse.class,description = "The ID of the vm snapshot")
+    @Parameter(name = ApiConstants.VM_SNAPSHOT_ID,
+               type = CommandType.UUID,
+               required = true,
+               entityType = VMSnapshotResponse.class,
+               description = "The ID of the vm snapshot")
     private Long vmSnapShotId;
 
     public Long getVmSnapShotId() {
@@ -65,17 +68,15 @@ public class RevertToVMSnapshotCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws  ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, ConcurrentOperationException {
-        CallContext.current().setEventDetails(
-                "vmsnapshot id: " + getVmSnapShotId());
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, ConcurrentOperationException {
+        CallContext.current().setEventDetails("vmsnapshot id: " + getVmSnapShotId());
         UserVm result = _vmSnapshotService.revertToSnapshot(getVmSnapShotId());
         if (result != null) {
-            UserVmResponse response = _responseGenerator.createUserVmResponse(
-                    "virtualmachine", result).get(0);
+            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,"Failed to revert VM snapshot");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to revert VM snapshot");
         }
     }
 

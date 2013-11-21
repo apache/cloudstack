@@ -16,32 +16,32 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.host.HostVO;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=HostVO.class)
+@EntityReference(value = HostVO.class)
 public class SspResponse extends BaseResponse {
     @SerializedName(ApiConstants.HOST_ID)
-    @Param(description="server id of the stratosphere ssp server")
+    @Param(description = "server id of the stratosphere ssp server")
     private String hostId;
 
     @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description="zone which this ssp controls")
+    @Param(description = "zone which this ssp controls")
     private String zoneId;
 
     @SerializedName(ApiConstants.URL)
-    @Param(description="url of ssp endpoint")
+    @Param(description = "url of ssp endpoint")
     private String url;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description="name")
+    @Param(description = "name")
     private String name;
-
 
     public String getHostId() {
         return hostId;

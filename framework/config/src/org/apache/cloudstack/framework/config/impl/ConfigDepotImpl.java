@@ -27,14 +27,15 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.commons.lang.ObjectUtils;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigDepotAdmin;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.commons.lang.ObjectUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -47,7 +48,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  *   - Gather all of the Configurable interfaces and insert their config
  *     variables into the config table.
  *   - Hide the data source where configs are stored and retrieved.
- * 
+ *
  * When dealing with this class, we must be very careful on cluster situations.
  *
  * TODO:
@@ -69,7 +70,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     private final static Logger s_logger = Logger.getLogger(ConfigDepotImpl.class);
     @Inject
-    ConfigurationDao   _configDao;
+    ConfigurationDao _configDao;
     List<Configurable> _configurables;
     List<ScopedConfigStorage> _scopedStorages;
     Set<Configurable> _configured = Collections.synchronizedSet(new HashSet<Configurable>());
@@ -102,16 +103,16 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     }
 
     protected void populateConfiguration(Date date, Configurable configurable) {
-        if ( _configured.contains(configurable) )
+        if (_configured.contains(configurable))
             return;
-        
+
         s_logger.debug("Retrieving keys from " + configurable.getClass().getSimpleName());
 
         for (ConfigKey<?> key : configurable.getConfigKeys()) {
             Pair<String, ConfigKey<?>> previous = _allKeys.get(key.key());
             if (previous != null && !previous.first().equals(configurable.getConfigComponentName())) {
-                throw new CloudRuntimeException("Configurable " + configurable.getConfigComponentName() + " is adding a key that has been added before by " + previous.first() +
-                                                ": " + key.toString());
+                throw new CloudRuntimeException("Configurable " + configurable.getConfigComponentName() + " is adding a key that has been added before by " +
+                    previous.first() + ": " + key.toString());
             }
             _allKeys.put(key.key(), new Pair<String, ConfigKey<?>>(configurable.getConfigComponentName(), key));
 
@@ -121,8 +122,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
                 vo.setUpdated(date);
                 _configDao.persist(vo);
             } else {
-                if (vo.isDynamic() != key.isDynamic() ||
-                    !ObjectUtils.equals(vo.getDescription(), key.description()) ||
+                if (vo.isDynamic() != key.isDynamic() || !ObjectUtils.equals(vo.getDescription(), key.description()) ||
                     !ObjectUtils.equals(vo.getDefaultValue(), key.defaultValue())) {
                     vo.setDynamic(key.isDynamic());
                     vo.setDescription(key.description());
@@ -136,7 +136,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
                 currentConfigs.add(key);
             }
         }
-        
+
         _configured.add(configurable);
     }
 
@@ -144,7 +144,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     public void populateConfiguration(Configurable configurable) {
         populateConfiguration(new Date(), configurable);
     }
-    
+
     @Override
     public List<String> getComponentsInDepot() {
         return new ArrayList<String>();
@@ -153,7 +153,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     public ConfigurationDao global() {
         return _configDao;
     }
-    
+
     public ScopedConfigStorage scoped(ConfigKey<?> config) {
         for (ScopedConfigStorage storage : _scopedStorages) {
             if (storage.getScope() == config.scope()) {

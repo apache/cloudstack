@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-
 import java.text.DecimalFormat;
 import java.util.EnumSet;
 import java.util.List;
@@ -243,8 +242,7 @@ public interface ResponseGenerator {
 
     LBStickinessResponse createLBStickinessPolicyResponse(StickinessPolicy stickinessPolicy, LoadBalancer lb);
 
-    LBHealthCheckResponse createLBHealthCheckPolicyResponse(List<? extends HealthCheckPolicy> healthcheckPolicies,
-            LoadBalancer lb);
+    LBHealthCheckResponse createLBHealthCheckPolicyResponse(List<? extends HealthCheckPolicy> healthcheckPolicies, LoadBalancer lb);
 
     LBHealthCheckResponse createLBHealthCheckPolicyResponse(HealthCheckPolicy healthcheckPolicy, LoadBalancer lb);
 
@@ -368,9 +366,7 @@ public interface ResponseGenerator {
      */
     ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag, boolean keyValueOnly);
 
-
     Site2SiteVpnGatewayResponse createSite2SiteVpnGatewayResponse(Site2SiteVpnGateway result);
-
 
     /**
      * @param offering
@@ -429,9 +425,11 @@ public interface ResponseGenerator {
     UsageRecordResponse createUsageResponse(Usage usageRecord);
 
     TrafficMonitorResponse createTrafficMonitorResponse(Host trafficMonitor);
+
     VMSnapshotResponse createVMSnapshotResponse(VMSnapshot vmSnapshot);
 
     NicSecondaryIpResponse createSecondaryIPToNicResponse(NicSecondaryIp result);
+
     public NicResponse createNicResponse(Nic result);
 
     ApplicationLoadBalancerResponse createLoadBalancerContainerReponse(ApplicationLoadBalancerRule lb, Map<Ip, UserVm> lbInstances);

@@ -22,52 +22,47 @@ import java.util.List;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackTemplatePermission {
-	@SerializedName(ApiConstants.ID)
-	private String id;
-	@SerializedName(ApiConstants.IS_PUBLIC)
-	private Boolean isPublic;
-	@SerializedName(ApiConstants.DOMAIN_ID)
-	private String domainId;
-	@SerializedName(ApiConstants.ACCOUNT)
-	private List<String> accounts;
-	
+    @SerializedName(ApiConstants.ID)
+    private String id;
+    @SerializedName(ApiConstants.IS_PUBLIC)
+    private Boolean isPublic;
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    private String domainId;
+    @SerializedName(ApiConstants.ACCOUNT)
+    private List<String> accounts;
 
-	/**
-	 * 
-	 */
-	public CloudStackTemplatePermission() {
-	}
+    /**
+     *
+     */
+    public CloudStackTemplatePermission() {
+    }
 
+    /**
+     * @return the id
+     */
+    public String getId() {
+        return id;
+    }
 
-	/**
-	 * @return the id
-	 */
-	public String getId() {
-		return id;
-	}
+    /**
+     * @return the isPublic
+     */
+    public Boolean getIsPublic() {
+        return isPublic;
+    }
 
+    /**
+     * @return the domainId
+     */
+    public String getDomainId() {
+        return domainId;
+    }
 
-	/**
-	 * @return the isPublic
-	 */
-	public Boolean getIsPublic() {
-		return isPublic;
-	}
-
-
-	/**
-	 * @return the domainId
-	 */
-	public String getDomainId() {
-		return domainId;
-	}
-
-
-	/**
-	 * @return the accounts
-	 */
-	public List<String> getAccounts() {
-		return accounts;
-	}
+    /**
+     * @return the accounts
+     */
+    public List<String> getAccounts() {
+        return accounts;
+    }
 
 }

@@ -46,18 +46,21 @@ public class RegisterCompleteServlet extends HttpServlet {
 
     static final long serialVersionUID = SerialVersionUID.CloudStartupServlet;
 
-    @Inject AccountService _accountSvc;
-    @Inject ConfigurationDao _configDao;
-    @Inject UserDao _userDao;
+    @Inject
+    AccountService _accountSvc;
+    @Inject
+    ConfigurationDao _configDao;
+    @Inject
+    UserDao _userDao;
 
     public RegisterCompleteServlet() {
     }
-    
+
     @Override
     public void init(ServletConfig config) throws ServletException {
-    	SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());       	
+        SpringBeanAutowiringSupport.processInjectionBasedOnServletContext(this, config.getServletContext());
     }
-    
+
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
         doGet(req, resp);
@@ -74,34 +77,34 @@ public class RegisterCompleteServlet extends HttpServlet {
             statusCode = 503;
             responseMessage = "{ \"registration_info\" : { \"errorcode\" : \"503\", \"errortext\" : \"Missing token\" } }";
         } else {
-            s_logger.info("Attempting to register user account with token = "+registrationToken);
+            s_logger.info("Attempting to register user account with token = " + registrationToken);
             User resourceAdminUser = _accountSvc.getActiveUserByRegistrationToken(registrationToken);
             if (resourceAdminUser != null) {
-                if(resourceAdminUser.isRegistered()) {
+                if (resourceAdminUser.isRegistered()) {
                     statusCode = 503;
                     responseMessage = "{ \"registration_info\" : { \"errorcode\" : \"503\", \"errortext\" : \"Expired token = " + registrationToken + "\" } }";
                 } else {
-                    if(expires != null && expires.toLowerCase().equals("true")){
+                    if (expires != null && expires.toLowerCase().equals("true")) {
                         _accountSvc.markUserRegistered(resourceAdminUser.getId());
                     }
 
                     Account resourceAdminAccount = _accountSvc.getActiveAccountById(resourceAdminUser.getAccountId());
-                    Account rsUserAccount = _accountSvc.getActiveAccountByName(resourceAdminAccount.getAccountName()+"-user", resourceAdminAccount.getDomainId());
+                    Account rsUserAccount = _accountSvc.getActiveAccountByName(resourceAdminAccount.getAccountName() + "-user", resourceAdminAccount.getDomainId());
 
-                    List<UserVO> users =  _userDao.listByAccount(rsUserAccount.getId());
+                    List<UserVO> users = _userDao.listByAccount(rsUserAccount.getId());
                     User rsUser = users.get(0);
 
                     Configuration config = _configDao.findByName("endpointe.url");
 
                     StringBuffer sb = new StringBuffer();
-                    sb.append("{ \"registration_info\" : { \"endpoint_url\" : \""+encodeParam(config.getValue())+"\", ");
-                    sb.append("\"domain_id\" : \""+resourceAdminAccount.getDomainId()+"\", ");
-                    sb.append("\"admin_account\" : \""+encodeParam(resourceAdminUser.getUsername())+"\", ");
-                    sb.append("\"admin_account_api_key\" : \""+resourceAdminUser.getApiKey()+"\", ");
-                    sb.append("\"admin_account_secret_key\" : \""+resourceAdminUser.getSecretKey()+"\", ");
-                    sb.append("\"user_account\" : \""+encodeParam(rsUser.getUsername())+"\", ");
-                    sb.append("\"user_account_api_key\" : \""+rsUser.getApiKey()+"\", ");
-                    sb.append("\"user_account_secret_key\" : \""+rsUser.getSecretKey()+"\" ");
+                    sb.append("{ \"registration_info\" : { \"endpoint_url\" : \"" + encodeParam(config.getValue()) + "\", ");
+                    sb.append("\"domain_id\" : \"" + resourceAdminAccount.getDomainId() + "\", ");
+                    sb.append("\"admin_account\" : \"" + encodeParam(resourceAdminUser.getUsername()) + "\", ");
+                    sb.append("\"admin_account_api_key\" : \"" + resourceAdminUser.getApiKey() + "\", ");
+                    sb.append("\"admin_account_secret_key\" : \"" + resourceAdminUser.getSecretKey() + "\", ");
+                    sb.append("\"user_account\" : \"" + encodeParam(rsUser.getUsername()) + "\", ");
+                    sb.append("\"user_account_api_key\" : \"" + rsUser.getApiKey() + "\", ");
+                    sb.append("\"user_account_secret_key\" : \"" + rsUser.getSecretKey() + "\" ");
                     sb.append("} }");
                     responseMessage = sb.toString();
                 }

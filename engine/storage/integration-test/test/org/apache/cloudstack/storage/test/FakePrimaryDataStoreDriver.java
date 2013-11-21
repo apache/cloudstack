@@ -38,6 +38,7 @@ import com.cloud.agent.api.to.DataTO;
 
 public class FakePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     boolean snapshotResult = true;
+
     @Override
     public ChapInfo getChapInfo(VolumeInfo volumeInfo) {
         return null;  //To change body of implemented methods use File | Settings | File Templates.

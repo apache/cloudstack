@@ -42,7 +42,6 @@ public interface VirtualMachineProfile {
         public static final Param PxeSeverType = new Param("PxeSeverType");
         public static final Param HaTag = new Param("HaTag");
 
-
         private String name;
 
         public Param(String name) {
@@ -138,6 +137,5 @@ public interface VirtualMachineProfile {
     Float getCpuOvercommitRatio();
 
     Float getMemoryOvercommitRatio();
-
 
 }

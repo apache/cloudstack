@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.storage.dao;
 
+import java.util.List;
+
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Type;
@@ -23,8 +25,6 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
-
-import java.util.List;
 
 public interface SnapshotDao extends GenericDao<SnapshotVO, Long>, StateDao<Snapshot.State, Snapshot.Event, SnapshotVO> {
     List<SnapshotVO> listByVolumeId(long volumeId);
@@ -60,7 +60,7 @@ public interface SnapshotDao extends GenericDao<SnapshotVO, Long>, StateDao<Snap
     /**
      * Gets the Total Secondary Storage space (in bytes) used by snapshots
      * allocated for an account
-     * 
+     *
      * @param account
      * @return total Secondary Storage space allocated
      */

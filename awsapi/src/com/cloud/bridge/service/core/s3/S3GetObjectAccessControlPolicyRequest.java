@@ -17,35 +17,35 @@
 package com.cloud.bridge.service.core.s3;
 
 public class S3GetObjectAccessControlPolicyRequest extends S3Request {
-	protected String bucketName;
-	protected String key;
-	protected String version;
-	
-	public S3GetObjectAccessControlPolicyRequest() {
-		super();
-	}
+    protected String bucketName;
+    protected String key;
+    protected String version;
 
-	public String getBucketName() {
-		return bucketName;
-	}
+    public S3GetObjectAccessControlPolicyRequest() {
+        super();
+    }
 
-	public void setBucketName(String bucketName) {
-		this.bucketName = bucketName;
-	}
+    public String getBucketName() {
+        return bucketName;
+    }
 
-	public String getKey() {
-		return key;
-	}
+    public void setBucketName(String bucketName) {
+        this.bucketName = bucketName;
+    }
 
-	public void setKey(String key) {
-		this.key = key;
-	}
-	
-	public String getVersion() {
-		return version;
-	}
-	
-	public void setVersion(String version) {
-		this.version = version;
-	}
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
 }

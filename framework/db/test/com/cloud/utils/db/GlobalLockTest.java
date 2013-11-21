@@ -24,21 +24,23 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloud.utils.Profiler;
 
-
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations="classpath:/testContext.xml")
+@ContextConfiguration(locations = "classpath:/testContext.xml")
 public class GlobalLockTest {
     public static final Logger s_logger = Logger.getLogger(GlobalLockTest.class);
     private final static GlobalLock _workLock = GlobalLock.getInternLock("SecurityGroupWork");
+
     public static class Worker implements Runnable {
         int id = 0;
         int timeoutSeconds = 10;
         int jobDuration = 2;
+
         public Worker(int id, int timeout, int duration) {
             this.id = id;
             timeoutSeconds = timeout;
             jobDuration = duration;
         }
+
         @Override
         public void run() {
             boolean locked = false;
@@ -49,7 +51,7 @@ public class GlobalLockTest {
                 p.stop();
                 System.out.println("Thread " + id + " waited " + p.getDuration() + " ms, locked=" + locked);
                 if (locked) {
-                    Thread.sleep(jobDuration*1000);
+                    Thread.sleep(jobDuration * 1000);
                 }
             } catch (InterruptedException e) {
             } finally {
@@ -63,14 +65,14 @@ public class GlobalLockTest {
 
     @Test
     public void testTimeout() {
-        Thread [] pool = new Thread[50];
-        for (int i=0; i < pool.length; i++) {
+        Thread[] pool = new Thread[50];
+        for (int i = 0; i < pool.length; i++) {
             pool[i] = new Thread(new Worker(i, 5, 3));
         }
-        for (int i=0; i < pool.length; i++) {
+        for (int i = 0; i < pool.length; i++) {
             pool[i].start();
         }
-        for (int i=0; i < pool.length; i++) {
+        for (int i = 0; i < pool.length; i++) {
             try {
                 pool[i].join();
             } catch (InterruptedException e) {

@@ -34,69 +34,68 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={UsageVolumeDao.class})
+@Local(value = {UsageVolumeDao.class})
 public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> implements UsageVolumeDao {
-	public static final Logger s_logger = Logger.getLogger(UsageVolumeDaoImpl.class.getName());
+    public static final Logger s_logger = Logger.getLogger(UsageVolumeDaoImpl.class.getName());
 
-	protected static final String REMOVE_BY_USERID_VOLID = "DELETE FROM usage_volume WHERE account_id = ? AND id = ?";
-	protected static final String UPDATE_DELETED = "UPDATE usage_volume SET deleted = ? WHERE account_id = ? AND id = ? and deleted IS NULL";
-    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, disk_offering_id, template_id, size, created, deleted " +
-                                                                 "FROM usage_volume " +
-                                                                 "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " +
-                                                                 "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
-    protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT id, zone_id, account_id, domain_id, disk_offering_id, template_id, size, created, deleted " +
-                                                                "FROM usage_volume " +
-                                                                "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " +
-                                                                "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
-    protected static final String GET_ALL_USAGE_RECORDS = "SELECT id, zone_id, account_id, domain_id, disk_offering_id, template_id, size, created, deleted " +
-                                                          "FROM usage_volume " +
-                                                          "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR " +
-                                                          "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
+    protected static final String REMOVE_BY_USERID_VOLID = "DELETE FROM usage_volume WHERE account_id = ? AND id = ?";
+    protected static final String UPDATE_DELETED = "UPDATE usage_volume SET deleted = ? WHERE account_id = ? AND id = ? and deleted IS NULL";
+    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, disk_offering_id, template_id, size, created, deleted "
+        + "FROM usage_volume " + "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
+        + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
+    protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT id, zone_id, account_id, domain_id, disk_offering_id, template_id, size, created, deleted "
+        + "FROM usage_volume " + "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
+        + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
+    protected static final String GET_ALL_USAGE_RECORDS = "SELECT id, zone_id, account_id, domain_id, disk_offering_id, template_id, size, created, deleted "
+        + "FROM usage_volume " + "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
 
-	public UsageVolumeDaoImpl() {}
-
-	public void removeBy(long accountId, long volId) {
-	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-		PreparedStatement pstmt = null;
-		try {
-		    txn.start();
-			String sql = REMOVE_BY_USERID_VOLID;
-			pstmt = txn.prepareAutoCloseStatement(sql);
-			pstmt.setLong(1, accountId);
-			pstmt.setLong(2, volId);
-			pstmt.executeUpdate();
-			txn.commit();
-		} catch (Exception e) {
-			txn.rollback();
-			s_logger.warn("Error removing usageVolumeVO", e);
-		} finally {
-		    txn.close();
-		}
-	}
-
-	public void update(UsageVolumeVO usage) {
-	    TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
-		PreparedStatement pstmt = null;
-		try {
-		    txn.start();
-			if (usage.getDeleted() != null) {
-				pstmt = txn.prepareAutoCloseStatement(UPDATE_DELETED);
-				pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getDeleted()));
-				pstmt.setLong(2, usage.getAccountId());
-				pstmt.setLong(3, usage.getId());
-			}
-			pstmt.executeUpdate();
-			txn.commit();
-		} catch (Exception e) {
-			txn.rollback();
-			s_logger.warn("Error updating UsageVolumeVO", e);
-		} finally {
-		    txn.close();
-		}
-	}
+    public UsageVolumeDaoImpl() {
+    }
 
     @Override
-	public List<UsageVolumeVO> getUsageRecords(Long accountId, Long domainId, Date startDate, Date endDate, boolean limit, int page) {
+    public void removeBy(long accountId, long volId) {
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        PreparedStatement pstmt = null;
+        try {
+            txn.start();
+            String sql = REMOVE_BY_USERID_VOLID;
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            pstmt.setLong(1, accountId);
+            pstmt.setLong(2, volId);
+            pstmt.executeUpdate();
+            txn.commit();
+        } catch (Exception e) {
+            txn.rollback();
+            s_logger.warn("Error removing usageVolumeVO", e);
+        } finally {
+            txn.close();
+        }
+    }
+
+    @Override
+    public void update(UsageVolumeVO usage) {
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        PreparedStatement pstmt = null;
+        try {
+            txn.start();
+            if (usage.getDeleted() != null) {
+                pstmt = txn.prepareAutoCloseStatement(UPDATE_DELETED);
+                pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), usage.getDeleted()));
+                pstmt.setLong(2, usage.getAccountId());
+                pstmt.setLong(3, usage.getId());
+            }
+            pstmt.executeUpdate();
+            txn.commit();
+        } catch (Exception e) {
+            txn.rollback();
+            s_logger.warn("Error updating UsageVolumeVO", e);
+        } finally {
+            txn.close();
+        }
+    }
+
+    @Override
+    public List<UsageVolumeVO> getUsageRecords(Long accountId, Long domainId, Date startDate, Date endDate, boolean limit, int page) {
         List<UsageVolumeVO> usageRecords = new ArrayList<UsageVolumeVO>();
 
         Long param1 = null;
@@ -114,7 +113,7 @@ public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> impl
         if (limit) {
             int startIndex = 0;
             if (page > 0) {
-                startIndex = 500 * (page-1);
+                startIndex = 500 * (page - 1);
             }
             sql += " LIMIT " + startIndex + ",500";
         }
@@ -138,16 +137,16 @@ public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> impl
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 //id, zoneId, account_id, domain_id, disk_offering_id, template_id created, deleted
-            	Long vId = Long.valueOf(rs.getLong(1));
-            	Long zoneId = Long.valueOf(rs.getLong(2));
+                Long vId = Long.valueOf(rs.getLong(1));
+                Long zoneId = Long.valueOf(rs.getLong(2));
                 Long acctId = Long.valueOf(rs.getLong(3));
                 Long dId = Long.valueOf(rs.getLong(4));
                 Long doId = Long.valueOf(rs.getLong(5));
-                if(doId == 0){
+                if (doId == 0) {
                     doId = null;
                 }
                 Long tId = Long.valueOf(rs.getLong(6));
-                if(tId == 0){
+                if (tId == 0) {
                     tId = null;
                 }
                 long size = Long.valueOf(rs.getLong(7));
@@ -155,13 +154,12 @@ public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> impl
                 Date deletedDate = null;
                 String createdTS = rs.getString(8);
                 String deletedTS = rs.getString(9);
-                
 
                 if (createdTS != null) {
-                	createdDate = DateUtil.parseDateString(s_gmtTimeZone, createdTS);
+                    createdDate = DateUtil.parseDateString(s_gmtTimeZone, createdTS);
                 }
                 if (deletedTS != null) {
-                	deletedDate = DateUtil.parseDateString(s_gmtTimeZone, deletedTS);
+                    deletedDate = DateUtil.parseDateString(s_gmtTimeZone, deletedTS);
                 }
 
                 usageRecords.add(new UsageVolumeVO(vId, zoneId, acctId, dId, doId, tId, size, createdDate, deletedDate));
@@ -174,5 +172,5 @@ public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> impl
         }
 
         return usageRecords;
-	}
+    }
 }

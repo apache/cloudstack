@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -31,12 +31,14 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={Site2SiteVpnConnectionDao.class})
+@Local(value = {Site2SiteVpnConnectionDao.class})
 public class Site2SiteVpnConnectionDaoImpl extends GenericDaoBase<Site2SiteVpnConnectionVO, Long> implements Site2SiteVpnConnectionDao {
     private static final Logger s_logger = Logger.getLogger(Site2SiteVpnConnectionDaoImpl.class);
 
-    @Inject protected IPAddressDao _addrDao;
-    @Inject protected Site2SiteVpnGatewayDao _vpnGatewayDao;
+    @Inject
+    protected IPAddressDao _addrDao;
+    @Inject
+    protected Site2SiteVpnGatewayDao _vpnGatewayDao;
 
     private SearchBuilder<Site2SiteVpnConnectionVO> AllFieldsSearch;
     private SearchBuilder<Site2SiteVpnConnectionVO> VpcSearch;

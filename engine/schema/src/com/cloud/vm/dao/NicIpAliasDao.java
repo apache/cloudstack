@@ -17,6 +17,7 @@
 package com.cloud.vm.dao;
 
 import java.util.List;
+
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.NicIpAlias;
 
@@ -24,6 +25,7 @@ public interface NicIpAliasDao extends GenericDao<NicIpAliasVO, Long> {
     List<NicIpAliasVO> listByVmId(long instanceId);
 
     List<String> listAliasIpAddressInNetwork(long networkConfigId);
+
     List<NicIpAliasVO> listByNetworkId(long networkId);
 
     NicIpAliasVO findByInstanceIdAndNetworkId(long networkId, long instanceId);
@@ -44,8 +46,7 @@ public interface NicIpAliasDao extends GenericDao<NicIpAliasVO, Long> {
 
     NicIpAliasVO findByIp4AddressAndNicId(String ip4Address, long nicId);
 
-    NicIpAliasVO findByIp4AddressAndNetworkIdAndInstanceId(long networkId,
-                                                               Long vmId, String vmIp);
+    NicIpAliasVO findByIp4AddressAndNetworkIdAndInstanceId(long networkId, Long vmId, String vmIp);
 
     List<String> getAliasIpAddressesForNic(long nicId);
 

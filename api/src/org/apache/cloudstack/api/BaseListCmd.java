@@ -43,7 +43,7 @@ public abstract class BaseListCmd extends BaseCmd {
 
     public BaseListCmd() {
     }
-    
+
     public String getKeyword() {
         return keyword;
     }
@@ -64,14 +64,15 @@ public abstract class BaseListCmd extends BaseCmd {
         return pageSize;
     }
 
+    @Override
     public void configure() {
-    	if(MAX_PAGESIZE == null) {
-	        if (_configService.getDefaultPageSize().longValue() != PAGESIZE_UNLIMITED) {
-	            MAX_PAGESIZE = _configService.getDefaultPageSize();
-	        } else {
-	        	MAX_PAGESIZE = PAGESIZE_UNLIMITED;
-	        }
-    	}
+        if (MAX_PAGESIZE == null) {
+            if (_configService.getDefaultPageSize().longValue() != PAGESIZE_UNLIMITED) {
+                MAX_PAGESIZE = _configService.getDefaultPageSize();
+            } else {
+                MAX_PAGESIZE = PAGESIZE_UNLIMITED;
+            }
+        }
     }
 
     @Override
@@ -89,7 +90,7 @@ public abstract class BaseListCmd extends BaseCmd {
         if (defaultPageSize.longValue() == PAGESIZE_UNLIMITED) {
             defaultPageSize = null;
         }
-        
+
         return defaultPageSize;
     }
 

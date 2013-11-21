@@ -33,6 +33,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+
 import org.apache.cloudstack.api.command.user.region.ha.gslb.AssignToGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.CreateGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.DeleteGlobalLoadBalancerRuleCmd;
@@ -57,13 +58,12 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.net.Ip;
 
 public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
-    private static final Logger s_logger = Logger.getLogger( GlobalLoadBalancingRulesServiceImplTest.class);
+    private static final Logger s_logger = Logger.getLogger(GlobalLoadBalancingRulesServiceImplTest.class);
 
     @Override
     @Before
@@ -176,18 +176,16 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
          */
         runDeleteGlobalLoadBalancerRuleTestWithLbRules();
 
-
     }
 
     void runCreateGlobalLoadBalancerRulePostiveTest() throws Exception {
 
         TransactionLegacy txn = TransactionLegacy.open("runCreateGlobalLoadBalancerRulePostiveTest");
 
-        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
+        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl = new GlobalLoadBalancingRulesServiceImpl();
 
         gslbServiceImpl._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         gslbServiceImpl._gslbRuleDao = Mockito.mock(GlobalLoadBalancerRuleDao.class);
@@ -248,11 +246,10 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         TransactionLegacy txn = TransactionLegacy.open("runCreateGlobalLoadBalancerRulePostiveTest");
 
-        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
+        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl = new GlobalLoadBalancingRulesServiceImpl();
 
         gslbServiceImpl._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         gslbServiceImpl._gslbRuleDao = Mockito.mock(GlobalLoadBalancerRuleDao.class);
@@ -313,11 +310,10 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         TransactionLegacy txn = TransactionLegacy.open("runCreateGlobalLoadBalancerRulePostiveTest");
 
-        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
+        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl = new GlobalLoadBalancingRulesServiceImpl();
 
         gslbServiceImpl._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         gslbServiceImpl._gslbRuleDao = Mockito.mock(GlobalLoadBalancerRuleDao.class);
@@ -378,11 +374,10 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         TransactionLegacy txn = TransactionLegacy.open("runCreateGlobalLoadBalancerRulePostiveTest");
 
-        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
+        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl = new GlobalLoadBalancingRulesServiceImpl();
 
         gslbServiceImpl._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         gslbServiceImpl._gslbRuleDao = Mockito.mock(GlobalLoadBalancerRuleDao.class);
@@ -443,11 +438,10 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         TransactionLegacy txn = TransactionLegacy.open("runCreateGlobalLoadBalancerRulePostiveTest");
 
-        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
+        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl = new GlobalLoadBalancingRulesServiceImpl();
 
         gslbServiceImpl._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         gslbServiceImpl._gslbRuleDao = Mockito.mock(GlobalLoadBalancerRuleDao.class);
@@ -509,7 +503,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         TransactionLegacy txn = TransactionLegacy.open("runAssignToGlobalLoadBalancerRuleTest");
 
-        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
+        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl = new GlobalLoadBalancingRulesServiceImpl();
 
         gslbServiceImpl._accountMgr = Mockito.mock(AccountManager.class);
         gslbServiceImpl._gslbRuleDao = Mockito.mock(GlobalLoadBalancerRuleDao.class);
@@ -525,15 +519,15 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         AssignToGlobalLoadBalancerRuleCmd assignCmd = new AssignToGlobalLoadBalancerRuleCmdExtn();
         Class<?> _class = assignCmd.getClass().getSuperclass();
 
-        Account account = new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         Field gslbRuleId = _class.getDeclaredField("id");
         gslbRuleId.setAccessible(true);
         gslbRuleId.set(assignCmd, new Long(1));
 
-        GlobalLoadBalancerRuleVO gslbRule = new  GlobalLoadBalancerRuleVO("test-gslb-rule", "test-gslb-rule",
-                "test-domain", "roundrobin", "sourceip", "tcp", 1, 1, 1, GlobalLoadBalancerRule.State.Active);
+        GlobalLoadBalancerRuleVO gslbRule =
+            new GlobalLoadBalancerRuleVO("test-gslb-rule", "test-gslb-rule", "test-domain", "roundrobin", "sourceip", "tcp", 1, 1, 1, GlobalLoadBalancerRule.State.Active);
         when(gslbServiceImpl._gslbRuleDao.findById(new Long(1))).thenReturn(gslbRule);
 
         LoadBalancerVO lbRule = new LoadBalancerVO();
@@ -558,7 +552,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         dcID.set(networkVo, new Long(1));
         when(gslbServiceImpl._networkDao.findById(new Long(1))).thenReturn(networkVo);
 
-        IPAddressVO ip = new IPAddressVO(new Ip("10.1.1.1"), 1, 1,1 ,true);
+        IPAddressVO ip = new IPAddressVO(new Ip("10.1.1.1"), 1, 1, 1, true);
         when(gslbServiceImpl._ipAddressDao.findById(new Long(1))).thenReturn(ip);
 
         try {
@@ -568,11 +562,11 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         }
     }
 
-    void runAssignToGlobalLoadBalancerRuleTestSameZoneLb() throws  Exception {
+    void runAssignToGlobalLoadBalancerRuleTestSameZoneLb() throws Exception {
 
         TransactionLegacy txn = TransactionLegacy.open("runAssignToGlobalLoadBalancerRuleTestSameZoneLb");
 
-        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
+        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl = new GlobalLoadBalancingRulesServiceImpl();
 
         gslbServiceImpl._accountMgr = Mockito.mock(AccountManager.class);
         gslbServiceImpl._gslbRuleDao = Mockito.mock(GlobalLoadBalancerRuleDao.class);
@@ -588,15 +582,15 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         AssignToGlobalLoadBalancerRuleCmd assignCmd = new AssignToGlobalLoadBalancerRuleCmdExtn();
         Class<?> _class = assignCmd.getClass().getSuperclass();
 
-        Account account = new AccountVO("testaccount", 3, "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 3, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         Field gslbRuleId = _class.getDeclaredField("id");
         gslbRuleId.setAccessible(true);
         gslbRuleId.set(assignCmd, new Long(1));
 
-        GlobalLoadBalancerRuleVO gslbRule = new  GlobalLoadBalancerRuleVO("test-gslb-rule", "test-gslb-rule",
-                "test-domain", "roundrobin", "sourceip", "tcp", 1, 3, 1, GlobalLoadBalancerRule.State.Active);
+        GlobalLoadBalancerRuleVO gslbRule =
+            new GlobalLoadBalancerRuleVO("test-gslb-rule", "test-gslb-rule", "test-domain", "roundrobin", "sourceip", "tcp", 1, 3, 1, GlobalLoadBalancerRule.State.Active);
         when(gslbServiceImpl._gslbRuleDao.findById(new Long(1))).thenReturn(gslbRule);
 
         LoadBalancerVO lbRule1 = new LoadBalancerVO();
@@ -657,7 +651,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         TransactionLegacy txn = TransactionLegacy.open("runAssignToGlobalLoadBalancerRuleTestRevokedState");
 
-        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
+        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl = new GlobalLoadBalancingRulesServiceImpl();
 
         gslbServiceImpl._accountMgr = Mockito.mock(AccountManager.class);
         gslbServiceImpl._gslbRuleDao = Mockito.mock(GlobalLoadBalancerRuleDao.class);
@@ -673,15 +667,15 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         AssignToGlobalLoadBalancerRuleCmd assignCmd = new AssignToGlobalLoadBalancerRuleCmdExtn();
         Class<?> _class = assignCmd.getClass().getSuperclass();
 
-        Account account = new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         Field gslbRuleId = _class.getDeclaredField("id");
         gslbRuleId.setAccessible(true);
         gslbRuleId.set(assignCmd, new Long(1));
 
-        GlobalLoadBalancerRuleVO gslbRule = new  GlobalLoadBalancerRuleVO("test-gslb-rule", "test-gslb-rule",
-                "test-domain", "roundrobin", "sourceip", "tcp", 1, 1, 1, GlobalLoadBalancerRule.State.Revoke);
+        GlobalLoadBalancerRuleVO gslbRule =
+            new GlobalLoadBalancerRuleVO("test-gslb-rule", "test-gslb-rule", "test-domain", "roundrobin", "sourceip", "tcp", 1, 1, 1, GlobalLoadBalancerRule.State.Revoke);
         when(gslbServiceImpl._gslbRuleDao.findById(new Long(1))).thenReturn(gslbRule);
 
         LoadBalancerVO lbRule = new LoadBalancerVO();
@@ -714,7 +708,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         TransactionLegacy txn = TransactionLegacy.open("runRemoveFromGlobalLoadBalancerRuleTest");
 
-        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
+        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl = new GlobalLoadBalancingRulesServiceImpl();
 
         gslbServiceImpl._accountMgr = Mockito.mock(AccountManager.class);
         gslbServiceImpl._gslbRuleDao = Mockito.mock(GlobalLoadBalancerRuleDao.class);
@@ -731,15 +725,15 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         RemoveFromGlobalLoadBalancerRuleCmd removeFromGslbCmd = new RemoveFromGlobalLoadBalancerRuleCmdExtn();
         Class<?> _class = removeFromGslbCmd.getClass().getSuperclass();
 
-        Account account = new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         Field gslbRuleId = _class.getDeclaredField("id");
         gslbRuleId.setAccessible(true);
         gslbRuleId.set(removeFromGslbCmd, new Long(1));
 
-        GlobalLoadBalancerRuleVO gslbRule = new  GlobalLoadBalancerRuleVO("test-gslb-rule", "test-gslb-rule",
-                "test-domain", "roundrobin", "sourceip", "tcp", 1, 1, 1, GlobalLoadBalancerRule.State.Active);
+        GlobalLoadBalancerRuleVO gslbRule =
+            new GlobalLoadBalancerRuleVO("test-gslb-rule", "test-gslb-rule", "test-domain", "roundrobin", "sourceip", "tcp", 1, 1, 1, GlobalLoadBalancerRule.State.Active);
         when(gslbServiceImpl._gslbRuleDao.findById(new Long(1))).thenReturn(gslbRule);
 
         LoadBalancerVO lbRule = new LoadBalancerVO();
@@ -771,13 +765,13 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         when(gslbServiceImpl._networkDao.findById(new Long(1))).thenReturn(networkVo);
 
         GlobalLoadBalancerLbRuleMapVO gslbLbMap = new GlobalLoadBalancerLbRuleMapVO(1, 1, 1);
-        List<GlobalLoadBalancerLbRuleMapVO>  listSslbLbMap = new ArrayList<GlobalLoadBalancerLbRuleMapVO>();
+        List<GlobalLoadBalancerLbRuleMapVO> listSslbLbMap = new ArrayList<GlobalLoadBalancerLbRuleMapVO>();
         listSslbLbMap.add(gslbLbMap);
         when(gslbServiceImpl._gslbLbMapDao.listByGslbRuleId(new Long(1))).thenReturn(listSslbLbMap);
 
         when(gslbServiceImpl._gslbLbMapDao.findByGslbRuleIdAndLbRuleId(new Long(1), new Long(1))).thenReturn(gslbLbMap);
 
-        IPAddressVO ip = new IPAddressVO(new Ip("10.1.1.1"), 1, 1,1 ,true);
+        IPAddressVO ip = new IPAddressVO(new Ip("10.1.1.1"), 1, 1, 1, true);
         when(gslbServiceImpl._ipAddressDao.findById(new Long(1))).thenReturn(ip);
 
         gslbServiceImpl.removeFromGlobalLoadBalancerRule(removeFromGslbCmd);
@@ -787,7 +781,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         TransactionLegacy txn = TransactionLegacy.open("runRemoveFromGlobalLoadBalancerRuleTestUnassignedLb");
 
-        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
+        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl = new GlobalLoadBalancingRulesServiceImpl();
 
         gslbServiceImpl._accountMgr = Mockito.mock(AccountManager.class);
         gslbServiceImpl._gslbRuleDao = Mockito.mock(GlobalLoadBalancerRuleDao.class);
@@ -803,15 +797,15 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         RemoveFromGlobalLoadBalancerRuleCmd removeFromGslbCmd = new RemoveFromGlobalLoadBalancerRuleCmdExtn();
         Class<?> _class = removeFromGslbCmd.getClass().getSuperclass();
 
-        Account account = new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         Field gslbRuleId = _class.getDeclaredField("id");
         gslbRuleId.setAccessible(true);
         gslbRuleId.set(removeFromGslbCmd, new Long(1));
 
-        GlobalLoadBalancerRuleVO gslbRule = new  GlobalLoadBalancerRuleVO("test-gslb-rule", "test-gslb-rule",
-                "test-domain", "roundrobin", "sourceip", "tcp", 1, 1, 1, GlobalLoadBalancerRule.State.Active);
+        GlobalLoadBalancerRuleVO gslbRule =
+            new GlobalLoadBalancerRuleVO("test-gslb-rule", "test-gslb-rule", "test-domain", "roundrobin", "sourceip", "tcp", 1, 1, 1, GlobalLoadBalancerRule.State.Active);
         when(gslbServiceImpl._gslbRuleDao.findById(new Long(1))).thenReturn(gslbRule);
 
         LoadBalancerVO lbRule = new LoadBalancerVO();
@@ -848,7 +842,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         TransactionLegacy txn = TransactionLegacy.open("runRemoveFromGlobalLoadBalancerRuleTestInvalidLb");
 
-        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
+        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl = new GlobalLoadBalancingRulesServiceImpl();
 
         gslbServiceImpl._accountMgr = Mockito.mock(AccountManager.class);
         gslbServiceImpl._gslbRuleDao = Mockito.mock(GlobalLoadBalancerRuleDao.class);
@@ -864,15 +858,15 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         RemoveFromGlobalLoadBalancerRuleCmd removeFromGslbCmd = new RemoveFromGlobalLoadBalancerRuleCmdExtn();
         Class<?> _class = removeFromGslbCmd.getClass().getSuperclass();
 
-        Account account = new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         Field gslbRuleId = _class.getDeclaredField("id");
         gslbRuleId.setAccessible(true);
         gslbRuleId.set(removeFromGslbCmd, new Long(1));
 
-        GlobalLoadBalancerRuleVO gslbRule = new  GlobalLoadBalancerRuleVO("test-gslb-rule", "test-gslb-rule",
-                "test-domain", "roundrobin", "sourceip", "tcp", 1, 1, 1, GlobalLoadBalancerRule.State.Active);
+        GlobalLoadBalancerRuleVO gslbRule =
+            new GlobalLoadBalancerRuleVO("test-gslb-rule", "test-gslb-rule", "test-domain", "roundrobin", "sourceip", "tcp", 1, 1, 1, GlobalLoadBalancerRule.State.Active);
         when(gslbServiceImpl._gslbRuleDao.findById(new Long(1))).thenReturn(gslbRule);
 
         Field lbRules = _class.getDeclaredField("loadBalancerRulesIds");
@@ -892,7 +886,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         TransactionLegacy txn = TransactionLegacy.open("runDeleteGlobalLoadBalancerRuleTestWithNoLbRules");
 
-        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
+        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl = new GlobalLoadBalancingRulesServiceImpl();
 
         gslbServiceImpl._accountMgr = Mockito.mock(AccountManager.class);
         gslbServiceImpl._gslbRuleDao = Mockito.mock(GlobalLoadBalancerRuleDao.class);
@@ -908,21 +902,21 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         DeleteGlobalLoadBalancerRuleCmd deleteCmd = new DeleteGlobalLoadBalancerRuleCmdExtn();
         Class<?> _class = deleteCmd.getClass().getSuperclass();
 
-        Account account = new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         Field gslbRuleId = _class.getDeclaredField("id");
         gslbRuleId.setAccessible(true);
         gslbRuleId.set(deleteCmd, new Long(1));
 
-        GlobalLoadBalancerRuleVO gslbRule = new  GlobalLoadBalancerRuleVO("test-gslb-rule", "test-gslb-rule",
-                "test-domain", "roundrobin", "sourceip", "tcp", 1, 1, 1, GlobalLoadBalancerRule.State.Active);
+        GlobalLoadBalancerRuleVO gslbRule =
+            new GlobalLoadBalancerRuleVO("test-gslb-rule", "test-gslb-rule", "test-domain", "roundrobin", "sourceip", "tcp", 1, 1, 1, GlobalLoadBalancerRule.State.Active);
         when(gslbServiceImpl._gslbRuleDao.findById(new Long(1))).thenReturn(gslbRule);
 
         GlobalLoadBalancerLbRuleMapVO gslbLbMap = new GlobalLoadBalancerLbRuleMapVO();
         gslbLbMap.setGslbLoadBalancerId(1);
         gslbLbMap.setLoadBalancerId(1);
-        List<GlobalLoadBalancerLbRuleMapVO>  gslbLbMapList = new ArrayList<GlobalLoadBalancerLbRuleMapVO>();
+        List<GlobalLoadBalancerLbRuleMapVO> gslbLbMapList = new ArrayList<GlobalLoadBalancerLbRuleMapVO>();
         gslbLbMapList.add(gslbLbMap);
         when(gslbServiceImpl._gslbLbMapDao.listByGslbRuleId(new Long(1))).thenReturn(gslbLbMapList);
 
@@ -938,7 +932,7 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
 
         TransactionLegacy txn = TransactionLegacy.open("runDeleteGlobalLoadBalancerRuleTestWithLbRules");
 
-        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl =  new GlobalLoadBalancingRulesServiceImpl();
+        GlobalLoadBalancingRulesServiceImpl gslbServiceImpl = new GlobalLoadBalancingRulesServiceImpl();
 
         gslbServiceImpl._accountMgr = Mockito.mock(AccountManager.class);
         gslbServiceImpl._gslbRuleDao = Mockito.mock(GlobalLoadBalancerRuleDao.class);
@@ -954,19 +948,18 @@ public class GlobalLoadBalancingRulesServiceImplTest extends TestCase {
         DeleteGlobalLoadBalancerRuleCmd deleteCmd = new DeleteGlobalLoadBalancerRuleCmdExtn();
         Class<?> _class = deleteCmd.getClass().getSuperclass();
 
-        Account account = new AccountVO("testaccount", 1, "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(gslbServiceImpl._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         Field gslbRuleId = _class.getDeclaredField("id");
         gslbRuleId.setAccessible(true);
         gslbRuleId.set(deleteCmd, new Long(1));
 
-        GlobalLoadBalancerRuleVO gslbRule = new  GlobalLoadBalancerRuleVO("test-gslb-rule", "test-gslb-rule",
-                "test-domain", "roundrobin", "sourceip", "tcp", 1, 1, 1, GlobalLoadBalancerRule.State.Active);
+        GlobalLoadBalancerRuleVO gslbRule =
+            new GlobalLoadBalancerRuleVO("test-gslb-rule", "test-gslb-rule", "test-domain", "roundrobin", "sourceip", "tcp", 1, 1, 1, GlobalLoadBalancerRule.State.Active);
         when(gslbServiceImpl._gslbRuleDao.findById(new Long(1))).thenReturn(gslbRule);
 
-
-        GlobalLoadBalancerLbRuleMapVO gslbLmMap = new GlobalLoadBalancerLbRuleMapVO(1,1,1);
+        GlobalLoadBalancerLbRuleMapVO gslbLmMap = new GlobalLoadBalancerLbRuleMapVO(1, 1, 1);
         List<GlobalLoadBalancerLbRuleMapVO> gslbLbMapVos = new ArrayList<GlobalLoadBalancerLbRuleMapVO>();
         gslbLbMapVos.add(gslbLmMap);
         when(gslbServiceImpl._gslbLbMapDao.listByGslbRuleId(new Long(1))).thenReturn(gslbLbMapVos);

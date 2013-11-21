@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-
 public class ApiConstants {
     public static final String ACCOUNT = "account";
     public static final String ACCOUNTS = "accounts";
@@ -248,7 +247,7 @@ public class ApiConstants {
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";
     public static final String VLAN = "vlan";
     public static final String VLAN_RANGE = "vlanrange";
-    public static final String REMOVE_VLAN="removevlan";
+    public static final String REMOVE_VLAN = "removevlan";
     public static final String VLAN_ID = "vlanid";
     public static final String ISOLATED_PVLAN = "isolatedpvlan";
     public static final String VM_AVAILABLE = "vmavailable";

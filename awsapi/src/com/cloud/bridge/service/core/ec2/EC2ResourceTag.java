@@ -24,13 +24,13 @@ public class EC2ResourceTag {
     private String value;
 
     public EC2ResourceTag() {
-        resourceId		= null;
-        resourceType	= null;
-        key				= null;
-        value			= null;
+        resourceId = null;
+        resourceType = null;
+        key = null;
+        value = null;
     }
 
-    public void setResourceId( String resourceId ) {
+    public void setResourceId(String resourceId) {
         this.resourceId = resourceId;
     }
 
@@ -38,7 +38,7 @@ public class EC2ResourceTag {
         return this.resourceId;
     }
 
-    public void setResourceType( String resourceType ) {
+    public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
 
@@ -46,7 +46,7 @@ public class EC2ResourceTag {
         return this.resourceType;
     }
 
-    public void setKey( String key ) {
+    public void setKey(String key) {
         this.key = key;
     }
 
@@ -54,7 +54,7 @@ public class EC2ResourceTag {
         return this.key;
     }
 
-    public void setValue( String value ) {
+    public void setValue(String value) {
         this.value = value;
     }
 

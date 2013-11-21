@@ -88,7 +88,7 @@ import com.cloud.utils.net.NetUtils;
  *  GenericDaoBase is completely at the mercy of the annotations you add
  *  to your entity bean.  If GenericDaoBase does not fit your needs, then
  *  don't extend from it.
- * 
+ *
  *  GenericDaoBase attempts to achieve the following:
  *    1. If you use _allFieldsStr in your SQL statement and use to() to convert
  *       the result to the entity bean, you don't ever have to worry about
@@ -98,7 +98,7 @@ import com.cloud.utils.net.NetUtils;
  *       in all of your DAOs.
  *    3. You don't have to match the '?' (you know what I'm talking about) to
  *       the fields in the insert statement as that's taken care of for you.
- * 
+ *
  *  GenericDaoBase looks at the following annotations:
  *    1. Table - just name
  *    2. Column - just name
@@ -106,12 +106,12 @@ import com.cloud.utils.net.NetUtils;
  *    4. SequenceGenerator - sequence generator
  *    5. Id
  *    6. SecondaryTable
- * 
+ *
  *  Sometime later, I might look into injecting the SQLs as needed but right
  *  now we have to construct them at construction time.  The good thing is that
  *  the DAOs are suppose to be one per jvm so the time is all during the
  *  initial load.
- * 
+ *
  **/
 @DB
 public abstract class GenericDaoBase<T, ID extends Serializable> extends ComponentLifecycleBase implements GenericDao<T, ID>, ComponentMethodInterceptable {
@@ -168,7 +168,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @Override
-    @SuppressWarnings("unchecked") @DB()
+    @SuppressWarnings("unchecked")
+    @DB()
     public <J> GenericSearchBuilder<T, J> createSearchBuilder(Class<J> resultType) {
         return new GenericSearchBuilder<T, J>(_entityBeanType, resultType);
     }
@@ -177,7 +178,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     public Map<String, Attribute> getAllAttributes() {
         return _allAttributes;
     }
-    
 
     @SuppressWarnings("unchecked")
     public T createSearchEntity(MethodInterceptor interceptor) {
@@ -196,8 +196,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         } else if (((Class<?>)t).getGenericSuperclass() instanceof ParameterizedType) {
             _entityBeanType = (Class<T>)((ParameterizedType)((Class<?>)t).getGenericSuperclass()).getActualTypeArguments()[0];
         } else {
-            _entityBeanType = (Class<T>)((ParameterizedType)
-                    ( (Class<?>)((Class<?>)t).getGenericSuperclass()).getGenericSuperclass()).getActualTypeArguments()[0];
+            _entityBeanType = (Class<T>)((ParameterizedType)((Class<?>)((Class<?>)t).getGenericSuperclass()).getGenericSuperclass()).getActualTypeArguments()[0];
         }
 
         s_daoMaps.put(_entityBeanType, this);
@@ -207,7 +206,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 s_daoMaps.put(interphace, this);
             }
         }
-  
+
         _table = DbUtil.getTableName(_entityBeanType);
 
         final SqlGenerator generator = new SqlGenerator(_entityBeanType);
@@ -244,7 +243,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             _tgs.put(tg.name(), tg);
         }
 
-        Callback[] callbacks = new Callback[] { NoOp.INSTANCE, new UpdateBuilder(this) };
+        Callback[] callbacks = new Callback[] {NoOp.INSTANCE, new UpdateBuilder(this)};
 
         _enhancer = new Enhancer();
         _enhancer.setSuperclass(_entityBeanType);
@@ -278,11 +277,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 s_logger.trace(info.selectSql);
             }
         }
-        
+
         setRunLevel(ComponentLifecycle.RUN_LEVEL_SYSTEM);
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     @SuppressWarnings("unchecked")
     public T createForUpdate(final ID id) {
         final T entity = (T)_factory.newInstance(new Callback[] {NoOp.INSTANCE, new UpdateBuilder(this)});
@@ -296,12 +296,14 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return entity;
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public T createForUpdate() {
         return createForUpdate(null);
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public <K> K getNextInSequence(final Class<K> clazz, final String name) {
         final TableGenerator tg = _tgs.get(name);
         assert (tg != null) : "Couldn't find Table generator using " + name;
@@ -309,7 +311,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return s_seqFetcher.getNextSequence(clazz, tg);
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public <K> K getRandomlyIncreasingNextInSequence(final Class<K> clazz, final String name) {
         final TableGenerator tg = _tgs.get(name);
         assert (tg != null) : "Couldn't find Table generator using " + name;
@@ -317,12 +320,14 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return s_seqFetcher.getRandomNextSequence(clazz, tg);
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public List<T> lockRows(final SearchCriteria<T> sc, final Filter filter, final boolean exclusive) {
         return search(sc, filter, exclusive, false);
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public T lockOneRandomRow(final SearchCriteria<T> sc, final boolean exclusive) {
         final Filter filter = new Filter(1);
         final List<T> beans = search(sc, filter, exclusive, true);
@@ -353,12 +358,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @Override
     public List<T> searchIncludingRemoved(SearchCriteria<T> sc, final Filter filter, final Boolean lock, final boolean cache) {
-        return searchIncludingRemoved(sc, filter, lock, cache, false) ;
+        return searchIncludingRemoved(sc, filter, lock, cache, false);
     }
 
     @Override
-    public List<T> searchIncludingRemoved(SearchCriteria<T> sc, final Filter filter, final Boolean lock,
-            final boolean cache, final boolean enable_query_cache) {
+    public List<T> searchIncludingRemoved(SearchCriteria<T> sc, final Filter filter, final Boolean lock, final boolean cache, final boolean enable_query_cache) {
         String clause = sc != null ? sc.getWhereClause() : null;
         if (clause != null && clause.length() == 0) {
             clause = null;
@@ -424,7 +428,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
-    @Override @SuppressWarnings("unchecked")
+    @Override
+    @SuppressWarnings("unchecked")
     public <M> List<M> customSearchIncludingRemoved(SearchCriteria<M> sc, final Filter filter) {
         if (sc.isSelectAll()) {
             return (List<M>)searchIncludingRemoved((SearchCriteria<T>)sc, filter, null, false);
@@ -499,7 +504,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public <M> List<M> customSearch(SearchCriteria<M> sc, final Filter filter) {
         if (_removed != null) {
             sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
@@ -514,19 +520,19 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             final Class<?> type = field.getType();
             if (type == String.class) {
                 byte[] bytes = rs.getBytes(index);
-                if(bytes != null) {
+                if (bytes != null) {
                     try {
                         Encrypt encrypt = field.getAnnotation(Encrypt.class);
-                        if (encrypt != null && encrypt.encrypt()){
+                        if (encrypt != null && encrypt.encrypt()) {
                             field.set(entity, DBEncryptionUtil.decrypt(new String(bytes, "UTF-8")));
                         } else {
                             field.set(entity, new String(bytes, "UTF-8"));
                         }
                     } catch (IllegalArgumentException e) {
-                        assert(false);
+                        assert (false);
                         throw new CloudRuntimeException("IllegalArgumentException when converting UTF-8 data");
                     } catch (UnsupportedEncodingException e) {
-                        assert(false);
+                        assert (false);
                         throw new CloudRuntimeException("UnsupportedEncodingException when converting UTF-8 data");
                     }
                 } else {
@@ -544,10 +550,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                 final Enumerated enumerated = field.getAnnotation(Enumerated.class);
                 final EnumType enumType = (enumerated == null) ? EnumType.STRING : enumerated.value();
 
-                final Enum<?>[] enums =  (Enum<?>[])field.getType().getEnumConstants();
+                final Enum<?>[] enums = (Enum<?>[])field.getType().getEnumConstants();
                 for (final Enum<?> e : enums) {
                     if ((enumType == EnumType.STRING && e.name().equalsIgnoreCase(rs.getString(index))) ||
-                            (enumType == EnumType.ORDINAL && e.ordinal() == rs.getInt(index))) {
+                        (enumType == EnumType.ORDINAL && e.ordinal() == rs.getInt(index))) {
                         field.set(entity, e);
                         return;
                     }
@@ -652,11 +658,12 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
-    @DB() @SuppressWarnings("unchecked")
+    @DB()
+    @SuppressWarnings("unchecked")
     protected <M> M getObject(Class<M> type, ResultSet rs, int index) throws SQLException {
         if (type == String.class) {
             byte[] bytes = rs.getBytes(index);
-            if(bytes != null) {
+            if (bytes != null) {
                 try {
                     return (M)new String(bytes, "UTF-8");
                 } catch (UnsupportedEncodingException e) {
@@ -797,7 +804,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
             sql = ub.toSql(_tables);
             if (sql == null) {
-                return  0;
+                return 0;
             }
 
             sql.append(searchClause);
@@ -916,7 +923,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return listIncludingRemovedBy(sc, null);
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     @SuppressWarnings("unchecked")
     public T findById(final ID id) {
         if (_cache != null) {
@@ -927,28 +935,32 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public T findByUuid(final String uuid) {
         SearchCriteria<T> sc = createSearchCriteria();
         sc.addAnd("uuid", SearchCriteria.Op.EQ, uuid);
         return findOneBy(sc);
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public T findByUuidIncludingRemoved(final String uuid) {
         SearchCriteria<T> sc = createSearchCriteria();
         sc.addAnd("uuid", SearchCriteria.Op.EQ, uuid);
         return findOneIncludingRemovedBy(sc);
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public T findByIdIncludingRemoved(ID id) {
         return findById(id, true, null);
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public T findById(final ID id, boolean fresh) {
-        if(!fresh) {
+        if (!fresh) {
             return findById(id);
         }
 
@@ -958,7 +970,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return lockRow(id, null);
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public T lockRow(ID id, Boolean lock) {
         return findById(id, false, lock);
     }
@@ -987,7 +1000,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public T acquireInLockTable(ID id) {
         return acquireInLockTable(id, _timeoutSeconds);
     }
@@ -996,7 +1010,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     public T acquireInLockTable(final ID id, int seconds) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         T t = null;
-        boolean locked  = false;
+        boolean locked = false;
         try {
             if (!txn.lock(_table + id.toString(), seconds)) {
                 return null;
@@ -1018,7 +1032,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return txn.release(_table + id);
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public boolean lockInLockTable(final String id) {
         return lockInLockTable(id, _timeoutSeconds);
     }
@@ -1035,7 +1050,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return txn.release(_table + id);
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public List<T> listAllIncludingRemoved() {
         return listAllIncludingRemoved(null);
     }
@@ -1067,7 +1083,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public List<T> listAllIncludingRemoved(final Filter filter) {
         final StringBuilder sql = createPartialSelectSql(null, false);
         addFilter(sql, filter);
@@ -1098,12 +1115,14 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public List<T> listAll() {
         return listAll(null);
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public List<T> listAll(final Filter filter) {
         if (_removed == null) {
             return listAllIncludingRemoved(filter);
@@ -1204,7 +1223,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return sql;
     }
 
-
     @DB()
     protected void addJoins(StringBuilder str, Collection<JoinBuilder<SearchCriteria<?>>> joins) {
         int fromIndex = str.lastIndexOf("WHERE");
@@ -1217,10 +1235,19 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         for (JoinBuilder<SearchCriteria<?>> join : joins) {
             StringBuilder onClause = new StringBuilder();
-            onClause.append(" ").append(join.getType().getName()).append(" ").append(join.getSecondAttribute().table)
-            .append(" ON ").append(join.getFirstAttribute().table).append(".").append(join.getFirstAttribute().columnName)
-            .append("=").append(join.getSecondAttribute().table).append(".").append(join.getSecondAttribute().columnName)
-            .append(" ");
+            onClause.append(" ")
+                .append(join.getType().getName())
+                .append(" ")
+                .append(join.getSecondAttribute().table)
+                .append(" ON ")
+                .append(join.getFirstAttribute().table)
+                .append(".")
+                .append(join.getFirstAttribute().columnName)
+                .append("=")
+                .append(join.getSecondAttribute().table)
+                .append(".")
+                .append(join.getSecondAttribute().columnName)
+                .append(" ");
             str.insert(fromIndex, onClause);
             String whereClause = join.getT().getWhereClause();
             if ((whereClause != null) && !"".equals(whereClause)) {
@@ -1238,24 +1265,28 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public List<T> search(final SearchCriteria<T> sc, final Filter filter) {
         return search(sc, filter, null, false);
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public Pair<List<T>, Integer> searchAndCount(final SearchCriteria<T> sc, final Filter filter) {
         List<T> objects = search(sc, filter, null, false);
         Integer count = getCount(sc);
         return new Pair<List<T>, Integer>(objects, count);
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public List<T> search(final SearchCriteria<T> sc, final Filter filter, final boolean enable_query_cache) {
         return search(sc, filter, null, false, enable_query_cache);
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public boolean update(ID id, T entity) {
         assert Enhancer.isEnhanced(entity.getClass()) : "Entity is not generated by this dao";
 
@@ -1435,26 +1466,26 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             // to support generic localization, utilize MySql UTF-8 support
             if (length < str.length()) {
                 try {
-                    if (attr.is(Attribute.Flag.Encrypted)){
+                    if (attr.is(Attribute.Flag.Encrypted)) {
                         pstmt.setBytes(j, DBEncryptionUtil.encrypt(str.substring(0, column.length())).getBytes("UTF-8"));
                     } else {
                         pstmt.setBytes(j, str.substring(0, column.length()).getBytes("UTF-8"));
                     }
                 } catch (UnsupportedEncodingException e) {
                     // no-way it can't support UTF-8 encoding
-                    assert(false);
+                    assert (false);
                     throw new CloudRuntimeException("UnsupportedEncodingException when saving string as UTF-8 data");
                 }
             } else {
                 try {
-                    if (attr.is(Attribute.Flag.Encrypted)){
+                    if (attr.is(Attribute.Flag.Encrypted)) {
                         pstmt.setBytes(j, DBEncryptionUtil.encrypt(str).getBytes("UTF-8"));
                     } else {
                         pstmt.setBytes(j, str.getBytes("UTF-8"));
                     }
                 } catch (UnsupportedEncodingException e) {
                     // no-way it can't support UTF-8 encoding
-                    assert(false);
+                    assert (false);
                     throw new CloudRuntimeException("UnsupportedEncodingException when saving string as UTF-8 data");
                 }
             }
@@ -1488,7 +1519,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             final Enumerated enumerated = attr.field.getAnnotation(Enumerated.class);
             final EnumType type = (enumerated == null) ? EnumType.STRING : enumerated.value();
             if (type == EnumType.STRING) {
-                pstmt.setString(j, value == null ? null :  value.toString());
+                pstmt.setString(j, value == null ? null : value.toString());
             } else if (type == EnumType.ORDINAL) {
                 if (value == null) {
                     pstmt.setObject(j, null);
@@ -1536,7 +1567,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return j;
     }
 
-    @SuppressWarnings("unchecked") @DB()
+    @SuppressWarnings("unchecked")
+    @DB()
     protected T toEntityBean(final ResultSet result, final boolean cache) throws SQLException {
         final T entity = (T)_factory.newInstance(new Callback[] {NoOp.INSTANCE, new UpdateBuilder(this)});
 
@@ -1588,7 +1620,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @DB()
     @SuppressWarnings("unchecked")
-    protected void loadCollection(T entity, Attribute attr)  {
+    protected void loadCollection(T entity, Attribute attr) {
         EcInfo ec = (EcInfo)attr.attache;
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
@@ -1691,10 +1723,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     @DB()
     protected void setField(final Object entity, final ResultSet rs, ResultSetMetaData meta, final int index) throws SQLException {
         Attribute attr = _allColumns.get(new Pair<String, String>(meta.getTableName(index), meta.getColumnName(index)));
-        if ( attr == null ){
+        if (attr == null) {
             // work around for mysql bug to return original table name instead of view name in db view case
             Table tbl = entity.getClass().getSuperclass().getAnnotation(Table.class);
-            if ( tbl != null ){
+            if (tbl != null) {
                 attr = _allColumns.get(new Pair<String, String>(tbl.name(), meta.getColumnLabel(index)));
             }
         }
@@ -1745,6 +1777,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     protected Cache _cache;
+
     @DB()
     protected void createCache(final Map<String, ? extends Object> params) {
         final String value = (String)params.get("cache.size");
@@ -1762,7 +1795,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _name = name;
 
@@ -1781,16 +1815,18 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     @DB()
     public static <T> UpdateBuilder getUpdateBuilder(final T entityObject) {
         final Factory factory = (Factory)entityObject;
-        assert(factory != null);
+        assert (factory != null);
         return (UpdateBuilder)factory.getCallback(1);
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public SearchBuilder<T> createSearchBuilder() {
         return new SearchBuilder<T>(_entityBeanType);
     }
 
-    @Override @DB()
+    @Override
+    @DB()
     public SearchCriteria<T> createSearchCriteria() {
         SearchBuilder<T> builder = createSearchBuilder();
         return builder.create();
@@ -1864,7 +1900,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         return sql;
     }
-    
+
     @DB()
     protected Pair<List<T>, Integer> listAndCountIncludingRemovedBy(final SearchCriteria<T> sc, final Filter filter) {
         List<T> objects = searchIncludingRemoved(sc, filter, null, false);

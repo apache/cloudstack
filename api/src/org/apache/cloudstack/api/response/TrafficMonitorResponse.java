@@ -16,66 +16,72 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 public class TrafficMonitorResponse extends BaseResponse {
 
-    @SerializedName(ApiConstants.ID) @Param(description="the ID of the external firewall")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the ID of the external firewall")
     private String id;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the zone ID of the external firewall")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "the zone ID of the external firewall")
     private String zoneId;
 
-    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the management IP address of the external firewall")
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "the management IP address of the external firewall")
     private String ipAddress;
 
-    @SerializedName(ApiConstants.NUM_RETRIES) @Param(description="the number of times to retry requests to the external firewall")
+    @SerializedName(ApiConstants.NUM_RETRIES)
+    @Param(description = "the number of times to retry requests to the external firewall")
     private String numRetries;
 
-    @SerializedName(ApiConstants.TIMEOUT) @Param(description="the timeout (in seconds) for requests to the external firewall")
+    @SerializedName(ApiConstants.TIMEOUT)
+    @Param(description = "the timeout (in seconds) for requests to the external firewall")
     private String timeout;
 
     public String getId() {
-    	return id;
+        return id;
     }
 
     public void setId(String id) {
-    	this.id = id;
+        this.id = id;
     }
 
     public String getZoneId() {
-    	return zoneId;
+        return zoneId;
     }
 
     public void setZoneId(String zoneId) {
-    	this.zoneId = zoneId;
+        this.zoneId = zoneId;
     }
 
     public String getIpAddress() {
-    	return ipAddress;
+        return ipAddress;
     }
 
     public void setIpAddress(String ipAddress) {
-    	this.ipAddress = ipAddress;
+        this.ipAddress = ipAddress;
     }
 
     public String getNumRetries() {
-    	return numRetries;
+        return numRetries;
     }
 
     public void setNumRetries(String numRetries) {
-    	this.numRetries = numRetries;
+        this.numRetries = numRetries;
     }
 
     public String getTimeout() {
-    	return timeout;
+        return timeout;
     }
 
     public void setTimeout(String timeout) {
-    	this.timeout = timeout;
+        this.timeout = timeout;
     }
 }

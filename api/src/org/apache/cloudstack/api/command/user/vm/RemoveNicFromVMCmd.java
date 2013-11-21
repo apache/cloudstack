@@ -21,22 +21,22 @@ import java.util.EnumSet;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.*;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NicResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "removeNicFromVirtualMachine", description="Removes VM from specified network by deleting a NIC", responseObject=UserVmResponse.class)
-
+@APICommand(name = "removeNicFromVirtualMachine", description = "Removes VM from specified network by deleting a NIC", responseObject = UserVmResponse.class)
 public class RemoveNicFromVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveNicFromVMCmd.class);
     private static final String s_name = "removenicfromvirtualmachineresponse";
@@ -45,12 +45,10 @@ public class RemoveNicFromVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="Virtual Machine ID")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "Virtual Machine ID")
     private Long vmId;
 
-    @Parameter(name=ApiConstants.NIC_ID, type=CommandType.UUID, entityType=NicResponse.class,
-            required=true, description="NIC ID")
+    @Parameter(name = ApiConstants.NIC_ID, type = CommandType.UUID, entityType = NicResponse.class, required = true, description = "NIC ID")
     private Long nicId;
 
     /////////////////////////////////////////////////////
@@ -60,7 +58,7 @@ public class RemoveNicFromVMCmd extends BaseAsyncCmd {
     public Long getVmId() {
         return vmId;
     }
-    
+
     public Long getNicId() {
         return nicId;
     }
@@ -73,7 +71,7 @@ public class RemoveNicFromVMCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
         return "virtualmachine";
     }
@@ -85,27 +83,26 @@ public class RemoveNicFromVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Removing NIC " + getNicId() + " from user vm: " + getVmId();
+        return "Removing NIC " + getNicId() + " from user vm: " + getVmId();
     }
-    
-    
+
     @Override
     public long getEntityOwnerId() {
         UserVm vm = _responseGenerator.findUserVmById(getVmId());
         if (vm == null) {
-             return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
+            return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
         }
         return vm.getAccountId();
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Vm Id: "+getVmId() + " Nic Id: " + getNicId());
+    public void execute() {
+        CallContext.current().setEventDetails("Vm Id: " + getVmId() + " Nic Id: " + getNicId());
         UserVm result = _userVmService.removeNicFromVirtualMachine(this);
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("nics"));
         EnumSet<VMDetails> details = EnumSet.copyOf(dc);
-        if (result != null){
+        if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", details, result).get(0);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);

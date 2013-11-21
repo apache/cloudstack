@@ -21,87 +21,87 @@ import org.apache.cloudstack.jobs.JobInfo;
 import com.cloud.api.ApiSerializerHelper;
 
 public class AsyncJobResult {
-	
-	private long jobId;
-    private JobInfo.Status jobStatus;
-	private int processStatus;
-	private int resultCode;
-	private String result;
-	private String uuid;
 
-	public AsyncJobResult(long jobId) {
-		this.jobId = jobId;
-		jobStatus = JobInfo.Status.IN_PROGRESS;
-		processStatus = 0;
-		resultCode = 0;
-		result = "";
-	}
-	
-	public long getJobId() {
-		return jobId;
-	}
-	
-	public void setJobId(long jobId) {
-		this.jobId = jobId;
-	}
-	
-	public String getUuid() {
-		return uuid;
-	}
-	
-	public void setUuid(String uuid) {
-		this.uuid = uuid;
-	}
-	
+    private long jobId;
+    private JobInfo.Status jobStatus;
+    private int processStatus;
+    private int resultCode;
+    private String result;
+    private String uuid;
+
+    public AsyncJobResult(long jobId) {
+        this.jobId = jobId;
+        jobStatus = JobInfo.Status.IN_PROGRESS;
+        processStatus = 0;
+        resultCode = 0;
+        result = "";
+    }
+
+    public long getJobId() {
+        return jobId;
+    }
+
+    public void setJobId(long jobId) {
+        this.jobId = jobId;
+    }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
     public JobInfo.Status getJobStatus() {
-		return jobStatus;
-	}
-	
+        return jobStatus;
+    }
+
     public void setJobStatus(JobInfo.Status jobStatus) {
-		this.jobStatus = jobStatus;
-	}
-	
-	public int getProcessStatus() {
-		return processStatus;
-	}
-	
-	public void setProcessStatus(int processStatus) {
-		this.processStatus = processStatus;
-	}
-	
-	public int getResultCode() {
-		return resultCode;
-	}
-	
-	public void setResultCode(int resultCode) {
-		this.resultCode = resultCode;
-	}
-	
-	public String getResult() {
-		return result;
-	}
-	
-	public void setResult(String result) {
-		this.result = result;
-	}
-	
-	public Object getResultObject() {
-		return ApiSerializerHelper.fromSerializedString(result);
-	}
-	
-	public void setResultObject(Object result) {
-		this.result = ApiSerializerHelper.toSerializedString(result);
-	}
-	
-	@Override
+        this.jobStatus = jobStatus;
+    }
+
+    public int getProcessStatus() {
+        return processStatus;
+    }
+
+    public void setProcessStatus(int processStatus) {
+        this.processStatus = processStatus;
+    }
+
+    public int getResultCode() {
+        return resultCode;
+    }
+
+    public void setResultCode(int resultCode) {
+        this.resultCode = resultCode;
+    }
+
+    public String getResult() {
+        return result;
+    }
+
+    public void setResult(String result) {
+        this.result = result;
+    }
+
+    public Object getResultObject() {
+        return ApiSerializerHelper.fromSerializedString(result);
+    }
+
+    public void setResultObject(Object result) {
+        this.result = ApiSerializerHelper.toSerializedString(result);
+    }
+
+    @Override
     public String toString() {
-		StringBuffer sb = new StringBuffer();
-		sb.append("AsyncJobResult {jobId:").append(getJobId());
+        StringBuffer sb = new StringBuffer();
+        sb.append("AsyncJobResult {jobId:").append(getJobId());
         sb.append(", jobStatus: ").append(getJobStatus().ordinal());
-		sb.append(", processStatus: ").append(getProcessStatus());
-		sb.append(", resultCode: ").append(getResultCode());
-		sb.append(", result: ").append(result);
-		sb.append("}");
-		return sb.toString();
-	}
+        sb.append(", processStatus: ").append(getProcessStatus());
+        sb.append(", resultCode: ").append(getResultCode());
+        sb.append(", result: ").append(result);
+        sb.append("}");
+        return sb.toString();
+    }
 }

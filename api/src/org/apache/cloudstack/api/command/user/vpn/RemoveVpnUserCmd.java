@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -27,12 +29,10 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "removeVpnUser", description="Removes vpn user", responseObject=SuccessResponse.class)
+@APICommand(name = "removeVpnUser", description = "Removes vpn user", responseObject = SuccessResponse.class)
 public class RemoveVpnUserCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveVpnUserCmd.class.getName());
 
@@ -41,24 +41,24 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=true, description="username for the vpn user")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "username for the vpn user")
     private String userName;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the vpn user. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the vpn user. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType=ProjectResponse.class,
-            description="remove vpn user from the project")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "remove vpn user from the project")
     private Long projectId;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            description="an optional domainId for the vpn user. If the account parameter is used, domainId must also be used.")
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               entityType = DomainResponse.class,
+               description = "an optional domainId for the vpn user. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public String getAccountName() {
         return accountName;
@@ -75,7 +75,6 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
     public Long getProjecId() {
         return projectId;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -107,7 +106,7 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Account owner = _accountService.getAccount(getEntityOwnerId());
         boolean result = _ravService.removeVpnUser(owner.getId(), userName, CallContext.current().getCallingAccount());
         if (!result) {

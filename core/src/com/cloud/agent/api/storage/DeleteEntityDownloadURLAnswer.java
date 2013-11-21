@@ -18,7 +18,7 @@ package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Answer;
 
-public class DeleteEntityDownloadURLAnswer  extends Answer{
+public class DeleteEntityDownloadURLAnswer extends Answer {
 
     String resultString;
     short resultCode;
@@ -31,7 +31,7 @@ public class DeleteEntityDownloadURLAnswer  extends Answer{
         this.resultCode = resultCode;
     }
 
-    public DeleteEntityDownloadURLAnswer(){
+    public DeleteEntityDownloadURLAnswer() {
     }
 
 }

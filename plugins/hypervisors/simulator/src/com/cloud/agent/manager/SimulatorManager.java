@@ -28,23 +28,23 @@ import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachine.State;
 
 public interface SimulatorManager extends Manager {
-	public static final String Name = "simulator manager";
+    public static final String Name = "simulator manager";
 
-	public enum AgentType {
-		Computing(0), // not used anymore
-		Routing(1),
-		Storage(2);
+    public enum AgentType {
+        Computing(0), // not used anymore
+        Routing(1),
+        Storage(2);
 
-		int value;
+        int value;
 
-		AgentType(int value) {
-			this.value = value;
-		}
+        AgentType(int value) {
+            this.value = value;
+        }
 
-		public int value() {
-			return value;
-		}
-	}
+        public int value() {
+            return value;
+        }
+    }
 
     MockVmManager getVmMgr();
 
@@ -53,12 +53,14 @@ public interface SimulatorManager extends Manager {
     MockAgentManager getAgentMgr();
 
     Answer simulate(Command cmd, String hostGuid);
+
     StoragePoolInfo getLocalStorage(String hostGuid);
 
     boolean configureSimulator(Long zoneId, Long podId, Long clusterId, Long hostId, String command, String values);
+
     public HashMap<String, Pair<Long, Long>> syncNetworkGroups(String hostGuid);
 
     Map<String, State> getVmStates(String hostGuid);
 
-	Map<String, MockVMVO> getVms(String hostGuid);
+    Map<String, MockVMVO> getVms(String hostGuid);
 }

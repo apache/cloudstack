@@ -38,16 +38,16 @@ import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
-import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupBigSwitchVnsCommand;
+import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.UpdateVnsPortAnswer;
 import com.cloud.agent.api.UpdateVnsPortCommand;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
+import com.cloud.network.bigswitch.AttachmentData;
 import com.cloud.network.bigswitch.BigSwitchVnsApi;
 import com.cloud.network.bigswitch.BigSwitchVnsApiException;
 import com.cloud.network.bigswitch.ControlClusterStatus;
-import com.cloud.network.bigswitch.AttachmentData;
 import com.cloud.network.bigswitch.NetworkData;
 import com.cloud.network.bigswitch.PortData;
 import com.cloud.resource.ServerResource;
@@ -68,10 +68,9 @@ public class BigSwitchVnsResource extends ManagerBase implements ServerResource 
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params)
-            throws ConfigurationException {
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 
-        _name = (String) params.get("name");
+        _name = (String)params.get("name");
         if (_name == null) {
             throw new ConfigurationException("Unable to find name");
         }
@@ -81,14 +80,14 @@ public class BigSwitchVnsResource extends ManagerBase implements ServerResource 
             throw new ConfigurationException("Unable to find the guid");
         }
 
-        _zoneId = (String) params.get("zoneId");
+        _zoneId = (String)params.get("zoneId");
         if (_zoneId == null) {
             throw new ConfigurationException("Unable to find zone");
         }
 
         _numRetries = 2;
 
-        String ip = (String) params.get("ip");
+        String ip = (String)params.get("ip");
         if (ip == null) {
             throw new ConfigurationException("Unable to find IP");
         }
@@ -130,11 +129,11 @@ public class BigSwitchVnsResource extends ManagerBase implements ServerResource 
         sc.setPrivateIpAddress("");
         sc.setStorageIpAddress("");
         sc.setVersion("");
-        return new StartupCommand[] { sc };
+        return new StartupCommand[] {sc};
     }
 
-        @Override
-        public PingCommand getCurrentStatus(long id) {
+    @Override
+    public PingCommand getCurrentStatus(long id) {
         try {
             ControlClusterStatus ccs = _bigswitchVnsApi.getControlClusterStatus();
             if (!ccs.getStatus()) {
@@ -142,11 +141,11 @@ public class BigSwitchVnsResource extends ManagerBase implements ServerResource 
                 return null;
             }
         } catch (BigSwitchVnsApiException e) {
-                s_logger.error("getControlClusterStatus failed", e);
-                return null;
+            s_logger.error("getControlClusterStatus failed", e);
+            return null;
         }
         return new PingCommand(Host.Type.L2Networking, id);
-        }
+    }
 
     @Override
     public Answer executeRequest(Command cmd) {
@@ -155,25 +154,19 @@ public class BigSwitchVnsResource extends ManagerBase implements ServerResource 
 
     public Answer executeRequest(Command cmd, int numRetries) {
         if (cmd instanceof ReadyCommand) {
-            return executeRequest((ReadyCommand) cmd);
-        }
-        else if (cmd instanceof MaintainCommand) {
+            return executeRequest((ReadyCommand)cmd);
+        } else if (cmd instanceof MaintainCommand) {
             return executeRequest((MaintainCommand)cmd);
-        }
-        else if (cmd instanceof CreateVnsNetworkCommand) {
+        } else if (cmd instanceof CreateVnsNetworkCommand) {
             return executeRequest((CreateVnsNetworkCommand)cmd, numRetries);
-        }
-        else if (cmd instanceof DeleteVnsNetworkCommand) {
-            return executeRequest((DeleteVnsNetworkCommand) cmd, numRetries);
-        }
-        else if (cmd instanceof CreateVnsPortCommand) {
-            return executeRequest((CreateVnsPortCommand) cmd, numRetries);
-        }
-        else if (cmd instanceof DeleteVnsPortCommand) {
-            return executeRequest((DeleteVnsPortCommand) cmd, numRetries);
-        }
-        else if (cmd instanceof UpdateVnsPortCommand) {
-                return executeRequest((UpdateVnsPortCommand) cmd, numRetries);
+        } else if (cmd instanceof DeleteVnsNetworkCommand) {
+            return executeRequest((DeleteVnsNetworkCommand)cmd, numRetries);
+        } else if (cmd instanceof CreateVnsPortCommand) {
+            return executeRequest((CreateVnsPortCommand)cmd, numRetries);
+        } else if (cmd instanceof DeleteVnsPortCommand) {
+            return executeRequest((DeleteVnsPortCommand)cmd, numRetries);
+        } else if (cmd instanceof UpdateVnsPortCommand) {
+            return executeRequest((UpdateVnsPortCommand)cmd, numRetries);
         }
         s_logger.debug("Received unsupported command " + cmd.toString());
         return Answer.createUnsupportedCommandAnswer(cmd);
@@ -203,12 +196,11 @@ public class BigSwitchVnsResource extends ManagerBase implements ServerResource 
             _bigswitchVnsApi.createNetwork(network);
             return new CreateVnsNetworkAnswer(cmd, true, "VNS " + network.getNetwork().getUuid() + " created");
         } catch (BigSwitchVnsApiException e) {
-                if (numRetries > 0) {
-                        return retry(cmd, --numRetries);
-                }
-                else {
-                        return new CreateVnsNetworkAnswer(cmd, e);
-                }
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new CreateVnsNetworkAnswer(cmd, e);
+            }
         }
 
     }
@@ -218,12 +210,11 @@ public class BigSwitchVnsResource extends ManagerBase implements ServerResource 
             _bigswitchVnsApi.deleteNetwork(cmd.get_tenantUuid(), cmd.getNetworkUuid());
             return new DeleteVnsNetworkAnswer(cmd, true, "VNS " + cmd.getNetworkUuid() + " deleted");
         } catch (BigSwitchVnsApiException e) {
-                if (numRetries > 0) {
-                        return retry(cmd, --numRetries);
-                }
-                else {
-                        return new DeleteVnsNetworkAnswer(cmd, e);
-                }
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new DeleteVnsNetworkAnswer(cmd, e);
+            }
         }
     }
 
@@ -239,8 +230,7 @@ public class BigSwitchVnsResource extends ManagerBase implements ServerResource 
                 AttachmentData attachment = new AttachmentData();
                 attachment.getAttachment().setId(cmd.getPortUuid());
                 attachment.getAttachment().setMac(cmd.getMac());
-                _bigswitchVnsApi.modifyPortAttachment(cmd.getTenantUuid(),
-                                cmd.getNetworkUuid(), cmd.getPortUuid(), attachment);
+                _bigswitchVnsApi.modifyPortAttachment(cmd.getTenantUuid(), cmd.getNetworkUuid(), cmd.getPortUuid(), attachment);
 
             } catch (BigSwitchVnsApiException ex) {
                 s_logger.warn("modifyPortAttachment failed after switchport was created, removing switchport");
@@ -249,32 +239,30 @@ public class BigSwitchVnsResource extends ManagerBase implements ServerResource 
             }
             return new CreateVnsPortAnswer(cmd, true, "network port " + cmd.getPortUuid() + " created");
         } catch (BigSwitchVnsApiException e) {
-                if (numRetries > 0) {
-                        return retry(cmd, --numRetries);
-                }
-                else {
-                        return new CreateVnsPortAnswer(cmd, e);
-                }
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new CreateVnsPortAnswer(cmd, e);
+            }
         }
     }
 
     private Answer executeRequest(DeleteVnsPortCommand cmd, int numRetries) {
         try {
-                _bigswitchVnsApi.deletePortAttachment(cmd.getTenantUuid(), cmd.getNetworkUuid(), cmd.getPortUuid());
-                try {
-                        _bigswitchVnsApi.deletePort(cmd.getTenantUuid(), cmd.getNetworkUuid(), cmd.getPortUuid());
-                } catch (BigSwitchVnsApiException ex) {
+            _bigswitchVnsApi.deletePortAttachment(cmd.getTenantUuid(), cmd.getNetworkUuid(), cmd.getPortUuid());
+            try {
+                _bigswitchVnsApi.deletePort(cmd.getTenantUuid(), cmd.getNetworkUuid(), cmd.getPortUuid());
+            } catch (BigSwitchVnsApiException ex) {
                 s_logger.warn("deletePort failed after portAttachment was removed");
                 throw (ex); // Rethrow the original exception
             }
-                return new DeleteVnsPortAnswer(cmd, true, "network port " + cmd.getPortUuid() + " deleted");
+            return new DeleteVnsPortAnswer(cmd, true, "network port " + cmd.getPortUuid() + " deleted");
         } catch (BigSwitchVnsApiException e) {
-                if (numRetries > 0) {
-                        return retry(cmd, --numRetries);
-                }
-                else {
-                        return new DeleteVnsPortAnswer(cmd, e);
-                }
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new DeleteVnsPortAnswer(cmd, e);
+            }
         }
     }
 
@@ -288,12 +276,11 @@ public class BigSwitchVnsResource extends ManagerBase implements ServerResource 
             _bigswitchVnsApi.modifyPort(cmd.getNetworkUuid(), port);
             return new UpdateVnsPortAnswer(cmd, true, "Network Port  " + cmd.getPortUuid() + " updated");
         } catch (BigSwitchVnsApiException e) {
-                if (numRetries > 0) {
-                        return retry(cmd, --numRetries);
-                }
-                else {
-                        return new UpdateVnsPortAnswer(cmd, e);
-                }
+            if (numRetries > 0) {
+                return retry(cmd, --numRetries);
+            } else {
+                return new UpdateVnsPortAnswer(cmd, e);
+            }
         }
 
     }
@@ -313,10 +300,9 @@ public class BigSwitchVnsResource extends ManagerBase implements ServerResource 
 
     private String truncate(String string, int length) {
         if (string.length() <= length) {
-                return string;
-        }
-        else {
-                return string.substring(0, length);
+            return string;
+        } else {
+            return string.substring(0, length);
         }
     }
 

@@ -36,18 +36,17 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={UserStatisticsDao.class})
+@Local(value = {UserStatisticsDao.class})
 public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long> implements UserStatisticsDao {
     private static final Logger s_logger = Logger.getLogger(UserStatisticsDaoImpl.class);
-    private static final String ACTIVE_AND_RECENTLY_DELETED_SEARCH = "SELECT us.id, us.data_center_id, us.account_id, us.public_ip_address, us.device_id, us.device_type, us.network_id, us.agg_bytes_received, us.agg_bytes_sent " +
-                                                                     "FROM user_statistics us, account a " +
-                                                                     "WHERE us.account_id = a.id AND (a.removed IS NULL OR a.removed >= ?) " +
-                                                                     "ORDER BY us.id";
-    private static final String UPDATED_STATS_SEARCH = "SELECT id, current_bytes_received, current_bytes_sent, net_bytes_received, net_bytes_sent, agg_bytes_received, agg_bytes_sent from  user_statistics " +
-                                                                    "where (agg_bytes_received < net_bytes_received + current_bytes_received) OR (agg_bytes_sent < net_bytes_sent + current_bytes_sent)";
+    private static final String ACTIVE_AND_RECENTLY_DELETED_SEARCH =
+        "SELECT us.id, us.data_center_id, us.account_id, us.public_ip_address, us.device_id, us.device_type, us.network_id, us.agg_bytes_received, us.agg_bytes_sent "
+            + "FROM user_statistics us, account a " + "WHERE us.account_id = a.id AND (a.removed IS NULL OR a.removed >= ?) " + "ORDER BY us.id";
+    private static final String UPDATED_STATS_SEARCH =
+        "SELECT id, current_bytes_received, current_bytes_sent, net_bytes_received, net_bytes_sent, agg_bytes_received, agg_bytes_sent from  user_statistics "
+            + "where (agg_bytes_received < net_bytes_received + current_bytes_received) OR (agg_bytes_sent < net_bytes_sent + current_bytes_sent)";
     private final SearchBuilder<UserStatisticsVO> AllFieldsSearch;
     private final SearchBuilder<UserStatisticsVO> AccountSearch;
-
 
     public UserStatisticsDaoImpl() {
         AccountSearch = createSearchBuilder();
@@ -60,7 +59,7 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
         AllFieldsSearch.and("network", AllFieldsSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("ip", AllFieldsSearch.entity().getPublicIpAddress(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("device", AllFieldsSearch.entity().getDeviceId(), SearchCriteria.Op.EQ);
-        AllFieldsSearch.and("deviceType", AllFieldsSearch.entity().getDeviceType(), SearchCriteria.Op.EQ);        
+        AllFieldsSearch.and("deviceType", AllFieldsSearch.entity().getDeviceType(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
 
@@ -72,7 +71,7 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
         sc.setParameters("network", networkId);
         sc.setParameters("ip", publicIp);
         sc.setParameters("device", deviceId);
-        sc.setParameters("deviceType", deviceType);        
+        sc.setParameters("deviceType", deviceType);
         return findOneBy(sc);
     }
 
@@ -84,7 +83,7 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
         sc.setParameters("network", networkId);
         sc.setParameters("ip", publicIp);
         sc.setParameters("device", deviceId);
-        sc.setParameters("deviceType", deviceType);        
+        sc.setParameters("deviceType", deviceType);
         return lockOneRandomRow(sc, true);
     }
 
@@ -98,7 +97,8 @@ public class UserStatisticsDaoImpl extends GenericDaoBase<UserStatisticsVO, Long
     @Override
     public List<UserStatisticsVO> listActiveAndRecentlyDeleted(Date minRemovedDate, int startIndex, int limit) {
         List<UserStatisticsVO> userStats = new ArrayList<UserStatisticsVO>();
-        if (minRemovedDate == null) return userStats;
+        if (minRemovedDate == null)
+            return userStats;
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {

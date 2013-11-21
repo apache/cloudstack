@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.network.vpc;
 
-import com.cloud.utils.db.GenericDao;
-
 import java.util.List;
+
+import com.cloud.utils.db.GenericDao;
 
 /*
  * Data Access Object for network_acl_item table

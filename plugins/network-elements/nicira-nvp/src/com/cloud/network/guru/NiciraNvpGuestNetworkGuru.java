@@ -66,30 +66,32 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = NetworkGuru.class)
 public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
+    private static final int MAX_NAME_LENGTH = 40;
+
     private static final Logger s_logger = Logger.getLogger(NiciraNvpGuestNetworkGuru.class);
 
     @Inject
-    NetworkModel _networkModel;
+    protected NetworkModel networkModel;
     @Inject
-    NetworkDao _networkDao;
+    protected NetworkDao networkDao;
     @Inject
-    DataCenterDao _zoneDao;
+    protected DataCenterDao zoneDao;
     @Inject
-    PhysicalNetworkDao _physicalNetworkDao;
+    protected PhysicalNetworkDao physicalNetworkDao;
     @Inject
-    AccountDao _accountDao;
+    protected AccountDao accountDao;
     @Inject
-    NiciraNvpDao _niciraNvpDao;
+    protected NiciraNvpDao niciraNvpDao;
     @Inject
-    HostDao _hostDao;
+    protected HostDao hostDao;
     @Inject
-    ResourceManager _resourceMgr;
+    protected ResourceManager resourceMgr;
     @Inject
-    AgentManager _agentMgr;
+    protected AgentManager agentMgr;
     @Inject
-    HostDetailsDao _hostDetailsDao;
+    protected HostDetailsDao hostDetailsDao;
     @Inject
-    NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
+    protected NetworkOfferingServiceMapDao ntwkOfferingSrvcDao;
 
     public NiciraNvpGuestNetworkGuru() {
         super();
@@ -97,13 +99,10 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    protected boolean canHandle(NetworkOffering offering, final NetworkType networkType, final PhysicalNetwork physicalNetwork) {
+    protected boolean canHandle(final NetworkOffering offering, final NetworkType networkType, final PhysicalNetwork physicalNetwork) {
         // This guru handles only Guest Isolated network that supports Source nat service
-        if (networkType == NetworkType.Advanced
-                && isMyTrafficType(offering.getTrafficType())
-                && offering.getGuestType() == Network.GuestType.Isolated
-                && isMyIsolationMethod(physicalNetwork)
-                && _ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(offering.getId(), Service.Connectivity)) {
+        if (networkType == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && offering.getGuestType() == Network.GuestType.Isolated &&
+            isMyIsolationMethod(physicalNetwork) && ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(offering.getId(), Service.Connectivity)) {
             return true;
         } else {
             s_logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
@@ -112,17 +111,16 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan,
-            Network userSpecified, Account owner) {
+    public Network design(final NetworkOffering offering, final DeploymentPlan plan, final Network userSpecified, final Account owner) {
         // Check of the isolation type of the related physical network is STT
-        PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
+        PhysicalNetworkVO physnet = physicalNetworkDao.findById(plan.getPhysicalNetworkId());
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
         if (!canHandle(offering, dc.getNetworkType(), physnet)) {
             s_logger.debug("Refusing to design this network");
             return null;
         }
 
-        List<NiciraNvpDeviceVO> devices = _niciraNvpDao.listByPhysicalNetwork(physnet.getId());
+        List<NiciraNvpDeviceVO> devices = niciraNvpDao.listByPhysicalNetwork(physnet.getId());
         if (devices.isEmpty()) {
             s_logger.error("No NiciraNvp Controller on physical network " + physnet.getName());
             return null;
@@ -141,9 +139,8 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public Network implement(Network network, NetworkOffering offering,
-            DeployDestination dest, ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException {
+    public Network implement(final Network network, final NetworkOffering offering, final DeployDestination dest, final ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException {
         assert (network.getState() == State.Implementing) : "Why are we implementing " + network;
 
         long dcId = dest.getDataCenter().getId();
@@ -153,10 +150,11 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
 
         // physical network id can be null in Guest Network in Basic zone, so locate the physical network
         if (physicalNetworkId == null) {
-            physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
+            physicalNetworkId = networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
         }
 
-        NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
+        NetworkVO implemented =
+            new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
                 network.getDataCenterId(), physicalNetworkId);
 
         if (network.getGateway() != null) {
@@ -172,24 +170,24 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
         if (name == null || name.isEmpty()) {
             name = ((NetworkVO)network).getUuid();
         }
-        if (name.length() > 40) {
-            name = name.substring(0, 39); // max length 40
+        if (name.length() > MAX_NAME_LENGTH) {
+            name = name.substring(0, MAX_NAME_LENGTH - 1); // max length 40
         }
 
-        List<NiciraNvpDeviceVO> devices = _niciraNvpDao.listByPhysicalNetwork(physicalNetworkId);
+        List<NiciraNvpDeviceVO> devices = niciraNvpDao.listByPhysicalNetwork(physicalNetworkId);
         if (devices.isEmpty()) {
             s_logger.error("No NiciraNvp Controller on physical network " + physicalNetworkId);
             return null;
         }
         NiciraNvpDeviceVO niciraNvpDevice = devices.get(0);
-        HostVO niciraNvpHost = _hostDao.findById(niciraNvpDevice.getHostId());
-        _hostDao.loadDetails(niciraNvpHost);
+        HostVO niciraNvpHost = hostDao.findById(niciraNvpDevice.getHostId());
+        hostDao.loadDetails(niciraNvpHost);
         String transportzoneuuid = niciraNvpHost.getDetail("transportzoneuuid");
         String transportzoneisotype = niciraNvpHost.getDetail("transportzoneisotype");
 
-        CreateLogicalSwitchCommand cmd = new CreateLogicalSwitchCommand(transportzoneuuid, transportzoneisotype, name,
-                context.getDomain().getName() + "-" + context.getAccount().getAccountName());
-        CreateLogicalSwitchAnswer answer = (CreateLogicalSwitchAnswer)_agentMgr.easySend(niciraNvpHost.getId(), cmd);
+        CreateLogicalSwitchCommand cmd =
+            new CreateLogicalSwitchCommand(transportzoneuuid, transportzoneisotype, name, context.getDomain().getName() + "-" + context.getAccount().getAccountName());
+        CreateLogicalSwitchAnswer answer = (CreateLogicalSwitchAnswer)agentMgr.easySend(niciraNvpHost.getId(), cmd);
 
         if (answer == null || !answer.getResult()) {
             s_logger.error("CreateLogicalSwitchCommand failed");
@@ -209,42 +207,36 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public void reserve(NicProfile nic, Network network,
-            VirtualMachineProfile vm,
-            DeployDestination dest, ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException {
+    public void reserve(final NicProfile nic, final Network network, final VirtualMachineProfile vm, final DeployDestination dest, final ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
         super.reserve(nic, network, vm, dest, context);
     }
 
     @Override
-    public boolean release(NicProfile nic,
-            VirtualMachineProfile vm,
-            String reservationId) {
+    public boolean release(final NicProfile nic, final VirtualMachineProfile vm, final String reservationId) {
         // TODO Auto-generated method stub
         return super.release(nic, vm, reservationId);
     }
 
     @Override
-    public void shutdown(NetworkProfile profile, NetworkOffering offering) {
-        NetworkVO networkObject = _networkDao.findById(profile.getId());
-        if (networkObject.getBroadcastDomainType() != BroadcastDomainType.Lswitch ||
-                networkObject.getBroadcastUri() == null) {
+    public void shutdown(final NetworkProfile profile, final NetworkOffering offering) {
+        NetworkVO networkObject = networkDao.findById(profile.getId());
+        if (networkObject.getBroadcastDomainType() != BroadcastDomainType.Lswitch || networkObject.getBroadcastUri() == null) {
             s_logger.warn("BroadcastUri is empty or incorrect for guestnetwork " + networkObject.getDisplayText());
             return;
         }
 
-        List<NiciraNvpDeviceVO> devices = _niciraNvpDao.listByPhysicalNetwork(networkObject.getPhysicalNetworkId());
+        List<NiciraNvpDeviceVO> devices = niciraNvpDao.listByPhysicalNetwork(networkObject.getPhysicalNetworkId());
         if (devices.isEmpty()) {
             s_logger.error("No NiciraNvp Controller on physical network " + networkObject.getPhysicalNetworkId());
             return;
         }
         NiciraNvpDeviceVO niciraNvpDevice = devices.get(0);
-        HostVO niciraNvpHost = _hostDao.findById(niciraNvpDevice.getHostId());
+        HostVO niciraNvpHost = hostDao.findById(niciraNvpDevice.getHostId());
 
         DeleteLogicalSwitchCommand cmd = new DeleteLogicalSwitchCommand(BroadcastDomainType.getValue(networkObject.getBroadcastUri()));
-        DeleteLogicalSwitchAnswer answer = (DeleteLogicalSwitchAnswer) _agentMgr.easySend(niciraNvpHost.getId(), cmd);
+        DeleteLogicalSwitchAnswer answer = (DeleteLogicalSwitchAnswer)agentMgr.easySend(niciraNvpHost.getId(), cmd);
 
         if (answer == null || !answer.getResult()) {
             s_logger.error("DeleteLogicalSwitchCommand failed");
@@ -254,7 +246,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public boolean trash(Network network, NetworkOffering offering) {
+    public boolean trash(final Network network, final NetworkOffering offering) {
         return super.trash(network, offering);
     }
 

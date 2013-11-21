@@ -19,8 +19,12 @@ package org.apache.cloudstack.network.contrail.model;
 
 import java.io.IOException;
 
-import org.apache.cloudstack.network.contrail.management.ContrailManager;
+import net.juniper.contrail.api.ApiConnector;
+import net.juniper.contrail.api.types.FloatingIp;
+
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.network.contrail.management.ContrailManager;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.PublicIpAddress;
@@ -28,9 +32,6 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
-
-import net.juniper.contrail.api.types.FloatingIp;
-import net.juniper.contrail.api.ApiConnector;
 
 public class FloatingIpModel extends ModelObjectBase {
     private static final Logger s_logger = Logger.getLogger(FloatingIpModel.class);
@@ -48,7 +49,7 @@ public class FloatingIpModel extends ModelObjectBase {
     private FloatingIpPoolModel _fipPoolModel;
 
     public FloatingIpModel(String uuid) {
-       _uuid = uuid;
+        _uuid = uuid;
     }
 
     public void addToFloatingIpPool(FloatingIpPoolModel fipPoolModel) {
@@ -75,7 +76,7 @@ public class FloatingIpModel extends ModelObjectBase {
     public int compareTo(ModelObject o) {
         FloatingIpModel other;
         try {
-            other = (FloatingIpModel) o;
+            other = (FloatingIpModel)o;
         } catch (ClassCastException ex) {
             String clsname = o.getClass().getName();
             return FloatingIpModel.class.getName().compareTo(clsname);
@@ -87,7 +88,7 @@ public class FloatingIpModel extends ModelObjectBase {
     @Override
     public void delete(ModelController controller) throws IOException {
         ApiConnector api = controller.getApiAccessor();
-        for (ModelObject successor: successors()) {
+        for (ModelObject successor : successors()) {
             successor.delete(controller);
         }
 
@@ -102,7 +103,7 @@ public class FloatingIpModel extends ModelObjectBase {
     public void destroy(ModelController controller) throws IOException {
         delete(controller);
 
-        for (ModelObject successor: successors()) {
+        for (ModelObject successor : successors()) {
             successor.destroy(controller);
         }
         clearSuccessors();
@@ -115,7 +116,6 @@ public class FloatingIpModel extends ModelObjectBase {
     public String getUuid() {
         return _uuid;
     }
-
 
     public FloatingIp getFloatingIp() {
         return _fip;
@@ -144,7 +144,7 @@ public class FloatingIpModel extends ModelObjectBase {
         FloatingIp fip = _fip;
 
         if (_fip == null) {
-            _fip = fip = (FloatingIp) controller.getApiAccessor().findById(FloatingIp.class, _uuid);
+            _fip = fip = (FloatingIp)controller.getApiAccessor().findById(FloatingIp.class, _uuid);
             if (fip == null) {
                 fip = new FloatingIp();
                 fip.setUuid(_uuid);
@@ -190,12 +190,12 @@ public class FloatingIpModel extends ModelObjectBase {
             } catch (IOException ex) {
                 s_logger.warn("floating ip update", ex);
                 throw new CloudRuntimeException("Unable to update floating ip object", ex);
-            }            
+            }
         }
 
         addToVMInterface(vmiModel);
 
-        for (ModelObject successor: successors()) {
+        for (ModelObject successor : successors()) {
             successor.update(controller);
         }
     }

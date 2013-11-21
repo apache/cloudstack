@@ -16,51 +16,64 @@
 // under the License.
 package com.cloud.api.response;
 
-import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.CiscoNexusVSMDevice;
+import com.cloud.serializer.Param;
 
-@EntityReference(value=CiscoNexusVSMDevice.class)
+@EntityReference(value = CiscoNexusVSMDevice.class)
 public class CiscoNexusVSMResponse extends BaseResponse {
 
-    @SerializedName(ApiConstants.EXTERNAL_SWITCH_MGMT_DEVICE_ID) @Param(description="device id of the Cisco N1KV VSM device")
+    @SerializedName(ApiConstants.EXTERNAL_SWITCH_MGMT_DEVICE_ID)
+    @Param(description = "device id of the Cisco N1KV VSM device")
     private String id;
 
-    @SerializedName(ApiConstants.EXTERNAL_SWITCH_MGMT_DEVICE_NAME) @Param(description="device name")
+    @SerializedName(ApiConstants.EXTERNAL_SWITCH_MGMT_DEVICE_NAME)
+    @Param(description = "device name")
     private String deviceName;
 
-    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the management IP address of the external Cisco Nexus 1000v Virtual Supervisor Module")
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "the management IP address of the external Cisco Nexus 1000v Virtual Supervisor Module")
     private String vsmmgmtIpAddress;
 
-    @SerializedName(ApiConstants.EXTERNAL_SWITCH_MGMT_DEVICE_STATE) @Param(description="device state")
+    @SerializedName(ApiConstants.EXTERNAL_SWITCH_MGMT_DEVICE_STATE)
+    @Param(description = "device state")
     private String deviceState;
 
-    @SerializedName(ApiConstants.VSM_MGMT_VLAN_ID) @Param(description="management vlan id of the VSM")
+    @SerializedName(ApiConstants.VSM_MGMT_VLAN_ID)
+    @Param(description = "management vlan id of the VSM")
     private String vsmmgmtvlanid;
 
-    @SerializedName(ApiConstants.VSM_CTRL_VLAN_ID) @Param(description="control vlan id of the VSM")
+    @SerializedName(ApiConstants.VSM_CTRL_VLAN_ID)
+    @Param(description = "control vlan id of the VSM")
     private int vsmctrlvlanid;
 
-    @SerializedName(ApiConstants.VSM_PKT_VLAN_ID) @Param(description="packet vlan id of the VSM")
+    @SerializedName(ApiConstants.VSM_PKT_VLAN_ID)
+    @Param(description = "packet vlan id of the VSM")
     private int vsmpktvlanid;
 
-    @SerializedName(ApiConstants.VSM_STORAGE_VLAN_ID) @Param(description="storage vlan id of the VSM")
+    @SerializedName(ApiConstants.VSM_STORAGE_VLAN_ID)
+    @Param(description = "storage vlan id of the VSM")
     private int vsmstoragevlanid;
 
-    @SerializedName(ApiConstants.VSM_DOMAIN_ID) @Param(description="The VSM is a switch supervisor. This is the VSM's switch domain id")
+    @SerializedName(ApiConstants.VSM_DOMAIN_ID)
+    @Param(description = "The VSM is a switch supervisor. This is the VSM's switch domain id")
     private String vsmdomainid;
 
-    @SerializedName(ApiConstants.VSM_CONFIG_MODE) @Param(description="The mode of the VSM (standalone/HA)")
+    @SerializedName(ApiConstants.VSM_CONFIG_MODE)
+    @Param(description = "The mode of the VSM (standalone/HA)")
     private String vsmconfigmode;
 
-    @SerializedName(ApiConstants.VSM_CONFIG_STATE) @Param(description="The Config State (Primary/Standby) of the VSM")
+    @SerializedName(ApiConstants.VSM_CONFIG_STATE)
+    @Param(description = "The Config State (Primary/Standby) of the VSM")
     private String vsmconfigstate;
 
-    @SerializedName(ApiConstants.VSM_DEVICE_STATE) @Param(description="The Device State (Enabled/Disabled) of the VSM")
+    @SerializedName(ApiConstants.VSM_DEVICE_STATE)
+    @Param(description = "The Device State (Enabled/Disabled) of the VSM")
     private String vsmdevicestate;
 
     // Setter methods.
@@ -77,38 +90,38 @@ public class CiscoNexusVSMResponse extends BaseResponse {
     }
 
     public void setDeviceState(String deviceState) {
-    	this.deviceState = deviceState;
+        this.deviceState = deviceState;
     }
 
     public void setVSMMgmtVlanId(String vlanId) {
-    	this.vsmmgmtvlanid = vlanId;
+        this.vsmmgmtvlanid = vlanId;
     }
 
     public void setVSMCtrlVlanId(int vlanId) {
-    	this.vsmctrlvlanid = vlanId;
+        this.vsmctrlvlanid = vlanId;
     }
 
     public void setVSMPktVlanId(int vlanId) {
-    	this.vsmpktvlanid = vlanId;
+        this.vsmpktvlanid = vlanId;
     }
 
     public void setVSMStorageVlanId(int vlanId) {
-    	this.vsmstoragevlanid = vlanId;
+        this.vsmstoragevlanid = vlanId;
     }
 
     public void setVSMDomainId(String domId) {
-    	this.vsmdomainid = domId;
+        this.vsmdomainid = domId;
     }
 
     public void setVSMConfigMode(String configMode) {
-    	this.vsmconfigmode = configMode;
+        this.vsmconfigmode = configMode;
     }
 
     public void setVSMConfigState(String configState) {
-    	this.vsmconfigstate = configState;
+        this.vsmconfigstate = configState;
     }
 
     public void setVSMDeviceState(String devState) {
-    	this.vsmdevicestate = devState;
+        this.vsmdevicestate = devState;
     }
 }

@@ -20,7 +20,7 @@ import com.cloud.host.Host;
 
 public class StartupSecondaryStorageCommand extends StartupCommand {
 
-	public StartupSecondaryStorageCommand() {
+    public StartupSecondaryStorageCommand() {
         super(Host.Type.SecondaryStorage);
         setIqn("NoIqn");
     }

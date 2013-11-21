@@ -21,21 +21,20 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="user_vm_clone_setting")
+@Table(name = "user_vm_clone_setting")
 public class UserVmCloneSettingVO {
 
-    @Column(name="vm_id")
+    @Column(name = "vm_id")
     private Long vmId;
 
-    @Column(name="clone_type")
+    @Column(name = "clone_type")
     private String cloneType;
 
     public UserVmCloneSettingVO() {
 
     }
 
-    public UserVmCloneSettingVO(long id,
-            String cloneType) {
+    public UserVmCloneSettingVO(long id, String cloneType) {
         this.vmId = id;
         this.cloneType = cloneType;
     }

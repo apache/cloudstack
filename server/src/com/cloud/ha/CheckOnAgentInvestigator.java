@@ -32,38 +32,38 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
-@Local(value=Investigator.class)
+@Local(value = Investigator.class)
 public class CheckOnAgentInvestigator extends AdapterBase implements Investigator {
     private final static Logger s_logger = Logger.getLogger(CheckOnAgentInvestigator.class);
-	@Inject AgentManager _agentMgr;
-	
-	
-	protected CheckOnAgentInvestigator() {
-	}
-	
-	@Override
+    @Inject
+    AgentManager _agentMgr;
+
+    protected CheckOnAgentInvestigator() {
+    }
+
+    @Override
     public Status isAgentAlive(Host agent) {
-		return null;
-	}
+        return null;
+    }
 
-	@Override
+    @Override
     public Boolean isVmAlive(VirtualMachine vm, Host host) {
-		CheckVirtualMachineCommand cmd = new CheckVirtualMachineCommand(vm.getInstanceName());
-		try {
-			CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer)_agentMgr.send(vm.getHostId(), cmd);
-			if (!answer.getResult()) {
-				s_logger.debug("Unable to get vm state on " + vm.toString());
-				return null;
-			}
+        CheckVirtualMachineCommand cmd = new CheckVirtualMachineCommand(vm.getInstanceName());
+        try {
+            CheckVirtualMachineAnswer answer = (CheckVirtualMachineAnswer)_agentMgr.send(vm.getHostId(), cmd);
+            if (!answer.getResult()) {
+                s_logger.debug("Unable to get vm state on " + vm.toString());
+                return null;
+            }
 
-			s_logger.debug("Agent responded with state " + answer.getState().toString());
-			return answer.getState() == State.Running;
-		} catch (AgentUnavailableException e) {
-			s_logger.debug("Unable to reach the agent for " + vm.toString() + ": " + e.getMessage());
-			return null;
-		} catch (OperationTimedoutException e) {
-			s_logger.debug("Operation timed out for " + vm.toString() + ": " + e.getMessage());
-			return null;
-		}
-	}
+            s_logger.debug("Agent responded with state " + answer.getState().toString());
+            return answer.getState() == State.Running;
+        } catch (AgentUnavailableException e) {
+            s_logger.debug("Unable to reach the agent for " + vm.toString() + ": " + e.getMessage());
+            return null;
+        } catch (OperationTimedoutException e) {
+            s_logger.debug("Operation timed out for " + vm.toString() + ": " + e.getMessage());
+            return null;
+        }
+    }
 }

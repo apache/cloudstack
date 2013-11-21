@@ -20,10 +20,15 @@ import java.rmi.ServerException;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -33,53 +38,51 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.server.api.response.netapp.DeleteVolumeOnFilerCmdResponse;
 
-
-@APICommand(name = "destroyVolumeOnFiler", description="Destroy a Volume", responseObject = DeleteVolumeOnFilerCmdResponse.class)
+@APICommand(name = "destroyVolumeOnFiler", description = "Destroy a Volume", responseObject = DeleteVolumeOnFilerCmdResponse.class)
 public class DestroyVolumeOnFilerCmd extends BaseCmd {
-	public static final Logger s_logger = Logger.getLogger(DestroyVolumeOnFilerCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(DestroyVolumeOnFilerCmd.class.getName());
     private static final String s_name = "destroyvolumeresponse";
-    
-    @Parameter(name=ApiConstants.AGGREGATE_NAME, type=CommandType.STRING, required = true, description="aggregate name.")
-	private String aggrName;
-    
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required = true, description="ip address.")
-	private String ipAddr;
-    
-    @Parameter(name=ApiConstants.VOLUME_NAME, type=CommandType.STRING, required = true, description="volume name.")
-	private String volumeName;
-    
-    @Inject NetappManager netappMgr;
-    
-    
-	@Override
-	public void execute() throws ResourceUnavailableException,
-			InsufficientCapacityException, ServerApiException,
-			ConcurrentOperationException, ResourceAllocationException {
-    	try {
-    		netappMgr.destroyVolumeOnFiler(ipAddr, aggrName, volumeName);
-    		DeleteVolumeOnFilerCmdResponse response = new DeleteVolumeOnFilerCmdResponse();
-    		response.setResponseName(getCommandName());
-    		this.setResponseObject(response);
-    	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
-    	} catch (ResourceInUseException e) {
-    		throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, e.toString());
-    	} catch (ServerException e) {
-    		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
-		}
-		
-	}
 
-	@Override
-	public String getCommandName() {
-		// TODO Auto-generated method stub
-		return s_name;
-	}
+    @Parameter(name = ApiConstants.AGGREGATE_NAME, type = CommandType.STRING, required = true, description = "aggregate name.")
+    private String aggrName;
 
-	@Override
-	public long getEntityOwnerId() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-    
+    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, required = true, description = "ip address.")
+    private String ipAddr;
+
+    @Parameter(name = ApiConstants.VOLUME_NAME, type = CommandType.STRING, required = true, description = "volume name.")
+    private String volumeName;
+
+    @Inject
+    NetappManager netappMgr;
+
+    @Override
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
+        try {
+            netappMgr.destroyVolumeOnFiler(ipAddr, aggrName, volumeName);
+            DeleteVolumeOnFilerCmdResponse response = new DeleteVolumeOnFilerCmdResponse();
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        } catch (InvalidParameterValueException e) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
+        } catch (ResourceInUseException e) {
+            throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, e.toString());
+        } catch (ServerException e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
+        }
+
+    }
+
+    @Override
+    public String getCommandName() {
+        // TODO Auto-generated method stub
+        return s_name;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
 }

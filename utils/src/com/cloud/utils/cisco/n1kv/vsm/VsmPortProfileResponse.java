@@ -16,15 +16,17 @@
 // under the License.
 package com.cloud.utils.cisco.n1kv.vsm;
 
-import org.apache.log4j.Logger;
+import java.util.StringTokenizer;
 
+import org.apache.log4j.Logger;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import java.util.StringTokenizer;
 
-import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.*;
+import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.BindingType;
+import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.PortProfileType;
+import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.SwitchPortMode;
 
 public class VsmPortProfileResponse extends VsmResponse {
     private static final Logger s_logger = Logger.getLogger(VsmPortProfileResponse.class);
@@ -41,6 +43,7 @@ public class VsmPortProfileResponse extends VsmResponse {
         return _portProfile;
     }
 
+    @Override
     protected void parse(Element root) {
         NodeList list = root.getElementsByTagName("nf:rpc-error");
         if (list.getLength() == 0) {
@@ -63,8 +66,7 @@ public class VsmPortProfileResponse extends VsmResponse {
                 NodeList readOnlyList = ((Element)list.item(0)).getElementsByTagName("__readonly__");
                 Element readOnly = (Element)readOnlyList.item(0);
 
-                for (Node node = readOnly.getFirstChild();
-                        node != null; node = node.getNextSibling()) {
+                for (Node node = readOnly.getFirstChild(); node != null; node = node.getNextSibling()) {
                     String currentNode = node.getNodeName();
                     String value = node.getTextContent();
                     if ("port_binding".equalsIgnoreCase(currentNode)) {
@@ -117,7 +119,7 @@ public class VsmPortProfileResponse extends VsmResponse {
             } else if ("access".equalsIgnoreCase(firstToken)) {
                 if (tokens.hasMoreTokens()) {
                     String secondToken = tokens.nextToken();
-                    assert("vlan".equalsIgnoreCase(secondToken));
+                    assert ("vlan".equalsIgnoreCase(secondToken));
                     if (tokens.hasMoreTokens()) {
                         _portProfile.vlan = tokens.nextToken();
                     }

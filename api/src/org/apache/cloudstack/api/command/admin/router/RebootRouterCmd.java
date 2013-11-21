@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.router;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,8 +28,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -35,7 +35,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 
-@APICommand(name = "rebootRouter", description="Starts a router.", responseObject=DomainRouterResponse.class)
+@APICommand(name = "rebootRouter", description = "Starts a router.", responseObject = DomainRouterResponse.class)
 public class RebootRouterCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RebootRouterCmd.class.getName());
     private static final String s_name = "rebootrouterresponse";
@@ -44,8 +44,7 @@ public class RebootRouterCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = DomainRouterResponse.class,
-            required=true, description="the ID of the router")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "the ID of the router")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -82,23 +81,24 @@ public class RebootRouterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "rebooting router: " + getId();
+        return "rebooting router: " + getId();
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.DomainRouter;
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }
 
-
     @Override
-    public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException{
-        CallContext.current().setEventDetails("Router Id: "+getId());
+    public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        CallContext.current().setEventDetails("Router Id: " + getId());
         VirtualRouter result = _routerService.rebootRouter(this.getId(), true);
-        if (result != null){
+        if (result != null) {
             DomainRouterResponse response = _responseGenerator.createDomainRouterResponse(result);
             response.setResponseName("router");
             this.setResponseObject(response);

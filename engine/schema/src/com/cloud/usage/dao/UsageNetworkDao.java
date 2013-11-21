@@ -24,6 +24,8 @@ import com.cloud.utils.db.GenericDao;
 
 public interface UsageNetworkDao extends GenericDao<UsageNetworkVO, Long> {
     Map<String, UsageNetworkVO> getRecentNetworkStats();
+
     void deleteOldStats(long maxEventTime);
+
     void saveUsageNetworks(List<UsageNetworkVO> usageNetworks);
 }

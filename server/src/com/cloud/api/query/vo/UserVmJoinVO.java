@@ -40,54 +40,54 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 
 @Entity
-@Table(name="user_vm_view")
+@Table(name = "user_vm_view")
 public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Id
-    @Column(name="id", updatable=false, nullable = false)
+    @Column(name = "id", updatable = false, nullable = false)
     private long id;
 
-    @Column(name="name", updatable=false, nullable=false, length=255)
+    @Column(name = "name", updatable = false, nullable = false, length = 255)
     private String name = null;
 
-    @Column(name="display_name", updatable=false, nullable=false, length=255)
+    @Column(name = "display_name", updatable = false, nullable = false, length = 255)
     private String displayName = null;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="account_uuid")
+    @Column(name = "account_uuid")
     private String accountUuid;
 
-    @Column(name="account_name")
+    @Column(name = "account_name")
     private String accountName = null;
 
-    @Column(name="account_type")
+    @Column(name = "account_type")
     private short accountType;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="domain_uuid")
+    @Column(name = "domain_uuid")
     private String domainUuid;
 
-    @Column(name="domain_name")
+    @Column(name = "domain_name")
     private String domainName = null;
 
-    @Column(name="domain_path")
+    @Column(name = "domain_path")
     private String domainPath = null;
 
-    @Column(name="instance_group_id")
+    @Column(name = "instance_group_id")
     private long instanceGroupId;
 
-    @Column(name="instance_group_uuid")
+    @Column(name = "instance_group_uuid")
     private String instanceGroupUuid;
 
-    @Column(name="instance_group_name")
+    @Column(name = "instance_group_name")
     private String instanceGroupName;
 
-    @Column(name="vm_type", updatable=false, nullable=false, length=32)
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "vm_type", updatable = false, nullable = false, length = 32)
+    @Enumerated(value = EnumType.STRING)
     protected VirtualMachine.Type type;
 
     /**
@@ -95,132 +95,131 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
      * the state machine needs to go through the DAO object because someone
      * else could be updating it as well.
      */
-    @Enumerated(value=EnumType.STRING)
-    @Column(name="state", updatable=true, nullable=false, length=32)
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "state", updatable = true, nullable = false, length = 32)
     private State state = null;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    @Column(name="instance_name", updatable=true, nullable=false)
+    @Column(name = "instance_name", updatable = true, nullable = false)
     private String instanceName;
 
-    @Column(name="guest_os_id", nullable=false, length=17)
+    @Column(name = "guest_os_id", nullable = false, length = 17)
     private long guestOsId;
 
-    @Column(name="guest_os_uuid")
+    @Column(name = "guest_os_uuid")
     private String guestOsUuid;
 
-    @Column(name="hypervisor_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "hypervisor_type")
+    @Enumerated(value = EnumType.STRING)
     private HypervisorType hypervisorType;
 
-    @Column(name="ha_enabled", updatable=true, nullable=true)
+    @Column(name = "ha_enabled", updatable = true, nullable = true)
     private boolean haEnabled;
 
     @Encrypt
-    @Column(name="vnc_password", updatable=true, nullable=false, length=255)
+    @Column(name = "vnc_password", updatable = true, nullable = false, length = 255)
     protected String vncPassword;
 
-    @Column(name="limit_cpu_use", updatable=true, nullable=true)
+    @Column(name = "limit_cpu_use", updatable = true, nullable = true)
     private boolean limitCpuUse;
 
-    @Column(name="display_vm", updatable=true, nullable=false)
+    @Column(name = "display_vm", updatable = true, nullable = false)
     protected boolean displayVm = true;
 
-    @Column(name="last_host_id", updatable=true, nullable=true)
+    @Column(name = "last_host_id", updatable = true, nullable = true)
     private Long lastHostId;
 
-    @Column(name="private_ip_address", updatable=true)
+    @Column(name = "private_ip_address", updatable = true)
     private String privateIpAddress;
 
-
-    @Column(name="private_mac_address", updatable=true, nullable=true)
+    @Column(name = "private_mac_address", updatable = true, nullable = true)
     private String privateMacAddress;
 
-    @Column(name="pod_id", updatable=true, nullable=false)
+    @Column(name = "pod_id", updatable = true, nullable = false)
     private Long podId;
 
-    @Column(name="pod_uuid")
+    @Column(name = "pod_uuid")
     private String podUuid;
 
-    @Column(name="data_center_id")
+    @Column(name = "data_center_id")
     private long dataCenterId;
 
-    @Column(name="data_center_uuid")
+    @Column(name = "data_center_uuid")
     private String dataCenterUuid;
 
-    @Column(name="data_center_name")
+    @Column(name = "data_center_name")
     private String dataCenterName = null;
 
-    @Column(name="security_group_enabled")
+    @Column(name = "security_group_enabled")
     private boolean securityGroupEnabled;
 
-    @Column(name="host_id", updatable=true, nullable=true)
+    @Column(name = "host_id", updatable = true, nullable = true)
     private long hostId;
 
-    @Column(name="host_uuid")
+    @Column(name = "host_uuid")
     private String hostUuid;
 
-    @Column(name="host_name", nullable=false)
+    @Column(name = "host_name", nullable = false)
     private String hostName;
 
-    @Column(name="template_id", updatable=true, nullable=true, length=17)
+    @Column(name = "template_id", updatable = true, nullable = true, length = 17)
     private long templateId;
 
-    @Column(name="template_uuid")
+    @Column(name = "template_uuid")
     private String templateUuid;
 
-    @Column(name="template_name")
+    @Column(name = "template_name")
     private String templateName;
 
-    @Column(name="template_display_text", length=4096)
+    @Column(name = "template_display_text", length = 4096)
     private String templateDisplayText;
 
-    @Column(name="password_enabled")
+    @Column(name = "password_enabled")
     private boolean passwordEnabled;
 
-    @Column(name="iso_id", updatable=true, nullable=true, length=17)
+    @Column(name = "iso_id", updatable = true, nullable = true, length = 17)
     private long isoId;
 
-    @Column(name="iso_uuid")
+    @Column(name = "iso_uuid")
     private String isoUuid;
 
-    @Column(name="iso_name")
+    @Column(name = "iso_name")
     private String isoName;
 
-    @Column(name="iso_display_text", length=4096)
+    @Column(name = "iso_display_text", length = 4096)
     private String isoDisplayText;
 
-    @Column(name="service_offering_id")
+    @Column(name = "service_offering_id")
     private long serviceOfferingId;
 
-    @Column(name="service_offering_uuid")
+    @Column(name = "service_offering_uuid")
     private String serviceOfferingUuid;
 
-    @Column(name="service_offering_name")
+    @Column(name = "service_offering_name")
     private String serviceOfferingName;
 
-    @Column(name="cpu")
+    @Column(name = "cpu")
     private int cpu;
 
-    @Column(name="speed")
+    @Column(name = "speed")
     private int speed;
 
-    @Column(name="ram_size")
+    @Column(name = "ram_size")
     private int ramSize;
 
-    @Column(name="pool_id", updatable=false, nullable = false)
+    @Column(name = "pool_id", updatable = false, nullable = false)
     private long poolId;
 
-    @Column(name="pool_uuid")
+    @Column(name = "pool_uuid")
     private String poolUuid;
 
-    @Column(name="pool_type", updatable=false, nullable=false, length=32)
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "pool_type", updatable = false, nullable = false, length = 32)
+    @Enumerated(value = EnumType.STRING)
     private StoragePoolType poolType;
 
     @Column(name = "volume_id")
@@ -290,21 +289,21 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "isolation_uri")
     private URI isolationUri;
 
-    @Column(name="network_id")
+    @Column(name = "network_id")
     private long networkId;
 
-    @Column(name="network_uuid")
+    @Column(name = "network_uuid")
     private String networkUuid;
 
-    @Column(name="network_name")
+    @Column(name = "network_name")
     private String networkName;
 
-    @Column(name="traffic_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "traffic_type")
+    @Enumerated(value = EnumType.STRING)
     private TrafficType trafficType;
 
-    @Column(name="guest_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "guest_type")
+    @Enumerated(value = EnumType.STRING)
     private GuestType guestType;
 
     @Column(name = "public_ip_id")
@@ -316,59 +315,59 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "public_ip_address")
     private String publicIpAddress;
 
-    @Column(name="user_data", updatable=true, nullable=true, length=2048)
+    @Column(name = "user_data", updatable = true, nullable = true, length = 2048)
     private String userData;
 
-    @Column(name="project_id")
+    @Column(name = "project_id")
     private long projectId;
 
-    @Column(name="project_uuid")
+    @Column(name = "project_uuid")
     private String projectUuid;
 
-    @Column(name="project_name")
+    @Column(name = "project_name")
     private String projectName;
 
-    @Column(name="keypair_name")
+    @Column(name = "keypair_name")
     private String keypairName;
 
-    @Column(name="job_id")
+    @Column(name = "job_id")
     private Long jobId;
 
-    @Column(name="job_uuid")
+    @Column(name = "job_uuid")
     private String jobUuid;
 
-    @Column(name="job_status")
+    @Column(name = "job_status")
     private int jobStatus;
 
-    @Column(name="tag_id")
+    @Column(name = "tag_id")
     private long tagId;
 
-    @Column(name="tag_uuid")
+    @Column(name = "tag_uuid")
     private String tagUuid;
 
-    @Column(name="tag_key")
+    @Column(name = "tag_key")
     private String tagKey;
 
-    @Column(name="tag_value")
+    @Column(name = "tag_value")
     private String tagValue;
 
-    @Column(name="tag_domain_id")
+    @Column(name = "tag_domain_id")
     private long tagDomainId;
 
-    @Column(name="tag_account_id")
+    @Column(name = "tag_account_id")
     private long tagAccountId;
 
-    @Column(name="tag_resource_id")
+    @Column(name = "tag_resource_id")
     private long tagResourceId;
 
-    @Column(name="tag_resource_uuid")
+    @Column(name = "tag_resource_uuid")
     private String tagResourceUuid;
 
-    @Column(name="tag_resource_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "tag_resource_type")
+    @Enumerated(value = EnumType.STRING)
     private ResourceObjectType tagResourceType;
 
-    @Column(name="tag_customer")
+    @Column(name = "tag_customer")
     private String tagCustomer;
 
     @Column(name = "affinity_group_id")
@@ -388,21 +387,20 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Transient
     Map<String, String> details;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="dynamically_scalable")
+    @Column(name = "dynamically_scalable")
     private boolean isDynamicallyScalable;
-    
-    @Column(name="detail_name")
+
+    @Column(name = "detail_name")
     private String detailName;
 
-    @Column(name="detail_value")
+    @Column(name = "detail_value")
     private String detailValue;
 
     public UserVmJoinVO() {
     }
-
 
     @Override
     public long getId() {
@@ -851,6 +849,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
     transient String toString;
+
     @Override
     public String toString() {
         if (toString == null) {
@@ -894,7 +893,6 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     public String getDetailName() {
         return detailName;
     }
-
 
     public String getDetailValue() {
         return detailValue;

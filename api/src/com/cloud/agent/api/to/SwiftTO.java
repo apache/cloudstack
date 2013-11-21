@@ -27,7 +27,8 @@ public class SwiftTO implements DataStoreTO, SwiftUtil.SwiftClientCfg {
     String userName;
     String key;
 
-    public SwiftTO() { }
+    public SwiftTO() {
+    }
 
     public SwiftTO(Long id, String url, String account, String userName, String key) {
         this.id = id;
@@ -41,6 +42,7 @@ public class SwiftTO implements DataStoreTO, SwiftUtil.SwiftClientCfg {
         return id;
     }
 
+    @Override
     public String getUrl() {
         return url;
     }

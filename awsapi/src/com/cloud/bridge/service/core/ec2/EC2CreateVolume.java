@@ -20,58 +20,56 @@ import org.apache.log4j.Logger;
 
 import com.cloud.bridge.service.exception.EC2ServiceException;
 
-
 public class EC2CreateVolume {
     protected final static Logger logger = Logger.getLogger(EC2CreateVolume.class);
 
-	private Long size;   // <- in gigs
-	private String  snapshotId;
-	private String  zoneName;
-    
-	public EC2CreateVolume() {
-		snapshotId = null;
-		zoneName   = null;
-		size 	   = null;
-	}
-	
-	/**
-	 * Define the size of the volume to create
-	 * 
-	 * @param size - valid values are [1 .. 1024] and represent gigBytes
-	 */
-	public void setSize(String size) 
-	{
-		if (null == size) return;  // size is an optional parameter
-		
-		try {
-		    this.size = Long.parseLong(size);
-		}
-		catch(NumberFormatException e) {
+    private Long size;   // <- in gigs
+    private String snapshotId;
+    private String zoneName;
+
+    public EC2CreateVolume() {
+        snapshotId = null;
+        zoneName = null;
+        size = null;
+    }
+
+    /**
+     * Define the size of the volume to create
+     *
+     * @param size - valid values are [1 .. 1024] and represent gigBytes
+     */
+    public void setSize(String size) {
+        if (null == size)
+            return;  // size is an optional parameter
+
+        try {
+            this.size = Long.parseLong(size);
+        } catch (NumberFormatException e) {
             logger.error("Bad volume Size parameter: ", e);
-			throw new EC2ServiceException( "Bad volume size parameter: " + size + ", expecting [1..1024]", 400 );
-		}
-		
-		if (!(1 <= this.size && 1024 >= this.size))
-			throw new EC2ServiceException( "Bad volume size parameter: " + size + ", expecting [1..1024]", 400 );
-	}
-	
-	public Long getSize() {
-		return this.size;
-	}
+            throw new EC2ServiceException("Bad volume size parameter: " + size + ", expecting [1..1024]", 400);
+        }
 
-	public void setSnapshotId(String snapshotId ) {
-		this.snapshotId = snapshotId;
-	}
-	
-	public String getSnapshotId() {
-		return this.snapshotId;
-	}
+        if (!(1 <= this.size && 1024 >= this.size))
+            throw new EC2ServiceException("Bad volume size parameter: " + size + ", expecting [1..1024]", 400);
+    }
 
-	public void setZoneName( String zoneName ) {
-		this.zoneName = zoneName;
-	}
-	
-	public String getZoneName() {
-		return this.zoneName;
-	}
+    public Long getSize() {
+        return this.size;
+    }
+
+    public void setSnapshotId(String snapshotId) {
+        this.snapshotId = snapshotId;
+    }
+
+    public String getSnapshotId() {
+        return this.snapshotId;
+    }
+
+    public void setZoneName(String zoneName) {
+        this.zoneName = zoneName;
+    }
+
+    public String getZoneName() {
+        return this.zoneName;
+    }
 }

@@ -328,6 +328,9 @@ cloudStack.docs = {
     },
     helpDiskOfferingHypervisorSnapshotReserve: {
         desc: 'Hypervisor snapshot reserve space as a percent of a volume (for managed storage using Xen or VMware) (Ex. The value 25 means 25%.)).',
+    },
+    helpDiskOfferingCacheMode: {
+        desc: 'The write caching mode to use for disks created with this disk offering. This can improve write performance.',
         externalLink: ''
     },
     helpDiskOfferingStorageTags: {
@@ -595,7 +598,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpPodNetmask: {
-        desc: 'The network prefix that defines the pod\'s subnet. Use CIDR notation.',
+        desc: 'The network prefix that defines the pod\'s subnet.',
         externalLink: ''
     },
     helpPodStartIP: {
@@ -1195,6 +1198,10 @@ cloudStack.docs = {
     },
     helpUploadVolumeChecksum: {
         desc: 'Use the hash that you created at the start of the volume upload procedure',
+        externalLink: ''
+    },
+    helpLdapGroupName: {
+        desc: 'The group name from which you want to import LDAP users',
         externalLink: ''
     }
 };

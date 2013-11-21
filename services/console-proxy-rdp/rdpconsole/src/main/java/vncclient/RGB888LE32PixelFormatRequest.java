@@ -16,75 +16,74 @@
 // under the License.
 package vncclient;
 
-import common.ScreenDescription;
-
 import streamer.BaseElement;
 import streamer.ByteBuffer;
 import streamer.Link;
+import common.ScreenDescription;
 
 public class RGB888LE32PixelFormatRequest extends BaseElement {
-  protected int bitsPerPixel = 32;
-  protected int depth = 24;
-  protected int bigEndianFlag = RfbConstants.LITTLE_ENDIAN;
-  protected int trueColourFlag = RfbConstants.TRUE_COLOR;
-  protected int redMax = 255;
-  protected int greenMax = 255;
-  protected int blueMax = 255;
-  protected int redShift = 0;
-  protected int greenShift = 8;
-  protected int blueShift = 16;
+    protected int bitsPerPixel = 32;
+    protected int depth = 24;
+    protected int bigEndianFlag = RfbConstants.LITTLE_ENDIAN;
+    protected int trueColourFlag = RfbConstants.TRUE_COLOR;
+    protected int redMax = 255;
+    protected int greenMax = 255;
+    protected int blueMax = 255;
+    protected int redShift = 0;
+    protected int greenShift = 8;
+    protected int blueShift = 16;
 
-  protected ScreenDescription screen;
+    protected ScreenDescription screen;
 
-  public RGB888LE32PixelFormatRequest(String id, ScreenDescription screen) {
-    super(id);
-    this.screen = screen;
-  }
+    public RGB888LE32PixelFormatRequest(String id, ScreenDescription screen) {
+        super(id);
+        this.screen = screen;
+    }
 
-  protected void declarePads() {
-    inputPads.put(STDIN, null);
-    outputPads.put(STDOUT, null);
-  }
+    protected void declarePads() {
+        inputPads.put(STDIN, null);
+        outputPads.put(STDOUT, null);
+    }
 
-  @Override
-  public void handleData(ByteBuffer buf, Link link) {
-    if (buf == null)
-      return;
+    @Override
+    public void handleData(ByteBuffer buf, Link link) {
+        if (buf == null)
+            return;
 
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
-    buf.unref();
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
+        buf.unref();
 
-    ByteBuffer outBuf = new ByteBuffer(20);
+        ByteBuffer outBuf = new ByteBuffer(20);
 
-    outBuf.writeByte(RfbConstants.CLIENT_SET_PIXEL_FORMAT);
+        outBuf.writeByte(RfbConstants.CLIENT_SET_PIXEL_FORMAT);
 
-    // Padding
-    outBuf.writeByte(0);
-    outBuf.writeByte(0);
-    outBuf.writeByte(0);
+        // Padding
+        outBuf.writeByte(0);
+        outBuf.writeByte(0);
+        outBuf.writeByte(0);
 
-    // Send pixel format
-    outBuf.writeByte(bitsPerPixel);
-    outBuf.writeByte(depth);
-    outBuf.writeByte(bigEndianFlag);
-    outBuf.writeByte(trueColourFlag);
-    outBuf.writeShort(redMax);
-    outBuf.writeShort(greenMax);
-    outBuf.writeShort(blueMax);
-    outBuf.writeByte(redShift);
-    outBuf.writeByte(greenShift);
-    outBuf.writeByte(blueShift);
+        // Send pixel format
+        outBuf.writeByte(bitsPerPixel);
+        outBuf.writeByte(depth);
+        outBuf.writeByte(bigEndianFlag);
+        outBuf.writeByte(trueColourFlag);
+        outBuf.writeShort(redMax);
+        outBuf.writeShort(greenMax);
+        outBuf.writeShort(blueMax);
+        outBuf.writeByte(redShift);
+        outBuf.writeByte(greenShift);
+        outBuf.writeByte(blueShift);
 
-    // Padding
-    outBuf.writeByte(0);
-    outBuf.writeByte(0);
-    outBuf.writeByte(0);
+        // Padding
+        outBuf.writeByte(0);
+        outBuf.writeByte(0);
+        outBuf.writeByte(0);
 
-    screen.setPixelFormat(bitsPerPixel, depth, bigEndianFlag != RfbConstants.LITTLE_ENDIAN, trueColourFlag == RfbConstants.TRUE_COLOR, redMax, greenMax,
-        blueMax, redShift, greenShift, blueShift);
+        screen.setPixelFormat(bitsPerPixel, depth, bigEndianFlag != RfbConstants.LITTLE_ENDIAN, trueColourFlag == RfbConstants.TRUE_COLOR, redMax, greenMax, blueMax,
+            redShift, greenShift, blueShift);
 
-    pushDataToAllOuts(outBuf);
-  }
+        pushDataToAllOuts(outBuf);
+    }
 
 }

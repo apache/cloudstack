@@ -21,34 +21,31 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface VpcOffering extends InternalIdentity, Identity {
     public enum State {
-        Disabled,
-        Enabled
+        Disabled, Enabled
     }
 
     public static final String defaultVPCOfferingName = "Default VPC offering";
     public static final String defaultVPCNSOfferingName = "Default VPC  offering with Netscaler";
 
     /**
-     * 
+     *
      * @return VPC offering name
      */
     String getName();
 
-    
     /**
      * @return VPC offering display text
      */
     String getDisplayText();
-    
 
     /**
-     * 
+     *
      * @return VPC offering state
      */
     State getState();
 
     /**
-     * 
+     *
      * @return true if offering is default - came with the cloudStack fresh install; false otherwise
      */
     boolean isDefault();

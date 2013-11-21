@@ -32,106 +32,107 @@ import vncclient.VncClient;
 
 public class Client {
 
-  private static Frame frame;
-  private static SocketWrapper socket;
-  private static ScrollPane scroller;
-  private static ScreenDescription screen;
-  private static BufferedImageCanvas canvas;
+    private static Frame frame;
+    private static SocketWrapper socket;
+    private static ScrollPane scroller;
+    private static ScreenDescription screen;
+    private static BufferedImageCanvas canvas;
 
-  public static void main(String args[]) {
-    // System.setProperty("streamer.Link.debug", "true");
-    // System.setProperty("streamer.Element.debug", "true");
-    // System.setProperty("streamer.Pipeline.debug", "true");
+    public static void main(String args[]) {
+        // System.setProperty("streamer.Link.debug", "true");
+        // System.setProperty("streamer.Element.debug", "true");
+        // System.setProperty("streamer.Pipeline.debug", "true");
 
-    try {
-      if (args.length < 4) {
-        System.out.println("Usage: \n  java common.Client vnc IP PORT PASSWORD\n  java common.Client rdp IP PORT username\n");
-        System.exit(0);
-      }
+        try {
+            if (args.length < 4) {
+                System.out.println("Usage: \n  java common.Client vnc IP PORT PASSWORD\n  java common.Client rdp IP PORT username\n");
+                System.exit(0);
+            }
 
-      String connectionType = args[0];
-      String hostname = args[1];
-      int port = Integer.parseInt(args[2]);
-      String userNameOrPassword = args[3];
+            String connectionType = args[0];
+            String hostname = args[1];
+            int port = Integer.parseInt(args[2]);
+            String userNameOrPassword = args[3];
 
-      // Create address from arguments
-      InetSocketAddress address = new InetSocketAddress(hostname, port);
+            // Create address from arguments
+            InetSocketAddress address = new InetSocketAddress(hostname, port);
 
-      // Create socket wrapper
-      socket = new SocketWrapper("socket");
+            // Create socket wrapper
+            socket = new SocketWrapper("socket");
 
-      screen = new ScreenDescription();
-      canvas = new BufferedImageCanvas(1024, 768);
-      screen.addSizeChangeListener(new SizeChangeListener() {
-        @Override
-        public void sizeChanged(int width, int height) {
-          if (canvas != null) {
-            canvas.setCanvasSize(width, height);
-            if (scroller != null)
-              scroller.setSize(canvas.getWidth(), canvas.getHeight());
-          }
+            screen = new ScreenDescription();
+            canvas = new BufferedImageCanvas(1024, 768);
+            screen.addSizeChangeListener(new SizeChangeListener() {
+                @Override
+                public void sizeChanged(int width, int height) {
+                    if (canvas != null) {
+                        canvas.setCanvasSize(width, height);
+                        if (scroller != null)
+                            scroller.setSize(canvas.getWidth(), canvas.getHeight());
+                    }
+                }
+            });
+
+            // Assemble pipeline
+            Element main;
+            if ("vnc".equals(connectionType)) {
+                main = new VncClient("client", userNameOrPassword, screen, canvas);
+            } else if ("rdp".equals(connectionType)) {
+                main = new RdpClient("client", userNameOrPassword, screen, canvas);
+            } else {
+                throw new RuntimeException("Unknown connection type. Expected value: \"vnc\" or \"rdp\", actual value: \"" + connectionType + "\".");
+            }
+
+            Pipeline pipeline = new PipelineImpl("Client");
+            pipeline.add(socket, main);
+            pipeline.link("socket", main.getId(), "socket");
+
+            pipeline.validate();
+
+            frame = createVncClientMainWindow(canvas, "VNC", new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent evt) {
+                    shutdown();
+                }
+            });
+
+            try {
+                // Connect socket to remote server and run main loop(s)
+                socket.connect(address);
+            } finally {
+                shutdown();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
         }
-      });
+    }
 
-      // Assemble pipeline
-      Element main;
-      if ("vnc".equals(connectionType)) {
-        main = new VncClient("client", userNameOrPassword, screen, canvas);
-      } else if ("rdp".equals(connectionType)) {
-        main = new RdpClient("client", userNameOrPassword, screen, canvas);
-      } else {
-        throw new RuntimeException("Unknown connection type. Expected value: \"vnc\" or \"rdp\", actual value: \"" + connectionType + "\".");
-      }
-
-      Pipeline pipeline = new PipelineImpl("Client");
-      pipeline.add(socket, main);
-      pipeline.link("socket", main.getId(), "socket");
-
-      pipeline.validate();
-      
-      frame = createVncClientMainWindow(canvas, "VNC", new WindowAdapter() {
-        public void windowClosing(WindowEvent evt) {
-          shutdown();
+    protected static void shutdown() {
+        if (frame != null) {
+            frame.setVisible(false);
+            frame.dispose();
         }
-      });
-
-      try {
-        // Connect socket to remote server and run main loop(s)
-        socket.connect(address);
-      } finally {
-        shutdown();
-      }
-
-    } catch (Exception e) {
-      e.printStackTrace(System.err);
+        if (socket != null)
+            socket.shutdown();
     }
-  }
 
-  protected static void shutdown() {
-    if (frame != null) {
-      frame.setVisible(false);
-      frame.dispose();
+    protected static Frame createVncClientMainWindow(BufferedImageCanvas canvas, String title, WindowListener windowListener) {
+        // Create AWT windows
+        Frame frame = new Frame(title + " - RDP");
+
+        // Use scrolling pane to support screens, which are larger than ours
+        scroller = new ScrollPane(ScrollPane.SCROLLBARS_AS_NEEDED);
+        scroller.add(canvas);
+        scroller.setSize(canvas.getWidth(), canvas.getHeight());
+
+        frame.add(scroller);
+        frame.pack();
+        frame.setVisible(true);
+
+        frame.addWindowListener(windowListener);
+
+        return frame;
     }
-    if (socket != null)
-      socket.shutdown();
-  }
-
-  protected static Frame createVncClientMainWindow(BufferedImageCanvas canvas, String title, WindowListener windowListener) {
-    // Create AWT windows
-    Frame frame = new Frame(title + " - RDP");
-
-    // Use scrolling pane to support screens, which are larger than ours
-    scroller = new ScrollPane(ScrollPane.SCROLLBARS_AS_NEEDED);
-    scroller.add(canvas);
-    scroller.setSize(canvas.getWidth(), canvas.getHeight());
-
-    frame.add(scroller);
-    frame.pack();
-    frame.setVisible(true);
-
-    frame.addWindowListener(windowListener);
-
-    return frame;
-  }
 
 }

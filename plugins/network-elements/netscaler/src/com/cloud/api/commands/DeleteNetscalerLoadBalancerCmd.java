@@ -19,11 +19,10 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
@@ -39,19 +38,23 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteNetscalerLoadBalancer", responseObject=SuccessResponse.class, description=" delete a netscaler load balancer device")
+@APICommand(name = "deleteNetscalerLoadBalancer", responseObject = SuccessResponse.class, description = " delete a netscaler load balancer device")
 public class DeleteNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(DeleteNetscalerLoadBalancerCmd.class.getName());
     private static final String s_name = "deletenetscalerloadbalancerresponse";
-    @Inject NetscalerLoadBalancerElementService _netsclarLbService;
+    @Inject
+    NetscalerLoadBalancerElementService _netsclarLbService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.UUID, entityType = NetscalerLoadBalancerResponse.class,
-            required=true, description="netscaler load balancer device ID")
+    @Parameter(name = ApiConstants.LOAD_BALANCER_DEVICE_ID,
+               type = CommandType.UUID,
+               entityType = NetscalerLoadBalancerResponse.class,
+               required = true,
+               description = "netscaler load balancer device ID")
     private Long lbDeviceId;
 
     /////////////////////////////////////////////////////
@@ -67,7 +70,8 @@ public class DeleteNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             boolean result = _netsclarLbService.deleteNetscalerLoadBalancer(this);
             if (result) {
@@ -77,7 +81,7 @@ public class DeleteNetscalerLoadBalancerCmd extends BaseAsyncCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete netscaler load balancer.");
             }
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

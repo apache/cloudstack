@@ -16,15 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
-import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.projects.Project;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Volume;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.Account;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -40,15 +36,20 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.projects.Project;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
-@APICommand(name = "createTemplate", responseObject = TemplateResponse.class, description = "Creates a template of a virtual machine. " + "The virtual machine must be in a STOPPED state. "
-        + "A template created from this command is automatically designated as a private template visible to the account that created it.")
-        public class CreateTemplateCmd extends BaseAsyncCreateCmd {
+@APICommand(name = "createTemplate", responseObject = TemplateResponse.class, description = "Creates a template of a virtual machine. "
+    + "The virtual machine must be in a STOPPED state. "
+    + "A template created from this command is automatically designated as a private template visible to the account that created it.")
+public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTemplateCmd.class.getName());
     private static final String s_name = "createtemplateresponse";
 
@@ -59,7 +60,11 @@ import java.util.Map;
     @Parameter(name = ApiConstants.BITS, type = CommandType.INTEGER, description = "32 or 64 bit")
     private Integer bits;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "the display text of the template. This is usually used for display purposes.", length=4096)
+    @Parameter(name = ApiConstants.DISPLAY_TEXT,
+               type = CommandType.STRING,
+               required = true,
+               description = "the display text of the template. This is usually used for display purposes.",
+               length = 4096)
     private String displayText;
 
     @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "true if this template is a featured template, false otherwise")
@@ -71,44 +76,58 @@ import java.util.Map;
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the template")
     private String templateName;
 
-    @Parameter(name = ApiConstants.OS_TYPE_ID, type = CommandType.UUID, entityType = GuestOSResponse.class,
-            required = true, description = "the ID of the OS Type that best represents the OS of this template.")
+    @Parameter(name = ApiConstants.OS_TYPE_ID,
+               type = CommandType.UUID,
+               entityType = GuestOSResponse.class,
+               required = true,
+               description = "the ID of the OS Type that best represents the OS of this template.")
     private Long osTypeId;
 
-    @Parameter(name = ApiConstants.PASSWORD_ENABLED, type = CommandType.BOOLEAN, description = "true if the template supports the password reset feature; default is false")
+    @Parameter(name = ApiConstants.PASSWORD_ENABLED,
+               type = CommandType.BOOLEAN,
+               description = "true if the template supports the password reset feature; default is false")
     private Boolean passwordEnabled;
 
     @Parameter(name = ApiConstants.REQUIRES_HVM, type = CommandType.BOOLEAN, description = "true if the template requres HVM, false otherwise")
     private Boolean requiresHvm;
 
-    @Parameter(name = ApiConstants.SNAPSHOT_ID, type = CommandType.UUID, entityType = SnapshotResponse.class,
-            description = "the ID of the snapshot the template is being created from. Either this parameter, or volumeId has to be passed in")
+    @Parameter(name = ApiConstants.SNAPSHOT_ID,
+               type = CommandType.UUID,
+               entityType = SnapshotResponse.class,
+               description = "the ID of the snapshot the template is being created from. Either this parameter, or volumeId has to be passed in")
     private Long snapshotId;
 
-    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class,
-            description = "the ID of the disk volume the template is being created from. Either this parameter, or snapshotId has to be passed in")
+    @Parameter(name = ApiConstants.VOLUME_ID,
+               type = CommandType.UUID,
+               entityType = VolumeResponse.class,
+               description = "the ID of the disk volume the template is being created from. Either this parameter, or snapshotId has to be passed in")
     private Long volumeId;
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
-            description="Optional, VM ID. If this presents, it is going to create a baremetal template for VM this ID refers to. This is only for VM whose hypervisor type is BareMetal")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+               type = CommandType.UUID,
+               entityType = UserVmResponse.class,
+               description = "Optional, VM ID. If this presents, it is going to create a baremetal template for VM this ID refers to. This is only for VM whose hypervisor type is BareMetal")
     private Long vmId;
 
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, description="Optional, only for baremetal hypervisor. The directory name where template stored on CIFS server")
+    @Parameter(name = ApiConstants.URL,
+               type = CommandType.STRING,
+               description = "Optional, only for baremetal hypervisor. The directory name where template stored on CIFS server")
     private String url;
 
-    @Parameter(name=ApiConstants.TEMPLATE_TAG, type=CommandType.STRING, description="the tag for this template.")
+    @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "the tag for this template.")
     private String templateTag;
 
-    @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="Template details in key/value pairs.")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Template details in key/value pairs.")
     protected Map details;
 
-    @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE, type = CommandType.BOOLEAN, description = "true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
+    @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE,
+               type = CommandType.BOOLEAN,
+               description = "true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
     protected Boolean isDynamicallyScalable;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-
 
     public Integer getBits() {
         return bits;
@@ -168,7 +187,7 @@ import java.util.Map;
         }
 
         Collection paramsCollection = details.values();
-        Map params = (Map) (paramsCollection.toArray())[0];
+        Map params = (Map)(paramsCollection.toArray())[0];
         return params;
     }
 
@@ -215,7 +234,8 @@ import java.util.Map;
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             Project project = _projectService.findByProjectAccountId(accountId);
             if (project.getState() != Project.State.Active) {
-                PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the specified project id in state=" + project.getState() + " as it's no longer active");
+                PermissionDeniedException ex =
+                    new PermissionDeniedException("Can't add resources to the specified project id in state=" + project.getState() + " as it's no longer active");
                 ex.addProxyObject(project.getUuid(), "projectId");
             }
         } else if (account.getState() == Account.State.disabled) {
@@ -252,19 +272,19 @@ import java.util.Map;
             this.setEntityId(template.getId());
             this.setEntityUuid(template.getUuid());
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
-            "Failed to create a template");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a template");
         }
 
     }
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Template Id: "+getEntityId()+((getSnapshotId() == null) ? " from volume Id: " + getVolumeId() : " from snapshot Id: " + getSnapshotId()));
+        CallContext.current().setEventDetails(
+            "Template Id: " + getEntityId() + ((getSnapshotId() == null) ? " from volume Id: " + getVolumeId() : " from snapshot Id: " + getSnapshotId()));
         VirtualMachineTemplate template = null;
         template = this._templateService.createPrivateTemplate(this);
 
-        if (template != null){
+        if (template != null) {
             List<TemplateResponse> templateResponses;
             if (isBareMetal()) {
                 templateResponses = _responseGenerator.createTemplateResponses(template.getId(), vmId);

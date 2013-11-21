@@ -15,20 +15,20 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
-
 package com.cloud.network.dao;
+
+import java.util.List;
+
+import javax.ejb.Local;
+
+import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import java.util.List;
 
 @Component
-@Local(value=MonitoringServiceDao.class)
+@Local(value = MonitoringServiceDao.class)
 public class MonitoringServiceDaoImpl extends GenericDaoBase<MonitoringServiceVO, Long> implements MonitoringServiceDao {
     private final SearchBuilder<MonitoringServiceVO> AllFieldsSearch;
 
@@ -44,8 +44,6 @@ public class MonitoringServiceDaoImpl extends GenericDaoBase<MonitoringServiceVO
 
         AllFieldsSearch.done();
     }
-
-
 
     @Override
     public List<MonitoringServiceVO> listAllServices() {

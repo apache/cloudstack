@@ -27,20 +27,20 @@ import com.cloud.consoleproxy.util.TileTracker;
 import com.cloud.consoleproxy.vnc.FrameBufferCanvas;
 
 /**
- * 
+ *
  * an instance of specialized console protocol implementation, such as VNC or RDP
- * 
+ *
  * It mainly implements the features needed by front-end AJAX viewer
- * 
+ *
  */
 public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, ConsoleProxyClientListener {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyClientBase.class);
-    
+
     private static int s_nextClientId = 0;
     protected int clientId = getNextClientId();
-    
+
     protected long ajaxSessionId = 0;
-    
+
     protected boolean dirtyFlag = false;
     protected Object tileDirtyEvent = new Object();
     protected TileTracker tracker;
@@ -48,7 +48,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
 
     protected ConsoleProxyClientParam clientParam;
     protected String clientToken;
-    
+
     protected long createTime = System.currentTimeMillis();
     protected long lastFrontEndActivityTime = System.currentTimeMillis();
 
@@ -68,69 +68,76 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
     public int getClientId() {
         return clientId;
     }
-    
+
+    @Override
     public abstract boolean isHostConnected();
+
+    @Override
     public abstract boolean isFrontEndAlive();
 
     @Override
     public long getAjaxSessionId() {
         return this.ajaxSessionId;
     }
-    
+
     @Override
     public AjaxFIFOImageCache getAjaxImageCache() {
         return ajaxImageCache;
     }
-    
+
+    @Override
     public Image getClientScaledImage(int width, int height) {
         FrameBufferCanvas canvas = getFrameBufferCavas();
-        if(canvas != null)
+        if (canvas != null)
             return canvas.getFrameBufferScaledImage(width, height);
-        
+
         return null;
     }
-    
+
+    @Override
     public abstract void sendClientRawKeyboardEvent(InputEventType event, int code, int modifiers);
+
+    @Override
     public abstract void sendClientMouseEvent(InputEventType event, int x, int y, int code, int modifiers);
-    
+
     @Override
     public long getClientCreateTime() {
         return createTime;
     }
-    
+
     @Override
     public long getClientLastFrontEndActivityTime() {
         return lastFrontEndActivityTime;
     }
-    
+
     @Override
     public String getClientHostAddress() {
         return clientParam.getClientHostAddress();
     }
-    
+
     @Override
     public int getClientHostPort() {
         return clientParam.getClientHostPort();
     }
-    
+
     @Override
     public String getClientHostPassword() {
         return clientParam.getClientHostPassword();
     }
-    
+
     @Override
     public String getClientTag() {
-        if(clientParam.getClientTag() != null)
+        if (clientParam.getClientTag() != null)
             return clientParam.getClientTag();
         return "";
     }
 
     @Override
     public abstract void initClient(ConsoleProxyClientParam param);
-        
+
     @Override
     public abstract void closeClient();
-    
+
     //
     // interface FrameBufferEventListener
     //
@@ -138,68 +145,68 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
     public void onFramebufferSizeChange(int w, int h) {
         tracker.resize(w, h);
 
-        synchronized(this) {
+        synchronized (this) {
             framebufferResized = true;
             resizedFramebufferWidth = w;
             resizedFramebufferHeight = h;
         }
-        
+
         signalTileDirtyEvent();
     }
 
     @Override
     public void onFramebufferUpdate(int x, int y, int w, int h) {
-        if(s_logger.isTraceEnabled())
+        if (s_logger.isTraceEnabled())
             s_logger.trace("Frame buffer update {" + x + "," + y + "," + w + "," + h + "}");
         tracker.invalidate(new Rectangle(x, y, w, h));
-        
+
         signalTileDirtyEvent();
     }
-    
+
     //
-    // AJAX Image manipulation 
+    // AJAX Image manipulation
     //
     public byte[] getFrameBufferJpeg() {
         FrameBufferCanvas canvas = getFrameBufferCavas();
-        if(canvas != null)
+        if (canvas != null)
             return canvas.getFrameBufferJpeg();
-        
+
         return null;
     }
-    
+
     public byte[] getTilesMergedJpeg(List<TileInfo> tileList, int tileWidth, int tileHeight) {
         FrameBufferCanvas canvas = getFrameBufferCavas();
-        if(canvas != null)
+        if (canvas != null)
             return canvas.getTilesMergedJpeg(tileList, tileWidth, tileHeight);
         return null;
     }
-    
+
     private String prepareAjaxImage(List<TileInfo> tiles, boolean init) {
         byte[] imgBits;
-        if(init)
+        if (init)
             imgBits = getFrameBufferJpeg();
-        else 
+        else
             imgBits = getTilesMergedJpeg(tiles, tracker.getTileWidth(), tracker.getTileHeight());
-        
-        if(imgBits == null) {
+
+        if (imgBits == null) {
             s_logger.warn("Unable to generate jpeg image");
         } else {
-            if(s_logger.isTraceEnabled())
+            if (s_logger.isTraceEnabled())
                 s_logger.trace("Generated jpeg image size: " + imgBits.length);
         }
-        
+
         int key = ajaxImageCache.putImage(imgBits);
         StringBuffer sb = new StringBuffer();
         sb.append("/ajaximg?token=").append(clientToken);
         sb.append("&key=").append(key);
         sb.append("&ts=").append(System.currentTimeMillis());
-        
+
         return sb.toString();
     }
-    
+
     private String prepareAjaxSession(boolean init) {
-        if(init) {
-            synchronized(this) {
+        if (init) {
+            synchronized (this) {
                 ajaxSessionId++;
             }
         }
@@ -213,13 +220,13 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
     public String onAjaxClientKickoff() {
         return "onKickoff();";
     }
-    
+
     private boolean waitForViewerReady() {
         long startTick = System.currentTimeMillis();
-        while(System.currentTimeMillis() - startTick < 5000) {
-            if(getFrameBufferCavas() != null)
+        while (System.currentTimeMillis() - startTick < 5000) {
+            if (getFrameBufferCavas() != null)
                 return true;
-            
+
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
@@ -227,140 +234,109 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
         }
         return false;
     }
-    
+
     private String onAjaxClientConnectFailed() {
-        return "<html><head></head><body><div id=\"main_panel\" tabindex=\"1\"><p>" + 
-            "Unable to start console session as connection is refused by the machine you are accessing" +
-            "</p></div></body></html>";
+        return "<html><head></head><body><div id=\"main_panel\" tabindex=\"1\"><p>"
+            + "Unable to start console session as connection is refused by the machine you are accessing" + "</p></div></body></html>";
     }
 
     @Override
     public String onAjaxClientStart(String title, List<String> languages, String guest) {
         updateFrontEndActivityTime();
-        
-        if(!waitForViewerReady())
+
+        if (!waitForViewerReady())
             return onAjaxClientConnectFailed();
-        
-        synchronized(this) {
+
+        synchronized (this) {
             ajaxSessionId++;
             framebufferResized = false;
         }
-        
+
         int tileWidth = tracker.getTileWidth();
         int tileHeight = tracker.getTileHeight();
         int width = tracker.getTrackWidth();
         int height = tracker.getTrackHeight();
-        
-        if(s_logger.isTraceEnabled())
+
+        if (s_logger.isTraceEnabled())
             s_logger.trace("Ajax client start, frame buffer w: " + width + ", " + height);
 
-/*        
-        int retry = 0;
-        tracker.initCoverageTest();
-        while(!tracker.hasFullCoverage() && retry < 10) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-            }
-            retry++;
-        }
-*/
-        
+        /*
+                int retry = 0;
+                tracker.initCoverageTest();
+                while(!tracker.hasFullCoverage() && retry < 10) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                    }
+                    retry++;
+                }
+        */
+
         List<TileInfo> tiles = tracker.scan(true);
         String imgUrl = prepareAjaxImage(tiles, true);
         String updateUrl = prepareAjaxSession(true);
-        
+
         StringBuffer sbTileSequence = new StringBuffer();
         int i = 0;
-        for(TileInfo tile : tiles) {
+        for (TileInfo tile : tiles) {
             sbTileSequence.append("[").append(tile.getRow()).append(",").append(tile.getCol()).append("]");
-            if(i < tiles.size() - 1)
+            if (i < tiles.size() - 1)
                 sbTileSequence.append(",");
-            
+
             i++;
         }
 
-        return getAjaxViewerPageContent(sbTileSequence.toString(), imgUrl, 
-            updateUrl, width, height, tileWidth, tileHeight, title, 
-            ConsoleProxy.keyboardType == ConsoleProxy.KEYBOARD_RAW, 
-            languages, guest);
+        return getAjaxViewerPageContent(sbTileSequence.toString(), imgUrl, updateUrl, width, height, tileWidth, tileHeight, title,
+            ConsoleProxy.keyboardType == ConsoleProxy.KEYBOARD_RAW, languages, guest);
     }
-    
-    private String getAjaxViewerPageContent(String tileSequence, String imgUrl, String updateUrl, int width,
-        int height, int tileWidth, int tileHeight, String title, boolean rawKeyboard, List<String> languages, String guest) {
+
+    private String getAjaxViewerPageContent(String tileSequence, String imgUrl, String updateUrl, int width, int height, int tileWidth, int tileHeight, String title,
+        boolean rawKeyboard, List<String> languages, String guest) {
 
         StringBuffer sbLanguages = new StringBuffer("");
-        if(languages != null) {
-            for(String lang : languages) {
-                if(sbLanguages.length() > 0) {
+        if (languages != null) {
+            for (String lang : languages) {
+                if (sbLanguages.length() > 0) {
                     sbLanguages.append(",");
                 }
                 sbLanguages.append(lang);
             }
         }
-        
-        String[] content = new String[] {
-            "<html>",
-            "<head>",
-            "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/jquery.js\"></script>",
-            "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/cloud.logger.js\"></script>",
-            "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/ajaxkeys.js\"></script>",
-            "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/ajaxviewer.js\"></script>",
-            "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/handler.js\"></script>",
-            "<link rel=\"stylesheet\" type=\"text/css\" href=\"/resource/css/ajaxviewer.css\"></link>",
-            "<link rel=\"stylesheet\" type=\"text/css\" href=\"/resource/css/logger.css\"></link>",
-            "<title>" + title + "</title>",
-            "</head>",
-            "<body>",
-            "<div id=\"toolbar\">",
-            "<ul>",
-                "<li>", 
-                    "<a href=\"#\" cmd=\"sendCtrlAltDel\">", 
-                        "<span><img align=\"left\" src=\"/resource/images/cad.gif\" alt=\"Ctrl-Alt-Del\" />Ctrl-Alt-Del</span>", 
-                    "</a>", 
-                "</li>",
-                "<li>", 
-                    "<a href=\"#\" cmd=\"sendCtrlEsc\">", 
-                        "<span><img align=\"left\" src=\"/resource/images/winlog.png\" alt=\"Ctrl-Esc\" style=\"width:16px;height:16px\"/>Ctrl-Esc</span>",
-                    "</a>", 
-                "</li>",
-                
-                "<li class=\"pulldown\">", 
-                    "<a href=\"#\">", 
-                        "<span><img align=\"left\" src=\"/resource/images/winlog.png\" alt=\"Keyboard\" style=\"width:16px;height:16px\"/>Keyboard</span>",
-                    "</a>", 
-                    "<ul>",
-                        "<li><a href=\"#\" cmd=\"keyboard_us\"><span>Standard (US) keyboard</span></a></li>",
-                        "<li><a href=\"#\" cmd=\"keyboard_uk\"><span>UK keyboard</span></a></li>",
-                        "<li><a href=\"#\" cmd=\"keyboard_jp\"><span>Japanese keyboard</span></a></li>",
-                    "</ul>",
-                "</li>",
-            "</ul>",
-            "<span id=\"light\" class=\"dark\" cmd=\"toggle_logwin\"></span>", 
-            "</div>",
-            "<div id=\"main_panel\" tabindex=\"1\"></div>",
-            "<script language=\"javascript\">",
-            "var acceptLanguages = '" + sbLanguages.toString() + "';",
-            "var tileMap = [ " + tileSequence + " ];",
-            "var ajaxViewer = new AjaxViewer('main_panel', '" + imgUrl + "', '" + updateUrl + "', tileMap, ", 
+
+        String[] content =
+            new String[] {"<html>", "<head>", "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/jquery.js\"></script>",
+                "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/cloud.logger.js\"></script>",
+                "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/ajaxkeys.js\"></script>",
+                "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/ajaxviewer.js\"></script>",
+                "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/handler.js\"></script>",
+                "<link rel=\"stylesheet\" type=\"text/css\" href=\"/resource/css/ajaxviewer.css\"></link>",
+                "<link rel=\"stylesheet\" type=\"text/css\" href=\"/resource/css/logger.css\"></link>", "<title>" + title + "</title>", "</head>", "<body>",
+                "<div id=\"toolbar\">", "<ul>", "<li>", "<a href=\"#\" cmd=\"sendCtrlAltDel\">",
+                "<span><img align=\"left\" src=\"/resource/images/cad.gif\" alt=\"Ctrl-Alt-Del\" />Ctrl-Alt-Del</span>", "</a>", "</li>", "<li>",
+                "<a href=\"#\" cmd=\"sendCtrlEsc\">",
+                "<span><img align=\"left\" src=\"/resource/images/winlog.png\" alt=\"Ctrl-Esc\" style=\"width:16px;height:16px\"/>Ctrl-Esc</span>", "</a>", "</li>",
+
+                "<li class=\"pulldown\">", "<a href=\"#\">",
+                "<span><img align=\"left\" src=\"/resource/images/winlog.png\" alt=\"Keyboard\" style=\"width:16px;height:16px\"/>Keyboard</span>", "</a>", "<ul>",
+                "<li><a href=\"#\" cmd=\"keyboard_us\"><span>Standard (US) keyboard</span></a></li>",
+                "<li><a href=\"#\" cmd=\"keyboard_uk\"><span>UK keyboard</span></a></li>",
+                "<li><a href=\"#\" cmd=\"keyboard_jp\"><span>Japanese keyboard</span></a></li>", "</ul>", "</li>", "</ul>",
+                "<span id=\"light\" class=\"dark\" cmd=\"toggle_logwin\"></span>", "</div>", "<div id=\"main_panel\" tabindex=\"1\"></div>",
+                "<script language=\"javascript\">", "var acceptLanguages = '" + sbLanguages.toString() + "';", "var tileMap = [ " + tileSequence + " ];",
+                "var ajaxViewer = new AjaxViewer('main_panel', '" + imgUrl + "', '" + updateUrl + "', tileMap, ",
                 String.valueOf(width) + ", " + String.valueOf(height) + ", " + String.valueOf(tileWidth) + ", " + String.valueOf(tileHeight) + ");",
 
-            "$(function() {",
-                "ajaxViewer.start();",
-            "});",
+                "$(function() {", "ajaxViewer.start();", "});",
 
-            "</script>",
-            "</body>",
-            "</html>"   
-        };
-        
+                "</script>", "</body>", "</html>"};
+
         StringBuffer sb = new StringBuffer();
-        for(int i = 0; i < content.length; i++)
+        for (int i = 0; i < content.length; i++)
             sb.append(content[i]);
-        
+
         return sb.toString();
     }
-    
+
     public String onAjaxClientDisconnected() {
         return "onDisconnect();";
     }
@@ -368,82 +344,79 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
     @Override
     public String onAjaxClientUpdate() {
         updateFrontEndActivityTime();
-        if(!waitForViewerReady())
+        if (!waitForViewerReady())
             return onAjaxClientDisconnected();
-        
-        synchronized(tileDirtyEvent) {
-            if(!dirtyFlag) {
+
+        synchronized (tileDirtyEvent) {
+            if (!dirtyFlag) {
                 try {
                     tileDirtyEvent.wait(3000);
-                } catch(InterruptedException e) {
+                } catch (InterruptedException e) {
                 }
             }
         }
-        
+
         boolean doResize = false;
-        synchronized(this) {
-            if(framebufferResized) {
+        synchronized (this) {
+            if (framebufferResized) {
                 framebufferResized = false;
                 doResize = true;
             }
         }
-        
+
         List<TileInfo> tiles;
-        
-        if(doResize)
+
+        if (doResize)
             tiles = tracker.scan(true);
         else
             tiles = tracker.scan(false);
         dirtyFlag = false;
-        
+
         String imgUrl = prepareAjaxImage(tiles, false);
         StringBuffer sbTileSequence = new StringBuffer();
         int i = 0;
-        for(TileInfo tile : tiles) {
+        for (TileInfo tile : tiles) {
             sbTileSequence.append("[").append(tile.getRow()).append(",").append(tile.getCol()).append("]");
-            if(i < tiles.size() - 1)
+            if (i < tiles.size() - 1)
                 sbTileSequence.append(",");
-            
+
             i++;
         }
 
-        return getAjaxViewerUpdatePageContent(sbTileSequence.toString(), imgUrl, doResize, 
-            resizedFramebufferWidth, resizedFramebufferHeight, 
-            tracker.getTileWidth(), tracker.getTileHeight());
+        return getAjaxViewerUpdatePageContent(sbTileSequence.toString(), imgUrl, doResize, resizedFramebufferWidth, resizedFramebufferHeight, tracker.getTileWidth(),
+            tracker.getTileHeight());
     }
-    
-    private String getAjaxViewerUpdatePageContent(String tileSequence, String imgUrl, boolean resized, int width,
-        int height, int tileWidth, int tileHeight) {
-        
-        String[] content = new String[] {
-            "tileMap = [ " + tileSequence + " ];",
-            resized ? "ajaxViewer.resize('main_panel', " + width + ", " + height + " , " + tileWidth + ", " + tileHeight + ");" : "", 
-            "ajaxViewer.refresh('" + imgUrl + "', tileMap, false);"
-        };
-        
+
+    private String getAjaxViewerUpdatePageContent(String tileSequence, String imgUrl, boolean resized, int width, int height, int tileWidth, int tileHeight) {
+
+        String[] content =
+            new String[] {"tileMap = [ " + tileSequence + " ];",
+                resized ? "ajaxViewer.resize('main_panel', " + width + ", " + height + " , " + tileWidth + ", " + tileHeight + ");" : "",
+                "ajaxViewer.refresh('" + imgUrl + "', tileMap, false);"};
+
         StringBuffer sb = new StringBuffer();
-        for(int i = 0; i < content.length; i++)
+        for (int i = 0; i < content.length; i++)
             sb.append(content[i]);
-        
+
         return sb.toString();
     }
-    
+
     //
     // Helpers
     //
     private synchronized static int getNextClientId() {
         return ++s_nextClientId;
     }
-    
+
     private void signalTileDirtyEvent() {
-        synchronized(tileDirtyEvent) {
+        synchronized (tileDirtyEvent) {
             dirtyFlag = true;
             tileDirtyEvent.notifyAll();
         }
     }
-    
+
     public void updateFrontEndActivityTime() {
-        lastFrontEndActivityTime = System.currentTimeMillis(); 
+        lastFrontEndActivityTime = System.currentTimeMillis();
     }
 
     protected abstract FrameBufferCanvas getFrameBufferCavas();

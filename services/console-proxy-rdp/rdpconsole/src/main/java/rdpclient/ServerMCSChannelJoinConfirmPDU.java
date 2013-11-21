@@ -20,32 +20,32 @@ import streamer.ByteBuffer;
 import streamer.Link;
 import streamer.OneTimeSwitch;
 
-public class ServerMCSChannelJoinConfirmPDU  extends OneTimeSwitch {
+public class ServerMCSChannelJoinConfirmPDU extends OneTimeSwitch {
 
-  protected int channel;
+    protected int channel;
 
-  public ServerMCSChannelJoinConfirmPDU(String id, int channel) {
-    super(id);
-    this.channel=channel;
-  }
+    public ServerMCSChannelJoinConfirmPDU(String id, int channel) {
+        super(id);
+        this.channel = channel;
+    }
 
-  @Override
-  protected void handleOneTimeData(ByteBuffer buf, Link link) {
-    if (buf == null)
-      return;
+    @Override
+    protected void handleOneTimeData(ByteBuffer buf, Link link) {
+        if (buf == null)
+            return;
 
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
-    
-    // Ignore packet
-    buf.unref();
-    switchOff();
-  }
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
+
+        // Ignore packet
+        buf.unref();
+        switchOff();
+    }
 
 }
 
 /*
- * 03 00 00 0F 02 F0 80 3E 00 00 03 03 EC 03 EC 
+ * 03 00 00 0F 02 F0 80 3E 00 00 03 03 EC 03 EC
 
   Frame: Number = 22, Captured Frame Length = 72, MediaType = DecryptedPayloadHeader
 + DecryptedPayloadHeader: FrameCount = 1, ErrorStatus = SUCCESS
@@ -85,5 +85,5 @@ public class ServerMCSChannelJoinConfirmPDU  extends OneTimeSwitch {
     - ChannelId: 1004
        Align: No Padding
        Value: 1004 (0x3EC)
- 
+
  */

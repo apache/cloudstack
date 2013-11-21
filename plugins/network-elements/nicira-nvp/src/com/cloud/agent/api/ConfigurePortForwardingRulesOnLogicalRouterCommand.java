@@ -28,7 +28,7 @@ public class ConfigurePortForwardingRulesOnLogicalRouterCommand extends Command 
     private String logicalRouterUuid;
     private List<PortForwardingRuleTO> rules;
 
-    public ConfigurePortForwardingRulesOnLogicalRouterCommand(String logicalRouterUuid, List<PortForwardingRuleTO> rules) {
+    public ConfigurePortForwardingRulesOnLogicalRouterCommand(final String logicalRouterUuid, final List<PortForwardingRuleTO> rules) {
         this.logicalRouterUuid = logicalRouterUuid;
         this.rules = rules;
     }
@@ -37,7 +37,7 @@ public class ConfigurePortForwardingRulesOnLogicalRouterCommand extends Command 
         return logicalRouterUuid;
     }
 
-    public void setLogicalRouterUuid(String logicalRouterUuid) {
+    public void setLogicalRouterUuid(final String logicalRouterUuid) {
         this.logicalRouterUuid = logicalRouterUuid;
     }
 
@@ -45,12 +45,11 @@ public class ConfigurePortForwardingRulesOnLogicalRouterCommand extends Command 
         return rules;
     }
 
-    public void setRules(List<PortForwardingRuleTO> rules) {
+    public void setRules(final List<PortForwardingRuleTO> rules) {
         this.rules = rules;
     }
 
-    /*
-     * (non-Javadoc)
+    /* (non-Javadoc)
      * @see com.cloud.agent.api.Command#executeInSequence()
      */
     @Override

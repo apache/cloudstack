@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.api.commands;
 
-
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
@@ -36,17 +35,21 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.BigSwitchVnsElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "deleteBigSwitchVnsDevice", responseObject=SuccessResponse.class, description=" delete a bigswitch vns device", since = "4.1.0")
+@APICommand(name = "deleteBigSwitchVnsDevice", responseObject = SuccessResponse.class, description = " delete a bigswitch vns device", since = "4.1.0")
 public class DeleteBigSwitchVnsDeviceCmd extends BaseAsyncCmd {
     private static final String s_name = "deletebigswitchvnsdeviceresponse";
-    @Inject BigSwitchVnsElementService _bigswitchVnsElementService;
+    @Inject
+    BigSwitchVnsElementService _bigswitchVnsElementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=VnsConstants.BIGSWITCH_VNS_DEVICE_ID, type=CommandType.UUID, entityType = BigSwitchVnsDeviceResponse.class,
-		required=true, description="BigSwitch device ID")
+    @Parameter(name = VnsConstants.BIGSWITCH_VNS_DEVICE_ID,
+               type = CommandType.UUID,
+               entityType = BigSwitchVnsDeviceResponse.class,
+               required = true,
+               description = "BigSwitch device ID")
     private Long bigswitchVnsDeviceId;
 
     /////////////////////////////////////////////////////
@@ -62,7 +65,8 @@ public class DeleteBigSwitchVnsDeviceCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             boolean result = _bigswitchVnsElementService.deleteBigSwitchVnsDevice(this);
             if (result) {
@@ -72,7 +76,7 @@ public class DeleteBigSwitchVnsDeviceCmd extends BaseAsyncCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete BigSwitch device.");
             }
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

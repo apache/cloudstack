@@ -37,44 +37,46 @@ import com.cloud.utils.net.NetUtils;
  *
  */
 @Entity
-@Table(name=("load_balancing_rules"))
-@DiscriminatorValue(value="LoadBalancing")
-@PrimaryKeyJoinColumn(name="id")
-public class ApplicationLoadBalancerRuleVO extends FirewallRuleVO implements ApplicationLoadBalancerRule{
-    @Column(name="name")
+@Table(name = ("load_balancing_rules"))
+@DiscriminatorValue(value = "LoadBalancing")
+@PrimaryKeyJoinColumn(name = "id")
+public class ApplicationLoadBalancerRuleVO extends FirewallRuleVO implements ApplicationLoadBalancerRule {
+    @Column(name = "name")
     private String name;
 
-    @Column(name="description", length=4096)
+    @Column(name = "description", length = 4096)
     private String description;
 
-    @Column(name="algorithm")
+    @Column(name = "algorithm")
     private String algorithm;
 
-    @Column(name="default_port_start")
+    @Column(name = "default_port_start")
     private int defaultPortStart;
-    
-    @Column(name="default_port_end")
+
+    @Column(name = "default_port_end")
     private int defaultPortEnd;
-    
-    @Column(name="source_ip_address_network_id")
+
+    @Column(name = "source_ip_address_network_id")
     Long sourceIpNetworkId;
-    
-    @Column(name="source_ip_address")
-    @Enumerated(value=EnumType.STRING)
+
+    @Column(name = "lb_protocol")
+    String lbProtocol;
+
+    @Column(name = "source_ip_address")
+    @Enumerated(value = EnumType.STRING)
     private Ip sourceIp = null;
-    
-    @Enumerated(value=EnumType.STRING)
-    @Column(name="scheme")
+
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "scheme")
     Scheme scheme;
 
-
-    public ApplicationLoadBalancerRuleVO() {  
+    public ApplicationLoadBalancerRuleVO() {
     }
-    
-    public ApplicationLoadBalancerRuleVO(String name, String description, int srcPort, int instancePort, String algorithm,
-            long networkId, long accountId, long domainId, Ip sourceIp, long sourceIpNtwkId, Scheme scheme) {
-        super(null, null, srcPort, srcPort, NetUtils.TCP_PROTO, networkId, accountId, domainId, Purpose.LoadBalancing, null, null,null, null, null);
-        
+
+    public ApplicationLoadBalancerRuleVO(String name, String description, int srcPort, int instancePort, String algorithm, long networkId, long accountId, long domainId,
+            Ip sourceIp, long sourceIpNtwkId, Scheme scheme) {
+        super(null, null, srcPort, srcPort, NetUtils.TCP_PROTO, networkId, accountId, domainId, Purpose.LoadBalancing, null, null, null, null, null);
+
         this.name = name;
         this.description = description;
         this.algorithm = algorithm;
@@ -84,8 +86,7 @@ public class ApplicationLoadBalancerRuleVO extends FirewallRuleVO implements App
         this.sourceIpNetworkId = sourceIpNtwkId;
         this.scheme = scheme;
     }
-    
-    
+
     @Override
     public Long getSourceIpNetworkId() {
         return sourceIpNetworkId;
@@ -95,7 +96,7 @@ public class ApplicationLoadBalancerRuleVO extends FirewallRuleVO implements App
     public Ip getSourceIp() {
         return sourceIp;
     }
-    
+
     @Override
     public String getName() {
         return name;
@@ -109,6 +110,11 @@ public class ApplicationLoadBalancerRuleVO extends FirewallRuleVO implements App
     @Override
     public String getAlgorithm() {
         return algorithm;
+    }
+
+    @Override
+    public String getLbProtocol() {
+        return lbProtocol;
     }
 
     @Override
@@ -130,4 +136,5 @@ public class ApplicationLoadBalancerRuleVO extends FirewallRuleVO implements App
     public int getInstancePort() {
         return defaultPortStart;
     }
+
 }

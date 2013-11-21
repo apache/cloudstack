@@ -26,11 +26,10 @@ import com.cloud.utils.component.Manager;
  * Monitor download progress of all templates across all servers
  *
  */
-public interface DownloadMonitor extends Manager{
-
+public interface DownloadMonitor extends Manager {
 
     public void downloadTemplateToStorage(DataObject template, AsyncCompletionCallback<DownloadAnswer> callback);
 
-	public void downloadVolumeToStorage(DataObject volume, AsyncCompletionCallback<DownloadAnswer> callback);
+    public void downloadVolumeToStorage(DataObject volume, AsyncCompletionCallback<DownloadAnswer> callback);
 
 }

@@ -16,21 +16,23 @@
 // under the License.
 package com.cloud.event.dao;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.ejb.Local;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.event.UsageEventDetailsVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @Component
-@Local(value={UsageEventDetailsDao.class})
+@Local(value = {UsageEventDetailsDao.class})
 public class UsageEventDetailsDaoImpl extends GenericDaoBase<UsageEventDetailsVO, Long> implements UsageEventDetailsDao {
     public static final Logger s_logger = Logger.getLogger(UsageEventDetailsDaoImpl.class.getName());
 
@@ -39,7 +41,7 @@ public class UsageEventDetailsDaoImpl extends GenericDaoBase<UsageEventDetailsVO
 
     public UsageEventDetailsDaoImpl() {
 
-        EventDetailsSearch =createSearchBuilder();
+        EventDetailsSearch = createSearchBuilder();
         EventDetailsSearch.and("eventId", EventDetailsSearch.entity().getUsageEventId(), SearchCriteria.Op.EQ);
         EventDetailsSearch.done();
 
@@ -47,7 +49,6 @@ public class UsageEventDetailsDaoImpl extends GenericDaoBase<UsageEventDetailsVO
         DetailSearch.and("eventId", DetailSearch.entity().getUsageEventId(), SearchCriteria.Op.EQ);
         DetailSearch.and("key", DetailSearch.entity().getKey(), SearchCriteria.Op.EQ);
         DetailSearch.done();
-
 
     }
 
@@ -99,6 +100,5 @@ public class UsageEventDetailsDaoImpl extends GenericDaoBase<UsageEventDetailsVO
         }
         txn.commit();
     }
-
 
 }

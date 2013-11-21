@@ -20,21 +20,21 @@ import com.cloud.bridge.util.XElement;
 import com.cloud.bridge.util.XSerializer;
 
 public class S3CreateBucketConfiguration {
-	@XElement(name="LocationConstraint")
-	private String location;
-	
-	static {
-		XSerializer.registerRootType("CreateBucketConfiguration", S3CreateBucketConfiguration.class);
-	}
-	
-	public S3CreateBucketConfiguration() {
-	}
+    @XElement(name = "LocationConstraint")
+    private String location;
 
-	public String getLocation() {
-		return location;
-	}
+    static {
+        XSerializer.registerRootType("CreateBucketConfiguration", S3CreateBucketConfiguration.class);
+    }
 
-	public void setLocation(String location) {
-		this.location = location;
-	}
+    public S3CreateBucketConfiguration() {
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
 }

@@ -19,19 +19,18 @@ package com.cloud.bridge.service.core.s3;
 import com.cloud.bridge.util.XElement;
 
 public class S3ListBucketPrefixEntry {
-	
-	@XElement(name="Prefix")
-	protected String prefix;
-	
-	public S3ListBucketPrefixEntry() {
-	}
 
-	public String getPrefix() {
-		return prefix;
-	}
+    @XElement(name = "Prefix")
+    protected String prefix;
 
-	public void setPrefix(String prefix) {
-		this.prefix = prefix;
-	}
+    public S3ListBucketPrefixEntry() {
+    }
+
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public void setPrefix(String prefix) {
+        this.prefix = prefix;
+    }
 }
-

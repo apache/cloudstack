@@ -50,10 +50,8 @@ public class SnapshotCommand extends Command {
      *            is the value of that field If you have better ideas on how to
      *            get it, you are welcome.
      */
-    public SnapshotCommand(StoragePool pool,
-            String secondaryStorageUrl, String snapshotUuid,
-            String snapshotName, Long dcId, Long accountId, Long volumeId) {
-       // this.primaryStoragePoolNameLabel = pool.getUuid();
+    public SnapshotCommand(StoragePool pool, String secondaryStorageUrl, String snapshotUuid, String snapshotName, Long dcId, Long accountId, Long volumeId) {
+        // this.primaryStoragePoolNameLabel = pool.getUuid();
         //this.primaryPool = new StorageFilerTO(pool);
         this.snapshotUuid = snapshotUuid;
         this.secondaryStorageUrl = secondaryStorageUrl;

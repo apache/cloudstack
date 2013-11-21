@@ -25,8 +25,7 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 
 public interface DataObjectManager {
-    public void createAsync(DataObject data, DataStore store, AsyncCompletionCallback<CreateCmdResult> callback,
-            boolean noCopy);
+    public void createAsync(DataObject data, DataStore store, AsyncCompletionCallback<CreateCmdResult> callback, boolean noCopy);
 
     /*
      * Only create internal state, without actually send down create command.

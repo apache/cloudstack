@@ -29,12 +29,18 @@ import com.cloud.utils.db.GenericDao;
  * vpc_service_map table.
  *
  */
-public interface VpcServiceMapDao extends GenericDao<VpcServiceMapVO, Long>{
+public interface VpcServiceMapDao extends GenericDao<VpcServiceMapVO, Long> {
     boolean areServicesSupportedInVpc(long vpcId, Service... services);
+
     boolean canProviderSupportServiceInVpc(long vpcId, Service service, Provider provider);
+
     List<NetworkServiceMapVO> getServicesInVpc(long vpcId);
+
     String getProviderForServiceInVpc(long vpcId, Service service);
+
     void deleteByVpcId(long vpcId);
+
     List<String> getDistinctProviders(long vpcId);
+
     String isProviderForVpc(long vpcId, Provider provider);
 }

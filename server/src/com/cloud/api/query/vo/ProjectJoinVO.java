@@ -33,82 +33,82 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="project_view")
+@Table(name = "project_view")
 public class ProjectJoinVO extends BaseViewVO implements InternalIdentity, Identity {
 
     @Id
-    @Column(name="id", updatable=false, nullable = false)
+    @Column(name = "id", updatable = false, nullable = false)
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="display_text")
+    @Column(name = "display_text")
     String displayText;
 
-    @Column(name="owner")
+    @Column(name = "owner")
     String owner;
 
-    @Column(name="state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
     private State state;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="domain_uuid")
+    @Column(name = "domain_uuid")
     private String domainUuid;
 
-    @Column(name="domain_name")
+    @Column(name = "domain_name")
     private String domainName;
 
-    @Column(name="domain_path")
+    @Column(name = "domain_path")
     private String domainPath;
 
-    @Column(name="tag_id")
+    @Column(name = "tag_id")
     private long tagId;
 
-    @Column(name="tag_uuid")
+    @Column(name = "tag_uuid")
     private String tagUuid;
 
-    @Column(name="tag_key")
+    @Column(name = "tag_key")
     private String tagKey;
 
-    @Column(name="tag_value")
+    @Column(name = "tag_value")
     private String tagValue;
 
-    @Column(name="tag_domain_id")
+    @Column(name = "tag_domain_id")
     private long tagDomainId;
 
-    @Column(name="tag_account_id")
+    @Column(name = "tag_account_id")
     private long tagAccountId;
 
-    @Column(name="tag_resource_id")
+    @Column(name = "tag_resource_id")
     private long tagResourceId;
 
-    @Column(name="tag_resource_uuid")
+    @Column(name = "tag_resource_uuid")
     private String tagResourceUuid;
 
-    @Column(name="tag_resource_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "tag_resource_type")
+    @Enumerated(value = EnumType.STRING)
     private ResourceObjectType tagResourceType;
 
-    @Column(name="tag_customer")
+    @Column(name = "tag_customer")
     private String tagCustomer;
 
-    @Column(name="project_account_id")
+    @Column(name = "project_account_id")
     private long projectAccountId;
 
     public ProjectJoinVO() {

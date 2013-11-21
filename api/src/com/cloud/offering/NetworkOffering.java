@@ -30,18 +30,15 @@ import com.cloud.network.Networks.TrafficType;
 public interface NetworkOffering extends InfrastructureEntity, InternalIdentity, Identity {
 
     public enum Availability {
-        Required,
-        Optional
+        Required, Optional
     }
 
     public enum State {
-        Disabled,
-        Enabled
+        Disabled, Enabled
     }
-    
+
     public enum Detail {
-        InternalLbProvider,
-        PublicLbProvider
+        InternalLbProvider, PublicLbProvider
     }
 
     public final static String SystemPublicNetwork = "System-Public-Network";
@@ -60,7 +57,6 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     public final static String DefaultIsolatedNetworkOfferingForVpcNetworks = "DefaultIsolatedNetworkOfferingForVpcNetworks";
     public final static String DefaultIsolatedNetworkOfferingForVpcNetworksNoLB = "DefaultIsolatedNetworkOfferingForVpcNetworksNoLB";
     public final static String DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB = "DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB";
-
 
     /**
      * @return name for the network offering.
@@ -123,10 +119,11 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     boolean isInline();
 
     boolean getIsPersistent();
-    
+
     boolean getInternalLb();
 
     boolean getPublicLb();
+
     boolean getEgressDefaultPolicy();
 
     Integer getConcurrentConnections();

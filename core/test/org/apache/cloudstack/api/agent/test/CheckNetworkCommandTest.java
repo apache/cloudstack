@@ -40,8 +40,7 @@ public class CheckNetworkCommandTest {
 
     @Test
     public void testGetPhysicalNetworkInfoList() {
-        List<PhysicalNetworkSetupInfo> networkInfoList = cnc
-                .getPhysicalNetworkInfoList();
+        List<PhysicalNetworkSetupInfo> networkInfoList = cnc.getPhysicalNetworkInfoList();
         assertEquals(0, networkInfoList.size());
     }
 

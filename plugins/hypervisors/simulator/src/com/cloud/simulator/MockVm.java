@@ -21,27 +21,35 @@ import com.cloud.vm.VirtualMachine.State;
 // As storage is mapped from storage device, can virtually treat that VM here does
 public interface MockVm {
 
+    public String getName();
 
-	public String getName();
+    public State getState();
 
-	public State getState();
+    public void setState(State state);
 
-	public void setState(State state);
+    public void setHostId(long hostId);
 
-	public void setHostId(long hostId);
-	public long getMemory();
+    public long getMemory();
 
-	public int getCpu();
-	public String getType();
-	public int getVncPort();
+    public int getCpu();
 
-	public void setName(String name);
-	public void setMemory(long memory);
-	public void setCpu(int cpu);
-	public void setType(String type);
-	public void setVncPort(int vncPort);
-	public long getId();
+    public String getType();
+
+    public int getVncPort();
+
+    public void setName(String name);
+
+    public void setMemory(long memory);
+
+    public void setCpu(int cpu);
+
+    public void setType(String type);
+
+    public void setVncPort(int vncPort);
+
+    public long getId();
 
     public String getBootargs();
+
     public void setBootargs(String bootargs);
 }

@@ -42,4 +42,4 @@ public class PingCommand extends Command {
     public boolean executeInSequence() {
         return false;
     }
- }
+}

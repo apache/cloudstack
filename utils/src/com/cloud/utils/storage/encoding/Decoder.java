@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
 public class Decoder {
     private static Map<String, String> getParameters(URI uri) {
         String parameters = uri.getQuery();
@@ -36,33 +35,27 @@ public class Decoder {
             if (!pair[1].equalsIgnoreCase("null")) {
                 params.put(pair[0], pair[1]);
             }
-            
+
         }
         return params;
     }
+
     public static DecodedDataObject decode(String url) throws URISyntaxException {
         URI uri = new URI(url);
         Map<String, String> params = getParameters(uri);
-        DecodedDataStore store = new DecodedDataStore(params.get(EncodingType.ROLE.toString()),
-                params.get(EncodingType.STOREUUID.toString()),
-                params.get(EncodingType.PROVIDERNAME.toString()),
-                uri.getScheme(),
-                uri.getScheme() + uri.getHost() + uri.getPath(),
-                uri.getHost(),
-                uri.getPath());
-        
+        DecodedDataStore store =
+            new DecodedDataStore(params.get(EncodingType.ROLE.toString()), params.get(EncodingType.STOREUUID.toString()),
+                params.get(EncodingType.PROVIDERNAME.toString()), uri.getScheme(), uri.getScheme() + uri.getHost() + uri.getPath(), uri.getHost(), uri.getPath());
+
         Long size = null;
         try {
             size = Long.parseLong(params.get(EncodingType.SIZE.toString()));
         } catch (NumberFormatException e) {
-            
+
         }
-        DecodedDataObject obj = new DecodedDataObject(params.get(EncodingType.OBJTYPE.toString()),
-                size,
-                params.get(EncodingType.NAME.toString()),
-                params.get(EncodingType.PATH.toString()),
-                store
-                );
+        DecodedDataObject obj =
+            new DecodedDataObject(params.get(EncodingType.OBJTYPE.toString()), size, params.get(EncodingType.NAME.toString()), params.get(EncodingType.PATH.toString()),
+                store);
         return obj;
     }
 }

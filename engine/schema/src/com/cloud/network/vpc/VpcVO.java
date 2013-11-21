@@ -29,58 +29,57 @@ import javax.persistence.Table;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="vpc")
+@Table(name = "vpc")
 public class VpcVO implements Vpc {
     @Id
-    @Column(name="id")
+    @Column(name = "id")
     long id;
-    
-    @Column(name="uuid")
+
+    @Column(name = "uuid")
     private String uuid;
-    
-    @Column(name="name")
+
+    @Column(name = "name")
     private String name;
-    
+
     @Column(name = "display_text")
     String displayText;
 
-    @Column(name="zone_id")
+    @Column(name = "zone_id")
     long zoneId;
 
-    @Column(name="cidr")
+    @Column(name = "cidr")
     private String cidr = null;
-    
-    @Column(name="domain_id")
+
+    @Column(name = "domain_id")
     Long domainId = null;
-    
-    @Column(name="account_id")
+
+    @Column(name = "account_id")
     Long accountId = null;
 
-    @Column(name="state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
     State state;
-    
-    @Column(name="vpc_offering_id")
+
+    @Column(name = "vpc_offering_id")
     long vpcOfferingId;
-    
-    @Column(name=GenericDao.REMOVED_COLUMN)
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
-    
-    @Column(name="network_domain")
+
+    @Column(name = "network_domain")
     String networkDomain;
-    
-    @Column(name="restart_required")
+
+    @Column(name = "restart_required")
     boolean restartRequired = false;
-    
+
     public VpcVO() {
         this.uuid = UUID.randomUUID().toString();
     }
-    
-    public VpcVO(long zoneId, String name, String displayText, long accountId, long domainId, long vpcOffId, String cidr,
-            String networkDomain) {
+
+    public VpcVO(long zoneId, String name, String displayText, long accountId, long domainId, long vpcOffId, String cidr, String networkDomain) {
         this.zoneId = zoneId;
         this.name = name;
         this.displayText = displayText;
@@ -117,7 +116,7 @@ public class VpcVO implements Vpc {
     public String getCidr() {
         return cidr;
     }
-    
+
     @Override
     public long getDomainId() {
         return domainId;
@@ -158,7 +157,7 @@ public class VpcVO implements Vpc {
     public void setDisplayText(String displayText) {
         this.displayText = displayText;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("[VPC [");
@@ -169,7 +168,7 @@ public class VpcVO implements Vpc {
     public String getNetworkDomain() {
         return networkDomain;
     }
-    
+
     public void setRestartRequired(boolean restartRequired) {
         this.restartRequired = restartRequired;
     }

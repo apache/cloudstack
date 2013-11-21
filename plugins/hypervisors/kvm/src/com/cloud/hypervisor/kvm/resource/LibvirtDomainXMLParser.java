@@ -25,7 +25,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -35,13 +34,11 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.diskProtocol;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.nicModel;
 
 public class LibvirtDomainXMLParser {
-    private static final Logger s_logger = Logger
-            .getLogger(LibvirtDomainXMLParser.class);
+    private static final Logger s_logger = Logger.getLogger(LibvirtDomainXMLParser.class);
     private final List<InterfaceDef> interfaces = new ArrayList<InterfaceDef>();
     private final List<DiskDef> diskDefs = new ArrayList<DiskDef>();
     private Integer vncPort;
@@ -60,15 +57,14 @@ public class LibvirtDomainXMLParser {
 
             desc = getTagValue("description", rootElement);
 
-            Element devices = (Element) rootElement.getElementsByTagName(
-                    "devices").item(0);
+            Element devices = (Element)rootElement.getElementsByTagName("devices").item(0);
             NodeList disks = devices.getElementsByTagName("disk");
             for (int i = 0; i < disks.getLength(); i++) {
-                Element disk = (Element) disks.item(i);
+                Element disk = (Element)disks.item(i);
                 String type = disk.getAttribute("type");
                 DiskDef def = new DiskDef();
                 if (type.equalsIgnoreCase("network")) {
-                    String diskFmtType = getAttrValue("driver", "type", disk);
+                    String diskCacheMode = getAttrValue("driver", "cache", disk);
                     String diskPath = getAttrValue("source", "name", disk);
                     String protocol = getAttrValue("source", "protocol", disk);
                     String authUserName = getAttrValue("auth", "username", disk);
@@ -78,9 +74,12 @@ public class LibvirtDomainXMLParser {
                     String diskLabel = getAttrValue("target", "dev", disk);
                     String bus = getAttrValue("target", "bus", disk);
                     def.defNetworkBasedDisk(diskPath, host, port, authUserName, poolUuid, diskLabel,
-                                            DiskDef.diskBus.valueOf(bus.toUpperCase()), DiskDef.diskProtocol.valueOf(protocol.toUpperCase()));
+                        DiskDef.diskBus.valueOf(bus.toUpperCase()),
+                        DiskDef.diskProtocol.valueOf(protocol.toUpperCase()));
+                    def.setCacheMode(DiskDef.diskCacheMode.valueOf(diskCacheMode));
                 } else {
                     String diskFmtType = getAttrValue("driver", "type", disk);
+                    String diskCacheMode = getAttrValue("driver", "cache", disk);
                     String diskFile = getAttrValue("source", "file", disk);
                     String diskDev = getAttrValue("source", "dev", disk);
 
@@ -92,22 +91,21 @@ public class LibvirtDomainXMLParser {
                         if (device.equalsIgnoreCase("disk")) {
                             DiskDef.diskFmtType fmt = null;
                             if (diskFmtType != null) {
-                                fmt = DiskDef.diskFmtType.valueOf(diskFmtType
-                                        .toUpperCase());
+                                fmt = DiskDef.diskFmtType.valueOf(diskFmtType.toUpperCase());
                             }
-                            def.defFileBasedDisk(diskFile, diskLabel,
-                                    DiskDef.diskBus.valueOf(bus.toUpperCase()), fmt);
+                            def.defFileBasedDisk(diskFile, diskLabel, DiskDef.diskBus.valueOf(bus.toUpperCase()), fmt);
                         } else if (device.equalsIgnoreCase("cdrom")) {
                             def.defISODisk(diskFile);
                         }
                     } else if (type.equalsIgnoreCase("block")) {
                         def.defBlockBasedDisk(diskDev, diskLabel,
-                                DiskDef.diskBus.valueOf(bus.toUpperCase()));
+                            DiskDef.diskBus.valueOf(bus.toUpperCase()));
+                        def.setCacheMode(DiskDef.diskCacheMode.valueOf(diskCacheMode));
                     }
                 }
 
                 NodeList iotune = disk.getElementsByTagName("iotune");
-                if ((iotune != null) && (iotune.getLength() !=0)) {
+                if ((iotune != null) && (iotune.getLength() != 0)) {
                     String bytesReadRateStr = getTagValue("read_bytes_sec", (Element)iotune.item(0));
                     if (bytesReadRateStr != null) {
                         Long bytesReadRate = Long.parseLong(bytesReadRateStr);
@@ -135,7 +133,7 @@ public class LibvirtDomainXMLParser {
 
             NodeList nics = devices.getElementsByTagName("interface");
             for (int i = 0; i < nics.getLength(); i++) {
-                Element nic = (Element) nics.item(i);
+                Element nic = (Element)nics.item(i);
 
                 String type = nic.getAttribute("type");
                 String mac = getAttrValue("mac", "address", nic);
@@ -144,7 +142,7 @@ public class LibvirtDomainXMLParser {
                 InterfaceDef def = new InterfaceDef();
                 NodeList bandwidth = nic.getElementsByTagName("bandwidth");
                 Integer networkRateKBps = 0;
-                if ((bandwidth != null) && (bandwidth.getLength() !=0)) {
+                if ((bandwidth != null) && (bandwidth.getLength() != 0)) {
                     Integer inbound = Integer.valueOf(getAttrValue("inbound", "average", (Element)bandwidth.item(0)));
                     Integer outbound = Integer.valueOf(getAttrValue("outbound", "average", (Element)bandwidth.item(0)));
                     if (inbound == outbound)
@@ -152,21 +150,18 @@ public class LibvirtDomainXMLParser {
                 }
                 if (type.equalsIgnoreCase("network")) {
                     String network = getAttrValue("source", "network", nic);
-                    def.defPrivateNet(network, dev, mac,
-                            nicModel.valueOf(model.toUpperCase()), networkRateKBps);
+                    def.defPrivateNet(network, dev, mac, nicModel.valueOf(model.toUpperCase()), networkRateKBps);
                 } else if (type.equalsIgnoreCase("bridge")) {
                     String bridge = getAttrValue("source", "bridge", nic);
-                    def.defBridgeNet(bridge, dev, mac,
-                            nicModel.valueOf(model.toUpperCase()), networkRateKBps);
-                } else if (type.equalsIgnoreCase("ethernet"))  {
+                    def.defBridgeNet(bridge, dev, mac, nicModel.valueOf(model.toUpperCase()), networkRateKBps);
+                } else if (type.equalsIgnoreCase("ethernet")) {
                     String scriptPath = getAttrValue("script", "path", nic);
                     def.defEthernet(dev, mac, nicModel.valueOf(model.toUpperCase()), scriptPath, networkRateKBps);
                 }
                 interfaces.add(def);
             }
 
-            Element graphic = (Element) devices
-                    .getElementsByTagName("graphics").item(0);
+            Element graphic = (Element)devices.getElementsByTagName("graphics").item(0);
 
             if (graphic != null) {
                 String port = graphic.getAttribute("port");
@@ -203,7 +198,7 @@ public class LibvirtDomainXMLParser {
 
         NodeList nlList = tagNodeList.item(0).getChildNodes();
 
-        Node nValue = (Node) nlList.item(0);
+        Node nValue = nlList.item(0);
 
         return nValue.getNodeValue();
     }
@@ -213,7 +208,7 @@ public class LibvirtDomainXMLParser {
         if (tagNode.getLength() == 0) {
             return null;
         }
-        Element node = (Element) tagNode.item(0);
+        Element node = (Element)tagNode.item(0);
         return node.getAttribute(attr);
     }
 

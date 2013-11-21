@@ -22,7 +22,8 @@ public class PingTestCommand extends Command {
     String _routerIp = null;
     String _privateIp = null;
 
-    public PingTestCommand() {}
+    public PingTestCommand() {
+    }
 
     public PingTestCommand(String computingHostIp) {
         _computingHostIp = computingHostIp;

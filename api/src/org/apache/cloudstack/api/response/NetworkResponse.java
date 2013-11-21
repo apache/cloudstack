@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -25,150 +27,194 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.network.Network;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {Network.class, ProjectAccount.class})
-public class NetworkResponse extends BaseResponse implements ControlledEntityResponse{
+public class NetworkResponse extends BaseResponse implements ControlledEntityResponse {
 
-    @SerializedName(ApiConstants.ID) @Param(description="the id of the network")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the id of the network")
     private String id;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the name of the network")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the name of the network")
     private String name;
 
-    @SerializedName(ApiConstants.DISPLAY_TEXT) @Param(description="the displaytext of the network")
+    @SerializedName(ApiConstants.DISPLAY_TEXT)
+    @Param(description = "the displaytext of the network")
     private String displaytext;
 
-    @SerializedName("broadcastdomaintype") @Param(description="Broadcast domain type of the network")
+    @SerializedName("broadcastdomaintype")
+    @Param(description = "Broadcast domain type of the network")
     private String broadcastDomainType;
 
-    @SerializedName(ApiConstants.TRAFFIC_TYPE) @Param(description="the traffic type of the network")
+    @SerializedName(ApiConstants.TRAFFIC_TYPE)
+    @Param(description = "the traffic type of the network")
     private String trafficType;
 
-    @SerializedName(ApiConstants.GATEWAY) @Param(description="the network's gateway")
+    @SerializedName(ApiConstants.GATEWAY)
+    @Param(description = "the network's gateway")
     private String gateway;
 
-    @SerializedName(ApiConstants.NETMASK) @Param(description="the network's netmask")
+    @SerializedName(ApiConstants.NETMASK)
+    @Param(description = "the network's netmask")
     private String netmask;
 
-    @SerializedName(ApiConstants.CIDR) @Param(description="Cloudstack managed address space, all CloudStack managed VMs get IP address from CIDR")
+    @SerializedName(ApiConstants.CIDR)
+    @Param(description = "Cloudstack managed address space, all CloudStack managed VMs get IP address from CIDR")
     private String cidr;
 
-    @SerializedName(ApiConstants.NETWORK_CIDR) @Param(description="the network CIDR of the guest network configured with IP reservation. It is the summation of CIDR and RESERVED_IP_RANGE")
+    @SerializedName(ApiConstants.NETWORK_CIDR)
+    @Param(description = "the network CIDR of the guest network configured with IP reservation. It is the summation of CIDR and RESERVED_IP_RANGE")
     private String networkCidr;
 
-    @SerializedName(ApiConstants.RESERVED_IP_RANGE) @Param(description="the network's IP range not to be used by CloudStack guest VMs and can be used for non CloudStack purposes")
+    @SerializedName(ApiConstants.RESERVED_IP_RANGE)
+    @Param(description = "the network's IP range not to be used by CloudStack guest VMs and can be used for non CloudStack purposes")
     private String reservedIpRange;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone id of the network")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "zone id of the network")
     private String zoneId;
 
-    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone the network belongs to")
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "the name of the zone the network belongs to")
     private String zoneName;
 
-    @SerializedName("networkofferingid") @Param(description="network offering id the network is created from")
+    @SerializedName("networkofferingid")
+    @Param(description = "network offering id the network is created from")
     private String networkOfferingId;
 
-    @SerializedName("networkofferingname") @Param(description="name of the network offering the network is created from")
+    @SerializedName("networkofferingname")
+    @Param(description = "name of the network offering the network is created from")
     private String networkOfferingName;
 
-    @SerializedName("networkofferingdisplaytext") @Param(description="display text of the network offering the network is created from")
+    @SerializedName("networkofferingdisplaytext")
+    @Param(description = "display text of the network offering the network is created from")
     private String networkOfferingDisplayText;
 
-    @SerializedName("networkofferingconservemode") @Param(description="true if network offering is ip conserve mode enabled")
+    @SerializedName("networkofferingconservemode")
+    @Param(description = "true if network offering is ip conserve mode enabled")
     private Boolean networkOfferingConserveMode;
-    
-    @SerializedName("networkofferingavailability") @Param(description="availability of the network offering the network is created from")
+
+    @SerializedName("networkofferingavailability")
+    @Param(description = "availability of the network offering the network is created from")
     private String networkOfferingAvailability;
 
-    @SerializedName(ApiConstants.IS_SYSTEM) @Param(description="true if network is system, false otherwise")
+    @SerializedName(ApiConstants.IS_SYSTEM)
+    @Param(description = "true if network is system, false otherwise")
     private Boolean isSystem;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="state of the network")
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "state of the network")
     private String state;
 
-    @SerializedName("related") @Param(description="related to what other network configuration")
+    @SerializedName("related")
+    @Param(description = "related to what other network configuration")
     private String related;
 
-    @SerializedName("broadcasturi") @Param(description="broadcast uri of the network. This parameter is visible to ROOT admins only")
+    @SerializedName("broadcasturi")
+    @Param(description = "broadcast uri of the network. This parameter is visible to ROOT admins only")
     private String broadcastUri;
 
-    @SerializedName(ApiConstants.DNS1) @Param(description="the first DNS for the network")
+    @SerializedName(ApiConstants.DNS1)
+    @Param(description = "the first DNS for the network")
     private String dns1;
 
-    @SerializedName(ApiConstants.DNS2) @Param(description="the second DNS for the network")
+    @SerializedName(ApiConstants.DNS2)
+    @Param(description = "the second DNS for the network")
     private String dns2;
 
-    @SerializedName(ApiConstants.TYPE) @Param(description="the type of the network")
+    @SerializedName(ApiConstants.TYPE)
+    @Param(description = "the type of the network")
     private String type;
 
-    @SerializedName(ApiConstants.VLAN) @Param(description="The vlan of the network. This parameter is visible to ROOT admins only")
+    @SerializedName(ApiConstants.VLAN)
+    @Param(description = "The vlan of the network. This parameter is visible to ROOT admins only")
     private String vlan;
 
-    @SerializedName(ApiConstants.ACL_TYPE) @Param(description="acl type - access type to the network")
+    @SerializedName(ApiConstants.ACL_TYPE)
+    @Param(description = "acl type - access type to the network")
     private String aclType;
 
-    @SerializedName(ApiConstants.SUBDOMAIN_ACCESS) @Param(description="true if users from subdomains can access the domain level network")
+    @SerializedName(ApiConstants.SUBDOMAIN_ACCESS)
+    @Param(description = "true if users from subdomains can access the domain level network")
     private Boolean subdomainAccess;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner of the network")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the owner of the network")
     private String accountName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the ipaddress")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the ipaddress")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the address")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the address")
     private String projectName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the network owner")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain id of the network owner")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the network owner")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain name of the network owner")
     private String domain;
 
-    @SerializedName("isdefault") @Param(description="true if network is default, false otherwise")
+    @SerializedName("isdefault")
+    @Param(description = "true if network is default, false otherwise")
     private Boolean isDefault;
 
-    @SerializedName("service") @Param(description="the list of services", responseObject = ServiceResponse.class)
+    @SerializedName("service")
+    @Param(description = "the list of services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
 
-    @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain")
+    @SerializedName(ApiConstants.NETWORK_DOMAIN)
+    @Param(description = "the network domain")
     private String networkDomain;
 
-    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network id")
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
+    @Param(description = "the physical network id")
     private String physicalNetworkId;
 
-    @SerializedName(ApiConstants.RESTART_REQUIRED) @Param(description="true network requires restart")
+    @SerializedName(ApiConstants.RESTART_REQUIRED)
+    @Param(description = "true network requires restart")
     private Boolean restartRequired;
 
-    @SerializedName(ApiConstants.SPECIFY_IP_RANGES) @Param(description="true if network supports specifying ip ranges, false otherwise")
+    @SerializedName(ApiConstants.SPECIFY_IP_RANGES)
+    @Param(description = "true if network supports specifying ip ranges, false otherwise")
     private Boolean specifyIpRanges;
 
-    @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the network belongs to")
+    @SerializedName(ApiConstants.VPC_ID)
+    @Param(description = "VPC the network belongs to")
     private String vpcId;
 
-    @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY) @Param(description="list networks available for vm deployment")
+    @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY)
+    @Param(description = "list networks available for vm deployment")
     private Boolean canUseForDeploy;
 
-    @SerializedName(ApiConstants.IS_PERSISTENT) @Param(description="list networks that are persistent")
+    @SerializedName(ApiConstants.IS_PERSISTENT)
+    @Param(description = "list networks that are persistent")
     private Boolean isPersistent;
 
-    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with network", responseObject = ResourceTagResponse.class)
+    @SerializedName(ApiConstants.TAGS)
+    @Param(description = "the list of resource tags associated with network", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
-    @SerializedName(ApiConstants.IP6_GATEWAY) @Param(description="the gateway of IPv6 network")
+    @SerializedName(ApiConstants.IP6_GATEWAY)
+    @Param(description = "the gateway of IPv6 network")
     private String ip6Gateway;
-    
-    @SerializedName(ApiConstants.IP6_CIDR) @Param(description="the cidr of IPv6 network")
+
+    @SerializedName(ApiConstants.IP6_CIDR)
+    @Param(description = "the cidr of IPv6 network")
     private String ip6Cidr;
 
-    @SerializedName(ApiConstants.DISPLAY_NETWORK) @Param(description="an optional field, whether to the display the network to the end user or not.")
+    @SerializedName(ApiConstants.DISPLAY_NETWORK)
+    @Param(description = "an optional field, whether to the display the network to the end user or not.")
     private Boolean displayNetwork;
 
-    @SerializedName(ApiConstants.ACL_ID) @Param(description="ACL Id associated with the VPC network")
+    @SerializedName(ApiConstants.ACL_ID)
+    @Param(description = "ACL Id associated with the VPC network")
     private String aclId;
-
 
     public Boolean getDisplayNetwork() {
         return displayNetwork;
@@ -234,6 +280,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.type = type;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
@@ -250,11 +297,11 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     public void setNetworkOfferingDisplayText(String networkOfferingDisplayText) {
         this.networkOfferingDisplayText = networkOfferingDisplayText;
     }
-    
+
     public void setNetworkOfferingConserveMode(Boolean networkOfferingConserveMode) {
         this.networkOfferingConserveMode = networkOfferingConserveMode;
     }
-        
+
     public void setDisplaytext(String displaytext) {
         this.displaytext = displaytext;
     }
@@ -267,6 +314,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.isSystem = isSystem;
     }
 
+    @Override
     public void setDomainName(String domain) {
         this.domain = domain;
     }
@@ -349,13 +397,13 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.tags = tags;
     }
 
-	public void setIp6Gateway(String ip6Gateway) {
-		this.ip6Gateway = ip6Gateway;
-	}
+    public void setIp6Gateway(String ip6Gateway) {
+        this.ip6Gateway = ip6Gateway;
+    }
 
-	public void setIp6Cidr(String ip6Cidr) {
-		this.ip6Cidr = ip6Cidr;
-	}
+    public void setIp6Cidr(String ip6Cidr) {
+        this.ip6Cidr = ip6Cidr;
+    }
 
     public String getAclId() {
         return aclId;

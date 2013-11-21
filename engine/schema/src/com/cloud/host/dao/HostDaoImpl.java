@@ -284,8 +284,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             JoinType.LEFTOUTER);
         ClusterManagedSearch = _clusterDao.createSearchBuilder();
         ClusterManagedSearch.and("managed", ClusterManagedSearch.entity().getManagedState(), SearchCriteria.Op.EQ);
-        UnmanagedDirectConnectSearch.join("ClusterManagedSearch", ClusterManagedSearch, ClusterManagedSearch.entity().getId(),
-            UnmanagedDirectConnectSearch.entity().getClusterId(), JoinType.INNER);
+        UnmanagedDirectConnectSearch.join("ClusterManagedSearch", ClusterManagedSearch, ClusterManagedSearch.entity().getId(), UnmanagedDirectConnectSearch.entity()
+            .getClusterId(), JoinType.INNER);
         UnmanagedDirectConnectSearch.done();
 
         DirectConnectSearch = createSearchBuilder();
@@ -733,7 +733,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         List<HostVO> result = new ArrayList<HostVO>();
         ResultSet rs = null;
         try {
-            String sql = "select h.id from host h left join  cluster c on h.cluster_id=c.id where h.mgmt_server_id is not null and h.last_ping < ? and h.status in ('Up', 'Updating', 'Disconnected', 'Connecting') and h.type not in ('ExternalFirewall', 'ExternalLoadBalancer', 'TrafficMonitor', 'SecondaryStorage', 'LocalSecondaryStorage', 'L2Networking') and (h.cluster_id is null or c.managed_state = 'Managed') ;";
+            String sql =
+                "select h.id from host h left join  cluster c on h.cluster_id=c.id where h.mgmt_server_id is not null and h.last_ping < ? and h.status in ('Up', 'Updating', 'Disconnected', 'Connecting') and h.type not in ('ExternalFirewall', 'ExternalLoadBalancer', 'TrafficMonitor', 'SecondaryStorage', 'LocalSecondaryStorage', 'L2Networking') and (h.cluster_id is null or c.managed_state = 'Managed') ;";
             pstmt = txn.prepareStatement(sql);
             pstmt.setLong(1, timeout);
             rs = pstmt.executeQuery();
@@ -824,10 +825,11 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     @Override
     @DB
     public List<RunningHostCountInfo> getRunningHostCounts(Date cutTime) {
-        String sql = "select * from (" + "select h.data_center_id, h.type, count(*) as count from host as h INNER JOIN mshost as m ON h.mgmt_server_id=m.msid "
-                     + "where h.status='Up' and h.type='SecondaryStorage' and m.last_update > ? " + "group by h.data_center_id, h.type " + "UNION ALL "
-                     + "select h.data_center_id, h.type, count(*) as count from host as h INNER JOIN mshost as m ON h.mgmt_server_id=m.msid "
-                     + "where h.status='Up' and h.type='Routing' and m.last_update > ? " + "group by h.data_center_id, h.type) as t " + "ORDER by t.data_center_id, t.type";
+        String sql =
+            "select * from (" + "select h.data_center_id, h.type, count(*) as count from host as h INNER JOIN mshost as m ON h.mgmt_server_id=m.msid "
+                + "where h.status='Up' and h.type='SecondaryStorage' and m.last_update > ? " + "group by h.data_center_id, h.type " + "UNION ALL "
+                + "select h.data_center_id, h.type, count(*) as count from host as h INNER JOIN mshost as m ON h.mgmt_server_id=m.msid "
+                + "where h.status='Up' and h.type='Routing' and m.last_update > ? " + "group by h.data_center_id, h.type) as t " + "ORDER by t.data_center_id, t.type";
 
         ArrayList<RunningHostCountInfo> l = new ArrayList<RunningHostCountInfo>();
 
@@ -946,7 +948,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
                 .append(":lastpinged=")
                 .append(host.getLastPinged())
                 .append("]");
-            str.append("; Old=[status=").append(oldStatus.toString()).append(":msid=").append(host.getManagementServerId()).append(":lastpinged=").append(oldPingTime).append("]");
+            str.append("; Old=[status=")
+                .append(oldStatus.toString())
+                .append(":msid=")
+                .append(host.getManagementServerId())
+                .append(":lastpinged=")
+                .append(oldPingTime)
+                .append("]");
             str.append("; DB=[status=")
                 .append(vo.getStatus().toString())
                 .append(":msid=")

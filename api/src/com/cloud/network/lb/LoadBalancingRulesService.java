@@ -38,7 +38,6 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.Ip;
 
-
 public interface LoadBalancingRulesService {
     /**
      * Create a load balancer rule from the given ipAddress/port to the given private port
@@ -50,9 +49,9 @@ public interface LoadBalancingRulesService {
      * @return the newly created LoadBalancerVO if successful, null otherwise
      * @throws InsufficientAddressCapacityException
      */
-    LoadBalancer createPublicLoadBalancerRule(String xId, String name, String description, 
-            int srcPortStart, int srcPortEnd, int defPortStart, int defPortEnd, Long ipAddrId, String protocol, String algorithm,
-            long networkId, long lbOwnerId, boolean openFirewall, String lbProtocol) throws NetworkRuleConflictException, InsufficientAddressCapacityException;
+    LoadBalancer createPublicLoadBalancerRule(String xId, String name, String description, int srcPortStart, int srcPortEnd, int defPortStart, int defPortEnd,
+        Long ipAddrId, String protocol, String algorithm, long networkId, long lbOwnerId, boolean openFirewall, String lbProtocol) throws NetworkRuleConflictException,
+        InsufficientAddressCapacityException;
 
     LoadBalancer updateLoadBalancerRule(UpdateLoadBalancerRuleCmd cmd);
 
@@ -86,7 +85,9 @@ public interface LoadBalancingRulesService {
      * @thows NetworkRuleConflictException
      */
     public HealthCheckPolicy createLBHealthCheckPolicy(CreateLBHealthCheckPolicyCmd cmd);
+
     public boolean applyLBHealthCheckPolicy(CreateLBHealthCheckPolicyCmd cmd) throws ResourceUnavailableException;
+
     boolean deleteLBHealthCheckPolicy(long healthCheckPolicyId, boolean apply);
 
     /**
@@ -101,8 +102,8 @@ public interface LoadBalancingRulesService {
     boolean applyLoadBalancerConfig(long lbRuleId) throws ResourceUnavailableException;
 
     boolean assignCertToLoadBalancer(long lbRuleId, Long CertId);
-    boolean removeCertFromLoadBalancer(long lbRuleId);
 
+    boolean removeCertFromLoadBalancer(long lbRuleId);
 
     /**
      * List instances that have either been applied to a load balancer or are eligible to be assigned to a load
@@ -145,7 +146,7 @@ public interface LoadBalancingRulesService {
     List<? extends HealthCheckPolicy> searchForLBHealthCheckPolicies(ListLBHealthCheckPoliciesCmd cmd);
 
     LoadBalancer findById(long LoadBalancer);
-    
+
     public void updateLBHealthChecks(Scheme scheme) throws ResourceUnavailableException;
 
     Map<Ip, UserVm> getLbInstances(long lbId);

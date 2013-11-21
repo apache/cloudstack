@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.command.admin.usage;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,12 +29,10 @@ import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.TrafficMonitorResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.host.Host;
 
-
-@APICommand(name = "listTrafficMonitors", description="List traffic monitor Hosts.", responseObject = TrafficMonitorResponse.class)
+@APICommand(name = "listTrafficMonitors", description = "List traffic monitor Hosts.", responseObject = TrafficMonitorResponse.class)
 public class ListTrafficMonitorsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
     private static final String s_name = "listtrafficmonitorsresponse";
@@ -43,8 +41,7 @@ public class ListTrafficMonitorsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            required = true, description="zone Id")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "zone Id")
     private long zoneId;
 
     /////////////////////////////////////////////////////
@@ -65,13 +62,13 @@ public class ListTrafficMonitorsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         List<? extends Host> trafficMonitors = _networkUsageService.listTrafficMonitors(this);
 
         ListResponse<TrafficMonitorResponse> listResponse = new ListResponse<TrafficMonitorResponse>();
         List<TrafficMonitorResponse> responses = new ArrayList<TrafficMonitorResponse>();
         for (Host trafficMonitor : trafficMonitors) {
-            TrafficMonitorResponse response =  _responseGenerator.createTrafficMonitorResponse(trafficMonitor);
+            TrafficMonitorResponse response = _responseGenerator.createTrafficMonitorResponse(trafficMonitor);
             response.setObjectName("trafficmonitor");
             response.setResponseName(getCommandName());
             responses.add(response);

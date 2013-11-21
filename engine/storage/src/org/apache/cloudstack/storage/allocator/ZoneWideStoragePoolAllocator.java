@@ -23,20 +23,20 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import com.cloud.user.Account;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
+import com.cloud.user.Account;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
@@ -53,15 +53,11 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
         List<Volume> requestVolumes = new ArrayList<Volume>();
         requestVolumes.add(volume);
 
-        return storageMgr.storagePoolHasEnoughIops(requestVolumes, pool) &&
-               storageMgr.storagePoolHasEnoughSpace(requestVolumes, pool);
+        return storageMgr.storagePoolHasEnoughIops(requestVolumes, pool) && storageMgr.storagePoolHasEnoughSpace(requestVolumes, pool);
     }
 
-
     @Override
-    protected List<StoragePool> select(DiskProfile dskCh,
-            VirtualMachineProfile vmProfile,
-            DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
         s_logger.debug("ZoneWideStoragePoolAllocator to find storage pool");
 
         if (dskCh.useLocalStorage()) {
@@ -97,7 +93,7 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
             if (suitablePools.size() == returnUpTo) {
                 break;
             }
-            StoragePool storagePool = (StoragePool) this.dataStoreMgr.getPrimaryDataStore(storage.getId());
+            StoragePool storagePool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(storage.getId());
             if (filter(avoid, storagePool, dskCh, plan)) {
                 suitablePools.add(storagePool);
             } else {
@@ -108,18 +104,15 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
     }
 
     @Override
-    protected List<StoragePool> reorderPoolsByNumberOfVolumes(DeploymentPlan plan, List<StoragePool> pools,
-                                                              Account account) {
+    protected List<StoragePool> reorderPoolsByNumberOfVolumes(DeploymentPlan plan, List<StoragePool> pools, Account account) {
         if (account == null) {
             return pools;
         }
         long dcId = plan.getDataCenterId();
 
-        List<Long> poolIdsByVolCount = _volumeDao.listZoneWidePoolIdsByVolumeCount(dcId,
-                account.getAccountId());
+        List<Long> poolIdsByVolCount = _volumeDao.listZoneWidePoolIdsByVolumeCount(dcId, account.getAccountId());
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("List of pools in ascending order of number of volumes for account id: "
-                    + account.getAccountId() + " is: " + poolIdsByVolCount);
+            s_logger.debug("List of pools in ascending order of number of volumes for account id: " + account.getAccountId() + " is: " + poolIdsByVolCount);
         }
 
         // now filter the given list of Pools by this ordered list

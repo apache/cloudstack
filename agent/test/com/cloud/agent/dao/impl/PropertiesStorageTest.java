@@ -30,8 +30,7 @@ import org.junit.Test;
 public class PropertiesStorageTest {
     @Test
     public void configureWithNotExistingFile() {
-        String fileName = "target/notyetexistingfile"
-                + System.currentTimeMillis();
+        String fileName = "target/notyetexistingfile" + System.currentTimeMillis();
         File file = new File(fileName);
 
         PropertiesStorage storage = new PropertiesStorage();
@@ -48,8 +47,7 @@ public class PropertiesStorageTest {
 
     @Test
     public void configureWithExistingFile() throws IOException {
-        String fileName = "target/existingfile"
-                + System.currentTimeMillis();
+        String fileName = "target/existingfile" + System.currentTimeMillis();
         File file = new File(fileName);
 
         FileUtils.writeStringToFile(file, "a=b\n\n");

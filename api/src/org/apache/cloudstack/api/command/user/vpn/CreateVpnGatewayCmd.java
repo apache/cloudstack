@@ -31,7 +31,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.vpc.Vpc;
 
-@APICommand(name = "createVpnGateway", description="Creates site to site vpn local gateway", responseObject=Site2SiteVpnGatewayResponse.class)
+@APICommand(name = "createVpnGateway", description = "Creates site to site vpn local gateway", responseObject = Site2SiteVpnGatewayResponse.class)
 public class CreateVpnGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVpnGatewayCmd.class.getName());
 
@@ -40,8 +40,11 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.UUID, entityType=VpcResponse.class,
-            required=true, description="public ip address id of the vpn gateway")
+    @Parameter(name = ApiConstants.VPC_ID,
+               type = CommandType.UUID,
+               entityType = VpcResponse.class,
+               required = true,
+               description = "public ip address id of the vpn gateway")
     private Long vpcId;
 
     /////////////////////////////////////////////////////
@@ -55,7 +58,6 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
 
     @Override
     public String getCommandName() {
@@ -79,7 +81,7 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Site2SiteVpnGateway result;
         result = _s2sVpnService.createVpnGateway(this);
         if (result != null) {

@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.capacity;
 
-import javax.persistence.Transient;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -27,56 +26,57 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="op_host_capacity")
+@Table(name = "op_host_capacity")
 public class CapacityVO implements Capacity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="host_id")
+    @Column(name = "host_id")
     private Long hostOrPoolId;
 
-    @Column(name="data_center_id")
+    @Column(name = "data_center_id")
     private Long dataCenterId;
 
-    @Column(name="pod_id")
+    @Column(name = "pod_id")
     private Long podId;
 
-    @Column(name="cluster_id")
+    @Column(name = "cluster_id")
     private Long clusterId;
 
-    @Column(name="used_capacity")
+    @Column(name = "used_capacity")
     private long usedCapacity;
 
-    @Column(name="reserved_capacity")
+    @Column(name = "reserved_capacity")
     private long reservedCapacity;
-    
-    @Column(name="total_capacity")
+
+    @Column(name = "total_capacity")
     private long totalCapacity;
 
-    @Column(name="capacity_type")
+    @Column(name = "capacity_type")
     private short capacityType;
-    
-    @Column(name="capacity_state")
+
+    @Column(name = "capacity_state")
     private CapacityState capacityState;
-    
-    @Column(name=GenericDao.CREATED_COLUMN)
-    protected Date created;    
-    
-    @Column(name="update_time", updatable=true, nullable=true)
-    @Temporal(value=TemporalType.TIMESTAMP)
+
+    @Column(name = GenericDao.CREATED_COLUMN)
+    protected Date created;
+
+    @Column(name = "update_time", updatable = true, nullable = true)
+    @Temporal(value = TemporalType.TIMESTAMP)
     protected Date updateTime;
-    
+
     @Transient
     private Float usedPercentage;
-    
-    public CapacityVO() {}
+
+    public CapacityVO() {
+    }
 
     public CapacityVO(Long hostId, Long dataCenterId, Long podId, Long clusterId, long usedCapacity, long totalCapacity, short capacityType) {
         this.hostOrPoolId = hostId;
@@ -89,8 +89,8 @@ public class CapacityVO implements Capacity {
         this.updateTime = new Date();
         this.capacityState = CapacityState.Enabled;
     }
-    
-    public CapacityVO(Long dataCenterId, Long podId, Long clusterId, short capacityType, float usedPercentage) {        
+
+    public CapacityVO(Long dataCenterId, Long podId, Long clusterId, short capacityType, float usedPercentage) {
         this.dataCenterId = dataCenterId;
         this.podId = podId;
         this.clusterId = clusterId;
@@ -108,67 +108,78 @@ public class CapacityVO implements Capacity {
     public Long getHostOrPoolId() {
         return hostOrPoolId;
     }
-    
+
     public void setHostId(Long hostId) {
         this.hostOrPoolId = hostId;
     }
+
     @Override
     public Long getDataCenterId() {
         return dataCenterId;
     }
+
     public void setDataCenterId(Long dataCenterId) {
         this.dataCenterId = dataCenterId;
     }
-    
+
     @Override
     public Long getPodId() {
         return podId;
     }
+
     public void setPodId(long podId) {
         this.podId = new Long(podId);
     }
-    
+
     @Override
     public Long getClusterId() {
         return clusterId;
     }
+
     public void setClusterId(long clusterId) {
         this.clusterId = new Long(clusterId);
     }
-    
+
     @Override
     public long getUsedCapacity() {
         return usedCapacity;
     }
+
     public void setUsedCapacity(long usedCapacity) {
         this.usedCapacity = usedCapacity;
-        this.setUpdateTime (new Date());
+        this.setUpdateTime(new Date());
     }
+
     @Override
     public long getReservedCapacity() {
         return reservedCapacity;
     }
+
     public void setReservedCapacity(long reservedCapacity) {
         this.reservedCapacity = reservedCapacity;
-        this.setUpdateTime (new Date());
+        this.setUpdateTime(new Date());
     }
+
     @Override
     public long getTotalCapacity() {
         return totalCapacity;
     }
+
     public void setTotalCapacity(long totalCapacity) {
         this.totalCapacity = totalCapacity;
-        this.setUpdateTime (new Date());
+        this.setUpdateTime(new Date());
     }
+
     @Override
     public short getCapacityType() {
         return capacityType;
     }
+
     public void setCapacityType(short capacityType) {
         this.capacityType = capacityType;
     }
 
-	public CapacityState getCapacityState() {
+    public CapacityState getCapacityState() {
         return capacityState;
     }
 
@@ -177,18 +188,18 @@ public class CapacityVO implements Capacity {
     }
 
     public Date getCreated() {
-		return created;
-	}
+        return created;
+    }
 
-	public Date getUpdateTime() {
-		return updateTime;
-	}
+    public Date getUpdateTime() {
+        return updateTime;
+    }
 
-	public void setUpdateTime(Date updateTime) {
-		this.updateTime = updateTime;
-	}
+    public void setUpdateTime(Date updateTime) {
+        this.updateTime = updateTime;
+    }
 
-	@Override
+    @Override
     public Float getUsedPercentage() {
         return usedPercentage;
     }

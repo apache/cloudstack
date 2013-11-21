@@ -44,22 +44,22 @@ public interface AccountManager extends AccountService {
      * @return true if disable was successful, false otherwise
      */
     boolean disableAccount(long accountId) throws ConcurrentOperationException, ResourceUnavailableException;
-    
+
     boolean deleteAccount(AccountVO account, long callerUserId, Account caller);
 
-	Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId);
-	
-	Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map<String, String> details, String uuid);
-		
+    Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId);
+
+    Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map<String, String> details, String uuid);
+
     /**
      * Logs out a user
      * @param userId
      */
     void logoutUser(long userId);
-    
+
     /**
      * Authenticates a user when s/he logs in.
-     * 
+     *
      * @param username
      *            required username for authentication
      * @param password
@@ -72,33 +72,33 @@ public interface AccountManager extends AccountService {
      * @return a user object, null if the user failed to authenticate
      */
     UserAccount authenticateUser(String username, String password, Long domainId, String loginIpAddress, Map<String, Object[]> requestParameters);
-    
+
     /**
      * Locate a user by their apiKey
-     * 
+     *
      * @param apiKey
      *            that was created for a particular user
      * @return the user/account pair if one exact match was found, null otherwise
      */
     Pair<User, Account> findUserByApiKey(String apiKey);
-    
-	boolean enableAccount(long accountId);
 
-	void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, Long domainId,
-			boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
+    boolean enableAccount(long accountId);
 
-    void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId,
-            boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
+    void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
+        ListProjectResourcesCriteria listProjectResourcesCriteria);
 
-	void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc,
-			Long domainId, boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
+    void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
+        ListProjectResourcesCriteria listProjectResourcesCriteria);
 
-    void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc,
-            Long domainId, boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
+    void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
+        ListProjectResourcesCriteria listProjectResourcesCriteria);
 
-	void buildACLSearchParameters(Account caller, Long id,
-			String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation);
-	
+    void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
+        ListProjectResourcesCriteria listProjectResourcesCriteria);
+
+    void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts,
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation);
+
     /**
      * Deletes a user by userId
      *
@@ -108,7 +108,7 @@ public interface AccountManager extends AccountService {
      * @return true if delete was successful, false otherwise
      */
     boolean deleteUserAccount(long accountId);
-    
+
     /**
      * Updates an account
      *
@@ -117,7 +117,7 @@ public interface AccountManager extends AccountService {
      * @return updated account object
      */
     Account updateAccount(UpdateAccountCmd cmd);
-    
+
     /**
      * Disables an account by accountName and domainId
      *
@@ -129,7 +129,7 @@ public interface AccountManager extends AccountService {
      * @return true if disable was successful, false otherwise
      */
     Account disableAccount(String accountName, Long domainId, Long accountId) throws ConcurrentOperationException, ResourceUnavailableException;
-    
+
     /**
      * Enables an account by accountId
      *
@@ -140,23 +140,23 @@ public interface AccountManager extends AccountService {
      * @param accountId
      * @return account object
      */
-    Account enableAccount(String accountName, Long domainId, Long accountId); 
-    
+    Account enableAccount(String accountName, Long domainId, Long accountId);
+
     /**
      * Deletes user by Id
      * @param deleteUserCmd
      * @return
      */
     boolean deleteUser(DeleteUserCmd deleteUserCmd);
-    
+
     /**
      * Update a user by userId
      *
      * @param userId
      * @return UserAccount object
      */
-    UserAccount updateUser(UpdateUserCmd cmd);   
-    
+    UserAccount updateUser(UpdateUserCmd cmd);
+
     /**
      * Disables a user by userId
      *
@@ -165,7 +165,7 @@ public interface AccountManager extends AccountService {
      * @return UserAccount object
      */
     UserAccount disableUser(long userId);
-    
+
     /**
      * Enables a user
      *
@@ -174,7 +174,7 @@ public interface AccountManager extends AccountService {
      * @return UserAccount object
      */
     UserAccount enableUser(long userId);
-    
+
     /**
      * Locks an account by accountId. A locked account cannot access the API, but will still have running VMs/IP
      * addresses
@@ -187,5 +187,5 @@ public interface AccountManager extends AccountService {
      * @param accountId
      * @return account object
      */
-    Account lockAccount(String accountName, Long domainId, Long accountId);    
+    Account lockAccount(String accountName, Long domainId, Long accountId);
 }

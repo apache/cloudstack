@@ -27,9 +27,9 @@ import com.cloud.consoleproxy.vnc.RfbConstants;
 import com.cloud.consoleproxy.vnc.VncClient;
 
 /**
- * 
+ *
  * ConsoleProxyVncClient bridges a VNC engine with the front-end AJAX viewer
- * 
+ *
  */
 public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyVncClient.class);
@@ -38,32 +38,33 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
     private static final int CTRL_KEY_MASK = 128;
     private static final int META_KEY_MASK = 256;
     private static final int ALT_KEY_MASK = 512;
-    
+
     private static final int X11_KEY_SHIFT = 0xffe1;
     private static final int X11_KEY_CTRL = 0xffe3;
     private static final int X11_KEY_ALT = 0xffe9;
     private static final int X11_KEY_META = 0xffe7;
-    
+
     private VncClient client;
     private Thread worker;
     private volatile boolean workerDone = false;
-    
+
     private int lastModifierStates = 0;
     private int lastPointerMask = 0;
-    
+
     public ConsoleProxyVncClient() {
     }
-    
+
+    @Override
     public boolean isHostConnected() {
-        if(client != null)
+        if (client != null)
             return client.isHostConnected();
-        
+
         return false;
     }
-    
+
     @Override
     public boolean isFrontEndAlive() {
-        if(workerDone || System.currentTimeMillis() - getClientLastFrontEndActivityTime() > ConsoleProxy.VIEWER_LINGER_SECONDS*1000) {
+        if (workerDone || System.currentTimeMillis() - getClientLastFrontEndActivityTime() > ConsoleProxy.VIEWER_LINGER_SECONDS * 1000) {
             s_logger.info("Front end has been idle for too long");
             return false;
         }
@@ -73,25 +74,23 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
     @Override
     public void initClient(ConsoleProxyClientParam param) {
         setClientParam(param);
-        
+
         client = new VncClient(this);
         worker = new Thread(new Runnable() {
+            @Override
             public void run() {
                 String tunnelUrl = getClientParam().getClientTunnelUrl();
                 String tunnelSession = getClientParam().getClientTunnelSession();
-                
-                for(int i = 0; i < 15 && !workerDone; i++) {
+
+                for (int i = 0; i < 15 && !workerDone; i++) {
                     try {
-                        if(tunnelUrl != null && !tunnelUrl.isEmpty() && tunnelSession != null && !tunnelSession.isEmpty()) {
+                        if (tunnelUrl != null && !tunnelUrl.isEmpty() && tunnelSession != null && !tunnelSession.isEmpty()) {
                             URI uri = new URI(tunnelUrl);
                             s_logger.info("Connect to VNC server via tunnel. url: " + tunnelUrl + ", session: " + tunnelSession);
-                            
+
                             ConsoleProxy.ensureRoute(uri.getHost());
-                            client.connectTo(
-                                uri.getHost(), uri.getPort(), 
-                                uri.getPath() + "?" + uri.getQuery(), 
-                                tunnelSession, "https".equalsIgnoreCase(uri.getScheme()),
-                                getClientHostPassword());
+                            client.connectTo(uri.getHost(), uri.getPort(), uri.getPath() + "?" + uri.getQuery(), tunnelSession,
+                                "https".equalsIgnoreCase(uri.getScheme()), getClientHostPassword());
                         } else {
                             s_logger.info("Connect to VNC server directly. host: " + getClientHostAddress() + ", port: " + getClientHostPort());
                             ConsoleProxy.ensureRoute(getClientHostAddress());
@@ -104,20 +103,20 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
                     } catch (Throwable e) {
                         s_logger.error("Unexpected exception (will retry until timeout) ", e);
                     }
-                    
+
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
                     }
 
-                    if(tunnelUrl != null && !tunnelUrl.isEmpty() && tunnelSession != null && !tunnelSession.isEmpty()) {
+                    if (tunnelUrl != null && !tunnelUrl.isEmpty() && tunnelSession != null && !tunnelSession.isEmpty()) {
                         ConsoleProxyAuthenticationResult authResult = ConsoleProxy.reAuthenticationExternally(getClientParam());
-                        if(authResult != null && authResult.isSuccess()) {
-                            if(authResult.getTunnelUrl() != null && !authResult.getTunnelUrl().isEmpty() && 
-                                authResult.getTunnelSession() != null && !authResult.getTunnelSession().isEmpty()) {
+                        if (authResult != null && authResult.isSuccess()) {
+                            if (authResult.getTunnelUrl() != null && !authResult.getTunnelUrl().isEmpty() && authResult.getTunnelSession() != null &&
+                                !authResult.getTunnelSession().isEmpty()) {
                                 tunnelUrl = authResult.getTunnelUrl();
                                 tunnelSession = authResult.getTunnelSession();
-                                
+
                                 s_logger.info("Reset XAPI session. url: " + tunnelUrl + ", session: " + tunnelSession);
                             }
                         }
@@ -129,64 +128,67 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
                 client.getClientListener().onClientClose();
             }
         });
-        
+
         worker.setDaemon(true);
         worker.start();
     }
-    
+
     @Override
     public void closeClient() {
-    	workerDone = true;
-        if(client != null)
+        workerDone = true;
+        if (client != null)
             client.shutdown();
     }
-    
+
     @Override
     public void onClientConnected() {
     }
-    
+
+    @Override
     public void onClientClose() {
         s_logger.info("Received client close indication. remove viewer from map.");
-        
+
         ConsoleProxy.removeViewer(this);
     }
-    
+
     @Override
     public void onFramebufferUpdate(int x, int y, int w, int h) {
         super.onFramebufferUpdate(x, y, w, h);
         client.requestUpdate(false);
     }
 
+    @Override
     public void sendClientRawKeyboardEvent(InputEventType event, int code, int modifiers) {
-        if(client == null)
+        if (client == null)
             return;
-        
+
         updateFrontEndActivityTime();
-        
-        switch(event) {
-        case KEY_DOWN :
-            sendModifierEvents(modifiers);
-            client.sendClientKeyboardEvent(RfbConstants.KEY_DOWN, code, 0);
-            break;
-            
-        case KEY_UP :
-            client.sendClientKeyboardEvent(RfbConstants.KEY_UP, code, 0);
-            sendModifierEvents(0);
-            break;
-            
-        case KEY_PRESS :
-            break;
-            
-        default :
-            assert(false);
-            break;
+
+        switch (event) {
+            case KEY_DOWN:
+                sendModifierEvents(modifiers);
+                client.sendClientKeyboardEvent(RfbConstants.KEY_DOWN, code, 0);
+                break;
+
+            case KEY_UP:
+                client.sendClientKeyboardEvent(RfbConstants.KEY_UP, code, 0);
+                sendModifierEvents(0);
+                break;
+
+            case KEY_PRESS:
+                break;
+
+            default:
+                assert (false);
+                break;
         }
     }
-    
+
+    @Override
     public void sendClientMouseEvent(InputEventType event, int x, int y, int code, int modifiers) {
-        if(client == null)
+        if (client == null)
             return;
-        
+
         updateFrontEndActivityTime();
 
         if (event == InputEventType.MOUSE_DOWN) {
@@ -196,7 +198,7 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
                 lastPointerMask |= 1;
             }
         }
-        
+
         if (event == InputEventType.MOUSE_UP) {
             if (code == 2) {
                 lastPointerMask ^= 4;
@@ -204,33 +206,33 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
                 lastPointerMask ^= 1;
             }
         }
-            
+
         sendModifierEvents(modifiers);
         client.sendClientMouseEvent(lastPointerMask, x, y, code, modifiers);
-        if(lastPointerMask == 0)
+        if (lastPointerMask == 0)
             sendModifierEvents(0);
     }
-    
+
     @Override
     protected FrameBufferCanvas getFrameBufferCavas() {
-        if(client != null)
+        if (client != null)
             return client.getFrameBufferCanvas();
         return null;
     }
-    
+
     private void sendModifierEvents(int modifiers) {
-        if((modifiers & SHIFT_KEY_MASK) != (lastModifierStates & SHIFT_KEY_MASK))
+        if ((modifiers & SHIFT_KEY_MASK) != (lastModifierStates & SHIFT_KEY_MASK))
             client.sendClientKeyboardEvent((modifiers & SHIFT_KEY_MASK) != 0 ? RfbConstants.KEY_DOWN : RfbConstants.KEY_UP, X11_KEY_SHIFT, 0);
-            
-        if((modifiers & CTRL_KEY_MASK) != (lastModifierStates & CTRL_KEY_MASK))
+
+        if ((modifiers & CTRL_KEY_MASK) != (lastModifierStates & CTRL_KEY_MASK))
             client.sendClientKeyboardEvent((modifiers & CTRL_KEY_MASK) != 0 ? RfbConstants.KEY_DOWN : RfbConstants.KEY_UP, X11_KEY_CTRL, 0);
 
-        if((modifiers & META_KEY_MASK) != (lastModifierStates & META_KEY_MASK))
+        if ((modifiers & META_KEY_MASK) != (lastModifierStates & META_KEY_MASK))
             client.sendClientKeyboardEvent((modifiers & META_KEY_MASK) != 0 ? RfbConstants.KEY_DOWN : RfbConstants.KEY_UP, X11_KEY_META, 0);
-        
-        if((modifiers & ALT_KEY_MASK) != (lastModifierStates & ALT_KEY_MASK))
+
+        if ((modifiers & ALT_KEY_MASK) != (lastModifierStates & ALT_KEY_MASK))
             client.sendClientKeyboardEvent((modifiers & ALT_KEY_MASK) != 0 ? RfbConstants.KEY_DOWN : RfbConstants.KEY_UP, X11_KEY_ALT, 0);
-        
+
         lastModifierStates = modifiers;
     }
 }

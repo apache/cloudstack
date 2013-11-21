@@ -22,7 +22,7 @@ public interface VmDiskStats {
     public long getIORead();
 
     public long getIOWrite();
-    
+
     public long getBytesRead();
 
     public long getBytesWrite();

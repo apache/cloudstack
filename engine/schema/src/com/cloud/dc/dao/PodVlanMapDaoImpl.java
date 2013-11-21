@@ -28,48 +28,48 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={PodVlanMapDao.class})
+@Local(value = {PodVlanMapDao.class})
 public class PodVlanMapDaoImpl extends GenericDaoBase<PodVlanMapVO, Long> implements PodVlanMapDao {
-    
-	protected SearchBuilder<PodVlanMapVO> PodSearch;
-	protected SearchBuilder<PodVlanMapVO> VlanSearch;
-	protected SearchBuilder<PodVlanMapVO> PodVlanSearch;
-	
-	@Override
-	public List<PodVlanMapVO> listPodVlanMapsByPod(long podId) {
-		SearchCriteria<PodVlanMapVO> sc = PodSearch.create();
-    	sc.setParameters("podId", podId);
-    	return listIncludingRemovedBy(sc);
-	}
-	
-	@Override
-	public PodVlanMapVO listPodVlanMapsByVlan(long vlanDbId) {
-		SearchCriteria<PodVlanMapVO> sc = VlanSearch.create();
-    	sc.setParameters("vlanDbId", vlanDbId);
-    	return findOneBy(sc);
-	}
-	
-	@Override
-	public PodVlanMapVO findPodVlanMap(long podId, long vlanDbId) {
-		SearchCriteria<PodVlanMapVO> sc = PodVlanSearch.create();
-		sc.setParameters("podId", podId);
-		sc.setParameters("vlanDbId", vlanDbId);
-		return findOneIncludingRemovedBy(sc);
-	}
-	
+
+    protected SearchBuilder<PodVlanMapVO> PodSearch;
+    protected SearchBuilder<PodVlanMapVO> VlanSearch;
+    protected SearchBuilder<PodVlanMapVO> PodVlanSearch;
+
+    @Override
+    public List<PodVlanMapVO> listPodVlanMapsByPod(long podId) {
+        SearchCriteria<PodVlanMapVO> sc = PodSearch.create();
+        sc.setParameters("podId", podId);
+        return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public PodVlanMapVO listPodVlanMapsByVlan(long vlanDbId) {
+        SearchCriteria<PodVlanMapVO> sc = VlanSearch.create();
+        sc.setParameters("vlanDbId", vlanDbId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public PodVlanMapVO findPodVlanMap(long podId, long vlanDbId) {
+        SearchCriteria<PodVlanMapVO> sc = PodVlanSearch.create();
+        sc.setParameters("podId", podId);
+        sc.setParameters("vlanDbId", vlanDbId);
+        return findOneIncludingRemovedBy(sc);
+    }
+
     public PodVlanMapDaoImpl() {
-    	PodSearch = createSearchBuilder();
-    	PodSearch.and("podId", PodSearch.entity().getPodId(), SearchCriteria.Op.EQ);
+        PodSearch = createSearchBuilder();
+        PodSearch.and("podId", PodSearch.entity().getPodId(), SearchCriteria.Op.EQ);
         PodSearch.done();
-        
-    	VlanSearch = createSearchBuilder();
-    	VlanSearch.and("vlanDbId", VlanSearch.entity().getVlanDbId(), SearchCriteria.Op.EQ);
+
+        VlanSearch = createSearchBuilder();
+        VlanSearch.and("vlanDbId", VlanSearch.entity().getVlanDbId(), SearchCriteria.Op.EQ);
         VlanSearch.done();
-        
+
         PodVlanSearch = createSearchBuilder();
         PodVlanSearch.and("podId", PodVlanSearch.entity().getPodId(), SearchCriteria.Op.EQ);
         PodVlanSearch.and("vlanDbId", PodVlanSearch.entity().getVlanDbId(), SearchCriteria.Op.EQ);
         PodVlanSearch.done();
     }
-    
+
 }

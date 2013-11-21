@@ -29,7 +29,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={UserDao.class})
+@Local(value = {UserDao.class})
 @DB
 public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao {
     protected SearchBuilder<UserVO> UsernamePasswordSearch;
@@ -39,20 +39,20 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
     protected SearchBuilder<UserVO> AccountIdSearch;
     protected SearchBuilder<UserVO> SecretKeySearch;
     protected SearchBuilder<UserVO> RegistrationTokenSearch;
-    
-    protected UserDaoImpl () {
-    	UsernameSearch = createSearchBuilder();
-    	UsernameSearch.and("username", UsernameSearch.entity().getUsername(), SearchCriteria.Op.EQ);
-    	UsernameSearch.done();
-    	
+
+    protected UserDaoImpl() {
+        UsernameSearch = createSearchBuilder();
+        UsernameSearch.and("username", UsernameSearch.entity().getUsername(), SearchCriteria.Op.EQ);
+        UsernameSearch.done();
+
         UsernameLikeSearch = createSearchBuilder();
         UsernameLikeSearch.and("username", UsernameLikeSearch.entity().getUsername(), SearchCriteria.Op.LIKE);
         UsernameLikeSearch.done();
-        
+
         AccountIdSearch = createSearchBuilder();
         AccountIdSearch.and("account", AccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountIdSearch.done();
-        
+
         UsernamePasswordSearch = createSearchBuilder();
         UsernamePasswordSearch.and("username", UsernamePasswordSearch.entity().getUsername(), SearchCriteria.Op.EQ);
         UsernamePasswordSearch.and("password", UsernamePasswordSearch.entity().getPassword(), SearchCriteria.Op.EQ);
@@ -65,33 +65,33 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
         SecretKeySearch = createSearchBuilder();
         SecretKeySearch.and("secretKey", SecretKeySearch.entity().getSecretKey(), SearchCriteria.Op.EQ);
         SecretKeySearch.done();
-        
+
         RegistrationTokenSearch = createSearchBuilder();
         RegistrationTokenSearch.and("registrationToken", RegistrationTokenSearch.entity().getRegistrationToken(), SearchCriteria.Op.EQ);
         RegistrationTokenSearch.done();
     }
 
-	@Override
-	public UserVO getUser(String username, String password) {
-	    SearchCriteria<UserVO> sc = UsernamePasswordSearch.create();
-	    sc.setParameters("username", username);
-	    sc.setParameters("password", password);
-	    return findOneBy(sc);
-	}
-	
-	@Override
-    public List<UserVO> listByAccount(long accountId) {
-	    SearchCriteria<UserVO> sc = AccountIdSearch.create();
-	    sc.setParameters("account", accountId);
-	    return listBy(sc, null);
-	}
+    @Override
+    public UserVO getUser(String username, String password) {
+        SearchCriteria<UserVO> sc = UsernamePasswordSearch.create();
+        sc.setParameters("username", username);
+        sc.setParameters("password", password);
+        return findOneBy(sc);
+    }
 
-	@Override
-	public UserVO getUser(String username) {
-	    SearchCriteria<UserVO> sc = UsernameSearch.create();
-	    sc.setParameters("username", username);
-	    return findOneBy(sc);
-	}
+    @Override
+    public List<UserVO> listByAccount(long accountId) {
+        SearchCriteria<UserVO> sc = AccountIdSearch.create();
+        sc.setParameters("account", accountId);
+        return listBy(sc, null);
+    }
+
+    @Override
+    public UserVO getUser(String username) {
+        SearchCriteria<UserVO> sc = UsernameSearch.create();
+        sc.setParameters("username", username);
+        return findOneBy(sc);
+    }
 
     @Override
     public UserVO getUser(long userId) {
@@ -100,13 +100,13 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
         return findOneBy(sc);
     }
 
-	@Override
-	public List<UserVO> findUsersLike(String username) {
+    @Override
+    public List<UserVO> findUsersLike(String username) {
         SearchCriteria<UserVO> sc = UsernameLikeSearch.create();
         sc.setParameters("username", "%" + username + "%");
         return listBy(sc);
     }
-	
+
     @Override
     public UserVO findUserBySecretKey(String secretKey) {
         SearchCriteria<UserVO> sc = SecretKeySearch.create();
@@ -114,18 +114,18 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
         return findOneBy(sc);
     }
 
-	@Override
-	public UserVO findUserByRegistrationToken(String registrationToken) {
+    @Override
+    public UserVO findUserByRegistrationToken(String registrationToken) {
         SearchCriteria<UserVO> sc = RegistrationTokenSearch.create();
         sc.setParameters("registrationToken", registrationToken);
         return findOneBy(sc);
-	}
-	
-	@Override
-	public List<UserVO> findUsersByName(String username) {
-	    SearchCriteria<UserVO> sc = UsernameSearch.create();
+    }
+
+    @Override
+    public List<UserVO> findUsersByName(String username) {
+        SearchCriteria<UserVO> sc = UsernameSearch.create();
         sc.setParameters("username", username);
         return listBy(sc);
-	}
-	
+    }
+
 }

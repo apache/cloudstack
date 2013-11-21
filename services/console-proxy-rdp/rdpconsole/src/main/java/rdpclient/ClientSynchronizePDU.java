@@ -30,26 +30,26 @@ import streamer.PipelineImpl;
  */
 public class ClientSynchronizePDU extends OneTimeSwitch {
 
-  public ClientSynchronizePDU(String id) {
-    super(id);
-  }
+    public ClientSynchronizePDU(String id) {
+        super(id);
+    }
 
-  @Override
-  protected void handleOneTimeData(ByteBuffer buf, Link link) {
-    if (buf == null)
-      return;
+    @Override
+    protected void handleOneTimeData(ByteBuffer buf, Link link) {
+        if (buf == null)
+            return;
 
-    throw new RuntimeException("Unexpected packet: " + buf + ".");
-  }
+        throw new RuntimeException("Unexpected packet: " + buf + ".");
+    }
 
-  @Override
-  protected void onStart() {
-    super.onStart();
+    @Override
+    protected void onStart() {
+        super.onStart();
 
-    int length = 1024; // Large enough
-    ByteBuffer buf = new ByteBuffer(length, true);
+        int length = 1024; // Large enough
+        ByteBuffer buf = new ByteBuffer(length, true);
 
-    /* @formatter:off */
+        /* @formatter:off */
     buf.writeBytes(new byte[] {
         // MCS send data request
         (byte)0x64,
@@ -58,16 +58,16 @@ public class ClientSynchronizePDU extends OneTimeSwitch {
         // Channel ID: 1003 (I/O Channel)
         (byte)0x03, (byte)0xeb,
         // Data priority: high (0x40), segmentation: begin (0x20) | end (0x10)
-        (byte)0x70, 
+        (byte)0x70,
         // Data length:  22 bytes (0x16, variable length field)
-        (byte)0x80,  (byte)0x16, 
-        
+        (byte)0x80,  (byte)0x16,
+
         // RDP: total length: 22 bytes (LE)
-        (byte)0x16, (byte)0x00, 
-        
+        (byte)0x16, (byte)0x00,
+
         // PDU type: PDUTYPE_DATAPDU (0x7), TS_PROTOCOL_VERSION (0x10) (LE)
         (byte)0x17, (byte)0x00,
-        
+
         // PDU source: 1007 (LE)
         (byte)0xec, (byte)0x03,
         // Share ID: 0x000103ea (LE)
@@ -75,49 +75,49 @@ public class ClientSynchronizePDU extends OneTimeSwitch {
         // Padding: 1 byte
         (byte)0x00,
         // Stream ID: STREAM_LOW (1)
-        (byte)0x01, 
+        (byte)0x01,
         // uncompressedLength : 8 bytes (LE)
         (byte)0x08, (byte)0x00,
         // pduType2 = PDUTYPE2_SYNCHRONIZE (31)
-        (byte)0x1f, 
+        (byte)0x1f,
         // generalCompressedType: 0
         (byte)0x00,
         // generalCompressedLength: 0 (LE?)
         (byte)0x00, (byte)0x00,
         //  messageType: SYNCMSGTYPE_SYNC (1) (LE)
-        (byte)0x01, (byte)0x00, 
+        (byte)0x01, (byte)0x00,
         // targetUser: 0x03ea
         (byte)0xea, (byte)0x03,
     });
     /* @formatter:on */
 
-    // Trim buffer to actual length of data written
-    buf.trimAtCursor();
+        // Trim buffer to actual length of data written
+        buf.trimAtCursor();
 
-    pushDataToOTOut(buf);
+        pushDataToOTOut(buf);
 
-    switchOff();
-  }
+        switchOff();
+    }
 
-  /**
-   * Example.
-   * 
-   * @see http://msdn.microsoft.com/en-us/library/cc240841.aspx
-   */
-  public static void main(String args[]) {
-    // System.setProperty("streamer.Link.debug", "true");
-    System.setProperty("streamer.Element.debug", "true");
-    // System.setProperty("streamer.Pipeline.debug", "true");
+    /**
+     * Example.
+     *
+     * @see http://msdn.microsoft.com/en-us/library/cc240841.aspx
+     */
+    public static void main(String args[]) {
+        // System.setProperty("streamer.Link.debug", "true");
+        System.setProperty("streamer.Element.debug", "true");
+        // System.setProperty("streamer.Pipeline.debug", "true");
 
-    /* @formatter:off */
+        /* @formatter:off */
     byte[] packet = new byte[] {
         // TPKT
         (byte)0x03, (byte)0x00,
         // TPKT length: 37 bytes
         (byte)0x00, (byte)0x25,
-        // X224 Data PDU 
+        // X224 Data PDU
         (byte)0x02, (byte)0xf0, (byte)0x80,
-        
+
         // MCS send data request
         (byte)0x64,
         // Initiator: 1004 (1001+3)
@@ -125,12 +125,12 @@ public class ClientSynchronizePDU extends OneTimeSwitch {
         // Channel ID: 1003 (I/O Channel)
         (byte)0x03, (byte)0xeb,
         // Data priority: high (0x40), segmentation: begin (0x20) | end (0x10)
-        (byte)0x70, 
+        (byte)0x70,
         // Data length:  22 bytes (0x16, variable length field)
-        (byte)0x80,  (byte)0x16, 
-        
+        (byte)0x80,  (byte)0x16,
+
         // RDP: total length: 22 bytes (LE)
-        (byte)0x16, (byte)0x00, 
+        (byte)0x16, (byte)0x00,
         // PDU type: PDUTYPE_DATAPDU (0x7), TS_PROTOCOL_VERSION (0x10) (LE)
         (byte)0x17, (byte)0x00,
         // PDU source: 1007 (LE)
@@ -140,43 +140,43 @@ public class ClientSynchronizePDU extends OneTimeSwitch {
         // Padding: 1 byte
         (byte)0x00,
         // Stream ID: STREAM_LOW (1)
-        (byte)0x01, 
+        (byte)0x01,
         // uncompressedLength : 8 bytes (LE)
         (byte)0x08, (byte)0x00,
         // pduType2 = PDUTYPE2_SYNCHRONIZE (31)
-        (byte)0x1f, 
+        (byte)0x1f,
         // generalCompressedType: 0
         (byte)0x00,
         // generalCompressedLength: 0 (LE?)
         (byte)0x00, (byte)0x00,
         //  messageType: SYNCMSGTYPE_SYNC (1) (LE)
-        (byte)0x01, (byte)0x00, 
+        (byte)0x01, (byte)0x00,
         // targetUser: 0x03ea
         (byte)0xea, (byte)0x03,
-        
+
     };
     /* @formatter:on */
 
-    MockSource source = new MockSource("source", ByteBuffer.convertByteArraysToByteBuffers(new byte[] { 1, 2, 3 }));
-    Element todo = new ClientSynchronizePDU("TODO");
-    Element x224 = new ClientX224DataPdu("x224");
-    Element tpkt = new ClientTpkt("tpkt");
-    Element sink = new MockSink("sink", ByteBuffer.convertByteArraysToByteBuffers(packet));
-    Element mainSink = new MockSink("mainSink", ByteBuffer.convertByteArraysToByteBuffers(new byte[] { 1, 2, 3 }));
+        MockSource source = new MockSource("source", ByteBuffer.convertByteArraysToByteBuffers(new byte[] {1, 2, 3}));
+        Element todo = new ClientSynchronizePDU("TODO");
+        Element x224 = new ClientX224DataPdu("x224");
+        Element tpkt = new ClientTpkt("tpkt");
+        Element sink = new MockSink("sink", ByteBuffer.convertByteArraysToByteBuffers(packet));
+        Element mainSink = new MockSink("mainSink", ByteBuffer.convertByteArraysToByteBuffers(new byte[] {1, 2, 3}));
 
-    Pipeline pipeline = new PipelineImpl("test");
-    pipeline.add(source, todo, x224, tpkt, sink, mainSink);
-    pipeline.link("source", "TODO", "mainSink");
-    pipeline.link("TODO >" + OTOUT, "x224", "tpkt", "sink");
-    pipeline.runMainLoop("source", STDOUT, false, false);
-  }
+        Pipeline pipeline = new PipelineImpl("test");
+        pipeline.add(source, todo, x224, tpkt, sink, mainSink);
+        pipeline.link("source", "TODO", "mainSink");
+        pipeline.link("TODO >" + OTOUT, "x224", "tpkt", "sink");
+        pipeline.runMainLoop("source", STDOUT, false, false);
+    }
 
 }
 
 /*
  * @formatting:off
 
- * 03 00 00 25 02 F0 80 64 00 03 03 EB 70 80 16 16 00 17 00 EC 03 EA 03 01 00 00 01 08 00 1F 00 00 00 01 00 EA 03 
+ * 03 00 00 25 02 F0 80 64 00 03 03 EB 70 80 16 16 00 17 00 EC 03 EA 03 01 00 00 01 08 00 1F 00 00 00 01 00 EA 03
 
   Frame: Number = 40, Captured Frame Length = 94, MediaType = DecryptedPayloadHeader
 + DecryptedPayloadHeader: FrameCount = 1, ErrorStatus = SUCCESS
@@ -219,7 +219,7 @@ public class ClientSynchronizePDU extends OneTimeSwitch {
       Length: 22
     RDP: RDPBCGR
 - RDPBCGR: SynchronizePDU
-  - SlowPathPacket: SynchronizePDU 
+  - SlowPathPacket: SynchronizePDU
    - SlowPath: Type = TS_PDUTYPE_DATAPDU
     - TsShareControlHeader: Type = TS_PDUTYPE_DATAPDU
        TotalLength: 22 (0x16)

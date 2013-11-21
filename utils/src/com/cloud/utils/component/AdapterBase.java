@@ -25,7 +25,7 @@ public class AdapterBase extends ComponentLifecycleBase implements Adapter, Comp
         super();
         // set default run level for adapter components
         setRunLevel(ComponentLifecycle.RUN_LEVEL_COMPONENT);
-	}
+    }
 
     public static <T extends Adapter> T getAdapterByName(List<T> adapters, String name) {
         for (T adapter : adapters) {

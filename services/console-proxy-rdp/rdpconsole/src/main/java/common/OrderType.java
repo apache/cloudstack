@@ -17,6 +17,6 @@
 package common;
 
 public enum OrderType {
-  BITMAP_UPDATE, COPY_RECT,
+    BITMAP_UPDATE, COPY_RECT,
 
 }

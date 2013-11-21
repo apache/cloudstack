@@ -21,6 +21,6 @@ import org.apache.cloudstack.resourcedetail.UserIpAddressDetailVO;
 
 import com.cloud.utils.db.GenericDao;
 
-public interface UserIpAddressDetailsDao extends GenericDao<UserIpAddressDetailVO, Long>, ResourceDetailsDao<UserIpAddressDetailVO>{
+public interface UserIpAddressDetailsDao extends GenericDao<UserIpAddressDetailVO, Long>, ResourceDetailsDao<UserIpAddressDetailVO> {
 
 }

@@ -65,8 +65,7 @@ public class LibvirtNetworkDef {
         _domainName = domName;
     }
 
-    public void defNATNetwork(String brName, boolean stp, int delay,
-            String fwNic, String ipAddr, String netMask) {
+    public void defNATNetwork(String brName, boolean stp, int delay, String fwNic, String ipAddr, String netMask) {
         _networkType = netType.NAT;
         _brName = brName;
         _stp = stp;
@@ -76,8 +75,7 @@ public class LibvirtNetworkDef {
         _brNetMask = netMask;
     }
 
-    public void defBrNetwork(String brName, boolean stp, int delay,
-            String fwNic, String ipAddr, String netMask) {
+    public void defBrNetwork(String brName, boolean stp, int delay, String fwNic, String ipAddr, String netMask) {
         _networkType = netType.BRIDGE;
         _brName = brName;
         _stp = stp;
@@ -87,8 +85,7 @@ public class LibvirtNetworkDef {
         _brNetMask = netMask;
     }
 
-    public void defLocalNetwork(String brName, boolean stp, int delay,
-            String ipAddr, String netMask) {
+    public void defLocalNetwork(String brName, boolean stp, int delay, String ipAddr, String netMask) {
         _networkType = netType.LOCAL;
         _brName = brName;
         _stp = stp;
@@ -142,8 +139,7 @@ public class LibvirtNetworkDef {
             }
             netBuilder.append("/>\n");
         }
-        if (_brIPAddr != null || _brNetMask != null || !ipranges.isEmpty()
-                || !dhcpMaps.isEmpty()) {
+        if (_brIPAddr != null || _brNetMask != null || !ipranges.isEmpty() || !dhcpMaps.isEmpty()) {
             netBuilder.append("<ip");
             if (_brIPAddr != null)
                 netBuilder.append(" address='" + _brIPAddr + "'");
@@ -155,12 +151,10 @@ public class LibvirtNetworkDef {
             if (!ipranges.isEmpty() || !dhcpMaps.isEmpty()) {
                 netBuilder.append("<dhcp>\n");
                 for (IPRange ip : ipranges) {
-                    netBuilder.append("<range start='" + ip._start + "'"
-                            + " end='" + ip._end + "'/>\n");
+                    netBuilder.append("<range start='" + ip._start + "'" + " end='" + ip._end + "'/>\n");
                 }
                 for (dhcpMapping map : dhcpMaps) {
-                    netBuilder.append("<host mac='" + map._mac + "' name='"
-                            + map._name + "' ip='" + map._ip + "'/>\n");
+                    netBuilder.append("<host mac='" + map._mac + "' name='" + map._name + "' ip='" + map._ip + "'/>\n");
                 }
                 netBuilder.append("</dhcp>\n");
             }

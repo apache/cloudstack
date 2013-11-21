@@ -24,105 +24,104 @@ import com.cloud.bridge.util.EC2RestAuth;
 
 public class EC2Snapshot {
 
-	private String   id;
-	private String   name;
-	private String   volumeId;
-	private Long      volumeSize;   // in gigs
-    private String   type;
-    private String   state;
+    private String id;
+    private String name;
+    private String volumeId;
+    private Long volumeSize;   // in gigs
+    private String type;
+    private String state;
     private Calendar created;
-    private String 	 accountName;
-    private String 	 domainId;
-    private List<EC2TagKeyValue>    tagsSet;
-    
-	public EC2Snapshot() {
-		id         	= null;
-		name       	= null;
-		volumeId   	= null;
-		volumeSize 	= new Long(0);
-		type       	= null;
-		state       = null;
-		created    	= null;
-		accountName = null;
-		domainId	= null;
-		tagsSet    = new ArrayList<EC2TagKeyValue>();
-	}
-	
-	public void setId(String id ) {
-		this.id = id;
-	}
-	
-	public String getId() {
-		return this.id;
-	}
+    private String accountName;
+    private String domainId;
+    private List<EC2TagKeyValue> tagsSet;
 
-	public void setName( String name ) {
-		this.name = name;
-	}
-	
-	public String getName() {
-		return this.name;
-	}
+    public EC2Snapshot() {
+        id = null;
+        name = null;
+        volumeId = null;
+        volumeSize = new Long(0);
+        type = null;
+        state = null;
+        created = null;
+        accountName = null;
+        domainId = null;
+        tagsSet = new ArrayList<EC2TagKeyValue>();
+    }
 
-	public void setVolumeId(String volumeId ) {
-		this.volumeId = volumeId;
-	}
-	
-	public String getVolumeId() {
-		return this.volumeId;
-	}
-	
-	public void setVolumeSize( Long volumeSize ) {
-		this.volumeSize = volumeSize;
-	}
-	
-	public Long getVolumeSize() {
-	    return this.volumeSize;
-	}
+    public void setId(String id) {
+        this.id = id;
+    }
 
-	public void setType( String type ) {
-		this.type = type;
-	}
-	
-	public String getType() {
-		return this.type;
-	}
+    public String getId() {
+        return this.id;
+    }
 
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public void setCreated( String created ) {
-		this.created = EC2RestAuth.parseDateString( created );
-	}
-	
-	public Calendar getCreated() {
-		return this.created;
-	}
+    public String getName() {
+        return this.name;
+    }
 
-	public String getAccountName() {
-		return accountName;
-	}
+    public void setVolumeId(String volumeId) {
+        this.volumeId = volumeId;
+    }
 
-	public void setAccountName(String accountName) {
-		this.accountName = accountName;
-	}
+    public String getVolumeId() {
+        return this.volumeId;
+    }
 
-	public String getDomainId() {
-		return domainId;
-	}
+    public void setVolumeSize(Long volumeSize) {
+        this.volumeSize = volumeSize;
+    }
 
-	public void setDomainId(String domainId) {
-		this.domainId = domainId;
-	}
+    public Long getVolumeSize() {
+        return this.volumeSize;
+    }
 
-	public String getState() {
-		return state;
-	}
-	
-	public void setState(String state) {
-		this.state = state;
-	}
+    public void setType(String type) {
+        this.type = type;
+    }
 
-    public void addResourceTag( EC2TagKeyValue param ) {
-        tagsSet.add( param );
+    public String getType() {
+        return this.type;
+    }
+
+    public void setCreated(String created) {
+        this.created = EC2RestAuth.parseDateString(created);
+    }
+
+    public Calendar getCreated() {
+        return this.created;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public String getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
+    }
+
+    public void addResourceTag(EC2TagKeyValue param) {
+        tagsSet.add(param);
     }
 
     public EC2TagKeyValue[] getResourceTags() {

@@ -41,6 +41,7 @@ public class VolumeTO implements InternalIdentity {
     private Long bytesWriteRate;
     private Long iopsReadRate;
     private Long iopsWriteRate;
+    private String cacheMode;
     private Long chainSize;
 
     public VolumeTO(long id, Volume.Type type, StoragePoolType poolType, String poolUuid, String name, String mountPoint, String path, long size, String chainInfo) {
@@ -55,7 +56,8 @@ public class VolumeTO implements InternalIdentity {
         this.chainInfo = chainInfo;
     }
 
-    public VolumeTO(long id, Volume.Type type, StoragePoolType poolType, String poolUuid, String name, String mountPoint, String path, long size, String chainInfo, String guestOsType) {
+    public VolumeTO(long id, Volume.Type type, StoragePoolType poolType, String poolUuid, String name, String mountPoint, String path, long size, String chainInfo,
+            String guestOsType) {
         this.id = id;
         this.name = name;
         this.path = path;
@@ -91,6 +93,7 @@ public class VolumeTO implements InternalIdentity {
         this.deviceId = id;
     }
 
+    @Override
     public long getId() {
         return id;
     }
@@ -135,7 +138,7 @@ public class VolumeTO implements InternalIdentity {
         return guestOsType;
     }
     
-    public void setPath(String path){
+    public void setPath(String path) {
         this.path = path;
     }
 
@@ -174,6 +177,14 @@ public class VolumeTO implements InternalIdentity {
 
     public Long getIopsWriteRate() {
         return iopsWriteRate;
+    }
+
+    public void setCacheMode(String cacheMode) {
+        this.cacheMode = cacheMode;
+    }
+
+    public String getCacheMode() {
+        return cacheMode;
     }
 
     public Long getChainSize() {

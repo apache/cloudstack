@@ -29,83 +29,80 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.GenericQueryBuilder;
-import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={StorageNetworkIpAddressDao.class})
+@Local(value = {StorageNetworkIpAddressDao.class})
 @DB
 public class StorageNetworkIpAddressDaoImpl extends GenericDaoBase<StorageNetworkIpAddressVO, Long> implements StorageNetworkIpAddressDao {
-	protected final GenericSearchBuilder<StorageNetworkIpAddressVO, Long> countInUserIp;
-	protected final GenericSearchBuilder<StorageNetworkIpAddressVO, String> listInUseIp;
-	protected final SearchBuilder<StorageNetworkIpAddressVO> untakenIp;
-	protected final SearchBuilder<StorageNetworkIpAddressVO> ipSearch;
-	
+    protected final GenericSearchBuilder<StorageNetworkIpAddressVO, Long> countInUserIp;
+    protected final GenericSearchBuilder<StorageNetworkIpAddressVO, String> listInUseIp;
+    protected final SearchBuilder<StorageNetworkIpAddressVO> untakenIp;
+    protected final SearchBuilder<StorageNetworkIpAddressVO> ipSearch;
 
-	protected StorageNetworkIpAddressDaoImpl() {
-		countInUserIp = createSearchBuilder(Long.class);
-		countInUserIp.select(null, Func.COUNT, null);
-		countInUserIp.and("rangeId", countInUserIp.entity().getRangeId(), Op.EQ);
-		countInUserIp.and("taken", countInUserIp.entity().getTakenAt(), Op.NNULL);
-		countInUserIp.done();
-		
-		listInUseIp = createSearchBuilder(String.class);
-		listInUseIp.selectFields(listInUseIp.entity().getIpAddress());
-		listInUseIp.and("rangeId", listInUseIp.entity().getRangeId(), Op.EQ);
-		listInUseIp.and("taken", listInUseIp.entity().getTakenAt(), Op.NNULL);
-		listInUseIp.done();
-		
-		untakenIp = createSearchBuilder();
-		untakenIp.and("rangeId", untakenIp.entity().getRangeId(), Op.EQ);
-		untakenIp.and("taken", untakenIp.entity().getTakenAt(), Op.NULL);
-		untakenIp.done();
-		
-		ipSearch = createSearchBuilder();
-		ipSearch.and("ipAddress", ipSearch.entity().getIpAddress(), Op.EQ);
-		ipSearch.done();
-	}
-	
-	@Override
-	public long countInUseIpByRangeId(long rangeId) {
-		SearchCriteria<Long> sc = countInUserIp.create();
-		sc.setParameters("rangeId", rangeId);
-		return customSearch(sc, null).get(0);
-	}
+    protected StorageNetworkIpAddressDaoImpl() {
+        countInUserIp = createSearchBuilder(Long.class);
+        countInUserIp.select(null, Func.COUNT, null);
+        countInUserIp.and("rangeId", countInUserIp.entity().getRangeId(), Op.EQ);
+        countInUserIp.and("taken", countInUserIp.entity().getTakenAt(), Op.NNULL);
+        countInUserIp.done();
 
-	@Override
-	public List<String> listInUseIpByRangeId(long rangeId) {
-		SearchCriteria<String> sc = listInUseIp.create();
-		sc.setParameters("rangeId", rangeId);
-		return customSearch(sc, null);
-	}
-	
-	@Override
-	@DB
+        listInUseIp = createSearchBuilder(String.class);
+        listInUseIp.selectFields(listInUseIp.entity().getIpAddress());
+        listInUseIp.and("rangeId", listInUseIp.entity().getRangeId(), Op.EQ);
+        listInUseIp.and("taken", listInUseIp.entity().getTakenAt(), Op.NNULL);
+        listInUseIp.done();
+
+        untakenIp = createSearchBuilder();
+        untakenIp.and("rangeId", untakenIp.entity().getRangeId(), Op.EQ);
+        untakenIp.and("taken", untakenIp.entity().getTakenAt(), Op.NULL);
+        untakenIp.done();
+
+        ipSearch = createSearchBuilder();
+        ipSearch.and("ipAddress", ipSearch.entity().getIpAddress(), Op.EQ);
+        ipSearch.done();
+    }
+
+    @Override
+    public long countInUseIpByRangeId(long rangeId) {
+        SearchCriteria<Long> sc = countInUserIp.create();
+        sc.setParameters("rangeId", rangeId);
+        return customSearch(sc, null).get(0);
+    }
+
+    @Override
+    public List<String> listInUseIpByRangeId(long rangeId) {
+        SearchCriteria<String> sc = listInUseIp.create();
+        sc.setParameters("rangeId", rangeId);
+        return customSearch(sc, null);
+    }
+
+    @Override
+    @DB
     public StorageNetworkIpAddressVO takeIpAddress(long rangeId) {
-		SearchCriteria<StorageNetworkIpAddressVO> sc = untakenIp.create();
-		sc.setParameters("rangeId", rangeId);
+        SearchCriteria<StorageNetworkIpAddressVO> sc = untakenIp.create();
+        sc.setParameters("rangeId", rangeId);
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         StorageNetworkIpAddressVO ip = lockOneRandomRow(sc, true);
         if (ip == null) {
-        	txn.rollback();
-        	return null;
+            txn.rollback();
+            return null;
         }
         ip.setTakenAt(new Date());
         update(ip.getId(), ip);
         txn.commit();
         return ip;
-	}
+    }
 
-	@Override
+    @Override
     public void releaseIpAddress(String ip) {
-		SearchCriteria<StorageNetworkIpAddressVO> sc = ipSearch.create();
-	    sc.setParameters("ipAddress", ip);
-	    StorageNetworkIpAddressVO vo = createForUpdate();
-	    vo.setTakenAt(null);
-	    update(vo, sc);
+        SearchCriteria<StorageNetworkIpAddressVO> sc = ipSearch.create();
+        sc.setParameters("ipAddress", ip);
+        StorageNetworkIpAddressVO vo = createForUpdate();
+        vo.setTakenAt(null);
+        update(vo, sc);
     }
 }

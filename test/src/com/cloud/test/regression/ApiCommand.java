@@ -109,9 +109,9 @@ public class ApiCommand {
     // ================FOLLOWING METHODS USE INPUT XML FILE=======================//
     public void setCommandName() {
         NodeList commandName = this.xmlCommand.getElementsByTagName("name");
-        Element commandElmnt = (Element) commandName.item(0);
+        Element commandElmnt = (Element)commandName.item(0);
         NodeList commandNm = commandElmnt.getChildNodes();
-        this.commandName = (((Node) commandNm.item(0)).getNodeValue());
+        this.commandName = (commandNm.item(0).getNodeValue());
     }
 
     public String getName() {
@@ -186,33 +186,32 @@ public class ApiCommand {
         NodeList parameterLst = this.xmlCommand.getElementsByTagName("parameters");
         if (parameterLst != null) {
             for (int j = 0; j < parameterLst.getLength(); j++) {
-                Element parameterElement = (Element) parameterLst.item(j);
+                Element parameterElement = (Element)parameterLst.item(j);
                 NodeList itemLst = parameterElement.getElementsByTagName("item");
                 for (int k = 0; k < itemLst.getLength(); k++) {
                     Node item = itemLst.item(k);
                     if (item.getNodeType() == Node.ELEMENT_NODE) {
-                        Element itemElement = (Element) item;
+                        Element itemElement = (Element)item;
                         NodeList itemName = itemElement.getElementsByTagName("name");
-                        Element itemNameElement = (Element) itemName.item(0);
+                        Element itemNameElement = (Element)itemName.item(0);
 
                         // get value
                         Element itemValueElement = null;
                         if ((itemElement.getElementsByTagName("value") != null) && (itemElement.getElementsByTagName("value").getLength() != 0)) {
                             NodeList itemValue = itemElement.getElementsByTagName("value");
-                            itemValueElement = (Element) itemValue.item(0);
+                            itemValueElement = (Element)itemValue.item(0);
                         }
 
                         Element itemParamElement = null;
                         // getparam
                         if ((itemElement.getElementsByTagName("param") != null) && (itemElement.getElementsByTagName("param").getLength() != 0)) {
                             NodeList itemParam = itemElement.getElementsByTagName("param");
-                            itemParamElement = (Element) itemParam.item(0);
+                            itemParamElement = (Element)itemParam.item(0);
                         }
 
                         if ((itemElement.getAttribute("getparam").equals("true")) && (itemParamElement != null)) {
                             this.urlParam.put(itemNameElement.getTextContent(), param.get(itemParamElement.getTextContent()));
-                        }
-                        else if (itemValueElement != null) {
+                        } else if (itemValueElement != null) {
                             this.urlParam.put(itemNameElement.getTextContent(), itemValueElement.getTextContent());
                         } else if (itemElement.getAttribute("random").equals("true")) {
                             Random ran = new Random();
@@ -223,7 +222,7 @@ public class ApiCommand {
                             }
                         } else if (itemElement.getAttribute("randomnumber").equals("true")) {
                             Random ran = new Random();
-                            Integer randomNumber = (Integer) Math.abs(ran.nextInt(65535));
+                            Integer randomNumber = Math.abs(ran.nextInt(65535));
                             this.urlParam.put(itemNameElement.getTextContent(), randomNumber.toString());
                             if ((itemElement.getAttribute("setparam").equals("true")) && (itemParamElement != null)) {
                                 param.put(itemParamElement.getTextContent(), randomNumber.toString());
@@ -243,9 +242,9 @@ public class ApiCommand {
             Set<?> c = this.urlParam.entrySet();
             Iterator<?> it = c.iterator();
             while (it.hasNext()) {
-                Map.Entry<?, ?> me = (Map.Entry<?, ?>) it.next();
-                String key = (String) me.getKey();
-                String value = (String) me.getValue();
+                Map.Entry<?, ?> me = (Map.Entry<?, ?>)it.next();
+                String key = (String)me.getKey();
+                String value = (String)me.getValue();
                 try {
                     temp = temp + " -" + key + " " + value;
                 } catch (Exception ex) {
@@ -258,9 +257,9 @@ public class ApiCommand {
             Set<?> c = this.urlParam.entrySet();
             Iterator<?> it = c.iterator();
             while (it.hasNext()) {
-                Map.Entry<?, ?> me = (Map.Entry<?, ?>) it.next();
-                String key = (String) me.getKey();
-                String value = (String) me.getValue();
+                Map.Entry<?, ?> me = (Map.Entry<?, ?>)it.next();
+                String key = (String)me.getKey();
+                String value = (String)me.getValue();
                 try {
                     temp = temp + key + "=" + value;
                 } catch (Exception ex) {
@@ -276,9 +275,9 @@ public class ApiCommand {
                 Set<?> c = this.urlParam.entrySet();
                 Iterator<?> it = c.iterator();
                 while (it.hasNext()) {
-                    Map.Entry<?, ?> me = (Map.Entry<?, ?>) it.next();
-                    String key = (String) me.getKey();
-                    String value = (String) me.getValue();
+                    Map.Entry<?, ?> me = (Map.Entry<?, ?>)it.next();
+                    String key = (String)me.getKey();
+                    String value = (String)me.getValue();
                     try {
                         temp = temp + "&" + key + "=" + URLEncoder.encode(value, "UTF-8");
                     } catch (Exception ex) {
@@ -286,8 +285,7 @@ public class ApiCommand {
                     }
                 }
                 this.command = temp;
-            }
-            else if (isUserCommand == true) {
+            } else if (isUserCommand == true) {
                 String apiKey = param.get("apikey");
                 String secretKey = param.get("secretkey");
 
@@ -299,9 +297,9 @@ public class ApiCommand {
                 Set<?> c = this.urlParam.entrySet();
                 Iterator<?> it = c.iterator();
                 while (it.hasNext()) {
-                    Map.Entry<?, ?> me = (Map.Entry<?, ?>) it.next();
-                    String key = (String) me.getKey();
-                    String value = (String) me.getValue();
+                    Map.Entry<?, ?> me = (Map.Entry<?, ?>)it.next();
+                    String key = (String)me.getKey();
+                    String value = (String)me.getValue();
                     try {
                         temp = temp + key + "=" + URLEncoder.encode(value, "UTF-8") + "&";
                     } catch (Exception ex) {
@@ -327,15 +325,14 @@ public class ApiCommand {
         NodeList returnLst = this.xmlCommand.getElementsByTagName("returnvalue");
         if (returnLst != null) {
             for (int m = 0; m < returnLst.getLength(); m++) {
-                Element returnElement = (Element) returnLst.item(m);
+                Element returnElement = (Element)returnLst.item(m);
                 if (returnElement.getAttribute("list").equals("true")) {
                     this.list = true;
                     NodeList elementLst = returnElement.getElementsByTagName("element");
-                    this.listId = (Element) elementLst.item(0);
+                    this.listId = (Element)elementLst.item(0);
                     NodeList elementName = returnElement.getElementsByTagName("name");
-                    this.listName = (Element) elementName.item(0);
-                }
-                else {
+                    this.listName = (Element)elementName.item(0);
+                } else {
                     this.list = false;
                 }
 
@@ -344,24 +341,24 @@ public class ApiCommand {
                     for (int n = 0; n < itemLst1.getLength(); n++) {
                         Node item = itemLst1.item(n);
                         if (item.getNodeType() == Node.ELEMENT_NODE) {
-                            Element itemElement = (Element) item;
+                            Element itemElement = (Element)item;
                             // get parameter name
                             NodeList itemName = itemElement.getElementsByTagName("name");
-                            Element itemNameElement = (Element) itemName.item(0);
+                            Element itemNameElement = (Element)itemName.item(0);
 
                             // Get parameters for future use
                             if (itemElement.getAttribute("setparam").equals("true")) {
                                 NodeList itemVariable = itemElement.getElementsByTagName("param");
-                                Element itemVariableElement = (Element) itemVariable.item(0);
+                                Element itemVariableElement = (Element)itemVariable.item(0);
                                 setParam.put(itemVariableElement.getTextContent(), itemNameElement.getTextContent());
                                 this.required = true;
                             } else if (itemElement.getAttribute("getparam").equals("true")) {
                                 NodeList itemVariable = itemElement.getElementsByTagName("param");
-                                Element itemVariableElement = (Element) itemVariable.item(0);
+                                Element itemVariableElement = (Element)itemVariable.item(0);
                                 this.verifyParam.put(itemNameElement.getTextContent(), param.get(itemVariableElement.getTextContent()));
                             } else if ((itemElement.getElementsByTagName("value") != null) && (itemElement.getElementsByTagName("value").getLength() != 0)) {
                                 NodeList itemVariable = itemElement.getElementsByTagName("value");
-                                Element itemVariableElement = (Element) itemVariable.item(0);
+                                Element itemVariableElement = (Element)itemVariable.item(0);
                                 this.verifyParam.put(itemNameElement.getTextContent(), itemVariableElement.getTextContent());
                             } else {
                                 this.verifyParam.put(itemNameElement.getTextContent(), "no value");
@@ -379,8 +376,7 @@ public class ApiCommand {
 
     // Send api command to the server
     public void sendCommand(HttpClient client, Connection conn) {
-        if (TestCaseEngine._printUrl == true)
-        {
+        if (TestCaseEngine._printUrl == true) {
             s_logger.info("url is " + this.command);
         }
 
@@ -423,19 +419,17 @@ public class ApiCommand {
 
                     if (!(this.isAsync)) {
                         this.responseBody = doc.getDocumentElement();
-                    }
-                    else {
+                    } else {
                         // get async job result
-                        Element jobTag = (Element) doc.getDocumentElement().getElementsByTagName("jobid").item(0);
+                        Element jobTag = (Element)doc.getDocumentElement().getElementsByTagName("jobid").item(0);
                         String jobId = jobTag.getTextContent();
                         Element responseBodyAsyncEl = queryAsyncJobResult(jobId);
                         if (responseBodyAsyncEl == null) {
                             s_logger.error("Can't get a async result");
-                        }
-                        else {
+                        } else {
                             this.responseBody = responseBodyAsyncEl;
                             // get status of the job
-                            Element jobStatusTag = (Element) responseBodyAsyncEl.getElementsByTagName("jobstatus").item(0);
+                            Element jobStatusTag = (Element)responseBodyAsyncEl.getElementsByTagName("jobstatus").item(0);
                             String jobStatus = jobStatusTag.getTextContent();
                             if (!jobStatus.equals("1")) { // Need to modify with different error codes for jobAsync
 // results
@@ -478,9 +472,9 @@ public class ApiCommand {
             Set<?> set = this.setParam.entrySet();
             Iterator<?> it = set.iterator();
             while (it.hasNext()) {
-                Map.Entry<?, ?> me = (Map.Entry<?, ?>) it.next();
-                String key = (String) me.getKey();
-                String value = (String) me.getValue();
+                Map.Entry<?, ?> me = (Map.Entry<?, ?>)it.next();
+                String key = (String)me.getKey();
+                String value = (String)me.getValue();
                 try {
                     String itemName = null;
                     while (this.result.next()) {
@@ -488,8 +482,7 @@ public class ApiCommand {
                     }
                     if (itemName != null) {
                         param.put(key, itemName);
-                    }
-                    else {
+                    } else {
                         s_logger.error("Following return parameter is missing: " + value);
                         result = false;
                     }
@@ -503,21 +496,20 @@ public class ApiCommand {
                 Iterator<?> it = set.iterator();
 
                 while (it.hasNext()) {
-                    Map.Entry<?, ?> me = (Map.Entry<?, ?>) it.next();
-                    String key = (String) me.getKey();
-                    String value = (String) me.getValue();
+                    Map.Entry<?, ?> me = (Map.Entry<?, ?>)it.next();
+                    String key = (String)me.getKey();
+                    String value = (String)me.getValue();
                     // set parameters needed for the future use
                     NodeList itemName = this.responseBody.getElementsByTagName(value);
                     if ((itemName != null) && (itemName.getLength() != 0)) {
                         for (int i = 0; i < itemName.getLength(); i++) {
-                            Element itemNameElement = (Element) itemName.item(i);
+                            Element itemNameElement = (Element)itemName.item(i);
                             if (itemNameElement.getChildNodes().getLength() <= 1) {
                                 param.put(key, itemNameElement.getTextContent());
                                 break;
                             }
                         }
-                    }
-                    else {
+                    } else {
                         s_logger.error("Following return parameter is missing: " + value);
                         result = false;
                     }
@@ -529,20 +521,19 @@ public class ApiCommand {
                 Node requiredNode = returnLst.item(Integer.parseInt(this.listId.getTextContent()));
 
                 if (requiredNode.getNodeType() == Node.ELEMENT_NODE) {
-                    Element fstElmnt = (Element) requiredNode;
+                    Element fstElmnt = (Element)requiredNode;
 
                     while (it.hasNext()) {
-                        Map.Entry<?, ?> me = (Map.Entry<?, ?>) it.next();
-                        String key = (String) me.getKey();
-                        String value = (String) me.getValue();
+                        Map.Entry<?, ?> me = (Map.Entry<?, ?>)it.next();
+                        String key = (String)me.getKey();
+                        String value = (String)me.getValue();
                         NodeList itemName = fstElmnt.getElementsByTagName(value);
                         if ((itemName != null) && (itemName.getLength() != 0)) {
-                            Element itemNameElement = (Element) itemName.item(0);
+                            Element itemNameElement = (Element)itemName.item(0);
                             if (itemNameElement.getChildNodes().getLength() <= 1) {
                                 param.put(key, itemNameElement.getTextContent());
                             }
-                        }
-                        else {
+                        } else {
                             s_logger.error("Following return parameter is missing: " + value);
                             result = false;
                         }
@@ -565,9 +556,9 @@ public class ApiCommand {
                 Iterator<?> it = set.iterator();
 
                 while (it.hasNext()) {
-                    Map.Entry<?, ?> me = (Map.Entry<?, ?>) it.next();
-                    String key = (String) me.getKey();
-                    String value = (String) me.getValue();
+                    Map.Entry<?, ?> me = (Map.Entry<?, ?>)it.next();
+                    String key = (String)me.getKey();
+                    String value = (String)me.getValue();
                     if (value == null) {
                         s_logger.error("Parameter " + key + " is missing in the list of global parameters");
                         return false;
@@ -575,12 +566,13 @@ public class ApiCommand {
 
                     NodeList itemName = this.responseBody.getElementsByTagName(key);
                     if ((itemName.getLength() != 0) && (itemName != null)) {
-                        Element itemNameElement = (Element) itemName.item(0);
+                        Element itemNameElement = (Element)itemName.item(0);
                         if (itemNameElement.hasChildNodes()) {
                             continue;
                         }
                         if (!(verifyParam.get(key).equals("no value")) && !(itemNameElement.getTextContent().equals(verifyParam.get(key)))) {
-                            s_logger.error("Incorrect value for the following tag: " + key + ". Expected value is " + verifyParam.get(key) + " while actual value is " + itemNameElement.getTextContent());
+                            s_logger.error("Incorrect value for the following tag: " + key + ". Expected value is " + verifyParam.get(key) + " while actual value is " +
+                                itemNameElement.getTextContent());
                             result = false;
                         }
                     } else {
@@ -598,21 +590,22 @@ public class ApiCommand {
                 Node requiredNode = returnLst.item(Integer.parseInt(this.listId.getTextContent()));
 
                 if (requiredNode.getNodeType() == Node.ELEMENT_NODE) {
-                    Element fstElmnt = (Element) requiredNode;
+                    Element fstElmnt = (Element)requiredNode;
 
                     while (it.hasNext()) {
-                        Map.Entry<?, ?> me = (Map.Entry<?, ?>) it.next();
-                        String key = (String) me.getKey();
-                        String value = (String) me.getValue();
+                        Map.Entry<?, ?> me = (Map.Entry<?, ?>)it.next();
+                        String key = (String)me.getKey();
+                        String value = (String)me.getValue();
                         if (value == null) {
                             s_logger.error("Parameter " + key + " is missing in the list of global parameters");
                             return false;
                         }
                         NodeList itemName = fstElmnt.getElementsByTagName(key);
                         if ((itemName.getLength() != 0) && (itemName != null)) {
-                            Element itemNameElement = (Element) itemName.item(0);
+                            Element itemNameElement = (Element)itemName.item(0);
                             if (!(verifyParam.get(key).equals("no value")) && !(itemNameElement.getTextContent().equals(verifyParam.get(key)))) {
-                                s_logger.error("Incorrect value for the following tag: " + key + ". Expected value is " + verifyParam.get(key) + " while actual value is " + itemNameElement.getTextContent());
+                                s_logger.error("Incorrect value for the following tag: " + key + ". Expected value is " + verifyParam.get(key) +
+                                    " while actual value is " + itemNameElement.getTextContent());
                                 result = false;
                             }
                         } else {
@@ -627,9 +620,9 @@ public class ApiCommand {
             Iterator<?> it = set.iterator();
 
             while (it.hasNext()) {
-                Map.Entry<?, ?> me = (Map.Entry<?, ?>) it.next();
-                String key = (String) me.getKey();
-                String value = (String) me.getValue();
+                Map.Entry<?, ?> me = (Map.Entry<?, ?>)it.next();
+                String key = (String)me.getKey();
+                String value = (String)me.getValue();
                 if (value == null) {
                     s_logger.error("Parameter " + key + " is missing in the list of global parameters");
                     return false;
@@ -668,7 +661,7 @@ public class ApiCommand {
                 pro.load(in);
                 Enumeration<?> en = pro.propertyNames();
                 while (en.hasMoreElements()) {
-                    key = (String) en.nextElement();
+                    key = (String)en.nextElement();
                     expectedEvents.put(key, Integer.parseInt(pro.getProperty(key)));
                 }
 
@@ -680,16 +673,14 @@ public class ApiCommand {
                 int responseCode = client.executeMethod(method);
                 if (responseCode == 200) {
                     InputStream is = method.getResponseBodyAsStream();
-                    ArrayList<HashMap<String, String>> eventValues = UtilsForTest.parseMulXML(
-                            is, new String[] { "event" });
+                    ArrayList<HashMap<String, String>> eventValues = UtilsForTest.parseMulXML(is, new String[] {"event"});
 
                     for (int i = 0; i < eventValues.size(); i++) {
                         HashMap<String, String> element = eventValues.get(i);
                         if (element.get("level").equals(level)) {
                             if (actualEvents.containsKey(element.get("type")) == true) {
                                 actualEvents.put(element.get("type"), actualEvents.get(element.get("type")) + 1);
-                            }
-                            else {
+                            } else {
                                 actualEvents.put(element.get("type"), 1);
                             }
                         }
@@ -711,11 +702,13 @@ public class ApiCommand {
                     expected = expectedEvents.get(type);
                     actual = actualEvents.get(type);
                     if (actual == null) {
-                        s_logger.error("Event of type " + type + " and level " + level + " is missing in the listEvents response. Expected number of these events is " + expected);
+                        s_logger.error("Event of type " + type + " and level " + level + " is missing in the listEvents response. Expected number of these events is " +
+                            expected);
                         fail++;
                     } else if (expected.compareTo(actual) != 0) {
                         fail++;
-                        s_logger.info("Amount of events of  " + type + " type and level " + level + " is incorrect. Expected number of these events is " + expected + ", actual number is " + actual);
+                        s_logger.info("Amount of events of  " + type + " type and level " + level + " is incorrect. Expected number of these events is " + expected +
+                            ", actual number is " + actual);
                     }
                 }
                 if (fail == 0) {
@@ -741,16 +734,14 @@ public class ApiCommand {
             int responseCode = client.executeMethod(method);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
-                ArrayList<HashMap<String, String>> eventValues = UtilsForTest.parseMulXML(
-                        is, new String[] { "event" });
+                ArrayList<HashMap<String, String>> eventValues = UtilsForTest.parseMulXML(is, new String[] {"event"});
 
                 for (int i = 0; i < eventValues.size(); i++) {
                     HashMap<String, String> element = eventValues.get(i);
                     if (element.get("level").equals(level)) {
                         if (actualEvents.containsKey(element.get("type")) == true) {
                             actualEvents.put(element.get("type"), actualEvents.get(element.get("type")) + 1);
-                        }
-                        else {
+                        } else {
                             actualEvents.put(element.get("type"), 1);
                         }
                     }
@@ -775,10 +766,10 @@ public class ApiCommand {
             if (actual == null) {
                 s_logger.error("Event of type " + type + " and level " + level + " is missing in the listEvents response. Expected number of these events is " + expected);
                 fail++;
-            }
-            else if (expected.compareTo(actual) != 0) {
+            } else if (expected.compareTo(actual) != 0) {
                 fail++;
-                s_logger.info("Amount of events of  " + type + " type and level " + level + " is incorrect. Expected number of these events is " + expected + ", actual number is " + actual);
+                s_logger.info("Amount of events of  " + type + " type and level " + level + " is incorrect. Expected number of these events is " + expected +
+                    ", actual number is " + actual);
             }
         }
 
@@ -805,7 +796,7 @@ public class ApiCommand {
                     Document doc = builder.parse(is);
                     doc.getDocumentElement().normalize();
                     returnBody = doc.getDocumentElement();
-                    Element jobStatusTag = (Element) returnBody.getElementsByTagName("jobstatus").item(0);
+                    Element jobStatusTag = (Element)returnBody.getElementsByTagName("jobstatus").item(0);
                     String jobStatus = jobStatusTag.getTextContent();
                     if (jobStatus.equals("0")) {
                         try {
@@ -816,8 +807,7 @@ public class ApiCommand {
                         break;
                     }
                     method.releaseConnection();
-                }
-                else {
+                } else {
                     s_logger.error("Error during queryJobAsync. Error code is " + code);
                     this.responseCode = code;
                     return null;
@@ -832,11 +822,10 @@ public class ApiCommand {
     private String getElementByName(String elementName) {
         NodeList commandName = this.xmlCommand.getElementsByTagName(elementName);
         if (commandName.getLength() != 0) {
-            Element commandElmnt = (Element) commandName.item(0);
+            Element commandElmnt = (Element)commandName.item(0);
             NodeList commandNm = commandElmnt.getChildNodes();
-            return ((Node) commandNm.item(0)).getNodeValue();
-        }
-        else {
+            return commandNm.item(0).getNodeValue();
+        } else {
             return null;
         }
     }
@@ -844,9 +833,9 @@ public class ApiCommand {
     private boolean verifyTagValue(String elementName, String expectedValue) {
         NodeList tag = this.xmlCommand.getElementsByTagName(elementName);
         if (tag.getLength() != 0) {
-            Element commandElmnt = (Element) tag.item(0);
+            Element commandElmnt = (Element)tag.item(0);
             NodeList commandNm = commandElmnt.getChildNodes();
-            if (((Node) commandNm.item(0)).getNodeValue().equals(expectedValue)) {
+            if (commandNm.item(0).getNodeValue().equals(expectedValue)) {
                 return true;
             } else {
                 return false;

@@ -41,7 +41,7 @@ public class DbUpgradeUtils {
                 s_logger.debug("Key " + key + " is dropped successfully from the table " + tableName);
             } catch (SQLException e) {
                 // do nothing here
-                
+
                 continue;
             } finally {
                 try {
@@ -53,8 +53,7 @@ public class DbUpgradeUtils {
             }
         }
     }
-    
-    
+
     public static void dropPrimaryKeyIfExists(Connection conn, String tableName) {
         PreparedStatement pstmt = null;
         try {
@@ -72,8 +71,7 @@ public class DbUpgradeUtils {
             }
         }
     }
-    
-    
+
     public static void dropTableColumnsIfExist(Connection conn, String tableName, List<String> columns) {
         PreparedStatement pstmt = null;
         try {

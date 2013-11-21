@@ -70,7 +70,7 @@ public class SspClient {
         putMethod = new PutMethod(apiUrl);
     }
 
-    public boolean login(){
+    public boolean login() {
         PostMethod method = postMethod;
         method.setPath("/ws.v1/login"); // NOTE: /ws.v1/login is correct
         method.addParameter("username", username);
@@ -79,10 +79,10 @@ public class SspClient {
         try {
             client.executeMethod(method);
         } catch (HttpException e) {
-            s_logger.info("Login "+username+" to "+apiUrl+" failed", e);
+            s_logger.info("Login " + username + " to " + apiUrl + " failed", e);
             return false;
         } catch (IOException e) {
-            s_logger.info("Login "+username+" to "+apiUrl+" failed", e);
+            s_logger.info("Login " + username + " to " + apiUrl + " failed", e);
             return false;
         } finally {
             method.releaseConnection();
@@ -93,14 +93,14 @@ public class SspClient {
         } catch (URIException e) {
             s_logger.error("method getURI failed", e);
         }
-        s_logger.info("ssp api call:" + apiCallPath + " user="+username+" status="+method.getStatusLine());
-        if(method.getStatusCode() == HttpStatus.SC_OK){
+        s_logger.info("ssp api call:" + apiCallPath + " user=" + username + " status=" + method.getStatusLine());
+        if (method.getStatusCode() == HttpStatus.SC_OK) {
             return true;
         }
         return false;
     }
 
-    private String executeMethod(HttpMethod method){
+    private String executeMethod(HttpMethod method) {
         String apiCallPath = null;
         try {
             apiCallPath = method.getName() + " " + method.getURI().toString();
@@ -113,17 +113,17 @@ public class SspClient {
             client.executeMethod(method);
             response = method.getResponseBodyAsString();
         } catch (HttpException e) {
-            s_logger.error("ssp api call failed "+apiCallPath, e);
+            s_logger.error("ssp api call failed " + apiCallPath, e);
             return null;
         } catch (IOException e) {
-            s_logger.error("ssp api call failed "+apiCallPath, e);
+            s_logger.error("ssp api call failed " + apiCallPath, e);
             return null;
         } finally {
             method.releaseConnection();
         }
 
-        if(method.getStatusCode() == HttpStatus.SC_UNAUTHORIZED){
-            if(!login()){
+        if (method.getStatusCode() == HttpStatus.SC_UNAUTHORIZED) {
+            if (!login()) {
                 return null;
             }
 
@@ -131,24 +131,24 @@ public class SspClient {
                 client.executeMethod(method);
                 response = method.getResponseBodyAsString();
             } catch (HttpException e) {
-                s_logger.error("ssp api call failed "+apiCallPath, e);
+                s_logger.error("ssp api call failed " + apiCallPath, e);
                 return null;
             } catch (IOException e) {
-                s_logger.error("ssp api call failed "+apiCallPath, e);
+                s_logger.error("ssp api call failed " + apiCallPath, e);
                 return null;
             } finally {
                 method.releaseConnection();
             }
         }
-        s_logger.info("ssp api call:" + apiCallPath + " user="+username+" status="+method.getStatusLine());
-        if(method instanceof EntityEnclosingMethod){
+        s_logger.info("ssp api call:" + apiCallPath + " user=" + username + " status=" + method.getStatusLine());
+        if (method instanceof EntityEnclosingMethod) {
             EntityEnclosingMethod emethod = (EntityEnclosingMethod)method;
             RequestEntity reqEntity = emethod.getRequestEntity();
-            if(reqEntity instanceof StringRequestEntity){
+            if (reqEntity instanceof StringRequestEntity) {
                 StringRequestEntity strReqEntity = (StringRequestEntity)reqEntity;
-                s_logger.debug("ssp api request body:"+strReqEntity.getContent());
-            }else{
-                s_logger.debug("ssp api request body:"+emethod.getRequestEntity());
+                s_logger.debug("ssp api request body:" + strReqEntity.getContent());
+            } else {
+                s_logger.debug("ssp api request body:" + emethod.getRequestEntity());
             }
         }
         s_logger.debug("ssp api response body:" + response);
@@ -162,7 +162,7 @@ public class SspClient {
         public String tenantUuid;
     }
 
-    public TenantNetwork createTenantNetwork(String tenantUuid, String networkName){
+    public TenantNetwork createTenantNetwork(String tenantUuid, String networkName) {
         TenantNetwork req = new TenantNetwork();
         req.name = networkName;
         req.tenantUuid = tenantUuid;
@@ -179,18 +179,18 @@ public class SspClient {
         method.setRequestEntity(entity);
 
         String response = executeMethod(method);
-        if(response != null && method.getStatusCode() == HttpStatus.SC_CREATED){
+        if (response != null && method.getStatusCode() == HttpStatus.SC_CREATED) {
             return new Gson().fromJson(response, TenantNetwork.class);
         }
         return null;
     }
 
-    public boolean deleteTenantNetwork(String tenantNetworkUuid){
+    public boolean deleteTenantNetwork(String tenantNetworkUuid) {
         DeleteMethod method = deleteMethod;
-        method.setPath("/ssp.v1/tenant-networks/"+tenantNetworkUuid);
+        method.setPath("/ssp.v1/tenant-networks/" + tenantNetworkUuid);
 
         executeMethod(method);
-        if(method.getStatusCode() == HttpStatus.SC_NO_CONTENT){
+        if (method.getStatusCode() == HttpStatus.SC_NO_CONTENT) {
             return true;
         }
         return false;
@@ -209,7 +209,7 @@ public class SspClient {
         public Integer vlanId;
     }
 
-    public TenantPort createTenantPort(String tenantNetworkUuid){
+    public TenantPort createTenantPort(String tenantNetworkUuid) {
         TenantPort req = new TenantPort();
         req.networkUuid = tenantNetworkUuid;
         req.attachmentType = "NoAttachment";
@@ -226,34 +226,34 @@ public class SspClient {
         method.setRequestEntity(entity);
 
         String response = executeMethod(method);
-        if(response != null && method.getStatusCode() == HttpStatus.SC_CREATED){
+        if (response != null && method.getStatusCode() == HttpStatus.SC_CREATED) {
             return new Gson().fromJson(response, TenantPort.class);
         }
         return null;
     }
 
-    public boolean deleteTenantPort(String tenantPortUuid){
+    public boolean deleteTenantPort(String tenantPortUuid) {
         DeleteMethod method = deleteMethod;
-        method.setPath("/ssp.v1/tenant-ports/"+tenantPortUuid);
+        method.setPath("/ssp.v1/tenant-ports/" + tenantPortUuid);
 
         executeMethod(method);
-        if(method.getStatusCode() == HttpStatus.SC_NO_CONTENT){
+        if (method.getStatusCode() == HttpStatus.SC_NO_CONTENT) {
             return true;
         }
         return false;
     }
 
-    public TenantPort updateTenantVifBinding(String portUuid, String hypervisorIpAddress){
+    public TenantPort updateTenantVifBinding(String portUuid, String hypervisorIpAddress) {
         TenantPort req = new TenantPort();
-        if(hypervisorIpAddress != null){
+        if (hypervisorIpAddress != null) {
             req.attachmentType = "VifAttachment";
             req.hypervisorIpAddress = hypervisorIpAddress;
-        }else{
+        } else {
             req.attachmentType = "NoAttachment";
         }
 
         PutMethod method = putMethod;
-        method.setPath("/ssp.v1/tenant-ports/"+portUuid);
+        method.setPath("/ssp.v1/tenant-ports/" + portUuid);
         StringRequestEntity entity = null;
         try {
             entity = new StringRequestEntity(new Gson().toJson(req), "application/json", "UTF-8");
@@ -264,7 +264,7 @@ public class SspClient {
         method.setRequestEntity(entity);
 
         String response = executeMethod(method);
-        if(response != null && method.getStatusCode() == HttpStatus.SC_OK){
+        if (response != null && method.getStatusCode() == HttpStatus.SC_OK) {
             return new Gson().fromJson(response, TenantPort.class);
         }
         return null;

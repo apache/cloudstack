@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.storage;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.Date;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 public interface StoragePoolHostAssoc extends InternalIdentity {
 

@@ -112,24 +112,17 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         storeTemplateSearch.done();
 
         storeTemplateStateSearch = createSearchBuilder();
-        storeTemplateStateSearch.and("template_id", storeTemplateStateSearch.entity().getTemplateId(),
-                SearchCriteria.Op.EQ);
-        storeTemplateStateSearch.and("store_id", storeTemplateStateSearch.entity().getDataStoreId(),
-                SearchCriteria.Op.EQ);
+        storeTemplateStateSearch.and("template_id", storeTemplateStateSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
+        storeTemplateStateSearch.and("store_id", storeTemplateStateSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         storeTemplateStateSearch.and("states", storeTemplateStateSearch.entity().getState(), SearchCriteria.Op.IN);
-        storeTemplateStateSearch.and("destroyed", storeTemplateStateSearch.entity().getDestroyed(),
-                SearchCriteria.Op.EQ);
+        storeTemplateStateSearch.and("destroyed", storeTemplateStateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         storeTemplateStateSearch.done();
 
         storeTemplateDownloadStatusSearch = createSearchBuilder();
-        storeTemplateDownloadStatusSearch.and("template_id",
-                storeTemplateDownloadStatusSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
-        storeTemplateDownloadStatusSearch.and("store_id", storeTemplateDownloadStatusSearch.entity().getDataStoreId(),
-                SearchCriteria.Op.EQ);
-        storeTemplateDownloadStatusSearch.and("downloadState", storeTemplateDownloadStatusSearch.entity()
-                .getDownloadState(), SearchCriteria.Op.IN);
-        storeTemplateDownloadStatusSearch.and("destroyed", storeTemplateDownloadStatusSearch.entity().getDestroyed(),
-                SearchCriteria.Op.EQ);
+        storeTemplateDownloadStatusSearch.and("template_id", storeTemplateDownloadStatusSearch.entity().getTemplateId(), SearchCriteria.Op.EQ);
+        storeTemplateDownloadStatusSearch.and("store_id", storeTemplateDownloadStatusSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        storeTemplateDownloadStatusSearch.and("downloadState", storeTemplateDownloadStatusSearch.entity().getDownloadState(), SearchCriteria.Op.IN);
+        storeTemplateDownloadStatusSearch.and("destroyed", storeTemplateDownloadStatusSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         storeTemplateDownloadStatusSearch.done();
 
         storeTemplateSearch = createSearchBuilder();
@@ -143,7 +136,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
 
     @Override
     public boolean updateState(State currentState, Event event, State nextState, DataObjectInStore vo, Object data) {
-        TemplateDataStoreVO dataObj = (TemplateDataStoreVO) vo;
+        TemplateDataStoreVO dataObj = (TemplateDataStoreVO)vo;
         Long oldUpdated = dataObj.getUpdatedCount();
         Date oldUpdatedTime = dataObj.getUpdated();
 
@@ -166,18 +159,36 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
             TemplateDataStoreVO dbVol = findByIdIncludingRemoved(dataObj.getId());
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(dataObj.toString());
-                str.append(": DB Data={id=").append(dbVol.getId()).append("; state=").append(dbVol.getState())
-                .append("; updatecount=").append(dbVol.getUpdatedCount()).append(";updatedTime=")
-                .append(dbVol.getUpdated());
-                str.append(": New Data={id=").append(dataObj.getId()).append("; state=").append(nextState)
-                .append("; event=").append(event).append("; updatecount=").append(dataObj.getUpdatedCount())
-                .append("; updatedTime=").append(dataObj.getUpdated());
-                str.append(": stale Data={id=").append(dataObj.getId()).append("; state=").append(currentState)
-                .append("; event=").append(event).append("; updatecount=").append(oldUpdated)
-                .append("; updatedTime=").append(oldUpdatedTime);
+                str.append(": DB Data={id=")
+                    .append(dbVol.getId())
+                    .append("; state=")
+                    .append(dbVol.getState())
+                    .append("; updatecount=")
+                    .append(dbVol.getUpdatedCount())
+                    .append(";updatedTime=")
+                    .append(dbVol.getUpdated());
+                str.append(": New Data={id=")
+                    .append(dataObj.getId())
+                    .append("; state=")
+                    .append(nextState)
+                    .append("; event=")
+                    .append(event)
+                    .append("; updatecount=")
+                    .append(dataObj.getUpdatedCount())
+                    .append("; updatedTime=")
+                    .append(dataObj.getUpdated());
+                str.append(": stale Data={id=")
+                    .append(dataObj.getId())
+                    .append("; state=")
+                    .append(currentState)
+                    .append("; event=")
+                    .append(event)
+                    .append("; updatecount=")
+                    .append(oldUpdated)
+                    .append("; updatedTime=")
+                    .append(oldUpdatedTime);
             } else {
-                s_logger.debug("Unable to update objectIndatastore: id=" + dataObj.getId()
-                        + ", as there is no such object exists in the database anymore");
+                s_logger.debug("Unable to update objectIndatastore: id=" + dataObj.getId() + ", as there is no such object exists in the database anymore");
             }
         }
         return rows > 0;
@@ -199,7 +210,6 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         return listIncludingRemovedBy(sc);
     }
 
-
     @Override
     public List<TemplateDataStoreVO> listActiveOnCache(long id) {
         SearchCriteria<TemplateDataStoreVO> sc = cacheSearch.create();
@@ -208,7 +218,6 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         sc.setParameters("ref_cnt", 0);
         return listIncludingRemovedBy(sc);
     }
-
 
     @Override
     public void deletePrimaryRecordsForStore(long id) {
@@ -244,7 +253,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         SearchCriteria<TemplateDataStoreVO> sc = storeTemplateStateSearch.create();
         sc.setParameters("template_id", templateId);
         sc.setParameters("store_id", storeId);
-        sc.setParameters("states", (Object[]) states);
+        sc.setParameters("states", (Object[])states);
         sc.setParameters("destroyed", false);
         return search(sc, null);
     }
@@ -254,7 +263,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         SearchCriteria<TemplateDataStoreVO> sc = storeTemplateDownloadStatusSearch.create();
         sc.setParameters("template_id", templateId);
         sc.setParameters("store_id", storeId);
-        sc.setParameters("downloadState", (Object[]) status);
+        sc.setParameters("downloadState", (Object[])status);
         sc.setParameters("destroyed", false);
         return search(sc, null);
     }
@@ -266,8 +275,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         if (imgStores != null) {
             List<TemplateDataStoreVO> result = new ArrayList<TemplateDataStoreVO>();
             for (DataStore store : imgStores) {
-                List<TemplateDataStoreVO> sRes = listByTemplateStoreDownloadStatus(templateId, store.getId(),
-                        status);
+                List<TemplateDataStoreVO> sRes = listByTemplateStoreDownloadStatus(templateId, store.getId(), status);
                 if (sRes != null && sRes.size() > 0) {
                     result.addAll(sRes);
                 }
@@ -283,8 +291,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         List<DataStore> imgStores = _storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
         if (imgStores != null) {
             for (DataStore store : imgStores) {
-                List<TemplateDataStoreVO> sRes = listByTemplateStoreDownloadStatus(templateId, store.getId(),
-                        status);
+                List<TemplateDataStoreVO> sRes = listByTemplateStoreDownloadStatus(templateId, store.getId(), status);
                 if (sRes != null && sRes.size() > 0) {
                     Collections.shuffle(sRes);
                     return sRes.get(0);
@@ -427,7 +434,6 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         }
     }
 
-
     @Override
     public void updateStoreRoleToCachce(long storeId) {
         SearchCriteria<TemplateDataStoreVO> sc = storeSearch.create();
@@ -443,6 +449,5 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         }
 
     }
-
 
 }

@@ -21,18 +21,18 @@ import com.cloud.agent.api.Command;
 public abstract class ssCommand extends Command {
     private String secUrl;
 
-
-	public ssCommand() {
-	}
+    public ssCommand() {
+    }
 
     protected ssCommand(ssCommand that) {
         this.secUrl = that.secUrl;
     }
-	public ssCommand(String secUrl) {
-	    this.secUrl = secUrl;
+
+    public ssCommand(String secUrl) {
+        this.secUrl = secUrl;
     }
 
-	@Override
+    @Override
     public boolean executeInSequence() {
         return true;
     }

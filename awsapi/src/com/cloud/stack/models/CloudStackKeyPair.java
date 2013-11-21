@@ -20,40 +20,39 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackKeyPair {
-	@SerializedName(ApiConstants.FINGERPRINT)
-	private String fingerprint;
-	@SerializedName(ApiConstants.NAME)
-	private String name;
-	@SerializedName(ApiConstants.PRIVATE_KEY)
-	private String privatekey;
+    @SerializedName(ApiConstants.FINGERPRINT)
+    private String fingerprint;
+    @SerializedName(ApiConstants.NAME)
+    private String name;
+    @SerializedName(ApiConstants.PRIVATE_KEY)
+    private String privatekey;
 
+    /**
+     *  Empty Constructor...
+     */
+    public CloudStackKeyPair() {
 
-	/**
-	 *  Empty Constructor...
-	 */
-	public CloudStackKeyPair() {
-		
-	}
+    }
 
-	/**
-	 * @return the fingerprint
-	 */
-	public String getFingerprint() {
-		return fingerprint;
-	}
+    /**
+     * @return the fingerprint
+     */
+    public String getFingerprint() {
+        return fingerprint;
+    }
 
-	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
 
-	/**
-	 * @return the privatekey
-	 */
-	public String getPrivatekey() {
-		return privatekey;
-	}
+    /**
+     * @return the privatekey
+     */
+    public String getPrivatekey() {
+        return privatekey;
+    }
 
 }

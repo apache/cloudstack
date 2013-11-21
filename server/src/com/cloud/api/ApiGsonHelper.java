@@ -16,10 +16,11 @@
 // under the License.
 package com.cloud.api;
 
-import com.google.gson.GsonBuilder;
-import org.apache.cloudstack.api.ResponseObject;
-
 import java.util.Map;
+
+import com.google.gson.GsonBuilder;
+
+import org.apache.cloudstack.api.ResponseObject;
 
 public class ApiGsonHelper {
     private static final GsonBuilder s_gBuilder;

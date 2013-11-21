@@ -34,13 +34,11 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
     private boolean _archTypex86_64 = false;
     private final StringBuffer _emulator = new StringBuffer();
     private final StringBuffer _capXML = new StringBuffer();
-    private static final Logger s_logger = Logger
-            .getLogger(LibvirtCapXMLParser.class);
+    private static final Logger s_logger = Logger.getLogger(LibvirtCapXMLParser.class);
     private final ArrayList<String> guestOsTypes = new ArrayList<String>();
 
     @Override
-    public void endElement(String uri, String localName, String qName)
-            throws SAXException {
+    public void endElement(String uri, String localName, String qName) throws SAXException {
         if (qName.equalsIgnoreCase("host")) {
             _host = false;
         } else if (qName.equalsIgnoreCase("os_type")) {
@@ -59,8 +57,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
     }
 
     @Override
-    public void characters(char[] ch, int start, int length)
-            throws SAXException {
+    public void characters(char[] ch, int start, int length) throws SAXException {
         if (_host) {
             _capXML.append(ch, start, length);
         } else if (_osType) {
@@ -72,8 +69,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
     }
 
     @Override
-    public void startElement(String uri, String localName, String qName,
-            Attributes attributes) throws SAXException {
+    public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
         if (qName.equalsIgnoreCase("host")) {
             _host = true;
         } else if (qName.equalsIgnoreCase("guest")) {
@@ -84,15 +80,13 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
             }
         } else if (qName.equalsIgnoreCase("arch")) {
             for (int i = 0; i < attributes.getLength(); i++) {
-                if (attributes.getQName(i).equalsIgnoreCase("name")
-                        && attributes.getValue(i).equalsIgnoreCase("x86_64")) {
+                if (attributes.getQName(i).equalsIgnoreCase("name") && attributes.getValue(i).equalsIgnoreCase("x86_64")) {
                     _archTypex86_64 = true;
                 }
             }
         } else if (qName.equalsIgnoreCase("domain")) {
             for (int i = 0; i < attributes.getLength(); i++) {
-                if (attributes.getQName(i).equalsIgnoreCase("type")
-                        && attributes.getValue(i).equalsIgnoreCase("kvm")) {
+                if (attributes.getQName(i).equalsIgnoreCase("type") && attributes.getValue(i).equalsIgnoreCase("kvm")) {
                     _domainTypeKVM = true;
                 }
             }
@@ -102,8 +96,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
         } else if (_host) {
             _capXML.append("<").append(qName);
             for (int i = 0; i < attributes.getLength(); i++) {
-                _capXML.append(" ").append(attributes.getQName(i)).append("=")
-                        .append(attributes.getValue(i));
+                _capXML.append(" ").append(attributes.getQName(i)).append("=").append(attributes.getValue(i));
             }
             _capXML.append(">");
         }

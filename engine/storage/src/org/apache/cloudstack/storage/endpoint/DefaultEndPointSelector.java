@@ -57,14 +57,14 @@ public class DefaultEndPointSelector implements EndPointSelector {
     private static final Logger s_logger = Logger.getLogger(DefaultEndPointSelector.class);
     @Inject
     HostDao hostDao;
-    private final String findOneHostOnPrimaryStorage = "select h.id from host h, storage_pool_host_ref s  where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and" +
-            " h.id = s.host_id and s.pool_id = ? ";
+    private final String findOneHostOnPrimaryStorage =
+        "select h.id from host h, storage_pool_host_ref s  where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and"
+            + " h.id = s.host_id and s.pool_id = ? ";
 
     protected boolean moveBetweenPrimaryImage(DataStore srcStore, DataStore destStore) {
         DataStoreRole srcRole = srcStore.getRole();
         DataStoreRole destRole = destStore.getRole();
-        if ((srcRole == DataStoreRole.Primary && destRole.isImageStore())
-                || (srcRole.isImageStore() && destRole == DataStoreRole.Primary)) {
+        if ((srcRole == DataStoreRole.Primary && destRole.isImageStore()) || (srcRole.isImageStore() && destRole == DataStoreRole.Primary)) {
             return true;
         } else {
             return false;
@@ -74,8 +74,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     protected boolean moveBetweenCacheAndImage(DataStore srcStore, DataStore destStore) {
         DataStoreRole srcRole = srcStore.getRole();
         DataStoreRole destRole = destStore.getRole();
-        if (srcRole == DataStoreRole.Image && destRole == DataStoreRole.ImageCache
-                || srcRole == DataStoreRole.ImageCache && destRole == DataStoreRole.Image) {
+        if (srcRole == DataStoreRole.Image && destRole == DataStoreRole.ImageCache || srcRole == DataStoreRole.ImageCache && destRole == DataStoreRole.Image) {
             return true;
         } else {
             return false;
@@ -141,8 +140,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             return null;
         }
 
-        return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(),
-                host.getPublicIpAddress());
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(), host.getPublicIpAddress());
     }
 
     protected EndPoint findEndPointForImageMove(DataStore srcStore, DataStore destStore) {
@@ -225,14 +223,13 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
         Collections.shuffle(ssAHosts);
         HostVO host = ssAHosts.get(0);
-        return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(),
-                host.getPublicIpAddress());
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(), host.getPublicIpAddress());
     }
 
     private List<HostVO> listUpAndConnectingSecondaryStorageVmHost(Long dcId) {
         QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
         if (dcId != null) {
-            sc.and(sc.entity().getDataCenterId(), Op.EQ,dcId);
+            sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
         }
         sc.and(sc.entity().getStatus(), Op.IN, Status.Up, Status.Connecting);
         sc.and(sc.entity().getType(), Op.EQ, Host.Type.SecondaryStorageVM);
@@ -279,16 +276,14 @@ public class DefaultEndPointSelector implements EndPointSelector {
         List<EndPoint> endPoints = new ArrayList<EndPoint>();
         if (store.getScope().getScopeType() == ScopeType.HOST) {
             HostVO host = hostDao.findById(store.getScope().getScopeId());
-            endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(),
-                    host.getPublicIpAddress()));
+            endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(), host.getPublicIpAddress()));
         } else if (store.getScope().getScopeType() == ScopeType.CLUSTER) {
             QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
             sc.and(sc.entity().getClusterId(), Op.EQ, store.getScope().getScopeId());
             sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
             List<HostVO> hosts = sc.list();
             for (HostVO host : hosts) {
-                endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(),
-                        host.getPublicIpAddress()));
+                endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(), host.getPublicIpAddress()));
             }
 
         } else {

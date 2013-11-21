@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.api.command.user.autoscale;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,8 +30,6 @@ import org.apache.cloudstack.api.response.ConditionResponse;
 import org.apache.cloudstack.api.response.CounterResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
@@ -44,8 +44,7 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.COUNTER_ID, type = CommandType.UUID, entityType = CounterResponse.class,
-            required = true, description = "ID of the Counter.")
+    @Parameter(name = ApiConstants.COUNTER_ID, type = CommandType.UUID, entityType = CounterResponse.class, required = true, description = "ID of the Counter.")
     private long counterId;
 
     @Parameter(name = ApiConstants.RELATIONAL_OPERATOR, type = CommandType.STRING, required = true, description = "Relational Operator to be used with threshold.")
@@ -54,12 +53,10 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.THRESHOLD, type = CommandType.LONG, required = true, description = "Threshold value.")
     private Long threshold;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account of the condition. " +
-    "Must be used with the domainId parameter.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account of the condition. " + "Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
-            description = "the domain ID of the account.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the domain ID of the account.")
     private Long domainId;
 
     // ///////////////////////////////////////////////////
@@ -81,7 +78,7 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        Condition condition  = _entityMgr.findById(Condition.class, getEntityId());
+        Condition condition = _entityMgr.findById(Condition.class, getEntityId());
         ConditionResponse response = _responseGenerator.createConditionResponse(condition);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
@@ -147,6 +144,5 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
 
         return accountId;
     }
-
 
 }

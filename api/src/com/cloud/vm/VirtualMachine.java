@@ -34,9 +34,7 @@ import com.cloud.utils.fsm.StateObject;
 public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, InternalIdentity, StateObject<VirtualMachine.State> {
 
 	public enum PowerState {
-	    PowerUnknown,
-	    PowerOn,
-	    PowerOff,
+        PowerUnknown, PowerOn, PowerOff,
     }
 
     public enum State {
@@ -201,19 +199,18 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
     };
 
     public enum Type {
-        User(false),
-        DomainRouter(true),
-        ConsoleProxy(true),
-        SecondaryStorageVm(true),
-        ElasticIpVm(true),
-        ElasticLoadBalancerVm(true),
-        InternalLoadBalancerVm(true),
+        User(false), DomainRouter(true), ConsoleProxy(true), SecondaryStorageVm(true), ElasticIpVm(true), ElasticLoadBalancerVm(true), InternalLoadBalancerVm(true),
 
         /*
          * UserBareMetal is only used for selecting VirtualMachineGuru, there is no
          * VM with this type. UserBareMetal should treat exactly as User.
          */
-        UserBareMetal(false);
+        UserBareMetal(false),
+        
+        /*
+         * General VM type for queuing VM orchestration work
+         */
+        Instance(false);
 
         boolean _isUsedBySystem;
 
@@ -264,8 +261,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
      * @return template id.
      */
     long getTemplateId();
-
-
 
     /**
      * returns the guest OS ID

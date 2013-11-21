@@ -22,7 +22,6 @@ public class CheckHealthCommand extends Command {
         setWait(50);
     }
 
-
     @Override
     public boolean executeInSequence() {
         return false;

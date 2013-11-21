@@ -17,39 +17,39 @@
 package com.cloud.bridge.service.core.s3;
 
 public class S3Response {
-	protected int resultCode;
-	protected String version;
-	protected String resultDescription;
-	
-	public S3Response() {
-	}
-	
-	public S3Response(int code, String description) {
-		resultCode = code;
-		resultDescription = description;
-	}
-	
-	public int getResultCode() {
-		return resultCode;
-	}
-	
-	public void setResultCode(int code) {
-		resultCode = code;
-	}
-	
-	public String getVersion() {
-		return version;
-	}
-	
-	public void setVersion(String version) {
-		this.version = version;
-	}
+    protected int resultCode;
+    protected String version;
+    protected String resultDescription;
 
-	public String getResultDescription() {
-		return resultDescription; 
-	}
-	
-	public void setResultDescription(String description) {
-		resultDescription = description;
-	}
+    public S3Response() {
+    }
+
+    public S3Response(int code, String description) {
+        resultCode = code;
+        resultDescription = description;
+    }
+
+    public int getResultCode() {
+        return resultCode;
+    }
+
+    public void setResultCode(int code) {
+        resultCode = code;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public String getResultDescription() {
+        return resultDescription;
+    }
+
+    public void setResultDescription(String description) {
+        resultDescription = description;
+    }
 }

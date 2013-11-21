@@ -47,17 +47,19 @@ import com.cloud.utils.db.EntityManager;
 public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispatcher {
     private static final Logger s_logger = Logger.getLogger(ApiAsyncJobDispatcher.class);
 
-    @Inject private ApiDispatcher _dispatcher;
-    
-    @Inject private AsyncJobManager _asyncJobMgr;
+    @Inject
+    private ApiDispatcher _dispatcher;
+
+    @Inject
+    private AsyncJobManager _asyncJobMgr;
     @Inject
     private EntityManager _entityMgr;
     @Inject
     ManagedContext _managedContext;
-    
+
     public ApiAsyncJobDispatcher() {
     }
-    
+
     @Override
     public void runJob(final AsyncJob job) {
         _managedContext.runWithContext(new Runnable() {
@@ -67,8 +69,8 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             }
         });
     }
-    
-	protected void runJobInContext(AsyncJob job) {
+
+    protected void runJobInContext(AsyncJob job) {
         BaseAsyncCmd cmdObj = null;
         try {
             Class<?> cmdClass = Class.forName(job.getCmd());
@@ -76,8 +78,9 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             cmdObj = ComponentContext.inject(cmdObj);
             cmdObj.configure();
             cmdObj.setJob(job);
-            
-            Type mapType = new TypeToken<Map<String, String>>() {}.getType();
+
+            Type mapType = new TypeToken<Map<String, String>>() {
+            }.getType();
             Gson gson = ApiGsonHelper.getBuilder().create();
             Map<String, String> params = gson.fromJson(job.getCmdInfo(), mapType);
 
@@ -113,7 +116,7 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             } finally {
                 CallContext.unregister();
             }
-        } catch(Throwable e) {
+        } catch (Throwable e) {
             String errorMsg = null;
             int errorCode = ApiErrorCode.INTERNAL_ERROR.getHttpCode();
             if (!(e instanceof ServerApiException)) {
@@ -134,5 +137,5 @@ public class ApiAsyncJobDispatcher extends AdapterBase implements AsyncJobDispat
             //         and we need to preserve that as much as possible here
             _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, ApiErrorCode.INTERNAL_ERROR.getHttpCode(), ApiSerializerHelper.toSerializedString(response));
         }
-	}
+    }
 }

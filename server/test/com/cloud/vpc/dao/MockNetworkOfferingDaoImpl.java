@@ -36,7 +36,7 @@ import com.cloud.utils.db.DB;
 
 @Local(value = NetworkOfferingDao.class)
 @DB()
-public class MockNetworkOfferingDaoImpl extends NetworkOfferingDaoImpl implements NetworkOfferingDao{
+public class MockNetworkOfferingDaoImpl extends NetworkOfferingDaoImpl implements NetworkOfferingDao {
     private static final Logger s_logger = Logger.getLogger(MockNetworkOfferingDaoImpl.class);
 
     /* (non-Javadoc)
@@ -92,45 +92,50 @@ public class MockNetworkOfferingDaoImpl extends NetworkOfferingDaoImpl implement
         // TODO Auto-generated method stub
         return null;
     }
-    
-    
+
     @Override
     public NetworkOfferingVO findById(Long id) {
         NetworkOfferingVO vo = null;
         if (id.longValue() == 1) {
             //network offering valid for vpc
-            vo = new NetworkOfferingVO("vpc", "vpc", TrafficType.Guest, false, true, null, null, false,
-                    Availability.Optional, null, Network.GuestType.Isolated, false, false, false, false, false);
+            vo =
+                new NetworkOfferingVO("vpc", "vpc", TrafficType.Guest, false, true, null, null, false, Availability.Optional, null, Network.GuestType.Isolated, false,
+                    false, false, false, false);
         } else if (id.longValue() == 2) {
             //invalid offering - source nat is not included
-            vo = new NetworkOfferingVO("vpc", "vpc", TrafficType.Guest, false, true, null, null, false,
-                    Availability.Optional, null, Network.GuestType.Isolated, false, false, false, false, false);
+            vo =
+                new NetworkOfferingVO("vpc", "vpc", TrafficType.Guest, false, true, null, null, false, Availability.Optional, null, Network.GuestType.Isolated, false,
+                    false, false, false, false);
         } else if (id.longValue() == 3) {
             //network offering invalid for vpc (conserve mode off)
-            vo = new NetworkOfferingVO("non vpc", "non vpc", TrafficType.Guest, false, true, null, null, false,
-                    Availability.Optional, null, Network.GuestType.Isolated, true, false, false, false, false);
+            vo =
+                new NetworkOfferingVO("non vpc", "non vpc", TrafficType.Guest, false, true, null, null, false, Availability.Optional, null, Network.GuestType.Isolated,
+                    true, false, false, false, false);
         } else if (id.longValue() == 4) {
             //network offering invalid for vpc (Shared)
-            vo = new NetworkOfferingVO("non vpc", "non vpc", TrafficType.Guest, false, true, null, null, false,
-                    Availability.Optional, null, Network.GuestType.Shared, false, false, false, false, false);
+            vo =
+                new NetworkOfferingVO("non vpc", "non vpc", TrafficType.Guest, false, true, null, null, false, Availability.Optional, null, Network.GuestType.Shared,
+                    false, false, false, false, false);
         } else if (id.longValue() == 5) {
             //network offering invalid for vpc (has redundant router)
-            vo = new NetworkOfferingVO("vpc", "vpc", TrafficType.Guest, false, true, null, null, false,
-                    Availability.Optional, null, Network.GuestType.Isolated, false, false, false, false, false);
+            vo =
+                new NetworkOfferingVO("vpc", "vpc", TrafficType.Guest, false, true, null, null, false, Availability.Optional, null, Network.GuestType.Isolated, false,
+                    false, false, false, false);
             vo.setRedundantRouter(true);
         } else if (id.longValue() == 6) {
-            //network offering invalid for vpc (has lb service)   
-            vo = new NetworkOfferingVO("vpc", "vpc", TrafficType.Guest, false, true, null, null, false,
-                    Availability.Optional, null, Network.GuestType.Isolated, false, false, false, false, false);
+            //network offering invalid for vpc (has lb service)
+            vo =
+                new NetworkOfferingVO("vpc", "vpc", TrafficType.Guest, false, true, null, null, false, Availability.Optional, null, Network.GuestType.Isolated, false,
+                    false, false, false, false);
         }
-        
+
         if (vo != null) {
             vo = setId(vo, id);
         }
-        
+
         return vo;
     }
-    
+
     private NetworkOfferingVO setId(NetworkOfferingVO vo, long id) {
         NetworkOfferingVO voToReturn = vo;
         Class<?> c = voToReturn.getClass();
@@ -139,13 +144,13 @@ public class MockNetworkOfferingDaoImpl extends NetworkOfferingDaoImpl implement
             f.setAccessible(true);
             f.setLong(voToReturn, id);
         } catch (NoSuchFieldException ex) {
-           s_logger.warn(ex);
-           return null;
+            s_logger.warn(ex);
+            return null;
         } catch (IllegalAccessException ex) {
             s_logger.warn(ex);
             return null;
         }
-        
+
         return voToReturn;
     }
 

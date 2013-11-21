@@ -17,6 +17,7 @@
 package org.apache.cloudstack.framework.jobs;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobJoinMapVO;
 import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
@@ -63,24 +64,32 @@ public class AsyncJobExecutionContext  {
     public void setJob(AsyncJob job) {
 		_job = job;
 	}
+    
+    public boolean isJobDispatchedBy(String jobDispatcherName) {
+    	assert(jobDispatcherName != null);
+    	if(_job != null && _job.getDispatcher() != null && _job.getDispatcher().equals(jobDispatcherName))
+    		return true;
+    	
+    	return false;
+    }
 	
     public void completeAsyncJob(JobInfo.Status jobStatus, int resultCode, String resultObject) {
-    	assert(_job != null);
+        assert (_job != null);
     	_jobMgr.completeAsyncJob(_job.getId(), jobStatus, resultCode, resultObject);
     }
     
     public void updateAsyncJobStatus(int processStatus, String resultObject) {
-    	assert(_job != null);
+        assert (_job != null);
     	_jobMgr.updateAsyncJobStatus(_job.getId(), processStatus, resultObject);
     }
     
     public void updateAsyncJobAttachment(String instanceType, Long instanceId) {
-    	assert(_job != null);
+        assert (_job != null);
     	_jobMgr.updateAsyncJobAttachment(_job.getId(), instanceType, instanceId);
     }
 	
     public void logJobJournal(AsyncJob.JournalType journalType, String journalText, String journalObjJson) {
-		assert(_job != null);
+        assert (_job != null);
 		_jobMgr.logJobJournal(_job.getId(), journalType, journalText, journalObjJson);
 	}
 
@@ -90,34 +99,32 @@ public class AsyncJobExecutionContext  {
     }
 
     public void joinJob(long joinJobId) {
-    	assert(_job != null);
+        assert (_job != null);
     	_jobMgr.joinJob(_job.getId(), joinJobId);
     }
 	
-    public void joinJob(long joinJobId, String wakeupHandler, String wakeupDispatcher,
-    		String[] wakeupTopcisOnMessageBus, long wakeupIntervalInMilliSeconds, long timeoutInMilliSeconds) {
-    	assert(_job != null);
-    	_jobMgr.joinJob(_job.getId(), joinJobId, wakeupHandler, wakeupDispatcher, wakeupTopcisOnMessageBus,
-    		wakeupIntervalInMilliSeconds, timeoutInMilliSeconds);
+    public void joinJob(long joinJobId, String wakeupHandler, String wakeupDispatcher, String[] wakeupTopcisOnMessageBus, long wakeupIntervalInMilliSeconds,
+        long timeoutInMilliSeconds) {
+        assert (_job != null);
+        _jobMgr.joinJob(_job.getId(), joinJobId, wakeupHandler, wakeupDispatcher, wakeupTopcisOnMessageBus, wakeupIntervalInMilliSeconds, timeoutInMilliSeconds);
     }
     
     //
 	// check failure exception before we disjoin the worker job
 	// TODO : it is ugly and this will become unnecessary after we switch to full-async mode
 	//
-    public void disjoinJob(long joinedJobId) throws InsufficientCapacityException,
-		ConcurrentOperationException, ResourceUnavailableException {
-    	assert(_job != null);
+    public void disjoinJob(long joinedJobId) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+        assert (_job != null);
     	
     	AsyncJobJoinMapVO record = _joinMapDao.getJoinRecord(_job.getId(), joinedJobId);
-    	if(record.getJoinStatus() == JobInfo.Status.FAILED && record.getJoinResult() != null) {
+        if (record.getJoinStatus() == JobInfo.Status.FAILED && record.getJoinResult() != null) {
     		Object exception = JobSerializerHelper.fromObjectSerializedString(record.getJoinResult());
-    		if(exception != null && exception instanceof Exception) {
-    			if(exception instanceof InsufficientCapacityException)
+            if (exception != null && exception instanceof Exception) {
+                if (exception instanceof InsufficientCapacityException)
     				throw (InsufficientCapacityException)exception;
-    			else if(exception instanceof ConcurrentOperationException)
+                else if (exception instanceof ConcurrentOperationException)
     				throw (ConcurrentOperationException)exception;
-    			else if(exception instanceof ResourceUnavailableException)
+                else if (exception instanceof ResourceUnavailableException)
     				throw (ResourceUnavailableException)exception;
     			else
     				throw new RuntimeException((Exception)exception);
@@ -128,12 +135,12 @@ public class AsyncJobExecutionContext  {
     }
     
     public void completeJoin(JobInfo.Status joinStatus, String joinResult) {
-    	assert(_job != null);
+        assert (_job != null);
     	_jobMgr.completeJoin(_job.getId(), joinStatus, joinResult);
     }
     
     public void completeJobAndJoin(JobInfo.Status joinStatus, String joinResult) {
-    	assert(_job != null);
+        assert (_job != null);
     	_jobMgr.completeJoin(_job.getId(), joinStatus, joinResult);
     	_jobMgr.completeAsyncJob(_job.getId(), joinStatus, 0, null);
     }
@@ -159,7 +166,7 @@ public class AsyncJobExecutionContext  {
         setCurrentExecutionContext(null);
         return context;
     }
-
+    
     // This is intended to be package level access for AsyncJobManagerImpl only.
     public static void setCurrentExecutionContext(AsyncJobExecutionContext currentContext) {
 		s_currentExectionContext.set(currentContext);

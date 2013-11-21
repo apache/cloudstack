@@ -37,21 +37,13 @@ public interface HighAvailabilityManager extends Manager {
     }
 
     enum Step {
-        Scheduled,
-        Investigating,
-        Fencing,
-        Stopping,
-        Restarting,
-        Migrating,
-        Cancelled,
-        Done,
-        Error,
+        Scheduled, Investigating, Fencing, Stopping, Restarting, Migrating, Cancelled, Done, Error,
     }
 
     /**
      * Investigate why a host has disconnected and migrate the VMs on it
      * if necessary.
-     * 
+     *
      * @param host - the host that has disconnected.
      */
     Status investigate(long hostId);
@@ -61,19 +53,19 @@ public interface HighAvailabilityManager extends Manager {
      * VM is restarted depends on various reasons.
      *   1. Is the VM really dead.  This method will try to find out.
      *   2. Is the VM HA enabled?  If not, the VM is simply stopped.
-     * 
+     *
      * All VMs that enter HA mode is not allowed to be operated on until it
      * has been determined that the VM is dead.
-     * 
+     *
      * @param vm the vm that has gone away.
      * @param investigate must be investigated before we do anything with this vm.
      */
     void scheduleRestart(VMInstanceVO vm, boolean investigate);
 
     void cancelDestroy(VMInstanceVO vm, Long hostId);
-    
+
     void scheduleDestroy(VMInstanceVO vm, long hostId);
-    
+
     /**
      * Schedule restarts for all vms running on the host.
      * @param host host.
@@ -83,25 +75,25 @@ public interface HighAvailabilityManager extends Manager {
 
     /**
      * Schedule the vm for migration.
-     * 
+     *
      * @param vm
      * @return true if schedule worked.
      */
     boolean scheduleMigration(VMInstanceVO vm);
-    
+
     List<VMInstanceVO> findTakenMigrationWork();
 
     /**
      * Schedules a work item to stop a VM.  This method schedules a work
      * item to do one of three things.
-     * 
+     *
      * 1. Perform a regular stop of a VM: WorkType.Stop
      * 2. Perform a force stop of a VM: WorkType.ForceStop
      * 3. Check if a VM has been stopped: WorkType.CheckStop
-     * 
+     *
      * @param vm virtual machine to stop.
      * @param host host the virtual machine is on.
-     * @param type which type of stop is requested. 
+     * @param type which type of stop is requested.
      */
     void scheduleStop(VMInstanceVO vm, long hostId, WorkType type);
 

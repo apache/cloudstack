@@ -26,6 +26,8 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.usage.UsageVO;
@@ -33,19 +35,19 @@ import com.cloud.usage.UsageVmDiskVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageVmDiskDao;
 import com.cloud.user.AccountVO;
-
 import com.cloud.utils.db.SearchCriteria;
-import org.springframework.stereotype.Component;
 
 @Component
 public class VmDiskUsageParser {
-public static final Logger s_logger = Logger.getLogger(VmDiskUsageParser.class.getName());
+    public static final Logger s_logger = Logger.getLogger(VmDiskUsageParser.class.getName());
 
     private static UsageDao m_usageDao;
     private static UsageVmDiskDao m_usageVmDiskDao;
 
-    @Inject private UsageDao _usageDao;
-    @Inject private UsageVmDiskDao _usageVmDiskDao;
+    @Inject
+    private UsageDao _usageDao;
+    @Inject
+    private UsageVmDiskDao _usageVmDiskDao;
 
     @PostConstruct
     void init() {
@@ -74,9 +76,9 @@ public static final Logger s_logger = Logger.getLogger(VmDiskUsageParser.class.g
         // Calculate the bytes since last parsing
         for (UsageVmDiskVO usageVmDisk : usageVmDiskVOs) {
             long zoneId = usageVmDisk.getZoneId();
-            String key = ""+zoneId;
-            if(usageVmDisk.getVmId() != 0){
-                key += "-Vm-" + usageVmDisk.getVmId()+"-Disk-" + usageVmDisk.getVolumeId();
+            String key = "" + zoneId;
+            if (usageVmDisk.getVmId() != 0) {
+                key += "-Vm-" + usageVmDisk.getVmId() + "-Disk-" + usageVmDisk.getVolumeId();
             }
             VmDiskInfo vmDiskInfo = vmDiskUsageByZone.get(key);
 
@@ -104,51 +106,56 @@ public static final Logger s_logger = Logger.getLogger(VmDiskUsageParser.class.g
 
             if ((ioRead > 0L) || (ioWrite > 0L) || (bytesRead > 0L) || (bytesWrite > 0L)) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Creating vm disk usage record, io read:" + ioRead + ", io write: " + ioWrite + "bytes read:" + bytesRead + ", bytes write: " + bytesWrite + "for account: "
-                            + account.getId() + " in availability zone " + vmDiskInfo.getZoneId() + ", start: " + startDate + ", end: " + endDate);
+                    s_logger.debug("Creating vm disk usage record, io read:" + ioRead + ", io write: " + ioWrite + "bytes read:" + bytesRead + ", bytes write: " +
+                        bytesWrite + "for account: " + account.getId() + " in availability zone " + vmDiskInfo.getZoneId() + ", start: " + startDate + ", end: " +
+                        endDate);
                 }
 
                 Long vmId = null;
                 Long volumeId = null;
-                
+
                 // Create the usage record for disk I/O read (io requests)
                 String usageDesc = "disk I/O read (io requests)";
-                if ((vmDiskInfo.getVmId() != 0) && (vmDiskInfo.getVolumeId() != 0)){
+                if ((vmDiskInfo.getVmId() != 0) && (vmDiskInfo.getVolumeId() != 0)) {
                     vmId = vmDiskInfo.getVmId();
                     volumeId = vmDiskInfo.getVolumeId();
                     usageDesc += " for Vm: " + vmId + " and Volume: " + volumeId;
                 }
-                UsageVO usageRecord = new UsageVO(vmDiskInfo.getZoneId(), account.getId(), account.getDomainId(), usageDesc, ioRead + " io read",
-                        UsageTypes.VM_DISK_IO_READ, new Double(ioRead), vmId, null, null, null, vmDiskInfo.getVolumeId(), startDate, endDate, "VirtualMachine");
+                UsageVO usageRecord =
+                    new UsageVO(vmDiskInfo.getZoneId(), account.getId(), account.getDomainId(), usageDesc, ioRead + " io read", UsageTypes.VM_DISK_IO_READ, new Double(
+                        ioRead), vmId, null, null, null, vmDiskInfo.getVolumeId(), startDate, endDate, "VirtualMachine");
                 usageRecords.add(usageRecord);
 
                 // Create the usage record for disk I/O write (io requests)
                 usageDesc = "disk I/O write (io requests)";
-                if ((vmDiskInfo.getVmId() != 0) && (vmDiskInfo.getVolumeId() != 0)){
+                if ((vmDiskInfo.getVmId() != 0) && (vmDiskInfo.getVolumeId() != 0)) {
                     usageDesc += " for Vm: " + vmId + " and Volume: " + volumeId;
                 }
-                usageRecord = new UsageVO(vmDiskInfo.getZoneId(), account.getId(), account.getDomainId(), usageDesc, ioWrite + " io write",
-                        UsageTypes.VM_DISK_BYTES_WRITE, new Double(ioWrite), vmId, null, null, null, vmDiskInfo.getVolumeId(), startDate, endDate, "VirtualMachine");
+                usageRecord =
+                    new UsageVO(vmDiskInfo.getZoneId(), account.getId(), account.getDomainId(), usageDesc, ioWrite + " io write", UsageTypes.VM_DISK_BYTES_WRITE,
+                        new Double(ioWrite), vmId, null, null, null, vmDiskInfo.getVolumeId(), startDate, endDate, "VirtualMachine");
                 usageRecords.add(usageRecord);
-                
+
                 // Create the usage record for disk I/O read (bytes)
                 usageDesc = "disk I/O read (bytes)";
-                if ((vmDiskInfo.getVmId() != 0) && (vmDiskInfo.getVolumeId() != 0)){
+                if ((vmDiskInfo.getVmId() != 0) && (vmDiskInfo.getVolumeId() != 0)) {
                     usageDesc += " for Vm: " + vmId + " and Volume: " + volumeId;
                 }
-                usageRecord = new UsageVO(vmDiskInfo.getZoneId(), account.getId(), account.getDomainId(), usageDesc, bytesRead + " bytes read",
-                        UsageTypes.VM_DISK_BYTES_READ, new Double(bytesRead), vmId, null, null, null, vmDiskInfo.getVolumeId(), startDate, endDate, "VirtualMachine");
+                usageRecord =
+                    new UsageVO(vmDiskInfo.getZoneId(), account.getId(), account.getDomainId(), usageDesc, bytesRead + " bytes read", UsageTypes.VM_DISK_BYTES_READ,
+                        new Double(bytesRead), vmId, null, null, null, vmDiskInfo.getVolumeId(), startDate, endDate, "VirtualMachine");
                 usageRecords.add(usageRecord);
 
                 // Create the usage record for disk I/O write (bytes)
                 usageDesc = "disk I/O write (bytes)";
-                if ((vmDiskInfo.getVmId() != 0) && (vmDiskInfo.getVolumeId() != 0)){
+                if ((vmDiskInfo.getVmId() != 0) && (vmDiskInfo.getVolumeId() != 0)) {
                     usageDesc += " for Vm: " + vmId + " and Volume: " + volumeId;
                 }
-                usageRecord = new UsageVO(vmDiskInfo.getZoneId(), account.getId(), account.getDomainId(), usageDesc, bytesWrite + " bytes write",
-                        UsageTypes.VM_DISK_BYTES_WRITE, new Double(bytesWrite), vmId, null, null, null, vmDiskInfo.getVolumeId(), startDate, endDate, "VirtualMachine");
+                usageRecord =
+                    new UsageVO(vmDiskInfo.getZoneId(), account.getId(), account.getDomainId(), usageDesc, bytesWrite + " bytes write", UsageTypes.VM_DISK_BYTES_WRITE,
+                        new Double(bytesWrite), vmId, null, null, null, vmDiskInfo.getVolumeId(), startDate, endDate, "VirtualMachine");
                 usageRecords.add(usageRecord);
-                
+
             } else {
                 // Don't charge anything if there were zero bytes processed
                 if (s_logger.isDebugEnabled()) {
@@ -161,7 +168,7 @@ public static final Logger s_logger = Logger.getLogger(VmDiskUsageParser.class.g
 
         return true;
     }
-    
+
     private static class VmDiskInfo {
         private long zoneId;
         private long vmId;
@@ -188,7 +195,7 @@ public static final Logger s_logger = Logger.getLogger(VmDiskUsageParser.class.g
         public long getVmId() {
             return vmId;
         }
-        
+
         public Long getVolumeId() {
             return volumeId;
         }
@@ -200,7 +207,7 @@ public static final Logger s_logger = Logger.getLogger(VmDiskUsageParser.class.g
         public long getIOWrite() {
             return ioWrite;
         }
-        
+
         public long getBytesRead() {
             return bytesRead;
         }
@@ -208,6 +215,6 @@ public static final Logger s_logger = Logger.getLogger(VmDiskUsageParser.class.g
         public long getBytesWrite() {
             return bytesWrite;
         }
-    
+
     }
 }

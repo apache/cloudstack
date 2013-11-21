@@ -19,18 +19,18 @@ package com.cloud.acl;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
-import org.springframework.stereotype.Component;
 
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.DomainManager;
 
 @Component
 @Local(value = SecurityChecker.class)
@@ -44,32 +44,27 @@ public class AffinityGroupAccessChecker extends DomainChecker {
     AffinityGroupDomainMapDao _affinityGroupDomainMapDao;
 
     @Override
-    public boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType)
-            throws PermissionDeniedException {
+    public boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType) throws PermissionDeniedException {
         if (entity instanceof AffinityGroup) {
-            AffinityGroup group = (AffinityGroup) entity;
+            AffinityGroup group = (AffinityGroup)entity;
 
             if (_affinityGroupService.isAdminControlledGroup(group)) {
-                if (accessType != null && accessType == AccessType.ModifyEntry
-                        && !_accountMgr.isRootAdmin(caller.getType())) {
-                    throw new PermissionDeniedException(caller + " does not have permission to operate with resource "
-                            + entity);
+                if (accessType != null && accessType == AccessType.ModifyEntry && !_accountMgr.isRootAdmin(caller.getType())) {
+                    throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
                 }
             }
 
             if (group.getAclType() == ACLType.Domain) {
                 if (!_affinityGroupService.isAffinityGroupAvailableInDomain(group.getId(), caller.getDomainId())) {
-                    throw new PermissionDeniedException("Affinity group is not available in domain id="
-                            + caller.getDomainId());
+                    throw new PermissionDeniedException("Affinity group is not available in domain id=" + caller.getDomainId());
                 } else {
                     return true;
                 }
             } else {
-                //acl_type account 
+                //acl_type account
                 if (caller.getId() != group.getAccountId()) {
-                      throw new PermissionDeniedException(caller
-                      + " does not have permission to operate with resource " + entity);
-                }else{
+                    throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
+                } else {
                     return true;
                 }
 

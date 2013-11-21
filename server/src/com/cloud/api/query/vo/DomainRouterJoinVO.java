@@ -34,38 +34,38 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine.State;
 
 @Entity
-@Table(name="domain_router_view")
+@Table(name = "domain_router_view")
 public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Id
-    @Column(name="id", updatable=false, nullable = false)
+    @Column(name = "id", updatable = false, nullable = false)
     private long id;
 
-    @Column(name="name", updatable=false, nullable=false, length=255)
+    @Column(name = "name", updatable = false, nullable = false, length = 255)
     private String name = null;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="account_uuid")
+    @Column(name = "account_uuid")
     private String accountUuid;
 
-    @Column(name="account_name")
+    @Column(name = "account_name")
     private String accountName = null;
 
-    @Column(name="account_type")
+    @Column(name = "account_type")
     private short accountType;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="domain_uuid")
+    @Column(name = "domain_uuid")
     private String domainUuid;
 
-    @Column(name="domain_name")
+    @Column(name = "domain_name")
     private String domainName = null;
 
-    @Column(name="domain_path")
+    @Column(name = "domain_path")
     private String domainPath = null;
 
     /**
@@ -73,68 +73,71 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
      * the state machine needs to go through the DAO object because someone
      * else could be updating it as well.
      */
-    @Enumerated(value=EnumType.STRING)
-    @Column(name="state", updatable=true, nullable=false, length=32)
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "state", updatable = true, nullable = false, length = 32)
     private State state = null;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    @Column(name="instance_name", updatable=true, nullable=false)
+    @Column(name = "instance_name", updatable = true, nullable = false)
     private String instanceName;
 
-    @Column(name="pod_id", updatable=true, nullable=false)
+    @Column(name = "pod_id", updatable = true, nullable = false)
     private Long podId;
 
-    @Column(name="pod_uuid")
+    @Column(name = "pod_uuid")
     private String podUuid;
 
-    @Column(name="data_center_id")
+    @Column(name = "data_center_id")
     private long dataCenterId;
 
-    @Column(name="data_center_uuid")
+    @Column(name = "data_center_uuid")
     private String dataCenterUuid;
 
-    @Column(name="data_center_name")
+    @Column(name = "data_center_name")
     private String dataCenterName = null;
 
-    @Column(name="dns1")
+    @Column(name = "cluster_id")
+    private long clusterId;
+
+    @Column(name = "dns1")
     private String dns1 = null;
 
-    @Column(name="dns2")
+    @Column(name = "dns2")
     private String dns2 = null;
 
-    @Column(name="ip6_dns1")
+    @Column(name = "ip6_dns1")
     private String ip6Dns1 = null;
 
-    @Column(name="ip6_dns2")
+    @Column(name = "ip6_dns2")
     private String ip6Dns2 = null;
 
-    @Column(name="host_id", updatable=true, nullable=true)
+    @Column(name = "host_id", updatable = true, nullable = true)
     private long hostId;
 
-    @Column(name="host_uuid")
+    @Column(name = "host_uuid")
     private String hostUuid;
 
-    @Column(name="host_name", nullable=false)
+    @Column(name = "host_name", nullable = false)
     private String hostName;
 
-    @Column(name="template_id", updatable=true, nullable=true, length=17)
+    @Column(name = "template_id", updatable = true, nullable = true, length = 17)
     private long templateId;
 
-    @Column(name="template_uuid")
+    @Column(name = "template_uuid")
     private String templateUuid;
 
-    @Column(name="service_offering_id")
+    @Column(name = "service_offering_id")
     private long serviceOfferingId;
 
-    @Column(name="service_offering_uuid")
+    @Column(name = "service_offering_uuid")
     private String serviceOfferingUuid;
 
-    @Column(name="service_offering_name")
+    @Column(name = "service_offering_name")
     private String serviceOfferingName;
 
     @Column(name = "vpc_id")
@@ -179,62 +182,62 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     @Column(name = "isolation_uri")
     private URI isolationUri;
 
-    @Column(name="network_id")
+    @Column(name = "network_id")
     private long networkId;
 
-    @Column(name="network_uuid")
+    @Column(name = "network_uuid")
     private String networkUuid;
 
-    @Column(name="network_name")
+    @Column(name = "network_name")
     private String networkName;
 
-    @Column(name="network_domain")
+    @Column(name = "network_domain")
     private String networkDomain;
 
-    @Column(name="traffic_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "traffic_type")
+    @Enumerated(value = EnumType.STRING)
     private TrafficType trafficType;
 
-    @Column(name="project_id")
+    @Column(name = "project_id")
     private long projectId;
 
-    @Column(name="project_uuid")
+    @Column(name = "project_uuid")
     private String projectUuid;
 
-    @Column(name="project_name")
+    @Column(name = "project_name")
     private String projectName;
 
-    @Column(name="job_id")
+    @Column(name = "job_id")
     private Long jobId;
 
-    @Column(name="job_uuid")
+    @Column(name = "job_uuid")
     private String jobUuid;
 
-    @Column(name="job_status")
+    @Column(name = "job_status")
     private int jobStatus;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="template_version")
+    @Column(name = "template_version")
     private String templateVersion;
 
-    @Column(name="scripts_version")
+    @Column(name = "scripts_version")
     private String scriptsVersion;
 
-    @Column(name="redundant_state")
+    @Column(name = "redundant_state")
     @Enumerated(EnumType.STRING)
     private RedundantState redundantState;
 
-    @Column(name="is_redundant_router")
+    @Column(name = "is_redundant_router")
     boolean isRedundantRouter;
 
-    @Column(name="guest_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "guest_type")
+    @Enumerated(value = EnumType.STRING)
     private GuestType guestType;
 
-    @Column(name="role")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "role")
+    @Enumerated(value = EnumType.STRING)
     private VirtualRouter.Role role;
 
     public DomainRouterJoinVO() {
@@ -332,6 +335,10 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
 
     public String getHostName() {
         return hostName;
+    }
+
+    public Long getClusterId() {
+        return clusterId;
     }
 
     public long getTemplateId() {

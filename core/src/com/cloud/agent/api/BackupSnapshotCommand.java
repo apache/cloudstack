@@ -52,22 +52,8 @@ public class BackupSnapshotCommand extends SnapshotCommand {
      * @param isVolumeInactive         True if the volume belongs to a VM that is not running or is detached.
      * @param secHostId                This is the Id of the secondary storage.
      */
-    public BackupSnapshotCommand(String secondaryStoragePoolURL,
-                                 Long   dcId,
-                                 Long   accountId,
-                                 Long   volumeId,
-                                 Long   snapshotId,
-                                 Long   secHostId,
-                                 String volumePath,
-                                 StoragePool pool,
-                                 String snapshotUuid,
-                                 String snapshotName,
-                                 String prevSnapshotUuid,
-                                 String prevBackupUuid,
-                                 boolean isVolumeInactive,
-                                 String vmName,
-                                 int wait)
-    {
+    public BackupSnapshotCommand(String secondaryStoragePoolURL, Long dcId, Long accountId, Long volumeId, Long snapshotId, Long secHostId, String volumePath,
+            StoragePool pool, String snapshotUuid, String snapshotName, String prevSnapshotUuid, String prevBackupUuid, boolean isVolumeInactive, String vmName, int wait) {
         super(pool, secondaryStoragePoolURL, snapshotUuid, snapshotName, dcId, accountId, volumeId);
         this.snapshotId = snapshotId;
         this.prevSnapshotUuid = prevSnapshotUuid;

@@ -26,7 +26,10 @@ import com.cloud.vm.VirtualMachine;
 
 public interface HypervisorHelper {
     DataTO introduceObject(DataTO object, Scope scope, Long storeId);
+
     boolean forgetObject(DataTO object, Scope scope, Long storeId);
+
     VMSnapshotTO quiesceVm(VirtualMachine virtualMachine);
+
     boolean unquiesceVM(VirtualMachine virtualMachine, VMSnapshotTO vmSnapshotTO);
 }

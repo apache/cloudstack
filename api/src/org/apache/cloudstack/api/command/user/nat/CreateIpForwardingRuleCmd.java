@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.user.nat;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -31,8 +33,6 @@ import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -42,7 +42,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.user.Account;
 
-@APICommand(name = "createIpForwardingRule", description="Creates an ip forwarding rule", responseObject=FirewallRuleResponse.class)
+@APICommand(name = "createIpForwardingRule", description = "Creates an ip forwarding rule", responseObject = FirewallRuleResponse.class)
 public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements StaticNatRule {
     public static final Logger s_logger = Logger.getLogger(CreateIpForwardingRuleCmd.class.getName());
 
@@ -52,30 +52,33 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.UUID, entityType = IPAddressResponse.class,
-            required=true, description="the public IP address id of the forwarding rule, already associated via associateIp")
+    @Parameter(name = ApiConstants.IP_ADDRESS_ID,
+               type = CommandType.UUID,
+               entityType = IPAddressResponse.class,
+               required = true,
+               description = "the public IP address id of the forwarding rule, already associated via associateIp")
     private Long ipAddressId;
 
-    @Parameter(name=ApiConstants.START_PORT, type=CommandType.INTEGER, required=true, description="the start port for the rule")
+    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, required = true, description = "the start port for the rule")
     private Integer startPort;
 
-    @Parameter(name=ApiConstants.END_PORT, type=CommandType.INTEGER, description="the end port for the rule")
+    @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "the end port for the rule")
     private Integer endPort;
 
-    @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, required=true, description="the protocol for the rule. Valid values are TCP or UDP.")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "the protocol for the rule. Valid values are TCP or UDP.")
     private String protocol;
 
-    @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end pubic port is automatically created; if false - firewall rule has to be created explicitely. Has value true by default")
+    @Parameter(name = ApiConstants.OPEN_FIREWALL,
+               type = CommandType.BOOLEAN,
+               description = "if true, firewall rule for source/end pubic port is automatically created; if false - firewall rule has to be created explicitely. Has value true by default")
     private Boolean openFirewall;
 
     @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from")
     private List<String> cidrlist;
 
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public Long getIpAddressId() {
         return ipAddressId;
@@ -107,12 +110,12 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException{
+    public void execute() throws ResourceUnavailableException {
 
         boolean result = true;
         FirewallRule rule = null;
         try {
-            CallContext.current().setEventDetails("Rule Id: "+ getEntityId());
+            CallContext.current().setEventDetails("Rule Id: " + getEntityId());
 
             if (getOpenFirewall()) {
                 result = result && _firewallService.applyIngressFirewallRules(ipAddressId, CallContext.current().getCallingAccount());
@@ -143,7 +146,8 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
 
         //cidr list parameter is deprecated
         if (cidrlist != null) {
-            throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
+            throw new InvalidParameterValueException(
+                "Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
         }
 
         try {
@@ -175,7 +179,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     @Override
     public String getEventDescription() {
         IpAddress ip = _networkService.getIp(ipAddressId);
-        return  ("Applying an ipforwarding 1:1 NAT rule for Ip: "+ip.getAddress()+" with virtual machine:"+ this.getVirtualMachineId());
+        return ("Applying an ipforwarding 1:1 NAT rule for Ip: " + ip.getAddress() + " with virtual machine:" + this.getVirtualMachineId());
     }
 
     private long getVirtualMachineId() {
@@ -188,7 +192,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     }
 
     @Override
-    public String getDestIpAddress(){
+    public String getDestIpAddress() {
         return null;
     }
 
@@ -253,7 +257,6 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
         // FIXME: We should allow for end user to specify Xid.
         return null;
     }
-
 
     @Override
     public String getUuid() {

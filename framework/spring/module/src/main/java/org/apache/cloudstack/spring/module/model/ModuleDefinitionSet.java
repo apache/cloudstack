@@ -24,9 +24,9 @@ import org.springframework.core.io.Resource;
 public interface ModuleDefinitionSet {
 
     ModuleDefinition getModuleDefinition(String name);
-    
+
     ApplicationContext getApplicationContext(String name);
-    
+
     Resource[] getConfigResources(String name);
-    
+
 }

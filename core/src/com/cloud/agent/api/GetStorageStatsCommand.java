@@ -28,16 +28,15 @@ public class GetStorageStatsCommand extends Command {
     private String secUrl;
     private DataStoreTO store;
 
-
     public String getSecUrl() {
-		return secUrl;
-	}
+        return secUrl;
+    }
 
-	public void setSecUrl(String secUrl) {
-		this.secUrl = secUrl;
-	}
+    public void setSecUrl(String secUrl) {
+        this.secUrl = secUrl;
+    }
 
-	public GetStorageStatsCommand() {
+    public GetStorageStatsCommand() {
     }
 
     public StoragePoolType getPooltype() {

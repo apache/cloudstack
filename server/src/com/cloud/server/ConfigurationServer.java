@@ -29,10 +29,12 @@ public interface ConfigurationServer {
 
     /**
      * Persists default values for the configuration table, pods/zones, and VLANs
-     * 
+     *
      * @return
      */
     public void persistDefaultValues() throws InternalErrorException;
+
     public void updateKeyPairs();
+
     public List<ConfigurationVO> getConfigListByScope(String scope, Long resourceId);
 }

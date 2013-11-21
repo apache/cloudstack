@@ -25,15 +25,12 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.storage.vmsnapshot.DefaultVMSnapshotStrategy;
-import org.apache.cloudstack.storage.vmsnapshot.VMSnapshotHelper;
-import org.apache.cloudstack.test.utils.SpringUtils;
+import junit.framework.TestCase;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -45,6 +42,13 @@ import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.storage.vmsnapshot.DefaultVMSnapshotStrategy;
+import org.apache.cloudstack.storage.vmsnapshot.VMSnapshotHelper;
+import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
@@ -67,8 +71,6 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
-import junit.framework.TestCase;
-
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 public class VMSnapshotStrategyTest extends TestCase {
@@ -76,19 +78,20 @@ public class VMSnapshotStrategyTest extends TestCase {
     VMSnapshotStrategy vmSnapshotStrategy;
     @Inject
     VMSnapshotHelper vmSnapshotHelper;
-    @Inject UserVmDao userVmDao;
+    @Inject
+    UserVmDao userVmDao;
     @Inject
     GuestOSDao guestOSDao;
     @Inject
     AgentManager agentMgr;
     @Inject
     VMSnapshotDao vmSnapshotDao;
+
     @Override
     @Before
     public void setUp() {
         ComponentContext.initComponentsLifeCycle();
     }
-
 
     @Test
     public void testCreateVMSnapshot() throws AgentUnavailableException, OperationTimedoutException {
@@ -100,12 +103,12 @@ public class VMSnapshotStrategyTest extends TestCase {
         UserVmVO userVmVO = Mockito.mock(UserVmVO.class);
         Mockito.when(userVmVO.getGuestOSId()).thenReturn(guestOsId);
         Mockito.when(vmSnapshot.getVmId()).thenReturn(vmId);
-        Mockito.when(vmSnapshotHelper.pickRunningHost(Mockito.anyLong())).thenReturn(hostId);
-        Mockito.when(vmSnapshotHelper.getVolumeTOList(Mockito.anyLong())).thenReturn(volumeObjectTOs);
-        Mockito.when(userVmDao.findById(Mockito.anyLong())).thenReturn(userVmVO);
+        Mockito.when(vmSnapshotHelper.pickRunningHost(Matchers.anyLong())).thenReturn(hostId);
+        Mockito.when(vmSnapshotHelper.getVolumeTOList(Matchers.anyLong())).thenReturn(volumeObjectTOs);
+        Mockito.when(userVmDao.findById(Matchers.anyLong())).thenReturn(userVmVO);
         GuestOSVO guestOSVO = Mockito.mock(GuestOSVO.class);
-        Mockito.when(guestOSDao.findById(Mockito.anyLong())).thenReturn(guestOSVO);
-        Mockito.when(agentMgr.send(Mockito.anyLong(), Mockito.any(Command.class))).thenReturn(null);
+        Mockito.when(guestOSDao.findById(Matchers.anyLong())).thenReturn(guestOSVO);
+        Mockito.when(agentMgr.send(Matchers.anyLong(), Matchers.any(Command.class))).thenReturn(null);
         Exception e = null;
         try {
             vmSnapshotStrategy.takeVMSnapshot(vmSnapshot);
@@ -116,8 +119,8 @@ public class VMSnapshotStrategyTest extends TestCase {
         assertNotNull(e);
         CreateVMSnapshotAnswer answer = Mockito.mock(CreateVMSnapshotAnswer.class);
         Mockito.when(answer.getResult()).thenReturn(true);
-        Mockito.when(agentMgr.send(Mockito.anyLong(), Mockito.any(Command.class))).thenReturn(answer);
-        Mockito.when(vmSnapshotDao.findById(Mockito.anyLong())).thenReturn(vmSnapshot);
+        Mockito.when(agentMgr.send(Matchers.anyLong(), Matchers.any(Command.class))).thenReturn(answer);
+        Mockito.when(vmSnapshotDao.findById(Matchers.anyLong())).thenReturn(vmSnapshot);
         VMSnapshot snapshot = null;
         snapshot = vmSnapshotStrategy.takeVMSnapshot(vmSnapshot);
         assertNotNull(snapshot);
@@ -133,17 +136,17 @@ public class VMSnapshotStrategyTest extends TestCase {
         UserVmVO userVmVO = Mockito.mock(UserVmVO.class);
         Mockito.when(userVmVO.getGuestOSId()).thenReturn(guestOsId);
         Mockito.when(vmSnapshot.getVmId()).thenReturn(vmId);
-        Mockito.when(vmSnapshotHelper.pickRunningHost(Mockito.anyLong())).thenReturn(hostId);
-        Mockito.when(vmSnapshotHelper.getVolumeTOList(Mockito.anyLong())).thenReturn(volumeObjectTOs);
-        Mockito.when(userVmDao.findById(Mockito.anyLong())).thenReturn(userVmVO);
+        Mockito.when(vmSnapshotHelper.pickRunningHost(Matchers.anyLong())).thenReturn(hostId);
+        Mockito.when(vmSnapshotHelper.getVolumeTOList(Matchers.anyLong())).thenReturn(volumeObjectTOs);
+        Mockito.when(userVmDao.findById(Matchers.anyLong())).thenReturn(userVmVO);
         GuestOSVO guestOSVO = Mockito.mock(GuestOSVO.class);
-        Mockito.when(guestOSDao.findById(Mockito.anyLong())).thenReturn(guestOSVO);
+        Mockito.when(guestOSDao.findById(Matchers.anyLong())).thenReturn(guestOSVO);
         VMSnapshotTO vmSnapshotTO = Mockito.mock(VMSnapshotTO.class);
-        Mockito.when(vmSnapshotHelper.getSnapshotWithParents(Mockito.any(VMSnapshotVO.class))).thenReturn(vmSnapshotTO);
-        Mockito.when(vmSnapshotDao.findById(Mockito.anyLong())).thenReturn(vmSnapshot);
+        Mockito.when(vmSnapshotHelper.getSnapshotWithParents(Matchers.any(VMSnapshotVO.class))).thenReturn(vmSnapshotTO);
+        Mockito.when(vmSnapshotDao.findById(Matchers.anyLong())).thenReturn(vmSnapshot);
         Mockito.when(vmSnapshot.getId()).thenReturn(1L);
         Mockito.when(vmSnapshot.getCreated()).thenReturn(new Date());
-        Mockito.when(agentMgr.send(Mockito.anyLong(), Mockito.any(Command.class))).thenReturn(null);
+        Mockito.when(agentMgr.send(Matchers.anyLong(), Matchers.any(Command.class))).thenReturn(null);
         Exception e = null;
         try {
             vmSnapshotStrategy.revertVMSnapshot(vmSnapshot);
@@ -155,7 +158,7 @@ public class VMSnapshotStrategyTest extends TestCase {
 
         RevertToVMSnapshotAnswer answer = Mockito.mock(RevertToVMSnapshotAnswer.class);
         Mockito.when(answer.getResult()).thenReturn(Boolean.TRUE);
-        Mockito.when(agentMgr.send(Mockito.anyLong(), Mockito.any(Command.class))).thenReturn(answer);
+        Mockito.when(agentMgr.send(Matchers.anyLong(), Matchers.any(Command.class))).thenReturn(answer);
         boolean result = vmSnapshotStrategy.revertVMSnapshot(vmSnapshot);
         assertTrue(result);
     }
@@ -170,17 +173,17 @@ public class VMSnapshotStrategyTest extends TestCase {
         UserVmVO userVmVO = Mockito.mock(UserVmVO.class);
         Mockito.when(userVmVO.getGuestOSId()).thenReturn(guestOsId);
         Mockito.when(vmSnapshot.getVmId()).thenReturn(vmId);
-        Mockito.when(vmSnapshotHelper.pickRunningHost(Mockito.anyLong())).thenReturn(hostId);
-        Mockito.when(vmSnapshotHelper.getVolumeTOList(Mockito.anyLong())).thenReturn(volumeObjectTOs);
-        Mockito.when(userVmDao.findById(Mockito.anyLong())).thenReturn(userVmVO);
+        Mockito.when(vmSnapshotHelper.pickRunningHost(Matchers.anyLong())).thenReturn(hostId);
+        Mockito.when(vmSnapshotHelper.getVolumeTOList(Matchers.anyLong())).thenReturn(volumeObjectTOs);
+        Mockito.when(userVmDao.findById(Matchers.anyLong())).thenReturn(userVmVO);
         GuestOSVO guestOSVO = Mockito.mock(GuestOSVO.class);
-        Mockito.when(guestOSDao.findById(Mockito.anyLong())).thenReturn(guestOSVO);
+        Mockito.when(guestOSDao.findById(Matchers.anyLong())).thenReturn(guestOSVO);
         VMSnapshotTO vmSnapshotTO = Mockito.mock(VMSnapshotTO.class);
-        Mockito.when(vmSnapshotHelper.getSnapshotWithParents(Mockito.any(VMSnapshotVO.class))).thenReturn(vmSnapshotTO);
-        Mockito.when(vmSnapshotDao.findById(Mockito.anyLong())).thenReturn(vmSnapshot);
+        Mockito.when(vmSnapshotHelper.getSnapshotWithParents(Matchers.any(VMSnapshotVO.class))).thenReturn(vmSnapshotTO);
+        Mockito.when(vmSnapshotDao.findById(Matchers.anyLong())).thenReturn(vmSnapshot);
         Mockito.when(vmSnapshot.getId()).thenReturn(1L);
         Mockito.when(vmSnapshot.getCreated()).thenReturn(new Date());
-        Mockito.when(agentMgr.send(Mockito.anyLong(), Mockito.any(Command.class))).thenReturn(null);
+        Mockito.when(agentMgr.send(Matchers.anyLong(), Matchers.any(Command.class))).thenReturn(null);
 
         Exception e = null;
         try {
@@ -193,15 +196,16 @@ public class VMSnapshotStrategyTest extends TestCase {
 
         DeleteVMSnapshotAnswer answer = Mockito.mock(DeleteVMSnapshotAnswer.class);
         Mockito.when(answer.getResult()).thenReturn(true);
-        Mockito.when(agentMgr.send(Mockito.anyLong(), Mockito.any(Command.class))).thenReturn(answer);
+        Mockito.when(agentMgr.send(Matchers.anyLong(), Matchers.any(Command.class))).thenReturn(answer);
 
         boolean result = vmSnapshotStrategy.deleteVMSnapshot(vmSnapshot);
         assertTrue(result);
     }
 
-
     @Configuration
-    @ComponentScan(basePackageClasses = {NetUtils.class, DefaultVMSnapshotStrategy.class}, includeFilters = {@ComponentScan.Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)}, useDefaultFilters = false)
+    @ComponentScan(basePackageClasses = {NetUtils.class, DefaultVMSnapshotStrategy.class},
+                   includeFilters = {@ComponentScan.Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
+                   useDefaultFilters = false)
     public static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         public static class Library implements TypeFilter {

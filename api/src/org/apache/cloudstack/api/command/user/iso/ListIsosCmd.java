@@ -16,9 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -30,13 +28,10 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
-@APICommand(name = "listIsos", description="Lists all available ISO files.", responseObject=TemplateResponse.class)
+@APICommand(name = "listIsos", description = "Lists all available ISO files.", responseObject = TemplateResponse.class)
 public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
 
@@ -46,43 +41,41 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.BOOTABLE, type=CommandType.BOOLEAN, description="true if the ISO is bootable, false otherwise")
+    @Parameter(name = ApiConstants.BOOTABLE, type = CommandType.BOOLEAN, description = "true if the ISO is bootable, false otherwise")
     private Boolean bootable;
 
-    @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the hypervisor for which to restrict the search")
+    @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor for which to restrict the search")
     private String hypervisor;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = TemplateResponse.class,
-            description="list ISO by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "list ISO by id")
     private Long id;
 
-    @Parameter(name=ApiConstants.IS_PUBLIC, type=CommandType.BOOLEAN, description="true if the ISO is publicly available to all users, false otherwise.")
+    @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "true if the ISO is publicly available to all users, false otherwise.")
     private Boolean publicIso;
 
-    @Parameter(name=ApiConstants.IS_READY, type=CommandType.BOOLEAN, description="true if this ISO is ready to be deployed")
+    @Parameter(name = ApiConstants.IS_READY, type = CommandType.BOOLEAN, description = "true if this ISO is ready to be deployed")
     private Boolean ready;
 
-    @Parameter(name=ApiConstants.ISO_FILTER, type=CommandType.STRING, description="possible values are \"featured\", \"self\", \"selfexecutable\",\"sharedexecutable\",\"executable\", and \"community\". " +
-                                                             "* featured : templates that have been marked as featured and public. " +
-                                                             "* self : templates that have been registered or created by the calling user. " +
-                                                             "* selfexecutable : same as self, but only returns templates that can be used to deploy a new VM. " +
-                                                             "* sharedexecutable : templates ready to be deployed that have been granted to the calling user by another user. " +
-                                                             "* executable : templates that are owned by the calling user, or public templates, that can be used to deploy a VM. " +
-                                                             "* community : templates that have been marked as public but not featured. " +
-                                                             "* all : all templates (only usable by admins).")
+    @Parameter(name = ApiConstants.ISO_FILTER,
+               type = CommandType.STRING,
+               description = "possible values are \"featured\", \"self\", \"selfexecutable\",\"sharedexecutable\",\"executable\", and \"community\". "
+                   + "* featured : templates that have been marked as featured and public. "
+                   + "* self : templates that have been registered or created by the calling user. "
+                   + "* selfexecutable : same as self, but only returns templates that can be used to deploy a new VM. "
+                   + "* sharedexecutable : templates ready to be deployed that have been granted to the calling user by another user. "
+                   + "* executable : templates that are owned by the calling user, or public templates, that can be used to deploy a VM. "
+                   + "* community : templates that have been marked as public but not featured. " + "* all : all templates (only usable by admins).")
     private String isoFilter = TemplateFilter.selfexecutable.toString();
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list all isos by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list all isos by name")
     private String isoName;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            description="the ID of the zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the ID of the zone")
     private Long zoneId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public Boolean isBootable() {
         return bootable;
@@ -122,8 +115,9 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
         boolean isAccountSpecific = (account == null || isAdmin(account.getType())) && (getAccountName() != null) && (getDomainId() != null);
         // Show only those that are downloaded.
         TemplateFilter templateFilter = TemplateFilter.valueOf(getIsoFilter());
-        boolean onlyReady = (templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.selfexecutable) || (templateFilter == TemplateFilter.sharedexecutable)
-        || (templateFilter == TemplateFilter.executable && isAccountSpecific) || (templateFilter == TemplateFilter.community);
+        boolean onlyReady =
+            (templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.selfexecutable) || (templateFilter == TemplateFilter.sharedexecutable) ||
+                (templateFilter == TemplateFilter.executable && isAccountSpecific) || (templateFilter == TemplateFilter.community);
 
         if (!onlyReady) {
             if (isReady() != null && isReady().booleanValue() != onlyReady) {
@@ -143,12 +137,13 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
         return s_name;
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.Iso;
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         ListResponse<TemplateResponse> response = _queryService.listIsos(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

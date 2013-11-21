@@ -37,20 +37,20 @@ import com.cloud.utils.db.GenericDao;
  *
  */
 @Entity
-@Table(name="image_store_view")
+@Table(name = "image_store_view")
 public class ImageStoreJoinVO extends BaseViewVO implements InternalIdentity, Identity {
 
     @Id
-    @Column(name="id")
+    @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="url")
+    @Column(name = "url")
     private String url;
 
     @Column(name = "protocol")
@@ -59,7 +59,7 @@ public class ImageStoreJoinVO extends BaseViewVO implements InternalIdentity, Id
     @Column(name = "image_provider_name", nullable = false)
     private String providerName;
 
-    @Column(name="scope")
+    @Column(name = "scope")
     @Enumerated(value = EnumType.STRING)
     private ScopeType scope;
 
@@ -67,22 +67,22 @@ public class ImageStoreJoinVO extends BaseViewVO implements InternalIdentity, Id
     @Enumerated(value = EnumType.STRING)
     private DataStoreRole role;
 
-    @Column(name="data_center_id")
+    @Column(name = "data_center_id")
     private long zoneId;
 
-    @Column(name="data_center_uuid")
+    @Column(name = "data_center_uuid")
     private String zoneUuid;
 
-    @Column(name="data_center_name")
+    @Column(name = "data_center_name")
     private String zoneName;
 
-    @Column(name="detail_name")
+    @Column(name = "detail_name")
     private String detailName;
 
-    @Column(name="detail_value")
+    @Column(name = "detail_value")
     private String detailValue;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
     @Override

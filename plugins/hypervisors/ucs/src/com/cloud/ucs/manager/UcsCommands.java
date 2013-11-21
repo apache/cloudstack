@@ -68,11 +68,16 @@ public class UcsCommands {
     }
 
     public static String associateProfileToBlade(String cookie, String profileDn, String bladeDn) {
-        XmlObject cmd = new XmlObject("configConfMos").putElement("cookie", cookie).putElement("inHierarchical", "true").putElement(
-                "inConfigs", new XmlObject("inConfigs").putElement(
-                        "pair", new XmlObject("pair").putElement("key", profileDn).putElement(
-                                "lsServer", new XmlObject("lsServer")
-                                .putElement("agentPolicyName", "")
+        XmlObject cmd =
+            new XmlObject("configConfMos").putElement("cookie", cookie)
+                .putElement("inHierarchical", "true")
+                .putElement(
+                    "inConfigs",
+                    new XmlObject("inConfigs").putElement(
+                        "pair",
+                        new XmlObject("pair").putElement("key", profileDn).putElement(
+                            "lsServer",
+                            new XmlObject("lsServer").putElement("agentPolicyName", "")
                                 .putElement("biosProfileName", "")
                                 .putElement("bootPolicyName", "")
                                 .putElement("descr", "")
@@ -94,14 +99,8 @@ public class UcsCommands {
                                 .putElement("usrLbl", "")
                                 .putElement("uuid", "")
                                 .putElement("vconProfileName", "")
-                                .putElement("lsBinding", new XmlObject("lsBinding")
-                                            .putElement("pnDn", bladeDn)
-                                            .putElement("restrictMigration", "no")
-                                            .putElement("rn", "pn")
-                                        )
-                                )
-                        )
-                );
+                                .putElement("lsBinding",
+                                    new XmlObject("lsBinding").putElement("pnDn", bladeDn).putElement("restrictMigration", "no").putElement("rn", "pn")))));
 
         return cmd.dump();
     }

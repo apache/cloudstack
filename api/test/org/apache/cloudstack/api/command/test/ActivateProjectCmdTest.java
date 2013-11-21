@@ -19,12 +19,14 @@ package org.apache.cloudstack.api.command.test;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
-import org.apache.cloudstack.api.command.user.project.ActivateProjectCmd;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
+
+import org.apache.cloudstack.api.command.user.project.ActivateProjectCmd;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
@@ -38,6 +40,7 @@ public class ActivateProjectCmdTest extends TestCase {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    @Override
     @Before
     public void setUp() {
 
@@ -54,15 +57,13 @@ public class ActivateProjectCmdTest extends TestCase {
     @Test
     public void testGetEntityOwnerIdForNullProject() {
         ProjectService projectService = Mockito.mock(ProjectService.class);
-        Mockito.when(projectService.getProject(Mockito.anyLong())).thenReturn(
-                null);
+        Mockito.when(projectService.getProject(Matchers.anyLong())).thenReturn(null);
         activateProjectCmd._projectService = projectService;
 
         try {
             activateProjectCmd.getEntityOwnerId();
         } catch (InvalidParameterValueException exception) {
-            Assert.assertEquals("Unable to find project by id 2",
-                    exception.getLocalizedMessage());
+            Assert.assertEquals("Unable to find project by id 2", exception.getLocalizedMessage());
         }
     }
 
@@ -73,11 +74,9 @@ public class ActivateProjectCmdTest extends TestCase {
         ProjectService projectService = Mockito.mock(ProjectService.class);
         Account account = Mockito.mock(Account.class);
         Mockito.when(account.getId()).thenReturn(2L);
-        Mockito.when(projectService.getProject(Mockito.anyLong())).thenReturn(
-                project);
+        Mockito.when(projectService.getProject(Matchers.anyLong())).thenReturn(project);
 
-        Mockito.when(projectService.getProjectOwner(Mockito.anyLong()))
-                .thenReturn(account);
+        Mockito.when(projectService.getProjectOwner(Matchers.anyLong())).thenReturn(account);
         activateProjectCmd._projectService = projectService;
 
         Assert.assertEquals(2L, activateProjectCmd.getEntityOwnerId());

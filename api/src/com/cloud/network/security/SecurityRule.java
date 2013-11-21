@@ -29,9 +29,10 @@ public interface SecurityRule extends Identity, InternalIdentity {
             _type = type;
         }
 
-        public String getType(){
+        public String getType() {
             return _type;
         }
+
         private final String _type;
     }
 

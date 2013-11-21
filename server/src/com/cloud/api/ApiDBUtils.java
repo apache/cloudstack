@@ -408,116 +408,223 @@ public class ApiDBUtils {
     private ManagementServer ms;
     @Inject
     public AsyncJobManager asyncMgr;
-    @Inject private SecurityGroupManager securityGroupMgr;
-    @Inject private StorageManager storageMgr;
-    @Inject private UserVmManager userVmMgr;
-    @Inject private NetworkModel networkModel;
-    @Inject private NetworkOrchestrationService networkMgr;
-    @Inject private StatsCollector statsCollector;
-    @Inject private TemplateManager templateMgr;
-    @Inject private VolumeOrchestrationService volumeMgr;
+    @Inject
+    private SecurityGroupManager securityGroupMgr;
+    @Inject
+    private StorageManager storageMgr;
+    @Inject
+    private UserVmManager userVmMgr;
+    @Inject
+    private NetworkModel networkModel;
+    @Inject
+    private NetworkOrchestrationService networkMgr;
+    @Inject
+    private StatsCollector statsCollector;
+    @Inject
+    private TemplateManager templateMgr;
+    @Inject
+    private VolumeOrchestrationService volumeMgr;
 
-    @Inject private AccountDao accountDao;
-    @Inject private AccountVlanMapDao accountVlanMapDao;
-    @Inject private ClusterDao clusterDao;
-    @Inject private CapacityDao capacityDao;
-    @Inject private DataCenterJoinDao dcJoinDao;
-    @Inject private DiskOfferingDao diskOfferingDao;
-    @Inject private DiskOfferingJoinDao diskOfferingJoinDao;
-    @Inject private DomainDao domainDao;
-    @Inject private DomainRouterDao domainRouterDao;
-    @Inject private DomainRouterJoinDao domainRouterJoinDao;
-    @Inject private GuestOSDao guestOSDao;
-    @Inject private GuestOSCategoryDao guestOSCategoryDao;
-    @Inject private HostDao hostDao;
-    @Inject private AccountGuestVlanMapDao accountGuestVlanMapDao;
-    @Inject private IPAddressDao ipAddressDao;
-    @Inject private LoadBalancerDao loadBalancerDao;
-    @Inject private SecurityGroupDao securityGroupDao;
-    @Inject private SecurityGroupJoinDao securityGroupJoinDao;
-    @Inject private ServiceOfferingJoinDao serviceOfferingJoinDao;
-    @Inject private NetworkRuleConfigDao networkRuleConfigDao;
-    @Inject private HostPodDao podDao;
-    @Inject private ServiceOfferingDao serviceOfferingDao;
-    @Inject private SnapshotDao snapshotDao;
-    @Inject private PrimaryDataStoreDao storagePoolDao;
-    @Inject private VMTemplateDao templateDao;
-    @Inject private VMTemplateDetailsDao templateDetailsDao;
-    @Inject private UploadDao uploadDao;
-    @Inject private UserDao userDao;
-    @Inject private UserStatisticsDao userStatsDao;
-    @Inject private UserVmDao userVmDao;
-    @Inject private UserVmJoinDao userVmJoinDao;
-    @Inject private VlanDao vlanDao;
-    @Inject private VolumeDao volumeDao;
-    @Inject private Site2SiteVpnGatewayDao site2SiteVpnGatewayDao;
-    @Inject private Site2SiteCustomerGatewayDao site2SiteCustomerGatewayDao;
-    @Inject private DataCenterDao zoneDao;
-    @Inject private NetworkOfferingDao networkOfferingDao;
-    @Inject private NetworkDao networkDao;
-    @Inject private PhysicalNetworkDao physicalNetworkDao;
-    @Inject private ConfigurationService configSvc;
-    @Inject private ConfigurationDao configDao;
-    @Inject private ConsoleProxyDao consoleProxyDao;
-    @Inject private FirewallRulesCidrsDao firewallCidrsDao;
-    @Inject private VMInstanceDao vmDao;
-    @Inject private ResourceLimitService resourceLimitMgr;
-    @Inject private ProjectService projectMgr;
-    @Inject private ResourceManager resourceMgr;
-    @Inject private AccountDetailsDao accountDetailsDao;
-    @Inject private NetworkDomainDao networkDomainDao;
-    @Inject private HighAvailabilityManager haMgr;
-    @Inject private VpcManager vpcMgr;
-    @Inject private TaggedResourceService taggedResourceService;
-    @Inject private UserVmDetailsDao userVmDetailsDao;
-    @Inject private SSHKeyPairDao sshKeyPairDao;
+    @Inject
+    private AccountDao accountDao;
+    @Inject
+    private AccountVlanMapDao accountVlanMapDao;
+    @Inject
+    private ClusterDao clusterDao;
+    @Inject
+    private CapacityDao capacityDao;
+    @Inject
+    private DataCenterJoinDao dcJoinDao;
+    @Inject
+    private DiskOfferingDao diskOfferingDao;
+    @Inject
+    private DiskOfferingJoinDao diskOfferingJoinDao;
+    @Inject
+    private DomainDao domainDao;
+    @Inject
+    private DomainRouterDao domainRouterDao;
+    @Inject
+    private DomainRouterJoinDao domainRouterJoinDao;
+    @Inject
+    private GuestOSDao guestOSDao;
+    @Inject
+    private GuestOSCategoryDao guestOSCategoryDao;
+    @Inject
+    private HostDao hostDao;
+    @Inject
+    private AccountGuestVlanMapDao accountGuestVlanMapDao;
+    @Inject
+    private IPAddressDao ipAddressDao;
+    @Inject
+    private LoadBalancerDao loadBalancerDao;
+    @Inject
+    private SecurityGroupDao securityGroupDao;
+    @Inject
+    private SecurityGroupJoinDao securityGroupJoinDao;
+    @Inject
+    private ServiceOfferingJoinDao serviceOfferingJoinDao;
+    @Inject
+    private NetworkRuleConfigDao networkRuleConfigDao;
+    @Inject
+    private HostPodDao podDao;
+    @Inject
+    private ServiceOfferingDao serviceOfferingDao;
+    @Inject
+    private SnapshotDao snapshotDao;
+    @Inject
+    private PrimaryDataStoreDao storagePoolDao;
+    @Inject
+    private VMTemplateDao templateDao;
+    @Inject
+    private VMTemplateDetailsDao templateDetailsDao;
+    @Inject
+    private UploadDao uploadDao;
+    @Inject
+    private UserDao userDao;
+    @Inject
+    private UserStatisticsDao userStatsDao;
+    @Inject
+    private UserVmDao userVmDao;
+    @Inject
+    private UserVmJoinDao userVmJoinDao;
+    @Inject
+    private VlanDao vlanDao;
+    @Inject
+    private VolumeDao volumeDao;
+    @Inject
+    private Site2SiteVpnGatewayDao site2SiteVpnGatewayDao;
+    @Inject
+    private Site2SiteCustomerGatewayDao site2SiteCustomerGatewayDao;
+    @Inject
+    private DataCenterDao zoneDao;
+    @Inject
+    private NetworkOfferingDao networkOfferingDao;
+    @Inject
+    private NetworkDao networkDao;
+    @Inject
+    private PhysicalNetworkDao physicalNetworkDao;
+    @Inject
+    private ConfigurationService configSvc;
+    @Inject
+    private ConfigurationDao configDao;
+    @Inject
+    private ConsoleProxyDao consoleProxyDao;
+    @Inject
+    private FirewallRulesCidrsDao firewallCidrsDao;
+    @Inject
+    private VMInstanceDao vmDao;
+    @Inject
+    private ResourceLimitService resourceLimitMgr;
+    @Inject
+    private ProjectService projectMgr;
+    @Inject
+    private ResourceManager resourceMgr;
+    @Inject
+    private AccountDetailsDao accountDetailsDao;
+    @Inject
+    private NetworkDomainDao networkDomainDao;
+    @Inject
+    private HighAvailabilityManager haMgr;
+    @Inject
+    private VpcManager vpcMgr;
+    @Inject
+    private TaggedResourceService taggedResourceService;
+    @Inject
+    private UserVmDetailsDao userVmDetailsDao;
+    @Inject
+    private SSHKeyPairDao sshKeyPairDao;
 
-    @Inject private ConditionDao asConditionDao;
-    @Inject private AutoScalePolicyConditionMapDao asPolicyConditionMapDao;
-    @Inject private AutoScaleVmGroupPolicyMapDao asVmGroupPolicyMapDao;
-    @Inject private AutoScalePolicyDao asPolicyDao;
-    @Inject private AutoScaleVmProfileDao asVmProfileDao;
-    @Inject private AutoScaleVmGroupDao asVmGroupDao;
-    @Inject private CounterDao counterDao;
-    @Inject private ResourceTagJoinDao tagJoinDao;
-    @Inject private EventJoinDao eventJoinDao;
-    @Inject private InstanceGroupJoinDao vmGroupJoinDao;
-    @Inject private UserAccountJoinDao userAccountJoinDao;
-    @Inject private ProjectJoinDao projectJoinDao;
-    @Inject private ProjectAccountJoinDao projectAccountJoinDao;
-    @Inject private ProjectInvitationJoinDao projectInvitationJoinDao;
-    @Inject private HostJoinDao hostJoinDao;
-    @Inject private VolumeJoinDao volJoinDao;
-    @Inject private StoragePoolJoinDao poolJoinDao;
-    @Inject private ImageStoreJoinDao imageStoreJoinDao;
-    @Inject private AccountJoinDao accountJoinDao;
-    @Inject private AsyncJobJoinDao jobJoinDao;
-    @Inject private TemplateJoinDao templateJoinDao;
+    @Inject
+    private ConditionDao asConditionDao;
+    @Inject
+    private AutoScalePolicyConditionMapDao asPolicyConditionMapDao;
+    @Inject
+    private AutoScaleVmGroupPolicyMapDao asVmGroupPolicyMapDao;
+    @Inject
+    private AutoScalePolicyDao asPolicyDao;
+    @Inject
+    private AutoScaleVmProfileDao asVmProfileDao;
+    @Inject
+    private AutoScaleVmGroupDao asVmGroupDao;
+    @Inject
+    private CounterDao counterDao;
+    @Inject
+    private ResourceTagJoinDao tagJoinDao;
+    @Inject
+    private EventJoinDao eventJoinDao;
+    @Inject
+    private InstanceGroupJoinDao vmGroupJoinDao;
+    @Inject
+    private UserAccountJoinDao userAccountJoinDao;
+    @Inject
+    private ProjectJoinDao projectJoinDao;
+    @Inject
+    private ProjectAccountJoinDao projectAccountJoinDao;
+    @Inject
+    private ProjectInvitationJoinDao projectInvitationJoinDao;
+    @Inject
+    private HostJoinDao hostJoinDao;
+    @Inject
+    private VolumeJoinDao volJoinDao;
+    @Inject
+    private StoragePoolJoinDao poolJoinDao;
+    @Inject
+    private ImageStoreJoinDao imageStoreJoinDao;
+    @Inject
+    private AccountJoinDao accountJoinDao;
+    @Inject
+    private AsyncJobJoinDao jobJoinDao;
+    @Inject
+    private TemplateJoinDao templateJoinDao;
 
-    @Inject private PhysicalNetworkTrafficTypeDao physicalNetworkTrafficTypeDao;
-    @Inject private PhysicalNetworkServiceProviderDao physicalNetworkServiceProviderDao;
-    @Inject private FirewallRulesDao firewallRuleDao;
-    @Inject private StaticRouteDao staticRouteDao;
-    @Inject private VpcGatewayDao vpcGatewayDao;
-    @Inject private VpcDao vpcDao;
-    @Inject private VpcOfferingDao vpcOfferingDao;
-    @Inject private SnapshotPolicyDao snapshotPolicyDao;
-    @Inject private AsyncJobDao asyncJobDao;
-    @Inject private HostDetailsDao hostDetailsDao;
-    @Inject private ClusterDetailsDao clusterDetailsDao;
-    @Inject private VMSnapshotDao vmSnapshotDao;
-    @Inject private NicSecondaryIpDao nicSecondaryIpDao;
-    @Inject private VpcProvisioningService vpcProvSvc;
-    @Inject private ApplicationLoadBalancerRuleDao _appLbDao;
-    @Inject private AffinityGroupDao affinityGroupDao;
-    @Inject private AffinityGroupJoinDao affinityGroupJoinDao;
-    @Inject private GlobalLoadBalancingRulesService gslbService;
-    @Inject private NetworkACLDao networkACLDao;
-    @Inject private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
-    @Inject private AccountService accountService;
-    @Inject private ConfigurationManager configMgr;
-    @Inject private DataCenterDetailsDao zoneDetailsDao;
-    @Inject private  ResourceMetaDataService resourceDetailsService;
+    @Inject
+    private PhysicalNetworkTrafficTypeDao physicalNetworkTrafficTypeDao;
+    @Inject
+    private PhysicalNetworkServiceProviderDao physicalNetworkServiceProviderDao;
+    @Inject
+    private FirewallRulesDao firewallRuleDao;
+    @Inject
+    private StaticRouteDao staticRouteDao;
+    @Inject
+    private VpcGatewayDao vpcGatewayDao;
+    @Inject
+    private VpcDao vpcDao;
+    @Inject
+    private VpcOfferingDao vpcOfferingDao;
+    @Inject
+    private SnapshotPolicyDao snapshotPolicyDao;
+    @Inject
+    private AsyncJobDao asyncJobDao;
+    @Inject
+    private HostDetailsDao hostDetailsDao;
+    @Inject
+    private ClusterDetailsDao clusterDetailsDao;
+    @Inject
+    private VMSnapshotDao vmSnapshotDao;
+    @Inject
+    private NicSecondaryIpDao nicSecondaryIpDao;
+    @Inject
+    private VpcProvisioningService vpcProvSvc;
+    @Inject
+    private ApplicationLoadBalancerRuleDao _appLbDao;
+    @Inject
+    private AffinityGroupDao affinityGroupDao;
+    @Inject
+    private AffinityGroupJoinDao affinityGroupJoinDao;
+    @Inject
+    private GlobalLoadBalancingRulesService gslbService;
+    @Inject
+    private NetworkACLDao networkACLDao;
+    @Inject
+    private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+    @Inject
+    private AccountService accountService;
+    @Inject
+    private ConfigurationManager configMgr;
+    @Inject
+    private DataCenterDetailsDao zoneDetailsDao;
+    @Inject
+    private ResourceMetaDataService resourceDetailsService;
 
     @PostConstruct
     void init() {
@@ -645,7 +752,7 @@ public class ApiDBUtils {
         // so if this Utils class can have some kind of config rather than a static initializer (maybe from
         // management server instantiation?) then maybe the management server method can be moved entirely
         // into this utils class.
-        return _ms.getMemoryOrCpuCapacityByHost(hostId,capacityType);
+        return _ms.getMemoryOrCpuCapacityByHost(hostId, capacityType);
     }
 
     public static long getStorageCapacitybyPool(Long poolId, short capacityType) {
@@ -656,15 +763,15 @@ public class ApiDBUtils {
         return _ms.getMemoryOrCpuCapacityByHost(poolId, capacityType);
     }
 
-    public static List<SummedCapacity> getCapacityByClusterPodZone(Long zoneId, Long podId, Long clusterId){
-        return _capacityDao.findByClusterPodZone(zoneId,podId,clusterId);
+    public static List<SummedCapacity> getCapacityByClusterPodZone(Long zoneId, Long podId, Long clusterId) {
+        return _capacityDao.findByClusterPodZone(zoneId, podId, clusterId);
     }
 
-    public static List<SummedCapacity> findNonSharedStorageForClusterPodZone(Long zoneId, Long podId, Long clusterId){
-        return _capacityDao.findNonSharedStorageForClusterPodZone(zoneId,podId,clusterId);
+    public static List<SummedCapacity> findNonSharedStorageForClusterPodZone(Long zoneId, Long podId, Long clusterId) {
+        return _capacityDao.findNonSharedStorageForClusterPodZone(zoneId, podId, clusterId);
     }
 
-    public static List<CapacityVO> getCapacityByPod(){
+    public static List<CapacityVO> getCapacityByPod() {
         return null;
 
     }
@@ -678,8 +785,7 @@ public class ApiDBUtils {
     }
 
     public static List<UserVmJoinVO> searchForUserVMs(Criteria c, List<Long> permittedAccounts) {
-        return _userVmMgr.searchForUserVMs(c, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM),
-                null, false, permittedAccounts, false, null, null).first();
+        return _userVmMgr.searchForUserVMs(c, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM), null, false, permittedAccounts, false, null, null).first();
     }
 
     public static List<? extends StoragePoolVO> searchForStoragePools(Criteria c) {
@@ -759,11 +865,11 @@ public class ApiDBUtils {
         return _statsCollector.getStorageStats(id);
     }
 
-    public static CapacityVO getStoragePoolUsedStats(Long poolId, Long clusterId, Long podId, Long zoneId){
+    public static CapacityVO getStoragePoolUsedStats(Long poolId, Long clusterId, Long podId, Long zoneId) {
         return _storageMgr.getStoragePoolUsedStats(poolId, clusterId, podId, zoneId);
     }
 
-    public static CapacityVO getSecondaryStorageUsedStats(Long hostId, Long zoneId){
+    public static CapacityVO getSecondaryStorageUsedStats(Long hostId, Long zoneId) {
         return _storageMgr.getSecondaryStorageUsedStats(hostId, zoneId);
     }
 
@@ -787,8 +893,8 @@ public class ApiDBUtils {
         return _clusterDao.findById(clusterId);
     }
 
-    public static String findClusterDetails(long clusterId, String name){
-        ClusterDetailsVO detailsVO = _clusterDetailsDao.findDetail(clusterId,name);
+    public static String findClusterDetails(long clusterId, String name) {
+        ClusterDetailsVO detailsVO = _clusterDetailsDao.findDetail(clusterId, name);
         if (detailsVO != null) {
             return detailsVO.getValue();
         }
@@ -890,15 +996,14 @@ public class ApiDBUtils {
 
     public static VMTemplateVO findTemplateById(Long templateId) {
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(templateId);
-        if(template != null) {
+        if (template != null) {
             Map<String, String> details = _templateDetailsDao.listDetailsKeyPairs(templateId);
-            if(details != null && !details.isEmpty()) {
+            if (details != null && !details.isEmpty()) {
                 template.setDetails(details);
             }
         }
         return template;
     }
-
 
     public static UploadVO findUploadById(Long id) {
         return _uploadDao.findById(id);
@@ -958,10 +1063,9 @@ public class ApiDBUtils {
         return _volumeDao.getHypervisorType(volumeId);
     }
 
-    public static HypervisorType getHypervisorTypeFromFormat(ImageFormat format){
+    public static HypervisorType getHypervisorTypeFromFormat(ImageFormat format) {
         return _storageMgr.getHypervisorTypeFromFormat(format);
     }
-
 
     public static List<UserStatisticsVO> listUserStatsBy(Long accountId) {
         return _userStatsDao.listBy(accountId);
@@ -1057,9 +1161,9 @@ public class ApiDBUtils {
         return cpuOverprovisioningFactor;
     }
 
-    public static boolean isExtractionDisabled(){
+    public static boolean isExtractionDisabled() {
         String disableExtractionString = _configDao.getValue(Config.DisableExtraction.toString());
-        boolean disableExtraction  = (disableExtractionString == null) ? false : Boolean.parseBoolean(disableExtractionString);
+        boolean disableExtraction = (disableExtractionString == null) ? false : Boolean.parseBoolean(disableExtractionString);
         return disableExtraction;
     }
 
@@ -1071,7 +1175,7 @@ public class ApiDBUtils {
         return _consoleProxyDao.findById(id);
     }
 
-    public static List<String> findFirewallSourceCidrs(long id){
+    public static List<String> findFirewallSourceCidrs(long id) {
         return _firewallCidrsDao.getSourceCidrs(id);
     }
 
@@ -1165,8 +1269,8 @@ public class ApiDBUtils {
     public static List<? extends ResourceTag> listByResourceTypeAndId(ResourceObjectType type, long resourceId) {
         return _taggedResourceService.listByResourceTypeAndId(type, resourceId);
     }
-    public static List<ConditionVO> getAutoScalePolicyConditions(long policyId)
-    {
+
+    public static List<ConditionVO> getAutoScalePolicyConditions(long policyId) {
         List<AutoScalePolicyConditionMapVO> vos = _asPolicyConditionMapDao.listByAll(policyId, null);
         ArrayList<ConditionVO> conditions = new ArrayList<ConditionVO>(vos.size());
         for (AutoScalePolicyConditionMapVO vo : vos) {
@@ -1176,18 +1280,18 @@ public class ApiDBUtils {
         return conditions;
     }
 
-    public static void getAutoScaleVmGroupPolicyIds(long vmGroupId, List<Long> scaleUpPolicyIds, List<Long> scaleDownPolicyIds)
-    {
+    public static void getAutoScaleVmGroupPolicyIds(long vmGroupId, List<Long> scaleUpPolicyIds, List<Long> scaleDownPolicyIds) {
         List<AutoScaleVmGroupPolicyMapVO> vos = _asVmGroupPolicyMapDao.listByVmGroupId(vmGroupId);
         for (AutoScaleVmGroupPolicyMapVO vo : vos) {
             AutoScalePolicy autoScalePolicy = _asPolicyDao.findById(vo.getPolicyId());
-            if(autoScalePolicy.getAction().equals("scaleup")) {
+            if (autoScalePolicy.getAction().equals("scaleup")) {
                 scaleUpPolicyIds.add(autoScalePolicy.getId());
             } else {
                 scaleDownPolicyIds.add(autoScalePolicy.getId());
             }
         }
     }
+
     public static String getKeyPairName(String sshPublicKey) {
         SSHKeyPairVO sshKeyPair = _sshKeyPairDao.findByPublicKey(sshPublicKey);
         //key might be removed prior to this point
@@ -1197,16 +1301,15 @@ public class ApiDBUtils {
         return null;
     }
 
-    public static UserVmDetailVO  findPublicKeyByVmId(long vmId) {
+    public static UserVmDetailVO findPublicKeyByVmId(long vmId) {
         return _userVmDetailsDao.findDetail(vmId, "SSH.PublicKey");
     }
 
-    public static void getAutoScaleVmGroupPolicies(long vmGroupId, List<AutoScalePolicy> scaleUpPolicies, List<AutoScalePolicy> scaleDownPolicies)
-    {
+    public static void getAutoScaleVmGroupPolicies(long vmGroupId, List<AutoScalePolicy> scaleUpPolicies, List<AutoScalePolicy> scaleDownPolicies) {
         List<AutoScaleVmGroupPolicyMapVO> vos = _asVmGroupPolicyMapDao.listByVmGroupId(vmGroupId);
         for (AutoScaleVmGroupPolicyMapVO vo : vos) {
             AutoScalePolicy autoScalePolicy = _asPolicyDao.findById(vo.getPolicyId());
-            if(autoScalePolicy.getAction().equals("scaleup")) {
+            if (autoScalePolicy.getAction().equals("scaleup")) {
                 scaleUpPolicies.add(autoScalePolicy);
             } else {
                 scaleDownPolicies.add(autoScalePolicy);
@@ -1218,64 +1321,64 @@ public class ApiDBUtils {
         return _counterDao.findById(counterId);
     }
 
-    public static ConditionVO findConditionById(long conditionId){
+    public static ConditionVO findConditionById(long conditionId) {
         return _asConditionDao.findById(conditionId);
     }
 
-    public static PhysicalNetworkServiceProviderVO findPhysicalNetworkServiceProviderById(long providerId){
+    public static PhysicalNetworkServiceProviderVO findPhysicalNetworkServiceProviderById(long providerId) {
         return _physicalNetworkServiceProviderDao.findById(providerId);
     }
 
-    public static FirewallRuleVO findFirewallRuleById(long ruleId){
+    public static FirewallRuleVO findFirewallRuleById(long ruleId) {
         return _firewallRuleDao.findById(ruleId);
     }
 
-    public static StaticRouteVO findStaticRouteById(long routeId){
+    public static StaticRouteVO findStaticRouteById(long routeId) {
         return _staticRouteDao.findById(routeId);
     }
 
-    public static VpcGatewayVO findVpcGatewayById(long gatewayId){
+    public static VpcGatewayVO findVpcGatewayById(long gatewayId) {
         return _vpcGatewayDao.findById(gatewayId);
     }
 
-    public static AutoScalePolicyVO findAutoScalePolicyById(long policyId){
+    public static AutoScalePolicyVO findAutoScalePolicyById(long policyId) {
         return _asPolicyDao.findById(policyId);
     }
 
-    public static AutoScaleVmProfileVO findAutoScaleVmProfileById(long profileId){
+    public static AutoScaleVmProfileVO findAutoScaleVmProfileById(long profileId) {
         return _asVmProfileDao.findById(profileId);
     }
 
-    public static AutoScaleVmGroupVO findAutoScaleVmGroupById(long groupId){
+    public static AutoScaleVmGroupVO findAutoScaleVmGroupById(long groupId) {
         return _asVmGroupDao.findById(groupId);
     }
 
-    public static GuestOSCategoryVO findGuestOsCategoryById(long catId){
+    public static GuestOSCategoryVO findGuestOsCategoryById(long catId) {
         return _guestOSCategoryDao.findById(catId);
     }
 
-    public static VpcVO findVpcById(long vpcId){
+    public static VpcVO findVpcById(long vpcId) {
         return _vpcDao.findById(vpcId);
     }
 
-    public static SnapshotPolicy findSnapshotPolicyById(long policyId){
+    public static SnapshotPolicy findSnapshotPolicyById(long policyId) {
         return _snapshotPolicyDao.findById(policyId);
     }
 
-    public static VpcOffering findVpcOfferingById(long offeringId){
+    public static VpcOffering findVpcOfferingById(long offeringId) {
         return _vpcOfferingDao.findById(offeringId);
     }
 
-    public static NetworkACL findByNetworkACLId(long aclId){
+    public static NetworkACL findByNetworkACLId(long aclId) {
         return _networkACLDao.findById(aclId);
     }
 
-    public static AsyncJob findAsyncJobById(long jobId){
+    public static AsyncJob findAsyncJobById(long jobId) {
         return _asyncJobDao.findById(jobId);
     }
 
-    public static String findJobInstanceUuid(AsyncJob job){
-        if ( job == null ) {
+    public static String findJobInstanceUuid(AsyncJob job) {
+        if (job == null) {
             return null;
         }
         String jobInstanceId = null;
@@ -1291,8 +1394,8 @@ public class ApiDBUtils {
             if (template != null) {
                 jobInstanceId = template.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.VirtualMachine || jobInstanceType == ApiCommandJobType.ConsoleProxy
-                || jobInstanceType == ApiCommandJobType.SystemVm || jobInstanceType == ApiCommandJobType.DomainRouter) {
+        } else if (jobInstanceType == ApiCommandJobType.VirtualMachine || jobInstanceType == ApiCommandJobType.ConsoleProxy ||
+            jobInstanceType == ApiCommandJobType.SystemVm || jobInstanceType == ApiCommandJobType.DomainRouter) {
             VMInstanceVO vm = ApiDBUtils.findVMInstanceById(job.getInstanceId());
             if (vm != null) {
                 jobInstanceId = vm.getUuid();
@@ -1403,11 +1506,11 @@ public class ApiDBUtils {
         return _domainRouterJoinDao.newDomainRouterResponse(vr, caller);
     }
 
-    public static DomainRouterResponse fillRouterDetails(DomainRouterResponse vrData, DomainRouterJoinVO vr){
+    public static DomainRouterResponse fillRouterDetails(DomainRouterResponse vrData, DomainRouterJoinVO vr) {
         return _domainRouterJoinDao.setDomainRouterResponse(vrData, vr);
     }
 
-    public static List<DomainRouterJoinVO> newDomainRouterView(VirtualRouter vr){
+    public static List<DomainRouterJoinVO> newDomainRouterView(VirtualRouter vr) {
         return _domainRouterJoinDao.newDomainRouterView(vr);
     }
 
@@ -1415,11 +1518,11 @@ public class ApiDBUtils {
         return _userVmJoinDao.newUserVmResponse(objectName, userVm, details, caller);
     }
 
-    public static UserVmResponse fillVmDetails(UserVmResponse vmData, UserVmJoinVO vm){
+    public static UserVmResponse fillVmDetails(UserVmResponse vmData, UserVmJoinVO vm) {
         return _userVmJoinDao.setUserVmResponse(vmData, vm);
     }
 
-    public static List<UserVmJoinVO> newUserVmView(UserVm... userVms){
+    public static List<UserVmJoinVO> newUserVmView(UserVm... userVms) {
         return _userVmJoinDao.newUserVmView(userVms);
     }
 
@@ -1427,15 +1530,15 @@ public class ApiDBUtils {
         return _securityGroupJoinDao.newSecurityGroupResponse(vsg, caller);
     }
 
-    public static SecurityGroupResponse fillSecurityGroupDetails(SecurityGroupResponse vsgData, SecurityGroupJoinVO sg){
+    public static SecurityGroupResponse fillSecurityGroupDetails(SecurityGroupResponse vsgData, SecurityGroupJoinVO sg) {
         return _securityGroupJoinDao.setSecurityGroupResponse(vsgData, sg);
     }
 
-    public static List<SecurityGroupJoinVO> newSecurityGroupView(SecurityGroup sg){
+    public static List<SecurityGroupJoinVO> newSecurityGroupView(SecurityGroup sg) {
         return _securityGroupJoinDao.newSecurityGroupView(sg);
     }
 
-    public static List<SecurityGroupJoinVO> findSecurityGroupViewById(Long sgId){
+    public static List<SecurityGroupJoinVO> findSecurityGroupViewById(Long sgId) {
         return _securityGroupJoinDao.searchByIds(sgId);
     }
 
@@ -1443,16 +1546,15 @@ public class ApiDBUtils {
         return _tagJoinDao.newResourceTagResponse(vsg, keyValueOnly);
     }
 
-    public static ResourceTagJoinVO newResourceTagView(ResourceTag sg){
+    public static ResourceTagJoinVO newResourceTagView(ResourceTag sg) {
         return _tagJoinDao.newResourceTagView(sg);
     }
 
-    public static ResourceTagJoinVO findResourceTagViewById(Long tagId){
+    public static ResourceTagJoinVO findResourceTagViewById(Long tagId) {
         List<ResourceTagJoinVO> tags = _tagJoinDao.searchByIds(tagId);
-        if ( tags != null && tags.size() > 0 ){
+        if (tags != null && tags.size() > 0) {
             return tags.get(0);
-        }
-        else{
+        } else {
             return null;
         }
     }
@@ -1461,7 +1563,7 @@ public class ApiDBUtils {
         return _eventJoinDao.newEventResponse(ve);
     }
 
-    public static EventJoinVO newEventView(Event e){
+    public static EventJoinVO newEventView(Event e) {
         return _eventJoinDao.newEventView(e);
     }
 
@@ -1469,13 +1571,14 @@ public class ApiDBUtils {
         return _vmGroupJoinDao.newInstanceGroupResponse(ve);
     }
 
-    public static InstanceGroupJoinVO newInstanceGroupView(InstanceGroup e){
+    public static InstanceGroupJoinVO newInstanceGroupView(InstanceGroup e) {
         return _vmGroupJoinDao.newInstanceGroupView(e);
     }
 
     public static UserResponse newUserResponse(UserAccountJoinVO usr) {
         return newUserResponse(usr, null);
     }
+
     public static UserResponse newUserResponse(UserAccountJoinVO usr, Long domainId) {
         UserResponse response = _userAccountJoinDao.newUserResponse(usr);
         if (domainId != null && usr.getDomainId() != domainId)
@@ -1485,11 +1588,11 @@ public class ApiDBUtils {
         return response;
     }
 
-    public static UserAccountJoinVO newUserView(User usr){
+    public static UserAccountJoinVO newUserView(User usr) {
         return _userAccountJoinDao.newUserView(usr);
     }
 
-    public static UserAccountJoinVO newUserView(UserAccount usr){
+    public static UserAccountJoinVO newUserView(UserAccount usr) {
         return _userAccountJoinDao.newUserView(usr);
     }
 
@@ -1497,15 +1600,15 @@ public class ApiDBUtils {
         return _projectJoinDao.newProjectResponse(proj);
     }
 
-    public static ProjectResponse fillProjectDetails(ProjectResponse rsp, ProjectJoinVO proj){
-        return _projectJoinDao.setProjectResponse(rsp,proj);
+    public static ProjectResponse fillProjectDetails(ProjectResponse rsp, ProjectJoinVO proj) {
+        return _projectJoinDao.setProjectResponse(rsp, proj);
     }
 
-    public static List<ProjectJoinVO> newProjectView(Project proj){
+    public static List<ProjectJoinVO> newProjectView(Project proj) {
         return _projectJoinDao.newProjectView(proj);
     }
 
-    public static List<UserAccountJoinVO> findUserViewByAccountId(Long accountId){
+    public static List<UserAccountJoinVO> findUserViewByAccountId(Long accountId) {
         return _userAccountJoinDao.searchByAccountId(accountId);
     }
 
@@ -1529,7 +1632,7 @@ public class ApiDBUtils {
         return _hostJoinDao.newHostResponse(vr, details);
     }
 
-    public static HostResponse fillHostDetails(HostResponse vrData, HostJoinVO vr){
+    public static HostResponse fillHostDetails(HostResponse vrData, HostJoinVO vr) {
         return _hostJoinDao.setHostResponse(vrData, vr);
     }
 
@@ -1541,7 +1644,7 @@ public class ApiDBUtils {
         return _hostJoinDao.setHostForMigrationResponse(vrData, vr);
     }
 
-    public static List<HostJoinVO> newHostView(Host vr){
+    public static List<HostJoinVO> newHostView(Host vr) {
         return _hostJoinDao.newHostView(vr);
     }
 
@@ -1549,12 +1652,11 @@ public class ApiDBUtils {
         return _volJoinDao.newVolumeResponse(vr);
     }
 
-
-    public static VolumeResponse fillVolumeDetails(VolumeResponse vrData, VolumeJoinVO vr){
+    public static VolumeResponse fillVolumeDetails(VolumeResponse vrData, VolumeJoinVO vr) {
         return _volJoinDao.setVolumeResponse(vrData, vr);
     }
 
-    public static List<VolumeJoinVO> newVolumeView(Volume vr){
+    public static List<VolumeJoinVO> newVolumeView(Volume vr) {
         return _volJoinDao.newVolumeView(vr);
     }
 
@@ -1562,7 +1664,7 @@ public class ApiDBUtils {
         return _poolJoinDao.newStoragePoolResponse(vr);
     }
 
-    public static StoragePoolResponse fillStoragePoolDetails(StoragePoolResponse vrData, StoragePoolJoinVO vr){
+    public static StoragePoolResponse fillStoragePoolDetails(StoragePoolResponse vrData, StoragePoolJoinVO vr) {
         return _poolJoinDao.setStoragePoolResponse(vrData, vr);
     }
 
@@ -1570,12 +1672,11 @@ public class ApiDBUtils {
         return _poolJoinDao.newStoragePoolForMigrationResponse(vr);
     }
 
-    public static StoragePoolResponse fillStoragePoolForMigrationDetails(StoragePoolResponse
-            vrData, StoragePoolJoinVO vr){
+    public static StoragePoolResponse fillStoragePoolForMigrationDetails(StoragePoolResponse vrData, StoragePoolJoinVO vr) {
         return _poolJoinDao.setStoragePoolForMigrationResponse(vrData, vr);
     }
 
-    public static List<StoragePoolJoinVO> newStoragePoolView(StoragePool vr){
+    public static List<StoragePoolJoinVO> newStoragePoolView(StoragePool vr) {
         return _poolJoinDao.newStoragePoolView(vr);
     }
 
@@ -1583,20 +1684,19 @@ public class ApiDBUtils {
         return _imageStoreJoinDao.newImageStoreResponse(vr);
     }
 
-    public static ImageStoreResponse fillImageStoreDetails(ImageStoreResponse vrData, ImageStoreJoinVO vr){
+    public static ImageStoreResponse fillImageStoreDetails(ImageStoreResponse vrData, ImageStoreJoinVO vr) {
         return _imageStoreJoinDao.setImageStoreResponse(vrData, vr);
     }
 
-    public static List<ImageStoreJoinVO> newImageStoreView(ImageStore vr){
+    public static List<ImageStoreJoinVO> newImageStoreView(ImageStore vr) {
         return _imageStoreJoinDao.newImageStoreView(vr);
     }
-
 
     public static AccountResponse newAccountResponse(AccountJoinVO ve) {
         return _accountJoinDao.newAccountResponse(ve);
     }
 
-    public static AccountJoinVO newAccountView(Account e){
+    public static AccountJoinVO newAccountView(Account e) {
         return _accountJoinDao.newAccountView(e);
     }
 
@@ -1608,7 +1708,7 @@ public class ApiDBUtils {
         return _jobJoinDao.newAsyncJobResponse(ve);
     }
 
-    public static AsyncJobJoinVO newAsyncJobView(AsyncJob e){
+    public static AsyncJobJoinVO newAsyncJobView(AsyncJob e) {
         return _jobJoinDao.newAsyncJobView(e);
     }
 
@@ -1616,7 +1716,7 @@ public class ApiDBUtils {
         return _diskOfferingJoinDao.newDiskOfferingResponse(offering);
     }
 
-    public static DiskOfferingJoinVO newDiskOfferingView(DiskOffering offering){
+    public static DiskOfferingJoinVO newDiskOfferingView(DiskOffering offering) {
         return _diskOfferingJoinDao.newDiskOfferingView(offering);
     }
 
@@ -1624,7 +1724,7 @@ public class ApiDBUtils {
         return _serviceOfferingJoinDao.newServiceOfferingResponse(offering);
     }
 
-    public static ServiceOfferingJoinVO newServiceOfferingView(ServiceOffering offering){
+    public static ServiceOfferingJoinVO newServiceOfferingView(ServiceOffering offering) {
         return _serviceOfferingJoinDao.newServiceOfferingView(offering);
     }
 
@@ -1632,11 +1732,11 @@ public class ApiDBUtils {
         return _dcJoinDao.newDataCenterResponse(dc, showCapacities);
     }
 
-    public static DataCenterJoinVO newDataCenterView(DataCenter dc){
+    public static DataCenterJoinVO newDataCenterView(DataCenter dc) {
         return _dcJoinDao.newDataCenterView(dc);
     }
 
-    public static Map<String, String> findHostDetailsById(long hostId){
+    public static Map<String, String> findHostDetailsById(long hostId) {
         return _hostDetailsDao.findDetails(hostId);
     }
 
@@ -1648,26 +1748,23 @@ public class ApiDBUtils {
         return _templateJoinDao.newUpdateResponse(vr);
     }
 
-
     public static TemplateResponse newTemplateResponse(TemplateJoinVO vr) {
         return _templateJoinDao.newTemplateResponse(vr);
     }
-
 
     public static TemplateResponse newIsoResponse(TemplateJoinVO vr) {
         return _templateJoinDao.newIsoResponse(vr);
     }
 
-    public static TemplateResponse fillTemplateDetails(TemplateResponse vrData, TemplateJoinVO vr){
+    public static TemplateResponse fillTemplateDetails(TemplateResponse vrData, TemplateJoinVO vr) {
         return _templateJoinDao.setTemplateResponse(vrData, vr);
     }
 
-    public static List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate vr){
+    public static List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate vr) {
         return _templateJoinDao.newTemplateView(vr);
     }
 
-
-    public static List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate vr, long zoneId, boolean readyOnly){
+    public static List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate vr, long zoneId, boolean readyOnly) {
         return _templateJoinDao.newTemplateView(vr, zoneId, readyOnly);
     }
 
@@ -1705,8 +1802,8 @@ public class ApiDBUtils {
     public static boolean isAdmin(Account account) {
         return _accountService.isAdmin(account.getType());
     }
-    
-    public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType){
-        return  _tagJoinDao.listBy(resourceUUID, resourceType);
+
+    public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
+        return _tagJoinDao.listBy(resourceUUID, resourceType);
     }
 }

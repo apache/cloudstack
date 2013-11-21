@@ -27,17 +27,17 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={UserAccountDao.class})
+@Local(value = {UserAccountDao.class})
 public class UserAccountDaoImpl extends GenericDaoBase<UserAccountVO, Long> implements UserAccountDao {
-	
-	protected final SearchBuilder<UserAccountVO> userAccountSearch;
-	
+
+    protected final SearchBuilder<UserAccountVO> userAccountSearch;
+
     public UserAccountDaoImpl() {
-    	userAccountSearch = createSearchBuilder();
-    	userAccountSearch.and("apiKey", userAccountSearch.entity().getApiKey(), SearchCriteria.Op.EQ);
+        userAccountSearch = createSearchBuilder();
+        userAccountSearch.and("apiKey", userAccountSearch.entity().getApiKey(), SearchCriteria.Op.EQ);
         userAccountSearch.done();
     }
-	
+
     @Override
     public UserAccount getUserAccount(String username, Long domainId) {
         if ((username == null) || (domainId == null)) {
@@ -59,11 +59,11 @@ public class UserAccountDaoImpl extends GenericDaoBase<UserAccountVO, Long> impl
         return false;
     }
 
-	@Override
-	public UserAccount getUserByApiKey(String apiKey) {
-		SearchCriteria<UserAccountVO> sc = userAccountSearch.create();
-		sc.setParameters("apiKey",apiKey);
-		return findOneBy(sc);
-	}
-	
+    @Override
+    public UserAccount getUserByApiKey(String apiKey) {
+        SearchCriteria<UserAccountVO> sc = userAccountSearch.create();
+        sc.setParameters("apiKey", apiKey);
+        return findOneBy(sc);
+    }
+
 }

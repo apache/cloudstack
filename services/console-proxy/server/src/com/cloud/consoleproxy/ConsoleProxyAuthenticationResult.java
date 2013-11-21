@@ -24,7 +24,7 @@ public class ConsoleProxyAuthenticationResult {
     private int port;
     private String tunnelUrl;
     private String tunnelSession;
-    
+
     public ConsoleProxyAuthenticationResult() {
         success = false;
         isReauthentication = false;

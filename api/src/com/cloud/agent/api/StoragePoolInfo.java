@@ -21,67 +21,69 @@ import java.util.Map;
 import com.cloud.storage.Storage.StoragePoolType;
 
 public class StoragePoolInfo {
-	String uuid;
-	String host;
-	String localPath;
-	String hostPath;
-	StoragePoolType poolType;
-	long capacityBytes;
-	long availableBytes;
-	Map<String, String> details;
+    String uuid;
+    String host;
+    String localPath;
+    String hostPath;
+    StoragePoolType poolType;
+    long capacityBytes;
+    long availableBytes;
+    Map<String, String> details;
 
-	protected StoragePoolInfo() {
-		super();
-	}
+    protected StoragePoolInfo() {
+        super();
+    }
 
-	public StoragePoolInfo(String uuid, String host, String hostPath,
-			String localPath, StoragePoolType poolType, long capacityBytes,
-			long availableBytes) {
-		super();
-		this.uuid = uuid;
-		this.host = host;
-		this.localPath = localPath;
-		this.hostPath = hostPath;
-		this.poolType = poolType;
-		this.capacityBytes = capacityBytes;
-		this.availableBytes = availableBytes;
-	}
+    public StoragePoolInfo(String uuid, String host, String hostPath, String localPath, StoragePoolType poolType, long capacityBytes, long availableBytes) {
+        super();
+        this.uuid = uuid;
+        this.host = host;
+        this.localPath = localPath;
+        this.hostPath = hostPath;
+        this.poolType = poolType;
+        this.capacityBytes = capacityBytes;
+        this.availableBytes = availableBytes;
+    }
 
-    public StoragePoolInfo(String uuid, String host, String hostPath,
-            String localPath, StoragePoolType poolType, long capacityBytes,
-            long availableBytes, Map<String, String> details) {
+    public StoragePoolInfo(String uuid, String host, String hostPath, String localPath, StoragePoolType poolType, long capacityBytes, long availableBytes,
+            Map<String, String> details) {
         this(uuid, host, hostPath, localPath, poolType, capacityBytes, availableBytes);
         this.details = details;
     }
 
-	public long getCapacityBytes() {
-		return capacityBytes;
-	}
-	public long getAvailableBytes() {
-		return availableBytes;
-	}
+    public long getCapacityBytes() {
+        return capacityBytes;
+    }
 
-	public String getUuid() {
-		return uuid;
-	}
-	public String getHost() {
-		return host;
-	}
-	public String getLocalPath() {
-		return localPath;
-	}
-	public String getHostPath() {
-		return hostPath;
-	}
-	public StoragePoolType getPoolType() {
-		return poolType;
-	}
+    public long getAvailableBytes() {
+        return availableBytes;
+    }
 
-	public void setUuid(String uuid) {
-		this.uuid = uuid;
-	}
+    public String getUuid() {
+        return uuid;
+    }
 
-	public Map<String, String> getDetails() {
-	    return details;
-	}
+    public String getHost() {
+        return host;
+    }
+
+    public String getLocalPath() {
+        return localPath;
+    }
+
+    public String getHostPath() {
+        return hostPath;
+    }
+
+    public StoragePoolType getPoolType() {
+        return poolType;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+
+    public Map<String, String> getDetails() {
+        return details;
+    }
 }

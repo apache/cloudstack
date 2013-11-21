@@ -23,7 +23,8 @@ package com.cloud.agent.api;
 public class CheckStateCommand extends Command {
     String vmName;
 
-    public CheckStateCommand() {}
+    public CheckStateCommand() {
+    }
 
     public CheckStateCommand(String vmName) {
         this.vmName = vmName;

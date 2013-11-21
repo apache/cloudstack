@@ -86,257 +86,225 @@ public class CloudStackVolume {
     @SerializedName(ApiConstants.TAGS)
     private List<CloudStackKeyValue> tags;
 
-    
     public CloudStackVolume() {
     }
 
+    /**
+     * @return the id
+     */
+    public String getId() {
+        return id;
+    }
 
-	/**
-	 * @return the id
-	 */
-	public String getId() {
-		return id;
-	}
+    /**
+     * @return the accountName
+     */
+    public String getAccountName() {
+        return accountName;
+    }
 
+    /**
+     * @return the attached
+     */
+    public String getAttached() {
+        return attached;
+    }
 
-	/**
-	 * @return the accountName
-	 */
-	public String getAccountName() {
-		return accountName;
-	}
+    /**
+     * @return the created
+     */
+    public String getCreated() {
+        return created;
+    }
 
+    /**
+     * @return the destroyed
+     */
+    public Boolean getDestroyed() {
+        return destroyed;
+    }
 
-	/**
-	 * @return the attached
-	 */
-	public String getAttached() {
-		return attached;
-	}
+    /**
+     * @return the deviceId
+     */
+    public String getDeviceId() {
+        return deviceId;
+    }
 
+    /**
+     * @return the diskOfferingDisplayText
+     */
+    public String getDiskOfferingDisplayText() {
+        return diskOfferingDisplayText;
+    }
 
-	/**
-	 * @return the created
-	 */
-	public String getCreated() {
-		return created;
-	}
+    /**
+     * @return the diskOfferingId
+     */
+    public String getDiskOfferingId() {
+        return diskOfferingId;
+    }
 
+    /**
+     * @return the diskOfferingName
+     */
+    public String getDiskOfferingName() {
+        return diskOfferingName;
+    }
 
-	/**
-	 * @return the destroyed
-	 */
-	public Boolean getDestroyed() {
-		return destroyed;
-	}
+    /**
+     * @return the domainName
+     */
+    public String getDomainName() {
+        return domainName;
+    }
 
+    /**
+     * @return the domainId
+     */
+    public String getDomainId() {
+        return domainId;
+    }
 
-	/**
-	 * @return the deviceId
-	 */
-	public String getDeviceId() {
-		return deviceId;
-	}
+    /**
+     * @return the hypervisor
+     */
+    public String getHypervisor() {
+        return hypervisor;
+    }
 
+    /**
+     * @return the extractable
+     */
+    public Boolean getExtractable() {
+        return extractable;
+    }
 
-	/**
-	 * @return the diskOfferingDisplayText
-	 */
-	public String getDiskOfferingDisplayText() {
-		return diskOfferingDisplayText;
-	}
+    /**
+     * @return the jobId
+     */
+    public String getJobId() {
+        return jobId;
+    }
 
+    /**
+     * @return the jobStatus
+     */
+    public Integer getJobStatus() {
+        return jobStatus;
+    }
 
-	/**
-	 * @return the diskOfferingId
-	 */
-	public String getDiskOfferingId() {
-		return diskOfferingId;
-	}
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
 
+    /**
+     * @return the serviceOfferingDisplayText
+     */
+    public String getServiceOfferingDisplayText() {
+        return serviceOfferingDisplayText;
+    }
 
-	/**
-	 * @return the diskOfferingName
-	 */
-	public String getDiskOfferingName() {
-		return diskOfferingName;
-	}
+    /**
+     * @return the serviceOfferingId
+     */
+    public String getServiceOfferingId() {
+        return serviceOfferingId;
+    }
 
+    /**
+     * @return the serviceOfferingName
+     */
+    public String getServiceOfferingName() {
+        return serviceOfferingName;
+    }
 
-	/**
-	 * @return the domainName
-	 */
-	public String getDomainName() {
-		return domainName;
-	}
+    /**
+     * @return the size
+     */
+    public Long getSize() {
+        return size;
+    }
 
+    /**
+     * @return the snapshotId
+     */
+    public String getSnapshotId() {
+        return snapshotId;
+    }
 
-	/**
-	 * @return the domainId
-	 */
-	public String getDomainId() {
-		return domainId;
-	}
+    /**
+     * @return the state
+     */
+    public String getState() {
+        return state;
+    }
 
+    /**
+     * @return the storagePoolName
+     */
+    public String getStoragePoolName() {
+        return storagePoolName;
+    }
 
-	/**
-	 * @return the hypervisor
-	 */
-	public String getHypervisor() {
-		return hypervisor;
-	}
+    /**
+     * @return the storageType
+     */
+    public String getStorageType() {
+        return storageType;
+    }
 
+    /**
+     * @return the volumeType
+     */
+    public String getVolumeType() {
+        return volumeType;
+    }
 
-	/**
-	 * @return the extractable
-	 */
-	public Boolean getExtractable() {
-		return extractable;
-	}
+    /**
+     * @return the virtualMachineId
+     */
+    public String getVirtualMachineId() {
+        return virtualMachineId;
+    }
 
+    /**
+     * @return the virtualMachineDisplayName
+     */
+    public String getVirtualMachineDisplayName() {
+        return virtualMachineDisplayName;
+    }
 
-	/**
-	 * @return the jobId
-	 */
-	public String getJobId() {
-		return jobId;
-	}
+    /**
+     * @return the virtualMachineName
+     */
+    public String getVirtualMachineName() {
+        return virtualMachineName;
+    }
 
+    /**
+     * @return the virtualMachineState
+     */
+    public String getVirtualMachineState() {
+        return virtualMachineState;
+    }
 
-	/**
-	 * @return the jobStatus
-	 */
-	public Integer getJobStatus() {
-		return jobStatus;
-	}
+    /**
+     * @return the zoneId
+     */
+    public String getZoneId() {
+        return zoneId;
+    }
 
-
-	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
-
-
-	/**
-	 * @return the serviceOfferingDisplayText
-	 */
-	public String getServiceOfferingDisplayText() {
-		return serviceOfferingDisplayText;
-	}
-
-
-	/**
-	 * @return the serviceOfferingId
-	 */
-	public String getServiceOfferingId() {
-		return serviceOfferingId;
-	}
-
-
-	/**
-	 * @return the serviceOfferingName
-	 */
-	public String getServiceOfferingName() {
-		return serviceOfferingName;
-	}
-
-
-	/**
-	 * @return the size
-	 */
-	public Long getSize() {
-		return size;
-	}
-
-
-	/**
-	 * @return the snapshotId
-	 */
-	public String getSnapshotId() {
-		return snapshotId;
-	}
-
-
-	/**
-	 * @return the state
-	 */
-	public String getState() {
-		return state;
-	}
-
-
-	/**
-	 * @return the storagePoolName
-	 */
-	public String getStoragePoolName() {
-		return storagePoolName;
-	}
-
-
-	/**
-	 * @return the storageType
-	 */
-	public String getStorageType() {
-		return storageType;
-	}
-
-
-	/**
-	 * @return the volumeType
-	 */
-	public String getVolumeType() {
-		return volumeType;
-	}
-
-
-	/**
-	 * @return the virtualMachineId
-	 */
-	public String getVirtualMachineId() {
-		return virtualMachineId;
-	}
-
-
-	/**
-	 * @return the virtualMachineDisplayName
-	 */
-	public String getVirtualMachineDisplayName() {
-		return virtualMachineDisplayName;
-	}
-
-
-	/**
-	 * @return the virtualMachineName
-	 */
-	public String getVirtualMachineName() {
-		return virtualMachineName;
-	}
-
-
-	/**
-	 * @return the virtualMachineState
-	 */
-	public String getVirtualMachineState() {
-		return virtualMachineState;
-	}
-
-
-	/**
-	 * @return the zoneId
-	 */
-	public String getZoneId() {
-		return zoneId;
-	}
-
-
-	/**
-	 * @return the zoneName
-	 */
-	public String getZoneName() {
-		return zoneName;
-	}
+    /**
+     * @return the zoneName
+     */
+    public String getZoneName() {
+        return zoneName;
+    }
 
     /**
      * @return all tags

@@ -46,16 +46,16 @@ public interface VolumeService {
 
     /**
      * Creates the volume based on the given criteria
-     * 
+     *
      * @param cmd
-     * 
+     *
      * @return the volume object
      */
     AsyncCallFuture<VolumeApiResult> createVolumeAsync(VolumeInfo volume, DataStore store);
 
     /**
      * Delete volume
-     * 
+     *
      * @param volumeId
      * @return
      * @throws ConcurrentOperationException
@@ -74,15 +74,13 @@ public interface VolumeService {
 
     VolumeEntity getVolumeEntity(long volumeId);
 
-    AsyncCallFuture<VolumeApiResult> createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId,
-            TemplateInfo template);
+    AsyncCallFuture<VolumeApiResult> createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId, TemplateInfo template);
 
     AsyncCallFuture<VolumeApiResult> copyVolume(VolumeInfo srcVolume, DataStore destStore);
 
     AsyncCallFuture<VolumeApiResult> migrateVolume(VolumeInfo srcVolume, DataStore destStore);
 
-    AsyncCallFuture<CommandResult> migrateVolumes(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo,
-            Host srcHost, Host destHost);
+    AsyncCallFuture<CommandResult> migrateVolumes(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost);
 
     boolean destroyVolume(long volumeId) throws ConcurrentOperationException;
 

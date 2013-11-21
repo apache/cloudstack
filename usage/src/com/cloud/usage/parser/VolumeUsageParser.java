@@ -26,33 +26,35 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.usage.UsageTypes;
 
-import com.cloud.usage.UsageServer;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.UsageVolumeVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageVolumeDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
-import org.springframework.stereotype.Component;
 
 @Component
 public class VolumeUsageParser {
     public static final Logger s_logger = Logger.getLogger(VolumeUsageParser.class.getName());
-    
+
     private static UsageDao m_usageDao;
     private static UsageVolumeDao m_usageVolumeDao;
 
-    @Inject private UsageDao _usageDao;
-    @Inject private UsageVolumeDao _usageVolumeDao;
-    
+    @Inject
+    private UsageDao _usageDao;
+    @Inject
+    private UsageVolumeDao _usageVolumeDao;
+
     @PostConstruct
     void init() {
-    	m_usageDao = _usageDao;
-    	m_usageVolumeDao = _usageVolumeDao;
+        m_usageDao = _usageDao;
+        m_usageVolumeDao = _usageVolumeDao;
     }
-    
+
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Parsing all Volume usage events for account: " + account.getId());
@@ -67,8 +69,8 @@ public class VolumeUsageParser {
         //     - look for an entry for accountId with end date null (currently running vm or owned IP)
         //     - look for an entry for accountId with start date before given range *and* end date after given range
         List<UsageVolumeVO> usageUsageVols = m_usageVolumeDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
-        
-        if(usageUsageVols.isEmpty()){
+
+        if (usageUsageVols.isEmpty()) {
             s_logger.debug("No volume usage events for this period");
             return true;
         }
@@ -85,10 +87,10 @@ public class VolumeUsageParser {
             long zoneId = usageVol.getZoneId();
             Long templateId = usageVol.getTemplateId();
             long size = usageVol.getSize();
-            String key = ""+volId;
+            String key = "" + volId;
 
             diskOfferingMap.put(key, new VolInfo(volId, zoneId, doId, templateId, size));
-            
+
             Date volCreateDate = usageVol.getCreated();
             Date volDeleteDate = usageVol.getDeleted();
 
@@ -103,7 +105,6 @@ public class VolumeUsageParser {
 
             long currentDuration = (volDeleteDate.getTime() - volCreateDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
 
-
             updateVolUsageData(usageMap, key, usageVol.getId(), currentDuration);
         }
 
@@ -114,7 +115,8 @@ public class VolumeUsageParser {
             // Only create a usage record if we have a runningTime of bigger than zero.
             if (useTime > 0L) {
                 VolInfo info = diskOfferingMap.get(volIdKey);
-                createUsageRecord(UsageTypes.VOLUME, useTime, startDate, endDate, account, info.getVolumeId(), info.getZoneId(), info.getDiskOfferingId(), info.getTemplateId(), info.getSize());
+                createUsageRecord(UsageTypes.VOLUME, useTime, startDate, endDate, account, info.getVolumeId(), info.getZoneId(), info.getDiskOfferingId(),
+                    info.getTemplateId(), info.getSize());
             }
         }
 
@@ -133,7 +135,8 @@ public class VolumeUsageParser {
         usageDataMap.put(key, volUsageInfo);
     }
 
-    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long volId, long zoneId, Long doId, Long templateId, long size) {
+    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long volId, long zoneId, Long doId,
+        Long templateId, long size) {
         // Our smallest increment is hourly for now
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Total running time " + runningTime + "ms");
@@ -145,20 +148,22 @@ public class VolumeUsageParser {
         String usageDisplay = dFormat.format(usage);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating Volume usage record for vol: " + volId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate + ", for account: " + account.getId());
+            s_logger.debug("Creating Volume usage record for vol: " + volId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate +
+                ", for account: " + account.getId());
         }
 
         // Create the usage record
-        String usageDesc = "Volume Id: "+volId+" usage time";
+        String usageDesc = "Volume Id: " + volId + " usage time";
 
-        if(templateId != null){
-            usageDesc += " (Template: " +templateId+ ")";
-        } else if(doId != null){
-            usageDesc += " (DiskOffering: " +doId+ ")";
-        } 
-        
-        UsageVO usageRecord = new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type,
-                new Double(usage), null, null, doId, templateId, volId, size, startDate, endDate);
+        if (templateId != null) {
+            usageDesc += " (Template: " + templateId + ")";
+        } else if (doId != null) {
+            usageDesc += " (DiskOffering: " + doId + ")";
+        }
+
+        UsageVO usageRecord =
+            new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), null, null, doId, templateId, volId,
+                size, startDate, endDate);
         m_usageDao.persist(usageRecord);
     }
 
@@ -176,18 +181,23 @@ public class VolumeUsageParser {
             this.templateId = templateId;
             this.size = size;
         }
+
         public long getZoneId() {
             return zoneId;
         }
+
         public long getVolumeId() {
             return volId;
         }
+
         public Long getDiskOfferingId() {
             return diskOfferingId;
         }
+
         public Long getTemplateId() {
             return templateId;
-        }        
+        }
+
         public long getSize() {
             return size;
         }

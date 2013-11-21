@@ -23,13 +23,15 @@ import com.cloud.agent.api.to.DataTO;
 
 public class ForgetObjectCmd extends Command implements StorageSubSystemCommand {
     private DataTO dataTO;
+
     public ForgetObjectCmd(DataTO data) {
-       this.dataTO = data;
+        this.dataTO = data;
     }
 
     public DataTO getDataTO() {
         return this.dataTO;
     }
+
     @Override
     public boolean executeInSequence() {
         return false;

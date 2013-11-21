@@ -26,29 +26,31 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-
-@APICommand(name = "migrateVolume", description="Migrate volume", responseObject=VolumeResponse.class, since="3.0.0")
+@APICommand(name = "migrateVolume", description = "Migrate volume", responseObject = VolumeResponse.class, since = "3.0.0")
 public class MigrateVolumeCmd extends BaseAsyncCmd {
     private static final String s_name = "migratevolumeresponse";
 
-     /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.VOLUME_ID, type=CommandType.UUID, entityType=VolumeResponse.class,
-            required=true, description="the ID of the volume")
+    @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "the ID of the volume")
     private Long volumeId;
 
-    @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.UUID, entityType=StoragePoolResponse.class,
-            required=true, description="destination storage pool ID to migrate the volume to")
+    @Parameter(name = ApiConstants.STORAGE_ID,
+               type = CommandType.UUID,
+               entityType = StoragePoolResponse.class,
+               required = true,
+               description = "destination storage pool ID to migrate the volume to")
     private Long storageId;
 
-    @Parameter(name=ApiConstants.LIVE_MIGRATE, type=CommandType.BOOLEAN, required=false,
-            description="if the volume should be live migrated when it is attached to a running vm")
+    @Parameter(name = ApiConstants.LIVE_MIGRATE,
+               type = CommandType.BOOLEAN,
+               required = false,
+               description = "if the volume should be live migrated when it is attached to a running vm")
     private Boolean liveMigrate;
 
     /////////////////////////////////////////////////////
@@ -66,6 +68,7 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
     public boolean isLiveMigrate() {
         return (liveMigrate != null) ? liveMigrate : false;
     }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -77,12 +80,12 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-          Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
-          if (volume != null) {
-              return volume.getAccountId();
-          }
+        Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
+        if (volume != null) {
+            return volume.getAccountId();
+        }
 
-          return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
     @Override
@@ -92,22 +95,21 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Attempting to migrate volume Id: " + getVolumeId() + " to storage pool Id: "+ getStoragePoolId();
+        return "Attempting to migrate volume Id: " + getVolumeId() + " to storage pool Id: " + getStoragePoolId();
     }
 
-
     @Override
-    public void execute(){
-    	Volume result;
+    public void execute() {
+        Volume result;
 
-    	result = _volumeService.migrateVolume(this);
-    	if (result != null) {
-    		VolumeResponse response = _responseGenerator.createVolumeResponse(result);
-    		response.setResponseName(getCommandName());
-    		this.setResponseObject(response);
-    	} else {
-    		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate volume");
-    	}
+        result = _volumeService.migrateVolume(this);
+        if (result != null) {
+            VolumeResponse response = _responseGenerator.createVolumeResponse(result);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate volume");
+        }
     }
 
 }

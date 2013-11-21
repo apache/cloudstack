@@ -25,6 +25,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.Outcome;
 
 import com.cloud.utils.Predicate;
+
 public class OutcomeImpl<T> implements Outcome<T> {
     protected AsyncJob _job;
     protected Class<T> _clazz;

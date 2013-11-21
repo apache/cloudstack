@@ -37,7 +37,7 @@ import com.cloud.utils.db.GenericDao;
 
 /**
  * A bean representing a user
- * 
+ *
  */
 @Entity
 @Table(name = "user")
@@ -66,7 +66,7 @@ public class UserVO implements User, Identity, InternalIdentity {
     private String email = null;
 
     @Column(name = "state")
-    @Enumerated(value=EnumType.STRING)
+    @Enumerated(value = EnumType.STRING)
     private State state;
 
     @Column(name = "api_key")
@@ -85,15 +85,15 @@ public class UserVO implements User, Identity, InternalIdentity {
     @Column(name = "timezone")
     private String timezone;
 
-    @Column(name="registration_token")
+    @Column(name = "registration_token")
     private String registrationToken = null;
 
-    @Column(name="is_registered")
+    @Column(name = "is_registered")
     boolean registered;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
-    
+
     @Column(name = "default")
     boolean isDefault;
 
@@ -105,7 +105,7 @@ public class UserVO implements User, Identity, InternalIdentity {
         this.id = id;
         this.uuid = UUID.randomUUID().toString();
     }
-    
+
     public UserVO(long accountId, String username, String password, String firstName, String lastName, String email, String timezone, String uuid) {
         this.accountId = accountId;
         this.username = username;
@@ -115,9 +115,9 @@ public class UserVO implements User, Identity, InternalIdentity {
         this.email = email;
         this.timezone = timezone;
         this.state = State.enabled;
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
-    
+
     @Override
     public long getId() {
         return id;
@@ -234,16 +234,15 @@ public class UserVO implements User, Identity, InternalIdentity {
     }
 
     @Override
-    public String getRegistrationToken(){
+    public String getRegistrationToken() {
         return registrationToken;
     }
 
-    public void setRegistrationToken(String registrationToken)
-    {
-        this.registrationToken = registrationToken; 
+    public void setRegistrationToken(String registrationToken) {
+        this.registrationToken = registrationToken;
     }
 
-    @Override 
+    @Override
     public boolean isRegistered() {
         return registered;
     }
@@ -265,10 +264,10 @@ public class UserVO implements User, Identity, InternalIdentity {
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
-    
+
     @Override
     public boolean isDefault() {
         return isDefault;
     }
-    
+
 }

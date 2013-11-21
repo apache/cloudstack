@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.element;
 
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,12 +67,10 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = {NetworkElement.class, FirewallServiceProvider.class,
-        DhcpServiceProvider.class, UserDataServiceProvider.class,
-        StaticNatServiceProvider.class, LoadBalancingServiceProvider.class,
-        PortForwardingServiceProvider.class, IpDeployer.class, VpcProvider.class,
-        Site2SiteVpnServiceProvider.class, NetworkACLServiceProvider.class})
-public class VpcVirtualRouterElement extends VirtualRouterElement implements VpcProvider, Site2SiteVpnServiceProvider, NetworkACLServiceProvider{
+@Local(value = {NetworkElement.class, FirewallServiceProvider.class, DhcpServiceProvider.class, UserDataServiceProvider.class, StaticNatServiceProvider.class,
+    LoadBalancingServiceProvider.class, PortForwardingServiceProvider.class, IpDeployer.class, VpcProvider.class, Site2SiteVpnServiceProvider.class,
+    NetworkACLServiceProvider.class})
+public class VpcVirtualRouterElement extends VirtualRouterElement implements VpcProvider, Site2SiteVpnServiceProvider, NetworkACLServiceProvider {
     private static final Logger s_logger = Logger.getLogger(VpcVirtualRouterElement.class);
     @Inject
     VpcManager _vpcMgr;
@@ -118,8 +115,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             }
         } else {
             if (!_networkMgr.isProviderSupportServiceInNetwork(network.getId(), service, getProvider())) {
-                s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName()
-                        + " in the network " + network);
+                s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() + " in the network " + network);
                 return false;
             }
         }
@@ -128,8 +124,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
 
     @Override
-    public boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-    ResourceUnavailableException, InsufficientCapacityException {
+    public boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
+        InsufficientCapacityException {
 
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
@@ -153,9 +149,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
 
     @Override
-    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
-            throws ResourceUnavailableException, ConcurrentOperationException,
-            InsufficientCapacityException {
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException,
+        ConcurrentOperationException, InsufficientCapacityException {
 
         Long vpcId = network.getVpcId();
         if (vpcId == null) {
@@ -174,8 +169,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         List<DomainRouterVO> routers = _vpcRouterMgr.deployVirtualRouterInVpc(vpc, dest, _accountMgr.getAccount(vpc.getAccountId()), params);
         if ((routers == null) || (routers.size() == 0)) {
-            throw new ResourceUnavailableException("Can't find at least one running router!",
-                    DataCenter.class, network.getDataCenterId());
+            throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
         }
 
         if (routers.size() > 1) {
@@ -196,9 +190,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm,
-            DeployDestination dest, ReservationContext context)
-                    throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
         Long vpcId = network.getVpcId();
         if (vpcId == null) {
@@ -215,11 +208,9 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         if (vm.getType() == VirtualMachine.Type.User) {
             Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
             params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
-            List<DomainRouterVO> routers = _vpcRouterMgr.deployVirtualRouterInVpc(vpc, dest,
-                    _accountMgr.getAccount(vpc.getAccountId()), params);
+            List<DomainRouterVO> routers = _vpcRouterMgr.deployVirtualRouterInVpc(vpc, dest, _accountMgr.getAccount(vpc.getAccountId()), params);
             if ((routers == null) || (routers.size() == 0)) {
-                throw new ResourceUnavailableException("Can't find at least one running router!",
-                        DataCenter.class, network.getDataCenterId());
+                throw new ResourceUnavailableException("Can't find at least one running router!", DataCenter.class, network.getDataCenterId());
             }
 
             if (routers.size() > 1) {
@@ -241,8 +232,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
 
     @Override
-    public boolean shutdown(Network network, ReservationContext context, boolean cleanup)
-            throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
         boolean success = true;
         Long vpcId = network.getVpcId();
         if (vpcId == null) {
@@ -341,8 +331,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(gateway.getVpcId());
         if (routers == null || routers.isEmpty()) {
-            s_logger.debug(getName() + " element doesn't need to create Private gateway on the backend; VPC virtual " +
-                    "router doesn't exist in the vpc id=" + gateway.getVpcId());
+            s_logger.debug(getName() + " element doesn't need to create Private gateway on the backend; VPC virtual " + "router doesn't exist in the vpc id=" +
+                gateway.getVpcId());
             return true;
         }
 
@@ -352,15 +342,15 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         VirtualRouter router = routers.get(0);
 
-        if ( _vpcRouterMgr.setupPrivateGateway(gateway, router) ) {
+        if (_vpcRouterMgr.setupPrivateGateway(gateway, router)) {
             try {
                 List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(gateway.getNetworkACLId());
                 if (!applyACLItemsToPrivateGw(gateway, rules)) {
-                    s_logger.debug ("Failed to apply network acl id  "+ gateway.getNetworkACLId() + "  on gateway ");
-                    return  false;
+                    s_logger.debug("Failed to apply network acl id  " + gateway.getNetworkACLId() + "  on gateway ");
+                    return false;
                 }
             } catch (Exception ex) {
-                s_logger.debug ("Failed to apply network acl id  "+ gateway.getNetworkACLId() + "  on gateway ");
+                s_logger.debug("Failed to apply network acl id  " + gateway.getNetworkACLId() + "  on gateway ");
                 return false;
             }
         }
@@ -376,8 +366,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(gateway.getVpcId());
         if (routers == null || routers.isEmpty()) {
-            s_logger.debug(getName() + " element doesn't need to delete Private gateway on the backend; VPC virtual " +
-                    "router doesn't exist in the vpc id=" + gateway.getVpcId());
+            s_logger.debug(getName() + " element doesn't need to delete Private gateway on the backend; VPC virtual " + "router doesn't exist in the vpc id=" +
+                gateway.getVpcId());
             return true;
         }
 
@@ -390,10 +380,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         return _vpcRouterMgr.destroyPrivateGateway(gateway, router);
     }
 
-
     @Override
-    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> services)
-            throws ResourceUnavailableException {
+    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> services) throws ResourceUnavailableException {
         boolean canHandle = true;
         for (Service service : services) {
             if (!canHandle(network, service)) {
@@ -404,8 +392,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         if (canHandle) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug(getName() + " element doesn't need to associate ip addresses on the backend; VPC virtual " +
-                        "router doesn't exist in the network " + network.getId());
+                s_logger.debug(getName() + " element doesn't need to associate ip addresses on the backend; VPC virtual " + "router doesn't exist in the network " +
+                    network.getId());
                 return true;
             }
 
@@ -420,8 +408,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         if (canHandle(config, Service.NetworkACL)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " +
-                        "router doesn't exist in the network " + config.getId());
+                s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " + "router doesn't exist in the network " +
+                    config.getId());
                 return true;
             }
 
@@ -444,8 +432,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     public boolean applyStaticRoutes(Vpc vpc, List<StaticRouteProfile> routes) throws ResourceUnavailableException {
         List<DomainRouterVO> routers = _routerDao.listByVpcId(vpc.getId());
         if (routers == null || routers.isEmpty()) {
-            s_logger.debug("Virtual router elemnt doesn't need to static routes on the backend; virtual " +
-                    "router doesn't exist in the vpc " + vpc);
+            s_logger.debug("Virtual router elemnt doesn't need to static routes on the backend; virtual " + "router doesn't exist in the vpc " + vpc);
             return true;
         }
 
@@ -458,15 +445,14 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
 
     @Override
-    public boolean applyACLItemsToPrivateGw(PrivateGateway gateway,List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
+    public boolean applyACLItemsToPrivateGw(PrivateGateway gateway, List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
         Network config = _networkDao.findById(gateway.getNetworkId());
         boolean isPrivateGateway = true;
 
-
         List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(gateway.getVpcId());
         if (routers == null || routers.isEmpty()) {
-            s_logger.debug("Virtual router element doesn't need to apply network acl rules on the backend; virtual " +
-                    "router doesn't exist in the network " + config.getId());
+            s_logger.debug("Virtual router element doesn't need to apply network acl rules on the backend; virtual " + "router doesn't exist in the network " +
+                config.getId());
             return true;
         }
 
@@ -476,7 +462,6 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return true;
         }
     }
-
 
     @Override
     public boolean startSite2SiteVpn(Site2SiteVpnConnection conn) throws ResourceUnavailableException {
@@ -493,14 +478,13 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
 
         if (!_ntwkModel.isProviderEnabledInZone(vpc.getZoneId(), Provider.VPCVirtualRouter.getName())) {
-            throw new ResourceUnavailableException("VPC provider is not enabled in zone " + vpc.getZoneId(),
-                    DataCenter.class, vpc.getZoneId());
+            throw new ResourceUnavailableException("VPC provider is not enabled in zone " + vpc.getZoneId(), DataCenter.class, vpc.getZoneId());
         }
 
         List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(ip.getVpcId());
         if (routers == null || routers.size() != 1) {
             throw new ResourceUnavailableException("Cannot enable site-to-site VPN on the backend; virtual router doesn't exist in the vpc " + ip.getVpcId(),
-                    DataCenter.class, vpc.getZoneId());
+                DataCenter.class, vpc.getZoneId());
         }
 
         return _vpcRouterMgr.startSite2SiteVpn(conn, routers.get(0));
@@ -521,14 +505,13 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
 
         if (!_ntwkModel.isProviderEnabledInZone(vpc.getZoneId(), Provider.VPCVirtualRouter.getName())) {
-            throw new ResourceUnavailableException("VPC provider is not enabled in zone " + vpc.getZoneId(),
-                    DataCenter.class, vpc.getZoneId());
+            throw new ResourceUnavailableException("VPC provider is not enabled in zone " + vpc.getZoneId(), DataCenter.class, vpc.getZoneId());
         }
 
         List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(ip.getVpcId());
         if (routers == null || routers.size() != 1) {
             throw new ResourceUnavailableException("Cannot enable site-to-site VPN on the backend; virtual router doesn't exist in the vpc " + ip.getVpcId(),
-                    DataCenter.class, vpc.getZoneId());
+                DataCenter.class, vpc.getZoneId());
         }
 
         return _vpcRouterMgr.stopSite2SiteVpn(conn, routers.get(0));
@@ -536,44 +519,44 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
     @Override
     public String[] applyVpnUsers(RemoteAccessVpn vpn, List<? extends VpnUser> users) throws ResourceUnavailableException {
-    	if (vpn.getVpcId() == null) {
-    		return null;
-    	}
+        if (vpn.getVpcId() == null) {
+            return null;
+        }
 
-    	List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(vpn.getVpcId());
-    	if (routers == null || routers.size() != 1) {
-    		s_logger.debug("Cannot apply vpn users on the backend; virtual router doesn't exist in the network " + vpn.getVpcId());
-    		return null;
-    	}
-    	return _vpcRouterMgr.applyVpnUsers(vpn, users, routers.get(0));
+        List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(vpn.getVpcId());
+        if (routers == null || routers.size() != 1) {
+            s_logger.debug("Cannot apply vpn users on the backend; virtual router doesn't exist in the network " + vpn.getVpcId());
+            return null;
+        }
+        return _vpcRouterMgr.applyVpnUsers(vpn, users, routers.get(0));
     }
 
     @Override
     public boolean startVpn(RemoteAccessVpn vpn) throws ResourceUnavailableException {
-    	if (vpn.getVpcId() == null) {
-    		return false;
-    	}
+        if (vpn.getVpcId() == null) {
+            return false;
+        }
 
-    	List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(vpn.getVpcId());
-    	if (routers == null || routers.size() != 1) {
-    		s_logger.debug("Cannot apply vpn users on the backend; virtual router doesn't exist in the network " + vpn.getVpcId());
-    		return true;
-    	}
+        List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(vpn.getVpcId());
+        if (routers == null || routers.size() != 1) {
+            s_logger.debug("Cannot apply vpn users on the backend; virtual router doesn't exist in the network " + vpn.getVpcId());
+            return true;
+        }
         return _vpcRouterMgr.startRemoteAccessVpn(vpn, routers.get(0));
     }
 
     @Override
     public boolean stopVpn(RemoteAccessVpn vpn) throws ResourceUnavailableException {
-    	if (vpn.getVpcId() == null) {
-    		return false;
-    	}
+        if (vpn.getVpcId() == null) {
+            return false;
+        }
 
-    	List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(vpn.getVpcId());
-    	if (routers == null || routers.size() != 1) {
-    		s_logger.debug("Cannot apply vpn users on the backend; virtual router doesn't exist in the network " + vpn.getVpcId());
-    		return true;
-    	}
-    	return _vpcRouterMgr.stopRemoteAccessVpn(vpn, routers.get(0));
+        List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(vpn.getVpcId());
+        if (routers == null || routers.size() != 1) {
+            s_logger.debug("Cannot apply vpn users on the backend; virtual router doesn't exist in the network " + vpn.getVpcId());
+            return true;
+        }
+        return _vpcRouterMgr.stopRemoteAccessVpn(vpn, routers.get(0));
     }
 
 }

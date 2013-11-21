@@ -24,22 +24,22 @@ import com.cloud.storage.StoragePool;
 
 public class DeleteStoragePoolCommand extends Command {
 
-	StorageFilerTO pool;
-	public static final String LOCAL_PATH_PREFIX="/mnt/";
-	String localPath;
+    StorageFilerTO pool;
+    public static final String LOCAL_PATH_PREFIX = "/mnt/";
+    String localPath;
 
-	public DeleteStoragePoolCommand() {
+    public DeleteStoragePoolCommand() {
 
-	}
+    }
 
     public DeleteStoragePoolCommand(StoragePool pool, String localPath) {
-    	this.pool = new StorageFilerTO(pool);
-    	this.localPath = localPath;
+        this.pool = new StorageFilerTO(pool);
+        this.localPath = localPath;
     }
 
     public DeleteStoragePoolCommand(StoragePool pool) {
-		this(pool, LOCAL_PATH_PREFIX + File.separator + UUID.nameUUIDFromBytes((pool.getHostAddress() + pool.getPath()).getBytes()));
-	}
+        this(pool, LOCAL_PATH_PREFIX + File.separator + UUID.nameUUIDFromBytes((pool.getHostAddress() + pool.getPath()).getBytes()));
+    }
 
     public StorageFilerTO getPool() {
         return pool;
@@ -49,13 +49,13 @@ public class DeleteStoragePoolCommand extends Command {
         this.pool = new StorageFilerTO(pool);
     }
 
-	@Override
+    @Override
     public boolean executeInSequence() {
         return false;
     }
 
-	public String getLocalPath() {
-		return localPath;
-	}
+    public String getLocalPath() {
+        return localPath;
+    }
 
 }

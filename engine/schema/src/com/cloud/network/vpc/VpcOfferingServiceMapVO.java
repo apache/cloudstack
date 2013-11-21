@@ -25,32 +25,33 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
-
 
 @Entity
-@Table(name="vpc_offering_service_map")
+@Table(name = "vpc_offering_service_map")
 public class VpcOfferingServiceMapVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     long id;
-    
-    @Column(name="vpc_offering_id")
+
+    @Column(name = "vpc_offering_id")
     long vpcOfferingId;
-    
-    @Column(name="service")
+
+    @Column(name = "service")
     String service;
-    
-    @Column(name="provider")
+
+    @Column(name = "provider")
     String provider;
-    
-    @Column(name=GenericDao.CREATED_COLUMN)
+
+    @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 
+    @Override
     public long getId() {
         return id;
     }
@@ -70,10 +71,10 @@ public class VpcOfferingServiceMapVO implements InternalIdentity {
     public Date getCreated() {
         return created;
     }
-    
+
     public VpcOfferingServiceMapVO() {
     }
-    
+
     public VpcOfferingServiceMapVO(long vpcOfferingId, Service service, Provider provider) {
         this.vpcOfferingId = vpcOfferingId;
         this.service = service.getName();
@@ -81,7 +82,8 @@ public class VpcOfferingServiceMapVO implements InternalIdentity {
             this.provider = provider.getName();
         }
     }
-    
+
+    @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("[VPC Offering Service[");
         return buf.append(vpcOfferingId).append("-").append(service).append("-").append(provider).append("]").toString();

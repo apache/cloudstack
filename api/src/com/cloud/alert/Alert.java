@@ -23,12 +23,20 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface Alert extends Identity, InternalIdentity {
     short getType();
+
     String getSubject();
+
     Long getPodId();
+
     long getDataCenterId();
+
     int getSentCount();
+
     Date getCreatedDate();
+
     Date getLastSent();
+
     Date getResolved();
+
     boolean getArchived();
 }

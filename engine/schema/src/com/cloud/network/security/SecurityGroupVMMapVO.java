@@ -26,14 +26,15 @@ import javax.persistence.SecondaryTable;
 import javax.persistence.SecondaryTables;
 import javax.persistence.Table;
 
-import com.cloud.vm.VirtualMachine.State;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.vm.VirtualMachine.State;
 
 @Entity
 @Table(name = ("security_group_vm_map"))
-@SecondaryTables({ @SecondaryTable(name = "nics", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "instance_id", referencedColumnName = "instance_id") }),
-        @SecondaryTable(name = "vm_instance", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "instance_id", referencedColumnName = "id") }),
-        @SecondaryTable(name = "security_group", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "security_group_id", referencedColumnName = "id") }) })
+@SecondaryTables({@SecondaryTable(name = "nics", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "instance_id", referencedColumnName = "instance_id")}),
+    @SecondaryTable(name = "vm_instance", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "instance_id", referencedColumnName = "id")}),
+    @SecondaryTable(name = "security_group", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "security_group_id", referencedColumnName = "id")})})
 public class SecurityGroupVMMapVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -63,6 +64,7 @@ public class SecurityGroupVMMapVO implements InternalIdentity {
         this.instanceId = instanceId;
     }
 
+    @Override
     public long getId() {
         return id;
     }

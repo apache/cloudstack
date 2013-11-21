@@ -16,36 +16,18 @@
 // under the License.
 package org.apache.cloudstack.region;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.springframework.stereotype.Component;
 
-import com.cloud.dc.AccountVlanMapVO;
-import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.Vlan;
-import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value={PortableIpRangeDao.class})
+@Local(value = {PortableIpRangeDao.class})
 public class PortableIpRangeDaoImpl extends GenericDaoBase<PortableIpRangeVO, Long> implements PortableIpRangeDao {
 
     private final SearchBuilder<PortableIpRangeVO> listByRegionIDSearch;

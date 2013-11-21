@@ -34,6 +34,8 @@ import static org.apache.cloudstack.api.BaseCmd.CommandType.STRING;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -41,7 +43,6 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.DiscoveryException;
@@ -57,42 +58,33 @@ public final class AddS3Cmd extends BaseCmd {
 
     private static String COMMAND_NAME = "adds3response";
 
-    @Parameter(name = S3_ACCESS_KEY, type = STRING, required = true,
-            description = "S3 access key")
+    @Parameter(name = S3_ACCESS_KEY, type = STRING, required = true, description = "S3 access key")
     private String accessKey;
 
-    @Parameter(name = S3_SECRET_KEY, type = STRING, required = true,
-            description = "S3 secret key")
+    @Parameter(name = S3_SECRET_KEY, type = STRING, required = true, description = "S3 secret key")
     private String secretKey;
 
-    @Parameter(name = S3_END_POINT, type = STRING, required = false,
-            description = "S3 host name")
+    @Parameter(name = S3_END_POINT, type = STRING, required = false, description = "S3 host name")
     private String endPoint = null;
 
-    @Parameter(name = S3_BUCKET_NAME, type = STRING, required = true,
-            description = "name of the template storage bucket")
+    @Parameter(name = S3_BUCKET_NAME, type = STRING, required = true, description = "name of the template storage bucket")
     private String bucketName;
 
-    @Parameter(name = S3_HTTPS_FLAG, type = BOOLEAN, required = false,
-            description = "connect to the S3 endpoint via HTTPS?")
+    @Parameter(name = S3_HTTPS_FLAG, type = BOOLEAN, required = false, description = "connect to the S3 endpoint via HTTPS?")
     private Boolean httpsFlag = null;
 
-    @Parameter(name = S3_CONNECTION_TIMEOUT, type = INTEGER, required = false,
-            description = "connection timeout (milliseconds)")
+    @Parameter(name = S3_CONNECTION_TIMEOUT, type = INTEGER, required = false, description = "connection timeout (milliseconds)")
     private Integer connectionTimeout = null;
 
-    @Parameter(name = S3_MAX_ERROR_RETRY, type = INTEGER, required = false,
-            description = "maximum number of times to retry on error")
+    @Parameter(name = S3_MAX_ERROR_RETRY, type = INTEGER, required = false, description = "maximum number of times to retry on error")
     private Integer maxErrorRetry = null;
 
-    @Parameter(name = S3_SOCKET_TIMEOUT, type = INTEGER, required = false,
-            description = "socket timeout (milliseconds)")
+    @Parameter(name = S3_SOCKET_TIMEOUT, type = INTEGER, required = false, description = "socket timeout (milliseconds)")
     private Integer socketTimeout = null;
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException,
-    ServerApiException, ConcurrentOperationException, ResourceAllocationException,
-    NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException, NetworkRuleConflictException {
 
         AddImageStoreCmd cmd = new AddImageStoreCmd() {
             @Override
@@ -119,10 +111,10 @@ public final class AddS3Cmd extends BaseCmd {
         };
         cmd.setProviderName("S3");
 
-        try{
+        try {
             ImageStore result = _storageService.discoverImageStore(cmd);
             ImageStoreResponse storeResponse = null;
-            if (result != null ) {
+            if (result != null) {
                 storeResponse = _responseGenerator.createImageStoreResponse(result);
                 storeResponse.setResponseName(getCommandName());
                 storeResponse.setObjectName("secondarystorage");
@@ -147,7 +139,7 @@ public final class AddS3Cmd extends BaseCmd {
             return false;
         }
 
-        final AddS3Cmd thatAddS3Cmd = (AddS3Cmd) thatObject;
+        final AddS3Cmd thatAddS3Cmd = (AddS3Cmd)thatObject;
 
         if (this.httpsFlag != null ? !this.httpsFlag.equals(thatAddS3Cmd.httpsFlag) : thatAddS3Cmd.httpsFlag != null) {
             return false;

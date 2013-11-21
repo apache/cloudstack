@@ -30,10 +30,10 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
-@Local(value={ManagementServerHostPeerDao.class})
+@Local(value = {ManagementServerHostPeerDao.class})
 public class ManagementServerHostPeerDaoImpl extends GenericDaoBase<ManagementServerHostPeerVO, Long> implements ManagementServerHostPeerDao {
     private static final Logger s_logger = Logger.getLogger(ManagementServerHostPeerDaoImpl.class);
-    
+
     private final SearchBuilder<ManagementServerHostPeerVO> ClearPeerSearch;
     private final SearchBuilder<ManagementServerHostPeerVO> FindForUpdateSearch;
     private final SearchBuilder<ManagementServerHostPeerVO> CountSearch;
@@ -42,42 +42,42 @@ public class ManagementServerHostPeerDaoImpl extends GenericDaoBase<ManagementSe
         ClearPeerSearch = createSearchBuilder();
         ClearPeerSearch.and("ownerMshost", ClearPeerSearch.entity().getOwnerMshost(), SearchCriteria.Op.EQ);
         ClearPeerSearch.done();
-        
+
         FindForUpdateSearch = createSearchBuilder();
         FindForUpdateSearch.and("ownerMshost", FindForUpdateSearch.entity().getOwnerMshost(), SearchCriteria.Op.EQ);
         FindForUpdateSearch.and("peerMshost", FindForUpdateSearch.entity().getPeerMshost(), SearchCriteria.Op.EQ);
         FindForUpdateSearch.and("peerRunid", FindForUpdateSearch.entity().getPeerRunid(), SearchCriteria.Op.EQ);
         FindForUpdateSearch.done();
-        
+
         CountSearch = createSearchBuilder();
         CountSearch.and("peerMshost", CountSearch.entity().getPeerMshost(), SearchCriteria.Op.EQ);
         CountSearch.and("peerRunid", CountSearch.entity().getPeerRunid(), SearchCriteria.Op.EQ);
         CountSearch.and("peerState", CountSearch.entity().getPeerState(), SearchCriteria.Op.EQ);
         CountSearch.done();
     }
-    
+
     @Override
     @DB
     public void clearPeerInfo(long ownerMshost) {
-        SearchCriteria<ManagementServerHostPeerVO>  sc = ClearPeerSearch.create();
+        SearchCriteria<ManagementServerHostPeerVO> sc = ClearPeerSearch.create();
         sc.setParameters("ownerMshost", ownerMshost);
-        
+
         expunge(sc);
     }
-    
+
     @Override
     @DB
     public void updatePeerInfo(long ownerMshost, long peerMshost, long peerRunid, ManagementServerHost.State peerState) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
-        
+
             SearchCriteria<ManagementServerHostPeerVO> sc = FindForUpdateSearch.create();
             sc.setParameters("ownerMshost", ownerMshost);
             sc.setParameters("peerMshost", peerMshost);
             sc.setParameters("peerRunid", peerRunid);
             List<ManagementServerHostPeerVO> l = listBy(sc);
-            if(l.size() == 1) {
+            if (l.size() == 1) {
                 ManagementServerHostPeerVO peer = l.get(0);
                 peer.setPeerState(peerState);
                 update(peer.getId(), peer);
@@ -86,12 +86,12 @@ public class ManagementServerHostPeerDaoImpl extends GenericDaoBase<ManagementSe
                 persist(peer);
             }
             txn.commit();
-        } catch(Exception e) {
+        } catch (Exception e) {
             s_logger.warn("Unexpected exception, ", e);
             txn.rollback();
         }
     }
-    
+
     @Override
     @DB
     public int countStateSeenInPeers(long mshost, long runid, ManagementServerHost.State state) {
@@ -99,7 +99,7 @@ public class ManagementServerHostPeerDaoImpl extends GenericDaoBase<ManagementSe
         sc.setParameters("peerMshost", mshost);
         sc.setParameters("peerRunid", runid);
         sc.setParameters("peerState", state);
-        
+
         List<ManagementServerHostPeerVO> l = listBy(sc);
         return l.size();
     }

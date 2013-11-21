@@ -22,11 +22,12 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "volume_reservation")
-public class VolumeReservationVO implements InternalIdentity{
+public class VolumeReservationVO implements InternalIdentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,10 +40,10 @@ public class VolumeReservationVO implements InternalIdentity{
     @Column(name = "vm_id")
     private long vmId;
 
-    @Column(name="volume_id")
+    @Column(name = "volume_id")
     private long volumeId;
 
-    @Column(name="pool_id")
+    @Column(name = "pool_id")
     private long poolId;
 
     /**
@@ -59,7 +60,7 @@ public class VolumeReservationVO implements InternalIdentity{
         this.vmReservationId = vmReservationId;
     }
 
-
+    @Override
     public long getId() {
         return id;
     }
@@ -79,6 +80,5 @@ public class VolumeReservationVO implements InternalIdentity{
     public Long getPoolId() {
         return poolId;
     }
-
 
 }

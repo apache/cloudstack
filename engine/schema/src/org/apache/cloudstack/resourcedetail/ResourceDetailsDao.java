@@ -23,7 +23,7 @@ import org.apache.cloudstack.api.ResourceDetail;
 
 import com.cloud.utils.db.GenericDao;
 
-public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao<R, Long>{
+public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao<R, Long> {
     /**
      * Finds detail by resourceId and key
      * @param resourceId
@@ -31,7 +31,7 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
      * @return
      */
     public R findDetail(long resourceId, String name);
-    
+
     /**
      * Removes all details for the resource specified
      * @param resourceId
@@ -51,7 +51,7 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
      * @return list of details each implementing ResourceDetail interface
      */
     public List<R> listDetails(long resourceId);
-    
+
     /**
      * List details for resourceId having display field = forDisplay value passed in
      * @param resourceId
@@ -61,11 +61,11 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
     public List<R> listDetails(long resourceId, boolean forDisplay);
 
     public Map<String, String> listDetailsKeyPairs(long resourceId);
-    
+
     public Map<String, String> listDetailsKeyPairs(long resourceId, boolean forDisplay);
-    
+
     public void saveDetails(List<R> details);
-        
+
     public void addDetail(long resourceId, String key, String value);
 
 }

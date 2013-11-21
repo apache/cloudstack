@@ -25,17 +25,16 @@ public class StopAnswer extends RebootAnswer {
     }
 
     public StopAnswer(StopCommand cmd, String details, String hypervisortoolsversion, Integer timeOffset, boolean success) {
-        super(cmd,  details, success);
+        super(cmd, details, success);
         this.hypervisortoolsversion = hypervisortoolsversion;
         this.timeOffset = timeOffset;
     }
 
     public StopAnswer(StopCommand cmd, String details, boolean success) {
-        super(cmd,  details, success);
+        super(cmd, details, success);
         this.hypervisortoolsversion = null;
         this.timeOffset = null;
     }
-
 
     public StopAnswer(StopCommand cmd, Exception e) {
         super(cmd, e);

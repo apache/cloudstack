@@ -16,17 +16,18 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateTemplate", description="Updates attributes of a template.", responseObject=TemplateResponse.class)
+@APICommand(name = "updateTemplate", description = "Updates attributes of a template.", responseObject = TemplateResponse.class)
 public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateTemplateCmd.class.getName());
     private static final String s_name = "updatetemplateresponse";
@@ -51,7 +52,7 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd {
 
     @SuppressWarnings("unchecked")
     public TemplateResponse getResponse() {
-       return null;
+        return null;
     }
 
     @Override
@@ -65,7 +66,7 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         VirtualMachineTemplate result = _templateService.updateTemplate(this);
         if (result != null) {
             TemplateResponse response = _responseGenerator.createTemplateUpdateResponse(result);

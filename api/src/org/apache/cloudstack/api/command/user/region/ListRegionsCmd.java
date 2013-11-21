@@ -21,6 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -29,26 +31,26 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.RegionResponse;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.region.RegionService;
-import org.apache.log4j.Logger;
 
-@APICommand(name = "listRegions", description="Lists Regions", responseObject=RegionResponse.class)
+@APICommand(name = "listRegions", description = "Lists Regions", responseObject = RegionResponse.class)
 public class ListRegionsCmd extends BaseListCmd {
-	public static final Logger s_logger = Logger.getLogger(ListRegionsCmd.class.getName());
-	
+    public static final Logger s_logger = Logger.getLogger(ListRegionsCmd.class.getName());
+
     private static final String s_name = "listregionsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.INTEGER, description="List Region by region ID.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.INTEGER, description = "List Region by region ID.")
     private Integer id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="List Region by region name.")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List Region by region name.")
     private String name;
-    
-    @Inject RegionService _regionService;
-    
+
+    @Inject
+    RegionService _regionService;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -60,7 +62,7 @@ public class ListRegionsCmd extends BaseListCmd {
     public String getName() {
         return name;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -71,14 +73,14 @@ public class ListRegionsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         List<? extends Region> result = _regionService.listRegions(this);
         ListResponse<RegionResponse> response = new ListResponse<RegionResponse>();
         List<RegionResponse> regionResponses = new ArrayList<RegionResponse>();
         for (Region region : result) {
-        	RegionResponse regionResponse = _responseGenerator.createRegionResponse(region);
-        	regionResponse.setObjectName("region");
-        	regionResponses.add(regionResponse);
+            RegionResponse regionResponse = _responseGenerator.createRegionResponse(region);
+            regionResponse.setObjectName("region");
+            regionResponses.add(regionResponse);
         }
 
         response.setResponses(regionResponses);

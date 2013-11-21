@@ -52,7 +52,8 @@ import com.cloud.vm.VirtualMachineProfile;
  * to provision volumes.
  */
 public interface VolumeOrchestrationService {
-    VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType) throws ConcurrentOperationException, StorageUnavailableException;
+    VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType)
+        throws ConcurrentOperationException, StorageUnavailableException;
 
     Volume allocateDuplicateVolume(Volume oldVol, Long templateId);
 
@@ -86,7 +87,8 @@ public interface VolumeOrchestrationService {
 
     boolean canVmRestartOnAnotherServer(long vmId);
 
-    DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, VirtualMachineTemplate template, VirtualMachine vm, Account owner);
+    DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, VirtualMachineTemplate template, VirtualMachine vm,
+        Account owner);
 
     String getVmNameFromVolumeId(long volumeId);
 

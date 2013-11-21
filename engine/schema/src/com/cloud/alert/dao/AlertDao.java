@@ -24,10 +24,13 @@ import com.cloud.utils.db.GenericDao;
 
 public interface AlertDao extends GenericDao<AlertVO, Long> {
     AlertVO getLastAlert(short type, long dataCenterId, Long podId, Long clusterId);
+
     // This is for backward compatibility
     AlertVO getLastAlert(short type, long dataCenterId, Long podId);
 
     public boolean deleteAlert(List<Long> Ids, String type, Date startDate, Date endDate, Long zoneId);
+
     public boolean archiveAlert(List<Long> Ids, String type, Date startDate, Date endDate, Long zoneId);
+
     public List<AlertVO> listOlderAlerts(Date oldTime);
 }

@@ -31,91 +31,89 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.network.Network.Provider;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="data_center")
+@Table(name = "data_center")
 public class DataCenterVO implements DataCenter {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-	@Column(name="name")
-	private String name = null;
+    @Column(name = "name")
+    private String name = null;
 
-    @Column(name="description")
+    @Column(name = "description")
     private String description = null;
 
-    @Column(name="dns1")
+    @Column(name = "dns1")
     private String dns1 = null;
 
-    @Column(name="dns2")
+    @Column(name = "dns2")
     private String dns2 = null;
 
-    @Column(name="ip6_dns1")
+    @Column(name = "ip6_dns1")
     private String ip6Dns1 = null;
 
-    @Column(name="ip6_dns2")
+    @Column(name = "ip6_dns2")
     private String ip6Dns2 = null;
 
-    @Column(name="internal_dns1")
+    @Column(name = "internal_dns1")
     private String internalDns1 = null;
 
-    @Column(name="internal_dns2")
+    @Column(name = "internal_dns2")
     private String internalDns2 = null;
 
-    @Column(name="router_mac_address", updatable = false, nullable=false)
+    @Column(name = "router_mac_address", updatable = false, nullable = false)
     private String routerMacAddress = "02:00:00:00:00:01";
 
-    @Column(name="guest_network_cidr")
+    @Column(name = "guest_network_cidr")
     private String guestNetworkCidr = null;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private Long domainId = null;
 
-    @Column(name="domain")
+    @Column(name = "domain")
     private String domain;
 
-    @Column(name="networktype")
+    @Column(name = "networktype")
     @Enumerated(EnumType.STRING)
     NetworkType networkType;
 
-    @Column(name="dns_provider")
+    @Column(name = "dns_provider")
     private String dnsProvider;
 
-    @Column(name="dhcp_provider")
+    @Column(name = "dhcp_provider")
     private String dhcpProvider;
 
-    @Column(name="gateway_provider")
+    @Column(name = "gateway_provider")
     private String gatewayProvider;
 
-    @Column(name="vpn_provider")
+    @Column(name = "vpn_provider")
     private String vpnProvider;
 
-    @Column(name="userdata_provider")
+    @Column(name = "userdata_provider")
     private String userDataProvider;
 
-    @Column(name="lb_provider")
+    @Column(name = "lb_provider")
     private String loadBalancerProvider;
 
-    @Column(name="firewall_provider")
+    @Column(name = "firewall_provider")
     private String firewallProvider;
 
-    @Column(name="mac_address", nullable=false)
-    @TableGenerator(name="mac_address_sq", table="data_center", pkColumnName="id", valueColumnName="mac_address", allocationSize=1)
+    @Column(name = "mac_address", nullable = false)
+    @TableGenerator(name = "mac_address_sq", table = "data_center", pkColumnName = "id", valueColumnName = "mac_address", allocationSize = 1)
     private long macAddress = 1;
 
-	@Column(name="zone_token")
-	private String zoneToken;
+    @Column(name = "zone_token")
+    private String zoneToken;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
     // This is a delayed load value.  If the value is null,
@@ -124,17 +122,17 @@ public class DataCenterVO implements DataCenter {
     @Transient
     Map<String, String> details;
 
-    @Column(name="allocation_state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "allocation_state")
+    @Enumerated(value = EnumType.STRING)
     AllocationState allocationState;
 
-	@Column(name="uuid")
-	private String uuid;
+    @Column(name = "uuid")
+    private String uuid;
 
-    @Column(name="is_security_group_enabled")
+    @Column(name = "is_security_group_enabled")
     boolean securityGroupEnabled;
 
-    @Column(name="is_local_storage_enabled")
+    @Column(name = "is_local_storage_enabled")
     boolean localStorageEnabled;
 
     @Override
@@ -182,14 +180,16 @@ public class DataCenterVO implements DataCenter {
         this.firewallProvider = firewallProvider;
     }
 
-    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
+    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId,
+            NetworkType zoneType, String zoneToken, String domainSuffix) {
         this(name, description, dns1, dns2, dns3, dns4, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix, false, false, null, null);
         this.id = id;
         this.allocationState = Grouping.AllocationState.Enabled;
         this.uuid = UUID.randomUUID().toString();
-	}
+    }
 
-    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix, boolean securityGroupEnabled, boolean localStorageEnabled, String ip6Dns1, String ip6Dns2) {
+    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId,
+            NetworkType zoneType, String zoneToken, String domainSuffix, boolean securityGroupEnabled, boolean localStorageEnabled, String ip6Dns1, String ip6Dns2) {
         this.name = name;
         this.description = description;
         this.dns1 = dns1;
@@ -214,7 +214,7 @@ public class DataCenterVO implements DataCenter {
             gatewayProvider = Provider.VirtualRouter.getName();
             vpnProvider = Provider.VirtualRouter.getName();
             userDataProvider = Provider.VirtualRouter.getName();
-        } else if (zoneType == NetworkType.Basic){
+        } else if (zoneType == NetworkType.Basic) {
             dhcpProvider = Provider.VirtualRouter.getName();
             dnsProvider = Provider.VirtualRouter.getName();
             userDataProvider = Provider.VirtualRouter.getName();
@@ -245,24 +245,22 @@ public class DataCenterVO implements DataCenter {
     }
 
     @Override
-    public String getGuestNetworkCidr()
-    {
-    	return guestNetworkCidr;
+    public String getGuestNetworkCidr() {
+        return guestNetworkCidr;
     }
 
-    public void setGuestNetworkCidr(String guestNetworkCidr)
-    {
-    	this.guestNetworkCidr = guestNetworkCidr;
+    public void setGuestNetworkCidr(String guestNetworkCidr) {
+        this.guestNetworkCidr = guestNetworkCidr;
     }
 
     @Override
     public Long getDomainId() {
-		return domainId;
-	}
+        return domainId;
+    }
 
-	public void setDomainId(Long domainId) {
-		this.domainId = domainId;
-	}
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
 
     @Override
     public String getDescription() {
@@ -293,38 +291,38 @@ public class DataCenterVO implements DataCenter {
         return internalDns2;
     }
 
-	protected DataCenterVO() {
+    protected DataCenterVO() {
     }
 
-	@Override
+    @Override
     public long getId() {
-		return id;
-	}
+        return id;
+    }
 
-	@Override
+    @Override
     public String getName() {
-	    return name;
-	}
+        return name;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public void setDns1(String dns1) {
-		this.dns1 = dns1;
-	}
+    public void setDns1(String dns1) {
+        this.dns1 = dns1;
+    }
 
-	public void setDns2(String dns2) {
-		this.dns2 = dns2;
-	}
+    public void setDns2(String dns2) {
+        this.dns2 = dns2;
+    }
 
-	public void setInternalDns1(String dns3) {
-		this.internalDns1 = dns3;
-	}
+    public void setInternalDns1(String dns3) {
+        this.internalDns1 = dns3;
+    }
 
-	public void setInternalDns2(String dns4) {
-		this.internalDns2 = dns4;
-	}
+    public void setInternalDns2(String dns4) {
+        this.internalDns2 = dns4;
+    }
 
     public void setRouterMacAddress(String routerMacAddress) {
         this.routerMacAddress = routerMacAddress;
@@ -388,12 +386,13 @@ public class DataCenterVO implements DataCenter {
         details.put(name, value);
     }
 
+    @Override
     public AllocationState getAllocationState() {
-    	return allocationState;
+        return allocationState;
     }
 
     public void setAllocationState(AllocationState allocationState) {
-		this.allocationState = allocationState;
+        this.allocationState = allocationState;
     }
 
     @Override
@@ -412,25 +411,25 @@ public class DataCenterVO implements DataCenter {
 
     @Override
     public String getZoneToken() {
- 	    return zoneToken;
- 	}
+        return zoneToken;
+    }
 
- 	public void setZoneToken(String zoneToken) {
- 		this.zoneToken = zoneToken;
- 	}
+    public void setZoneToken(String zoneToken) {
+        this.zoneToken = zoneToken;
+    }
 
- 	public Date getRemoved() {
- 	    return removed;
- 	}
+    public Date getRemoved() {
+        return removed;
+    }
 
- 	@Override
- 	public String getUuid() {
- 		return this.uuid;
- 	}
+    @Override
+    public String getUuid() {
+        return this.uuid;
+    }
 
- 	public void setUuid(String uuid) {
- 		this.uuid = uuid;
- 	}
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
 
     public long getMacAddress() {
         return macAddress;
@@ -440,21 +439,21 @@ public class DataCenterVO implements DataCenter {
         this.macAddress = macAddress;
     }
 
- 	@Override
-	public String getIp6Dns1() {
-		return ip6Dns1;
-	}
+    @Override
+    public String getIp6Dns1() {
+        return ip6Dns1;
+    }
 
-	public void setIp6Dns1(String ip6Dns1) {
-		this.ip6Dns1 = ip6Dns1;
-	}
+    public void setIp6Dns1(String ip6Dns1) {
+        this.ip6Dns1 = ip6Dns1;
+    }
 
- 	@Override
-	public String getIp6Dns2() {
-		return ip6Dns2;
-	}
+    @Override
+    public String getIp6Dns2() {
+        return ip6Dns2;
+    }
 
-	public void setIp6Dns2(String ip6Dns2) {
-		this.ip6Dns2 = ip6Dns2;
-	}
+    public void setIp6Dns2(String ip6Dns2) {
+        this.ip6Dns2 = ip6Dns2;
+    }
 }

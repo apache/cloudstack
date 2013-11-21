@@ -16,22 +16,27 @@
 // under the License.
 package com.cloud.network.dao;
 
-import com.cloud.network.MonitoringService;
-
-import javax.persistence.*;
 import java.util.UUID;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import com.cloud.network.MonitoringService;
 
 @Entity
 @Table(name = "monitoring_services")
 public class MonitoringServiceVO implements MonitoringService {
 
-    public MonitoringServiceVO(String service, String processname, String serviceName, String servicePath,
-                            String pidFile, boolean defaultService) {
+    public MonitoringServiceVO(String service, String processname, String serviceName, String servicePath, String pidFile, boolean defaultService) {
         this.service = service;
         this.processname = processname;
         this.servicename = serviceName;
         this.servicePath = servicePath;
-        this.servicePidFile= pidFile;
+        this.servicePidFile = pidFile;
         this.defaultService = defaultService;
 
     }
@@ -47,25 +52,25 @@ public class MonitoringServiceVO implements MonitoringService {
     @Column(name = "service")
     String service;
 
-    @Column(name="process_name", updatable=false)
+    @Column(name = "process_name", updatable = false)
     String processname;
 
-    @Column(name="service_name", updatable=false)
+    @Column(name = "service_name", updatable = false)
     String servicename;
 
-    @Column(name="service_path", updatable=false)
+    @Column(name = "service_path", updatable = false)
     private String servicePath;
 
-    @Column(name="pidFile", updatable=false)
+    @Column(name = "pidFile", updatable = false)
     private String servicePidFile;
 
-    @Column(name="isDefault")
+    @Column(name = "isDefault")
     private boolean defaultService;
-
 
     @Column(name = "uuid")
     String uuid = UUID.randomUUID().toString();
 
+    @Override
     public long getId() {
         return id;
     }

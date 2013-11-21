@@ -75,7 +75,7 @@ public class DeployDestination {
 
     @Override
     public boolean equals(Object obj) {
-        DeployDestination that = (DeployDestination) obj;
+        DeployDestination that = (DeployDestination)obj;
         if (this._dc == null || that._dc == null) {
             return false;
         }

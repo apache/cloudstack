@@ -16,49 +16,61 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=RemoteAccessVpn.class)
+@EntityReference(value = RemoteAccessVpn.class)
 @SuppressWarnings("unused")
-public class RemoteAccessVpnResponse extends BaseResponse implements ControlledEntityResponse{
+public class RemoteAccessVpnResponse extends BaseResponse implements ControlledEntityResponse {
 
-    @SerializedName(ApiConstants.PUBLIC_IP_ID) @Param(description="the public ip address of the vpn server")
+    @SerializedName(ApiConstants.PUBLIC_IP_ID)
+    @Param(description = "the public ip address of the vpn server")
     private String publicIpId;
 
-    @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="the public ip address of the vpn server")
+    @SerializedName(ApiConstants.PUBLIC_IP)
+    @Param(description = "the public ip address of the vpn server")
     private String publicIp;
 
-    @SerializedName("iprange") @Param(description="the range of ips to allocate to the clients")
+    @SerializedName("iprange")
+    @Param(description = "the range of ips to allocate to the clients")
     private String ipRange;
 
-    @SerializedName("presharedkey") @Param(description="the ipsec preshared key")
+    @SerializedName("presharedkey")
+    @Param(description = "the ipsec preshared key")
     private String presharedKey;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account of the remote access vpn")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account of the remote access vpn")
     private String accountName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vpn")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the vpn")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vpn")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the vpn")
     private String projectName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the account of the remote access vpn")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain id of the account of the remote access vpn")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the account of the remote access vpn")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain name of the account of the remote access vpn")
     private String domainName;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="the state of the rule")
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "the state of the rule")
     private String state;
-    
-    @SerializedName(ApiConstants.ID) @Param(description="the id of the remote access vpn")
+
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the id of the remote access vpn")
     private String id;
 
     public void setPublicIp(String publicIp) {
@@ -73,6 +85,7 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
         this.presharedKey = presharedKey;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
@@ -82,6 +95,7 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
         this.domainId = domainId;
     }
 
+    @Override
     public void setDomainName(String name) {
         this.domainName = name;
     }
@@ -103,7 +117,7 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
-    
+
     public void setId(String id) {
         this.id = id;
     }

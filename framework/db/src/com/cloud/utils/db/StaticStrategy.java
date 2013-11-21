@@ -34,33 +34,34 @@ public class StaticStrategy implements BalanceStrategy {
     public StaticStrategy() {
     }
 
+    @Override
     public void destroy() {
         // we don't have anything to clean up
     }
 
+    @Override
     public void init(Connection conn, Properties props) throws SQLException {
         // we don't have anything to initialize
     }
 
-    public ConnectionImpl pickConnection(LoadBalancingConnectionProxy proxy,
-            List<String> configuredHosts, Map<String, ConnectionImpl> liveConnections, long[] responseTimes,
-            int numRetries) throws SQLException {
+    @Override
+    public ConnectionImpl pickConnection(LoadBalancingConnectionProxy proxy, List<String> configuredHosts, Map<String, ConnectionImpl> liveConnections,
+        long[] responseTimes, int numRetries) throws SQLException {
         int numHosts = configuredHosts.size();
 
         SQLException ex = null;
 
         List<String> whiteList = new ArrayList<String>(numHosts);
         whiteList.addAll(configuredHosts);
-        
+
         Map<String, Long> blackList = proxy.getGlobalBlacklist();
 
         whiteList.removeAll(blackList.keySet());
-        
+
         Map<String, Integer> whiteListMap = this.getArrayIndexMap(whiteList);
-        
 
         for (int attempts = 0; attempts < numRetries;) {
-            if(whiteList.size() == 0){
+            if (whiteList.size() == 0) {
                 throw SQLError.createSQLException("No hosts configured", null);
             }
 
@@ -83,7 +84,7 @@ public class StaticStrategy implements BalanceStrategy {
                             whiteList.remove(whiteListIndex.intValue());
                             whiteListMap = this.getArrayIndexMap(whiteList);
                         }
-                        proxy.addToGlobalBlacklist( hostPortSpec );
+                        proxy.addToGlobalBlacklist(hostPortSpec);
 
                         if (whiteList.size() == 0) {
                             attempts++;
@@ -107,7 +108,7 @@ public class StaticStrategy implements BalanceStrategy {
                     throw sqlEx;
                 }
             }
-            
+
             return conn;
         }
 
@@ -117,14 +118,14 @@ public class StaticStrategy implements BalanceStrategy {
 
         return null; // we won't get here, compiler can't tell
     }
-    
+
     private Map<String, Integer> getArrayIndexMap(List<String> l) {
         Map<String, Integer> m = new HashMap<String, Integer>(l.size());
         for (int i = 0; i < l.size(); i++) {
             m.put(l.get(i), Integer.valueOf(i));
         }
         return m;
-        
+
     }
 
 }

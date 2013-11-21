@@ -24,21 +24,26 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface Event extends ControlledEntity, Identity, InternalIdentity {
     public enum State {
-        Created,
-        Scheduled,
-        Started,
-        Completed;
+        Created, Scheduled, Started, Completed;
     }
 
     String getType();
+
     State getState();
 
     String getDescription();
+
     Date getCreateDate();
+
     long getUserId();
+
     int getTotalSize();
+
     String getLevel();
+
     long getStartId();
+
     String getParameters();
+
     boolean getArchived();
 }

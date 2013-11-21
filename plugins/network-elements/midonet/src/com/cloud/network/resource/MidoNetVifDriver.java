@@ -19,30 +19,33 @@
 
 package com.cloud.network.resource;
 
-import com.cloud.hypervisor.kvm.resource.*;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.naming.ConfigurationException;
+import javax.ws.rs.core.MultivaluedMap;
+
+import org.apache.log4j.Logger;
+import org.libvirt.LibvirtException;
+import org.midonet.client.MidonetApi;
+import org.midonet.client.resource.Bridge;
+import org.midonet.client.resource.BridgePort;
+import org.midonet.client.resource.Host;
+
+import com.sun.jersey.core.util.MultivaluedMapImpl;
+
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
+import com.cloud.hypervisor.kvm.resource.VifDriverBase;
 import com.cloud.network.Networks;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import org.apache.log4j.Logger;
-import org.libvirt.LibvirtException;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.naming.ConfigurationException;
-import java.util.Map;
-import java.util.UUID;
-
-import org.midonet.client.resource.Bridge;
-import org.midonet.client.resource.BridgePort;
-import org.midonet.client.resource.Host;
-import org.midonet.client.MidonetApi;
 
 public class MidoNetVifDriver extends VifDriverBase {
 
-    private static final Logger s_logger = Logger
-            .getLogger(MidoNetVifDriver.class);
+    private static final Logger s_logger = Logger.getLogger(MidoNetVifDriver.class);
     private int _timeout;
     private String _midoApiLocation = "http://localhost:8081/";
     private static final String midoPostfix = "mnet";
@@ -52,11 +55,11 @@ public class MidoNetVifDriver extends VifDriverBase {
 
         super.configure(params);
 
-        String value = (String) params.get("scripts.timeout");
+        String value = (String)params.get("scripts.timeout");
         _timeout = NumbersUtil.parseInt(value, 30 * 60) * 1000;
 
         // Load Midonet API server location
-        String midoLoc = (String) params.get("midonet.apiserver.address");
+        String midoLoc = (String)params.get("midonet.apiserver.address");
         if (midoLoc != null) {
             _midoApiLocation = midoLoc;
         }
@@ -100,8 +103,7 @@ public class MidoNetVifDriver extends VifDriverBase {
     }
 
     @Override
-    public LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType)
-            throws InternalErrorException, LibvirtException {
+    public LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType) throws InternalErrorException, LibvirtException {
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("nic=" + nic);
@@ -111,8 +113,7 @@ public class MidoNetVifDriver extends VifDriverBase {
 
         String trafficLabel = nic.getName();
 
-        if (nic.getBroadcastType() == Networks.BroadcastDomainType.Mido &&
-                (nic.getType() == Networks.TrafficType.Guest || nic.getType() == Networks.TrafficType.Public)){
+        if (nic.getBroadcastType() == Networks.BroadcastDomainType.Mido && (nic.getType() == Networks.TrafficType.Guest || nic.getType() == Networks.TrafficType.Public)) {
             /*
             * create the tap.
             */
@@ -124,7 +125,7 @@ public class MidoNetVifDriver extends VifDriverBase {
             * should look like "mido://[tenant_id].[bridge_name]"
             */
             MultivaluedMap qNet = new MultivaluedMapImpl();
-            String nicAuthority= nic.getBroadcastUri().getAuthority();
+            String nicAuthority = nic.getBroadcastUri().getAuthority();
             String tenantId = nicAuthority.split("\\.")[0];
             qNet.add("tenant_id", tenantId);
             String url = nicAuthority.split("\\.")[1];
@@ -137,11 +138,8 @@ public class MidoNetVifDriver extends VifDriverBase {
                 if (b.getName().equals(netName)) {
                     for (BridgePort p : b.getPorts()) {
                         UUID pvif = p.getVifId();
-                        if (pvif != null && p.getVifId().toString().equals(nic.getUuid())){
-                            getMyHost(api).addHostInterfacePort()
-                                    .interfaceName(tapName)
-                                    .portId(p.getId())
-                                    .create();
+                        if (pvif != null && p.getVifId().toString().equals(nic.getUuid())) {
+                            getMyHost(api).addHostInterfacePort().interfaceName(tapName).portId(p.getId()).create();
                             break;
                         }
                     }

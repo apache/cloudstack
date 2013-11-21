@@ -16,6 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.ratelimit;
 
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -30,14 +34,10 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.ratelimit.ApiRateLimitService;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.configuration.Config;
 import com.cloud.user.Account;
 
-import javax.inject.Inject;
-
-@APICommand(name = "resetApiLimit", responseObject=ApiLimitResponse.class, description="Reset api count")
+@APICommand(name = "resetApiLimit", responseObject = ApiLimitResponse.class, description = "Reset api count")
 public class ResetApiLimitCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(ResetApiLimitCmd.class.getName());
 
@@ -54,29 +54,24 @@ public class ResetApiLimitCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @ACL
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.UUID, entityType=AccountResponse.class,
-            description="the ID of the acount whose limit to be reset")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.UUID, entityType = AccountResponse.class, description = "the ID of the acount whose limit to be reset")
     private Long accountId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-
     public Long getAccountId() {
         return accountId;
     }
-
 
     public void setAccountId(Long accountId) {
         this.accountId = accountId;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
 
     @Override
     public String getCommandName() {
@@ -94,9 +89,9 @@ public class ResetApiLimitCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean apiLimitEnabled = Boolean.parseBoolean(_configDao.getValue(Config.ApiLimitEnabled.key()));
-        if ( !apiLimitEnabled ){
+        if (!apiLimitEnabled) {
             throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "This api is only available when api.throttling.enabled = true.");
         }
         boolean result = _apiLimitService.resetApiLimit(this.accountId);

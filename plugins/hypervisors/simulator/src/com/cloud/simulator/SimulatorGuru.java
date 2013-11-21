@@ -27,10 +27,10 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.vm.VirtualMachineProfile;
 
-
-@Local(value=HypervisorGuru.class)
+@Local(value = HypervisorGuru.class)
 public class SimulatorGuru extends HypervisorGuruBase implements HypervisorGuru {
-    @Inject GuestOSDao _guestOsDao;
+    @Inject
+    GuestOSDao _guestOsDao;
 
     protected SimulatorGuru() {
         super();

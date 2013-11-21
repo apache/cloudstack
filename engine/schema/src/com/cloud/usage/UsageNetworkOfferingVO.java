@@ -25,64 +25,65 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 @Entity
-@Table(name="usage_network_offering")
+@Table(name = "usage_network_offering")
 public class UsageNetworkOfferingVO {
-	
-	@Column(name="zone_id")
+
+    @Column(name = "zone_id")
     private long zoneId;
-	
-	@Column(name="account_id")
+
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="domain_id")
-	private long domainId;
+    @Column(name = "domain_id")
+    private long domainId;
 
-	@Column(name="vm_instance_id")
-	private long vmInstanceId;
+    @Column(name = "vm_instance_id")
+    private long vmInstanceId;
 
-	@Column(name="network_offering_id")
+    @Column(name = "network_offering_id")
     private Long networkOfferingId;
-	
-    @Column(name="is_default")
+
+    @Column(name = "is_default")
     private boolean isDefault = false;
 
-	@Column(name="created")
-	@Temporal(value=TemporalType.TIMESTAMP)
-	private Date created = null;
+    @Column(name = "created")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date created = null;
 
-	@Column(name="deleted")
-	@Temporal(value=TemporalType.TIMESTAMP)
-	private Date deleted = null;
-	
-	@Column(name="nic_id")
-	private Long nicId;
+    @Column(name = "deleted")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date deleted = null;
 
-	protected UsageNetworkOfferingVO() {
-	}
+    @Column(name = "nic_id")
+    private Long nicId;
 
-	public UsageNetworkOfferingVO(long zoneId, long accountId, long domainId, long vmInstanceId, long networkOfferingId, long nicId, boolean isDefault, Date created, Date deleted) {
-		this.zoneId = zoneId;
-		this.accountId = accountId;
-		this.domainId = domainId;
-		this.vmInstanceId = vmInstanceId;
-		this.networkOfferingId = networkOfferingId;
-		this.isDefault = isDefault;
-		this.created = created;
-		this.deleted = deleted;
-		this.nicId = nicId;
-	}
+    protected UsageNetworkOfferingVO() {
+    }
 
-	public long getZoneId() {
-		return zoneId;
-	}
-	
-	public long getAccountId() {
-		return accountId;
-	}
+    public UsageNetworkOfferingVO(long zoneId, long accountId, long domainId, long vmInstanceId, long networkOfferingId, long nicId, boolean isDefault, Date created,
+            Date deleted) {
+        this.zoneId = zoneId;
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.vmInstanceId = vmInstanceId;
+        this.networkOfferingId = networkOfferingId;
+        this.isDefault = isDefault;
+        this.created = created;
+        this.deleted = deleted;
+        this.nicId = nicId;
+    }
 
-	public long getDomainId() {
-	    return domainId;
-	}
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public long getAccountId() {
+        return accountId;
+    }
+
+    public long getDomainId() {
+        return domainId;
+    }
 
     public long getVmInstanceId() {
         return vmInstanceId;
@@ -97,15 +98,16 @@ public class UsageNetworkOfferingVO {
     }
 
     public Date getCreated() {
-		return created;
-	}
+        return created;
+    }
 
-	public Date getDeleted() {
-		return deleted;
-	}
-	public void setDeleted(Date deleted) {
-	    this.deleted = deleted;
-	}
+    public Date getDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(Date deleted) {
+        this.deleted = deleted;
+    }
 
     public Long getNicId() {
         return nicId;

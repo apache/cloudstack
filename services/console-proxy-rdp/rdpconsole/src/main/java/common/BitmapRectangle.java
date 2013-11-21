@@ -23,52 +23,50 @@ import streamer.ByteBuffer;
  */
 public class BitmapRectangle {
 
-  /**
-   * Left bound of the rectangle.
-   */
-  public int x;
+    /**
+     * Left bound of the rectangle.
+     */
+    public int x;
 
-  /**
-   * Top bound of the rectangle.
-   */
-  public int y;
+    /**
+     * Top bound of the rectangle.
+     */
+    public int y;
 
-  /**
-   * Width of the rectangle.
-   */
-  public int width;
+    /**
+     * Width of the rectangle.
+     */
+    public int width;
 
-  /**
-   * Height of the rectangle.
-   */
-  public int height;
+    /**
+     * Height of the rectangle.
+     */
+    public int height;
 
-  /**
-   * Color depth of the rectangle data in bits-per-pixel.
-   */
-  public int colorDepth;
+    /**
+     * Color depth of the rectangle data in bits-per-pixel.
+     */
+    public int colorDepth;
 
-  /**
-   * Variable-length array of bytes describing a raw uncompressed bitmap image.
-   */
-  public ByteBuffer bitmapDataStream;
+    /**
+     * Variable-length array of bytes describing a raw uncompressed bitmap image.
+     */
+    public ByteBuffer bitmapDataStream;
 
-  /**
-   * Size of single horizontal scan line.
-   */
-  public int bufferWidth;
+    /**
+     * Size of single horizontal scan line.
+     */
+    public int bufferWidth;
 
-  /**
-   * Number of horizontal scan lines in buffer.
-   */
-  public int bufferHeight;
+    /**
+     * Number of horizontal scan lines in buffer.
+     */
+    public int bufferHeight;
 
-  @Override
-  public String toString() {
-    return String
-        .format(
-            "BitmapUpdateRectangle [x=%s, y=%s, width=%s, height=%s, bitsPerPixel=%s, bitmapDataStream=%s]",
-            x, y, width, height, colorDepth, bitmapDataStream);
-  }
+    @Override
+    public String toString() {
+        return String.format("BitmapUpdateRectangle [x=%s, y=%s, width=%s, height=%s, bitsPerPixel=%s, bitmapDataStream=%s]", x, y, width, height, colorDepth,
+            bitmapDataStream);
+    }
 
 }

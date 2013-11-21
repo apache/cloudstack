@@ -17,12 +17,12 @@
 package org.apache.cloudstack.storage.to;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 public class SnapshotObjectTO implements DataTO {
     private String path;
@@ -141,7 +141,6 @@ public class SnapshotObjectTO implements DataTO {
 
     @Override
     public String toString() {
-        return new StringBuilder("SnapshotTO[datastore=").append(dataStore).append("|volume=").append(volume).append("|path")
-                .append(path).append("]").toString();
+        return new StringBuilder("SnapshotTO[datastore=").append(dataStore).append("|volume=").append(volume).append("|path").append(path).append("]").toString();
     }
 }

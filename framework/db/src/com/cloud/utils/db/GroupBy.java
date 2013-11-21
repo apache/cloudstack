@@ -27,7 +27,7 @@ public class GroupBy<J extends SearchBase<?, T, R>, T, R> {
     J _builder;
     List<Pair<Func, Attribute>> _groupBys;
     Having _having;
-    
+
     public GroupBy(J builder) {
         _builder = builder;
         _groupBys = new ArrayList<Pair<Func, Attribute>>();
@@ -37,29 +37,29 @@ public class GroupBy<J extends SearchBase<?, T, R>, T, R> {
         }
         _builder.getSpecifiedAttributes().clear();
     }
-    
+
     public GroupBy<J, T, R> group(Object useless) {
         _groupBys.add(new Pair<Func, Attribute>(null, _builder.getSpecifiedAttributes().get(0)));
         _builder.getSpecifiedAttributes().clear();
         return this;
     }
-    
+
     public GroupBy<J, T, R> group(Func func, Object useless) {
         _groupBys.add(new Pair<Func, Attribute>(func, _builder.getSpecifiedAttributes().get(0)));
         _builder.getSpecifiedAttributes().clear();
         return this;
     }
-    
+
     public J having(Func func, Object obj, Op op, Object value) {
-        assert(_having == null) : "You can only specify one having in a group by";
+        assert (_having == null) : "You can only specify one having in a group by";
         List<Attribute> attrs = _builder.getSpecifiedAttributes();
         assert attrs.size() == 1 : "You didn't specified an attribute";
-        
+
         _having = new Having(func, attrs.get(0), op, value);
         _builder.getSpecifiedAttributes().clear();
         return _builder;
     }
-    
+
     public void toSql(StringBuilder builder) {
         builder.append(" GROUP BY ");
         for (Pair<Func, Attribute> groupBy : _groupBys) {
@@ -70,29 +70,29 @@ public class GroupBy<J extends SearchBase<?, T, R>, T, R> {
             } else {
                 builder.append(groupBy.second().table + "." + groupBy.second().columnName);
             }
-            
+
             builder.append(", ");
         }
-        
+
         builder.delete(builder.length() - 2, builder.length());
         if (_having != null) {
             _having.toSql(builder);
         }
     }
-    
+
     protected class Having {
         public Func func;
         public Attribute attr;
         public Op op;
         public Object value;
-        
+
         public Having(Func func, Attribute attr, Op op, Object value) {
             this.func = func;
             this.attr = attr;
             this.op = op;
             this.value = value;
         }
-        
+
         public void toSql(StringBuilder builder) {
             if (func != null) {
                 String f = func.toString();
@@ -101,7 +101,7 @@ public class GroupBy<J extends SearchBase<?, T, R>, T, R> {
             } else {
                 builder.append(attr.toString());
             }
-            
+
             builder.append(op.toString());
         }
     }

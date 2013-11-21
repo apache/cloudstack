@@ -117,7 +117,7 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public String getUri() {
-        if ( url != null ){
+        if (url != null) {
             return url;
         }
         VMTemplateVO image = imageDao.findById(imageVO.getId());
@@ -133,12 +133,12 @@ public class TemplateObject implements TemplateInfo {
         }
 
         /*
-         * 
+         *
          * // If the template that was passed into this allocator is not
          * installed in the storage pool, // add 3 * (template size on secondary
          * storage) to the running total VMTemplateHostVO templateHostVO =
          * _storageMgr.findVmTemplateHost(templateForVmCreation.getId(), null);
-         * 
+         *
          * if (templateHostVO == null) { VMTemplateSwiftVO templateSwiftVO =
          * _swiftMgr.findByTmpltId(templateForVmCreation.getId()); if
          * (templateSwiftVO != null) { long templateSize =
@@ -184,21 +184,19 @@ public class TemplateObject implements TemplateInfo {
         try {
             if (getDataStore().getRole() == DataStoreRole.Primary) {
                 if (answer instanceof CopyCmdAnswer) {
-                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer) answer;
-                    TemplateObjectTO newTemplate = (TemplateObjectTO) cpyAnswer.getNewData();
-                    VMTemplateStoragePoolVO templatePoolRef = templatePoolDao.findByPoolTemplate(getDataStore()
-                            .getId(), getId());
+                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
+                    TemplateObjectTO newTemplate = (TemplateObjectTO)cpyAnswer.getNewData();
+                    VMTemplateStoragePoolVO templatePoolRef = templatePoolDao.findByPoolTemplate(getDataStore().getId(), getId());
                     templatePoolRef.setDownloadPercent(100);
                     templatePoolRef.setDownloadState(Status.DOWNLOADED);
                     templatePoolRef.setLocalDownloadPath(newTemplate.getPath());
                     templatePoolRef.setInstallPath(newTemplate.getPath());
                     templatePoolDao.update(templatePoolRef.getId(), templatePoolRef);
                 }
-            } else if (getDataStore().getRole() == DataStoreRole.Image
-                    || getDataStore().getRole() == DataStoreRole.ImageCache) {
+            } else if (getDataStore().getRole() == DataStoreRole.Image || getDataStore().getRole() == DataStoreRole.ImageCache) {
                 if (answer instanceof CopyCmdAnswer) {
-                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer) answer;
-                    TemplateObjectTO newTemplate = (TemplateObjectTO) cpyAnswer.getNewData();
+                    CopyCmdAnswer cpyAnswer = (CopyCmdAnswer)answer;
+                    TemplateObjectTO newTemplate = (TemplateObjectTO)cpyAnswer.getNewData();
                     TemplateDataStoreVO templateStoreRef = templateStoreDao.findByStoreTemplate(getDataStore().getId(), getId());
                     templateStoreRef.setInstallPath(newTemplate.getPath());
                     templateStoreRef.setDownloadPercent(100);
@@ -213,7 +211,7 @@ public class TemplateObject implements TemplateInfo {
                         if (newTemplate.getFormat() != null) {
                             templateVO.setFormat(newTemplate.getFormat());
                         }
-                        if (newTemplate.getName() != null ){
+                        if (newTemplate.getName() != null) {
                             // For template created from snapshot, template name is determine by resource code.
                             templateVO.setUniqueName(newTemplate.getName());
                         }
@@ -390,13 +388,13 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public String getUrl() {
-        if (url != null ){
+        if (url != null) {
             return url;
         }
         return imageVO.getUrl();
     }
 
-    public void setUrl(String url){
+    public void setUrl(String url) {
         this.url = url;
     }
 

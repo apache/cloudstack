@@ -36,7 +36,6 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -54,29 +53,33 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
-@Local(value=NetworkElement.class)
+@Local(value = NetworkElement.class)
 public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider, IpDeployer {
     private static final Logger s_logger = Logger.getLogger(ElasticLoadBalancerElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
-    @Inject NetworkModel _networkManager;
-    @Inject ElasticLoadBalancerManager _lbMgr;
-    @Inject ConfigurationDao _configDao;
-    @Inject NetworkOfferingDao _networkOfferingDao;
-    @Inject NetworkDao _networksDao;
-    
+    @Inject
+    NetworkModel _networkManager;
+    @Inject
+    ElasticLoadBalancerManager _lbMgr;
+    @Inject
+    ConfigurationDao _configDao;
+    @Inject
+    NetworkOfferingDao _networkOfferingDao;
+    @Inject
+    NetworkDao _networksDao;
+
     boolean _enabled;
     TrafficType _frontEndTrafficType = TrafficType.Guest;
-    
+
     private boolean canHandle(Network network, List<LoadBalancingRule> rules) {
-        if (network.getGuestType() != Network.GuestType.Shared|| network.getTrafficType() != TrafficType.Guest) {
+        if (network.getGuestType() != Network.GuestType.Shared || network.getTrafficType() != TrafficType.Guest) {
             s_logger.debug("Not handling network with type  " + network.getGuestType() + " and traffic type " + network.getTrafficType());
             return false;
         }
-        
+
         Map<Capability, String> lbCaps = this.getCapabilities().get(Service.Lb);
         if (!lbCaps.isEmpty()) {
             String schemeCaps = lbCaps.get(Capability.LbSchemes);
@@ -89,51 +92,51 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
                 }
             }
         }
-        
+
         return true;
     }
-    
+
     @Override
     public Provider getProvider() {
         return Provider.ElasticLoadBalancerVm;
     }
-    
+
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
         return capabilities;
     }
-    
+
     private static Map<Service, Map<Capability, String>> setCapabilities() {
         Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
-        
+
         Map<Capability, String> lbCapabilities = new HashMap<Capability, String>();
         lbCapabilities.put(Capability.SupportedLBAlgorithms, "roundrobin,leastconn,source");
         lbCapabilities.put(Capability.SupportedLBIsolation, "shared");
         lbCapabilities.put(Capability.SupportedProtocols, "tcp, udp");
         lbCapabilities.put(Capability.LbSchemes, LoadBalancerContainer.Scheme.Public.toString());
-        
-        capabilities.put(Service.Lb, lbCapabilities);   
+
+        capabilities.put(Service.Lb, lbCapabilities);
         return capabilities;
     }
 
     @Override
-    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
-        
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException, InsufficientCapacityException {
+
         return true;
     }
 
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-       
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+
         return true;
     }
 
     @Override
     public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
-            ResourceUnavailableException {
-        
+        ResourceUnavailableException {
+
         return true;
     }
 
@@ -148,33 +151,32 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
         // TODO  kill all loadbalancer vms by calling the ElasticLoadBalancerManager
         return false;
     }
-    
+
     @Override
     public boolean validateLBRule(Network network, LoadBalancingRule rule) {
         return true;
     }
-    
+
     @Override
     public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
         if (!canHandle(network, rules)) {
             return false;
         }
-                
+
         return _lbMgr.applyLoadBalancerRules(network, rules);
     }
 
-
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        
+
         super.configure(name, params);
         String enabled = _configDao.getValue(Config.ElasticLoadBalancerEnabled.key());
-        _enabled = (enabled == null) ? false: Boolean.parseBoolean(enabled);
+        _enabled = (enabled == null) ? false : Boolean.parseBoolean(enabled);
         if (_enabled) {
             String traffType = _configDao.getValue(Config.ElasticLoadBalancerNetwork.key());
             if ("guest".equalsIgnoreCase(traffType)) {
                 _frontEndTrafficType = TrafficType.Guest;
-            } else if ("public".equalsIgnoreCase(traffType)){
+            } else if ("public".equalsIgnoreCase(traffType)) {
                 _frontEndTrafficType = TrafficType.Public;
             } else
                 throw new ConfigurationException("Traffic type for front end of load balancer has to be guest or public; found : " + traffType);
@@ -190,7 +192,7 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
 
     @Override
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
-            ResourceUnavailableException {
+        ResourceUnavailableException {
         // TODO Auto-generated method stub
         return true;
     }
@@ -199,7 +201,7 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
     public boolean canEnableIndividualServices() {
         return false;
     }
-    
+
     @Override
     public boolean verifyServicesCombination(Set<Service> services) {
         return true;

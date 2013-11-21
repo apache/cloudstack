@@ -16,6 +16,23 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeCommand;
@@ -102,23 +119,9 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DownloadCommand;
-import org.apache.cloudstack.storage.command.DownloadProgressCommand;
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @Component
-@Local(value = { SimulatorManager.class })
+@Local(value = {SimulatorManager.class})
 public class SimulatorManagerImpl extends ManagerBase implements SimulatorManager, PluggableService {
     private static final Logger s_logger = Logger.getLogger(SimulatorManagerImpl.class);
     @Inject
@@ -220,45 +223,45 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
             }
 
             if (cmd instanceof GetHostStatsCommand) {
-                return _mockAgentMgr.getHostStatistic((GetHostStatsCommand) cmd);
+                return _mockAgentMgr.getHostStatistic((GetHostStatsCommand)cmd);
             } else if (cmd instanceof CheckHealthCommand) {
-                return _mockAgentMgr.checkHealth((CheckHealthCommand) cmd);
+                return _mockAgentMgr.checkHealth((CheckHealthCommand)cmd);
             } else if (cmd instanceof PingTestCommand) {
-                return _mockAgentMgr.pingTest((PingTestCommand) cmd);
+                return _mockAgentMgr.pingTest((PingTestCommand)cmd);
             } else if (cmd instanceof PrepareForMigrationCommand) {
-                return _mockVmMgr.prepareForMigrate((PrepareForMigrationCommand) cmd);
+                return _mockVmMgr.prepareForMigrate((PrepareForMigrationCommand)cmd);
             } else if (cmd instanceof MigrateCommand) {
-                return _mockVmMgr.Migrate((MigrateCommand) cmd, info);
+                return _mockVmMgr.Migrate((MigrateCommand)cmd, info);
             } else if (cmd instanceof StartCommand) {
-                return _mockVmMgr.startVM((StartCommand) cmd, info);
+                return _mockVmMgr.startVM((StartCommand)cmd, info);
             } else if (cmd instanceof CheckSshCommand) {
-                return _mockVmMgr.checkSshCommand((CheckSshCommand) cmd);
+                return _mockVmMgr.checkSshCommand((CheckSshCommand)cmd);
             } else if (cmd instanceof CheckVirtualMachineCommand) {
-                return _mockVmMgr.checkVmState((CheckVirtualMachineCommand) cmd);
+                return _mockVmMgr.checkVmState((CheckVirtualMachineCommand)cmd);
             } else if (cmd instanceof SetStaticNatRulesCommand) {
-                return _mockNetworkMgr.SetStaticNatRules((SetStaticNatRulesCommand) cmd);
+                return _mockNetworkMgr.SetStaticNatRules((SetStaticNatRulesCommand)cmd);
             } else if (cmd instanceof SetFirewallRulesCommand) {
-                return _mockNetworkMgr.SetFirewallRules((SetFirewallRulesCommand) cmd);
+                return _mockNetworkMgr.SetFirewallRules((SetFirewallRulesCommand)cmd);
             } else if (cmd instanceof SetPortForwardingRulesCommand) {
-                return _mockNetworkMgr.SetPortForwardingRules((SetPortForwardingRulesCommand) cmd);
+                return _mockNetworkMgr.SetPortForwardingRules((SetPortForwardingRulesCommand)cmd);
             } else if (cmd instanceof NetworkUsageCommand) {
-                return _mockNetworkMgr.getNetworkUsage((NetworkUsageCommand) cmd);
+                return _mockNetworkMgr.getNetworkUsage((NetworkUsageCommand)cmd);
             } else if (cmd instanceof IpAssocCommand) {
-                return _mockNetworkMgr.IpAssoc((IpAssocCommand) cmd);
+                return _mockNetworkMgr.IpAssoc((IpAssocCommand)cmd);
             } else if (cmd instanceof LoadBalancerConfigCommand) {
-                return _mockNetworkMgr.LoadBalancerConfig((LoadBalancerConfigCommand) cmd);
+                return _mockNetworkMgr.LoadBalancerConfig((LoadBalancerConfigCommand)cmd);
             } else if (cmd instanceof DhcpEntryCommand) {
-                return _mockNetworkMgr.AddDhcpEntry((DhcpEntryCommand) cmd);
+                return _mockNetworkMgr.AddDhcpEntry((DhcpEntryCommand)cmd);
             } else if (cmd instanceof VmDataCommand) {
-                return _mockVmMgr.setVmData((VmDataCommand) cmd);
+                return _mockVmMgr.setVmData((VmDataCommand)cmd);
             } else if (cmd instanceof CleanupNetworkRulesCmd) {
-                return _mockVmMgr.CleanupNetworkRules((CleanupNetworkRulesCmd) cmd, info);
+                return _mockVmMgr.CleanupNetworkRules((CleanupNetworkRulesCmd)cmd, info);
             } else if (cmd instanceof CheckNetworkCommand) {
-                return _mockAgentMgr.checkNetworkCommand((CheckNetworkCommand) cmd);
-            }else if (cmd instanceof StopCommand) {
+                return _mockAgentMgr.checkNetworkCommand((CheckNetworkCommand)cmd);
+            } else if (cmd instanceof StopCommand) {
                 return _mockVmMgr.stopVM((StopCommand)cmd);
             } else if (cmd instanceof RebootCommand) {
-                return _mockVmMgr.rebootVM((RebootCommand) cmd);
+                return _mockVmMgr.rebootVM((RebootCommand)cmd);
             } else if (cmd instanceof GetVncPortCommand) {
                 return _mockVmMgr.getVncPort((GetVncPortCommand)cmd);
             } else if (cmd instanceof CheckConsoleProxyLoadCommand) {
@@ -318,56 +321,56 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
             } else if (cmd instanceof GetVmStatsCommand) {
                 return _mockVmMgr.getVmStats((GetVmStatsCommand)cmd);
             } else if (cmd instanceof CheckRouterCommand) {
-                return _mockVmMgr.checkRouter((CheckRouterCommand) cmd);
+                return _mockVmMgr.checkRouter((CheckRouterCommand)cmd);
             } else if (cmd instanceof BumpUpPriorityCommand) {
-                return _mockVmMgr.bumpPriority((BumpUpPriorityCommand) cmd);
+                return _mockVmMgr.bumpPriority((BumpUpPriorityCommand)cmd);
             } else if (cmd instanceof GetDomRVersionCmd) {
-                return _mockVmMgr.getDomRVersion((GetDomRVersionCmd) cmd);
+                return _mockVmMgr.getDomRVersion((GetDomRVersionCmd)cmd);
             } else if (cmd instanceof ClusterSyncCommand) {
                 return new Answer(cmd);
             } else if (cmd instanceof CopyVolumeCommand) {
-                return _mockStorageMgr.CopyVolume((CopyVolumeCommand) cmd);
+                return _mockStorageMgr.CopyVolume((CopyVolumeCommand)cmd);
             } else if (cmd instanceof PlugNicCommand) {
-                return _mockNetworkMgr.plugNic((PlugNicCommand) cmd);
+                return _mockNetworkMgr.plugNic((PlugNicCommand)cmd);
             } else if (cmd instanceof UnPlugNicCommand) {
-                return _mockNetworkMgr.unplugNic((UnPlugNicCommand) cmd);
+                return _mockNetworkMgr.unplugNic((UnPlugNicCommand)cmd);
             } else if (cmd instanceof IpAssocVpcCommand) {
-                return _mockNetworkMgr.ipAssoc((IpAssocVpcCommand) cmd);
+                return _mockNetworkMgr.ipAssoc((IpAssocVpcCommand)cmd);
             } else if (cmd instanceof SetSourceNatCommand) {
-                return _mockNetworkMgr.setSourceNat((SetSourceNatCommand) cmd);
+                return _mockNetworkMgr.setSourceNat((SetSourceNatCommand)cmd);
             } else if (cmd instanceof SetNetworkACLCommand) {
-                return _mockNetworkMgr.setNetworkAcl((SetNetworkACLCommand) cmd);
+                return _mockNetworkMgr.setNetworkAcl((SetNetworkACLCommand)cmd);
             } else if (cmd instanceof SetupGuestNetworkCommand) {
-                return _mockNetworkMgr.setUpGuestNetwork((SetupGuestNetworkCommand) cmd);
+                return _mockNetworkMgr.setUpGuestNetwork((SetupGuestNetworkCommand)cmd);
             } else if (cmd instanceof SetPortForwardingRulesVpcCommand) {
-                return _mockNetworkMgr.setVpcPortForwards((SetPortForwardingRulesVpcCommand) cmd);
+                return _mockNetworkMgr.setVpcPortForwards((SetPortForwardingRulesVpcCommand)cmd);
             } else if (cmd instanceof SetStaticNatRulesCommand) {
-                return _mockNetworkMgr.setVPCStaticNatRules((SetStaticNatRulesCommand) cmd);
+                return _mockNetworkMgr.setVPCStaticNatRules((SetStaticNatRulesCommand)cmd);
             } else if (cmd instanceof SetStaticRouteCommand) {
-                return _mockNetworkMgr.setStaticRoute((SetStaticRouteCommand) cmd);
+                return _mockNetworkMgr.setStaticRoute((SetStaticRouteCommand)cmd);
             } else if (cmd instanceof Site2SiteVpnCfgCommand) {
-                return _mockNetworkMgr.siteToSiteVpn((Site2SiteVpnCfgCommand) cmd);
+                return _mockNetworkMgr.siteToSiteVpn((Site2SiteVpnCfgCommand)cmd);
             } else if (cmd instanceof CheckS2SVpnConnectionsCommand) {
-                return _mockNetworkMgr.checkSiteToSiteVpnConnection((CheckS2SVpnConnectionsCommand) cmd);
+                return _mockNetworkMgr.checkSiteToSiteVpnConnection((CheckS2SVpnConnectionsCommand)cmd);
             } else if (cmd instanceof CreateVMSnapshotCommand) {
-                return _mockVmMgr.createVmSnapshot((CreateVMSnapshotCommand) cmd);
+                return _mockVmMgr.createVmSnapshot((CreateVMSnapshotCommand)cmd);
             } else if (cmd instanceof DeleteVMSnapshotCommand) {
-                return _mockVmMgr.deleteVmSnapshot((DeleteVMSnapshotCommand) cmd);
+                return _mockVmMgr.deleteVmSnapshot((DeleteVMSnapshotCommand)cmd);
             } else if (cmd instanceof RevertToVMSnapshotCommand) {
-                return _mockVmMgr.revertVmSnapshot((RevertToVMSnapshotCommand) cmd);
+                return _mockVmMgr.revertVmSnapshot((RevertToVMSnapshotCommand)cmd);
             } else if (cmd instanceof NetworkRulesVmSecondaryIpCommand) {
-                return _mockVmMgr.plugSecondaryIp((NetworkRulesVmSecondaryIpCommand) cmd);
+                return _mockVmMgr.plugSecondaryIp((NetworkRulesVmSecondaryIpCommand)cmd);
             } else if (cmd instanceof ScaleVmCommand) {
-                return _mockVmMgr.scaleVm((ScaleVmCommand) cmd);
+                return _mockVmMgr.scaleVm((ScaleVmCommand)cmd);
             } else if (cmd instanceof PvlanSetupCommand) {
-                return _mockNetworkMgr.setupPVLAN((PvlanSetupCommand) cmd);
+                return _mockNetworkMgr.setupPVLAN((PvlanSetupCommand)cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
                 return this.storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else {
-                s_logger.error("Simulator does not implement command of type "+cmd.toString());
+                s_logger.error("Simulator does not implement command of type " + cmd.toString());
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             s_logger.error("Failed execute cmd: ", e);
             txn.rollback();
             return new Answer(cmd, false, e.toString());
@@ -401,8 +404,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
     }
 
     @Override
-    public boolean configureSimulator(Long zoneId, Long podId, Long clusterId, Long hostId, String command,
-            String values) {
+    public boolean configureSimulator(Long zoneId, Long podId, Long clusterId, Long hostId, String command, String values) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
             txn.start();

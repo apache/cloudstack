@@ -20,23 +20,20 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 
 public class DownloadInProgressState extends DownloadActiveState {
 
-	public DownloadInProgressState(DownloadListener dl) {
-		super(dl);
-	}
+    public DownloadInProgressState(DownloadListener dl) {
+        super(dl);
+    }
 
+    @Override
+    public String getName() {
+        return Status.DOWNLOAD_IN_PROGRESS.toString();
+    }
 
-	@Override
-	public String getName() {
-		return Status.DOWNLOAD_IN_PROGRESS.toString();
-	}
-
-
-	@Override
-	public void onEntry(String prevState, DownloadEvent event, Object evtObj) {
-		super.onEntry(prevState, event, evtObj);
-		if (!prevState.equals(getName()))
-			getDownloadListener().logDownloadStart();
-	}
-
+    @Override
+    public void onEntry(String prevState, DownloadEvent event, Object evtObj) {
+        super.onEntry(prevState, event, evtObj);
+        if (!prevState.equals(getName()))
+            getDownloadListener().logDownloadStart();
+    }
 
 }

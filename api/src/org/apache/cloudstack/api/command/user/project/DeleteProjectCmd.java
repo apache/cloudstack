@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.project;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -26,13 +28,11 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 
-@APICommand(name = "deleteProject", description="Deletes a project", responseObject=SuccessResponse.class, since="3.0.0")
+@APICommand(name = "deleteProject", description = "Deletes a project", responseObject = SuccessResponse.class, since = "3.0.0")
 public class DeleteProjectCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteProjectCmd.class.getName());
 
@@ -42,14 +42,12 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ProjectResponse.class,
-            required=true, description="id of the project to be deleted")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProjectResponse.class, required = true, description = "id of the project to be deleted")
     private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public Long geId() {
         return id;
@@ -65,7 +63,7 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute(){
+    public void execute() {
         CallContext.current().setEventDetails("Project Id: " + id);
         boolean result = _projectService.deleteProject(id);
         if (result) {
@@ -83,12 +81,12 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Deleting project: " + id;
+        return "Deleting project: " + id;
     }
 
     @Override
     public long getEntityOwnerId() {
-        Project project= _projectService.getProject(id);
+        Project project = _projectService.getProject(id);
         //verify input parameters
         if (project == null) {
             throw new InvalidParameterValueException("Unable to find project by id " + id);

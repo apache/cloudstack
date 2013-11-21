@@ -21,17 +21,15 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
-
 /**
  *  HypervisorCapability represents one particular hypervisor version's capabilities.
  */
-public interface HypervisorCapabilities extends Identity, InternalIdentity{
+public interface HypervisorCapabilities extends Identity, InternalIdentity {
 
     /**
      * @return type of hypervisor
      */
     HypervisorType getHypervisorType();
-
 
     String getHypervisorVersion();
 

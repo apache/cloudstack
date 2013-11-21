@@ -18,31 +18,29 @@ package common;
 
 import java.util.Arrays;
 
-
 import streamer.Order;
 
 /**
  * Not an order, but derived from Order class for compatibility with orders.
- * 
+ *
  * @see http://msdn.microsoft.com/en-us/library/dd306368.aspx
  */
 public class BitmapOrder extends Order {
 
-  public BitmapOrder() {
-    type = OrderType.BITMAP_UPDATE;
-  }
+    public BitmapOrder() {
+        type = OrderType.BITMAP_UPDATE;
+    }
 
-  /**
-   * Structures, each of which contains a rectangular clipping taken from the
-   * server-side screen frame buffer.
-   */
-  public BitmapRectangle rectangles[];
+    /**
+     * Structures, each of which contains a rectangular clipping taken from the
+     * server-side screen frame buffer.
+     */
+    public BitmapRectangle rectangles[];
 
-  @Override
-  public String toString() {
-    final int maxLen = 10;
-    return String.format("BitmapUpdateOrder [rectangles=%s]", rectangles != null ? Arrays.asList(rectangles).subList(0, Math.min(rectangles.length, maxLen))
-        : null);
-  }
+    @Override
+    public String toString() {
+        final int maxLen = 10;
+        return String.format("BitmapUpdateOrder [rectangles=%s]", rectangles != null ? Arrays.asList(rectangles).subList(0, Math.min(rectangles.length, maxLen)) : null);
+    }
 
 }

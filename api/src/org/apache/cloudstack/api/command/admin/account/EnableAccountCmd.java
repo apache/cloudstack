@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.admin.account;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -27,11 +29,10 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.region.RegionService;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "enableAccount", description="Enables an account", responseObject=AccountResponse.class)
+@APICommand(name = "enableAccount", description = "Enables an account", responseObject = AccountResponse.class)
 public class EnableAccountCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(EnableAccountCmd.class.getName());
     private static final String s_name = "enableaccountresponse";
@@ -39,18 +40,17 @@ public class EnableAccountCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=AccountResponse.class,
-            description="Account id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "Account id")
     private Long id;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="Enables specified account.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Enables specified account.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            description="Enables specified account in this domain.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "Enables specified account in this domain.")
     private Long domainId;
 
-    @Inject RegionService _regionService;
+    @Inject
+    RegionService _regionService;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -93,9 +93,9 @@ public class EnableAccountCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Account result = _regionService.enableAccount(this);
-        if (result != null){
+        if (result != null) {
             AccountResponse response = _responseGenerator.createAccountResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);

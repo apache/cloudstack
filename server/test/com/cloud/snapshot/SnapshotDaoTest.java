@@ -20,6 +20,9 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import junit.framework.Assert;
+import junit.framework.TestCase;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,15 +34,11 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDaoImpl;
 import com.cloud.utils.component.ComponentContext;
 
-
-import junit.framework.Assert;
-import junit.framework.TestCase;
-
-
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/SnapshotDaoTestContext.xml")
 public class SnapshotDaoTest extends TestCase {
-    @Inject SnapshotDaoImpl dao;
+    @Inject
+    SnapshotDaoImpl dao;
 
     @Before
     public void setup() throws Exception {
@@ -49,7 +48,7 @@ public class SnapshotDaoTest extends TestCase {
     @Test
     public void testListBy() {
         List<SnapshotVO> snapshots = dao.listByInstanceId(3, Snapshot.State.BackedUp);
-        for(SnapshotVO snapshot : snapshots) {
+        for (SnapshotVO snapshot : snapshots) {
             Assert.assertTrue(snapshot.getState() == Snapshot.State.BackedUp);
         }
     }

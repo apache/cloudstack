@@ -22,26 +22,26 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.bridge.model.CloudStackUserVO;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 
 @Component
-@Local(value={CloudStackUserDao.class})
+@Local(value = {CloudStackUserDao.class})
 public class CloudStackUserDaoImpl extends GenericDaoBase<CloudStackUserVO, String> implements CloudStackUserDao {
     public static final Logger logger = Logger.getLogger(CloudStackUserDaoImpl.class);
 
-    public CloudStackUserDaoImpl() {}
+    public CloudStackUserDaoImpl() {
+    }
 
     @Override
-    public String getSecretKeyByAccessKey( String accessKey ) {
+    public String getSecretKeyByAccessKey(String accessKey) {
         CloudStackUserVO user = null;
         String cloudSecretKey = null;
 
-        SearchBuilder <CloudStackUserVO> searchByAccessKey = createSearchBuilder();
+        SearchBuilder<CloudStackUserVO> searchByAccessKey = createSearchBuilder();
         searchByAccessKey.and("apiKey", searchByAccessKey.entity().getApiKey(), SearchCriteria.Op.EQ);
         searchByAccessKey.done();
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -49,8 +49,8 @@ public class CloudStackUserDaoImpl extends GenericDaoBase<CloudStackUserVO, Stri
             txn.start();
             SearchCriteria<CloudStackUserVO> sc = searchByAccessKey.create();
             sc.setParameters("apiKey", accessKey);
-            user =  findOneBy(sc);
-            if ( user != null && user.getSecretKey() != null) {
+            user = findOneBy(sc);
+            if (user != null && user.getSecretKey() != null) {
                 // User secret key could be encrypted
                 cloudSecretKey = DBEncryptionUtil.decrypt(user.getSecretKey());
             }

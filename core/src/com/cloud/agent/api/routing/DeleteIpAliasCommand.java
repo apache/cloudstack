@@ -16,10 +16,6 @@
 // under the License.
 package com.cloud.agent.api.routing;
 
-
-
-
-
 import java.util.List;
 
 public class DeleteIpAliasCommand extends NetworkElementCommand {
@@ -27,16 +23,15 @@ public class DeleteIpAliasCommand extends NetworkElementCommand {
     List<IpAliasTO> deleteIpAliasTOs;
     List<IpAliasTO> createIpAliasTos;
 
-
-    public DeleteIpAliasCommand( String routerip, List<IpAliasTO> deleteIpAliasTOs, List<IpAliasTO> createIpAliasTos){
+    public DeleteIpAliasCommand(String routerip, List<IpAliasTO> deleteIpAliasTOs, List<IpAliasTO> createIpAliasTos) {
         this.routerip = routerip;
         this.deleteIpAliasTOs = deleteIpAliasTOs;
         this.createIpAliasTos = createIpAliasTos;
 
     }
 
-    public  String getRouterip (){
-        return  routerip;
+    public String getRouterip() {
+        return routerip;
     }
 
     public List<IpAliasTO> getDeleteIpAliasTos() {

@@ -20,28 +20,29 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackOsCategory {
-	@SerializedName(ApiConstants.ID)
-	private Long id;
-	@SerializedName(ApiConstants.NAME)
-	private String name;
+    @SerializedName(ApiConstants.ID)
+    private Long id;
+    @SerializedName(ApiConstants.NAME)
+    private String name;
 
-	/**
-	 * 
-	 */
-	public CloudStackOsCategory() {
-		// TODO Auto-generated constructor stub
-	}
-	/**
-	 * @return the id
-	 */
-	public Long getId() {
-		return id;
-	}
+    /**
+     *
+     */
+    public CloudStackOsCategory() {
+        // TODO Auto-generated constructor stub
+    }
 
-	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
+    /**
+     * @return the id
+     */
+    public Long getId() {
+        return id;
+    }
+
+    /**
+     * @return the name
+     */
+    public String getName() {
+        return name;
+    }
 }

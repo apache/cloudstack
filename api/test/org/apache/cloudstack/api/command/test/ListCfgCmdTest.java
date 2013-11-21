@@ -16,21 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.test;
 
-import com.cloud.configuration.ConfigurationService;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.resource.ResourceService;
-import com.cloud.server.ManagementService;
-import com.cloud.utils.Pair;
+import java.util.ArrayList;
+import java.util.List;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
-
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
-import org.apache.cloudstack.api.response.ConfigurationResponse;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.config.Configuration;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -38,10 +28,16 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
+import org.apache.cloudstack.api.response.ConfigurationResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.config.Configuration;
 
-public class ListCfgCmdTest extends TestCase{
+import com.cloud.server.ManagementService;
+import com.cloud.utils.Pair;
+
+public class ListCfgCmdTest extends TestCase {
 
     private ListCfgsByCmd listCfgsByCmd;
     private ManagementService mgr;
@@ -50,6 +46,7 @@ public class ListCfgCmdTest extends TestCase{
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    @Override
     @Before
     public void setUp() {
         responseGenerator = Mockito.mock(ResponseGenerator.class);
@@ -64,18 +61,14 @@ public class ListCfgCmdTest extends TestCase{
         listCfgsByCmd._mgr = mgr;
         listCfgsByCmd._responseGenerator = responseGenerator;
 
-
-
         List<Configuration> configList = new ArrayList<Configuration>();
         configList.add(cfg);
 
         Pair<List<? extends Configuration>, Integer> result = new Pair<List<? extends Configuration>, Integer>(configList, 1);
 
         try {
-            Mockito.when(
-                    mgr.searchForConfigurations(listCfgsByCmd))
-                    .thenReturn(result);
-        }catch (Exception e){
+            Mockito.when(mgr.searchForConfigurations(listCfgsByCmd)).thenReturn(result);
+        } catch (Exception e) {
             Assert.fail("Received exception when success expected " + e.getMessage());
         }
         ConfigurationResponse cfgResponse = new ConfigurationResponse();
@@ -85,7 +78,7 @@ public class ListCfgCmdTest extends TestCase{
         listCfgsByCmd.execute();
         Mockito.verify(responseGenerator).createConfigurationResponse(cfg);
 
-        ListResponse<ConfigurationResponse> actualResponse = (ListResponse<ConfigurationResponse>) listCfgsByCmd.getResponseObject();
+        ListResponse<ConfigurationResponse> actualResponse = (ListResponse<ConfigurationResponse>)listCfgsByCmd.getResponseObject();
         Assert.assertEquals(cfgResponse, actualResponse.getResponses().get(0));
     }
 

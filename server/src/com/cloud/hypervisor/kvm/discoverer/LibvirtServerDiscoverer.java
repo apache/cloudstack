@@ -62,8 +62,7 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 
-public abstract class LibvirtServerDiscoverer extends DiscovererBase implements Discoverer, Listener,
-        ResourceStateAdapter {
+public abstract class LibvirtServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(LibvirtServerDiscoverer.class);
     private String _hostIp;
     private final int _waitTime = 5; /* wait for 5 minutes */
@@ -83,6 +82,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     @Inject
     NetworkModel _networkMgr;
 
+    @Override
     public abstract Hypervisor.HypervisorType getHypervisorType();
 
     @Override
@@ -132,8 +132,8 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     }
 
     @Override
-    public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI uri,
-            String username, String password, List<String> hostTags) throws DiscoveryException {
+    public Map<? extends ServerResource, Map<String, String>>
+        find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) throws DiscoveryException {
 
         ClusterVO cluster = _clusterDao.findById(clusterId);
         if (cluster == null || cluster.getHypervisorType() != getHypervisorType()) {
@@ -216,8 +216,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
                 kvmGuestNic = (kvmPublicNic != null) ? kvmPublicNic : kvmPrivateNic;
             }
 
-            String parameters = " -m " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid
-                    + " -a";
+            String parameters = " -m " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
 
             parameters += " --pubNic=" + kvmPublicNic;
             parameters += " --prvNic=" + kvmPrivateNic;
@@ -343,7 +342,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             return null;
         }
 
-        StartupRoutingCommand ssCmd = ((StartupRoutingCommand) firstCmd);
+        StartupRoutingCommand ssCmd = ((StartupRoutingCommand)firstCmd);
         if (ssCmd.getHypervisorType() != getHypervisorType()) {
             return null;
         }
@@ -362,9 +361,8 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             String hostOsInCluster = oneHost.getDetail("Host.OS");
             String hostOs = ssCmd.getHostDetails().get("Host.OS");
             if (!hostOsInCluster.equalsIgnoreCase(hostOs)) {
-                throw new IllegalArgumentException("Can't add host: " + firstCmd.getPrivateIpAddress()
-                        + " with hostOS: " + hostOs + " into a cluster," + "in which there are " + hostOsInCluster
-                        + " hosts added");
+                throw new IllegalArgumentException("Can't add host: " + firstCmd.getPrivateIpAddress() + " with hostOS: " + hostOs + " into a cluster," +
+                    "in which there are " + hostOsInCluster + " hosts added");
             }
         }
 
@@ -374,17 +372,14 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     }
 
     @Override
-    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource,
-            Map<String, String> details, List<String> hostTags) {
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details, List<String> hostTags) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage)
-            throws UnableDeleteHostException {
-        if (host.getType() != Host.Type.Routing
-                || (host.getHypervisorType() != HypervisorType.KVM && host.getHypervisorType() != HypervisorType.LXC)) {
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
+        if (host.getType() != Host.Type.Routing || (host.getHypervisorType() != HypervisorType.KVM && host.getHypervisorType() != HypervisorType.LXC)) {
             return null;
         }
 

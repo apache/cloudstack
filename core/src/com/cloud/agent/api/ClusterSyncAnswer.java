@@ -24,21 +24,20 @@ import com.cloud.vm.VirtualMachine.State;
 public class ClusterSyncAnswer extends Answer {
     private long _clusterId;
     private HashMap<String, Ternary<String, State, String>> _newStates;
-    private boolean _isExecuted=false;
+    private boolean _isExecuted = false;
 
     // this is here because a cron command answer is being sent twice
     //  AgentAttache.processAnswers
     //  AgentManagerImpl.notifyAnswersToMonitors
-    public boolean isExceuted(){
+    public boolean isExceuted() {
         return _isExecuted;
     }
 
-    public void setExecuted(){
+    public void setExecuted() {
         _isExecuted = true;
     }
 
-
-    public ClusterSyncAnswer(long clusterId, HashMap<String, Ternary<String, State, String>> newStates){
+    public ClusterSyncAnswer(long clusterId, HashMap<String, Ternary<String, State, String>> newStates) {
         _clusterId = clusterId;
         _newStates = newStates;
         result = true;

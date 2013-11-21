@@ -23,7 +23,6 @@ import org.apache.cloudstack.engine.entity.api.CloudStackEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.disktype.DiskFormat;
 import org.apache.cloudstack.engine.subsystem.api.storage.type.VolumeType;
 
-
 public interface VolumeEntity extends CloudStackEntity {
 
     /**
@@ -33,15 +32,15 @@ public interface VolumeEntity extends CloudStackEntity {
 
     /**
      * Make a reservation to do storage migration
-     * 
-     * @param expirationTime time in seconds the reservation is cancelled 
+     *
+     * @param expirationTime time in seconds the reservation is cancelled
      * @return reservation token
      */
     String reserveForMigration(long expirationTime);
 
     /**
      * Migrate using a reservation.
-     * @param reservationToken reservation token 
+     * @param reservationToken reservation token
      */
     void migrate(String reservationToken);
 
@@ -73,12 +72,12 @@ public interface VolumeEntity extends CloudStackEntity {
      * Destroy the volume
      */
     void destroy();
-    
+
     long getSize();
-    
+
     DiskFormat getDiskType();
-    
+
     VolumeType getType();
-    
+
     StorageEntity getDataStore();
 }

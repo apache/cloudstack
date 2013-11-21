@@ -21,18 +21,17 @@ import java.io.IOException;
 
 import com.cloud.utils.component.Manager;
 
-
 /**
  * StorageLayer is an independence layer for
- * 
+ *
  *   1. Proper synchronization between threads.
- * 
+ *
  *
  */
 public interface StorageLayer extends Manager {
     public final static String InstanceConfigKey = "storage.layer.instance";
     public final static String ClassConfigKey = "storage.layer.implementation";
-    
+
     /**
      * @param path path to the file to get the size.
      * @return size of the file.
@@ -47,70 +46,70 @@ public interface StorageLayer extends Manager {
      * @return true if it is a directory; false otherwise.
      */
     boolean isDirectory(String path);
-    
+
     /**
      * Is this path a file?
      * @param path path to check.
      * @return true if it is a file; false otherwise.
      */
     boolean isFile(String path);
-    
+
     /**
      * creates the directory.  All parent directories have to already exists.
      * @param path path to make.
      * @return true if created; false if not.
      */
     boolean mkdir(String path);
-    
+
     /**
      * Creates the entire path.
      * @param path path to create.
      * @return true if created; false if not.
      */
     boolean mkdirs(String path);
-    
+
     /**
      * Does this path exists?
      * @param path directory or file to check if it exists.
      * @return true if exists; false if not.
      */
     boolean exists(String path);
-    
+
     /**
      * list all the files in a certain path.
      * @param path directory that the file exists in.
      * @return list of files that exists under this path.
      */
     String[] listFiles(String path);
-    
+
     /**
      * Get the total disk size in bytes.
      * @param path path
      * @return disk size if path given is a disk; -1 if not.
      */
     long getTotalSpace(String path);
-    
+
     /**
      * Get the total available disk size in bytes.
      * @param path path to the disk.
      * @return disk size if path given is a disk; -1 if not.
      */
     long getUsedSpace(String path);
-    
+
     /**
      * Get the total available disk size in bytes.
      * @param path path to the disk.
      * @return disk size if path given is a disk; -1 if not.
      */
     long getUsableSpace(String path);
-    
+
     /**
      * delete the path
      * @param path to delete.
      * @return true if deleted; false if not.
      */
     boolean delete(String path);
-    
+
     /**
      * creates a file on this path.
      * @param path directory to create the file in.
@@ -131,14 +130,14 @@ public interface StorageLayer extends Manager {
      * @throws IOException if the parent has no children but delete failed.
      */
     boolean cleanup(String path, String rootPath) throws IOException;
-    
+
     /**
      * Retrieves the actual file object.
      * @param path path to the file.
      * @return File object representing the file.
      */
     File getFile(String path);
-    
+
     /**
      * Sets permissions for a file to be world readable and writeable
      * @param file

@@ -67,22 +67,11 @@ public class Storage {
 
             return fileExtension;
         }
-        
+
     }
 
     public static enum FileSystem {
-        Unknown,
-        ext3,
-        ntfs,
-        fat,
-        fat32,
-        ext2,
-        ext4,
-        cdfs,
-        hpfs,
-        ufs,
-        hfs,
-        hfsp
+        Unknown, ext3, ntfs, fat, fat32, ext2, ext4, cdfs, hpfs, ufs, hfs, hfsp
     }
 
     public static enum TemplateType {

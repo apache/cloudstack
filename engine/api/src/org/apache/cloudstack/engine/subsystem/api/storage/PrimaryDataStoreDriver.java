@@ -23,6 +23,8 @@ import org.apache.cloudstack.storage.command.CommandResult;
 
 public interface PrimaryDataStoreDriver extends DataStoreDriver {
     public ChapInfo getChapInfo(VolumeInfo volumeInfo);
+
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback);
+
     public void revertSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CommandResult> callback);
 }

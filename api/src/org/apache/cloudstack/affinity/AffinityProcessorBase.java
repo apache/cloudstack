@@ -28,8 +28,7 @@ public class AffinityProcessorBase extends AdapterBase implements AffinityGroupP
     protected String _type;
 
     @Override
-    public void process(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid)
-            throws AffinityConflictException {
+    public void process(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) throws AffinityConflictException {
 
     }
 
@@ -43,8 +42,7 @@ public class AffinityProcessorBase extends AdapterBase implements AffinityGroupP
     }
 
     @Override
-    public boolean check(VirtualMachineProfile vm, DeployDestination plannedDestination)
-            throws AffinityConflictException {
+    public boolean check(VirtualMachineProfile vm, DeployDestination plannedDestination) throws AffinityConflictException {
         return true;
     }
 

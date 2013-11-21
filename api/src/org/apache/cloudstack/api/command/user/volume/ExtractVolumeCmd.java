@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import java.net.URISyntaxException;
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -30,15 +30,13 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.dc.DataCenter;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Upload;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-@APICommand(name = "extractVolume", description="Extracts volume", responseObject=ExtractResponse.class)
+@APICommand(name = "extractVolume", description = "Extracts volume", responseObject = ExtractResponse.class)
 public class ExtractVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ExtractVolumeCmd.class.getName());
 
@@ -48,19 +46,20 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class,
-            required=true, description="the ID of the volume")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "the ID of the volume")
     private Long id;
 
-
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=false, description="the url to which the volume would be extracted")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = false, description = "the url to which the volume would be extracted")
     private String url;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
-            required=true, description="the ID of the zone where the volume is located")
+    @Parameter(name = ApiConstants.ZONE_ID,
+               type = CommandType.UUID,
+               entityType = ZoneResponse.class,
+               required = true,
+               description = "the ID of the zone where the volume is located")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.MODE, type=CommandType.STRING, required=true, description="the mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
+    @Parameter(name = ApiConstants.MODE, type = CommandType.STRING, required = true, description = "the mode of extraction - HTTP_DOWNLOAD or FTP_UPLOAD")
     private String mode;
 
     /////////////////////////////////////////////////////
@@ -96,10 +95,12 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
         return s_name;
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.Volume;
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }
@@ -122,11 +123,11 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Extraction job";
+        return "Extraction job";
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         CallContext.current().setEventDetails("Volume Id: " + getId());
         String uploadUrl = _volumeService.extractVolume(this);
         if (uploadUrl != null) {

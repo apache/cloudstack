@@ -39,7 +39,7 @@ import com.cloud.utils.PropertiesUtil;
 
 /**
  * ManagementNetworkGuru
- * 
+ *
  * Replace the default management network strategy (PodBasedNetworkGuru) by using a Isolated network for management
  * traffic.
  */
@@ -94,20 +94,19 @@ public class ManagementNetworkGuru extends ContrailGuru {
     }
 
     @Override
-    public Network design(NetworkOffering offering, DeploymentPlan plan,
-            Network userSpecified, Account owner) {
-        
+    public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
+
         if (!canHandle(offering)) {
             return null;
         }
-        NetworkVO network = new NetworkVO(offering.getTrafficType(), Mode.Dhcp, BroadcastDomainType.Lswitch,
-                offering.getId(), Network.State.Allocated, plan.getDataCenterId(), plan.getPhysicalNetworkId());
+        NetworkVO network =
+            new NetworkVO(offering.getTrafficType(), Mode.Dhcp, BroadcastDomainType.Lswitch, offering.getId(), Network.State.Allocated, plan.getDataCenterId(),
+                plan.getPhysicalNetworkId());
         if (_mgmt_cidr != null) {
             network.setCidr(_mgmt_cidr);
             network.setGateway(_mgmt_gateway);
         }
-        s_logger.debug("Allocated network " + userSpecified.getName() +
-                (network.getCidr() == null ? "" : " subnet: " + network.getCidr()));
+        s_logger.debug("Allocated network " + userSpecified.getName() + (network.getCidr() == null ? "" : " subnet: " + network.getCidr()));
         return network;
     }
 

@@ -29,8 +29,7 @@ import com.cloud.storage.Storage.TemplateType;
 
 public interface VirtualMachineTemplate extends ControlledEntity, Identity, InternalIdentity {
     enum State {
-        Active,
-        Inactive;
+        Active, Inactive;
     }
 
     public static enum BootloaderType {
@@ -97,6 +96,7 @@ public interface VirtualMachineTemplate extends ControlledEntity, Identity, Inte
     Long getSourceTemplateId();
 
     String getTemplateTag();
+
     Map getDetails();
 
     Boolean isDynamicallyScalable();

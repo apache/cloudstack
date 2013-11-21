@@ -22,5 +22,6 @@ public interface ClusterManagerListener {
     void onManagementNodeJoined(List<? extends ManagementServerHost> nodeList, long selfNodeId);
 
     void onManagementNodeLeft(List<? extends ManagementServerHost> nodeList, long selfNodeId);
-	void onManagementNodeIsolated();
+
+    void onManagementNodeIsolated();
 }

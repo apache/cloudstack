@@ -50,8 +50,7 @@ public class AutoScaleCounter {
         @SerializedName("description")
         private String _description;
 
-        public AutoScaleCounterParam(String name, Boolean required,
-                String description, Boolean flag) {
+        public AutoScaleCounterParam(String name, Boolean required, String description, Boolean flag) {
             this._paramName = name;
             this._required = required;
             this._description = description;

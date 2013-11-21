@@ -23,7 +23,7 @@ public class CreateVnsNetworkCommand extends Command {
     private int _vlan;
 
     public CreateVnsNetworkCommand(String networkUuid, String name, String tenantUuid, int vlan) {
-	this._networkUuid = networkUuid;
+        this._networkUuid = networkUuid;
         this._name = name;
         this._tenantUuid = tenantUuid;
         this._vlan = vlan;
@@ -35,7 +35,7 @@ public class CreateVnsNetworkCommand extends Command {
     }
 
     public String getNetworkUuid() {
-	return _networkUuid;
+        return _networkUuid;
     }
 
     public String getName() {

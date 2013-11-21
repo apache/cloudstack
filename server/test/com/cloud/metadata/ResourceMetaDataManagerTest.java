@@ -39,23 +39,23 @@ import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.vm.dao.NicDetailsDao;
 
-
 public class ResourceMetaDataManagerTest {
 
-
-
-    @Spy ResourceMetaDataManagerImpl _resourceMetaDataMgr = new ResourceMetaDataManagerImpl();
-    @Mock VolumeDetailsDao _volumeDetailDao;
+    @Spy
+    ResourceMetaDataManagerImpl _resourceMetaDataMgr = new ResourceMetaDataManagerImpl();
+    @Mock
+    VolumeDetailsDao _volumeDetailDao;
     @Mock
     NicDetailsDao _nicDetailDao;
-    @Mock TaggedResourceService _taggedResourceMgr;
+    @Mock
+    TaggedResourceService _taggedResourceMgr;
 
     @Before
-    public void setup(){
+    public void setup() {
         MockitoAnnotations.initMocks(this);
 
         try {
-            _resourceMetaDataMgr.configure(null,null);
+            _resourceMetaDataMgr.configure(null, null);
         } catch (ConfigurationException e) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
@@ -63,14 +63,11 @@ public class ResourceMetaDataManagerTest {
         _resourceMetaDataMgr._taggedResourceMgr = _taggedResourceMgr;
         _resourceMetaDataMgr._nicDetailDao = _nicDetailDao;
 
-
     }
-
 
     // Test removing details
     //@Test
     public void testResourceDetails() throws ResourceAllocationException {
-
 
         //when(_resourceMetaDataMgr.getResourceId(anyString(), eq(ResourceTag.TaggedResourceType.Volume))).thenReturn(1L);
         doReturn(1L).when(_taggedResourceMgr).getResourceId(anyString(), eq(ResourceTag.ResourceObjectType.Volume));
@@ -82,11 +79,8 @@ public class ResourceMetaDataManagerTest {
 
     }
 
-
     // Test adding details
     public void testAddResourceDetails() throws ResourceAllocationException {
-
-
 
         doReturn(1L).when(_taggedResourceMgr).getResourceId("1", ResourceTag.ResourceObjectType.Volume);
         //           _volumeDetailDao.removeDetails(id, key);
@@ -94,7 +88,7 @@ public class ResourceMetaDataManagerTest {
         doNothing().when(_volumeDetailDao).removeDetail(anyLong(), anyString());
         doNothing().when(_nicDetailDao).removeDetail(anyLong(), anyString());
         Map<String, String> map = new HashedMap();
-        map.put("key","value");
+        map.put("key", "value");
         _resourceMetaDataMgr.addResourceMetaData("1", ResourceTag.ResourceObjectType.Volume, map);
 
     }

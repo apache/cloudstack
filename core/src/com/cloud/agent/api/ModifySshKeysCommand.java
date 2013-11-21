@@ -27,16 +27,20 @@ public class ModifySshKeysCommand extends Command {
     public ModifySshKeysCommand() {
 
     }
+
     public ModifySshKeysCommand(String pubKey, String prvKey) {
         _pubKey = pubKey;
         _prvKey = prvKey;
     }
+
     public String getPubKey() {
         return _pubKey;
     }
+
     public String getPrvKey() {
         return _prvKey;
     }
+
     @Override
     public boolean executeInSequence() {
         return false;

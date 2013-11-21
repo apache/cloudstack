@@ -57,7 +57,7 @@ public class LibvirtConnection {
     }
 
     static public Connect getConnectionByVmName(String vmName) throws LibvirtException {
-        HypervisorType[] hypervisors = new HypervisorType[] { HypervisorType.KVM, Hypervisor.HypervisorType.LXC };
+        HypervisorType[] hypervisors = new HypervisorType[] {HypervisorType.KVM, Hypervisor.HypervisorType.LXC};
 
         for (HypervisorType hypervisor : hypervisors) {
             try {

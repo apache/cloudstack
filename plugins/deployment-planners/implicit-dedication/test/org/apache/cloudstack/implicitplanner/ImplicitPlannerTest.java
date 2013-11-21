@@ -19,7 +19,6 @@ package org.apache.cloudstack.implicitplanner;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -35,7 +34,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.cloud.hypervisor.Hypervisor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,6 +57,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
+import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -187,8 +186,7 @@ public class ImplicitPlannerTest {
         when(dcDao.findById(1L)).thenReturn(mockDc);
 
         List<Long> clusterList = planner.orderClusters(vmProfile, plan, avoids);
-        assertTrue("Cluster list should be null/empty if the dc is in avoid list",
-                (clusterList == null || clusterList.isEmpty()));
+        assertTrue("Cluster list should be null/empty if the dc is in avoid list", (clusterList == null || clusterList.isEmpty()));
     }
 
     @Test
@@ -211,7 +209,7 @@ public class ImplicitPlannerTest {
         for (Long cluster : clusterList) {
             if (cluster != 1) {
                 fail("Found a cluster that shouldn't have been present, cluster id : " + cluster);
-            }else {
+            } else {
                 foundNeededCluster = true;
             }
         }
@@ -222,8 +220,7 @@ public class ImplicitPlannerTest {
         Set<Long> hostsThatShouldBeInAvoidList = new HashSet<Long>();
         hostsThatShouldBeInAvoidList.add(6L);
         hostsThatShouldBeInAvoidList.add(7L);
-        assertTrue("Hosts 6 and 7 that should have been present were not found in avoid list" ,
-                hostsInAvoidList.containsAll(hostsThatShouldBeInAvoidList));
+        assertTrue("Hosts 6 and 7 that should have been present were not found in avoid list", hostsInAvoidList.containsAll(hostsThatShouldBeInAvoidList));
     }
 
     @Test
@@ -260,8 +257,7 @@ public class ImplicitPlannerTest {
         Set<Long> hostsThatShouldBeInAvoidList = new HashSet<Long>();
         hostsThatShouldBeInAvoidList.add(5L);
         hostsThatShouldBeInAvoidList.add(7L);
-        assertTrue("Hosts 5 and 7 that should have been present were not found in avoid list" ,
-                hostsInAvoidList.containsAll(hostsThatShouldBeInAvoidList));
+        assertTrue("Hosts 5 and 7 that should have been present were not found in avoid list", hostsInAvoidList.containsAll(hostsThatShouldBeInAvoidList));
     }
 
     @Test
@@ -320,8 +316,7 @@ public class ImplicitPlannerTest {
         Set<Long> hostsThatShouldBeInAvoidList = new HashSet<Long>();
         hostsThatShouldBeInAvoidList.add(5L);
         hostsThatShouldBeInAvoidList.add(6L);
-        assertTrue("Hosts 5 and 6 that should have been present were not found in avoid list" ,
-                hostsInAvoidList.containsAll(hostsThatShouldBeInAvoidList));
+        assertTrue("Hosts 5 and 6 that should have been present were not found in avoid list", hostsInAvoidList.containsAll(hostsThatShouldBeInAvoidList));
     }
 
     @Test
@@ -380,17 +375,16 @@ public class ImplicitPlannerTest {
         clustersWithEnoughCapacity.add(1L);
         clustersWithEnoughCapacity.add(2L);
         clustersWithEnoughCapacity.add(3L);
-        when(capacityDao.listClustersInZoneOrPodByHostCapacities(dataCenterId, noOfCpusInOffering * cpuSpeedInOffering,
-                ramInOffering * 1024L * 1024L, CapacityVO.CAPACITY_TYPE_CPU, true)).thenReturn(clustersWithEnoughCapacity);
+        when(
+            capacityDao.listClustersInZoneOrPodByHostCapacities(dataCenterId, noOfCpusInOffering * cpuSpeedInOffering, ramInOffering * 1024L * 1024L,
+                Capacity.CAPACITY_TYPE_CPU, true)).thenReturn(clustersWithEnoughCapacity);
 
         Map<Long, Double> clusterCapacityMap = new HashMap<Long, Double>();
         clusterCapacityMap.put(1L, 2048D);
         clusterCapacityMap.put(2L, 2048D);
         clusterCapacityMap.put(3L, 2048D);
-        Pair<List<Long>, Map<Long, Double>> clustersOrderedByCapacity =
-                new Pair<List<Long>, Map<Long, Double>>(clustersWithEnoughCapacity, clusterCapacityMap);
-        when(capacityDao.orderClustersByAggregateCapacity(dataCenterId, CapacityVO.CAPACITY_TYPE_CPU,
-                true)).thenReturn(clustersOrderedByCapacity);
+        Pair<List<Long>, Map<Long, Double>> clustersOrderedByCapacity = new Pair<List<Long>, Map<Long, Double>>(clustersWithEnoughCapacity, clusterCapacityMap);
+        when(capacityDao.orderClustersByAggregateCapacity(dataCenterId, Capacity.CAPACITY_TYPE_CPU, true)).thenReturn(clustersOrderedByCapacity);
 
         List<Long> disabledClusters = new ArrayList<Long>();
         List<Long> clustersWithDisabledPods = new ArrayList<Long>();
@@ -464,9 +458,9 @@ public class ImplicitPlannerTest {
     }
 
     @Configuration
-    @ComponentScan(basePackageClasses = { ImplicitDedicationPlanner.class },
-        includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
-        useDefaultFilters = false)
+    @ComponentScan(basePackageClasses = {ImplicitDedicationPlanner.class},
+                   includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
+                   useDefaultFilters = false)
     public static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         @Bean

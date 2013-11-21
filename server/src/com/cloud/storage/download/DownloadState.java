@@ -24,61 +24,63 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.api.storage.DownloadAnswer;
 
 public abstract class DownloadState {
-	public static enum DownloadEvent {DOWNLOAD_ANSWER, ABANDON_DOWNLOAD, TIMEOUT_CHECK, DISCONNECT};
-	protected static final Logger s_logger = Logger.getLogger(DownloadListener.class.getName());
+    public static enum DownloadEvent {
+        DOWNLOAD_ANSWER, ABANDON_DOWNLOAD, TIMEOUT_CHECK, DISCONNECT
+    };
 
-	private DownloadListener dl;
-	
-	public DownloadState(DownloadListener dl) {
-		this.dl = dl;
-	}
-	
-	protected DownloadListener getDownloadListener() {
-		return dl;
-	}
-	
-	public String handleEvent(DownloadEvent event, Object eventObj){
-		if (s_logger.isTraceEnabled()) {
-			getDownloadListener().log("handleEvent, event type=" + event + ", curr state=" + getName(), Level.TRACE);
-		}
-		switch (event) {
-		case DOWNLOAD_ANSWER:
-			DownloadAnswer answer=(DownloadAnswer)eventObj;
-			return handleAnswer(answer);
-		case ABANDON_DOWNLOAD:
-			return handleAbort();
-		case TIMEOUT_CHECK:
-			Date now = new Date();
-			long update = now.getTime() - dl.getLastUpdated().getTime();
-			return handleTimeout(update);
-		case DISCONNECT:
-			return handleDisconnect();
-		}
-		return null;
-	}
-	
-	public   void onEntry(String prevState, DownloadEvent event, Object evtObj){
-		if (s_logger.isTraceEnabled()) {
-			getDownloadListener().log("onEntry, event type=" + event + ", curr state=" + getName(), Level.TRACE);
-		}
-		if (event==DownloadEvent.DOWNLOAD_ANSWER) {
-			getDownloadListener().callback((DownloadAnswer)evtObj);
-		}
-	}
-	
-	public  void onExit() {
-		
-	}
-	
-	public abstract String handleTimeout(long updateMs) ;
-	
-	public abstract String handleAbort();
-	
-	public abstract  String handleDisconnect();
+    protected static final Logger s_logger = Logger.getLogger(DownloadListener.class.getName());
 
-	public abstract String handleAnswer(DownloadAnswer answer) ;
-	
-	public abstract String getName();
+    private DownloadListener dl;
 
+    public DownloadState(DownloadListener dl) {
+        this.dl = dl;
+    }
+
+    protected DownloadListener getDownloadListener() {
+        return dl;
+    }
+
+    public String handleEvent(DownloadEvent event, Object eventObj) {
+        if (s_logger.isTraceEnabled()) {
+            getDownloadListener().log("handleEvent, event type=" + event + ", curr state=" + getName(), Level.TRACE);
+        }
+        switch (event) {
+            case DOWNLOAD_ANSWER:
+                DownloadAnswer answer = (DownloadAnswer)eventObj;
+                return handleAnswer(answer);
+            case ABANDON_DOWNLOAD:
+                return handleAbort();
+            case TIMEOUT_CHECK:
+                Date now = new Date();
+                long update = now.getTime() - dl.getLastUpdated().getTime();
+                return handleTimeout(update);
+            case DISCONNECT:
+                return handleDisconnect();
+        }
+        return null;
+    }
+
+    public void onEntry(String prevState, DownloadEvent event, Object evtObj) {
+        if (s_logger.isTraceEnabled()) {
+            getDownloadListener().log("onEntry, event type=" + event + ", curr state=" + getName(), Level.TRACE);
+        }
+        if (event == DownloadEvent.DOWNLOAD_ANSWER) {
+            getDownloadListener().callback((DownloadAnswer)evtObj);
+        }
+    }
+
+    public void onExit() {
+
+    }
+
+    public abstract String handleTimeout(long updateMs);
+
+    public abstract String handleAbort();
+
+    public abstract String handleDisconnect();
+
+    public abstract String handleAnswer(DownloadAnswer answer);
+
+    public abstract String getName();
 
 }

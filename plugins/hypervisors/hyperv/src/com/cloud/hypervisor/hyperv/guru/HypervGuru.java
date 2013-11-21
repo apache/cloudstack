@@ -20,12 +20,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruBase;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
@@ -41,6 +40,7 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
     public final HypervisorType getHypervisorType() {
         return HypervisorType.Hyperv;
     }
+
     /**
      * Prevent direct creation.
      */
@@ -49,13 +49,11 @@ public class HypervGuru extends HypervisorGuruBase implements HypervisorGuru {
     }
 
     @Override
-    public final VirtualMachineTO implement(
-            VirtualMachineProfile vm) {
+    public final VirtualMachineTO implement(VirtualMachineProfile vm) {
         VirtualMachineTO to = toVirtualMachineTO(vm);
 
         // Determine the VM's OS description
-        GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine()
-                .getGuestOSId());
+        GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
         to.setOs(guestOS.getDisplayName());
 
         return to;

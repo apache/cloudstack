@@ -33,12 +33,12 @@ import com.cloud.utils.fsm.StateDao;
  *
  */
 public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Status.Event, Host> {
-    long countBy(long clusterId,  ResourceState... states);
+    long countBy(long clusterId, ResourceState... states);
 
     /**
      * Mark all hosts associated with a certain management server
      * as disconnected.
-     * 
+     *
      * @param msId management server id.
      */
     void markHostsAsDisconnected(long msId, long lastPing);
@@ -68,6 +68,7 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     HostVO findByGuid(String guid);
 
     HostVO findByTypeNameAndZoneId(long zoneId, String name, Host.Type type);
+
     List<HostVO> findHypervisorHostInCluster(long clusterId);
 
     /**

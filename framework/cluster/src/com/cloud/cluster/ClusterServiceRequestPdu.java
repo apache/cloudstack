@@ -21,7 +21,7 @@ public class ClusterServiceRequestPdu extends ClusterServicePdu {
     private String responseResult;
     private long startTick;
     private long timeout;
-    
+
     public ClusterServiceRequestPdu() {
         startTick = System.currentTimeMillis();
         timeout = -1;

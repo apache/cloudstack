@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.dc;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -32,89 +30,92 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 @Entity
-@Table(name="op_dc_storage_network_ip_address")
-@SecondaryTables({@SecondaryTable(name = "dc_storage_network_ip_range", pkJoinColumns = { @PrimaryKeyJoinColumn(name = "range_id", referencedColumnName = "id")})})
+@Table(name = "op_dc_storage_network_ip_address")
+@SecondaryTables({@SecondaryTable(name = "dc_storage_network_ip_range", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "range_id", referencedColumnName = "id")})})
 public class StorageNetworkIpAddressVO implements InternalIdentity {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id")
-	long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    long id;
 
-	@Column(name = "range_id")
-	long rangeId;
-			
-	@Column(name = "ip_address", updatable = false, nullable = false)
-	String ipAddress;
+    @Column(name = "range_id")
+    long rangeId;
 
-	@Column(name = "taken")
-	@Temporal(value = TemporalType.TIMESTAMP)
-	private Date takenAt;
-	
-	@Column(name = "netmask", table = "dc_storage_network_ip_range", insertable = false, updatable = false)
-	private String netmask;
-	
-	@Column(name = "mac_address")
-	long mac;
-	
-	@Column(name = "vlan", table = "dc_storage_network_ip_range", insertable = false, updatable = false)
-	Integer vlan;
-	
-	@Column(name = "gateway", table = "dc_storage_network_ip_range", insertable = false, updatable = false)
-	String gateway;
+    @Column(name = "ip_address", updatable = false, nullable = false)
+    String ipAddress;
 
-	protected StorageNetworkIpAddressVO() {
-	}
+    @Column(name = "taken")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date takenAt;
 
-	public long getId() {
-		return id;
-	}
+    @Column(name = "netmask", table = "dc_storage_network_ip_range", insertable = false, updatable = false)
+    private String netmask;
 
-	public void setTakenAt(Date takenDate) {
-		this.takenAt = takenDate;
-	}
+    @Column(name = "mac_address")
+    long mac;
 
-	public String getIpAddress() {
-		return ipAddress;
-	}
-	
-	public void setIpAddress(String ip) {
-		this.ipAddress = ip;
-	}
+    @Column(name = "vlan", table = "dc_storage_network_ip_range", insertable = false, updatable = false)
+    Integer vlan;
 
-	public Date getTakenAt() {
-		return takenAt;
-	}
-	
-	public long getRangeId() {
-		return rangeId;
-	}
-	
-	public void setRangeId(long id) {
-		this.rangeId = id;
-	}
-	
-	public long getMac() {
-		return mac;
-	}
-	
-	public void setMac(long mac) {
-		this.mac = mac;
-	}
-	
-	public String getNetmask() {
-		return netmask;
-	}
-	
-	public void setNetmask(String netmask) {
-		this.netmask = netmask;
-	}
-	
-	public Integer getVlan() {
-		return vlan;
-	}
-	
-	public String getGateway() {
-		return gateway;
-	}
+    @Column(name = "gateway", table = "dc_storage_network_ip_range", insertable = false, updatable = false)
+    String gateway;
+
+    protected StorageNetworkIpAddressVO() {
+    }
+
+    @Override
+    public long getId() {
+        return id;
+    }
+
+    public void setTakenAt(Date takenDate) {
+        this.takenAt = takenDate;
+    }
+
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public void setIpAddress(String ip) {
+        this.ipAddress = ip;
+    }
+
+    public Date getTakenAt() {
+        return takenAt;
+    }
+
+    public long getRangeId() {
+        return rangeId;
+    }
+
+    public void setRangeId(long id) {
+        this.rangeId = id;
+    }
+
+    public long getMac() {
+        return mac;
+    }
+
+    public void setMac(long mac) {
+        this.mac = mac;
+    }
+
+    public String getNetmask() {
+        return netmask;
+    }
+
+    public void setNetmask(String netmask) {
+        this.netmask = netmask;
+    }
+
+    public Integer getVlan() {
+        return vlan;
+    }
+
+    public String getGateway() {
+        return gateway;
+    }
 }

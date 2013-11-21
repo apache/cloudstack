@@ -26,26 +26,27 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
-@Table(name="volume_details")
+@Table(name = "volume_details")
 public class VolumeDetailVO implements ResourceDetail {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="volume_id")
+    @Column(name = "volume_id")
     private long resourceId;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="value", length=1024)
+    @Column(name = "value", length = 1024)
     private String value;
-    
-    @Column(name="display")
+
+    @Column(name = "display")
     private boolean display;
 
-    public VolumeDetailVO() {}
+    public VolumeDetailVO() {
+    }
 
     public VolumeDetailVO(long volumeId, String name, String value) {
         this.resourceId = volumeId;
@@ -72,7 +73,7 @@ public class VolumeDetailVO implements ResourceDetail {
     public long getResourceId() {
         return resourceId;
     }
-    
+
     @Override
     public boolean isDisplay() {
         return display;

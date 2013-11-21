@@ -42,8 +42,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.vpc.NetworkACL;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -52,7 +52,7 @@ public class Upgrade410to420 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "4.1.0", "4.2.0" };
+        return new String[] {"4.1.0", "4.2.0"};
     }
 
     @Override
@@ -72,11 +72,11 @@ public class Upgrade410to420 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find db/schema-410to420.sql");
         }
 
-        return new File[] { new File(script) };
+        return new File[] {new File(script)};
     }
 
-	@Override
-	public void performDataMigration(Connection conn) {
+    @Override
+    public void performDataMigration(Connection conn) {
         movePrivateZoneToDedicatedResource(conn);
         upgradeVmwareLabels(conn);
         persistLegacyZones(conn);
@@ -134,9 +134,11 @@ public class Upgrade410to420 implements DbUpgrade {
                 numRows = rs.getInt(1);
             }
             if (numRows > 0) {
-                update = conn.prepareStatement("insert into `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'UserVmManager', 'vmware.create.full.clone' , 'false', 'If set to true, creates VMs as full clones on ESX hypervisor');");
+                update =
+                    conn.prepareStatement("insert into `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'UserVmManager', 'vmware.create.full.clone' , 'false', 'If set to true, creates VMs as full clones on ESX hypervisor');");
             } else {
-                update = conn.prepareStatement("insert into `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'UserVmManager', 'vmware.create.full.clone' , 'true', 'If set to true, creates VMs as full clones on ESX hypervisor');");
+                update =
+                    conn.prepareStatement("insert into `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'UserVmManager', 'vmware.create.full.clone' , 'true', 'If set to true, creates VMs as full clones on ESX hypervisor');");
             }
             update.executeUpdate();
         } catch (SQLException e) {
@@ -205,13 +207,13 @@ public class Upgrade410to420 implements DbUpgrade {
         try {
             clustersQuery = conn.prepareStatement("select id, hypervisor_type from `cloud`.`cluster` where removed is NULL");
             clusters = clustersQuery.executeQuery();
-            while(clusters.next()) {
+            while (clusters.next()) {
                 clusterHypervisorType = clusters.getString("hypervisor_type");
                 clusterId = clusters.getLong("id");
                 if (clusterHypervisorType.equalsIgnoreCase("VMware")) {
                     if (!readGlobalConfigParam) {
                         paramValStr = getConfigurationParameter(conn, VSWITCH_GLOBAL_CONFIG_PARAM_CATEGORY, NEXUS_GLOBAL_CONFIG_PARAM_NAME);
-                        if(paramValStr.equalsIgnoreCase("true")) {
+                        if (paramValStr.equalsIgnoreCase("true")) {
                             nexusEnabled = true;
                         }
                     }
@@ -293,7 +295,8 @@ public class Upgrade410to420 implements DbUpgrade {
         ResultSet rs = null;
         PreparedStatement pstmt = null;
         try {
-            pstmt = conn.prepareStatement("select value from `cloud`.`configuration` where category='" + category + "' and value is not NULL and name = '" + paramName + "';");
+            pstmt =
+                conn.prepareStatement("select value from `cloud`.`configuration` where category='" + category + "' and value is not NULL and name = '" + paramName + "';");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 return rs.getString("value");
@@ -340,7 +343,6 @@ public class Upgrade410to420 implements DbUpgrade {
         PreparedStatement pstmt3 = null;
         ResultSet rs3 = null;
 
-
         try {
 
             pstmt3 = conn.prepareStatement("SELECT distinct(`domain_id`) FROM `cloud`.`data_center` WHERE `domain_id` IS NOT NULL AND removed IS NULL");
@@ -354,8 +356,8 @@ public class Upgrade410to420 implements DbUpgrade {
                 // 'ExplicitDedication'
                 PreparedStatement pstmt2 = null;
                 ResultSet rs2 = null;
-                pstmt2 = conn
-                        .prepareStatement("SELECT affinity_group.id FROM `cloud`.`affinity_group` INNER JOIN `cloud`.`affinity_group_domain_map` ON affinity_group.id=affinity_group_domain_map.affinity_group_id WHERE affinity_group.type = 'ExplicitDedication' AND affinity_group.acl_type = 'Domain'  AND  (affinity_group_domain_map.domain_id = ?)");
+                pstmt2 =
+                    conn.prepareStatement("SELECT affinity_group.id FROM `cloud`.`affinity_group` INNER JOIN `cloud`.`affinity_group_domain_map` ON affinity_group.id=affinity_group_domain_map.affinity_group_id WHERE affinity_group.type = 'ExplicitDedication' AND affinity_group.acl_type = 'Domain'  AND  (affinity_group_domain_map.domain_id = ?)");
                 pstmt2.setLong(1, domainId);
                 rs2 = pstmt2.executeQuery();
                 if (rs2.next()) {
@@ -381,7 +383,8 @@ public class Upgrade410to420 implements DbUpgrade {
                     String groupName = "DedicatedGrp-domain-" + domainName;
                     s_logger.debug("Adding AffinityGroup of type " + type + " for domain id " + domainId);
 
-                    String sql = "INSERT INTO `cloud`.`affinity_group` (`name`, `type`, `uuid`, `description`, `domain_id`, `account_id`, `acl_type`) VALUES (?, ?, ?, ?, 1, 1, 'Domain')";
+                    String sql =
+                        "INSERT INTO `cloud`.`affinity_group` (`name`, `type`, `uuid`, `description`, `domain_id`, `account_id`, `acl_type`) VALUES (?, ?, ?, ?, 1, 1, 'Domain')";
                     pstmtUpdate = conn.prepareStatement(sql);
                     pstmtUpdate.setString(1, groupName);
                     pstmtUpdate.setString(2, type);
@@ -390,8 +393,7 @@ public class Upgrade410to420 implements DbUpgrade {
                     pstmtUpdate.executeUpdate();
                     pstmtUpdate.close();
 
-                    pstmt2 = conn
-                            .prepareStatement("SELECT affinity_group.id FROM `cloud`.`affinity_group` where uuid = ?");
+                    pstmt2 = conn.prepareStatement("SELECT affinity_group.id FROM `cloud`.`affinity_group` where uuid = ?");
                     pstmt2.setString(1, uuid);
                     rs2 = pstmt2.executeQuery();
                     if (rs2.next()) {
@@ -497,14 +499,17 @@ public class Upgrade410to420 implements DbUpgrade {
 
         PreparedStatement pstmt = null;
         try {
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE");
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
             pstmt.close();
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE");
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
             pstmt.close();
             pstmt.close();
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE");
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_dhcp_devices` ADD CONSTRAINT `fk_external_dhcp_devices_physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
             pstmt.close();
             s_logger.debug("Added foreign keys for table baremetal_dhcp_devices");
@@ -513,13 +518,16 @@ public class Upgrade410to420 implements DbUpgrade {
         }
 
         try {
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_pxe_devices` ADD CONSTRAINT `fk_external_pxe_devices_nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE");
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_pxe_devices` ADD CONSTRAINT `fk_external_pxe_devices_nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
             pstmt.close();
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_pxe_devices` ADD CONSTRAINT `fk_external_pxe_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE");
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_pxe_devices` ADD CONSTRAINT `fk_external_pxe_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
             pstmt.close();
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_pxe_devices` ADD CONSTRAINT `fk_external_pxe_devices_physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE");
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`baremetal_pxe_devices` ADD CONSTRAINT `fk_external_pxe_devices_physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
             pstmt.close();
             s_logger.debug("Added foreign keys for table baremetal_pxe_devices");
@@ -556,7 +564,6 @@ public class Upgrade410to420 implements DbUpgrade {
 
     }
 
-
     private void dropUploadTable(Connection conn) {
 
         PreparedStatement pstmt0 = null;
@@ -576,7 +583,7 @@ public class Upgrade410to420 implements DbUpgrade {
             pstmt1 = conn.prepareStatement("UPDATE template_store_ref SET download_url=?, download_url_created=? where template_id=? and store_id=?");
 
             //Update template_store_ref
-            while(rs0.next()){
+            while (rs0.next()) {
                 pstmt1.setString(1, rs0.getString("url"));
                 pstmt1.setDate(2, rs0.getDate("created"));
                 pstmt1.setLong(3, rs0.getLong("type_id"));
@@ -584,17 +591,16 @@ public class Upgrade410to420 implements DbUpgrade {
                 pstmt1.executeUpdate();
             }
 
-
-
             // Read upload table - Volumes
             s_logger.debug("Populating volume store ref table");
             pstmt2 = conn.prepareStatement("SELECT url, created, type_id, host_id, install_path from upload where type=?");
             pstmt2.setString(1, "VOLUME");
             rs2 = pstmt2.executeQuery();
 
-            pstmt3 = conn.prepareStatement("INSERT IGNORE INTO volume_store_ref (volume_id, store_id, zone_id, created, state, download_url, download_url_created, install_path) VALUES (?,?,?,?,?,?,?,?)");
+            pstmt3 =
+                conn.prepareStatement("INSERT IGNORE INTO volume_store_ref (volume_id, store_id, zone_id, created, state, download_url, download_url_created, install_path) VALUES (?,?,?,?,?,?,?,?)");
             //insert into template_store_ref
-            while(rs2.next()){
+            while (rs2.next()) {
                 pstmt3.setLong(1, rs2.getLong("type_id"));
                 pstmt3.setLong(2, rs2.getLong("host_id"));
                 pstmt3.setLong(3, 1l);// ???
@@ -605,7 +611,6 @@ public class Upgrade410to420 implements DbUpgrade {
                 pstmt3.setString(8, rs2.getString("install_path"));
                 pstmt3.executeUpdate();
             }
-
 
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable add date into template/volume store ref from upload table.", e);
@@ -634,79 +639,89 @@ public class Upgrade410to420 implements DbUpgrade {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         s_logger.debug("Updating System Vm template IDs");
-        try{
+        try {
             //Get all hypervisors in use
             Set<HypervisorType> hypervisorsListInUse = new HashSet<HypervisorType>();
             try {
                 pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null");
                 rs = pstmt.executeQuery();
-                while(rs.next()){
+                while (rs.next()) {
                     switch (HypervisorType.getType(rs.getString(1))) {
-                    case XenServer: hypervisorsListInUse.add(HypervisorType.XenServer);
-                    break;
-                    case KVM:       hypervisorsListInUse.add(HypervisorType.KVM);
-                    break;
-                    case VMware:    hypervisorsListInUse.add(HypervisorType.VMware);
-                    break;
-                    case Hyperv:    hypervisorsListInUse.add(HypervisorType.Hyperv);
-                    break;
-                    case LXC:       hypervisorsListInUse.add(HypervisorType.LXC);
-                    break;
+                        case XenServer:
+                            hypervisorsListInUse.add(HypervisorType.XenServer);
+                            break;
+                        case KVM:
+                            hypervisorsListInUse.add(HypervisorType.KVM);
+                            break;
+                        case VMware:
+                            hypervisorsListInUse.add(HypervisorType.VMware);
+                            break;
+                        case Hyperv:
+                            hypervisorsListInUse.add(HypervisorType.Hyperv);
+                            break;
+                        case LXC:
+                            hypervisorsListInUse.add(HypervisorType.LXC);
+                            break;
                     }
                 }
             } catch (SQLException e) {
                 throw new CloudRuntimeException("Error while listing hypervisors in use", e);
             }
 
-            Map<HypervisorType, String> NewTemplateNameList = new HashMap<HypervisorType, String>(){
-                {   put(HypervisorType.XenServer, "systemvm-xenserver-4.2");
-                put(HypervisorType.VMware, "systemvm-vmware-4.2");
-                put(HypervisorType.KVM, "systemvm-kvm-4.2");
-                put(HypervisorType.LXC, "systemvm-lxc-4.2");
-                put(HypervisorType.Hyperv, "systemvm-hyperv-4.2");
+            Map<HypervisorType, String> NewTemplateNameList = new HashMap<HypervisorType, String>() {
+                {
+                    put(HypervisorType.XenServer, "systemvm-xenserver-4.2");
+                    put(HypervisorType.VMware, "systemvm-vmware-4.2");
+                    put(HypervisorType.KVM, "systemvm-kvm-4.2");
+                    put(HypervisorType.LXC, "systemvm-lxc-4.2");
+                    put(HypervisorType.Hyperv, "systemvm-hyperv-4.2");
                 }
             };
 
-            Map<HypervisorType, String> routerTemplateConfigurationNames = new HashMap<HypervisorType, String>(){
-                {   put(HypervisorType.XenServer, "router.template.xen");
-                put(HypervisorType.VMware, "router.template.vmware");
-                put(HypervisorType.KVM, "router.template.kvm");
-                put(HypervisorType.LXC, "router.template.lxc");
-                put(HypervisorType.Hyperv, "router.template.hyperv");
+            Map<HypervisorType, String> routerTemplateConfigurationNames = new HashMap<HypervisorType, String>() {
+                {
+                    put(HypervisorType.XenServer, "router.template.xen");
+                    put(HypervisorType.VMware, "router.template.vmware");
+                    put(HypervisorType.KVM, "router.template.kvm");
+                    put(HypervisorType.LXC, "router.template.lxc");
+                    put(HypervisorType.Hyperv, "router.template.hyperv");
                 }
             };
 
-            Map<HypervisorType, String> newTemplateUrl = new HashMap<HypervisorType, String>(){
-                {   put(HypervisorType.XenServer, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-07-12-master-xen.vhd.bz2");
-                put(HypervisorType.VMware, "http://download.cloud.com/templates/4.2/systemvmtemplate-4.2-vh7.ova");
-                put(HypervisorType.KVM, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-kvm.qcow2.bz2");
-                put(HypervisorType.LXC, "http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2");
-                put(HypervisorType.Hyperv, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-xen.vhd.bz2");
+            Map<HypervisorType, String> newTemplateUrl = new HashMap<HypervisorType, String>() {
+                {
+                    put(HypervisorType.XenServer, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-07-12-master-xen.vhd.bz2");
+                    put(HypervisorType.VMware, "http://download.cloud.com/templates/4.2/systemvmtemplate-4.2-vh7.ova");
+                    put(HypervisorType.KVM, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-kvm.qcow2.bz2");
+                    put(HypervisorType.LXC, "http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2");
+                    put(HypervisorType.Hyperv, "http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-xen.vhd.bz2");
                 }
             };
 
-            Map<HypervisorType, String> newTemplateChecksum = new HashMap<HypervisorType, String>(){
-                {   put(HypervisorType.XenServer, "fb1b6e032a160d86f2c28feb5add6d83");
-                put(HypervisorType.VMware, "8fde62b1089e5844a9cd3b9b953f9596");
-                put(HypervisorType.KVM, "6cea42b2633841648040becb588bd8f0");
-                put(HypervisorType.LXC, "2755de1f9ef2ce4d6f2bee2efbb4da92");
-                put(HypervisorType.Hyperv, "fb1b6e032a160d86f2c28feb5add6d83");
+            Map<HypervisorType, String> newTemplateChecksum = new HashMap<HypervisorType, String>() {
+                {
+                    put(HypervisorType.XenServer, "fb1b6e032a160d86f2c28feb5add6d83");
+                    put(HypervisorType.VMware, "8fde62b1089e5844a9cd3b9b953f9596");
+                    put(HypervisorType.KVM, "6cea42b2633841648040becb588bd8f0");
+                    put(HypervisorType.LXC, "2755de1f9ef2ce4d6f2bee2efbb4da92");
+                    put(HypervisorType.Hyperv, "fb1b6e032a160d86f2c28feb5add6d83");
                 }
             };
 
-            for (Map.Entry<HypervisorType, String> hypervisorAndTemplateName : NewTemplateNameList.entrySet()){
+            for (Map.Entry<HypervisorType, String> hypervisorAndTemplateName : NewTemplateNameList.entrySet()) {
                 s_logger.debug("Updating " + hypervisorAndTemplateName.getKey() + " System Vms");
                 try {
                     //Get 4.2.0 system Vm template Id for corresponding hypervisor
                     pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = ? and removed is null order by id desc limit 1");
                     pstmt.setString(1, hypervisorAndTemplateName.getValue());
                     rs = pstmt.executeQuery();
-                    if(rs.next()){
+                    if (rs.next()) {
                         long templateId = rs.getLong(1);
                         rs.close();
                         pstmt.close();
                         // Mark the old system templates as removed
-                        pstmt = conn.prepareStatement("UPDATE `cloud`.`vm_template` SET removed = now() WHERE hypervisor_type = ? AND type = 'SYSTEM' AND removed is null");
+                        pstmt =
+                            conn.prepareStatement("UPDATE `cloud`.`vm_template` SET removed = now() WHERE hypervisor_type = ? AND type = 'SYSTEM' AND removed is null");
                         pstmt.setString(1, hypervisorAndTemplateName.getKey().toString());
                         pstmt.executeUpdate();
                         pstmt.close();
@@ -728,12 +743,14 @@ public class Upgrade410to420 implements DbUpgrade {
                         pstmt.executeUpdate();
                         pstmt.close();
                     } else {
-                        if (hypervisorsListInUse.contains(hypervisorAndTemplateName.getKey())){
+                        if (hypervisorsListInUse.contains(hypervisorAndTemplateName.getKey())) {
                             // throw new CloudRuntimeException("4.2.0 " + hypervisorAndTemplateName.getKey() + " SystemVm template not found. Cannot upgrade system Vms");
                         } else {
-                            s_logger.warn("4.2.0 " + hypervisorAndTemplateName.getKey() + " SystemVm template not found. " + hypervisorAndTemplateName.getKey() + " hypervisor is not used, so not failing upgrade");
+                            s_logger.warn("4.2.0 " + hypervisorAndTemplateName.getKey() + " SystemVm template not found. " + hypervisorAndTemplateName.getKey() +
+                                " hypervisor is not used, so not failing upgrade");
                             // Update the latest template URLs for corresponding hypervisor
-                            pstmt = conn.prepareStatement("UPDATE `cloud`.`vm_template` SET url = ? , checksum = ? WHERE hypervisor_type = ? AND type = 'SYSTEM' AND removed is null order by id desc limit 1");
+                            pstmt =
+                                conn.prepareStatement("UPDATE `cloud`.`vm_template` SET url = ? , checksum = ? WHERE hypervisor_type = ? AND type = 'SYSTEM' AND removed is null order by id desc limit 1");
                             pstmt.setString(1, newTemplateUrl.get(hypervisorAndTemplateName.getKey()));
                             pstmt.setString(2, newTemplateChecksum.get(hypervisorAndTemplateName.getKey()));
                             pstmt.setString(3, hypervisorAndTemplateName.getKey().toString());
@@ -742,7 +759,7 @@ public class Upgrade410to420 implements DbUpgrade {
                         }
                     }
                 } catch (SQLException e) {
-                    throw new CloudRuntimeException("Error while updating "+ hypervisorAndTemplateName.getKey() +" systemVm template", e);
+                    throw new CloudRuntimeException("Error while updating " + hypervisorAndTemplateName.getKey() + " systemVm template", e);
                 }
             }
             try {
@@ -754,8 +771,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 throw new CloudRuntimeException("Error while updating dynamically_scalable flag to 1 for SYSTEM template systemvm-vmware-4.2");
             }
             s_logger.debug("Updating System Vm Template IDs Complete");
-        }
-        finally {
+        } finally {
             try {
                 if (rs != null) {
                     rs.close();
@@ -794,12 +810,12 @@ public class Upgrade410to420 implements DbUpgrade {
             int numRows = 0;
             pstmt = conn.prepareStatement("select count(*) from `cloud`.`snapshots` where hypervisor_type = 'KVM'");
             rs = pstmt.executeQuery();
-            if(rs.next()){
+            if (rs.next()) {
                 numRows = rs.getInt(1);
             }
             rs.close();
             pstmt.close();
-            if (numRows > 0){
+            if (numRows > 0) {
                 //Add the configuration flag
                 pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = 'kvm.snapshot.enabled'");
                 pstmt.setString(1, "true");
@@ -858,22 +874,22 @@ public class Upgrade410to420 implements DbUpgrade {
     private void updateOverCommitRatioClusterDetails(Connection conn) {
         PreparedStatement pstmt = null;
         PreparedStatement pstmt1 = null;
-        PreparedStatement pstmt2 =null;
+        PreparedStatement pstmt2 = null;
         PreparedStatement pstmt3 = null;
         ResultSet rs1 = null;
         ResultSet rscpu_global = null;
         ResultSet rsmem_global = null;
         try {
             pstmt = conn.prepareStatement("select id, hypervisor_type from `cloud`.`cluster` WHERE removed IS NULL");
-            pstmt1=conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value)  VALUES(?, 'cpuOvercommitRatio', ?)");
-            pstmt2=conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value)  VALUES(?, 'memoryOvercommitRatio', ?)");
-            pstmt3=conn.prepareStatement("select value from `cloud`.`configuration` where name=?");
-            pstmt3.setString(1,"cpu.overprovisioning.factor");
+            pstmt1 = conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value)  VALUES(?, 'cpuOvercommitRatio', ?)");
+            pstmt2 = conn.prepareStatement("INSERT INTO `cloud`.`cluster_details` (cluster_id, name, value)  VALUES(?, 'memoryOvercommitRatio', ?)");
+            pstmt3 = conn.prepareStatement("select value from `cloud`.`configuration` where name=?");
+            pstmt3.setString(1, "cpu.overprovisioning.factor");
             rscpu_global = pstmt3.executeQuery();
             String global_cpu_overprovisioning_factor = "1";
             if (rscpu_global.next())
                 global_cpu_overprovisioning_factor = rscpu_global.getString(1);
-            pstmt3.setString(1,"mem.overprovisioning.factor");
+            pstmt3.setString(1, "mem.overprovisioning.factor");
             rsmem_global = pstmt3.executeQuery();
             String global_mem_overprovisioning_factor = "1";
             if (rsmem_global.next())
@@ -884,19 +900,19 @@ public class Upgrade410to420 implements DbUpgrade {
                 long id = rs1.getLong(1);
                 String hypervisor_type = rs1.getString(2);
                 if (HypervisorType.VMware.toString().equalsIgnoreCase(hypervisor_type)) {
-                    pstmt1.setLong(1,id);
-                    pstmt1.setString(2,global_cpu_overprovisioning_factor);
+                    pstmt1.setLong(1, id);
+                    pstmt1.setString(2, global_cpu_overprovisioning_factor);
                     pstmt1.execute();
-                    pstmt2.setLong(1,id);
-                    pstmt2.setString(2,global_mem_overprovisioning_factor);
+                    pstmt2.setLong(1, id);
+                    pstmt2.setString(2, global_mem_overprovisioning_factor);
                     pstmt2.execute();
-                }else {
+                } else {
                     //update cluster_details table with the default overcommit ratios.
-                    pstmt1.setLong(1,id);
-                    pstmt1.setString(2,"1");
+                    pstmt1.setLong(1, id);
+                    pstmt1.setString(2, "1");
                     pstmt1.execute();
-                    pstmt2.setLong(1,id);
-                    pstmt2.setString(2,"1");
+                    pstmt2.setLong(1, id);
+                    pstmt2.setString(2, "1");
                     pstmt2.execute();
                 }
             }
@@ -927,7 +943,6 @@ public class Upgrade410to420 implements DbUpgrade {
         }
     }
 
-
     @Override
     public File[] getCleanupScripts() {
         String script = Script.findScript("", "db/schema-410to420-cleanup.sql");
@@ -935,7 +950,7 @@ public class Upgrade410to420 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to find db/schema-410to420-cleanup.sql");
         }
 
-        return new File[] { new File(script) };
+        return new File[] {new File(script)};
     }
 
     private String getNewLabel(ResultSet rs, String oldParamValue) {
@@ -948,7 +963,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 oldGuestLabel = rs.getString("vmware_network_label");
                 // guestLabel is in format [[<VSWITCHNAME>],VLANID]
                 separatorIndex = oldGuestLabel.indexOf(",");
-                if(separatorIndex > -1) {
+                if (separatorIndex > -1) {
                     newGuestLabel += oldGuestLabel.substring(separatorIndex);
                 }
             }
@@ -976,7 +991,8 @@ public class Upgrade410to420 implements DbUpgrade {
 
         try {
             // update the existing vmware traffic labels
-            pstmt = conn.prepareStatement("select name,value from `cloud`.`configuration` where category='Hidden' and value is not NULL and name REGEXP 'vmware*.vswitch';");
+            pstmt =
+                conn.prepareStatement("select name,value from `cloud`.`configuration` where category='Hidden' and value is not NULL and name REGEXP 'vmware*.vswitch';");
             rsParams = pstmt.executeQuery();
             while (rsParams.next()) {
                 trafficTypeVswitchParam = rsParams.getString("name");
@@ -989,10 +1005,14 @@ public class Upgrade410to420 implements DbUpgrade {
                 } else if (trafficTypeVswitchParam.equals("vmware.guest.vswitch")) {
                     trafficType = "Guest";
                 }
-                pstmt = conn.prepareStatement("select physical_network_id, traffic_type, vmware_network_label from physical_network_traffic_types where vmware_network_label is not NULL and traffic_type='" + trafficType + "';");
+                pstmt =
+                    conn.prepareStatement("select physical_network_id, traffic_type, vmware_network_label from physical_network_traffic_types where vmware_network_label is not NULL and traffic_type='" +
+                        trafficType + "';");
                 rsLabel = pstmt.executeQuery();
                 newLabel = getNewLabel(rsLabel, trafficTypeVswitchParamValue);
-                pstmt = conn.prepareStatement("update physical_network_traffic_types set vmware_network_label = " + newLabel + " where traffic_type = '" + trafficType + "' and vmware_network_label is not NULL;");
+                pstmt =
+                    conn.prepareStatement("update physical_network_traffic_types set vmware_network_label = " + newLabel + " where traffic_type = '" + trafficType +
+                        "' and vmware_network_label is not NULL;");
                 s_logger.debug("Updating vmware label for " + trafficType + " traffic. Update SQL statement is " + pstmt);
                 pstmt.executeUpdate();
             }
@@ -1092,7 +1112,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 if (legacyZone) {
                     listOfLegacyZones.add(zoneId);
                 } else {
-                    assert(clusterDetails != null) : "Couldn't retrieve details of cluster!";
+                    assert (clusterDetails != null) : "Couldn't retrieve details of cluster!";
                     s_logger.debug("Discovered non-legacy zone " + zoneId + ". Processing the zone to associate with VMware datacenter.");
 
                     clusterDetailsQuery = conn.prepareStatement("select name, value from `cloud`.`cluster_details` where cluster_id=?");
@@ -1109,7 +1129,8 @@ public class Upgrade410to420 implements DbUpgrade {
                     }
                     guid = dcName + "@" + vc;
 
-                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`vmware_data_center` (uuid, name, guid, vcenter_host, username, password) values(?, ?, ?, ?, ?, ?)");
+                    pstmt =
+                        conn.prepareStatement("INSERT INTO `cloud`.`vmware_data_center` (uuid, name, guid, vcenter_host, username, password) values(?, ?, ?, ?, ?, ?)");
                     pstmt.setString(1, UUID.randomUUID().toString());
                     pstmt.setString(2, dcName);
                     pstmt.setString(3, guid);
@@ -1121,7 +1142,7 @@ public class Upgrade410to420 implements DbUpgrade {
                     pstmt = conn.prepareStatement("SELECT id FROM `cloud`.`vmware_data_center` where guid=?");
                     pstmt.setString(1, guid);
                     dcInfo = pstmt.executeQuery();
-                    if(dcInfo.next()) {
+                    if (dcInfo.next()) {
                         vmwareDcId = dcInfo.getLong("id");
                     }
 
@@ -1169,7 +1190,7 @@ public class Upgrade410to420 implements DbUpgrade {
         //Insert legacy zones into table for legacy zones.
         try {
             legacyZonesQuery = conn.prepareStatement("INSERT INTO `cloud`.`legacy_zones` (zone_id) VALUES (?)");
-            for(Long zoneId : zones) {
+            for (Long zoneId : zones) {
                 legacyZonesQuery.setLong(1, zoneId);
                 legacyZonesQuery.executeUpdate();
                 s_logger.debug("Inserted zone " + zoneId + " into cloud.legacyzones table");
@@ -1191,7 +1212,8 @@ public class Upgrade410to420 implements DbUpgrade {
         ResultSet rs = null;
 
         try {
-            pstmt = conn.prepareStatement("SELECT network_id, gateway, ip4_address FROM `cloud`.`nics` WHERE reserver_name IN ('DirectNetworkGuru','DirectPodBasedNetworkGuru') and vm_type='DomainRouter' AND removed IS null");
+            pstmt =
+                conn.prepareStatement("SELECT network_id, gateway, ip4_address FROM `cloud`.`nics` WHERE reserver_name IN ('DirectNetworkGuru','DirectPodBasedNetworkGuru') and vm_type='DomainRouter' AND removed IS null");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 Long networkId = rs.getLong(1);
@@ -1199,7 +1221,8 @@ public class Upgrade410to420 implements DbUpgrade {
                 String ip = rs.getString(3);
                 String uuid = UUID.randomUUID().toString();
                 //Insert placeholder nic for each Domain router nic in Shared network
-                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`nics` (uuid, ip4_address, gateway, network_id, state, strategy, vm_type, default_nic, created) VALUES (?, ?, ?, ?, 'Reserved', 'PlaceHolder', 'DomainRouter', 0, now())");
+                pstmt =
+                    conn.prepareStatement("INSERT INTO `cloud`.`nics` (uuid, ip4_address, gateway, network_id, state, strategy, vm_type, default_nic, created) VALUES (?, ?, ?, ?, 'Reserved', 'PlaceHolder', 'DomainRouter', 0, now())");
                 pstmt.setString(1, uuid);
                 pstmt.setString(2, ip);
                 pstmt.setString(3, gateway);
@@ -1223,7 +1246,6 @@ public class Upgrade410to420 implements DbUpgrade {
         }
     }
 
-
     private void updateRemoteAccessVpn(Connection conn) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
@@ -1231,7 +1253,7 @@ public class Upgrade410to420 implements DbUpgrade {
         try {
             pstmt = conn.prepareStatement("SELECT vpn_server_addr_id FROM `cloud`.`remote_access_vpn`");
             rs = pstmt.executeQuery();
-            long id=1;
+            long id = 1;
             while (rs.next()) {
                 String uuid = UUID.randomUUID().toString();
                 Long ipId = rs.getLong(1);
@@ -1268,18 +1290,20 @@ public class Upgrade410to420 implements DbUpgrade {
             while (rs.next()) {
                 long netId = rs.getLong(1);
                 //checking for Isolated OR Virtual
-                pstmt = conn.prepareStatement("select account_id, domain_id FROM `cloud`.`networks` where (guest_type='Isolated' OR guest_type='Virtual') and traffic_type='Guest' and vpc_id is NULL and (state='implemented' OR state='Shutdown') and id=? ");
+                pstmt =
+                    conn.prepareStatement("select account_id, domain_id FROM `cloud`.`networks` where (guest_type='Isolated' OR guest_type='Virtual') and traffic_type='Guest' and vpc_id is NULL and (state='implemented' OR state='Shutdown') and id=? ");
                 pstmt.setLong(1, netId);
                 s_logger.debug("Getting account_id, domain_id from networks table: " + pstmt);
                 rsNw = pstmt.executeQuery();
 
-                if(rsNw.next()) {
+                if (rsNw.next()) {
                     long accountId = rsNw.getLong(1);
                     long domainId = rsNw.getLong(2);
 
                     //Add new rule for the existing networks
                     s_logger.debug("Adding default egress firewall rule for network " + netId);
-                    pstmt = conn.prepareStatement("INSERT INTO firewall_rules (uuid, state, protocol, purpose, account_id, domain_id, network_id, xid, created,  traffic_type) VALUES (?, 'Active', 'all', 'Firewall', ?, ?, ?, ?, now(), 'Egress')");
+                    pstmt =
+                        conn.prepareStatement("INSERT INTO firewall_rules (uuid, state, protocol, purpose, account_id, domain_id, network_id, xid, created,  traffic_type) VALUES (?, 'Active', 'all', 'Firewall', ?, ?, ?, ?, now(), 'Egress')");
                     pstmt.setString(1, UUID.randomUUID().toString());
                     pstmt.setLong(2, accountId);
                     pstmt.setLong(3, domainId);
@@ -1293,7 +1317,7 @@ public class Upgrade410to420 implements DbUpgrade {
                     rsId = pstmt.executeQuery();
 
                     long firewallRuleId;
-                    if(rsId.next()) {
+                    if (rsId.next()) {
                         firewallRuleId = rsId.getLong(1);
                         pstmt = conn.prepareStatement("insert into firewall_rules_cidrs (firewall_rule_id,source_cidr) values (?, '0.0.0.0/0')");
                         pstmt.setLong(1, firewallRuleId);
@@ -1363,21 +1387,22 @@ public class Upgrade410to420 implements DbUpgrade {
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 Long networkId = rs.getLong(1);
-                s_logger.debug("Updating network ACLs for network: "+networkId);
+                s_logger.debug("Updating network ACLs for network: " + networkId);
                 Long vpcId = rs.getLong(2);
                 String tierUuid = rs.getString(3);
-                pstmt = conn.prepareStatement("SELECT id, uuid, start_port, end_port, state, protocol, icmp_code, icmp_type, created, traffic_type FROM `cloud`.`firewall_rules` where network_id = ? and purpose = 'NetworkACL'");
+                pstmt =
+                    conn.prepareStatement("SELECT id, uuid, start_port, end_port, state, protocol, icmp_code, icmp_type, created, traffic_type FROM `cloud`.`firewall_rules` where network_id = ? and purpose = 'NetworkACL'");
                 pstmt.setLong(1, networkId);
                 rsAcls = pstmt.executeQuery();
                 boolean hasAcls = false;
                 Long aclId = null;
                 int number = 1;
-                while(rsAcls.next()){
-                    if(!hasAcls){
+                while (rsAcls.next()) {
+                    if (!hasAcls) {
                         hasAcls = true;
                         aclId = nextAclId++;
                         //create ACL for the tier
-                        s_logger.debug("Creating network ACL for tier: "+tierUuid);
+                        s_logger.debug("Creating network ACL for tier: " + tierUuid);
                         pstmt = conn.prepareStatement("INSERT INTO `cloud`.`network_acl` (id, uuid, vpc_id, description, name) values (?, UUID(), ? , ?, ?)");
                         pstmt.setLong(1, aclId);
                         pstmt.setLong(2, vpcId);
@@ -1392,13 +1417,13 @@ public class Upgrade410to420 implements DbUpgrade {
                     pstmt = conn.prepareStatement("SELECT id, source_cidr FROM `cloud`.`firewall_rules_cidrs` where firewall_rule_id = ?");
                     pstmt.setLong(1, fwRuleId);
                     rsCidr = pstmt.executeQuery();
-                    while(rsCidr.next()){
+                    while (rsCidr.next()) {
                         Long cidrId = rsCidr.getLong(1);
                         String sourceCidr = rsCidr.getString(2);
-                        if(cidr == null){
+                        if (cidr == null) {
                             cidr = sourceCidr;
                         } else {
-                            cidr += ","+sourceCidr;
+                            cidr += "," + sourceCidr;
                         }
                         //Delete cidr entry
                         pstmtDelete = conn.prepareStatement("DELETE FROM `cloud`.`firewall_rules_cidrs` where id = ?");
@@ -1406,25 +1431,25 @@ public class Upgrade410to420 implements DbUpgrade {
                         pstmtDelete.executeUpdate();
                     }
 
-
                     String aclItemUuid = rsAcls.getString(2);
                     //Move acl to network_acl_item table
-                    s_logger.debug("Moving firewall rule: "+aclItemUuid);
-                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`network_acl_item` (uuid, acl_id, start_port, end_port, state, protocol, icmp_code, icmp_type, created, traffic_type, cidr, number, action) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )");
+                    s_logger.debug("Moving firewall rule: " + aclItemUuid);
+                    pstmt =
+                        conn.prepareStatement("INSERT INTO `cloud`.`network_acl_item` (uuid, acl_id, start_port, end_port, state, protocol, icmp_code, icmp_type, created, traffic_type, cidr, number, action) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )");
                     //uuid
                     pstmt.setString(1, aclItemUuid);
                     //aclId
                     pstmt.setLong(2, aclId);
                     //Start port
                     Integer startPort = rsAcls.getInt(3);
-                    if(rsAcls.wasNull()){
+                    if (rsAcls.wasNull()) {
                         pstmt.setNull(3, Types.INTEGER);
                     } else {
                         pstmt.setLong(3, startPort);
                     }
                     //End port
                     Integer endPort = rsAcls.getInt(4);
-                    if(rsAcls.wasNull()){
+                    if (rsAcls.wasNull()) {
                         pstmt.setNull(4, Types.INTEGER);
                     } else {
                         pstmt.setLong(4, endPort);
@@ -1437,7 +1462,7 @@ public class Upgrade410to420 implements DbUpgrade {
                     pstmt.setString(6, protocol);
                     //icmp_code
                     Integer icmpCode = rsAcls.getInt(7);
-                    if(rsAcls.wasNull()){
+                    if (rsAcls.wasNull()) {
                         pstmt.setNull(7, Types.INTEGER);
                     } else {
                         pstmt.setLong(7, icmpCode);
@@ -1445,7 +1470,7 @@ public class Upgrade410to420 implements DbUpgrade {
 
                     //icmp_type
                     Integer icmpType = rsAcls.getInt(8);
-                    if(rsAcls.wasNull()){
+                    if (rsAcls.wasNull()) {
                         pstmt.setNull(8, Types.INTEGER);
                     } else {
                         pstmt.setLong(8, icmpType);
@@ -1471,7 +1496,7 @@ public class Upgrade410to420 implements DbUpgrade {
                     pstmtDelete.setLong(1, fwRuleId);
                     pstmtDelete.executeUpdate();
                 }
-                if(!hasAcls){
+                if (!hasAcls) {
                     //no network ACls for this network.
                     // Assign default Deny ACL
                     aclId = NetworkACL.DEFAULT_DENY;
@@ -1509,8 +1534,7 @@ public class Upgrade410to420 implements DbUpgrade {
         ResultSet rs = null;
 
         try {
-            pstmt = conn
-                    .prepareStatement("select value from `cloud`.`configuration` where name = 'vm.allocation.algorithm'");
+            pstmt = conn.prepareStatement("select value from `cloud`.`configuration` where name = 'vm.allocation.algorithm'");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 String globalValue = rs.getString(1);
@@ -1521,11 +1545,9 @@ public class Upgrade410to420 implements DbUpgrade {
                         plannerName = "FirstFitPlanner";
                     } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.firstfit.toString())) {
                         plannerName = "FirstFitPlanner";
-                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_firstfit
-                            .toString())) {
+                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_firstfit.toString())) {
                         plannerName = "UserConcentratedPodPlanner";
-                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_random
-                            .toString())) {
+                    } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userconcentratedpod_random.toString())) {
                         plannerName = "UserConcentratedPodPlanner";
                     } else if (globalValue.equals(DeploymentPlanner.AllocationAlgorithm.userdispersing.toString())) {
                         plannerName = "UserDispersingPlanner";
@@ -1551,13 +1573,13 @@ public class Upgrade410to420 implements DbUpgrade {
         }
     }
 
-
     private void upgradeDefaultVpcOffering(Connection conn) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
 
         try {
-            pstmt = conn.prepareStatement("select distinct map.vpc_offering_id from `cloud`.`vpc_offering_service_map` map, `cloud`.`vpc_offerings` off where off.id=map.vpc_offering_id AND service='Lb'");
+            pstmt =
+                conn.prepareStatement("select distinct map.vpc_offering_id from `cloud`.`vpc_offering_service_map` map, `cloud`.`vpc_offerings` off where off.id=map.vpc_offering_id AND service='Lb'");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long id = rs.getLong(1);
@@ -1596,16 +1618,17 @@ public class Upgrade410to420 implements DbUpgrade {
                 long pNtwkId = rs.getLong(1);
                 String uuid = UUID.randomUUID().toString();
                 //Add internal LB VM to the list of physical network service providers
-                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`physical_network_service_providers` " +
-                        "(uuid, physical_network_id, provider_name, state, load_balance_service_provided, destination_physical_network_id)" +
-                        " VALUES (?, ?, 'InternalLbVm', 'Enabled', 1, 0)");
+                pstmt =
+                    conn.prepareStatement("INSERT INTO `cloud`.`physical_network_service_providers` "
+                        + "(uuid, physical_network_id, provider_name, state, load_balance_service_provided, destination_physical_network_id)"
+                        + " VALUES (?, ?, 'InternalLbVm', 'Enabled', 1, 0)");
                 pstmt.setString(1, uuid);
                 pstmt.setLong(2, pNtwkId);
                 pstmt.executeUpdate();
 
                 //Add internal lb vm to the list of physical network elements
-                PreparedStatement pstmt1 = conn.prepareStatement("SELECT id FROM `cloud`.`physical_network_service_providers`" +
-                        " WHERE physical_network_id=? AND provider_name='InternalLbVm'");
+                PreparedStatement pstmt1 =
+                    conn.prepareStatement("SELECT id FROM `cloud`.`physical_network_service_providers`" + " WHERE physical_network_id=? AND provider_name='InternalLbVm'");
                 pstmt1.setLong(1, pNtwkId);
                 ResultSet rs1 = pstmt1.executeQuery();
                 while (rs1.next()) {
@@ -1664,7 +1687,6 @@ public class Upgrade410to420 implements DbUpgrade {
             }
         }
     }
-
 
     private void updateNetworksForPrivateGateways(Connection conn) {
 
@@ -1725,7 +1747,8 @@ public class Upgrade410to420 implements DbUpgrade {
         ResultSet rs = null;
         s_logger.debug("Updating KVM snapshots");
         try {
-            pstmt = conn.prepareStatement("select id, backup_snap_id from `cloud`.`snapshots` where hypervisor_type='KVM' and removed is null and backup_snap_id is not null");
+            pstmt =
+                conn.prepareStatement("select id, backup_snap_id from `cloud`.`snapshots` where hypervisor_type='KVM' and removed is null and backup_snap_id is not null");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long id = rs.getLong(1);
@@ -1733,10 +1756,10 @@ public class Upgrade410to420 implements DbUpgrade {
                 // Update Backup Path. Remove anything before /snapshots/
                 // e.g 22x Path /mnt/0f14da63-7033-3ca5-bdbe-fa62f4e2f38a/snapshots/1/2/6/i-2-6-VM_ROOT-6_20121219072022
                 // Above path should change to /snapshots/1/2/6/i-2-6-VM_ROOT-6_20121219072022
-                int index = backUpPath.indexOf("snapshots"+File.separator);
-                if (index > 1){
+                int index = backUpPath.indexOf("snapshots" + File.separator);
+                if (index > 1) {
                     String correctedPath = backUpPath.substring(index);
-                    s_logger.debug("Updating Snapshot with id: "+id+" original backup path: "+backUpPath+ " updated backup path: "+correctedPath);
+                    s_logger.debug("Updating Snapshot with id: " + id + " original backup path: " + backUpPath + " updated backup path: " + correctedPath);
                     pstmt = conn.prepareStatement("UPDATE `cloud`.`snapshots` set backup_snap_id=? where id = ?");
                     pstmt.setString(1, correctedPath);
                     pstmt.setLong(2, id);
@@ -1782,8 +1805,9 @@ public class Upgrade410to420 implements DbUpgrade {
                 pNetworksResults = pNetworkStmt.executeQuery();
                 while (pNetworksResults.next()) {
                     long physicalNetworkId = pNetworksResults.getLong(1);
-                    PreparedStatement fetchF5NspStmt = conn.prepareStatement("SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId
-                            + " and provider_name = 'F5BigIp'");
+                    PreparedStatement fetchF5NspStmt =
+                        conn.prepareStatement("SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId +
+                            " and provider_name = 'F5BigIp'");
                     ResultSet rsF5NSP = fetchF5NspStmt.executeQuery();
                     boolean hasF5Nsp = rsF5NSP.next();
                     fetchF5NspStmt.close();
@@ -1797,14 +1821,16 @@ public class Upgrade410to420 implements DbUpgrade {
                         // add F5BigIP provider and provider instance to physical network if there are any external load
                         // balancers added in the zone
                         while (f5DevicesResult.next()) {
-                            long f5HostId = f5DevicesResult.getLong(1);;
+                            long f5HostId = f5DevicesResult.getLong(1);
+                            ;
                             addF5ServiceProvider(conn, physicalNetworkId, zoneId);
                             addF5LoadBalancer(conn, f5HostId, physicalNetworkId);
                         }
                     }
 
-                    PreparedStatement fetchSRXNspStmt = conn.prepareStatement("SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId
-                            + " and provider_name = 'JuniperSRX'");
+                    PreparedStatement fetchSRXNspStmt =
+                        conn.prepareStatement("SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId +
+                            " and provider_name = 'JuniperSRX'");
                     ResultSet rsSRXNSP = fetchSRXNspStmt.executeQuery();
                     boolean hasSrxNsp = rsSRXNSP.next();
                     fetchSRXNspStmt.close();
@@ -1851,12 +1877,13 @@ public class Upgrade410to420 implements DbUpgrade {
         }
     }
 
-    private void addF5LoadBalancer(Connection conn, long hostId, long physicalNetworkId){
+    private void addF5LoadBalancer(Connection conn, long hostId, long physicalNetworkId) {
         PreparedStatement pstmtUpdate = null;
-        try{
+        try {
             s_logger.debug("Adding F5 Big IP load balancer with host id " + hostId + " in to physical network" + physicalNetworkId);
-            String insertF5 = "INSERT INTO `cloud`.`external_load_balancer_devices` (physical_network_id, host_id, provider_name, " +
-                    "device_name, capacity, is_dedicated, device_state, allocation_state, is_managed, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String insertF5 =
+                "INSERT INTO `cloud`.`external_load_balancer_devices` (physical_network_id, host_id, provider_name, "
+                    + "device_name, capacity, is_dedicated, device_state, allocation_state, is_managed, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             pstmtUpdate = conn.prepareStatement(insertF5);
             pstmtUpdate.setLong(1, physicalNetworkId);
             pstmtUpdate.setLong(2, hostId);
@@ -1869,8 +1896,8 @@ public class Upgrade410to420 implements DbUpgrade {
             pstmtUpdate.setBoolean(9, false);
             pstmtUpdate.setString(10, UUID.randomUUID().toString());
             pstmtUpdate.executeUpdate();
-        }catch (SQLException e) {
-            throw new CloudRuntimeException("Exception while adding F5 load balancer device" ,  e);
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Exception while adding F5 load balancer device", e);
         } finally {
             if (pstmtUpdate != null) {
                 try {
@@ -1881,12 +1908,13 @@ public class Upgrade410to420 implements DbUpgrade {
         }
     }
 
-    private void addSrxFirewall(Connection conn, long hostId, long physicalNetworkId){
+    private void addSrxFirewall(Connection conn, long hostId, long physicalNetworkId) {
         PreparedStatement pstmtUpdate = null;
-        try{
+        try {
             s_logger.debug("Adding SRX firewall device with host id " + hostId + " in to physical network" + physicalNetworkId);
-            String insertSrx = "INSERT INTO `cloud`.`external_firewall_devices` (physical_network_id, host_id, provider_name, " +
-                    "device_name, capacity, is_dedicated, device_state, allocation_state, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String insertSrx =
+                "INSERT INTO `cloud`.`external_firewall_devices` (physical_network_id, host_id, provider_name, "
+                    + "device_name, capacity, is_dedicated, device_state, allocation_state, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             pstmtUpdate = conn.prepareStatement(insertSrx);
             pstmtUpdate.setLong(1, physicalNetworkId);
             pstmtUpdate.setLong(2, hostId);
@@ -1898,8 +1926,8 @@ public class Upgrade410to420 implements DbUpgrade {
             pstmtUpdate.setString(8, "Shared");
             pstmtUpdate.setString(9, UUID.randomUUID().toString());
             pstmtUpdate.executeUpdate();
-        }catch (SQLException e) {
-            throw new CloudRuntimeException("Exception while adding SRX firewall device ",  e);
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Exception while adding SRX firewall device ", e);
         } finally {
             if (pstmtUpdate != null) {
                 try {
@@ -1910,15 +1938,16 @@ public class Upgrade410to420 implements DbUpgrade {
         }
     }
 
-    private void addF5ServiceProvider(Connection conn, long physicalNetworkId, long zoneId){
+    private void addF5ServiceProvider(Connection conn, long physicalNetworkId, long zoneId) {
         PreparedStatement pstmtUpdate = null;
-        try{
+        try {
             // add physical network service provider - F5BigIp
             s_logger.debug("Adding PhysicalNetworkServiceProvider F5BigIp" + " in to physical network" + physicalNetworkId);
-            String insertPNSP = "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ," +
-                    "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`," +
-                    "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`," +
-                    "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,0,0,0,1,0,0,0,0)";
+            String insertPNSP =
+                "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
+                    + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
+                    + "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`,"
+                    + "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,0,0,0,1,0,0,0,0)";
 
             pstmtUpdate = conn.prepareStatement(insertPNSP);
             pstmtUpdate.setString(1, UUID.randomUUID().toString());
@@ -1926,7 +1955,7 @@ public class Upgrade410to420 implements DbUpgrade {
             pstmtUpdate.setString(3, "F5BigIp");
             pstmtUpdate.setString(4, "Enabled");
             pstmtUpdate.executeUpdate();
-        }catch (SQLException e) {
+        } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding PhysicalNetworkServiceProvider F5BigIp", e);
         } finally {
             if (pstmtUpdate != null) {
@@ -1938,15 +1967,16 @@ public class Upgrade410to420 implements DbUpgrade {
         }
     }
 
-    private void addSrxServiceProvider(Connection conn, long physicalNetworkId, long zoneId){
+    private void addSrxServiceProvider(Connection conn, long physicalNetworkId, long zoneId) {
         PreparedStatement pstmtUpdate = null;
-        try{
+        try {
             // add physical network service provider - JuniperSRX
             s_logger.debug("Adding PhysicalNetworkServiceProvider JuniperSRX");
-            String insertPNSP = "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ," +
-                    "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`," +
-                    "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`," +
-                    "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,1,1,1,0,1,1,0,0)";
+            String insertPNSP =
+                "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
+                    + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
+                    + "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`,"
+                    + "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,1,1,1,0,1,1,0,0)";
 
             pstmtUpdate = conn.prepareStatement(insertPNSP);
             pstmtUpdate.setString(1, UUID.randomUUID().toString());
@@ -1954,8 +1984,8 @@ public class Upgrade410to420 implements DbUpgrade {
             pstmtUpdate.setString(3, "JuniperSRX");
             pstmtUpdate.setString(4, "Enabled");
             pstmtUpdate.executeUpdate();
-        }catch (SQLException e) {
-            throw new CloudRuntimeException("Exception while adding PhysicalNetworkServiceProvider JuniperSRX" ,  e);
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Exception while adding PhysicalNetworkServiceProvider JuniperSRX", e);
         } finally {
             if (pstmtUpdate != null) {
                 try {
@@ -1981,10 +2011,11 @@ public class Upgrade410to420 implements DbUpgrade {
         ResultSet rs = null;
         long networkOfferingId, networkId;
         long f5DeviceId, f5HostId;
-        long srxDevivceId,  srxHostId;
+        long srxDevivceId, srxHostId;
 
         try {
-            pstmt = conn.prepareStatement("select id from `cloud`.`data_center` where lb_provider='F5BigIp' or firewall_provider='JuniperSRX' or gateway_provider='JuniperSRX'");
+            pstmt =
+                conn.prepareStatement("select id from `cloud`.`data_center` where lb_provider='F5BigIp' or firewall_provider='JuniperSRX' or gateway_provider='JuniperSRX'");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 zoneIds.add(rs.getLong(1));
@@ -2006,7 +2037,7 @@ public class Upgrade410to420 implements DbUpgrade {
             } else {
                 throw new CloudRuntimeException("Cannot upgrade as there is no 'Isolated with external providers' network offering crearted .");
             }
-        } catch  (SQLException e) {
+        } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create network to LB & firewalla device mapping for networks  that use them", e);
         }
 
@@ -2017,7 +2048,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 pstmt.setLong(1, zoneId);
                 rs = pstmt.executeQuery();
                 if (rs.first()) {
-                    f5HostId  = rs.getLong(1);
+                    f5HostId = rs.getLong(1);
                 } else {
                     throw new CloudRuntimeException("Cannot upgrade as there is no F5 load balancer device found in data center " + zoneId);
                 }
@@ -2027,7 +2058,8 @@ public class Upgrade410to420 implements DbUpgrade {
                 if (rs.first()) {
                     f5DeviceId = rs.getLong(1);
                 } else {
-                    throw new CloudRuntimeException("Cannot upgrade as there is no F5 load balancer device with host ID " + f5HostId + " found in external_load_balancer_device");
+                    throw new CloudRuntimeException("Cannot upgrade as there is no F5 load balancer device with host ID " + f5HostId +
+                        " found in external_load_balancer_device");
                 }
 
                 // find the SRX device id  in the zone
@@ -2045,11 +2077,13 @@ public class Upgrade410to420 implements DbUpgrade {
                 if (rs.first()) {
                     srxDevivceId = rs.getLong(1);
                 } else {
-                    throw new CloudRuntimeException("Cannot upgrade as there is no SRX firewall device found with host ID " + srxHostId + " found in external_firewall_devices");
+                    throw new CloudRuntimeException("Cannot upgrade as there is no SRX firewall device found with host ID " + srxHostId +
+                        " found in external_firewall_devices");
                 }
 
                 // check if network any uses F5 or SRX devices  in the zone
-                pstmt = conn.prepareStatement("select id from `cloud`.`networks` where guest_type='Virtual' and data_center_id=? and network_offering_id=? and removed IS NULL");
+                pstmt =
+                    conn.prepareStatement("select id from `cloud`.`networks` where guest_type='Virtual' and data_center_id=? and network_offering_id=? and removed IS NULL");
                 pstmt.setLong(1, zoneId);
                 pstmt.setLong(2, networkOfferingId);
                 rs = pstmt.executeQuery();
@@ -2058,22 +2092,24 @@ public class Upgrade410to420 implements DbUpgrade {
                     networkId = rs.getLong(1);
 
                     // add mapping for the network in network_external_lb_device_map
-                    String insertLbMapping = "INSERT INTO `cloud`.`network_external_lb_device_map` (uuid, network_id, external_load_balancer_device_id, created) VALUES ( ?, ?, ?, now())";
+                    String insertLbMapping =
+                        "INSERT INTO `cloud`.`network_external_lb_device_map` (uuid, network_id, external_load_balancer_device_id, created) VALUES ( ?, ?, ?, now())";
                     pstmtUpdate = conn.prepareStatement(insertLbMapping);
                     pstmtUpdate.setString(1, UUID.randomUUID().toString());
                     pstmtUpdate.setLong(2, networkId);
                     pstmtUpdate.setLong(3, f5DeviceId);
                     pstmtUpdate.executeUpdate();
-                    s_logger.debug("Successfully added entry in network_external_lb_device_map for network " +  networkId + " and F5 device ID " +  f5DeviceId);
+                    s_logger.debug("Successfully added entry in network_external_lb_device_map for network " + networkId + " and F5 device ID " + f5DeviceId);
 
                     // add mapping for the network in network_external_firewall_device_map
-                    String insertFwMapping = "INSERT INTO `cloud`.`network_external_firewall_device_map` (uuid, network_id, external_firewall_device_id, created) VALUES ( ?, ?, ?, now())";
+                    String insertFwMapping =
+                        "INSERT INTO `cloud`.`network_external_firewall_device_map` (uuid, network_id, external_firewall_device_id, created) VALUES ( ?, ?, ?, now())";
                     pstmtUpdate = conn.prepareStatement(insertFwMapping);
                     pstmtUpdate.setString(1, UUID.randomUUID().toString());
                     pstmtUpdate.setLong(2, networkId);
                     pstmtUpdate.setLong(3, srxDevivceId);
                     pstmtUpdate.executeUpdate();
-                    s_logger.debug("Successfully added entry in network_external_firewall_device_map for network " +  networkId + " and SRX device ID " +  srxDevivceId);
+                    s_logger.debug("Successfully added entry in network_external_firewall_device_map for network " + networkId + " and SRX device ID " + srxDevivceId);
                 }
 
                 // update host details for F5 and SRX devices
@@ -2085,12 +2121,8 @@ public class Upgrade410to420 implements DbUpgrade {
                 while (rs.next()) {
                     long hostId = rs.getLong(1);
                     String camlCaseName = rs.getString(2);
-                    if (!(camlCaseName.equalsIgnoreCase("numRetries") ||
-                            camlCaseName.equalsIgnoreCase("publicZone") ||
-                            camlCaseName.equalsIgnoreCase("privateZone") ||
-                            camlCaseName.equalsIgnoreCase("publicInterface") ||
-                            camlCaseName.equalsIgnoreCase("privateInterface") ||
-                            camlCaseName.equalsIgnoreCase("usageInterface") )) {
+                    if (!(camlCaseName.equalsIgnoreCase("numRetries") || camlCaseName.equalsIgnoreCase("publicZone") || camlCaseName.equalsIgnoreCase("privateZone") ||
+                        camlCaseName.equalsIgnoreCase("publicInterface") || camlCaseName.equalsIgnoreCase("privateInterface") || camlCaseName.equalsIgnoreCase("usageInterface"))) {
                         continue;
                     }
                     String lowerCaseName = camlCaseName.toLowerCase();
@@ -2103,7 +2135,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 s_logger.debug("Successfully updated host details for F5 and SRX devices");
             } catch (SQLException e) {
                 throw new CloudRuntimeException("Unable create a mapping for the networks in network_external_lb_device_map and network_external_firewall_device_map", e);
-            }  finally {
+            } finally {
                 try {
                     if (rs != null) {
                         rs.close();
@@ -2134,42 +2166,41 @@ public class Upgrade410to420 implements DbUpgrade {
             int numRows = 0;
             pstmt = conn.prepareStatement("select count(*) from `cloud`.`s3`");
             rs = pstmt.executeQuery();
-            if(rs.next()){
+            if (rs.next()) {
                 numRows = rs.getInt(1);
             }
             rs.close();
             pstmt.close();
-            if (numRows > 0){
+            if (numRows > 0) {
                 hasS3orSwift = true;
-            } else{
+            } else {
                 // check if there is swift storage
                 pstmt = conn.prepareStatement("select count(*) from `cloud`.`swift`");
                 rs = pstmt.executeQuery();
-                if(rs.next()){
+                if (rs.next()) {
                     numRows = rs.getInt(1);
                 }
                 rs.close();
                 pstmt.close();
-                if ( numRows > 0){
+                if (numRows > 0) {
                     hasS3orSwift = true;
                 }
             }
 
             String store_role = "Image";
-            if ( hasS3orSwift){
+            if (hasS3orSwift) {
                 store_role = "ImageCache";
             }
 
             s_logger.debug("Migrating NFS secondary storage to " + store_role + " store");
 
-            storeDetailInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`image_store_details` (store_id, name, value) values(?, ?, ?)");
+            storeDetailInsert = conn.prepareStatement("INSERT INTO `cloud`.`image_store_details` (store_id, name, value) values(?, ?, ?)");
 
             // migrate NFS secondary storage, for nfs, keep previous host_id as the store_id
-            storeInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`image_store` (id, uuid, name, image_provider_name, protocol, url, data_center_id, scope, role, parent, total_size, created) values(?, ?, ?, 'NFS', 'nfs', ?, ?, 'ZONE', ?, ?, ?, ?)");
-            nfsQuery = conn
-                    .prepareStatement("select id, uuid, url, data_center_id, parent, total_size, created from `cloud`.`host` where type = 'SecondaryStorage' and removed is null");
+            storeInsert =
+                conn.prepareStatement("INSERT INTO `cloud`.`image_store` (id, uuid, name, image_provider_name, protocol, url, data_center_id, scope, role, parent, total_size, created) values(?, ?, ?, 'NFS', 'nfs', ?, ?, 'ZONE', ?, ?, ?, ?)");
+            nfsQuery =
+                conn.prepareStatement("select id, uuid, url, data_center_id, parent, total_size, created from `cloud`.`host` where type = 'SecondaryStorage' and removed is null");
             rs = nfsQuery.executeQuery();
 
             while (rs.next()) {
@@ -2188,12 +2219,11 @@ public class Upgrade410to420 implements DbUpgrade {
                 storeInsert.setString(3, nfs_uuid);
                 storeInsert.setString(4, nfs_url);
                 storeInsert.setInt(5, nfs_dcid);
-                storeInsert.setString(6,  store_role);
+                storeInsert.setString(6, store_role);
                 storeInsert.setString(7, nfs_parent);
-                if (nfs_totalsize != null){
-                    storeInsert.setLong(8,  nfs_totalsize);
-                }
-                else{
+                if (nfs_totalsize != null) {
+                    storeInsert.setLong(8, nfs_totalsize);
+                } else {
                     storeInsert.setNull(8, Types.BIGINT);
                 }
                 storeInsert.setDate(9, nfs_created);
@@ -2204,8 +2234,7 @@ public class Upgrade410to420 implements DbUpgrade {
             pstmt = conn.prepareStatement("UPDATE `cloud`.`host` SET removed = now() WHERE type = 'SecondaryStorage' and removed is null");
             pstmt.executeUpdate();
             pstmt.close();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             String msg = "Unable to migrate secondary storages." + e.getMessage();
             s_logger.error(msg);
             throw new CloudRuntimeException(msg, e);
@@ -2243,21 +2272,20 @@ public class Upgrade410to420 implements DbUpgrade {
 
         s_logger.debug("Updating volume_store_ref table from volume_host_ref table");
         try {
-            volStoreInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`volume_store_ref` (store_id,  volume_id, zone_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, checksum, error_str, local_path, install_path, url, destroyed, update_count, ref_cnt, state) select host_id, volume_id, zone_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, checksum, error_str, local_path, install_path, url, destroyed, 0, 0, 'Allocated' from `cloud`.`volume_host_ref`");
+            volStoreInsert =
+                conn.prepareStatement("INSERT INTO `cloud`.`volume_store_ref` (store_id,  volume_id, zone_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, checksum, error_str, local_path, install_path, url, destroyed, update_count, ref_cnt, state) select host_id, volume_id, zone_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, checksum, error_str, local_path, install_path, url, destroyed, 0, 0, 'Allocated' from `cloud`.`volume_host_ref`");
             int rowCount = volStoreInsert.executeUpdate();
             s_logger.debug("Insert modified " + rowCount + " rows");
 
             volStoreUpdate = conn.prepareStatement("update `cloud`.`volume_store_ref` set state = 'Ready' where download_state = 'DOWNLOADED'");
             rowCount = volStoreUpdate.executeUpdate();
             s_logger.debug("Update modified " + rowCount + " rows");
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             String msg = "Unable to migrate volume_host_ref." + e.getMessage();
             s_logger.error(msg);
             throw new CloudRuntimeException(msg, e);
         } finally {
-            try{
+            try {
                 if (volStoreInsert != null) {
                     volStoreInsert.close();
                 }
@@ -2277,21 +2305,20 @@ public class Upgrade410to420 implements DbUpgrade {
 
         s_logger.debug("Updating template_store_ref table from template_host_ref table");
         try {
-            tmplStoreInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`template_store_ref` (store_id,  template_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, error_str, local_path, install_path, url, destroyed, is_copy, update_count, ref_cnt, store_role, state) select host_id, template_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, error_str, local_path, install_path, url, destroyed, is_copy, 0, 0, 'Image', 'Allocated' from `cloud`.`template_host_ref`");
+            tmplStoreInsert =
+                conn.prepareStatement("INSERT INTO `cloud`.`template_store_ref` (store_id,  template_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, error_str, local_path, install_path, url, destroyed, is_copy, update_count, ref_cnt, store_role, state) select host_id, template_id, created, last_updated, job_id, download_pct, size, physical_size, download_state, error_str, local_path, install_path, url, destroyed, is_copy, 0, 0, 'Image', 'Allocated' from `cloud`.`template_host_ref`");
             int rowCount = tmplStoreInsert.executeUpdate();
             s_logger.debug("Insert modified " + rowCount + " rows");
 
             tmplStoreUpdate = conn.prepareStatement("update `cloud`.`template_store_ref` set state = 'Ready' where download_state = 'DOWNLOADED'");
             rowCount = tmplStoreUpdate.executeUpdate();
             s_logger.debug("Update modified " + rowCount + " rows");
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             String msg = "Unable to migrate template_host_ref." + e.getMessage();
             s_logger.error(msg);
             throw new CloudRuntimeException(msg, e);
         } finally {
-            try{
+            try {
                 if (tmplStoreInsert != null) {
                     tmplStoreInsert.close();
                 }
@@ -2311,23 +2338,22 @@ public class Upgrade410to420 implements DbUpgrade {
         s_logger.debug("Updating snapshot_store_ref table from snapshots table");
         try {
             //Update all snapshots except KVM snapshots
-            snapshotStoreInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) select sechost_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', backup_snap_id), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type <> 'KVM' and sechost_id is not null and removed is null");
+            snapshotStoreInsert =
+                conn.prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) select sechost_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', backup_snap_id), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type <> 'KVM' and sechost_id is not null and removed is null");
             int rowCount = snapshotStoreInsert.executeUpdate();
             s_logger.debug("Inserted " + rowCount + " snapshots into snapshot_store_ref");
 
             //backsnap_id for KVM snapshots is complate path. CONCAT is not required
-            snapshotStoreInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) select sechost_id, id, created, size, prev_snap_id, backup_snap_id, volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type = 'KVM' and sechost_id is not null and removed is null");
+            snapshotStoreInsert =
+                conn.prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) select sechost_id, id, created, size, prev_snap_id, backup_snap_id, volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type = 'KVM' and sechost_id is not null and removed is null");
             rowCount = snapshotStoreInsert.executeUpdate();
             s_logger.debug("Inserted " + rowCount + " KVM snapshots into snapshot_store_ref");
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             String msg = "Unable to migrate snapshot_store_ref." + e.getMessage();
             s_logger.error(msg);
             throw new CloudRuntimeException(msg, e);
         } finally {
-            try{
+            try {
                 if (snapshotStoreInsert != null) {
                     snapshotStoreInsert.close();
                 }
@@ -2351,14 +2377,13 @@ public class Upgrade410to420 implements DbUpgrade {
         s_logger.debug("Migrating S3 to image store");
         try {
             storeQuery = conn.prepareStatement("select id from `cloud`.`image_store` where uuid = ?");
-            storeDetailInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`image_store_details` (store_id, name, value) values(?, ?, ?)");
+            storeDetailInsert = conn.prepareStatement("INSERT INTO `cloud`.`image_store_details` (store_id, name, value) values(?, ?, ?)");
 
             // migrate S3 to image_store
-            storeInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`image_store` (uuid, name, image_provider_name, protocol, scope, role, created) values(?, ?, 'S3', ?, 'REGION', 'Image', ?)");
-            s3Query = conn
-                    .prepareStatement("select id, uuid, access_key, secret_key, end_point, bucket, https, connection_timeout, max_error_retry, socket_timeout, created from `cloud`.`s3`");
+            storeInsert = conn.prepareStatement("INSERT INTO `cloud`.`image_store` (uuid, name, image_provider_name, protocol, scope, role, created) " +
+                "values(?, ?, 'S3', ?, 'REGION', 'Image', ?)");
+            s3Query = conn.prepareStatement("select id, uuid, access_key, secret_key, end_point, bucket, https, connection_timeout, " +
+                "max_error_retry, socket_timeout, created from `cloud`.`s3`");
             rs = s3Query.executeQuery();
 
             while (rs.next()) {
@@ -2461,11 +2486,11 @@ public class Upgrade410to420 implements DbUpgrade {
         ResultSet rs = null;
 
         s_logger.debug("Updating template_store_ref table from template_s3_ref table");
-        try{
-            tmplStoreInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`template_store_ref` (store_id,  template_id, created, download_pct, size, physical_size, download_state, local_path, install_path, update_count, ref_cnt, store_role, state) values(?, ?, ?, 100, ?, ?, 'DOWNLOADED', '?', '?', 0, 0, 'Image', 'Ready')");
-            s3Query = conn
-                    .prepareStatement("select template_s3_ref.s3_id, template_s3_ref.template_id, template_s3_ref.created, template_s3_ref.size, template_s3_ref.physical_size, vm_template.account_id from `cloud`.`template_s3_ref`, `cloud`.`vm_template` where vm_template.id = template_s3_ref.template_id");
+        try {
+            tmplStoreInsert =
+                conn.prepareStatement("INSERT INTO `cloud`.`template_store_ref` (store_id,  template_id, created, download_pct, size, physical_size, download_state, local_path, install_path, update_count, ref_cnt, store_role, state) values(?, ?, ?, 100, ?, ?, 'DOWNLOADED', '?', '?', 0, 0, 'Image', 'Ready')");
+            s3Query =
+                conn.prepareStatement("select template_s3_ref.s3_id, template_s3_ref.template_id, template_s3_ref.created, template_s3_ref.size, template_s3_ref.physical_size, vm_template.account_id from `cloud`.`template_s3_ref`, `cloud`.`vm_template` where vm_template.id = template_s3_ref.template_id");
             rs = s3Query.executeQuery();
 
             while (rs.next()) {
@@ -2490,12 +2515,11 @@ public class Upgrade410to420 implements DbUpgrade {
                     tmplStoreInsert.setNull(5, Types.BIGINT);
                 }
                 String path = "template/tmpl/" + account_id + "/" + s3_tmpl_id;
-                tmplStoreInsert.setString(6,  path);
-                tmplStoreInsert.setString(7,  path);
+                tmplStoreInsert.setString(6, path);
+                tmplStoreInsert.setString(7, path);
                 tmplStoreInsert.executeUpdate();
             }
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             String msg = "Unable to migrate template_s3_ref." + e.getMessage();
             s_logger.error(msg);
             throw new CloudRuntimeException(msg, e);
@@ -2522,13 +2546,12 @@ public class Upgrade410to420 implements DbUpgrade {
         PreparedStatement s3Query = null;
         ResultSet rs = null;
 
-
         s_logger.debug("Updating snapshot_store_ref table from snapshots table for s3");
         try {
-            snapshotStoreInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) values(?, ?, ?, ?, ?, ?, ?, 0, 0, 'Image', 'Ready')");
-            s3Query = conn
-                    .prepareStatement("select s3_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', backup_snap_id), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type <> 'KVM' and s3_id is not null and removed is null");
+            snapshotStoreInsert =
+                conn.prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) values(?, ?, ?, ?, ?, ?, ?, 0, 0, 'Image', 'Ready')");
+            s3Query =
+                conn.prepareStatement("select s3_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', backup_snap_id), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type <> 'KVM' and s3_id is not null and removed is null");
             rs = s3Query.executeQuery();
 
             while (rs.next()) {
@@ -2557,13 +2580,12 @@ public class Upgrade410to420 implements DbUpgrade {
                 snapshotStoreInsert.setLong(7, s3_vol_id);
                 snapshotStoreInsert.executeUpdate();
             }
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             String msg = "Unable to migrate s3 backedup snapshots to snapshot_store_ref." + e.getMessage();
             s_logger.error(msg);
             throw new CloudRuntimeException(msg, e);
         } finally {
-            try{
+            try {
                 if (snapshotStoreInsert != null) {
                     snapshotStoreInsert.close();
                 }
@@ -2587,12 +2609,11 @@ public class Upgrade410to420 implements DbUpgrade {
         s_logger.debug("Migrating Swift to image store");
         try {
             storeQuery = conn.prepareStatement("select id from `cloud`.`image_store` where uuid = ?");
-            storeDetailInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`image_store_details` (store_id, name, value) values(?, ?, ?)");
+            storeDetailInsert = conn.prepareStatement("INSERT INTO `cloud`.`image_store_details` (store_id, name, value) values(?, ?, ?)");
 
             // migrate SWIFT secondary storage
-            storeInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`image_store` (uuid, name, image_provider_name, protocol, url, scope, role, created) values(?, ?, 'Swift', 'http', ?, 'REGION', 'Image', ?)");
+            storeInsert =
+                conn.prepareStatement("INSERT INTO `cloud`.`image_store` (uuid, name, image_provider_name, protocol, url, scope, role, created) values(?, ?, 'Swift', 'http', ?, 'REGION', 'Image', ?)");
             swiftQuery = conn.prepareStatement("select id, uuid, url, account, username, swift.key, created from `cloud`.`swift`");
             rs = swiftQuery.executeQuery();
 
@@ -2635,8 +2656,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 }
                 swift_store_id_map.put(swift_id, storeId);
             }
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             String msg = "Unable to migrate swift secondary storages." + e.getMessage();
             s_logger.error(msg);
             throw new CloudRuntimeException(msg, e);
@@ -2682,8 +2702,8 @@ public class Upgrade410to420 implements DbUpgrade {
 
         s_logger.debug("Updating template_store_ref table from template_swift_ref table");
         try {
-            tmplStoreInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`template_store_ref` (store_id,  template_id, created, download_pct, size, physical_size, download_state, local_path, install_path, update_count, ref_cnt, store_role, state) values(?, ?, ?, 100, ?, ?, 'DOWNLOADED', '?', '?', 0, 0, 'Image', 'Ready')");
+            tmplStoreInsert =
+                conn.prepareStatement("INSERT INTO `cloud`.`template_store_ref` (store_id,  template_id, created, download_pct, size, physical_size, download_state, local_path, install_path, update_count, ref_cnt, store_role, state) values(?, ?, ?, 100, ?, ?, 'DOWNLOADED', '?', '?', 0, 0, 'Image', 'Ready')");
             s3Query = conn.prepareStatement("select swift_id, template_id, created, path, size, physical_size from `cloud`.`template_swift_ref`");
             rs = s3Query.executeQuery();
 
@@ -2741,10 +2761,10 @@ public class Upgrade410to420 implements DbUpgrade {
 
         s_logger.debug("Updating snapshot_store_ref table from snapshots table for swift");
         try {
-            snapshotStoreInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) values(?, ?, ?, ?, ?, ?, ?, 0, 0, 'Image', 'Ready')");
-            s3Query = conn
-                    .prepareStatement("select swift_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', backup_snap_id), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type <> 'KVM' and swift_id is not null and removed is null");
+            snapshotStoreInsert =
+                conn.prepareStatement("INSERT INTO `cloud`.`snapshot_store_ref` (store_id,  snapshot_id, created, size, parent_snapshot_id, install_path, volume_id, update_count, ref_cnt, store_role, state) values(?, ?, ?, ?, ?, ?, ?, 0, 0, 'Image', 'Ready')");
+            s3Query =
+                conn.prepareStatement("select swift_id, id, created, size, prev_snap_id, CONCAT('snapshots', '/', account_id, '/', volume_id, '/', backup_snap_id), volume_id, 0, 0, 'Image', 'Ready' from `cloud`.`snapshots` where status = 'BackedUp' and hypervisor_type <> 'KVM' and swift_id is not null and removed is null");
             rs = s3Query.executeQuery();
 
             while (rs.next()) {
@@ -2790,7 +2810,8 @@ public class Upgrade410to420 implements DbUpgrade {
         //Now add foreign key.
         PreparedStatement pstmt = null;
         try {
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`nicira_nvp_nic_map` ADD CONSTRAINT `fk_nicira_nvp_nic_map__nic` FOREIGN KEY (`nic`) REFERENCES `nics` (`uuid`) ON DELETE CASCADE");
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`nicira_nvp_nic_map` ADD CONSTRAINT `fk_nicira_nvp_nic_map__nic` FOREIGN KEY (`nic`) REFERENCES `nics` (`uuid`) ON DELETE CASCADE");
             pstmt.executeUpdate();
             s_logger.debug("Added foreign key fk_nicira_nvp_nic_map__nic to the table nicira_nvp_nic_map");
         } catch (SQLException e) {
@@ -2815,7 +2836,8 @@ public class Upgrade410to420 implements DbUpgrade {
         //Now add foreign key.
         PreparedStatement pstmt = null;
         try {
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`router_network_ref` ADD CONSTRAINT `fk_router_network_ref__router_id` FOREIGN KEY (`router_id`) REFERENCES `domain_router` (`id`) ON DELETE CASCADE");
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`router_network_ref` ADD CONSTRAINT `fk_router_network_ref__router_id` FOREIGN KEY (`router_id`) REFERENCES `domain_router` (`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
             s_logger.debug("Added foreign key fk_router_network_ref__router_id to the table router_network_ref");
         } catch (SQLException e) {
@@ -2875,17 +2897,17 @@ public class Upgrade410to420 implements DbUpgrade {
         ResultSet rs2 = null;
         try {
             try {
-                pstmt = conn.prepareStatement("SELECT *  FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'cloud' AND TABLE_NAME = 'network_offerings' AND COLUMN_NAME = 'concurrent_connections'");
+                pstmt =
+                    conn.prepareStatement("SELECT *  FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'cloud' AND TABLE_NAME = 'network_offerings' AND COLUMN_NAME = 'concurrent_connections'");
                 rs = pstmt.executeQuery();
                 if (!rs.next()) {
-                    pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `concurrent_connections` int(10) unsigned COMMENT 'Load Balancer(haproxy) maximum number of concurrent connections(global max)'");
+                    pstmt =
+                        conn.prepareStatement("ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `concurrent_connections` int(10) unsigned COMMENT 'Load Balancer(haproxy) maximum number of concurrent connections(global max)'");
                     pstmt.executeUpdate();
                 }
-            }catch (SQLException e) {
+            } catch (SQLException e) {
                 throw new CloudRuntimeException("migration of concurrent connections from network_detais failed");
             }
-
-
 
             pstmt = conn.prepareStatement("select network_id, value from `cloud`.`network_details` where name='maxconnections'");
             rs = pstmt.executeQuery();
@@ -2898,7 +2920,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 if (rs1.next()) {
                     long network_offering_id = rs1.getLong(1);
                     pstmt = conn.prepareStatement("select concurrent_connections from `cloud`.`network_offerings` where id= ?");
-                    pstmt.setLong(1,network_offering_id);
+                    pstmt.setLong(1, network_offering_id);
                     rs2 = pstmt.executeQuery();
                     if ((!rs2.next()) || (rs2.getInt(1) < maxconnections)) {
                         pstmt = conn.prepareStatement("update network_offerings set concurrent_connections=? where id=?");
@@ -2909,8 +2931,7 @@ public class Upgrade410to420 implements DbUpgrade {
                 }
             }
         } catch (SQLException e) {
-        }
-        finally {
+        } finally {
             try {
                 if (rs != null) {
                     rs.close();
@@ -2937,10 +2958,11 @@ public class Upgrade410to420 implements DbUpgrade {
             if (rs.next()) {
                 pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`volumes` DROP COLUMN `iso_id`");
                 pstmt.executeUpdate();
-                pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`volumes` CHANGE COLUMN `iso_id1` `iso_id` bigint(20) unsigned COMMENT 'The id of the iso from which the volume was created'");
+                pstmt =
+                    conn.prepareStatement("ALTER TABLE `cloud`.`volumes` CHANGE COLUMN `iso_id1` `iso_id` bigint(20) unsigned COMMENT 'The id of the iso from which the volume was created'");
                 pstmt.executeUpdate();
             }
-        }catch (SQLException e) {
+        } catch (SQLException e) {
             //implies iso_id1 is not present, so do nothing.
         }
     }
@@ -2955,9 +2977,8 @@ public class Upgrade410to420 implements DbUpgrade {
             throw new CloudRuntimeException("Failed to update volume format to RAW for volumes on RBD pools due to exception ", e);
         }
     }
-    
-    
-    private void upgradeVpcServiceMap(Connection conn){
+
+    private void upgradeVpcServiceMap(Connection conn) {
         s_logger.debug("Upgrading VPC service Map");
         PreparedStatement listVpc = null;
         PreparedStatement listServiceProviders = null;
@@ -2979,15 +3000,16 @@ public class Upgrade410to420 implements DbUpgrade {
                 while (rs1.next()) {
                     String service = rs1.getString(1);
                     String provider = rs1.getString(2);
-                    insertProviders = conn.prepareStatement("INSERT INTO `cloud`.`vpc_service_map` (`vpc_id`, `service`, `provider`, `created`) VALUES (?, ?, ?, now());");
+                    insertProviders =
+                        conn.prepareStatement("INSERT INTO `cloud`.`vpc_service_map` (`vpc_id`, `service`, `provider`, `created`) VALUES (?, ?, ?, now());");
                     insertProviders.setLong(1, vpc_id);
                     insertProviders.setString(2, service);
                     insertProviders.setString(3, provider);
                     insertProviders.executeUpdate();
                 }
-                s_logger.debug("Upgraded service map for VPC: "+vpc_id);
+                s_logger.debug("Upgraded service map for VPC: " + vpc_id);
             }
-        }catch (SQLException e) {
+        } catch (SQLException e) {
             throw new CloudRuntimeException("Error during VPC service map upgrade", e);
         } finally {
             try {
@@ -3028,10 +3050,10 @@ public class Upgrade410to420 implements DbUpgrade {
                 long account_id = rsAccount.getLong(1);
                 long domain_id = rsAccount.getLong(2);
                 // 1. update cpu,memory for all accounts
-                pstmt2 = conn.prepareStatement( "SELECT SUM(service_offering.cpu), SUM(service_offering.ram_size)" +
-                            " FROM `cloud`.`vm_instance`, `cloud`.`service_offering`" +
-                            " WHERE vm_instance.service_offering_id = service_offering.id AND vm_instance.account_id = ?" + " AND vm_instance.removed is NULL" +
-                            " AND vm_instance.vm_type='User' AND state not in ('Destroyed', 'Error', 'Expunging')");
+                pstmt2 =
+                    conn.prepareStatement("SELECT SUM(service_offering.cpu), SUM(service_offering.ram_size)" + " FROM `cloud`.`vm_instance`, `cloud`.`service_offering`"
+                        + " WHERE vm_instance.service_offering_id = service_offering.id AND vm_instance.account_id = ?" + " AND vm_instance.removed is NULL"
+                        + " AND vm_instance.vm_type='User' AND state not in ('Destroyed', 'Error', 'Expunging')");
                 pstmt2.setLong(1, account_id);
                 rsCount = pstmt2.executeQuery();
                 if (rsCount.next()) {
@@ -3042,9 +3064,10 @@ public class Upgrade410to420 implements DbUpgrade {
                     upgradeResourceCountforAccount(conn, account_id, domain_id, "memory", 0L);
                 }
                 // 2. update primary_storage for all accounts
-                pstmt3 = conn.prepareStatement("SELECT sum(size) FROM `cloud`.`volumes` WHERE account_id= ?" +
-                        " AND (path is not NULL OR state in ('Allocated')) AND removed is NULL" +
-                        " AND instance_id IN (SELECT id FROM `cloud`.`vm_instance` WHERE vm_type='User')");
+                pstmt3 =
+                    conn.prepareStatement("SELECT sum(size) FROM `cloud`.`volumes` WHERE account_id= ?"
+                        + " AND (path is not NULL OR state in ('Allocated')) AND removed is NULL"
+                        + " AND instance_id IN (SELECT id FROM `cloud`.`vm_instance` WHERE vm_type='User')");
                 pstmt3.setLong(1, account_id);
                 rsCount = pstmt3.executeQuery();
                 if (rsCount.next()) {
@@ -3056,8 +3079,9 @@ public class Upgrade410to420 implements DbUpgrade {
                 long totalVolumesSize = 0;
                 long totalSnapshotsSize = 0;
                 long totalTemplatesSize = 0;
-                pstmt4 = conn.prepareStatement("SELECT sum(size) FROM `cloud`.`volumes` WHERE account_id= ?" +
-                        " AND path is NULL AND state not in ('Allocated') AND removed is NULL");
+                pstmt4 =
+                    conn.prepareStatement("SELECT sum(size) FROM `cloud`.`volumes` WHERE account_id= ?"
+                        + " AND path is NULL AND state not in ('Allocated') AND removed is NULL");
                 pstmt4.setLong(1, account_id);
                 rsCount = pstmt4.executeQuery();
                 if (rsCount.next()) {
@@ -3069,8 +3093,9 @@ public class Upgrade410to420 implements DbUpgrade {
                 if (rsCount.next()) {
                     totalSnapshotsSize = rsCount.getLong(1);
                 }
-                pstmt4 = conn.prepareStatement("SELECT sum(template_store_ref.size) FROM `cloud`.`template_store_ref`,`cloud`.`vm_template` WHERE account_id = ?" +
-                		" AND template_store_ref.template_id = vm_template.id AND download_state = 'DOWNLOADED' AND destroyed = false AND removed is NULL");
+                pstmt4 =
+                    conn.prepareStatement("SELECT sum(template_store_ref.size) FROM `cloud`.`template_store_ref`,`cloud`.`vm_template` WHERE account_id = ?"
+                        + " AND template_store_ref.template_id = vm_template.id AND download_state = 'DOWNLOADED' AND destroyed = false AND removed is NULL");
                 pstmt4.setLong(1, account_id);
                 rsCount = pstmt4.executeQuery();
                 if (rsCount.next()) {
@@ -3079,20 +3104,21 @@ public class Upgrade410to420 implements DbUpgrade {
                 upgradeResourceCountforAccount(conn, account_id, domain_id, "secondary_storage", totalVolumesSize + totalSnapshotsSize + totalTemplatesSize);
             }
             // 4. upgrade cpu,memory,primary_storage,secondary_storage for domains
-            String resource_types[] = {"cpu","memory", "primary_storage", "secondary_storage"};
+            String resource_types[] = {"cpu", "memory", "primary_storage", "secondary_storage"};
             pstmt5 = conn.prepareStatement("select id FROM `cloud`.`domain`");
             rsAccount = pstmt5.executeQuery();
             while (rsAccount.next()) {
                 long domain_id = rsAccount.getLong(1);
-                for(int count=0; count < resource_types.length; count++) {
+                for (int count = 0; count < resource_types.length; count++) {
                     String resource_type = resource_types[count];
                     upgradeResourceCountforDomain(conn, domain_id, resource_type, 0L); // reset value to 0 before statistics
                 }
             }
-            for(int count= 0; count < resource_types.length; count++) {
+            for (int count = 0; count < resource_types.length; count++) {
                 String resource_type = resource_types[count];
-                pstmt5 = conn.prepareStatement("select account.domain_id,sum(resource_count.count) from `cloud`.`account` left join `cloud`.`resource_count` on account.id=resource_count.account_id " +
-                        "where resource_count.type=? group by account.domain_id;");
+                pstmt5 =
+                    conn.prepareStatement("select account.domain_id,sum(resource_count.count) from `cloud`.`account` left join `cloud`.`resource_count` on account.id=resource_count.account_id "
+                        + "where resource_count.type=? group by account.domain_id;");
                 pstmt5.setString(1, resource_type);
                 rsCount = pstmt5.executeQuery();
                 while (rsCount.next()) {
@@ -3138,7 +3164,8 @@ public class Upgrade410to420 implements DbUpgrade {
     private static void upgradeResourceCountforAccount(Connection conn, Long account_id, Long domain_id, String type, Long resource_count) throws SQLException {
         //update or insert into resource_count table.
         PreparedStatement pstmt = null;
-        pstmt = conn.prepareStatement("INSERT INTO `cloud`.`resource_count` (account_id, type, count) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), count=?");
+        pstmt =
+            conn.prepareStatement("INSERT INTO `cloud`.`resource_count` (account_id, type, count) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), count=?");
         pstmt.setLong(1, account_id);
         pstmt.setString(2, type);
         pstmt.setLong(3, resource_count);
@@ -3146,11 +3173,12 @@ public class Upgrade410to420 implements DbUpgrade {
         pstmt.executeUpdate();
         pstmt.close();
     }
-    
+
     private static void upgradeResourceCountforDomain(Connection conn, Long domain_id, String type, Long resource_count) throws SQLException {
         //update or insert into resource_count table.
         PreparedStatement pstmt = null;
-        pstmt = conn.prepareStatement("INSERT INTO `cloud`.`resource_count` (domain_id, type, count) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), count=?");
+        pstmt =
+            conn.prepareStatement("INSERT INTO `cloud`.`resource_count` (domain_id, type, count) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), count=?");
         pstmt.setLong(1, domain_id);
         pstmt.setString(2, type);
         pstmt.setLong(3, resource_count);

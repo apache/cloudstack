@@ -53,8 +53,7 @@ public class LibvirtStorageVolumeDef {
     private String _backingPath;
     private volFormat _backingFormat;
 
-    public LibvirtStorageVolumeDef(String volName, Long size, volFormat format,
-            String tmplPath, volFormat tmplFormat) {
+    public LibvirtStorageVolumeDef(String volName, Long size, volFormat format, String tmplPath, volFormat tmplFormat) {
         _volName = volName;
         _volSize = size;
         _volFormat = format;
@@ -72,8 +71,7 @@ public class LibvirtStorageVolumeDef {
         storageVolBuilder.append("<volume>\n");
         storageVolBuilder.append("<name>" + _volName + "</name>\n");
         if (_volSize != null) {
-            storageVolBuilder
-                    .append("<capacity>" + _volSize + "</capacity>\n");
+            storageVolBuilder.append("<capacity>" + _volSize + "</capacity>\n");
         }
         storageVolBuilder.append("<target>\n");
         storageVolBuilder.append("<format type='" + _volFormat + "'/>\n");
@@ -84,8 +82,7 @@ public class LibvirtStorageVolumeDef {
         if (_backingPath != null) {
             storageVolBuilder.append("<backingStore>\n");
             storageVolBuilder.append("<path>" + _backingPath + "</path>\n");
-            storageVolBuilder.append("<format type='" + _backingFormat
-                    + "'/>\n");
+            storageVolBuilder.append("<format type='" + _backingFormat + "'/>\n");
             storageVolBuilder.append("</backingStore>\n");
         }
         storageVolBuilder.append("</volume>\n");

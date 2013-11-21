@@ -56,17 +56,24 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 
 @Local(value = Discoverer.class)
 public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
-    private static final Logger s_logger = Logger
-            .getLogger(SimulatorDiscoverer.class);
+    private static final Logger s_logger = Logger.getLogger(SimulatorDiscoverer.class);
 
-    @Inject HostDao _hostDao;
-    @Inject VMTemplateDao _vmTemplateDao;
-    @Inject VMTemplateZoneDao _vmTemplateZoneDao;
-    @Inject ClusterDao _clusterDao;
-    @Inject AgentManager _agentMgr = null;
-    @Inject MockAgentManager _mockAgentMgr = null;
-    @Inject MockStorageManager _mockStorageMgr = null;
-    @Inject ResourceManager _resourceMgr;
+    @Inject
+    HostDao _hostDao;
+    @Inject
+    VMTemplateDao _vmTemplateDao;
+    @Inject
+    VMTemplateZoneDao _vmTemplateZoneDao;
+    @Inject
+    ClusterDao _clusterDao;
+    @Inject
+    AgentManager _agentMgr = null;
+    @Inject
+    MockAgentManager _mockAgentMgr = null;
+    @Inject
+    MockStorageManager _mockStorageMgr = null;
+    @Inject
+    ResourceManager _resourceMgr;
 
     /**
      * Finds ServerResources of an in-process simulator
@@ -75,9 +82,8 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
      *      java.lang.Long, java.net.URI, java.lang.String, java.lang.String)
      */
     @Override
-    public Map<? extends ServerResource, Map<String, String>> find(long dcId,
-            Long podId, Long clusterId, URI uri, String username,
-            String password, List<String> hostTags) throws DiscoveryException {
+    public Map<? extends ServerResource, Map<String, String>>
+        find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) throws DiscoveryException {
         Map<AgentResourceBase, Map<String, String>> resources;
 
         try {
@@ -86,15 +92,14 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
             String host = uri.getAuthority();
             String commands = URLDecoder.decode(uri.getPath());
 
-            long cpuSpeed = _mockAgentMgr.DEFAULT_HOST_SPEED_MHZ;
-            long cpuCores = _mockAgentMgr.DEFAULT_HOST_CPU_CORES;
-            long memory = _mockAgentMgr.DEFAULT_HOST_MEM_SIZE;
-            long localstorageSize = _mockStorageMgr.DEFAULT_HOST_STORAGE_SIZE;
+            long cpuSpeed = MockAgentManager.DEFAULT_HOST_SPEED_MHZ;
+            long cpuCores = MockAgentManager.DEFAULT_HOST_CPU_CORES;
+            long memory = MockAgentManager.DEFAULT_HOST_MEM_SIZE;
+            long localstorageSize = MockStorageManager.DEFAULT_HOST_STORAGE_SIZE;
             if (scheme.equals("http")) {
                 if (host == null || !host.startsWith("sim")) {
-                    String msg = "uri is not of simulator type so we're not taking care of the discovery for this: "
-                            + uri;
-                    if(s_logger.isDebugEnabled()) {
+                    String msg = "uri is not of simulator type so we're not taking care of the discovery for this: " + uri;
+                    if (s_logger.isDebugEnabled()) {
                         s_logger.debug(msg);
                     }
                     return null;
@@ -102,7 +107,7 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
                 if (commands != null) {
                     int index = commands.lastIndexOf("/");
                     if (index != -1) {
-                        commands = commands.substring(index+1);
+                        commands = commands.substring(index + 1);
 
                         String[] cmds = commands.split("&");
                         for (String cmd : cmds) {
@@ -120,9 +125,8 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
                     }
                 }
             } else {
-                String msg = "uriString is not http so we're not taking care of the discovery for this: "
-                        + uri;
-                if(s_logger.isDebugEnabled()) {
+                String msg = "uriString is not http so we're not taking care of the discovery for this: " + uri;
+                if (s_logger.isDebugEnabled()) {
                     s_logger.debug(msg);
                 }
                 return null;
@@ -131,20 +135,19 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
             String cluster = null;
             if (clusterId == null) {
                 String msg = "must specify cluster Id when adding host";
-                if(s_logger.isDebugEnabled()) {
+                if (s_logger.isDebugEnabled()) {
                     s_logger.debug(msg);
                 }
                 throw new RuntimeException(msg);
             } else {
                 ClusterVO clu = _clusterDao.findById(clusterId);
-                if (clu == null
-                        || (clu.getHypervisorType() != HypervisorType.Simulator)) {
+                if (clu == null || (clu.getHypervisorType() != HypervisorType.Simulator)) {
                     if (s_logger.isInfoEnabled())
                         s_logger.info("invalid cluster id or cluster is not for Simulator hypervisors");
                     return null;
                 }
                 cluster = Long.toString(clusterId);
-                if(clu.getGuid() == null) {
+                if (clu.getGuid() == null) {
                     clu.setGuid(UUID.randomUUID().toString());
                 }
                 _clusterDao.update(clusterId, clu);
@@ -153,7 +156,7 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
             String pod;
             if (podId == null) {
                 String msg = "must specify pod Id when adding host";
-                if(s_logger.isDebugEnabled()) {
+                if (s_logger.isDebugEnabled()) {
                     s_logger.debug(msg);
                 }
                 throw new RuntimeException(msg);
@@ -178,20 +181,17 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
             resources = createAgentResources(params);
             return resources;
         } catch (Exception ex) {
-            s_logger.error("Exception when discovering simulator hosts: "
-                    + ex.getMessage());
+            s_logger.error("Exception when discovering simulator hosts: " + ex.getMessage());
         }
         return null;
     }
 
-    private Map<AgentResourceBase, Map<String, String>> createAgentResources(
-            Map<String, Object> params) {
+    private Map<AgentResourceBase, Map<String, String>> createAgentResources(Map<String, Object> params) {
         try {
             s_logger.info("Creating Simulator Resources");
             return _mockAgentMgr.createServerResources(params);
         } catch (Exception ex) {
-            s_logger.warn("Caught exception at agent resource creation: "
-                    + ex.getMessage(), ex);
+            s_logger.warn("Caught exception at agent resource creation: " + ex.getMessage(), ex);
         }
         return null;
     }
@@ -204,11 +204,11 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
         }
     }
 
-    private void associateTemplatesToZone(long hostId, long dcId){
+    private void associateTemplatesToZone(long hostId, long dcId) {
         VMTemplateZoneVO tmpltZone;
 
         List<VMTemplateVO> allTemplates = _vmTemplateDao.listAll();
-        for (VMTemplateVO vt: allTemplates){
+        for (VMTemplateVO vt : allTemplates) {
             if (vt.isCrossZones()) {
                 tmpltZone = _vmTemplateZoneDao.findByZoneTemplate(dcId, vt.getId());
                 if (tmpltZone == null) {
@@ -256,7 +256,7 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
     public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
 
         /*if(forRebalance)
-		return;
+        return;
         if ( Host.Type.SecondaryStorage == host.getType() ) {
             List<VMTemplateVO> tmplts = _vmTemplateDao.listAll();
             for( VMTemplateVO tmplt : tmplts ) {
@@ -296,21 +296,18 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
     }
 
     @Override
-    public HostVO createHostVOForConnectedAgent(HostVO host,
-            StartupCommand[] cmd) {
+    public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
         return null;
     }
 
     @Override
-    public HostVO createHostVOForDirectConnectAgent(HostVO host,
-            StartupCommand[] startup, ServerResource resource,
-            Map<String, String> details, List<String> hostTags) {
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details, List<String> hostTags) {
         StartupCommand firstCmd = startup[0];
         if (!(firstCmd instanceof StartupRoutingCommand)) {
             return null;
         }
 
-        StartupRoutingCommand ssCmd = ((StartupRoutingCommand) firstCmd);
+        StartupRoutingCommand ssCmd = ((StartupRoutingCommand)firstCmd);
         if (ssCmd.getHypervisorType() != HypervisorType.Simulator) {
             return null;
         }
@@ -319,8 +316,7 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
     }
 
     @Override
-    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced,
-            boolean isForceDeleteStorage) throws UnableDeleteHostException {
+    public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
         return null;
     }
 

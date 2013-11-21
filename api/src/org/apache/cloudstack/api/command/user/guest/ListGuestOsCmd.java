@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.user.guest;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -27,12 +29,11 @@ import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
 import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.GuestOS;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listOsTypes", description="Lists all supported OS types for this cloud.", responseObject=GuestOSResponse.class)
+@APICommand(name = "listOsTypes", description = "Lists all supported OS types for this cloud.", responseObject = GuestOSResponse.class)
 public class ListGuestOsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListIsosCmd.class.getName());
 
@@ -42,17 +43,14 @@ public class ListGuestOsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = GuestOSResponse.class,
-            description="list by Os type Id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestOSResponse.class, description = "list by Os type Id")
     private Long id;
 
-    @Parameter(name=ApiConstants.OS_CATEGORY_ID, type=CommandType.UUID, entityType = GuestOSCategoryResponse.class,
-            description="list by Os Category id")
+    @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType = GuestOSCategoryResponse.class, description = "list by Os Category id")
     private Long osCategoryId;
 
-    @Parameter(name=ApiConstants.DESCRIPTION, type=CommandType.STRING, description="list os by description", since="3.0.1")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "list os by description", since = "3.0.1")
     private String description;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -80,7 +78,7 @@ public class ListGuestOsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends GuestOS>, Integer> result = _mgr.listGuestOSByCriteria(this);
         ListResponse<GuestOSResponse> response = new ListResponse<GuestOSResponse>();
         List<GuestOSResponse> osResponses = new ArrayList<GuestOSResponse>();

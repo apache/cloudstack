@@ -28,6 +28,12 @@ import javax.inject.Inject;
 
 import junit.framework.Assert;
 
+import org.mockito.Matchers;
+import org.mockito.Mockito;
+import org.springframework.test.context.ContextConfiguration;
+import org.testng.AssertJUnit;
+import org.testng.annotations.Test;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -38,10 +44,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
@@ -52,11 +58,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
-import org.springframework.test.context.ContextConfiguration;
-import org.testng.AssertJUnit;
-import org.testng.annotations.Test;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
@@ -80,18 +81,18 @@ import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
-import com.cloud.storage.Volume;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
 
-@ContextConfiguration(locations = { "classpath:/storageContext.xml" })
+@ContextConfiguration(locations = {"classpath:/storageContext.xml"})
 public class VolumeTest extends CloudStackTestNGBase {
     @Inject
     ImageStoreDao imageStoreDao;
@@ -156,14 +157,14 @@ public class VolumeTest extends CloudStackTestNGBase {
             imageStore = this.imageStoreDao.findByName(imageStoreName);
         } else {
             // create data center
-            DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,
-                    "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true, true, null, null);
+            DataCenterVO dc =
+                new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
+                    true, null, null);
             dc = dcDao.persist(dc);
             dcId = dc.getId();
             // create pod
 
-            HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), this.getHostGateway(),
-                    this.getHostCidr(), 8, "test");
+            HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), dc.getId(), this.getHostGateway(), this.getHostCidr(), 8, "test");
             pod = podDao.persist(pod);
             podId = pod.getId();
             // create xen cluster
@@ -224,7 +225,7 @@ public class VolumeTest extends CloudStackTestNGBase {
 
         /*
          * TemplateDataStoreVO templateStore = new TemplateDataStoreVO();
-         * 
+         *
          * templateStore.setDataStoreId(imageStore.getId());
          * templateStore.setDownloadPercent(100);
          * templateStore.setDownloadState(Status.DOWNLOADED);
@@ -251,17 +252,13 @@ public class VolumeTest extends CloudStackTestNGBase {
     protected void injectMockito() {
         List<HostVO> hosts = new ArrayList<HostVO>();
         hosts.add(this.host);
-        Mockito.when(
-                resourceMgr.listAllUpAndEnabledHosts((Type) Matchers.any(), Matchers.anyLong(), Matchers.anyLong(),
-                        Matchers.anyLong())).thenReturn(hosts);
+        Mockito.when(resourceMgr.listAllUpAndEnabledHosts((Type)Matchers.any(), Matchers.anyLong(), Matchers.anyLong(), Matchers.anyLong())).thenReturn(hosts);
 
-        RemoteHostEndPoint ep = RemoteHostEndPoint.getHypervisorHostEndPoint(this.host.getId(),
-                this.host.getPrivateIpAddress(), this.host.getPublicIpAddress());
+        RemoteHostEndPoint ep = RemoteHostEndPoint.getHypervisorHostEndPoint(this.host.getId(), this.host.getPrivateIpAddress(), this.host.getPublicIpAddress());
         Mockito.when(epSelector.select(Matchers.any(DataObject.class), Matchers.any(DataObject.class))).thenReturn(ep);
         Mockito.when(epSelector.select(Matchers.any(DataObject.class))).thenReturn(ep);
         Mockito.when(epSelector.select(Matchers.any(DataStore.class))).thenReturn(ep);
-        Mockito.when(hyGuruMgr.getGuruProcessedCommandTargetHost(Matchers.anyLong(), Matchers.any(Command.class)))
-                .thenReturn(this.host.getId());
+        Mockito.when(hyGuruMgr.getGuruProcessedCommandTargetHost(Matchers.anyLong(), Matchers.any(Command.class))).thenReturn(this.host.getId());
     }
 
     public DataStore createPrimaryDataStore() {
@@ -287,7 +284,7 @@ public class VolumeTest extends CloudStackTestNGBase {
              * this.podId); params.put("roles",
              * DataStoreRole.Primary.toString()); params.put("uuid", uuid);
              * params.put("providerName", String.valueOf(provider.getName()));
-             * 
+             *
              * DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
              * DataStore store = lifeCycle.initialize(params); ClusterScope
              * scope = new ClusterScope(clusterId, podId, dcId);
@@ -331,8 +328,8 @@ public class VolumeTest extends CloudStackTestNGBase {
         primaryStore = this.dataStoreMgr.getPrimaryDataStore(primaryStoreId);
         VolumeVO volume = createVolume(image.getId(), primaryStore.getId());
         VolumeInfo volInfo = this.volFactory.getVolume(volume.getId());
-        AsyncCallFuture<VolumeApiResult> future = this.volumeService.createVolumeFromTemplateAsync(volInfo,
-                this.primaryStoreId, this.templateFactory.getTemplate(this.image.getId(), DataStoreRole.Image));
+        AsyncCallFuture<VolumeApiResult> future =
+            this.volumeService.createVolumeFromTemplateAsync(volInfo, this.primaryStoreId, this.templateFactory.getTemplate(this.image.getId(), DataStoreRole.Image));
         try {
             VolumeApiResult result = future.get();
 

@@ -23,6 +23,7 @@ import com.cloud.usage.UsageSecurityGroupVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface UsageSecurityGroupDao extends GenericDao<UsageSecurityGroupVO, Long> {
-	public void update(UsageSecurityGroupVO usage);
-	public List<UsageSecurityGroupVO> getUsageRecords(Long accountId, Long domainId, Date startDate, Date endDate, boolean limit, int page);
+    public void update(UsageSecurityGroupVO usage);
+
+    public List<UsageSecurityGroupVO> getUsageRecords(Long accountId, Long domainId, Date startDate, Date endDate, boolean limit, int page);
 }

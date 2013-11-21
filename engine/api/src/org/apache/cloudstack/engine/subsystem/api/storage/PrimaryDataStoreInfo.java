@@ -31,8 +31,10 @@ public interface PrimaryDataStoreInfo extends StoragePool {
 
     boolean isVolumeDiskTypeSupported(DiskFormat diskType);
 
+    @Override
     String getUuid();
 
+    @Override
     StoragePoolType getPoolType();
 
     PrimaryDataStoreLifeCycle getLifeCycle();

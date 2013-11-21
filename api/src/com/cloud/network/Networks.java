@@ -23,13 +23,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * Network includes all of the enums used within networking.
- * 
+ *
  */
 public class Networks {
 
     public enum RouterPrivateIpStrategy {
-        None,
-        DcGlobal, // global to data center
+        None, DcGlobal, // global to data center
         HostLocal;
 
         public static String DummyPrivateIp = "169.254.1.1";
@@ -39,16 +38,11 @@ public class Networks {
      * Different ways to assign ip address to this network.
      */
     public enum Mode {
-        None,
-        Static,
-        Dhcp,
-        ExternalDhcp;
+        None, Static, Dhcp, ExternalDhcp;
     };
 
     public enum AddressFormat {
-        Ip4,
-        Ip6,
-        DualStack
+        Ip4, Ip6, DualStack
     }
 
     /**
@@ -78,23 +72,17 @@ public class Networks {
                     else
                         return new URI("vlan://" + value.toString());
                 } catch (URISyntaxException e) {
-                    throw new CloudRuntimeException(
-                            "Unable to convert to broadcast URI: " + value);
+                    throw new CloudRuntimeException("Unable to convert to broadcast URI: " + value);
                 }
             }
         },
-        Vswitch("vs", String.class),
-        LinkLocal(null, null),
-        Vnet("vnet", Long.class),
-        Storage("storage", Integer.class),
-        Lswitch("lswitch", String.class) {
+        Vswitch("vs", String.class), LinkLocal(null, null), Vnet("vnet", Long.class), Storage("storage", Integer.class), Lswitch("lswitch", String.class) {
             @Override
             public <T> URI toUri(T value) {
                 try {
                     return new URI("lswitch", value.toString(), null, null);
                 } catch (URISyntaxException e) {
-                    throw new CloudRuntimeException(
-                            "Unable to convert to broadcast URI: " + value);
+                    throw new CloudRuntimeException("Unable to convert to broadcast URI: " + value);
                 }
             }
 
@@ -106,10 +94,7 @@ public class Networks {
                 return uri.getSchemeSpecificPart();
             }
         },
-        Mido("mido", String.class),
-        Pvlan("pvlan", String.class),
-        Vxlan("vxlan", Long.class),
-        UnDecided(null, null);
+        Mido("mido", String.class), Pvlan("pvlan", String.class), Vxlan("vxlan", Long.class), UnDecided(null, null);
 
         private final String scheme;
         private final Class<?> type;
@@ -145,8 +130,7 @@ public class Networks {
             try {
                 return new URI(scheme + "://" + value.toString());
             } catch (URISyntaxException e) {
-                throw new CloudRuntimeException(
-                        "Unable to convert to broadcast URI: " + value);
+                throw new CloudRuntimeException("Unable to convert to broadcast URI: " + value);
             }
         }
 
@@ -167,8 +151,7 @@ public class Networks {
          * @return the scheme as BroadcastDomainType
          * @throws URISyntaxException when the string can not be converted to URI
          */
-        public static BroadcastDomainType getTypeOf(String str)
-                throws URISyntaxException {
+        public static BroadcastDomainType getTypeOf(String str) throws URISyntaxException {
             if (com.cloud.dc.Vlan.UNTAGGED.equalsIgnoreCase(str)) {
                 return Native;
             }
@@ -223,8 +206,7 @@ public class Networks {
          * @return depending on the scheme/BroadcastDomainType
          * @throws URISyntaxException the string is not even an uri
          */
-        public static String getValue(String uriString)
-                throws URISyntaxException {
+        public static String getValue(String uriString) throws URISyntaxException {
             return getValue(new URI(uriString));
         }
 
@@ -260,17 +242,10 @@ public class Networks {
      * Different types of network traffic in the data center.
      */
     public enum TrafficType {
-        None,
-        Public,
-        Guest,
-        Storage,
-        Management,
-        Control,
-        Vpn;
+        None, Public, Guest, Storage, Management, Control, Vpn;
 
         public static boolean isSystemNetwork(TrafficType trafficType) {
-            if (Storage.equals(trafficType) || Management.equals(trafficType)
-                    || Control.equals(trafficType)) {
+            if (Storage.equals(trafficType) || Management.equals(trafficType) || Control.equals(trafficType)) {
                 return true;
             }
             return false;
@@ -296,9 +271,7 @@ public class Networks {
     };
 
     public enum IsolationType {
-        None(null, null),
-        Ec2("ec2", String.class),
-        Vlan("vlan", Integer.class) {
+        None(null, null), Ec2("ec2", String.class), Vlan("vlan", Integer.class) {
             @Override
             public <T> URI toUri(T value) {
                 try {
@@ -307,14 +280,11 @@ public class Networks {
                     else
                         return new URI("vlan", value.toString(), null, null);
                 } catch (URISyntaxException e) {
-                    throw new CloudRuntimeException(
-                            "Unable to convert to isolation URI: " + value);
+                    throw new CloudRuntimeException("Unable to convert to isolation URI: " + value);
                 }
             }
         },
-        Vswitch("vs", String.class),
-        Undecided(null, null),
-        Vnet("vnet", Long.class);
+        Vswitch("vs", String.class), Undecided(null, null), Vnet("vnet", Long.class);
 
         private final String scheme;
         private final Class<?> type;
@@ -336,15 +306,13 @@ public class Networks {
             try {
                 return new URI(scheme + "://" + value.toString());
             } catch (URISyntaxException e) {
-                throw new CloudRuntimeException(
-                        "Unable to convert to isolation type URI: " + value);
+                throw new CloudRuntimeException("Unable to convert to isolation type URI: " + value);
             }
         }
     }
 
     public enum BroadcastScheme {
-        Vlan("vlan"),
-        VSwitch("vswitch");
+        Vlan("vlan"), VSwitch("vswitch");
 
         private final String scheme;
 

@@ -28,13 +28,11 @@ import org.apache.log4j.Logger;
 
 /**
  */
-@Target({ TYPE, FIELD })
+@Target({TYPE, FIELD})
 @Retention(RUNTIME)
 public @interface LogLevel {
     public enum Log4jLevel { // Had to do this because Level is not primitive.
-        Off(Level.OFF),
-        Trace(Level.TRACE),
-        Debug(Level.DEBUG);
+        Off(Level.OFF), Trace(Level.TRACE), Debug(Level.DEBUG);
 
         Level _level;
 

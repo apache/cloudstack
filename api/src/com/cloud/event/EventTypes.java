@@ -95,7 +95,6 @@ public class EventTypes {
     public static final String EVENT_PROXY_REBOOT = "PROXY.REBOOT";
     public static final String EVENT_PROXY_HA = "PROXY.HA";
 
-
     // VNC Console Events
     public static final String EVENT_VNC_CONNECT = "VNC.CONNECT";
     public static final String EVENT_VNC_DISCONNECT = "VNC.DISCONNECT";
@@ -121,7 +120,6 @@ public class EventTypes {
     public static final String EVENT_NIC_DETAIL_ADD = "NIC.DETAIL.ADD";
     public static final String EVENT_NIC_DETAIL_UPDATE = "NIC.DETAIL.UPDATE";
     public static final String EVENT_NIC_DETAIL_REMOVE = "NIC.DETAIL.REMOVE";
-
 
     // Load Balancers
     public static final String EVENT_ASSIGN_TO_LOAD_BALANCER_RULE = "LB.ASSIGN.TO.RULE";
@@ -194,7 +192,6 @@ public class EventTypes {
     public static final String EVENT_VOLUME_DETAIL_ADD = "VOLUME.DETAIL.ADD";
     public static final String EVENT_VOLUME_DETAIL_REMOVE = "VOLUME.DETAIL.REMOVE";
     public static final String EVENT_VOLUME_UPDATE = "VOLUME.UPDATE";
-
 
     // Domains
     public static final String EVENT_DOMAIN_CREATE = "DOMAIN.CREATE";
@@ -353,7 +350,6 @@ public class EventTypes {
     public static final String EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_ENABLE = "SWITCH.MGMT.ENABLE";
     public static final String EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_DISABLE = "SWITCH.MGMT.DISABLE";
 
-
     public static final String EVENT_EXTERNAL_FIREWALL_DEVICE_ADD = "PHYSICAL.FIREWALL.ADD";
     public static final String EVENT_EXTERNAL_FIREWALL_DEVICE_DELETE = "PHYSICAL.FIREWALL.DELETE";
     public static final String EVENT_EXTERNAL_FIREWALL_DEVICE_CONFIGURE = "PHYSICAL.FIREWALL.CONFIGURE";
@@ -420,7 +416,6 @@ public class EventTypes {
     public static final String EVENT_AUTOSCALEVMGROUP_ENABLE = "AUTOSCALEVMGROUP.ENABLE";
     public static final String EVENT_AUTOSCALEVMGROUP_DISABLE = "AUTOSCALEVMGROUP.DISABLE";
 
-
     public static final String EVENT_BAREMETAL_DHCP_SERVER_ADD = "PHYSICAL.DHCP.ADD";
     public static final String EVENT_BAREMETAL_DHCP_SERVER_DELETE = "PHYSICAL.DHCP.DELETE";
     public static final String EVENT_BAREMETAL_PXE_SERVER_ADD = "PHYSICAL.PXE.ADD";
@@ -437,9 +432,8 @@ public class EventTypes {
 
     public static final String EVENT_HOST_RESERVATION_RELEASE = "HOST.RESERVATION.RELEASE";
     // Dedicated guest vlan range
-    public static final String EVENT_GUEST_VLAN_RANGE_DEDICATE  = "GUESTVLANRANGE.DEDICATE";
-    public static final String EVENT_DEDICATED_GUEST_VLAN_RANGE_RELEASE  = "GUESTVLANRANGE.RELEASE";
-
+    public static final String EVENT_GUEST_VLAN_RANGE_DEDICATE = "GUESTVLANRANGE.DEDICATE";
+    public static final String EVENT_DEDICATED_GUEST_VLAN_RANGE_RELEASE = "GUESTVLANRANGE.RELEASE";
 
     public static final String EVENT_PORTABLE_IP_RANGE_CREATE = "PORTABLE.IP.RANGE.CREATE";
     public static final String EVENT_PORTABLE_IP_RANGE_DELETE = "PORTABLE.IP.RANGE.DELETE";
@@ -616,9 +610,9 @@ public class EventTypes {
 
         // VLANs/IP ranges
         entityEventDetails.put(EVENT_VLAN_IP_RANGE_CREATE, Vlan.class.getName());
-        entityEventDetails.put(EVENT_VLAN_IP_RANGE_DELETE,Vlan.class.getName());
+        entityEventDetails.put(EVENT_VLAN_IP_RANGE_DELETE, Vlan.class.getName());
         entityEventDetails.put(EVENT_VLAN_IP_RANGE_DEDICATE, Vlan.class.getName());
-        entityEventDetails.put(EVENT_VLAN_IP_RANGE_RELEASE,Vlan.class.getName());
+        entityEventDetails.put(EVENT_VLAN_IP_RANGE_RELEASE, Vlan.class.getName());
 
         entityEventDetails.put(EVENT_STORAGE_IP_RANGE_CREATE, StorageNetworkIpRange.class.getName());
         entityEventDetails.put(EVENT_STORAGE_IP_RANGE_DELETE, StorageNetworkIpRange.class.getName());
@@ -638,13 +632,13 @@ public class EventTypes {
         entityEventDetails.put(EVENT_SECURITY_GROUP_REMOVE, SecurityGroup.class.getName());
 
         // Host
-        entityEventDetails.put(EVENT_HOST_RECONNECT,  Host.class.getName());
+        entityEventDetails.put(EVENT_HOST_RECONNECT, Host.class.getName());
 
         // Maintenance
-        entityEventDetails.put(EVENT_MAINTENANCE_CANCEL,  Host.class.getName());
-        entityEventDetails.put(EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE,  Host.class.getName());
-        entityEventDetails.put(EVENT_MAINTENANCE_PREPARE,  Host.class.getName());
-        entityEventDetails.put(EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE,  Host.class.getName());
+        entityEventDetails.put(EVENT_MAINTENANCE_CANCEL, Host.class.getName());
+        entityEventDetails.put(EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE, Host.class.getName());
+        entityEventDetails.put(EVENT_MAINTENANCE_PREPARE, Host.class.getName());
+        entityEventDetails.put(EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE, Host.class.getName());
 
         // VPN
         entityEventDetails.put(EVENT_REMOTE_ACCESS_VPN_CREATE, RemoteAccessVpn.class.getName());
@@ -667,8 +661,8 @@ public class EventTypes {
         entityEventDetails.put(EVENT_ENABLE_STATIC_NAT, StaticNat.class.getName());
         entityEventDetails.put(EVENT_DISABLE_STATIC_NAT, StaticNat.class.getName());
 
-        entityEventDetails.put(EVENT_ZONE_VLAN_ASSIGN,Vlan.class.getName());
-        entityEventDetails.put(EVENT_ZONE_VLAN_RELEASE,Vlan.class.getName());
+        entityEventDetails.put(EVENT_ZONE_VLAN_ASSIGN, Vlan.class.getName());
+        entityEventDetails.put(EVENT_ZONE_VLAN_RELEASE, Vlan.class.getName());
 
         // Projects
         entityEventDetails.put(EVENT_PROJECT_CREATE, Project.class.getName());
@@ -682,7 +676,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_PROJECT_ACCOUNT_REMOVE, Project.class.getName());
 
         // Network as a Service
-        entityEventDetails.put(EVENT_NETWORK_ELEMENT_CONFIGURE,Network.class.getName());
+        entityEventDetails.put(EVENT_NETWORK_ELEMENT_CONFIGURE, Network.class.getName());
 
         // Physical Network Events
         entityEventDetails.put(EVENT_PHYSICAL_NETWORK_CREATE, PhysicalNetwork.class.getName());
@@ -710,7 +704,6 @@ public class EventTypes {
         entityEventDetails.put(EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_CONFIGURE, "Nexus1000v");
         entityEventDetails.put(EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_ENABLE, "Nexus1000v");
         entityEventDetails.put(EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_DISABLE, "Nexus1000v");
-
 
         entityEventDetails.put(EVENT_EXTERNAL_FIREWALL_DEVICE_ADD, PhysicalNetwork.class.getName());
         entityEventDetails.put(EVENT_EXTERNAL_FIREWALL_DEVICE_DELETE, PhysicalNetwork.class.getName());
@@ -740,8 +733,8 @@ public class EventTypes {
         entityEventDetails.put(EVENT_TAGS_DELETE, "tag");
 
         // external network device events
-        entityEventDetails.put(EVENT_EXTERNAL_NVP_CONTROLLER_ADD,  "NvpController");
-        entityEventDetails.put(EVENT_EXTERNAL_NVP_CONTROLLER_DELETE,  "NvpController");
+        entityEventDetails.put(EVENT_EXTERNAL_NVP_CONTROLLER_ADD, "NvpController");
+        entityEventDetails.put(EVENT_EXTERNAL_NVP_CONTROLLER_DELETE, "NvpController");
         entityEventDetails.put(EVENT_EXTERNAL_NVP_CONTROLLER_CONFIGURE, "NvpController");
 
         // AutoScale
@@ -764,7 +757,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_DEDICATED_GUEST_VLAN_RANGE_RELEASE, GuestVlan.class.getName());
     }
 
-    public static String getEntityForEvent (String eventName) {
+    public static String getEntityForEvent(String eventName) {
         String entityClassName = entityEventDetails.get(eventName);
         if (entityClassName == null || entityClassName.isEmpty()) {
             return null;
@@ -772,7 +765,7 @@ public class EventTypes {
         int index = entityClassName.lastIndexOf(".");
         String entityName = entityClassName;
         if (index != -1) {
-            entityName = entityClassName.substring(index+1);
+            entityName = entityClassName.substring(index + 1);
         }
         return entityName;
     }

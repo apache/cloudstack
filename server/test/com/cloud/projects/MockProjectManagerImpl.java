@@ -22,27 +22,18 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-
-import com.cloud.api.query.vo.ProjectAccountJoinVO;
-import com.cloud.api.query.vo.ProjectInvitationJoinVO;
-import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.user.Account;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.Pair;
 
-
-@Local(value = { ProjectManager.class })
+@Local(value = {ProjectManager.class})
 public class MockProjectManagerImpl extends ManagerBase implements ProjectManager {
 
     @Override
-    public Project createProject(String name, String displayText,
-            String accountName, Long domainId)
-            throws ResourceAllocationException {
+    public Project createProject(String name, String displayText, String accountName, Long domainId) throws ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -60,8 +51,7 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
     }
 
     @Override
-    public ProjectAccount assignAccountToProject(Project project,
-            long accountId, Role accountRole) {
+    public ProjectAccount assignAccountToProject(Project project, long accountId, Role accountRole) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -91,15 +81,13 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
     }
 
     @Override
-    public Project updateProject(long id, String displayText,
-            String newOwnerName) throws ResourceAllocationException {
+    public Project updateProject(long id, String displayText, String newOwnerName) throws ResourceAllocationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean addAccountToProject(long projectId, String accountName,
-            String email) {
+    public boolean addAccountToProject(long projectId, String accountName, String email) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -110,10 +98,8 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
         return false;
     }
 
-
     @Override
-    public boolean updateInvitation(long projectId, String accountName,
-            String token, boolean accept) {
+    public boolean updateInvitation(long projectId, String accountName, String token, boolean accept) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -125,8 +111,7 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
     }
 
     @Override
-    public Project suspendProject(long projectId)
-            throws ConcurrentOperationException, ResourceUnavailableException {
+    public Project suspendProject(long projectId) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -144,8 +129,7 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params)
-            throws ConfigurationException {
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         // TODO Auto-generated method stub
         return true;
     }
@@ -205,13 +189,10 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
     }
 
     @Override
-    public boolean deleteProject(Account caller, long callerUserId,
-            ProjectVO project) {
+    public boolean deleteProject(Account caller, long callerUserId, ProjectVO project) {
         // TODO Auto-generated method stub
         return false;
     }
-
-
 
     @Override
     public long getInvitationTimeout() {
@@ -219,12 +200,9 @@ public class MockProjectManagerImpl extends ManagerBase implements ProjectManage
         return 0;
     }
 
-
-
     @Override
     public Project findByProjectAccountIdIncludingRemoved(long projectAccountId) {
         return null;
     }
-
 
 }

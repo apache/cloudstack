@@ -16,15 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.user;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserResponse;
-import org.apache.log4j.Logger;
 
-@APICommand(name = "listUsers", description="Lists user accounts", responseObject=UserResponse.class)
+@APICommand(name = "listUsers", description = "Lists user accounts", responseObject = UserResponse.class)
 public class ListUsersCmd extends BaseListAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListUsersCmd.class.getName());
 
@@ -34,22 +35,23 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT_TYPE, type=CommandType.LONG, description="List users by account type. Valid types include admin, domain-admin, read-only-admin, or user.")
+    @Parameter(name = ApiConstants.ACCOUNT_TYPE,
+               type = CommandType.LONG,
+               description = "List users by account type. Valid types include admin, domain-admin, read-only-admin, or user.")
     private Long accountType;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserResponse.class, description="List user by ID.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserResponse.class, description = "List user by ID.")
     private Long id;
 
-    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="List users by state of the user account.")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "List users by state of the user account.")
     private String state;
 
-    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, description="List user by the username")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "List user by the username")
     private String username;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
 
     public Long getAccountType() {
         return accountType;
@@ -77,7 +79,7 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         ListResponse<UserResponse> response = _queryService.searchForUsers(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

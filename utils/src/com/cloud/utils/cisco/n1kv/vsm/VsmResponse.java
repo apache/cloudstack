@@ -16,57 +16,54 @@
 // under the License.
 package com.cloud.utils.cisco.n1kv.vsm;
 
-import org.apache.log4j.Logger;
+import java.io.IOException;
+import java.io.StringReader;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.w3c.dom.DOMException;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSSerializer;
-import org.xml.sax.SAXException;
 import org.xml.sax.InputSource;
-import java.io.StringReader;
-import java.io.IOException;
+import org.xml.sax.SAXException;
 
 public abstract class VsmResponse {
 
     // Following error tags, error types and severity have been taken from RFC 4741.
     public enum ErrorTag {
-       InUse, // in-use
-       InvalidValue, // invalid-value
-       TooBig, // too-big
-       MissingAttribute, // missing-attribute
-       BadAttribute, // bad-attribute
-       UnknownAttribute, // unknown-attribute
-       MissingElement, // missing-element
-       BadElement, // bad-element
-       UnknownElement, // unknown-element
-       UnknownNamespace, // unknown-namespace
-       AccessDenied, // access-denied
-       LockDenied, // lock-denied
-       ResourceDenied, // resource-denied
-       RollbackFailed, // rollback-failed
-       DataExists, // data-exists
-       DataMissing, // data-missing
-       OperationNotSupported, // operation-not-supported
-       OperationFailed, // operation-failed
-       PartialOperation, // partial-operation
+        InUse, // in-use
+        InvalidValue, // invalid-value
+        TooBig, // too-big
+        MissingAttribute, // missing-attribute
+        BadAttribute, // bad-attribute
+        UnknownAttribute, // unknown-attribute
+        MissingElement, // missing-element
+        BadElement, // bad-element
+        UnknownElement, // unknown-element
+        UnknownNamespace, // unknown-namespace
+        AccessDenied, // access-denied
+        LockDenied, // lock-denied
+        ResourceDenied, // resource-denied
+        RollbackFailed, // rollback-failed
+        DataExists, // data-exists
+        DataMissing, // data-missing
+        OperationNotSupported, // operation-not-supported
+        OperationFailed, // operation-failed
+        PartialOperation, // partial-operation
     }
 
     public enum ErrorType {
-       transport,
-       rpc,
-       protocol,
-       application;
+        transport, rpc, protocol, application;
     }
 
     public enum ErrorSeverity {
-       error,
-       warning;
+        error, warning;
     }
 
     private static final Logger s_logger = Logger.getLogger(VsmResponse.class);
@@ -113,12 +110,11 @@ public abstract class VsmResponse {
         return _responseOk;
     }
 
+    @Override
     public String toString() {
         StringBuffer error = new StringBuffer("");
 
-        error.append(" Severity: " + _severity)
-             .append(", Error code: " + _tag)
-             .append(", Error type: " + _type);
+        error.append(" Severity: " + _severity).append(", Error code: " + _tag).append(", Error type: " + _type);
 
         if (_message != null) {
             error.append(", Error Message: " + _message);
@@ -138,12 +134,11 @@ public abstract class VsmResponse {
     protected abstract void parse(Element root);
 
     protected void parseError(Node element) {
-        Element rpcError = (Element) element;
+        Element rpcError = (Element)element;
 
         try {
-            assert(rpcError.getNodeName().equalsIgnoreCase("nf:rpc-error"));
-            for (Node node = rpcError.getFirstChild();
-                    node != null; node = node.getNextSibling()) {
+            assert (rpcError.getNodeName().equalsIgnoreCase("nf:rpc-error"));
+            for (Node node = rpcError.getFirstChild(); node != null; node = node.getNextSibling()) {
                 if (node.getNodeName().equalsIgnoreCase("nf:error-type")) {
                     _type = ErrorType.valueOf(node.getTextContent().trim());
                 } else if (node.getNodeName().equalsIgnoreCase("nf:error-tag")) {
@@ -214,7 +209,7 @@ public abstract class VsmResponse {
         try {
             DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
-            DOMImplementationLS ls = (DOMImplementationLS) docBuilder.getDOMImplementation();
+            DOMImplementationLS ls = (DOMImplementationLS)docBuilder.getDOMImplementation();
             LSSerializer lss = ls.createLSSerializer();
             System.out.println(lss.writeToString(_docResponse));
         } catch (ParserConfigurationException e) {

@@ -22,49 +22,49 @@ import streamer.Link;
 
 public class ServerTpkt extends BaseElement {
 
-  /**
-   * TPKT protocol version (first byte).
-   */
-  public static final int PROTOCOL_TPKT = 3;
-  
-  public ServerTpkt(String id) {
-    super(id);
-  }
+    /**
+     * TPKT protocol version (first byte).
+     */
+    public static final int PROTOCOL_TPKT = 3;
 
-  @Override
-  public void handleData(ByteBuffer buf, Link link) {
-    if (buf == null)
-      return;
-
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
-
-    // We need at least 4 bytes to get packet length
-    if(!cap(buf, 4, UNLIMITED, link, false))
-      return;
-
-    int version = buf.readUnsignedByte();
-    if (version != PROTOCOL_TPKT)
-      throw new RuntimeException("Unexpected data in TPKT header. Expected TPKT version: 0x03,  actual value: " + buf + ".");
-
-    buf.skipBytes(1); // Reserved byte
-
-    // Length of whole packet, including header
-    int length = buf.readUnsignedShort();
-    if(!cap(buf, length, length, link, false))
-      return;
-
-    int payloadLength = length - buf.cursor;
-
-    // Extract payload
-    ByteBuffer outBuf = buf.slice(buf.cursor, payloadLength, true);
-    buf.unref();
-    
-    if(verbose) {
-      outBuf.putMetadata("source", this);
+    public ServerTpkt(String id) {
+        super(id);
     }
 
-    pushDataToAllOuts(outBuf);
-  }
+    @Override
+    public void handleData(ByteBuffer buf, Link link) {
+        if (buf == null)
+            return;
+
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
+
+        // We need at least 4 bytes to get packet length
+        if (!cap(buf, 4, UNLIMITED, link, false))
+            return;
+
+        int version = buf.readUnsignedByte();
+        if (version != PROTOCOL_TPKT)
+            throw new RuntimeException("Unexpected data in TPKT header. Expected TPKT version: 0x03,  actual value: " + buf + ".");
+
+        buf.skipBytes(1); // Reserved byte
+
+        // Length of whole packet, including header
+        int length = buf.readUnsignedShort();
+        if (!cap(buf, length, length, link, false))
+            return;
+
+        int payloadLength = length - buf.cursor;
+
+        // Extract payload
+        ByteBuffer outBuf = buf.slice(buf.cursor, payloadLength, true);
+        buf.unref();
+
+        if (verbose) {
+            outBuf.putMetadata("source", this);
+        }
+
+        pushDataToAllOuts(outBuf);
+    }
 
 }

@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
+
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
 public class KVMPhysicalDisk {
@@ -22,8 +23,7 @@ public class KVMPhysicalDisk {
     private String name;
     private KVMStoragePool pool;
 
-    public static String RBDStringBuilder(String monHost, int monPort,
-                            String authUserName, String authSecret, String image) {
+    public static String RBDStringBuilder(String monHost, int monPort, String authUserName, String authSecret, String image) {
         String rbdOpts;
 
         rbdOpts = "rbd:" + image;

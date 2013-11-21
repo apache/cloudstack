@@ -80,17 +80,17 @@ public class UriUtils {
         int schemeTail = url.indexOf("://");
 
         int pathStart = 0;
-        if(schemeTail > 0)
+        if (schemeTail > 0)
             pathStart = url.indexOf('/', schemeTail + 3);
         else
             pathStart = url.indexOf('/');
 
-        if(pathStart > 0) {
+        if (pathStart > 0) {
             String[] tokens = url.substring(pathStart + 1).split("/");
-            if(tokens != null) {
+            if (tokens != null) {
                 StringBuffer sb = new StringBuffer();
                 sb.append(url.substring(0, pathStart));
-                for(String token : tokens) {
+                for (String token : tokens) {
                     sb.append("/").append(URLEncoder.encode(token));
                 }
 
@@ -104,17 +104,13 @@ public class UriUtils {
 
     public static String getCifsUriParametersProblems(URI uri) {
         if (!UriUtils.hostAndPathPresent(uri)) {
-            String errMsg = "cifs URI missing host and/or path.  "
-                    + " Make sure it's of the format "
-                    + "cifs://hostname/path?user=<username>&password=<password>";
+            String errMsg = "cifs URI missing host and/or path.  " + " Make sure it's of the format " + "cifs://hostname/path?user=<username>&password=<password>";
             s_logger.warn(errMsg);
             return errMsg;
         }
-        if (!UriUtils.cifsCredentialsPresent(uri))
-        {
-            String errMsg = "cifs URI missing user and password details. "
-                    + "Add them as query parameters, e.g. "
-                    + "cifs://example.com/some_share?user=foo&password=bar";
+        if (!UriUtils.cifsCredentialsPresent(uri)) {
+            String errMsg =
+                "cifs URI missing user and password details. " + "Add them as query parameters, e.g. " + "cifs://example.com/some_share?user=foo&password=bar";
             s_logger.warn(errMsg);
             return errMsg;
         }
@@ -122,8 +118,7 @@ public class UriUtils {
     }
 
     public static boolean hostAndPathPresent(URI uri) {
-        return !(uri.getHost() == null || uri.getHost().trim().isEmpty()
-                || uri.getPath() == null || uri.getPath().trim().isEmpty());
+        return !(uri.getHost() == null || uri.getHost().trim().isEmpty() || uri.getPath() == null || uri.getPath().trim().isEmpty());
     }
 
     public static boolean cifsCredentialsPresent(URI uri) {
@@ -135,23 +130,23 @@ public class UriUtils {
             if (name.equals("user")) {
                 foundUser = true;
                 s_logger.debug("foundUser is" + foundUser);
-            }
-            else if (name.equals("password")) {
+            } else if (name.equals("password")) {
                 foundPswd = true;
                 s_logger.debug("foundPswd is" + foundPswd);
             }
         }
         return (foundUser && foundPswd);
     }
+
     // Get the size of a file from URL response header.
     public static Long getRemoteSize(String url) {
-        Long remoteSize = (long) 0;
+        Long remoteSize = (long)0;
         HttpURLConnection httpConn = null;
         HttpsURLConnection httpsConn = null;
         try {
             URI uri = new URI(url);
             if (uri.getScheme().equalsIgnoreCase("http")) {
-                httpConn = (HttpURLConnection) uri.toURL().openConnection();
+                httpConn = (HttpURLConnection)uri.toURL().openConnection();
                 if (httpConn != null) {
                     String contentLength = httpConn.getHeaderField("content-length");
                     if (contentLength != null) {
@@ -160,7 +155,7 @@ public class UriUtils {
                     httpConn.disconnect();
                 }
             } else if (uri.getScheme().equalsIgnoreCase("https")) {
-                httpsConn = (HttpsURLConnection) uri.toURL().openConnection();
+                httpsConn = (HttpsURLConnection)uri.toURL().openConnection();
                 if (httpsConn != null) {
                     String contentLength = httpsConn.getHeaderField("content-length");
                     if (contentLength != null) {
@@ -177,12 +172,12 @@ public class UriUtils {
         return remoteSize;
     }
 
-    public static  Pair<String, Integer> validateUrl(String url) throws IllegalArgumentException {
+    public static Pair<String, Integer> validateUrl(String url) throws IllegalArgumentException {
         try {
             URI uri = new URI(url);
-            if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http")
-                    && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
-                    throw new IllegalArgumentException("Unsupported scheme for url: " + url);
+            if ((uri.getScheme() == null) ||
+                (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
+                throw new IllegalArgumentException("Unsupported scheme for url: " + url);
             }
             int port = uri.getPort();
             if (!(port == 80 || port == 8080 || port == 443 || port == -1)) {
@@ -215,27 +210,26 @@ public class UriUtils {
 
     public static InputStream getInputStreamFromUrl(String url, String user, String password) {
 
-        try{
-          Pair<String, Integer> hostAndPort = validateUrl(url);
-          HttpClient httpclient = new HttpClient(new MultiThreadedHttpConnectionManager());
-          if ((user != null) && (password != null)) {
-              httpclient.getParams().setAuthenticationPreemptive(true);
-              Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
-              httpclient.getState().setCredentials(new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
-              s_logger.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
-          }
-          // Execute the method.
-          GetMethod method = new GetMethod(url);
-          int statusCode = httpclient.executeMethod(method);
+        try {
+            Pair<String, Integer> hostAndPort = validateUrl(url);
+            HttpClient httpclient = new HttpClient(new MultiThreadedHttpConnectionManager());
+            if ((user != null) && (password != null)) {
+                httpclient.getParams().setAuthenticationPreemptive(true);
+                Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
+                httpclient.getState().setCredentials(new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
+                s_logger.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
+            }
+            // Execute the method.
+            GetMethod method = new GetMethod(url);
+            int statusCode = httpclient.executeMethod(method);
 
-          if (statusCode != HttpStatus.SC_OK) {
-            s_logger.error("Failed to read from URL: " + url);
-            return null;
-          }
+            if (statusCode != HttpStatus.SC_OK) {
+                s_logger.error("Failed to read from URL: " + url);
+                return null;
+            }
 
-          return method.getResponseBodyAsStream();
-        }
-        catch (Exception ex){
+            return method.getResponseBodyAsStream();
+        } catch (Exception ex) {
             s_logger.error("Failed to read from URL: " + url);
             return null;
         }

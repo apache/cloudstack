@@ -27,6 +27,11 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -39,8 +44,6 @@ import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 import org.apache.cloudstack.api.response.ApiParameterResponse;
 import org.apache.cloudstack.api.response.ApiResponseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.serializer.Param;
 import com.cloud.user.User;
@@ -48,7 +51,6 @@ import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.component.PluggableService;
-import com.google.gson.annotations.SerializedName;
 
 @Component
 @Local(value = ApiDiscoveryService.class)
@@ -69,7 +71,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             long startTime = System.nanoTime();
             s_apiNameDiscoveryResponseMap = new HashMap<String, ApiDiscoveryResponse>();
             Set<Class<?>> cmdClasses = new HashSet<Class<?>>();
-            for(PluggableService service: _services) {
+            for (PluggableService service : _services) {
                 s_logger.debug(String.format("getting api commands of service: %s", service.getClass().getName()));
                 cmdClasses.addAll(service.getCommands());
             }
@@ -78,21 +80,19 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             long endTime = System.nanoTime();
             s_logger.info("Api Discovery Service: Annotation, docstrings, api relation graph processed in " + (endTime - startTime) / 1000000.0 + " ms");
         }
-        
+
         return true;
     }
 
     protected Map<String, List<String>> cacheResponseMap(Set<Class<?>> cmdClasses) {
         Map<String, List<String>> responseApiNameListMap = new HashMap<String, List<String>>();
 
-        for(Class<?> cmdClass: cmdClasses) {
+        for (Class<?> cmdClass : cmdClasses) {
             APICommand apiCmdAnnotation = cmdClass.getAnnotation(APICommand.class);
             if (apiCmdAnnotation == null) {
                 apiCmdAnnotation = cmdClass.getSuperclass().getAnnotation(APICommand.class);
             }
-            if (apiCmdAnnotation == null
-                    || !apiCmdAnnotation.includeInApiDoc()
-                    || apiCmdAnnotation.name().isEmpty()) {
+            if (apiCmdAnnotation == null || !apiCmdAnnotation.includeInApiDoc() || apiCmdAnnotation.name().isEmpty()) {
                 continue;
             }
 
@@ -111,9 +111,8 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             }
             response.setRelated(responseName);
 
-
             Field[] responseFields = apiCmdAnnotation.responseObject().getDeclaredFields();
-            for(Field responseField: responseFields) {
+            for (Field responseField : responseFields) {
                 ApiResponseResponse responseResponse = getFieldResponseMap(responseField);
                 response.addApiResponse(responseResponse);
             }
@@ -125,7 +124,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
         for (String apiName : s_apiNameDiscoveryResponseMap.keySet()) {
             ApiDiscoveryResponse response = s_apiNameDiscoveryResponseMap.get(apiName);
             Set<ApiParameterResponse> processedParams = new HashSet<ApiParameterResponse>();
-            for (ApiParameterResponse param: response.getParams()) {
+            for (ApiParameterResponse param : response.getParams()) {
                 if (responseApiNameListMap.containsKey(param.getRelated())) {
                     List<String> relatedApis = responseApiNameListMap.get(param.getRelated());
                     param.setRelated(StringUtils.join(relatedApis, ","));
@@ -186,20 +185,15 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             response.setSince(apiCmdAnnotation.since());
         }
 
+        Set<Field> fields = ReflectUtil.getAllFieldsForClass(cmdClass, new Class<?>[] {BaseCmd.class, BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
 
-        Set<Field> fields = ReflectUtil.getAllFieldsForClass(cmdClass,
-                new Class<?>[]{BaseCmd.class, BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
-
-        boolean isAsync = ReflectUtil.isCmdClassAsync(cmdClass,
-                new Class<?>[]{BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
+        boolean isAsync = ReflectUtil.isCmdClassAsync(cmdClass, new Class<?>[] {BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
 
         response.setAsync(isAsync);
 
-        for(Field field: fields) {
+        for (Field field : fields) {
             Parameter parameterAnnotation = field.getAnnotation(Parameter.class);
-            if (parameterAnnotation != null
-                    && parameterAnnotation.expose()
-                    && parameterAnnotation.includeInApiDoc()) {
+            if (parameterAnnotation != null && parameterAnnotation.expose() && parameterAnnotation.includeInApiDoc()) {
 
                 ApiParameterResponse paramResponse = new ApiParameterResponse();
                 paramResponse.setName(parameterAnnotation.name());

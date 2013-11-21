@@ -22,8 +22,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 public class KVMGuestOsMapper {
-    private static final Logger s_logger = Logger
-            .getLogger(KVMGuestOsMapper.class);
+    private static final Logger s_logger = Logger.getLogger(KVMGuestOsMapper.class);
     private static Map<String, String> s_mapper = new HashMap<String, String>();
     static {
         s_mapper.put("CentOS 4.5 (32-bit)", "CentOS 4.5");
@@ -43,48 +42,27 @@ public class KVMGuestOsMapper {
         s_mapper.put("CentOS 5.5 (32-bit)", "CentOS 5.5");
         s_mapper.put("CentOS 5.5 (64-bit)", "CentOS 5.5");
         s_mapper.put("Red Hat Enterprise Linux 2", "Red Hat Enterprise Linux 2");
-        s_mapper.put("Red Hat Enterprise Linux 3 (32-bit)",
-                "Red Hat Enterprise Linux 3");
-        s_mapper.put("Red Hat Enterprise Linux 3 (64-bit)",
-                "Red Hat Enterprise Linux 3");
-        s_mapper.put("Red Hat Enterprise Linux 4(64-bit)",
-                "Red Hat Enterprise Linux 4");
-        s_mapper.put("Red Hat Enterprise Linux 4.5 (32-bit)",
-                "Red Hat Enterprise Linux 4.5");
-        s_mapper.put("Red Hat Enterprise Linux 4.6 (32-bit)",
-                "Red Hat Enterprise Linux 4.6");
-        s_mapper.put("Red Hat Enterprise Linux 4.7 (32-bit)",
-                "Red Hat Enterprise Linux 4.7");
-        s_mapper.put("Red Hat Enterprise Linux 4.8 (32-bit)",
-                "Red Hat Enterprise Linux 4.8");
-        s_mapper.put("Red Hat Enterprise Linux 5.0 (32-bit)",
-                "Red Hat Enterprise Linux 5.0");
-        s_mapper.put("Red Hat Enterprise Linux 5.0 (64-bit)",
-                "Red Hat Enterprise Linux 5.0");
-        s_mapper.put("Red Hat Enterprise Linux 5.1 (32-bit)",
-                "Red Hat Enterprise Linux 5.1");
-        s_mapper.put("Red Hat Enterprise Linux 5.1 (32-bit)",
-                "Red Hat Enterprise Linux 5.1");
-        s_mapper.put("Red Hat Enterprise Linux 5.2 (32-bit)",
-                "Red Hat Enterprise Linux 5.2");
-        s_mapper.put("Red Hat Enterprise Linux 5.2 (64-bit)",
-                "Red Hat Enterprise Linux 5.2");
-        s_mapper.put("Red Hat Enterprise Linux 5.3 (32-bit)",
-                "Red Hat Enterprise Linux 5.3");
-        s_mapper.put("Red Hat Enterprise Linux 5.3 (64-bit)",
-                "Red Hat Enterprise Linux 5.3");
-        s_mapper.put("Red Hat Enterprise Linux 5.4 (32-bit)",
-                "Red Hat Enterprise Linux 5.4");
-        s_mapper.put("Red Hat Enterprise Linux 5.4 (64-bit)",
-                "Red Hat Enterprise Linux 5.4");
-        s_mapper.put("Red Hat Enterprise Linux 5.5 (32-bit)",
-                "Red Hat Enterprise Linux 5.5");
-        s_mapper.put("Red Hat Enterprise Linux 5.5 (64-bit)",
-                "Red Hat Enterprise Linux 5.5");
-        s_mapper.put("Red Hat Enterprise Linux 6.0 (32-bit)",
-                "Red Hat Enterprise Linux 6.0");
-        s_mapper.put("Red Hat Enterprise Linux 6.0 (64-bit)",
-                "Red Hat Enterprise Linux 6.0");
+        s_mapper.put("Red Hat Enterprise Linux 3 (32-bit)", "Red Hat Enterprise Linux 3");
+        s_mapper.put("Red Hat Enterprise Linux 3 (64-bit)", "Red Hat Enterprise Linux 3");
+        s_mapper.put("Red Hat Enterprise Linux 4(64-bit)", "Red Hat Enterprise Linux 4");
+        s_mapper.put("Red Hat Enterprise Linux 4.5 (32-bit)", "Red Hat Enterprise Linux 4.5");
+        s_mapper.put("Red Hat Enterprise Linux 4.6 (32-bit)", "Red Hat Enterprise Linux 4.6");
+        s_mapper.put("Red Hat Enterprise Linux 4.7 (32-bit)", "Red Hat Enterprise Linux 4.7");
+        s_mapper.put("Red Hat Enterprise Linux 4.8 (32-bit)", "Red Hat Enterprise Linux 4.8");
+        s_mapper.put("Red Hat Enterprise Linux 5.0 (32-bit)", "Red Hat Enterprise Linux 5.0");
+        s_mapper.put("Red Hat Enterprise Linux 5.0 (64-bit)", "Red Hat Enterprise Linux 5.0");
+        s_mapper.put("Red Hat Enterprise Linux 5.1 (32-bit)", "Red Hat Enterprise Linux 5.1");
+        s_mapper.put("Red Hat Enterprise Linux 5.1 (32-bit)", "Red Hat Enterprise Linux 5.1");
+        s_mapper.put("Red Hat Enterprise Linux 5.2 (32-bit)", "Red Hat Enterprise Linux 5.2");
+        s_mapper.put("Red Hat Enterprise Linux 5.2 (64-bit)", "Red Hat Enterprise Linux 5.2");
+        s_mapper.put("Red Hat Enterprise Linux 5.3 (32-bit)", "Red Hat Enterprise Linux 5.3");
+        s_mapper.put("Red Hat Enterprise Linux 5.3 (64-bit)", "Red Hat Enterprise Linux 5.3");
+        s_mapper.put("Red Hat Enterprise Linux 5.4 (32-bit)", "Red Hat Enterprise Linux 5.4");
+        s_mapper.put("Red Hat Enterprise Linux 5.4 (64-bit)", "Red Hat Enterprise Linux 5.4");
+        s_mapper.put("Red Hat Enterprise Linux 5.5 (32-bit)", "Red Hat Enterprise Linux 5.5");
+        s_mapper.put("Red Hat Enterprise Linux 5.5 (64-bit)", "Red Hat Enterprise Linux 5.5");
+        s_mapper.put("Red Hat Enterprise Linux 6.0 (32-bit)", "Red Hat Enterprise Linux 6.0");
+        s_mapper.put("Red Hat Enterprise Linux 6.0 (64-bit)", "Red Hat Enterprise Linux 6.0");
         s_mapper.put("Fedora 13", "Fedora 13");
         s_mapper.put("Fedora 12", "Fedora 12");
         s_mapper.put("Fedora 11", "Fedora 11");
@@ -122,21 +100,14 @@ public class KVMGuestOsMapper {
         s_mapper.put("Asianux 3(64-bit)", "Other Linux");
         s_mapper.put("Windows 7 (32-bit)", "Windows 7");
         s_mapper.put("Windows 7 (64-bit)", "Windows 7");
-        s_mapper.put("Windows Server 2003 Enterprise Edition(32-bit)",
-                "Windows Server 2003");
-        s_mapper.put("Windows Server 2003 Enterprise Edition(64-bit)",
-                "Windows Server 2003");
-        s_mapper.put("Windows Server 2003 DataCenter Edition(32-bit)",
-                "Windows Server 2003");
-        s_mapper.put("Windows Server 2003 DataCenter Edition(64-bit)",
-                "Windows Server 2003");
-        s_mapper.put("Windows Server 2003 Standard Edition(32-bit)",
-                "Windows Server 2003");
-        s_mapper.put("Windows Server 2003 Standard Edition(64-bit)",
-                "Windows Server 2003");
+        s_mapper.put("Windows Server 2003 Enterprise Edition(32-bit)", "Windows Server 2003");
+        s_mapper.put("Windows Server 2003 Enterprise Edition(64-bit)", "Windows Server 2003");
+        s_mapper.put("Windows Server 2003 DataCenter Edition(32-bit)", "Windows Server 2003");
+        s_mapper.put("Windows Server 2003 DataCenter Edition(64-bit)", "Windows Server 2003");
+        s_mapper.put("Windows Server 2003 Standard Edition(32-bit)", "Windows Server 2003");
+        s_mapper.put("Windows Server 2003 Standard Edition(64-bit)", "Windows Server 2003");
         s_mapper.put("Windows Server 2003 Web Edition", "Windows Server 2003");
-        s_mapper.put("Microsoft Small Bussiness Server 2003",
-                "Windows Server 2003");
+        s_mapper.put("Microsoft Small Bussiness Server 2003", "Windows Server 2003");
         s_mapper.put("Windows Server 2008 (32-bit)", "Windows Server 2008");
         s_mapper.put("Windows Server 2008 (64-bit)", "Windows Server 2008");
         s_mapper.put("Windows Server 2008 R2 (64-bit)", "Windows Server 2008");

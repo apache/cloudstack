@@ -18,16 +18,16 @@ package com.cloud.agent.api;
 
 public class CreateLogicalSwitchCommand extends Command {
 
-    private String _transportUuid;
-    private String _transportType;
-    private String _name;
-    private String _ownerName;
+    private final String transportUuid;
+    private final String transportType;
+    private final String name;
+    private final String ownerName;
 
-    public CreateLogicalSwitchCommand(String transportUuid, String transportType, String name, String ownerName) {
-        _transportUuid = transportUuid;
-        _transportType = transportType;
-        _name = name;
-        _ownerName = ownerName;
+    public CreateLogicalSwitchCommand(final String transportUuid, final String transportType, final String name, final String ownerName) {
+        this.transportUuid = transportUuid;
+        this.transportType = transportType;
+        this.name = name;
+        this.ownerName = ownerName;
     }
 
     @Override
@@ -36,19 +36,19 @@ public class CreateLogicalSwitchCommand extends Command {
     }
 
     public String getTransportUuid() {
-        return _transportUuid;
+        return transportUuid;
     }
 
     public String getTransportType() {
-        return _transportType;
+        return transportType;
     }
 
     public String getName() {
-        return _name;
+        return name;
     }
 
     public String getOwnerName() {
-        return _ownerName;
+        return ownerName;
     }
 
 }

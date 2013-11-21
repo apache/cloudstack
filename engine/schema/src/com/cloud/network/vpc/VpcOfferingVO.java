@@ -29,19 +29,17 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
-
 
 @Entity
-@Table(name="vpc_offerings")
+@Table(name = "vpc_offerings")
 public class VpcOfferingVO implements VpcOffering {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     long id;
-    
-    @Column(name="uuid")
+
+    @Column(name = "uuid")
     private String uuid;
 
     @Column(name = "name")
@@ -52,27 +50,27 @@ public class VpcOfferingVO implements VpcOffering {
 
     @Column(name = "display_text")
     String displayText;
-    
+
     @Column(name = "state")
     @Enumerated(value = EnumType.STRING)
     State state = State.Disabled;
-    
+
     @Column(name = "default")
     boolean isDefault = false;
-    
+
     @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
-    
+
     @Column(name = "service_offering_id")
     Long serviceOfferingId;
-    
+
     public VpcOfferingVO() {
         this.uuid = UUID.randomUUID().toString();
     }
-    
+
     public VpcOfferingVO(String name, String displayText, Long serviceOfferingId) {
         this.name = name;
         this.displayText = displayText;
@@ -81,12 +79,12 @@ public class VpcOfferingVO implements VpcOffering {
         this.uuid = UUID.randomUUID().toString();
         this.state = State.Disabled;
     }
-    
+
     public VpcOfferingVO(String name, String displayText, boolean isDefault, Long serviceOfferingId) {
         this(name, displayText, serviceOfferingId);
         this.isDefault = isDefault;
     }
-    
+
     @Override
     public long getId() {
         return id;
@@ -115,7 +113,7 @@ public class VpcOfferingVO implements VpcOffering {
     public State getState() {
         return state;
     }
-    
+
     @Override
     public boolean isDefault() {
         return isDefault;
@@ -124,7 +122,7 @@ public class VpcOfferingVO implements VpcOffering {
     public void setUniqueName(String uniqueName) {
         this.uniqueName = uniqueName;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("[VPC Offering [");
@@ -134,7 +132,6 @@ public class VpcOfferingVO implements VpcOffering {
     public void setName(String name) {
         this.name = name;
     }
-
 
     public void setDisplayText(String displayText) {
         this.displayText = displayText;

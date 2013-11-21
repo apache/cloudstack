@@ -16,12 +16,9 @@
 // under the License.
 package com.cloud.network.dao;
 
-import java.util.List;
-
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.Attribute;
-import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -34,15 +31,15 @@ public class NetworkOpDaoImpl extends GenericDaoBase<NetworkOpVO, Long> implemen
     protected final SearchBuilder<NetworkOpVO> AllFieldsSearch;
     protected final GenericSearchBuilder<NetworkOpVO, Integer> ActiveNicsSearch;
     protected final Attribute _activeNicsAttribute;
-    
+
     protected NetworkOpDaoImpl() {
         super();
-        
+
         ActiveNicsSearch = createSearchBuilder(Integer.class);
         ActiveNicsSearch.selectFields(ActiveNicsSearch.entity().getActiveNicsCount());
         ActiveNicsSearch.and("network", ActiveNicsSearch.entity().getId(), Op.EQ);
         ActiveNicsSearch.done();
-        
+
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("network", AllFieldsSearch.entity().getId(), Op.EQ);
         AllFieldsSearch.done();
@@ -51,31 +48,35 @@ public class NetworkOpDaoImpl extends GenericDaoBase<NetworkOpVO, Long> implemen
         assert _activeNicsAttribute != null : "Cannot find activeNicsCount";
     }
 
+    @Override
     public int getActiveNics(long networkId) {
         SearchCriteria<Integer> sc = ActiveNicsSearch.create();
         sc.setParameters("network", networkId);
-        
+
         return customSearch(sc, null).get(0);
     }
-    
+
+    @Override
     public void changeActiveNicsBy(long networkId, int count) {
-        
+
         SearchCriteria<NetworkOpVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
 
         NetworkOpVO vo = createForUpdate();
         UpdateBuilder builder = getUpdateBuilder(vo);
         builder.incr(_activeNicsAttribute, count);
-        
+
         update(builder, sc, null);
     }
-    
+
+    @Override
     public void setCheckForGc(long networkId) {
         NetworkOpVO vo = createForUpdate();
         vo.setCheckForGc(true);
         update(networkId, vo);
     }
-    
+
+    @Override
     public void clearCheckForGc(long networkId) {
         NetworkOpVO vo = createForUpdate();
         vo.setCheckForGc(false);

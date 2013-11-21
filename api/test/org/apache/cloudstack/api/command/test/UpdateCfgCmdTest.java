@@ -16,18 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.test;
 
-import com.cloud.configuration.ConfigurationService;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.resource.ResourceService;
-
 import junit.framework.Assert;
 import junit.framework.TestCase;
-
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
-import org.apache.cloudstack.api.response.ConfigurationResponse;
-import org.apache.cloudstack.config.Configuration;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -35,7 +25,16 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
-public class UpdateCfgCmdTest extends TestCase{
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
+import org.apache.cloudstack.api.response.ConfigurationResponse;
+import org.apache.cloudstack.config.Configuration;
+
+import com.cloud.configuration.ConfigurationService;
+import com.cloud.exception.InvalidParameterValueException;
+
+public class UpdateCfgCmdTest extends TestCase {
 
     private UpdateCfgCmd updateCfgCmd;
     private ConfigurationService configService;
@@ -44,6 +43,7 @@ public class UpdateCfgCmdTest extends TestCase{
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    @Override
     @Before
     public void setUp() {
         responseGenerator = Mockito.mock(ResponseGenerator.class);
@@ -58,8 +58,7 @@ public class UpdateCfgCmdTest extends TestCase{
         try {
             updateCfgCmd.execute();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to update config",
-                    exception.getDescription());
+            Assert.assertEquals("Failed to update config", exception.getDescription());
         }
 
     }
@@ -70,9 +69,7 @@ public class UpdateCfgCmdTest extends TestCase{
         updateCfgCmd._configService = configService;
 
         try {
-            Mockito.when(
-                    configService.updateConfiguration(updateCfgCmd))
-                    .thenReturn(null);
+            Mockito.when(configService.updateConfiguration(updateCfgCmd)).thenReturn(null);
         } catch (InvalidParameterValueException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -83,12 +80,10 @@ public class UpdateCfgCmdTest extends TestCase{
         try {
             updateCfgCmd.execute();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to update config",
-                    exception.getDescription());
+            Assert.assertEquals("Failed to update config", exception.getDescription());
         }
 
     }
-
 
     @Test
     public void testCreateSuccess() {
@@ -98,10 +93,8 @@ public class UpdateCfgCmdTest extends TestCase{
         updateCfgCmd._responseGenerator = responseGenerator;
 
         try {
-            Mockito.when(
-                    configService.updateConfiguration(updateCfgCmd))
-                    .thenReturn(cfg);
-        }catch (Exception e){
+            Mockito.when(configService.updateConfiguration(updateCfgCmd)).thenReturn(cfg);
+        } catch (Exception e) {
             Assert.fail("Received exception when success expected " + e.getMessage());
         }
 
@@ -111,7 +104,7 @@ public class UpdateCfgCmdTest extends TestCase{
 
         updateCfgCmd.execute();
         Mockito.verify(responseGenerator).createConfigurationResponse(cfg);
-        ConfigurationResponse actualResponse = (ConfigurationResponse) updateCfgCmd.getResponseObject();
+        ConfigurationResponse actualResponse = (ConfigurationResponse)updateCfgCmd.getResponseObject();
         Assert.assertEquals(response, actualResponse);
         Assert.assertEquals("updateconfigurationresponse", response.getResponseName());
     }

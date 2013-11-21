@@ -24,47 +24,38 @@ import javax.persistence.Enumerated;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
-
 import com.cloud.vm.VirtualMachine;
 
 @Entity
-@Table(name="vm_work_job")
-@DiscriminatorValue(value="VmWork")
-@PrimaryKeyJoinColumn(name="id")
+@Table(name = "vm_work_job")
+@DiscriminatorValue(value = "VmWork")
+@PrimaryKeyJoinColumn(name = "id")
 public class VmWorkJobVO extends AsyncJobVO {
 
     // These steps are rather arbitrary.  What's recorded depends on the
     // the operation being performed.
-	public enum Step {
-        Filed(false),
-        Prepare(false),
-        Starting(true),
-        Started(false),
-        Release(false),
-        Done(false),
-        Migrating(true),
-        Reconfiguring(false),
-        Error(false);
-        
+    public enum Step {
+        Filed(false), Prepare(false), Starting(true), Started(false), Release(false), Done(false), Migrating(true), Reconfiguring(false), Error(false);
+
         boolean updateState; // Should the VM State be updated after this step?
+
         private Step(boolean updateState) {
             this.updateState = updateState;
         }
-        
+
         boolean updateState() {
             return updateState;
         }
     }
-	
-    @Column(name="step")
+
+    @Column(name = "step")
     Step step;
-    
-    @Column(name="vm_type")
-    @Enumerated(value=EnumType.STRING)
+
+    @Column(name = "vm_type")
+    @Enumerated(value = EnumType.STRING)
     VirtualMachine.Type vmType;
 
-    @Column(name="vm_instance_id")
+    @Column(name = "vm_instance_id")
     long vmInstanceId;
 
     protected VmWorkJobVO() {
@@ -74,28 +65,28 @@ public class VmWorkJobVO extends AsyncJobVO {
         step = Step.Filed;
         setRelated(related);
     }
-    
+
     public Step getStep() {
-    	return step;
+        return step;
     }
-    
+
     public void setStep(Step step) {
-    	this.step = step;
+        this.step = step;
     }
-    
+
     public VirtualMachine.Type getVmType() {
-    	return vmType;
+        return vmType;
     }
-    
+
     public void setVmType(VirtualMachine.Type vmType) {
-    	this.vmType = vmType;
+        this.vmType = vmType;
     }
-    
+
     public long getVmInstanceId() {
-    	return vmInstanceId;
+        return vmInstanceId;
     }
-    
+
     public void setVmInstanceId(long vmInstanceId) {
-    	this.vmInstanceId = vmInstanceId;
+        this.vmInstanceId = vmInstanceId;
     }
 }

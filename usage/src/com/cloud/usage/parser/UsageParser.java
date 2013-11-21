@@ -18,12 +18,14 @@ package com.cloud.usage.parser;
 
 import java.util.Date;
 
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 public abstract class UsageParser extends ManagedContextRunnable {
     public static final Logger s_logger = Logger.getLogger(UsageParser.class.getName());
-    
+
+    @Override
     protected void runInContext() {
         try {
             parse(null);
@@ -31,6 +33,6 @@ public abstract class UsageParser extends ManagedContextRunnable {
             s_logger.warn("Error while parsing usage events", e);
         }
     }
-    
+
     public abstract void parse(Date endDate);
 }

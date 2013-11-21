@@ -27,14 +27,14 @@ import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 
 @Entity
-@Table(name="security_group_view")
-public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEntity{
+@Table(name = "security_group_view")
+public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Id
-    @Column(name="id", updatable=false, nullable = false)
+    @Column(name = "id", updatable = false, nullable = false)
     private long id;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
     @Column(name = "description")
@@ -43,46 +43,46 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="account_uuid")
+    @Column(name = "account_uuid")
     private String accountUuid;
 
-    @Column(name="account_name")
+    @Column(name = "account_name")
     private String accountName = null;
 
-    @Column(name="account_type")
+    @Column(name = "account_type")
     private short accountType;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="domain_uuid")
+    @Column(name = "domain_uuid")
     private String domainUuid;
 
-    @Column(name="domain_name")
+    @Column(name = "domain_name")
     private String domainName = null;
 
-    @Column(name="domain_path")
+    @Column(name = "domain_path")
     private String domainPath = null;
 
-    @Column(name="project_id")
+    @Column(name = "project_id")
     private long projectId;
 
-    @Column(name="project_uuid")
+    @Column(name = "project_uuid")
     private String projectUuid;
 
-    @Column(name="project_name")
+    @Column(name = "project_name")
     private String projectName;
 
-    @Column(name="job_id")
+    @Column(name = "job_id")
     private Long jobId;
 
-    @Column(name="job_uuid")
+    @Column(name = "job_uuid")
     private String jobUuid;
 
-    @Column(name="job_status")
+    @Column(name = "job_status")
     private int jobStatus;
 
     @Column(name = "rule_id")
@@ -109,35 +109,35 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     @Column(name = "rule_allowed_ip_cidr")
     private String ruleAllowedSourceIpCidr = null;
 
-    @Column(name="tag_id")
+    @Column(name = "tag_id")
     private long tagId;
 
-    @Column(name="tag_uuid")
+    @Column(name = "tag_uuid")
     private String tagUuid;
 
-    @Column(name="tag_key")
+    @Column(name = "tag_key")
     private String tagKey;
 
-    @Column(name="tag_value")
+    @Column(name = "tag_value")
     private String tagValue;
 
-    @Column(name="tag_domain_id")
+    @Column(name = "tag_domain_id")
     private long tagDomainId;
 
-    @Column(name="tag_account_id")
+    @Column(name = "tag_account_id")
     private long tagAccountId;
 
-    @Column(name="tag_resource_id")
+    @Column(name = "tag_resource_id")
     private long tagResourceId;
 
-    @Column(name="tag_resource_uuid")
+    @Column(name = "tag_resource_uuid")
     private String tagResourceUuid;
 
-    @Column(name="tag_resource_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "tag_resource_type")
+    @Enumerated(value = EnumType.STRING)
     private ResourceObjectType tagResourceType;
 
-    @Column(name="tag_customer")
+    @Column(name = "tag_customer")
     private String tagCustomer;
 
     public SecurityGroupJoinVO() {

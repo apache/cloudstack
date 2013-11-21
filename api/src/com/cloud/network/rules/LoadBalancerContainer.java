@@ -17,7 +17,7 @@
 package com.cloud.network.rules;
 
 public interface LoadBalancerContainer {
-    
+
     public enum Scheme {
         Public, Internal;
     }
@@ -25,9 +25,11 @@ public interface LoadBalancerContainer {
     String getName();
 
     String getDescription();
-    
+
     String getAlgorithm();
-    
+
+    String getLbProtocol();
+
     Scheme getScheme();
 
 }

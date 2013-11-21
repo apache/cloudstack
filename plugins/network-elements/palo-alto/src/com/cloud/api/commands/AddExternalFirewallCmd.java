@@ -18,23 +18,24 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ExternalFirewallResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.network.element.PaloAltoFirewallElementService;
-import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "addExternalFirewall", description="Adds an external firewall appliance", responseObject = ExternalFirewallResponse.class)
+@APICommand(name = "addExternalFirewall", description = "Adds an external firewall appliance", responseObject = ExternalFirewallResponse.class)
 public class AddExternalFirewallCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddExternalFirewallCmd.class.getName());
     private static final String s_name = "addexternalfirewallresponse";
@@ -43,17 +44,20 @@ public class AddExternalFirewallCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            required = true, description="Zone in which to add the external firewall appliance.")
+    @Parameter(name = ApiConstants.ZONE_ID,
+               type = CommandType.UUID,
+               entityType = ZoneResponse.class,
+               required = true,
+               description = "Zone in which to add the external firewall appliance.")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the external firewall appliance.")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "URL of the external firewall appliance.")
     private String url;
 
-    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="Username of the external firewall appliance.")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Username of the external firewall appliance.")
     private String username;
 
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Password of the external firewall appliance.")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "Password of the external firewall appliance.")
     private String password;
 
     ///////////////////////////////////////////////////
@@ -76,12 +80,12 @@ public class AddExternalFirewallCmd extends BaseCmd {
         return password;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @Inject PaloAltoFirewallElementService _paElementService;
+    @Inject
+    PaloAltoFirewallElementService _paElementService;
 
     @Override
     public String getCommandName() {
@@ -95,7 +99,7 @@ public class AddExternalFirewallCmd extends BaseCmd {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void execute(){
+    public void execute() {
         try {
             Host externalFirewall = _paElementService.addExternalFirewall(this);
             ExternalFirewallResponse response = _paElementService.createExternalFirewallResponse(externalFirewall);
@@ -109,4 +113,3 @@ public class AddExternalFirewallCmd extends BaseCmd {
         }
     }
 }
-

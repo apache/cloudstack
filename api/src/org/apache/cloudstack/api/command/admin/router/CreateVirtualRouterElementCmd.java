@@ -20,6 +20,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -30,8 +32,6 @@ import org.apache.cloudstack.api.response.ProviderResponse;
 import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
@@ -40,7 +40,7 @@ import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.user.Account;
 
-@APICommand(name = "createVirtualRouterElement", responseObject=VirtualRouterProviderResponse.class, description="Create a virtual router element.")
+@APICommand(name = "createVirtualRouterElement", responseObject = VirtualRouterProviderResponse.class, description = "Create a virtual router element.")
 public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVirtualRouterElementCmd.class.getName());
     private static final String s_name = "createvirtualrouterelementresponse";
@@ -52,10 +52,17 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.NETWORK_SERVICE_PROVIDER_ID, type=CommandType.UUID, entityType = ProviderResponse.class, required=true, description="the network service provider ID of the virtual router element")
+    @Parameter(name = ApiConstants.NETWORK_SERVICE_PROVIDER_ID,
+               type = CommandType.UUID,
+               entityType = ProviderResponse.class,
+               required = true,
+               description = "the network service provider ID of the virtual router element")
     private Long nspId;
-    
-    @Parameter(name=ApiConstants.PROVIDER_TYPE, type=CommandType.UUID, entityType = ProviderResponse.class, description="The provider type. Supported types are VirtualRouter (default) and VPCVirtualRouter")
+
+    @Parameter(name = ApiConstants.PROVIDER_TYPE,
+               type = CommandType.UUID,
+               entityType = ProviderResponse.class,
+               description = "The provider type. Supported types are VirtualRouter (default) and VPCVirtualRouter")
     private String providerType;
 
     /////////////////////////////////////////////////////
@@ -69,23 +76,22 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
     public Long getNspId() {
         return nspId;
     }
-    
+
     public Type getProviderType() {
         if (providerType != null) {
             if (providerType.equalsIgnoreCase(Type.VirtualRouter.toString())) {
                 return Type.VirtualRouter;
             } else if (providerType.equalsIgnoreCase(Type.VPCVirtualRouter.toString())) {
                 return Type.VPCVirtualRouter;
-            } else throw new InvalidParameterValueException("Invalid providerType specified");
-        } 
+            } else
+                throw new InvalidParameterValueException("Invalid providerType specified");
+        }
         return Type.VirtualRouter;
     }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
-
 
     @Override
     public String getCommandName() {
@@ -98,14 +104,14 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Virtual router element Id: "+getEntityId());
+    public void execute() {
+        CallContext.current().setEventDetails("Virtual router element Id: " + getEntityId());
         VirtualRouterProvider result = _service.get(0).getCreatedElement(getEntityId());
         if (result != null) {
             VirtualRouterProviderResponse response = _responseGenerator.createVirtualRouterProviderResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
-        }else {
+        } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Virtual Router entity to physical network");
         }
     }
@@ -128,6 +134,6 @@ public class CreateVirtualRouterElementCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Adding physical network ServiceProvider Virtual Router: " + getEntityId();
+        return "Adding physical network ServiceProvider Virtual Router: " + getEntityId();
     }
 }

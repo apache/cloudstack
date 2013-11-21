@@ -27,9 +27,10 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "template_zone_ref")
@@ -65,6 +66,7 @@ public class VMTemplateZoneVO implements InternalIdentity {
         this.lastUpdated = lastUpdated;
     }
 
+    @Override
     public long getId() {
         return id;
     }

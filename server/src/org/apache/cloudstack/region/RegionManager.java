@@ -17,7 +17,6 @@
 package org.apache.cloudstack.region;
 
 import java.util.List;
-import java.util.Map;
 
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
@@ -84,7 +83,7 @@ public interface RegionManager {
 
     /**
      * Updates an account
-     * isPopagate falg is set to true if sent from peer Region 
+     * isPopagate falg is set to true if sent from peer Region
      *
      * @param cmd
      *            - the parameter containing accountId or account nameand domainId
@@ -114,7 +113,7 @@ public interface RegionManager {
      * @param accountId
      * @return account object
      */
-    Account enableAccount(String accountName, Long domainId, Long accountId); 	
+    Account enableAccount(String accountName, Long domainId, Long accountId);
 
     /**
      * Deletes user by Id
@@ -125,7 +124,7 @@ public interface RegionManager {
 
     /**
      * update an existing domain
-     * 
+     *
      * @param cmd
      *            - the command containing domainId and new domainName
      * @return Domain object if the command succeeded
@@ -154,7 +153,7 @@ public interface RegionManager {
      * @param userId
      *            - the userId
      * @return UserAccount object
-     */	
+     */
     UserAccount disableUser(Long id);
 
     /**

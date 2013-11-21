@@ -30,36 +30,35 @@ import javax.persistence.Table;
 
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name=("virtual_router_providers"))
+@Table(name = ("virtual_router_providers"))
 public class VirtualRouterProviderVO implements VirtualRouterProvider {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     long id;
-    
-    @Column(name="type")
+
+    @Column(name = "type")
     @Enumerated(EnumType.STRING)
     private Type type;
-    
-    @Column(name="enabled")
+
+    @Column(name = "enabled")
     private boolean enabled;
-    
-    @Column(name="nsp_id")
+
+    @Column(name = "nsp_id")
     private long nspId;
-    
-    @Column(name="uuid")
+
+    @Column(name = "uuid")
     private String uuid;
-    
-    @Column(name=GenericDao.REMOVED_COLUMN)
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
 
     public VirtualRouterProviderVO() {
         this.uuid = UUID.randomUUID().toString();
     }
-    
+
     public VirtualRouterProviderVO(long nspId, Type type) {
         this.nspId = nspId;
         this.type = type;
@@ -71,6 +70,7 @@ public class VirtualRouterProviderVO implements VirtualRouterProvider {
         return nspId;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }
@@ -84,7 +84,7 @@ public class VirtualRouterProviderVO implements VirtualRouterProvider {
     public Type getType() {
         return this.type;
     }
-    
+
     public Date getRemoved() {
         return removed;
     }

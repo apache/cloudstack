@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.resource;
@@ -83,23 +83,24 @@ public class CiscoVnmcResource implements ServerResource {
 
     private final Logger s_logger = Logger.getLogger(CiscoVnmcResource.class);
 
+    @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof ReadyCommand) {
-            return execute((ReadyCommand) cmd);
+            return execute((ReadyCommand)cmd);
         } else if (cmd instanceof MaintainCommand) {
-            return execute((MaintainCommand) cmd);
+            return execute((MaintainCommand)cmd);
         } else if (cmd instanceof IpAssocCommand) {
-            return execute((IpAssocCommand) cmd);
+            return execute((IpAssocCommand)cmd);
         } else if (cmd instanceof SetSourceNatCommand) {
-            return execute((SetSourceNatCommand) cmd);
+            return execute((SetSourceNatCommand)cmd);
         } else if (cmd instanceof SetFirewallRulesCommand) {
-            return execute((SetFirewallRulesCommand) cmd);
+            return execute((SetFirewallRulesCommand)cmd);
         } else if (cmd instanceof SetStaticNatRulesCommand) {
-            return execute((SetStaticNatRulesCommand) cmd);
+            return execute((SetStaticNatRulesCommand)cmd);
         } else if (cmd instanceof SetPortForwardingRulesCommand) {
-            return execute((SetPortForwardingRulesCommand) cmd);
+            return execute((SetPortForwardingRulesCommand)cmd);
         } else if (cmd instanceof ExternalNetworkResourceUsageCommand) {
-            return execute((ExternalNetworkResourceUsageCommand) cmd);
+            return execute((ExternalNetworkResourceUsageCommand)cmd);
         } else if (cmd instanceof CreateLogicalEdgeFirewallCommand) {
             return execute((CreateLogicalEdgeFirewallCommand)cmd);
         } else if (cmd instanceof CleanupLogicalEdgeFirewallCommand) {
@@ -113,34 +114,35 @@ public class CiscoVnmcResource implements ServerResource {
         }
     }
 
+    @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         try {
-            _name = (String) params.get("name");
+            _name = (String)params.get("name");
             if (_name == null) {
                 throw new ConfigurationException("Unable to find name");
             }
 
-            _zoneId = (String) params.get("zoneId");
+            _zoneId = (String)params.get("zoneId");
             if (_zoneId == null) {
                 throw new ConfigurationException("Unable to find zone");
             }
 
-            _physicalNetworkId = (String) params.get("physicalNetworkId");
+            _physicalNetworkId = (String)params.get("physicalNetworkId");
             if (_physicalNetworkId == null) {
                 throw new ConfigurationException("Unable to find physical network id in the configuration parameters");
             }
 
-            _ip = (String) params.get("ip");
+            _ip = (String)params.get("ip");
             if (_ip == null) {
                 throw new ConfigurationException("Unable to find IP");
             }
 
-            _username = (String) params.get("username");
+            _username = (String)params.get("username");
             if (_username == null) {
                 throw new ConfigurationException("Unable to find username");
             }
 
-            _password = (String) params.get("password");
+            _password = (String)params.get("password");
             if (_password == null) {
                 throw new ConfigurationException("Unable to find password");
             }
@@ -150,9 +152,9 @@ public class CiscoVnmcResource implements ServerResource {
                 throw new ConfigurationException("Unable to find the guid");
             }
 
-            _numRetries = NumbersUtil.parseInt((String) params.get("numretries"), 1);
+            _numRetries = NumbersUtil.parseInt((String)params.get("numretries"), 1);
 
-            NumbersUtil.parseInt((String) params.get("timeout"), 300);
+            NumbersUtil.parseInt((String)params.get("timeout"), 300);
 
             // Open a socket and login
             _connection = new CiscoVnmcConnectionImpl(_ip, _username, _password);
@@ -167,6 +169,7 @@ public class CiscoVnmcResource implements ServerResource {
 
     }
 
+    @Override
     public StartupCommand[] initialize() {
         StartupExternalFirewallCommand cmd = new StartupExternalFirewallCommand();
         cmd.setName(_name);
@@ -176,9 +179,10 @@ public class CiscoVnmcResource implements ServerResource {
         cmd.setStorageIpAddress("");
         cmd.setVersion(CiscoVnmcResource.class.getPackage().getImplementationVersion());
         cmd.setGuid(_guid);
-        return new StartupCommand[] { cmd };
+        return new StartupCommand[] {cmd};
     }
 
+    @Override
     public Host.Type getType() {
         return Host.Type.ExternalFirewall;
     }
@@ -210,10 +214,12 @@ public class CiscoVnmcResource implements ServerResource {
     public void disconnected() {
     }
 
+    @Override
     public IAgentControl getAgentControl() {
         return null;
     }
 
+    @Override
     public void setAgentControl(IAgentControl agentControl) {
         return;
     }
@@ -365,35 +371,26 @@ public class CiscoVnmcResource implements ServerResource {
                     } else {
                         String[] externalIpRange = getIpRangeFromCidr(rule.getSourceCidrList().get(0));
                         if (rule.getTrafficType() == TrafficType.Ingress) {
-                            if (!rule.getProtocol().equalsIgnoreCase("icmp")
-                                    && rule.getSrcPortRange() != null) {
-                                if (!_connection.createTenantVDCIngressAclRule(tenant,
-                                        rule.getId(), policyIdentifier,
-                                        rule.getProtocol().toUpperCase(), externalIpRange[0], externalIpRange[1],
-                                        Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]))) {
+                            if (!rule.getProtocol().equalsIgnoreCase("icmp") && rule.getSrcPortRange() != null) {
+                                if (!_connection.createTenantVDCIngressAclRule(tenant, rule.getId(), policyIdentifier, rule.getProtocol().toUpperCase(),
+                                    externalIpRange[0], externalIpRange[1], Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]))) {
                                     throw new ExecutionException("Failed to create ACL ingress rule in VNMC for guest network with vlan " + vlanId);
                                 }
                             } else {
-                                if (!_connection.createTenantVDCIngressAclRule(tenant,
-                                        rule.getId(), policyIdentifier,
-                                        rule.getProtocol().toUpperCase(), externalIpRange[0], externalIpRange[1])) {
+                                if (!_connection.createTenantVDCIngressAclRule(tenant, rule.getId(), policyIdentifier, rule.getProtocol().toUpperCase(),
+                                    externalIpRange[0], externalIpRange[1])) {
                                     throw new ExecutionException("Failed to create ACL ingress rule in VNMC for guest network with vlan " + vlanId);
                                 }
                             }
                         } else {
-                            if ((rule.getProtocol().equalsIgnoreCase("tcp") || rule.getProtocol().equalsIgnoreCase("udp"))
-                                    && rule.getSrcPortRange() != null) {
-                                if (!_connection.createTenantVDCEgressAclRule(tenant,
-                                        rule.getId(), policyIdentifier,
-                                        rule.getProtocol().toUpperCase(),
-                                        externalIpRange[0], externalIpRange[1],
-                                        Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]))) {
+                            if ((rule.getProtocol().equalsIgnoreCase("tcp") || rule.getProtocol().equalsIgnoreCase("udp")) && rule.getSrcPortRange() != null) {
+                                if (!_connection.createTenantVDCEgressAclRule(tenant, rule.getId(), policyIdentifier, rule.getProtocol().toUpperCase(),
+                                    externalIpRange[0], externalIpRange[1], Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]))) {
                                     throw new ExecutionException("Failed to create ACL egress rule in VNMC for guest network with vlan " + vlanId);
                                 }
                             } else {
-                                if (!_connection.createTenantVDCEgressAclRule(tenant,
-                                        rule.getId(), policyIdentifier,
-                                        rule.getProtocol().toUpperCase(), externalIpRange[0], externalIpRange[1])) {
+                                if (!_connection.createTenantVDCEgressAclRule(tenant, rule.getId(), policyIdentifier, rule.getProtocol().toUpperCase(),
+                                    externalIpRange[0], externalIpRange[1])) {
                                     throw new ExecutionException("Failed to create ACL egress rule in VNMC for guest network with vlan " + vlanId);
                                 }
                             }
@@ -480,8 +477,7 @@ public class CiscoVnmcResource implements ServerResource {
                             throw new ExecutionException("Failed to create DNAT ip pool in VNMC for guest network with vlan " + vlanId);
                         }
 
-                        if (!_connection.createTenantVDCDNatRule(tenant,
-                                rule.getId(), policyIdentifier, rule.getSrcIp())) {
+                        if (!_connection.createTenantVDCDNatRule(tenant, rule.getId(), policyIdentifier, rule.getSrcIp())) {
                             throw new ExecutionException("Failed to create DNAT rule in VNMC for guest network with vlan " + vlanId);
                         }
                     }
@@ -565,15 +561,13 @@ public class CiscoVnmcResource implements ServerResource {
                         if (!_connection.createTenantVDCPFIpPool(tenant, Long.toString(rule.getId()), rule.getDstIp())) {
                             throw new ExecutionException("Failed to create PF ip pool in VNMC for guest network with vlan " + vlanId);
                         }
-                        if (!_connection.createTenantVDCPFPortPool(tenant, Long.toString(rule.getId()),
-                                Integer.toString(rule.getDstPortRange()[0]), Integer.toString(rule.getDstPortRange()[1]))) {
+                        if (!_connection.createTenantVDCPFPortPool(tenant, Long.toString(rule.getId()), Integer.toString(rule.getDstPortRange()[0]),
+                            Integer.toString(rule.getDstPortRange()[1]))) {
                             throw new ExecutionException("Failed to create PF port pool in VNMC for guest network with vlan " + vlanId);
                         }
 
-                        if (!_connection.createTenantVDCPFRule(tenant,
-                                rule.getId(), policyIdentifier,
-                                rule.getProtocol().toUpperCase(), rule.getSrcIp(),
-                                Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]))) {
+                        if (!_connection.createTenantVDCPFRule(tenant, rule.getId(), policyIdentifier, rule.getProtocol().toUpperCase(), rule.getSrcIp(),
+                            Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]))) {
                             throw new ExecutionException("Failed to create PF rule in VNMC for guest network with vlan " + vlanId);
                         }
                     }
@@ -615,7 +609,7 @@ public class CiscoVnmcResource implements ServerResource {
                 throw new ExecutionException("Failed to create tenant edge static route in VNMC for guest network with vlan " + vlanId);
         }
 
-        // associate edge 
+        // associate edge
         if (!_connection.associateTenantVDCEdgeStaticRoutePolicy(tenant))
             throw new ExecutionException("Failed to associate edge static route policy with edge device profile in VNMC for guest network with vlan " + vlanId);
     }

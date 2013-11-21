@@ -68,7 +68,7 @@ public class ApiXmlDocReader {
             try {
                 ObjectInputStream inOld = xs.createObjectInputStream(new FileReader(oldFile));
                 while (true) {
-                    Command c1 = (Command) inOld.readObject();
+                    Command c1 = (Command)inOld.readObject();
                     oldCommands.put(c1.getName(), c1);
                 }
             } catch (EOFException ex) {
@@ -78,7 +78,7 @@ public class ApiXmlDocReader {
             try {
                 ObjectInputStream inNew = xs.createObjectInputStream(new FileReader(newFile));
                 while (true) {
-                    Command c = (Command) inNew.readObject();
+                    Command c = (Command)inNew.readObject();
                     commands.put(c.getName(), c);
                 }
             } catch (EOFException ex) {
@@ -202,7 +202,8 @@ public class ApiXmlDocReader {
                     }
                 }
 
-                if (newReqArgs.size() != 0 || newRespArgs.size() != 0 || removedReqArgs.size() != 0 || removedRespArgs.size() != 0 || stableReqArgs.size() != 0 || stableReqArgs.size() != 0) {
+                if (newReqArgs.size() != 0 || newRespArgs.size() != 0 || removedReqArgs.size() != 0 || removedRespArgs.size() != 0 || stableReqArgs.size() != 0 ||
+                    stableReqArgs.size() != 0) {
                     StringBuffer commandInfo = new StringBuffer();
                     commandInfo.append("\n\t" + key);
                     out.write(commandInfo.toString());

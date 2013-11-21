@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -23,12 +25,11 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateNetworkOffering", description="Updates a network offering.", responseObject=NetworkOfferingResponse.class)
+@APICommand(name = "updateNetworkOffering", description = "Updates a network offering.", responseObject = NetworkOfferingResponse.class)
 public class UpdateNetworkOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkOfferingCmd.class.getName());
     private static final String _name = "updatenetworkofferingresponse";
@@ -37,30 +38,34 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=NetworkOfferingResponse.class,
-            description="the id of the network offering")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkOfferingResponse.class, description = "the id of the network offering")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the network offering")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the network offering")
     private String networkOfferingName;
 
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the network offering")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the network offering")
     private String displayText;
 
-    @Parameter(name=ApiConstants.AVAILABILITY, type=CommandType.STRING, description="the availability of network offering." +
-            " Default value is Required for Guest Virtual network offering; Optional for Guest Direct network offering")
+    @Parameter(name = ApiConstants.AVAILABILITY, type = CommandType.STRING, description = "the availability of network offering."
+        + " Default value is Required for Guest Virtual network offering; Optional for Guest Direct network offering")
     private String availability;
 
-    @Parameter(name=ApiConstants.SORT_KEY, type=CommandType.INTEGER, description="sort key of the network offering, integer")
+    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the network offering, integer")
     private Integer sortKey;
 
-    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="update state for the network offering")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "update state for the network offering")
     private String state;
 
-    @Parameter(name=ApiConstants.KEEPALIVE_ENABLED, type=CommandType.BOOLEAN, required=false, description="if true keepalive will be turned on in the loadbalancer. At the time of writing this has only an effect on haproxy; the mode http and httpclose options are unset in the haproxy conf file.")
+    @Parameter(name = ApiConstants.KEEPALIVE_ENABLED,
+               type = CommandType.BOOLEAN,
+               required = false,
+               description = "if true keepalive will be turned on in the loadbalancer. At the time of writing this has only an effect on haproxy; the mode http and httpclose options are unset in the haproxy conf file.")
     private Boolean keepAliveEnabled;
 
-    @Parameter(name=ApiConstants.MAX_CONNECTIONS, type=CommandType.INTEGER, description="maximum number of concurrent connections supported by the network offering")
+    @Parameter(name = ApiConstants.MAX_CONNECTIONS,
+               type = CommandType.INTEGER,
+               description = "maximum number of concurrent connections supported by the network offering")
     private Integer maxConnections;
 
     /////////////////////////////////////////////////////
@@ -98,6 +103,7 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     public Boolean getKeepAliveEnabled() {
         return keepAliveEnabled;
     }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -112,7 +118,7 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         NetworkOffering result = _configService.updateNetworkOffering(this);
         if (result != null) {
             NetworkOfferingResponse response = _responseGenerator.createNetworkOfferingResponse(result);

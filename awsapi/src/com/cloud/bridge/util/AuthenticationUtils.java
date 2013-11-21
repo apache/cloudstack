@@ -16,32 +16,32 @@
 // under the License.
 package com.cloud.bridge.util;
 
-import org.apache.log4j.Logger;
-
+import java.math.BigInteger;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import javax.security.auth.x500.X500Principal;
-import java.math.BigInteger;
 
+import javax.security.auth.x500.X500Principal;
+
+import org.apache.log4j.Logger;
 
 public class AuthenticationUtils {
     protected final static Logger logger = Logger.getLogger(AuthenticationUtils.class);
 
-	public AuthenticationUtils() {
-	}
+    public AuthenticationUtils() {
+    }
 
-	/**
-	 * The combination of the Issuer and the serial number of a X509 certificate
-	 * must be globally unique.  The Issuer can be described by its Distinguished Name (DN).  
-	 * The uniqueId is constructed by appending a ", serial=" onto the end of the Issuer's 
-	 * DN (thus keeping the DN format).
-	 * 
-	 * @param cert
-	 */
-	public static String X509CertUniqueId( Certificate cert ) {
-		X509Certificate userCert = (X509Certificate)cert;
+    /**
+     * The combination of the Issuer and the serial number of a X509 certificate
+     * must be globally unique.  The Issuer can be described by its Distinguished Name (DN).
+     * The uniqueId is constructed by appending a ", serial=" onto the end of the Issuer's
+     * DN (thus keeping the DN format).
+     *
+     * @param cert
+     */
+    public static String X509CertUniqueId(Certificate cert) {
+        X509Certificate userCert = (X509Certificate)cert;
         X500Principal issuer = userCert.getIssuerX500Principal();
         BigInteger serialNumber = userCert.getSerialNumber();
-        return new String( issuer.toString() + ", serial=" + serialNumber );
-	}
+        return new String(issuer.toString() + ", serial=" + serialNumber);
+    }
 }

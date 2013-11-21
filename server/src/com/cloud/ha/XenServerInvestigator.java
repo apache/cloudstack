@@ -36,22 +36,25 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
-@Local(value=Investigator.class)
+@Local(value = Investigator.class)
 public class XenServerInvestigator extends AdapterBase implements Investigator {
     private final static Logger s_logger = Logger.getLogger(XenServerInvestigator.class);
-    @Inject HostDao _hostDao;
-    @Inject AgentManager _agentMgr;
-    @Inject ResourceManager _resourceMgr;
-    
+    @Inject
+    HostDao _hostDao;
+    @Inject
+    AgentManager _agentMgr;
+    @Inject
+    ResourceManager _resourceMgr;
+
     protected XenServerInvestigator() {
     }
-    
+
     @Override
     public Status isAgentAlive(Host agent) {
         if (agent.getHypervisorType() != HypervisorType.XenServer) {
             return null;
         }
-        
+
         CheckOnHostCommand cmd = new CheckOnHostCommand(agent);
         List<HostVO> neighbors = _resourceMgr.listAllHostsInCluster(agent.getClusterId());
         for (HostVO neighbor : neighbors) {
@@ -68,7 +71,7 @@ public class XenServerInvestigator extends AdapterBase implements Investigator {
                 return ans.isAlive() ? Status.Up : Status.Down;
             }
         }
-        
+
         return null;
     }
 

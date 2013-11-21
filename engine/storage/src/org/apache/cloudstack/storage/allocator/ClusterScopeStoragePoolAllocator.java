@@ -49,8 +49,7 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
     DiskOfferingDao _diskOfferingDao;
 
     @Override
-    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile,
-            DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
+    protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
         s_logger.debug("ClusterScopeStoragePoolAllocator looking for storage pool");
 
         if (dskCh.useLocalStorage()) {
@@ -72,8 +71,7 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             return null;
         }
         if (dskCh.getTags() != null && dskCh.getTags().length != 0) {
-            s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId
-                    + " having tags:" + Arrays.toString(dskCh.getTags()));
+            s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId + " having tags:" + Arrays.toString(dskCh.getTags()));
         } else {
             s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
         }
@@ -98,7 +96,7 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             if (suitablePools.size() == returnUpTo) {
                 break;
             }
-            StoragePool storagePool = (StoragePool) dataStoreMgr.getPrimaryDataStore(pool.getId());
+            StoragePool storagePool = (StoragePool)dataStoreMgr.getPrimaryDataStore(pool.getId());
             if (filter(avoid, storagePool, dskCh, plan)) {
                 suitablePools.add(storagePool);
             } else {

@@ -24,89 +24,112 @@ import java.util.Map;
 
 public class S3PolicyAction {
 
-	public enum PolicyActions {
-		UnknownAction, AllActions,
-	    GetObject, GetObjectVersion, PutObject, GetObjectAcl,
-	    GetObjectVersionAcl, PutObjectAcl, PutObjectAclVersion, DeleteObject,
-	    DeleteObjectVersion, ListMultipartUploadParts, AbortMultipartUpload, CreateBucket,
-	    DeleteBucket, ListBucket, ListBucketVersions, ListAllMyBuckets, 
-	    ListBucketMultipartUploads, GetBucketAcl, PutBucketAcl, GetBucketVersioning,
-	    PutBucketVersioning, GetBucketLocation, PutBucketPolicy, GetBucketPolicy
-	}
-	
-	// -> map a string name into a policy action constant
-	private Map<String,PolicyActions> actionNames = new HashMap<String,PolicyActions>();
-	
-	private List<PolicyActions> actionList = new ArrayList<PolicyActions>();
-	
-	public S3PolicyAction() {
-		actionNames.put("s3:GetObject",                  PolicyActions.GetObject);
-		actionNames.put("s3:GetObjectVersion",           PolicyActions.GetObjectVersion);
-		actionNames.put("s3:PutObject",                  PolicyActions.PutObject);
-		actionNames.put("s3:GetObjectAcl",               PolicyActions.GetObjectAcl);
-		actionNames.put("s3:GetObjectVersionAcl",        PolicyActions.GetObjectVersionAcl);
-		actionNames.put("s3:PutObjectAcl",               PolicyActions.PutObjectAcl);
-		actionNames.put("s3:PutObjectAclVersion",        PolicyActions.PutObjectAclVersion);
-		actionNames.put("s3:DeleteObject",               PolicyActions.DeleteObject);
-		actionNames.put("s3:DeleteObjectVersion",        PolicyActions.DeleteObjectVersion);
-		actionNames.put("s3:ListMultipartUploadParts",   PolicyActions.ListMultipartUploadParts);
-		actionNames.put("s3:AbortMultipartUpload",       PolicyActions.AbortMultipartUpload);
-		actionNames.put("s3:CreateBucket",               PolicyActions.CreateBucket);
-		actionNames.put("s3:DeleteBucket",               PolicyActions.DeleteBucket);
-		actionNames.put("s3:ListBucket",                 PolicyActions.ListBucket);
-		actionNames.put("s3:ListBucketVersions",         PolicyActions.ListBucketVersions);
-		actionNames.put("s3:ListAllMyBuckets",           PolicyActions.ListAllMyBuckets);
-		actionNames.put("s3:ListBucketMultipartUploads", PolicyActions.ListBucketMultipartUploads);
-		actionNames.put("s3:GetBucketAcl",               PolicyActions.GetBucketAcl);
-		actionNames.put("s3:PutBucketAcl",               PolicyActions.PutBucketAcl);
-		actionNames.put("s3:GetBucketVersioning",        PolicyActions.GetBucketVersioning);
-		actionNames.put("s3:PutBucketVersioning",        PolicyActions.PutBucketVersioning);
-		actionNames.put("s3:GetBucketLocation",          PolicyActions.GetBucketLocation);
-		actionNames.put("s3:PutBucketPolicy",            PolicyActions.PutBucketPolicy);
-		actionNames.put("s3:GetBucketPolicy",            PolicyActions.GetBucketPolicy);
-	}
+    public enum PolicyActions {
+        UnknownAction,
+        AllActions,
+        GetObject,
+        GetObjectVersion,
+        PutObject,
+        GetObjectAcl,
+        GetObjectVersionAcl,
+        PutObjectAcl,
+        PutObjectAclVersion,
+        DeleteObject,
+        DeleteObjectVersion,
+        ListMultipartUploadParts,
+        AbortMultipartUpload,
+        CreateBucket,
+        DeleteBucket,
+        ListBucket,
+        ListBucketVersions,
+        ListAllMyBuckets,
+        ListBucketMultipartUploads,
+        GetBucketAcl,
+        PutBucketAcl,
+        GetBucketVersioning,
+        PutBucketVersioning,
+        GetBucketLocation,
+        PutBucketPolicy,
+        GetBucketPolicy
+    }
 
-	public PolicyActions[] getActions() {
-		return actionList.toArray(new PolicyActions[0]);
-	}
-	
-	public void addAction(PolicyActions param) {
-		actionList.add( param );
-	}
-	
-	public PolicyActions toPolicyActions(String operation) {
-		
-		if (operation.equalsIgnoreCase("s3:*")) return PolicyActions.AllActions;
-		
-		Object value = actionNames.get( operation );
+    // -> map a string name into a policy action constant
+    private Map<String, PolicyActions> actionNames = new HashMap<String, PolicyActions>();
 
-		if ( null == value ) 
-			 return PolicyActions.UnknownAction;
-		else return (PolicyActions)value;
-	}
-	
-	public boolean contains(PolicyActions operationRequested) {
-		Iterator<PolicyActions> itr = actionList.iterator();
-	    while( itr.hasNext()) {
-	    	PolicyActions oneAction = itr.next();
-	    	if (PolicyActions.AllActions == oneAction) return true;
-	    	if (oneAction == operationRequested) return true;
-	    }
-	    return false;
-	}
+    private List<PolicyActions> actionList = new ArrayList<PolicyActions>();
 
-	public String toString() {
-		
-		StringBuffer value = new StringBuffer();
-		Iterator<PolicyActions> itr = actionList.iterator();
-		
-		value.append( "Actions: \n" );
-		while( itr.hasNext()) {
-			PolicyActions oneAction = itr.next();
-			value.append( oneAction );
-			value.append( "\n" );
-		}
-		
-		return value.toString();
-	}
+    public S3PolicyAction() {
+        actionNames.put("s3:GetObject", PolicyActions.GetObject);
+        actionNames.put("s3:GetObjectVersion", PolicyActions.GetObjectVersion);
+        actionNames.put("s3:PutObject", PolicyActions.PutObject);
+        actionNames.put("s3:GetObjectAcl", PolicyActions.GetObjectAcl);
+        actionNames.put("s3:GetObjectVersionAcl", PolicyActions.GetObjectVersionAcl);
+        actionNames.put("s3:PutObjectAcl", PolicyActions.PutObjectAcl);
+        actionNames.put("s3:PutObjectAclVersion", PolicyActions.PutObjectAclVersion);
+        actionNames.put("s3:DeleteObject", PolicyActions.DeleteObject);
+        actionNames.put("s3:DeleteObjectVersion", PolicyActions.DeleteObjectVersion);
+        actionNames.put("s3:ListMultipartUploadParts", PolicyActions.ListMultipartUploadParts);
+        actionNames.put("s3:AbortMultipartUpload", PolicyActions.AbortMultipartUpload);
+        actionNames.put("s3:CreateBucket", PolicyActions.CreateBucket);
+        actionNames.put("s3:DeleteBucket", PolicyActions.DeleteBucket);
+        actionNames.put("s3:ListBucket", PolicyActions.ListBucket);
+        actionNames.put("s3:ListBucketVersions", PolicyActions.ListBucketVersions);
+        actionNames.put("s3:ListAllMyBuckets", PolicyActions.ListAllMyBuckets);
+        actionNames.put("s3:ListBucketMultipartUploads", PolicyActions.ListBucketMultipartUploads);
+        actionNames.put("s3:GetBucketAcl", PolicyActions.GetBucketAcl);
+        actionNames.put("s3:PutBucketAcl", PolicyActions.PutBucketAcl);
+        actionNames.put("s3:GetBucketVersioning", PolicyActions.GetBucketVersioning);
+        actionNames.put("s3:PutBucketVersioning", PolicyActions.PutBucketVersioning);
+        actionNames.put("s3:GetBucketLocation", PolicyActions.GetBucketLocation);
+        actionNames.put("s3:PutBucketPolicy", PolicyActions.PutBucketPolicy);
+        actionNames.put("s3:GetBucketPolicy", PolicyActions.GetBucketPolicy);
+    }
+
+    public PolicyActions[] getActions() {
+        return actionList.toArray(new PolicyActions[0]);
+    }
+
+    public void addAction(PolicyActions param) {
+        actionList.add(param);
+    }
+
+    public PolicyActions toPolicyActions(String operation) {
+
+        if (operation.equalsIgnoreCase("s3:*"))
+            return PolicyActions.AllActions;
+
+        Object value = actionNames.get(operation);
+
+        if (null == value)
+            return PolicyActions.UnknownAction;
+        else
+            return (PolicyActions)value;
+    }
+
+    public boolean contains(PolicyActions operationRequested) {
+        Iterator<PolicyActions> itr = actionList.iterator();
+        while (itr.hasNext()) {
+            PolicyActions oneAction = itr.next();
+            if (PolicyActions.AllActions == oneAction)
+                return true;
+            if (oneAction == operationRequested)
+                return true;
+        }
+        return false;
+    }
+
+    public String toString() {
+
+        StringBuffer value = new StringBuffer();
+        Iterator<PolicyActions> itr = actionList.iterator();
+
+        value.append("Actions: \n");
+        while (itr.hasNext()) {
+            PolicyActions oneAction = itr.next();
+            value.append(oneAction);
+            value.append("\n");
+        }
+
+        return value.toString();
+    }
 }

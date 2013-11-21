@@ -31,27 +31,27 @@ public interface AsyncJob extends JobInfo {
         public static final String JOB_HEARTBEAT = "job.heartbeat";
         public static final String JOB_STATE = "job.state";
     }
-    
+
     public static interface Constants {
 
-    	// Although we may have detailed masks for each individual wakeup event, i.e.
+        // Although we may have detailed masks for each individual wakeup event, i.e.
         // periodical timer, matched topic from message bus, it seems that we don't
         // need to distinguish them to such level. Therefore, only one wakeup signal
         // is defined
         public static final int SIGNAL_MASK_WAKEUP = 1;
-        
+
         public static final String SYNC_LOCK_NAME = "SyncLock";
     }
-	
+
     @Override
     String getType();
-    
+
     @Override
     String getDispatcher();
 
     @Override
     int getPendingSignals();
-    
+
     @Override
     long getUserId();
 
@@ -66,7 +66,7 @@ public interface AsyncJob extends JobInfo {
 
     @Override
     String getCmdInfo();
-    
+
     @Override
     Status getStatus();
 
@@ -86,7 +86,7 @@ public interface AsyncJob extends JobInfo {
 
     @Override
     Long getExecutingMsid();
-    
+
     @Override
     Long getCompleteMsid();
 

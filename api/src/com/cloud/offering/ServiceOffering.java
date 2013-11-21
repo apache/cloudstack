@@ -33,8 +33,7 @@ public interface ServiceOffering extends DiskOffering, InfrastructureEntity, Int
     public static final String internalLbVmDefaultOffUniqueName = "Cloud.Com-InternalLBVm";
 
     public enum StorageType {
-        local,
-        shared
+        local, shared
     }
 
     @Override

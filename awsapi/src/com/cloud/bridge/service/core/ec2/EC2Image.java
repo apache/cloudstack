@@ -24,67 +24,67 @@ import java.util.List;
  */
 public class EC2Image {
 
-	private String  id;
-	private String  name;
-	private String  description;
-	private String  osTypeId;
+    private String id;
+    private String name;
+    private String description;
+    private String osTypeId;
     private Boolean isPublic;
-    private String  state;
-	private String 	accountName;
-    private String 	domainId;
-    private String  hypervisor;
-    private String  architecture;
-    private String  imageType;
-    private List<EC2TagKeyValue>    tagsSet;
-	
-	public EC2Image() {
-		id          = null;
-		name        = null;
-		description = null;
-		osTypeId    = null;
-		isPublic    = false;
-        state     =   null;
-		accountName	= null;
-        domainId 	= null;
-        hypervisor  = null;
+    private String state;
+    private String accountName;
+    private String domainId;
+    private String hypervisor;
+    private String architecture;
+    private String imageType;
+    private List<EC2TagKeyValue> tagsSet;
+
+    public EC2Image() {
+        id = null;
+        name = null;
+        description = null;
+        osTypeId = null;
+        isPublic = false;
+        state = null;
+        accountName = null;
+        domainId = null;
+        hypervisor = null;
         architecture = null;
-        imageType    = "machine";
-		tagsSet    = new ArrayList<EC2TagKeyValue>();
-	}
-	
-	public void setId( String id ) {
-		this.id = id;
-	}
-	
-	public String getId() {
-		return this.id;
-	}
-	
-	public void setName( String name ) {
-		this.name = name;
-	}
-	
-	public String getName() {
-		return this.name;
-	}
+        imageType = "machine";
+        tagsSet = new ArrayList<EC2TagKeyValue>();
+    }
 
-	public void setDescription( String description ) {
-		this.description = description;
-	}
-	
-	public String getDescription() {
-		return this.description;
-	}
-	
-	public void setOsTypeId( String osTypeId ) {
-		this.osTypeId = osTypeId;
-	}
-	
-	public String getOsTypeId() {
-		return this.osTypeId;
-	}
+    public void setId(String id) {
+        this.id = id;
+    }
 
-    public void setIsPublic( Boolean isPublic ) {
+    public String getId() {
+        return this.id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return this.description;
+    }
+
+    public void setOsTypeId(String osTypeId) {
+        this.osTypeId = osTypeId;
+    }
+
+    public String getOsTypeId() {
+        return this.osTypeId;
+    }
+
+    public void setIsPublic(Boolean isPublic) {
         this.isPublic = isPublic;
     }
 
@@ -92,7 +92,7 @@ public class EC2Image {
         return this.isPublic;
     }
 
-    public void setState( String state ) {
+    public void setState(String state) {
         this.state = state;
     }
 
@@ -100,21 +100,21 @@ public class EC2Image {
         return this.state;
     }
 
-	public String getAccountName() {
-		return accountName;
-	}
+    public String getAccountName() {
+        return accountName;
+    }
 
-	public void setAccountName(String accountName) {
-		this.accountName = accountName;
-	}
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
 
-	public String getDomainId() {
-		return domainId;
-	}
+    public String getDomainId() {
+        return domainId;
+    }
 
-	public void setDomainId(String domainId) {
-		this.domainId = domainId;
-	}
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
+    }
 
     public String getHypervisor() {
         return hypervisor;
@@ -136,8 +136,8 @@ public class EC2Image {
         return imageType;
     }
 
-    public void addResourceTag( EC2TagKeyValue param ) {
-        tagsSet.add( param );
+    public void addResourceTag(EC2TagKeyValue param) {
+        tagsSet.add(param);
     }
 
     public EC2TagKeyValue[] getResourceTags() {

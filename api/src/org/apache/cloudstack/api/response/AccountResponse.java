@@ -31,162 +31,213 @@ import com.cloud.user.Account;
 @SuppressWarnings("unused")
 @EntityReference(value = Account.class)
 public class AccountResponse extends BaseResponse implements ResourceLimitAndCountResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the id of the account")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the id of the account")
     private String id;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="the name of the account")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the name of the account")
     private String name;
 
-    @SerializedName(ApiConstants.ACCOUNT_TYPE) @Param(description="account type (admin, domain-admin, user)")
+    @SerializedName(ApiConstants.ACCOUNT_TYPE)
+    @Param(description = "account type (admin, domain-admin, user)")
     private Short accountType;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="id of the Domain the account belongs too")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "id of the Domain the account belongs too")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="name of the Domain the account belongs too")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "name of the Domain the account belongs too")
     private String domainName;
 
-    @SerializedName(ApiConstants.DEFAULT_ZONE_ID) @Param(description="the default zone of the account")
+    @SerializedName(ApiConstants.DEFAULT_ZONE_ID)
+    @Param(description = "the default zone of the account")
     private String defaultZoneId;
 
-    @SerializedName(ApiConstants.RECEIVED_BYTES) @Param(description="the total number of network traffic bytes received")
+    @SerializedName(ApiConstants.RECEIVED_BYTES)
+    @Param(description = "the total number of network traffic bytes received")
     private Long bytesReceived;
 
-    @SerializedName(ApiConstants.SENT_BYTES) @Param(description="the total number of network traffic bytes sent")
+    @SerializedName(ApiConstants.SENT_BYTES)
+    @Param(description = "the total number of network traffic bytes sent")
     private Long bytesSent;
 
-    @SerializedName(ApiConstants.VM_LIMIT) @Param(description="the total number of virtual machines that can be deployed by this account")
+    @SerializedName(ApiConstants.VM_LIMIT)
+    @Param(description = "the total number of virtual machines that can be deployed by this account")
     private String vmLimit;
 
-    @SerializedName(ApiConstants.VM_TOTAL) @Param(description="the total number of virtual machines deployed by this account")
+    @SerializedName(ApiConstants.VM_TOTAL)
+    @Param(description = "the total number of virtual machines deployed by this account")
     private Long vmTotal;
 
-    @SerializedName(ApiConstants.VM_AVAILABLE) @Param(description="the total number of virtual machines available for this account to acquire")
+    @SerializedName(ApiConstants.VM_AVAILABLE)
+    @Param(description = "the total number of virtual machines available for this account to acquire")
     private String vmAvailable;
 
-    @SerializedName(ApiConstants.IP_LIMIT) @Param(description="the total number of public ip addresses this account can acquire")
+    @SerializedName(ApiConstants.IP_LIMIT)
+    @Param(description = "the total number of public ip addresses this account can acquire")
     private String ipLimit;
 
-    @SerializedName(ApiConstants.IP_TOTAL) @Param(description="the total number of public ip addresses allocated for this account")
+    @SerializedName(ApiConstants.IP_TOTAL)
+    @Param(description = "the total number of public ip addresses allocated for this account")
     private Long ipTotal;
 
-    @SerializedName(ApiConstants.IP_AVAILABLE) @Param(description="the total number of public ip addresses available for this account to acquire")
+    @SerializedName(ApiConstants.IP_AVAILABLE)
+    @Param(description = "the total number of public ip addresses available for this account to acquire")
     private String ipAvailable;
 
-    @SerializedName("volumelimit") @Param(description="the total volume which can be used by this account")
+    @SerializedName("volumelimit")
+    @Param(description = "the total volume which can be used by this account")
     private String volumeLimit;
 
-    @SerializedName("volumetotal") @Param(description="the total volume being used by this account")
+    @SerializedName("volumetotal")
+    @Param(description = "the total volume being used by this account")
     private Long volumeTotal;
 
-    @SerializedName("volumeavailable") @Param(description="the total volume available for this account")
+    @SerializedName("volumeavailable")
+    @Param(description = "the total volume available for this account")
     private String volumeAvailable;
 
-    @SerializedName("snapshotlimit") @Param(description="the total number of snapshots which can be stored by this account")
+    @SerializedName("snapshotlimit")
+    @Param(description = "the total number of snapshots which can be stored by this account")
     private String snapshotLimit;
 
-    @SerializedName("snapshottotal") @Param(description="the total number of snapshots stored by this account")
+    @SerializedName("snapshottotal")
+    @Param(description = "the total number of snapshots stored by this account")
     private Long snapshotTotal;
 
-    @SerializedName("snapshotavailable") @Param(description="the total number of snapshots available for this account")
+    @SerializedName("snapshotavailable")
+    @Param(description = "the total number of snapshots available for this account")
     private String snapshotAvailable;
 
-    @SerializedName("templatelimit") @Param(description="the total number of templates which can be created by this account")
+    @SerializedName("templatelimit")
+    @Param(description = "the total number of templates which can be created by this account")
     private String templateLimit;
 
-    @SerializedName("templatetotal") @Param(description="the total number of templates which have been created by this account")
+    @SerializedName("templatetotal")
+    @Param(description = "the total number of templates which have been created by this account")
     private Long templateTotal;
 
-    @SerializedName("templateavailable") @Param(description="the total number of templates available to be created by this account")
+    @SerializedName("templateavailable")
+    @Param(description = "the total number of templates available to be created by this account")
     private String templateAvailable;
 
-    @SerializedName("vmstopped") @Param(description="the total number of virtual machines stopped for this account")
+    @SerializedName("vmstopped")
+    @Param(description = "the total number of virtual machines stopped for this account")
     private Integer vmStopped;
 
-    @SerializedName("vmrunning") @Param(description="the total number of virtual machines running for this account")
+    @SerializedName("vmrunning")
+    @Param(description = "the total number of virtual machines running for this account")
     private Integer vmRunning;
 
-    @SerializedName("projectlimit") @Param(description="the total number of projects the account can own", since="3.0.1")
+    @SerializedName("projectlimit")
+    @Param(description = "the total number of projects the account can own", since = "3.0.1")
     private String projectLimit;
 
-    @SerializedName("projecttotal") @Param(description="the total number of projects being administrated by this account", since="3.0.1")
+    @SerializedName("projecttotal")
+    @Param(description = "the total number of projects being administrated by this account", since = "3.0.1")
     private Long projectTotal;
 
-    @SerializedName("projectavailable") @Param(description="the total number of projects available for administration by this account", since="3.0.1")
+    @SerializedName("projectavailable")
+    @Param(description = "the total number of projects available for administration by this account", since = "3.0.1")
     private String projectAvailable;
 
-    @SerializedName("networklimit") @Param(description="the total number of networks the account can own", since="3.0.1")
+    @SerializedName("networklimit")
+    @Param(description = "the total number of networks the account can own", since = "3.0.1")
     private String networkLimit;
 
-    @SerializedName("networktotal") @Param(description="the total number of networks owned by account", since="3.0.1")
+    @SerializedName("networktotal")
+    @Param(description = "the total number of networks owned by account", since = "3.0.1")
     private Long networkTotal;
 
-    @SerializedName("networkavailable") @Param(description="the total number of networks available to be created for this account", since="3.0.1")
+    @SerializedName("networkavailable")
+    @Param(description = "the total number of networks available to be created for this account", since = "3.0.1")
     private String networkAvailable;
 
-    @SerializedName("vpclimit") @Param(description="the total number of vpcs the account can own", since="4.0.0")
+    @SerializedName("vpclimit")
+    @Param(description = "the total number of vpcs the account can own", since = "4.0.0")
     private String vpcLimit;
 
-    @SerializedName("vpctotal") @Param(description="the total number of vpcs owned by account", since="4.0.0")
+    @SerializedName("vpctotal")
+    @Param(description = "the total number of vpcs owned by account", since = "4.0.0")
     private Long vpcTotal;
 
-    @SerializedName("vpcavailable") @Param(description="the total number of vpcs available to be created for this account", since="4.0.0")
+    @SerializedName("vpcavailable")
+    @Param(description = "the total number of vpcs available to be created for this account", since = "4.0.0")
     private String vpcAvailable;
 
-    @SerializedName("cpulimit") @Param(description="the total number of cpu cores the account can own", since="4.2.0")
+    @SerializedName("cpulimit")
+    @Param(description = "the total number of cpu cores the account can own", since = "4.2.0")
     private String cpuLimit;
 
-    @SerializedName("cputotal") @Param(description="the total number of cpu cores owned by account", since="4.2.0")
+    @SerializedName("cputotal")
+    @Param(description = "the total number of cpu cores owned by account", since = "4.2.0")
     private Long cpuTotal;
 
-    @SerializedName("cpuavailable") @Param(description="the total number of cpu cores available to be created for this account", since="4.2.0")
+    @SerializedName("cpuavailable")
+    @Param(description = "the total number of cpu cores available to be created for this account", since = "4.2.0")
     private String cpuAvailable;
 
-    @SerializedName("memorylimit") @Param(description="the total memory (in MB) the account can own", since="4.2.0")
+    @SerializedName("memorylimit")
+    @Param(description = "the total memory (in MB) the account can own", since = "4.2.0")
     private String memoryLimit;
 
-    @SerializedName("memorytotal") @Param(description="the total memory (in MB) owned by account", since="4.2.0")
+    @SerializedName("memorytotal")
+    @Param(description = "the total memory (in MB) owned by account", since = "4.2.0")
     private Long memoryTotal;
 
-    @SerializedName("memoryavailable") @Param(description="the total memory (in MB) available to be created for this account", since="4.2.0")
+    @SerializedName("memoryavailable")
+    @Param(description = "the total memory (in MB) available to be created for this account", since = "4.2.0")
     private String memoryAvailable;
 
-    @SerializedName("primarystoragelimit") @Param(description="the total primary storage space (in GiB) the account can own", since="4.2.0")
+    @SerializedName("primarystoragelimit")
+    @Param(description = "the total primary storage space (in GiB) the account can own", since = "4.2.0")
     private String primaryStorageLimit;
 
-    @SerializedName("primarystoragetotal") @Param(description="the total primary storage space (in GiB) owned by account", since="4.2.0")
+    @SerializedName("primarystoragetotal")
+    @Param(description = "the total primary storage space (in GiB) owned by account", since = "4.2.0")
     private Long primaryStorageTotal;
 
-    @SerializedName("primarystorageavailable") @Param(description="the total primary storage space (in GiB) available to be used for this account", since="4.2.0")
+    @SerializedName("primarystorageavailable")
+    @Param(description = "the total primary storage space (in GiB) available to be used for this account", since = "4.2.0")
     private String primaryStorageAvailable;
 
-    @SerializedName("secondarystoragelimit") @Param(description="the total secondary storage space (in GiB) the account can own", since="4.2.0")
+    @SerializedName("secondarystoragelimit")
+    @Param(description = "the total secondary storage space (in GiB) the account can own", since = "4.2.0")
     private String secondaryStorageLimit;
 
-    @SerializedName("secondarystoragetotal") @Param(description="the total secondary storage space (in GiB) owned by account", since="4.2.0")
+    @SerializedName("secondarystoragetotal")
+    @Param(description = "the total secondary storage space (in GiB) owned by account", since = "4.2.0")
     private Long secondaryStorageTotal;
 
-    @SerializedName("secondarystorageavailable") @Param(description="the total secondary storage space (in GiB) available to be used for this account", since="4.2.0")
+    @SerializedName("secondarystorageavailable")
+    @Param(description = "the total secondary storage space (in GiB) available to be used for this account", since = "4.2.0")
     private String secondaryStorageAvailable;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="the state of the account")
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "the state of the account")
     private String state;
 
-    @SerializedName(ApiConstants.IS_CLEANUP_REQUIRED) @Param(description="true if the account requires cleanup")
+    @SerializedName(ApiConstants.IS_CLEANUP_REQUIRED)
+    @Param(description = "true if the account requires cleanup")
     private Boolean cleanupRequired;
 
-    @SerializedName("user")  @Param(description="the list of users associated with account", responseObject = UserResponse.class)
+    @SerializedName("user")
+    @Param(description = "the list of users associated with account", responseObject = UserResponse.class)
     private List<UserResponse> users;
 
-    @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain")
+    @SerializedName(ApiConstants.NETWORK_DOMAIN)
+    @Param(description = "the network domain")
     private String networkDomain;
 
-    @SerializedName(ApiConstants.ACCOUNT_DETAILS) @Param(description="details for the account")
+    @SerializedName(ApiConstants.ACCOUNT_DETAILS)
+    @Param(description = "details for the account")
     private Map<String, String> details;
-    
-    @SerializedName(ApiConstants.IS_DEFAULT) @Param(description="true if account is default, false otherwise", since="4.2.0")
-    private Boolean isDefault;
 
+    @SerializedName(ApiConstants.IS_DEFAULT)
+    @Param(description = "true if account is default, false otherwise", since = "4.2.0")
+    private Boolean isDefault;
 
     @Override
     public String getObjectId() {
@@ -347,7 +398,7 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     public void setNetworkTotal(Long networkTotal) {
         this.networkTotal = networkTotal;
     }
-    
+
     @Override
     public void setNetworkAvailable(String networkAvailable) {
         this.networkAvailable = networkAvailable;
@@ -362,7 +413,7 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     public void setVpcTotal(Long vpcTotal) {
         this.vpcTotal = vpcTotal;
     }
-    
+
     @Override
     public void setVpcAvailable(String vpcAvailable) {
         this.vpcAvailable = vpcAvailable;
@@ -372,66 +423,66 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     public void setCpuLimit(String cpuLimit) {
         this.cpuLimit = cpuLimit;
     }
-    
+
     @Override
     public void setCpuTotal(Long cpuTotal) {
         this.cpuTotal = cpuTotal;
     }
-    
+
     @Override
     public void setCpuAvailable(String cpuAvailable) {
         this.cpuAvailable = cpuAvailable;
     }
-    
+
     @Override
     public void setMemoryLimit(String memoryLimit) {
         this.memoryLimit = memoryLimit;
     }
-    
+
     @Override
     public void setMemoryTotal(Long memoryTotal) {
         this.memoryTotal = memoryTotal;
     }
-    
+
     @Override
     public void setMemoryAvailable(String memoryAvailable) {
         this.memoryAvailable = memoryAvailable;
     }
-    
+
     @Override
     public void setPrimaryStorageLimit(String primaryStorageLimit) {
         this.primaryStorageLimit = primaryStorageLimit;
     }
-    
+
     @Override
     public void setPrimaryStorageTotal(Long primaryStorageTotal) {
         this.primaryStorageTotal = primaryStorageTotal;
     }
-    
+
     @Override
     public void setPrimaryStorageAvailable(String primaryStorageAvailable) {
         this.primaryStorageAvailable = primaryStorageAvailable;
     }
-    
+
     @Override
     public void setSecondaryStorageLimit(String secondaryStorageLimit) {
         this.secondaryStorageLimit = secondaryStorageLimit;
     }
-    
+
     @Override
     public void setSecondaryStorageTotal(Long secondaryStorageTotal) {
         this.secondaryStorageTotal = secondaryStorageTotal;
     }
-    
+
     @Override
     public void setSecondaryStorageAvailable(String secondaryStorageAvailable) {
         this.secondaryStorageAvailable = secondaryStorageAvailable;
     }
-    
+
     public void setDefaultZone(String defaultZoneId) {
         this.defaultZoneId = defaultZoneId;
     }
-    
+
     public void setIsDefault(Boolean isDefault) {
         this.isDefault = isDefault;
     }

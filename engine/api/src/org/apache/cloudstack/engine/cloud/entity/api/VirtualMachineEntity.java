@@ -29,7 +29,6 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import org.apache.cloudstack.engine.entity.api.CloudStackEntity;
 
-
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AgentUnavailableException;
@@ -39,15 +38,14 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.vm.VirtualMachineProfile;
 
-
 /**
- * VirtualMachineEntity represents a Virtual Machine in Cloud Orchestration 
- * Platform.  
+ * VirtualMachineEntity represents a Virtual Machine in Cloud Orchestration
+ * Platform.
  *
  */
 @Path("vm/{id}")
 @Produces({"application/json", "application/xml"})
-@XmlRootElement(name="vm")
+@XmlRootElement(name = "vm")
 public interface VirtualMachineEntity extends CloudStackEntity {
 
     /**
@@ -87,16 +85,17 @@ public interface VirtualMachineEntity extends CloudStackEntity {
 
     /**
      * Start the virtual machine with a given deployment plan
-     * @param plannerToUse the Deployment Planner that should be used 
+     * @param plannerToUse the Deployment Planner that should be used
      * @param plan plan to which to deploy the machine
      * @param exclude list of areas to exclude
      * @return a reservation id
      */
-    String reserve(String plannerToUse, @BeanParam DeploymentPlan plan, ExcludeList exclude, String caller) throws InsufficientCapacityException, ResourceUnavailableException;
+    String reserve(String plannerToUse, @BeanParam DeploymentPlan plan, ExcludeList exclude, String caller) throws InsufficientCapacityException,
+        ResourceUnavailableException;
 
     /**
      * Migrate this VM to a certain destination.
-     * 
+     *
      * @param reservationId reservation id from reserve call.
      */
     void migrateTo(String reservationId, String caller);
@@ -104,13 +103,13 @@ public interface VirtualMachineEntity extends CloudStackEntity {
     /**
      * Deploy this virtual machine according to the reservation from before.
      * @param reservationId reservation id from reserve call.
-     * 
+     *
      */
     void deploy(String reservationId, String caller, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException;
 
     /**
      * Stop the virtual machine
-     * 
+     *
      */
     boolean stop(String caller) throws ResourceUnavailableException, CloudException;
 

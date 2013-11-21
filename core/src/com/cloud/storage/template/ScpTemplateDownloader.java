@@ -29,10 +29,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ScpTemplateDownloader extends TemplateDownloaderBase implements TemplateDownloader {
     private static final Logger s_logger = Logger.getLogger(ScpTemplateDownloader.class);
-    
+
     public ScpTemplateDownloader(StorageLayer storageLayer, String downloadUrl, String toDir, long maxTemplateSizeInBytes, DownloadCompleteCallback callback) {
         super(storageLayer, downloadUrl, toDir, maxTemplateSizeInBytes, callback);
-        
+
         URI uri;
         try {
             uri = new URI(_downloadUrl);
@@ -41,7 +41,7 @@ public class ScpTemplateDownloader extends TemplateDownloaderBase implements Tem
             _status = Status.UNRECOVERABLE_ERROR;
             return;
         }
-        
+
         String path = uri.getPath();
         String filename = path.substring(path.lastIndexOf("/") + 1);
         _toFile = toDir + File.separator + filename;
@@ -49,16 +49,14 @@ public class ScpTemplateDownloader extends TemplateDownloaderBase implements Tem
 
     @Override
     public long download(boolean resume, DownloadCompleteCallback callback) {
-        if (_status == Status.ABORTED ||
-            _status == Status.UNRECOVERABLE_ERROR ||
-            _status == Status.DOWNLOAD_FINISHED) {
+        if (_status == Status.ABORTED || _status == Status.UNRECOVERABLE_ERROR || _status == Status.DOWNLOAD_FINISHED) {
             return 0;
         }
-        
+
         _resume = resume;
-        
+
         _start = System.currentTimeMillis();
-        
+
         URI uri;
         try {
             uri = new URI(_downloadUrl);
@@ -66,7 +64,7 @@ public class ScpTemplateDownloader extends TemplateDownloaderBase implements Tem
             _status = Status.UNRECOVERABLE_ERROR;
             return 0;
         }
-        
+
         String username = uri.getUserInfo();
         String queries = uri.getQuery();
         String password = null;
@@ -85,42 +83,42 @@ public class ScpTemplateDownloader extends TemplateDownloaderBase implements Tem
             port = 22;
         }
         File file = new File(_toFile);
-        
+
         com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(uri.getHost(), port);
         try {
-        	if (_storage != null) {
-        		file.createNewFile();
-            	_storage.setWorldReadableAndWriteable(file);
+            if (_storage != null) {
+                file.createNewFile();
+                _storage.setWorldReadableAndWriteable(file);
             }
-        	
+
             sshConnection.connect(null, 60000, 60000);
             if (!sshConnection.authenticateWithPassword(username, password)) {
                 throw new CloudRuntimeException("Unable to authenticate");
             }
 
             SCPClient scp = new SCPClient(sshConnection);
-            
+
             String src = uri.getPath();
 
             _status = Status.IN_PROGRESS;
             scp.get(src, _toDir);
-            
+
             if (!file.exists()) {
                 _status = Status.UNRECOVERABLE_ERROR;
                 s_logger.debug("unable to scp the file " + _downloadUrl);
                 return 0;
             }
-            
+
             _status = Status.DOWNLOAD_FINISHED;
 
             _totalBytes = file.length();
-            
+
             String downloaded = "(download complete)";
-            
+
             _errorString = "Downloaded " + _remoteSize + " bytes " + downloaded;
             _downloadTime += System.currentTimeMillis() - _start;
             return _totalBytes;
-            
+
         } catch (Exception e) {
             s_logger.warn("Unable to download " + _downloadUrl, e);
             _status = TemplateDownloader.Status.UNRECOVERABLE_ERROR;
@@ -136,7 +134,7 @@ public class ScpTemplateDownloader extends TemplateDownloaderBase implements Tem
             }
         }
     }
-    
+
     @Override
     public int getDownloadPercent() {
         if (_status == Status.DOWNLOAD_FINISHED) {
@@ -147,13 +145,13 @@ public class ScpTemplateDownloader extends TemplateDownloaderBase implements Tem
             return 0;
         }
     }
-    
+
     public static void main(String[] args) {
-        String url ="scp://root@sol10-2/root/alex/agent.zip?password=password";
-        TemplateDownloader td = new ScpTemplateDownloader(null, url,"/tmp/mysql", TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES, null);
+        String url = "scp://root@sol10-2/root/alex/agent.zip?password=password";
+        TemplateDownloader td = new ScpTemplateDownloader(null, url, "/tmp/mysql", TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES, null);
         long bytes = td.download(true, null);
         if (bytes > 0) {
-            System.out.println("Downloaded  (" + bytes + " bytes)" + " in " + td.getDownloadTime()/1000 + " secs");
+            System.out.println("Downloaded  (" + bytes + " bytes)" + " in " + td.getDownloadTime() / 1000 + " secs");
         } else {
             System.out.println("Failed download");
         }

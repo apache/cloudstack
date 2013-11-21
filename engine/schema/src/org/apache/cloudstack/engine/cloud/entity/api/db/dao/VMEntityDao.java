@@ -16,26 +16,15 @@
 // under the License.
 package org.apache.cloudstack.engine.cloud.entity.api.db.dao;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
 
-import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.fsm.StateDao;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachine.Type;
-
 
 /*
  * Data Access Object for vm_instance table
  */
 public interface VMEntityDao extends GenericDao<VMEntityVO, Long> {
-  
+
     void loadVmReservation(VMEntityVO vm);
-    
+
 }

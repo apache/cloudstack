@@ -32,7 +32,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = { AlertDao.class })
+@Local(value = {AlertDao.class})
 public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements AlertDao {
 
     protected final SearchBuilder<AlertVO> AlertSearchByIdsAndType;
@@ -69,7 +69,7 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
         }
         return null;
     }
-    
+
     @Override
     public AlertVO getLastAlert(short type, long dataCenterId, Long podId) {
         Filter searchFilter = new Filter(AlertVO.class, "createdDate", Boolean.FALSE, Long.valueOf(0), Long.valueOf(1));
@@ -80,7 +80,7 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
         sc.addAnd("archived", SearchCriteria.Op.EQ, false);
         if (podId != null) {
             sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
-        }        
+        }
 
         List<AlertVO> alerts = listBy(sc, searchFilter);
         if ((alerts != null) && !alerts.isEmpty()) {
@@ -96,10 +96,10 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
         if (Ids != null) {
             sc.setParameters("id", Ids.toArray(new Object[Ids.size()]));
         }
-        if(type != null) {
+        if (type != null) {
             sc.setParameters("type", type);
         }
-        if(zoneId != null) {
+        if (zoneId != null) {
             sc.setParameters("data_center_id", zoneId);
         }
         if (startDate != null && endDate != null) {
@@ -109,7 +109,8 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
         }
         sc.setParameters("archived", false);
 
-        boolean result = true;;
+        boolean result = true;
+        ;
         List<AlertVO> alerts = listBy(sc);
         if (Ids != null && alerts.size() < Ids.size()) {
             result = false;
@@ -136,10 +137,10 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
         if (ids != null) {
             sc.setParameters("id", ids.toArray(new Object[ids.size()]));
         }
-        if(type != null) {
+        if (type != null) {
             sc.setParameters("type", type);
         }
-        if(zoneId != null) {
+        if (zoneId != null) {
             sc.setParameters("data_center_id", zoneId);
         }
         if (startDate != null && endDate != null) {
@@ -161,7 +162,8 @@ public class AlertDaoImpl extends GenericDaoBase<AlertVO, Long> implements Alert
 
     @Override
     public List<AlertVO> listOlderAlerts(Date oldTime) {
-        if (oldTime == null) return null;
+        if (oldTime == null)
+            return null;
         SearchCriteria<AlertVO> sc = createSearchCriteria();
         sc.addAnd("createdDate", SearchCriteria.Op.LT, oldTime);
         sc.addAnd("archived", SearchCriteria.Op.EQ, false);

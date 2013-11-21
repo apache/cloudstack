@@ -28,8 +28,9 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
-import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "autoscale_vmgroups")
@@ -83,7 +84,8 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
     public AutoScaleVmGroupVO() {
     }
 
-    public AutoScaleVmGroupVO(long lbRuleId, long zoneId, long domainId, long accountId, int minMembers, int maxMembers, int memberPort, int interval, long profileId, String state) {
+    public AutoScaleVmGroupVO(long lbRuleId, long zoneId, long domainId, long accountId, int minMembers, int maxMembers, int memberPort, int interval, long profileId,
+            String state) {
         this.uuid = UUID.randomUUID().toString();
         this.loadBalancerId = lbRuleId;
         this.minMembers = minMembers;

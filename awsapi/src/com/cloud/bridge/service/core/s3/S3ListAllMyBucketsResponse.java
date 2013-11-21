@@ -18,27 +18,26 @@ package com.cloud.bridge.service.core.s3;
 
 public class S3ListAllMyBucketsResponse extends S3Response {
 
-	private S3CanonicalUser owner;
-	private S3ListAllMyBucketsEntry[] buckets;
-	
-	public S3ListAllMyBucketsResponse() {
-		super();
-	}
+    private S3CanonicalUser owner;
+    private S3ListAllMyBucketsEntry[] buckets;
 
-	public S3CanonicalUser getOwner() {
-		return owner;
-	}
+    public S3ListAllMyBucketsResponse() {
+        super();
+    }
 
-	public void setOwner(S3CanonicalUser owner) {
-		this.owner = owner;
-	}
+    public S3CanonicalUser getOwner() {
+        return owner;
+    }
 
-	public S3ListAllMyBucketsEntry[] getBuckets() {
-		return buckets;
-	}
+    public void setOwner(S3CanonicalUser owner) {
+        this.owner = owner;
+    }
 
-	public void setBuckets(S3ListAllMyBucketsEntry[] buckets) {
-		this.buckets = buckets;
-	}
+    public S3ListAllMyBucketsEntry[] getBuckets() {
+        return buckets;
+    }
+
+    public void setBuckets(S3ListAllMyBucketsEntry[] buckets) {
+        this.buckets = buckets;
+    }
 }
-

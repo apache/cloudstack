@@ -26,34 +26,33 @@ import org.apache.cloudstack.framework.rpc.RpcProvider;
 import org.apache.cloudstack.framework.rpc.RpcTimeoutException;
 
 public class ClientOnlyListenerStyle {
-	
-	RpcProvider _rpcProvider;
-	
-	public void AsyncCallRpcService() {
-		String cmd = new String();
-		_rpcProvider.newCall("host-2").setCommand("TestCommand").setCommandArg(cmd).setTimeout(10000)
-			.addCallbackListener(new RpcCallbackListener<String>() {
-				@Override
-				public void onSuccess(String result) {
-				}
 
-				@Override
-				public void onFailure(RpcException e) {
-				}
-			}).apply();
-	}
-	
-	public void SyncCallRpcService() {
-		String cmd = new String();
-		RpcClientCall call = _rpcProvider.newCall("host-2").setCommand("TestCommand").setCommandArg(cmd).setTimeout(10000).apply();
-		
-		try {
-			String answer = call.get();
-		} catch (RpcTimeoutException e) {
-			
-		} catch (RpcIOException e) {
-			
-		} catch (RpcException e) {
-		}
-	}
+    RpcProvider _rpcProvider;
+
+    public void AsyncCallRpcService() {
+        String cmd = new String();
+        _rpcProvider.newCall("host-2").setCommand("TestCommand").setCommandArg(cmd).setTimeout(10000).addCallbackListener(new RpcCallbackListener<String>() {
+            @Override
+            public void onSuccess(String result) {
+            }
+
+            @Override
+            public void onFailure(RpcException e) {
+            }
+        }).apply();
+    }
+
+    public void SyncCallRpcService() {
+        String cmd = new String();
+        RpcClientCall call = _rpcProvider.newCall("host-2").setCommand("TestCommand").setCommandArg(cmd).setTimeout(10000).apply();
+
+        try {
+            String answer = call.get();
+        } catch (RpcTimeoutException e) {
+
+        } catch (RpcIOException e) {
+
+        } catch (RpcException e) {
+        }
+    }
 }

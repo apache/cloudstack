@@ -57,8 +57,6 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
@@ -97,7 +95,7 @@ public class DatabaseConfig {
         objectNames.add("physicalNetwork");
         objectNames.add("vlan");
         objectNames.add("pod");
-        objectNames.add("cluster");	
+        objectNames.add("cluster");
         objectNames.add("storagePool");
         objectNames.add("secondaryStorage");
         objectNames.add("serviceOffering");
@@ -185,28 +183,38 @@ public class DatabaseConfig {
         s_configurationDescriptions.put("storage.overprovisioning.factor", "Storage Allocator overprovisioning factor");
         s_configurationDescriptions.put("retries.per.host", "The number of times each command sent to a host should be retried in case of failure.");
         s_configurationDescriptions.put("integration.api.port", "internal port used by the management server for servicing Integration API requests");
-        s_configurationDescriptions.put("usage.stats.job.exec.time", "the time at which the usage statistics aggregation job will run as an HH24:MM time, e.g. 00:30 to run at 12:30am");
-        s_configurationDescriptions.put("usage.stats.job.aggregation.range", "the range of time for aggregating the user statistics specified in minutes (e.g. 1440 for daily, 60 for hourly)");
+        s_configurationDescriptions.put("usage.stats.job.exec.time",
+            "the time at which the usage statistics aggregation job will run as an HH24:MM time, e.g. 00:30 to run at 12:30am");
+        s_configurationDescriptions.put("usage.stats.job.aggregation.range",
+            "the range of time for aggregating the user statistics specified in minutes (e.g. 1440 for daily, 60 for hourly)");
         s_configurationDescriptions.put("consoleproxy.domP.enable", "Obsolete");
         s_configurationDescriptions.put("consoleproxy.port", "Obsolete");
         s_configurationDescriptions.put("consoleproxy.url.port", "Console proxy port for AJAX viewer");
         s_configurationDescriptions.put("consoleproxy.ram.size", "RAM size (in MB) used to create new console proxy VMs");
         s_configurationDescriptions.put("consoleproxy.cmd.port", "Console proxy command port that is used to communicate with management server");
         s_configurationDescriptions.put("consoleproxy.loadscan.interval", "The time interval(in milliseconds) to scan console proxy working-load info");
-        s_configurationDescriptions.put("consoleproxy.capacityscan.interval", "The time interval(in millisecond) to scan whether or not system needs more console proxy to ensure minimal standby capacity");
-        s_configurationDescriptions.put("consoleproxy.capacity.standby", "The minimal number of console proxy viewer sessions that system is able to serve immediately(standby capacity)");
+        s_configurationDescriptions.put("consoleproxy.capacityscan.interval",
+            "The time interval(in millisecond) to scan whether or not system needs more console proxy to ensure minimal standby capacity");
+        s_configurationDescriptions.put("consoleproxy.capacity.standby",
+            "The minimal number of console proxy viewer sessions that system is able to serve immediately(standby capacity)");
         s_configurationDescriptions.put("alert.email.addresses", "comma seperated list of email addresses used for sending alerts");
         s_configurationDescriptions.put("alert.smtp.host", "SMTP hostname used for sending out email alerts");
         s_configurationDescriptions.put("alert.smtp.port", "port the SMTP server is listening on (default is 25)");
-        s_configurationDescriptions.put("alert.smtp.useAuth", "If true, use SMTP authentication when sending emails.  If false, do not use SMTP authentication when sending emails.");
+        s_configurationDescriptions.put("alert.smtp.useAuth",
+            "If true, use SMTP authentication when sending emails.  If false, do not use SMTP authentication when sending emails.");
         s_configurationDescriptions.put("alert.smtp.username", "username for SMTP authentication (applies only if alert.smtp.useAuth is true)");
         s_configurationDescriptions.put("alert.smtp.password", "password for SMTP authentication (applies only if alert.smtp.useAuth is true)");
         s_configurationDescriptions.put("alert.email.sender", "sender of alert email (will be in the From header of the email)");
-        s_configurationDescriptions.put("memory.capacity.threshold", "percentage (as a value between 0 and 1) of memory utilization above which alerts will be sent about low memory available");
-        s_configurationDescriptions.put("cpu.capacity.threshold", "percentage (as a value between 0 and 1) of cpu utilization above which alerts will be sent about low cpu available");
-        s_configurationDescriptions.put("storage.capacity.threshold", "percentage (as a value between 0 and 1) of storage utilization above which alerts will be sent about low storage available");
-        s_configurationDescriptions.put("public.ip.capacity.threshold", "percentage (as a value between 0 and 1) of public IP address space utilization above which alerts will be sent");
-        s_configurationDescriptions.put("private.ip.capacity.threshold", "percentage (as a value between 0 and 1) of private IP address space utilization above which alerts will be sent");
+        s_configurationDescriptions.put("memory.capacity.threshold",
+            "percentage (as a value between 0 and 1) of memory utilization above which alerts will be sent about low memory available");
+        s_configurationDescriptions.put("cpu.capacity.threshold",
+            "percentage (as a value between 0 and 1) of cpu utilization above which alerts will be sent about low cpu available");
+        s_configurationDescriptions.put("storage.capacity.threshold",
+            "percentage (as a value between 0 and 1) of storage utilization above which alerts will be sent about low storage available");
+        s_configurationDescriptions.put("public.ip.capacity.threshold",
+            "percentage (as a value between 0 and 1) of public IP address space utilization above which alerts will be sent");
+        s_configurationDescriptions.put("private.ip.capacity.threshold",
+            "percentage (as a value between 0 and 1) of private IP address space utilization above which alerts will be sent");
         s_configurationDescriptions.put("expunge.interval", "the interval to wait before running the expunge thread");
         s_configurationDescriptions.put("network.throttling.rate", "default data transfer rate in megabits per second allowed per user");
         s_configurationDescriptions.put("multicast.throttling.rate", "default multicast rate in megabits per second allowed");
@@ -216,7 +224,7 @@ public class DatabaseConfig {
         s_configurationDescriptions.put("snapshot.max.daily", "Maximum daily snapshots for a volume");
         s_configurationDescriptions.put("snapshot.max.weekly", "Maximum weekly snapshots for a volume");
         s_configurationDescriptions.put("snapshot.max.monthly", "Maximum monthly snapshots for a volume");
-        s_configurationDescriptions.put("snapshot.delta.max",  "max delta snapshots between two full snapshots.");
+        s_configurationDescriptions.put("snapshot.delta.max", "max delta snapshots between two full snapshots.");
         s_configurationDescriptions.put("snapshot.recurring.test", "Flag for testing recurring snapshots");
         s_configurationDescriptions.put("snapshot.test.minutes.per.hour", "Set it to a smaller value to take more recurring snapshots");
         s_configurationDescriptions.put("snapshot.test.hours.per.day", "Set it to a smaller value to take more recurring snapshots");
@@ -225,7 +233,6 @@ public class DatabaseConfig {
         s_configurationDescriptions.put("snapshot.test.weeks.per.month", "Set it to a smaller value to take more recurring snapshots");
         s_configurationDescriptions.put("snapshot.test.months.per.year", "Set it to a smaller value to take more recurring snapshots");
         s_configurationDescriptions.put("hypervisor.type", "The type of hypervisor that this deployment will use.");
-
 
         s_configurationComponents.put("host.stats.interval", "management-server");
         s_configurationComponents.put("storage.stats.interval", "management-server");
@@ -299,7 +306,6 @@ public class DatabaseConfig {
         s_configurationComponents.put("snapshot.test.months.per.year", "SnapshotManager");
         s_configurationComponents.put("hypervisor.type", "ManagementServer");
 
-
         s_defaultConfigurationValues.put("host.stats.interval", "60000");
         s_defaultConfigurationValues.put("storage.stats.interval", "60000");
         //s_defaultConfigurationValues.put("volume.stats.interval", "-1");
@@ -327,7 +333,7 @@ public class DatabaseConfig {
         s_defaultConfigurationValues.put("alert.wait", "1800");
         s_defaultConfigurationValues.put("update.wait", "600");
         s_defaultConfigurationValues.put("expunge.interval", "86400");
-        s_defaultConfigurationValues.put("extract.url.cleanup.interval",  "120");
+        s_defaultConfigurationValues.put("extract.url.cleanup.interval", "120");
         s_defaultConfigurationValues.put("instance.name", "VM");
         s_defaultConfigurationValues.put("expunge.workers", "1");
         s_defaultConfigurationValues.put("stop.retry.interval", "600");
@@ -353,7 +359,7 @@ public class DatabaseConfig {
         System.setProperty("javax.xml.parsers.SAXParserFactory", "com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl");
 
         File file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
-        if(file != null) {
+        if (file != null) {
             System.out.println("Log4j configuration from : " + file.getAbsolutePath());
             DOMConfigurator.configureAndWatch(file.getAbsolutePath(), 10000);
         } else {
@@ -425,7 +431,7 @@ public class DatabaseConfig {
                 public void doInTransactionWithoutResult(TransactionStatus status) throws Exception {
                     // Save user configured values for all fields
                     saxParser.parse(configFile, handler);
-        
+
                     // Save default values for configuration fields
                     saveVMTemplate();
                     saveRootDomain();
@@ -436,7 +442,7 @@ public class DatabaseConfig {
             // Check pod CIDRs against each other, and against the guest ip network/netmask
             pzc.checkAllPodCidrSubnets();
         } catch (Exception ex) {
-            System.out.print("ERROR IS"+ex);
+            System.out.print("ERROR IS" + ex);
             s_logger.error("error", ex);
         }
     }
@@ -486,7 +492,8 @@ public class DatabaseConfig {
         } catch (URISyntaxException e1) {
             return;
         }
-        String insertSql1 = "INSERT INTO `host` (`id`, `name`, `status` , `type` , `private_ip_address`, `private_netmask` ,`private_mac_address` , `storage_ip_address` ,`storage_netmask`, `storage_mac_address`, `data_center_id`, `version`, `dom0_memory`, `last_ping`, `resource`, `guid`, `hypervisor_type`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        String insertSql1 =
+            "INSERT INTO `host` (`id`, `name`, `status` , `type` , `private_ip_address`, `private_netmask` ,`private_mac_address` , `storage_ip_address` ,`storage_netmask`, `storage_mac_address`, `data_center_id`, `version`, `dom0_memory`, `last_ping`, `resource`, `guid`, `hypervisor_type`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         String insertSqlHostDetails = "INSERT INTO `host_details` (`id`, `host_id`, `name`, `value`) VALUES(?,?,?,?)";
         String insertSql2 = "INSERT INTO `op_host` (`id`, `sequence`) VALUES(?, ?)";
         TransactionLegacy txn = TransactionLegacy.currentTxn();
@@ -564,7 +571,8 @@ public class DatabaseConfig {
         long dataCenterId = Long.parseLong(_currentObjectParams.get("zoneId"));
         long podId = Long.parseLong(_currentObjectParams.get("podId"));
         String hypervisor = _currentObjectParams.get("hypervisorType");
-        String insertSql1 = "INSERT INTO `cluster` (`id`, `name`, `data_center_id` , `pod_id`, `hypervisor_type` , `cluster_type`, `allocation_state`) VALUES (?,?,?,?,?,?,?)";
+        String insertSql1 =
+            "INSERT INTO `cluster` (`id`, `name`, `data_center_id` , `pod_id`, `hypervisor_type` , `cluster_type`, `allocation_state`) VALUES (?,?,?,?,?,?,?)";
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
@@ -586,7 +594,6 @@ public class DatabaseConfig {
 
     }
 
-
     @DB
     public void saveStoragePool() {
         String name = _currentObjectParams.get("name");
@@ -596,10 +603,11 @@ public class DatabaseConfig {
         long clusterId = Long.parseLong(_currentObjectParams.get("clusterId"));
         String hostAddress = _currentObjectParams.get("hostAddress");
         String hostPath = _currentObjectParams.get("hostPath");
-        String storageType = _currentObjectParams.get("storageType");         
-        String uuid = UUID.nameUUIDFromBytes(new String(hostAddress+hostPath).getBytes()).toString();
+        String storageType = _currentObjectParams.get("storageType");
+        String uuid = UUID.nameUUIDFromBytes(new String(hostAddress + hostPath).getBytes()).toString();
 
-        String insertSql1 = "INSERT INTO `storage_pool` (`id`, `name`, `uuid` , `pool_type` , `port`, `data_center_id` ,`available_bytes` , `capacity_bytes` ,`host_address`, `path`, `created`, `pod_id`,`status` , `cluster_id`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        String insertSql1 =
+            "INSERT INTO `storage_pool` (`id`, `name`, `uuid` , `pool_type` , `port`, `data_center_id` ,`available_bytes` , `capacity_bytes` ,`host_address`, `path`, `created`, `pod_id`,`status` , `cluster_id`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         // String insertSql2 = "INSERT INTO `netfs_storage_pool` VALUES (?,?,?)";
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
@@ -615,8 +623,8 @@ public class DatabaseConfig {
             }
             stmt.setLong(5, 111);
             stmt.setLong(6, dataCenterId);
-            stmt.setLong(7,0);
-            stmt.setLong(8,0);
+            stmt.setLong(7, 0);
+            stmt.setLong(8, 0);
             stmt.setString(9, hostAddress);
             stmt.setString(10, hostPath);
             stmt.setDate(11, new Date(new java.util.Date().getTime()));
@@ -681,7 +689,7 @@ public class DatabaseConfig {
         long zoneDbId = Long.parseLong(zoneId);
         pzc.savePhysicalNetwork(false, id, zoneDbId, vnetStart, vnetEnd);
 
-    }	
+    }
 
     private void savePhysicalNetworkServiceProvider() {
         long id = Long.parseLong(_currentObjectParams.get("id"));
@@ -698,14 +706,15 @@ public class DatabaseConfig {
         int sourceNat = Integer.parseInt(_currentObjectParams.get("sourceNat"));
         int lb = Integer.parseInt(_currentObjectParams.get("loadBalance"));
         int staticNat = Integer.parseInt(_currentObjectParams.get("staticNat"));
-        int pf =Integer.parseInt(_currentObjectParams.get("portForwarding"));
-        int userData =Integer.parseInt(_currentObjectParams.get("userData"));
-        int securityGroup =Integer.parseInt(_currentObjectParams.get("securityGroup"));
+        int pf = Integer.parseInt(_currentObjectParams.get("portForwarding"));
+        int userData = Integer.parseInt(_currentObjectParams.get("userData"));
+        int securityGroup = Integer.parseInt(_currentObjectParams.get("securityGroup"));
 
-        String insertSql1 = "INSERT INTO `physical_network_service_providers` (`id`, `uuid`, `physical_network_id` , `provider_name`, `state` ," +
-                "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`," +
-                "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`," +
-                "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        String insertSql1 =
+            "INSERT INTO `physical_network_service_providers` (`id`, `uuid`, `physical_network_id` , `provider_name`, `state` ,"
+                + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
+                + "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`,"
+                + "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
@@ -742,8 +751,7 @@ public class DatabaseConfig {
         String uuid = UUID.randomUUID().toString();
         String type = _currentObjectParams.get("type");
 
-        String insertSql1 = "INSERT INTO `virtual_router_providers` (`id`, `nsp_id`, `uuid` , `type` , `enabled`) " +
-                "VALUES (?,?,?,?,?)";
+        String insertSql1 = "INSERT INTO `virtual_router_providers` (`id`, `nsp_id`, `uuid` , `type` , `enabled`) " + "VALUES (?,?,?,?,?)";
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
@@ -771,7 +779,6 @@ public class DatabaseConfig {
         String publicIpRange = _currentObjectParams.get("ipAddressRange");
         String vlanType = _currentObjectParams.get("vlanType");
         String vlanPodName = _currentObjectParams.get("podName");
-
 
         String ipError = "Please enter a valid IP address for the field: ";
         if (!IPRangeConfig.validOrBlankIP(gateway)) {
@@ -896,7 +903,7 @@ public class DatabaseConfig {
 
     @DB
     protected void saveServiceOffering() {
-        long id  = Long.parseLong(_currentObjectParams.get("id"));
+        long id = Long.parseLong(_currentObjectParams.get("id"));
         String name = _currentObjectParams.get("name");
         String displayText = _currentObjectParams.get("displayText");
         int cpu = Integer.parseInt(_currentObjectParams.get("cpu"));
@@ -920,7 +927,8 @@ public class DatabaseConfig {
             useLocalStorage = false;
         }
 
-        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
+        ServiceOfferingVO serviceOffering =
+            new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
 
         Long bytesReadRate = Long.parseLong(_currentObjectParams.get("bytesReadRate"));
         if ((bytesReadRate != null) && (bytesReadRate > 0))
@@ -959,8 +967,8 @@ public class DatabaseConfig {
 
     @DB
     protected void saveDiskOffering() {
-        long id  = Long.parseLong(_currentObjectParams.get("id"));
-        long domainId  = Long.parseLong(_currentObjectParams.get("domainId"));
+        long id = Long.parseLong(_currentObjectParams.get("id"));
+        long domainId = Long.parseLong(_currentObjectParams.get("domainId"));
         String name = _currentObjectParams.get("name");
         String displayText = _currentObjectParams.get("displayText");
         long diskSpace = Long.parseLong(_currentObjectParams.get("diskSpace"));
@@ -1080,7 +1088,7 @@ public class DatabaseConfig {
         } catch (SQLException ex) {
             s_logger.error("error creating vm template: " + ex);
         } finally {
-        	txn.close();
+            txn.close();
         }
          */
         /*
@@ -1096,15 +1104,15 @@ public class DatabaseConfig {
         "VALUES (" + id + ",'" + uniqueName + "','" + name + "'," + isPublic + ",'" + path + "',now(),'" + type + "'," +
         requiresHvm + "," + bits + "," + createdByUserId + "," + isReady + ")";
 
-	    Transaction txn = Transaction.currentTxn();
-		try {
-		    PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
-		    stmt.executeUpdate();
-		} catch (SQLException ex) {
-		    s_logger.error("error creating vm template: " + ex);
-		} finally {
-			txn.close();
-		}
+        Transaction txn = Transaction.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
+            stmt.executeUpdate();
+        } catch (SQLException ex) {
+            s_logger.error("error creating vm template: " + ex);
+        } finally {
+            txn.close();
+        }
          */
     }
 
@@ -1121,8 +1129,9 @@ public class DatabaseConfig {
         }
 
         // insert system user
-        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created)" +
-                " VALUES (1, 'system', RAND(), 1, 'system', 'cloud', now())";
+        insertSql =
+            "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created)"
+                + " VALUES (1, 'system', RAND(), 1, 'system', 'cloud', now())";
         txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -1171,8 +1180,9 @@ public class DatabaseConfig {
         }
 
         // now insert the user
-        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, email, created) " +
-                "VALUES (" + id + ",'" + username + "','" + sb.toString() + "', 2, '" + firstname + "','" + lastname + "','" + email + "',now())";
+        insertSql =
+            "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, email, created) " + "VALUES (" + id + ",'" + username + "','" +
+                sb.toString() + "', 2, '" + firstname + "','" + lastname + "','" + email + "',now())";
 
         txn = TransactionLegacy.currentTxn();
         try {
@@ -1225,8 +1235,9 @@ public class DatabaseConfig {
             }
         }
 
-        String insertSql = "INSERT INTO `cloud`.`configuration` (instance, component, name, value, description, category) " +
-                "VALUES ('" + instance + "','" + component + "','" + name + "','" + value + "','" + description + "','" + category + "')";
+        String insertSql =
+            "INSERT INTO `cloud`.`configuration` (instance, component, name, value, description, category) " + "VALUES ('" + instance + "','" + component + "','" + name +
+                "','" + value + "','" + description + "','" + category + "')";
 
         String selectSql = "SELECT name FROM cloud.configuration WHERE name = '" + name + "'";
 
@@ -1290,7 +1301,7 @@ public class DatabaseConfig {
         } catch (SQLException ex) {
             s_logger.error("error updating admin user", ex);
         } finally {
-        	txn.close();
+            txn.close();
         }
 
         updateSql = "update account set domain_id = 1 where id = 1";
@@ -1301,7 +1312,7 @@ public class DatabaseConfig {
         } catch (SQLException ex) {
             s_logger.error("error updating system user", ex);
         } finally {
-        	txn.close();
+            txn.close();
         }
          */
     }
@@ -1314,8 +1325,7 @@ public class DatabaseConfig {
         }
 
         @Override
-        public void endElement(String s, String s1, String s2)
-                throws SAXException {
+        public void endElement(String s, String s1, String s2) throws SAXException {
             if (DatabaseConfig.objectNames.contains(s2) || "object".equals(s2)) {
                 _parent.saveCurrentObject();
             } else if (DatabaseConfig.fieldNames.contains(s2) || "field".equals(s2)) {
@@ -1324,8 +1334,7 @@ public class DatabaseConfig {
         }
 
         @Override
-        public void startElement(String s, String s1, String s2,
-                Attributes attributes) throws SAXException {
+        public void startElement(String s, String s1, String s2, Attributes attributes) throws SAXException {
             if ("object".equals(s2)) {
                 _parent.setCurrentObjectName(convertName(attributes.getValue("name")));
             } else if ("field".equals(s2)) {
@@ -1352,7 +1361,7 @@ public class DatabaseConfig {
         }
 
         private String convertName(String name) {
-            if (name.contains(".")){
+            if (name.contains(".")) {
                 String[] nameArray = name.split("\\.");
                 for (int i = 1; i < nameArray.length; i++) {
                     String word = nameArray[i];

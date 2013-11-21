@@ -56,7 +56,6 @@ public interface ResponseObject {
      */
     String getJobId();
 
-
     /**
      * Sets the job id
      *

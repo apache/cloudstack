@@ -26,10 +26,13 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 
 public interface VmWorkJobDao extends GenericDao<VmWorkJobVO, Long> {
-	VmWorkJobVO findPendingWorkJob(VirtualMachine.Type type, long instanceId);
-	List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId);
-	List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId, String jobCmd);
-	
-	void updateStep(long workJobId, Step step);
-	void expungeCompletedWorkJobs(Date cutDate);
+    VmWorkJobVO findPendingWorkJob(VirtualMachine.Type type, long instanceId);
+
+    List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId);
+
+    List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId, String jobCmd);
+
+    void updateStep(long workJobId, Step step);
+
+    void expungeCompletedWorkJobs(Date cutDate);
 }

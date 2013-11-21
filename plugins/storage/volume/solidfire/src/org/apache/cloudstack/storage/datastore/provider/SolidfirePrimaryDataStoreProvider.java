@@ -18,9 +18,11 @@
  */
 package org.apache.cloudstack.storage.datastore.provider;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashSet;
+
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
@@ -29,7 +31,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvid
 import org.apache.cloudstack.storage.datastore.driver.SolidfirePrimaryDataStoreDriver;
 import org.apache.cloudstack.storage.datastore.lifecycle.SolidFirePrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
-import org.springframework.stereotype.Component;
 
 import com.cloud.utils.component.ComponentContext;
 
@@ -73,7 +74,7 @@ public class SolidfirePrimaryDataStoreProvider implements PrimaryDataStoreProvid
 
     @Override
     public Set<DataStoreProviderType> getTypes() {
-        Set<DataStoreProviderType> types =  new HashSet<DataStoreProviderType>();
+        Set<DataStoreProviderType> types = new HashSet<DataStoreProviderType>();
 
         types.add(DataStoreProviderType.PRIMARY);
 

@@ -16,16 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
-import org.apache.cloudstack.api.response.LBHealthCheckResponse;
-
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
@@ -35,7 +34,7 @@ import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteLBHealthCheckPolicy", description = "Deletes a load balancer HealthCheck policy.", responseObject = SuccessResponse.class, since="4.2.0")
+@APICommand(name = "deleteLBHealthCheckPolicy", description = "Deletes a load balancer HealthCheck policy.", responseObject = SuccessResponse.class, since = "4.2.0")
 public class DeleteLBHealthCheckPolicyCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteLBHealthCheckPolicyCmd.class.getName());
     private static final String s_name = "deletelbhealthcheckpolicyresponse";
@@ -43,8 +42,11 @@ public class DeleteLBHealthCheckPolicyCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = LBHealthCheckResponse.class,
-            required = true, description = "the ID of the load balancer HealthCheck policy")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = LBHealthCheckResponse.class,
+               required = true,
+               description = "the ID of the load balancer HealthCheck policy")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -87,7 +89,7 @@ public class DeleteLBHealthCheckPolicyCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Load balancer healthcheck policy Id: " + getId());
-        boolean result = _lbService.deleteLBHealthCheckPolicy(getId() , true);
+        boolean result = _lbService.deleteLBHealthCheckPolicy(getId(), true);
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
@@ -104,8 +106,7 @@ public class DeleteLBHealthCheckPolicyCmd extends BaseAsyncCmd {
 
     @Override
     public Long getSyncObjId() {
-        HealthCheckPolicy policy = _entityMgr.findById(HealthCheckPolicy.class,
-                getId());
+        HealthCheckPolicy policy = _entityMgr.findById(HealthCheckPolicy.class, getId());
         if (policy == null) {
             throw new InvalidParameterValueException("Unable to find load balancer healthcheck rule: " + id);
         }

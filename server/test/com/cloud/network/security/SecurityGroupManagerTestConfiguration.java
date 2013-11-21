@@ -19,10 +19,6 @@ package com.cloud.network.security;
 
 import java.io.IOException;
 
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
-import org.apache.cloudstack.test.utils.SpringUtils;
-
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -33,15 +29,19 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
+import org.apache.cloudstack.test.utils.SpringUtils;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.api.query.dao.SecurityGroupJoinDaoImpl;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.dc.dao.DataCenterDaoImpl;
+import com.cloud.dc.dao.DataCenterDetailsDaoImpl;
 import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl;
 import com.cloud.dc.dao.DataCenterVnetDaoImpl;
-import com.cloud.dc.dao.DataCenterDetailsDaoImpl;
 import com.cloud.dc.dao.HostPodDaoImpl;
 import com.cloud.dc.dao.PodVlanDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
@@ -70,40 +70,15 @@ import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 
 @Configuration
-@ComponentScan(basePackageClasses={
-        SecurityGroupRulesDaoImpl.class,
-        UserVmDaoImpl.class,
-        AccountDaoImpl.class,
-        ConfigurationDaoImpl.class,
-        SecurityGroupWorkDaoImpl.class,
-        VmRulesetLogDaoImpl.class,
-        VMInstanceDaoImpl.class,
-        DomainDaoImpl.class,
-        UsageEventDaoImpl.class,
-        ResourceTagsDaoImpl.class,
-        HostDaoImpl.class,
-        HostDetailsDaoImpl.class,
-        HostTagsDaoImpl.class,
-        ClusterDaoImpl.class,
-        HostPodDaoImpl.class,
-        DataCenterDaoImpl.class,
-        DataCenterIpAddressDaoImpl.class,
-        HostTransferMapDaoImpl.class,
-        SecurityGroupManagerImpl2.class,
-        SecurityGroupDaoImpl.class,
-        SecurityGroupVMMapDaoImpl.class,
-        UserVmDetailsDaoImpl.class,
-        DataCenterIpAddressDaoImpl.class,
-        DataCenterLinkLocalIpAddressDaoImpl.class,
-        DataCenterVnetDaoImpl.class,
-        PodVlanDaoImpl.class,
-        DataCenterDetailsDaoImpl.class,
-        SecurityGroupRuleDaoImpl.class,
-        NicDaoImpl.class,
-        SecurityGroupJoinDaoImpl.class},
-        includeFilters={@Filter(value=Library.class, type=FilterType.CUSTOM)},
-        useDefaultFilters=false
-        )
+@ComponentScan(basePackageClasses = {SecurityGroupRulesDaoImpl.class, UserVmDaoImpl.class, AccountDaoImpl.class, ConfigurationDaoImpl.class,
+                   SecurityGroupWorkDaoImpl.class, VmRulesetLogDaoImpl.class, VMInstanceDaoImpl.class, DomainDaoImpl.class, UsageEventDaoImpl.class,
+                   ResourceTagsDaoImpl.class, HostDaoImpl.class, HostDetailsDaoImpl.class, HostTagsDaoImpl.class, ClusterDaoImpl.class, HostPodDaoImpl.class,
+                   DataCenterDaoImpl.class, DataCenterIpAddressDaoImpl.class, HostTransferMapDaoImpl.class, SecurityGroupManagerImpl2.class, SecurityGroupDaoImpl.class,
+                   SecurityGroupVMMapDaoImpl.class, UserVmDetailsDaoImpl.class, DataCenterIpAddressDaoImpl.class, DataCenterLinkLocalIpAddressDaoImpl.class,
+                   DataCenterVnetDaoImpl.class, PodVlanDaoImpl.class, DataCenterDetailsDaoImpl.class, SecurityGroupRuleDaoImpl.class, NicDaoImpl.class,
+                   SecurityGroupJoinDaoImpl.class},
+               includeFilters = {@Filter(value = Library.class, type = FilterType.CUSTOM)},
+               useDefaultFilters = false)
 public class SecurityGroupManagerTestConfiguration {
 
     @Bean
@@ -117,7 +92,7 @@ public class SecurityGroupManagerTestConfiguration {
     }
 
     @Bean
-    public VirtualMachineManager virtualMachineManager(){
+    public VirtualMachineManager virtualMachineManager() {
         return Mockito.mock(VirtualMachineManager.class);
     }
 
@@ -127,7 +102,7 @@ public class SecurityGroupManagerTestConfiguration {
     }
 
     @Bean
-    public NetworkOrchestrationService networkManager(){
+    public NetworkOrchestrationService networkManager() {
         return Mockito.mock(NetworkOrchestrationService.class);
     }
 

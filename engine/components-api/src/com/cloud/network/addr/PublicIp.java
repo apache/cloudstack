@@ -38,9 +38,9 @@ public class PublicIp implements PublicIpAddress {
     }
 
     public static PublicIp createFromAddrAndVlan(IPAddressVO addr, VlanVO vlan) {
-    	return new PublicIp(addr, vlan, NetUtils.createSequenceBasedMacAddress(addr.getMacAddress()));
+        return new PublicIp(addr, vlan, NetUtils.createSequenceBasedMacAddress(addr.getMacAddress()));
     }
-    
+
     @Override
     public Ip getAddress() {
         return _addr.getAddress();
@@ -159,7 +159,6 @@ public class PublicIp implements PublicIpAddress {
         return _addr.getId();
     }
 
-
     @Override
     public String getUuid() {
         return _addr.getUuid();
@@ -175,29 +174,29 @@ public class PublicIp implements PublicIpAddress {
         return _vlan.getPhysicalNetworkId();
     }
 
-	@Override
-	public void setState(State state) {
-		_addr.setState(state);
-	}
+    @Override
+    public void setState(State state) {
+        _addr.setState(state);
+    }
 
-	@Override
-	public Long getAllocatedToAccountId() {
-		return _addr.getAllocatedToAccountId();
-	}
+    @Override
+    public Long getAllocatedToAccountId() {
+        return _addr.getAllocatedToAccountId();
+    }
 
-	@Override
-	public Long getAllocatedInDomainId() {
-		return _addr.getAllocatedInDomainId();
-	}
+    @Override
+    public Long getAllocatedInDomainId() {
+        return _addr.getAllocatedInDomainId();
+    }
 
-	@Override
+    @Override
     public boolean getSystem() {
         return _addr.getSystem();
     }
-	
+
     @Override
     public Long getVpcId() {
-       return _addr.getVpcId();
+        return _addr.getVpcId();
     }
 
     @Override
@@ -230,6 +229,6 @@ public class PublicIp implements PublicIpAddress {
     }
 
     public Long getIpMacAddress() {
-        return  _addr.getMacAddress();
+        return _addr.getMacAddress();
     }
 }

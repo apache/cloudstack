@@ -16,10 +16,6 @@
 // under the License.
 package com.cloud.utils.xmlobject;
 
-import static org.junit.Assert.*;
-
-import java.util.List;
-
 import org.junit.Test;
 
 public class TestXmlObject {
@@ -31,19 +27,19 @@ public class TestXmlObject {
     @Test
     public void test() {
 
-	// deprecated, since we no longer use component.xml.in any more
-	/*
-        XmlObject xo = XmlObjectParser.parseFromFile("z:/components.xml.in");
-        p(xo.getTag());
-        p((String) xo.get("system-integrity-checker.checker").toString());
-        List<XmlObject> lst = xo.get("management-server.adapters");
-        for (XmlObject x : lst) {
-            List<XmlObject> lst1 = x.getAsList("adapter");
-            for (XmlObject y : lst1) {
-                p(y.toString());
+        // deprecated, since we no longer use component.xml.in any more
+        /*
+            XmlObject xo = XmlObjectParser.parseFromFile("z:/components.xml.in");
+            p(xo.getTag());
+            p((String) xo.get("system-integrity-checker.checker").toString());
+            List<XmlObject> lst = xo.get("management-server.adapters");
+            for (XmlObject x : lst) {
+                List<XmlObject> lst1 = x.getAsList("adapter");
+                for (XmlObject y : lst1) {
+                    p(y.toString());
+                }
             }
-        }
-        */
+            */
     }
 
 }

@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.agent.api;
 
-
-
 public class CancelCommand extends Command {
     protected long sequence;
     protected String reason;

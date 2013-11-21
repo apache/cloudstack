@@ -33,19 +33,19 @@ public interface FirewallManager extends FirewallService {
      * 1. one to one nat ip forwarding
      * 2. port forwarding
      * 3. load balancing
-     * 
+     *
      * and conflicts are detected between those two rules. In this case, it
      * is possible for both rules to be rolled back when, technically, we should
      * and the user can simply re-add one of the rules themselves.
-     * 
+     *
      * @param newRule
      *            the new rule created.
      * @throws NetworkRuleConflictException
      */
     void detectRulesConflict(FirewallRule newRule) throws NetworkRuleConflictException;
 
-    void validateFirewallRule(Account caller, IPAddressVO ipAddress, Integer portStart, Integer portEnd, String proto,
-            Purpose purpose, FirewallRuleType type, Long networkid, FirewallRule.TrafficType trafficType);
+    void validateFirewallRule(Account caller, IPAddressVO ipAddress, Integer portStart, Integer portEnd, String proto, Purpose purpose, FirewallRuleType type,
+        Long networkid, FirewallRule.TrafficType trafficType);
 
     boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError, boolean updateRulesInDB) throws ResourceUnavailableException;
 
@@ -57,7 +57,7 @@ public interface FirewallManager extends FirewallService {
 
 //    /**
 //     * Revokes a firewall rule
-//     * 
+//     *
 //     * @param ruleId
 //     *            the id of the rule to revoke.
 //     * @param caller
@@ -72,7 +72,8 @@ public interface FirewallManager extends FirewallService {
 //            FirewallRule.FirewallRuleType type, Long networkId, FirewallRule.TrafficType traffictype)
 //            throws NetworkRuleConflictException;
 
-    FirewallRule createRuleForAllCidrs(long ipAddrId, Account caller, Integer startPort, Integer endPort, String protocol, Integer icmpCode, Integer icmpType, Long relatedRuleId, long networkId) throws NetworkRuleConflictException;
+    FirewallRule createRuleForAllCidrs(long ipAddrId, Account caller, Integer startPort, Integer endPort, String protocol, Integer icmpCode, Integer icmpType,
+        Long relatedRuleId, long networkId) throws NetworkRuleConflictException;
 
     boolean revokeAllFirewallRulesForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException;
 

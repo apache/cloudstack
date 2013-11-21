@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -16,15 +16,21 @@
 // under the License.
 package com.cloud.network.vpc.dao;
 
+import java.util.List;
+
+import javax.ejb.Local;
+
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.vpc.NetworkACLItem.State;
 import com.cloud.network.vpc.NetworkACLItemDao;
 import com.cloud.network.vpc.NetworkACLItemVO;
-import com.cloud.utils.db.*;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import java.util.List;
 
 @Component
 @Local(value = NetworkACLItemDao.class)
@@ -68,7 +74,6 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
         MaxNumberSearch.and("aclId", MaxNumberSearch.entity().getAclId(), Op.EQ);
         MaxNumberSearch.done();
     }
-
 
     @Override
     public boolean setStateToAdd(NetworkACLItemVO rule) {

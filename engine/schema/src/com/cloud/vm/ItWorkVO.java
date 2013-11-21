@@ -27,67 +27,59 @@ import com.cloud.utils.time.InaccurateClock;
 import com.cloud.vm.VirtualMachine.State;
 
 @Entity
-@Table(name="op_it_work")
+@Table(name = "op_it_work")
 public class ItWorkVO {
     enum ResourceType {
-        Volume,
-        Nic,
-        Host
+        Volume, Nic, Host
     }
-    
+
     enum Step {
-        Prepare,
-        Starting,
-        Started,
-        Release,
-        Done,
-        Migrating,
-        Reconfiguring
+        Prepare, Starting, Started, Release, Done, Migrating, Reconfiguring
     }
-    
+
     @Id
-    @Column(name="id")
+    @Column(name = "id")
     String id;
-    
-    @Column(name="created_at")
+
+    @Column(name = "created_at")
     long createdAt;
-    
-    @Column(name="mgmt_server_id")
+
+    @Column(name = "mgmt_server_id")
     long managementServerId;
-    
-    @Column(name="type")
+
+    @Column(name = "type")
     State type;
-    
-    @Column(name="thread")
+
+    @Column(name = "thread")
     String threadName;
-    
-    @Column(name="step")
+
+    @Column(name = "step")
     Step step;
-    
-    @Column(name="updated_at")
+
+    @Column(name = "updated_at")
     long updatedAt;
-    
-    @Column(name="instance_id")
+
+    @Column(name = "instance_id")
     long instanceId;
-    
+
     public long getInstanceId() {
         return instanceId;
     }
 
-    @Column(name="resource_id")
+    @Column(name = "resource_id")
     long resourceId;
-    
-    @Column(name="resource_type")
+
+    @Column(name = "resource_type")
     ResourceType resourceType;
-    
-    @Column(name="vm_type")
-    @Enumerated(value=EnumType.STRING)
+
+    @Column(name = "vm_type")
+    @Enumerated(value = EnumType.STRING)
     VirtualMachine.Type vmType;
-    
+
     public VirtualMachine.Type getVmType() {
         return vmType;
     }
-    
+
     public long getResourceId() {
         return resourceId;
     }
@@ -106,7 +98,7 @@ public class ItWorkVO {
 
     protected ItWorkVO() {
     }
-    
+
     protected ItWorkVO(String id, long managementServerId, State type, VirtualMachine.Type vmType, long instanceId) {
         this.id = id;
         this.managementServerId = managementServerId;
@@ -127,53 +119,61 @@ public class ItWorkVO {
     public Long getCreatedAt() {
         return createdAt;
     }
-    
+
     public long getManagementServerId() {
         return managementServerId;
     }
-    
+
     public void setManagementServerId(long managementServerId) {
         this.managementServerId = managementServerId;
     }
-    
+
     public State getType() {
         return type;
     }
-    
+
     public void setType(State type) {
         this.type = type;
     }
-    
+
     public String getThreadName() {
         return threadName;
     }
-    
+
     public Step getStep() {
         return step;
     }
-    
+
     public void setStep(Step step) {
         this.step = step;
     }
-    
+
     public long getUpdatedAt() {
         return updatedAt;
     }
-    
+
     public void setUpdatedAt(long updatedAt) {
         this.updatedAt = updatedAt;
     }
-    
+
     public long getSecondsTaskIsInactive() {
         return InaccurateClock.getTimeInSeconds() - this.updatedAt;
     }
-    
+
     public long getSecondsTaskHasBeenCreated() {
         return InaccurateClock.getTimeInSeconds() - this.createdAt;
     }
-    
+
     @Override
     public String toString() {
-        return new StringBuilder("ItWork[").append(id).append("-").append(type.toString()).append("-").append(instanceId).append("-").append(step.toString()).append("]").toString();
+        return new StringBuilder("ItWork[").append(id)
+            .append("-")
+            .append(type.toString())
+            .append("-")
+            .append(instanceId)
+            .append("-")
+            .append(step.toString())
+            .append("]")
+            .toString();
     }
 }

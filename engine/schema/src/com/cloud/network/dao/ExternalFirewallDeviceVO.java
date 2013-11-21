@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.network.dao;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -30,19 +27,22 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
 /**
  * ExternalFirewallDeviceVO contains information of a external firewall device (Juniper SRX) added into a deployment
   */
 
 @Entity
-@Table(name="external_firewall_devices")
+@Table(name = "external_firewall_devices")
 public class ExternalFirewallDeviceVO implements InternalIdentity, Identity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
     @Column(name = "host_id")
@@ -57,29 +57,27 @@ public class ExternalFirewallDeviceVO implements InternalIdentity, Identity {
     @Column(name = "device_name")
     private String deviceName;
 
-    @Column(name="device_state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "device_state")
+    @Enumerated(value = EnumType.STRING)
     FirewallDeviceState deviceState;
 
-    @Column(name="is_dedicated")
+    @Column(name = "is_dedicated")
     private boolean isDedicatedDevice;
 
     @Column(name = "capacity")
     private long capacity;
 
     @Column(name = "allocation_state")
-    @Enumerated(value=EnumType.STRING)
+    @Enumerated(value = EnumType.STRING)
     private FirewallDeviceAllocationState allocationState;
 
     //keeping it enum for future possible states Maintenance, Shutdown
     public enum FirewallDeviceState {
-        Enabled,
-        Disabled
+        Enabled, Disabled
     }
 
     public enum FirewallDeviceAllocationState {
-        Free,
-        Allocated
+        Free, Allocated
     }
 
     public ExternalFirewallDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name, long capacity, boolean dedicated) {
@@ -99,6 +97,7 @@ public class ExternalFirewallDeviceVO implements InternalIdentity, Identity {
         this.uuid = UUID.randomUUID().toString();
     }
 
+    @Override
     public long getId() {
         return id;
     }
@@ -151,6 +150,7 @@ public class ExternalFirewallDeviceVO implements InternalIdentity, Identity {
         isDedicatedDevice = isDedicated;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }

@@ -18,6 +18,8 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -26,8 +28,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.api.response.CiscoVnmcResourceResponse;
 import com.cloud.exception.ConcurrentOperationException;
@@ -39,26 +39,31 @@ import com.cloud.network.cisco.CiscoVnmcController;
 import com.cloud.network.element.CiscoVnmcElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name="addCiscoVnmcResource", responseObject=CiscoVnmcResourceResponse.class, description="Adds a Cisco Vnmc Controller")
+@APICommand(name = "addCiscoVnmcResource", responseObject = CiscoVnmcResourceResponse.class, description = "Adds a Cisco Vnmc Controller")
 public class AddCiscoVnmcResourceCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(AddCiscoVnmcResourceCmd.class.getName());
     private static final String s_name = "addCiscoVnmcResource";
-    @Inject CiscoVnmcElementService _ciscoVnmcElementService;
+    @Inject
+    CiscoVnmcElementService _ciscoVnmcElementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class, required=true, description="the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = PhysicalNetworkResponse.class,
+               required = true,
+               description = "the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.HOST_NAME, type=CommandType.STRING, required = true, description="Hostname or ip address of the Cisco VNMC Controller.")
+    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, required = true, description = "Hostname or ip address of the Cisco VNMC Controller.")
     private String host;
 
-    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="Credentials to access the Cisco VNMC Controller API")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Credentials to access the Cisco VNMC Controller API")
     private String username;
 
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="Credentials to access the Cisco VNMC Controller API")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = true, description = "Credentials to access the Cisco VNMC Controller API")
     private String password;
 
     /////////////////////////////////////////////////////
@@ -86,7 +91,8 @@ public class AddCiscoVnmcResourceCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             CiscoVnmcController CiscoVnmcResourceVO = _ciscoVnmcElementService.addCiscoVnmcResource(this);
             if (CiscoVnmcResourceVO != null) {
@@ -97,7 +103,7 @@ public class AddCiscoVnmcResourceCmd extends BaseCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Cisco VNMC controller due to internal error.");
             }
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

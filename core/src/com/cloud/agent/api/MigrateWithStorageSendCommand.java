@@ -17,9 +17,10 @@
 package com.cloud.agent.api;
 
 import java.util.Map;
+
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.agent.api.to.NicTO;
 
 public class MigrateWithStorageSendCommand extends Command {
     VirtualMachineTO vm;
@@ -27,8 +28,7 @@ public class MigrateWithStorageSendCommand extends Command {
     Map<NicTO, Object> nicToNetwork;
     Map<String, String> token;
 
-    public MigrateWithStorageSendCommand(VirtualMachineTO vm, Map<VolumeTO, Object> volumeToSr,
-            Map<NicTO, Object> nicToNetwork, Map<String, String> token) {
+    public MigrateWithStorageSendCommand(VirtualMachineTO vm, Map<VolumeTO, Object> volumeToSr, Map<NicTO, Object> nicToNetwork, Map<String, String> token) {
         this.vm = vm;
         this.volumeToSr = volumeToSr;
         this.nicToNetwork = nicToNetwork;

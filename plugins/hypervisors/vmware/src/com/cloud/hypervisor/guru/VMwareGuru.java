@@ -1,4 +1,3 @@
-
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -28,16 +27,11 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
-import com.cloud.host.Host;
-import com.cloud.storage.Storage;
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.Command;
@@ -45,8 +39,8 @@ import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.UnregisterNicCommand;
-import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.CreateVolumeOVACommand;
 import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
 import com.cloud.agent.api.to.DataObjectType;
@@ -80,6 +74,7 @@ import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.secstorage.CommandExecLogVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
@@ -97,26 +92,36 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
 
-@Local(value=HypervisorGuru.class)
+@Local(value = HypervisorGuru.class)
 public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     private static final Logger s_logger = Logger.getLogger(VMwareGuru.class);
 
-    @Inject NetworkDao _networkDao;
-    @Inject GuestOSDao _guestOsDao;
-    @Inject HostDao _hostDao;
-    @Inject HostDetailsDao _hostDetailsDao;
-    @Inject CommandExecLogDao _cmdExecLogDao;
-    @Inject VmwareManager _vmwareMgr;
-    @Inject SecondaryStorageVmManager _secStorageMgr;
-    @Inject NetworkModel _networkMgr;
-    @Inject ConfigurationDao _configDao;
+    @Inject
+    NetworkDao _networkDao;
+    @Inject
+    GuestOSDao _guestOsDao;
+    @Inject
+    HostDao _hostDao;
+    @Inject
+    HostDetailsDao _hostDetailsDao;
+    @Inject
+    CommandExecLogDao _cmdExecLogDao;
+    @Inject
+    VmwareManager _vmwareMgr;
+    @Inject
+    SecondaryStorageVmManager _secStorageMgr;
+    @Inject
+    NetworkModel _networkMgr;
+    @Inject
+    ConfigurationDao _configDao;
     @Inject
     NicDao _nicDao;
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
     PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
-    @Inject ClusterManager _clusterMgr;
+    @Inject
+    ClusterManager _clusterMgr;
 
     protected VMwareGuru() {
         super();
@@ -133,14 +138,14 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
         to.setBootloader(BootloaderType.HVM);
 
         Map<String, String> details = to.getDetails();
-        if(details == null)
+        if (details == null)
             details = new HashMap<String, String>();
 
         String nicDeviceType = details.get(VmDetailConstants.NIC_ADAPTER);
-        if(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO
-                || vm.getVirtualMachine() instanceof SecondaryStorageVmVO) {
+        if (vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO ||
+            vm.getVirtualMachine() instanceof SecondaryStorageVmVO) {
 
-            if(nicDeviceType == null) {
+            if (nicDeviceType == null) {
                 details.put(VmDetailConstants.NIC_ADAPTER, _vmwareMgr.getSystemVMDefaultNicAdapterType());
             } else {
                 try {
@@ -152,7 +157,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             }
         } else {
             // for user-VM, use E1000 as default
-            if(nicDeviceType == null) {
+            if (nicDeviceType == null) {
                 details.put(VmDetailConstants.NIC_ADAPTER, VirtualEthernetCardType.E1000.toString());
             } else {
                 try {
@@ -165,19 +170,18 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
         }
 
         String diskDeviceType = details.get(VmDetailConstants.ROOK_DISK_CONTROLLER);
-        if (!(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO
-                || vm.getVirtualMachine() instanceof SecondaryStorageVmVO)){
+        if (!(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO || vm.getVirtualMachine() instanceof SecondaryStorageVmVO)) {
             // user vm
-            if (diskDeviceType == null){
+            if (diskDeviceType == null) {
                 details.put(VmDetailConstants.ROOK_DISK_CONTROLLER, _vmwareMgr.getRootDiskController());
             }
         }
 
         List<NicProfile> nicProfiles = vm.getNics();
 
-        for(NicProfile nicProfile : nicProfiles) {
-            if(nicProfile.getTrafficType() == TrafficType.Guest) {
-                if(_networkMgr.isProviderSupportServiceInNetwork(nicProfile.getNetworkId(), Service.Firewall, Provider.CiscoVnmc)) {
+        for (NicProfile nicProfile : nicProfiles) {
+            if (nicProfile.getTrafficType() == TrafficType.Guest) {
+                if (_networkMgr.isProviderSupportServiceInNetwork(nicProfile.getNetworkId(), Service.Firewall, Provider.CiscoVnmc)) {
                     details.put("ConfigureVServiceInNexus", Boolean.TRUE.toString());
                 }
                 break;
@@ -186,26 +190,26 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
 
         to.setDetails(details);
 
-        if(vm.getVirtualMachine() instanceof DomainRouterVO) {
+        if (vm.getVirtualMachine() instanceof DomainRouterVO) {
 
             NicProfile publicNicProfile = null;
-            for(NicProfile nicProfile : nicProfiles) {
-                if(nicProfile.getTrafficType() == TrafficType.Public) {
+            for (NicProfile nicProfile : nicProfiles) {
+                if (nicProfile.getTrafficType() == TrafficType.Public) {
                     publicNicProfile = nicProfile;
                     break;
                 }
             }
 
-            if(publicNicProfile != null) {
+            if (publicNicProfile != null) {
                 NicTO[] nics = to.getNics();
 
                 // reserve extra NICs
                 NicTO[] expandedNics = new NicTO[nics.length + _vmwareMgr.getRouterExtraPublicNics()];
                 int i = 0;
                 int deviceId = -1;
-                for(i = 0; i < nics.length; i++) {
+                for (i = 0; i < nics.length; i++) {
                     expandedNics[i] = nics[i];
-                    if(nics[i].getDeviceId() > deviceId)
+                    if (nics[i].getDeviceId() > deviceId)
                         deviceId = nics[i].getDeviceId();
                 }
                 deviceId++;
@@ -213,7 +217,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
                 long networkId = publicNicProfile.getNetworkId();
                 NetworkVO network = _networkDao.findById(networkId);
 
-                for(; i < nics.length + _vmwareMgr.getRouterExtraPublicNics(); i++) {
+                for (; i < nics.length + _vmwareMgr.getRouterExtraPublicNics(); i++) {
                     NicTO nicTo = new NicTO();
 
                     nicTo.setDeviceId(deviceId++);
@@ -249,7 +253,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             }
 
             StringBuffer sbMacSequence = new StringBuffer();
-            for(NicTO nicTo : sortNicsByDeviceId(to.getNics())) {
+            for (NicTO nicTo : sortNicsByDeviceId(to.getNics())) {
                 sbMacSequence.append(nicTo.getMac()).append("|");
             }
             sbMacSequence.deleteCharAt(sbMacSequence.length() - 1);
@@ -260,8 +264,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
 
         // Don't do this if the virtual machine is one of the special types
         // Should only be done on user machines
-        if(!(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO
-                || vm.getVirtualMachine() instanceof SecondaryStorageVmVO)) {
+        if (!(vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO || vm.getVirtualMachine() instanceof SecondaryStorageVmVO)) {
             String nestedVirt = _configDao.getValue(Config.VmwareEnableNestedVirtualization.key());
             if (nestedVirt != null) {
                 s_logger.debug("Nested virtualization requested, adding flag to vm configuration");
@@ -300,7 +303,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
         return listForSort.toArray(new NicTO[0]);
     }
 
-    @Override @DB
+    @Override
+    @DB
     public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
         boolean needDelegation = false;
 
@@ -320,20 +324,18 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
                 }
             }
 
-            if (!needDelegation && !(HypervisorType.VMware == srcData.getHypervisorType() ||
-                    HypervisorType.VMware == destData.getHypervisorType()
-            )) {
+            if (!needDelegation && !(HypervisorType.VMware == srcData.getHypervisorType() || HypervisorType.VMware == destData.getHypervisorType())) {
                 return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
             }
 
             if (destData.getObjectType() == DataObjectType.VOLUME && destStoreTO.getRole() == DataStoreRole.Primary &&
-                    srcData.getObjectType() == DataObjectType.TEMPLATE && srcStoreTO.getRole() == DataStoreRole.Primary) {
+                srcData.getObjectType() == DataObjectType.TEMPLATE && srcStoreTO.getRole() == DataStoreRole.Primary) {
                 needDelegation = false;
             } else {
                 needDelegation = true;
             }
         } else if (cmd instanceof CreateEntityDownloadURLCommand) {
-            DataTO srcData = ((CreateEntityDownloadURLCommand) cmd).getData();
+            DataTO srcData = ((CreateEntityDownloadURLCommand)cmd).getData();
             if ((HypervisorType.VMware == srcData.getHypervisorType())) {
                 needDelegation = true;
             }
@@ -344,14 +346,14 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
                 }
             }
         }
-        
-        if(!needDelegation) {
+
+        if (!needDelegation) {
             return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
         }
         HostVO host = _hostDao.findById(hostId);
         long dcId = host.getDataCenterId();
         Pair<HostVO, SecondaryStorageVmVO> cmdTarget = _secStorageMgr.assignSecStorageVm(dcId, cmd);
-        if(cmdTarget != null) {
+        if (cmdTarget != null) {
             // TODO, we need to make sure agent is actually connected too
 
             cmd.setContextParam("hypervisor", HypervisorType.VMware.toString());
@@ -367,16 +369,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             CommandExecLogVO execLog = new CommandExecLogVO(cmdTarget.first().getId(), cmdTarget.second().getId(), cmd.getClass().getSimpleName(), 1);
             _cmdExecLogDao.persist(execLog);
             cmd.setContextParam("execid", String.valueOf(execLog.getId()));
-    		cmd.setContextParam("noderuninfo", String.format("%d-%d", _clusterMgr.getManagementNodeId(), _clusterMgr.getCurrentRunId()));
+            cmd.setContextParam("noderuninfo", String.format("%d-%d", _clusterMgr.getManagementNodeId(), _clusterMgr.getCurrentRunId()));
+            cmd.setContextParam("vCenterSessionTimeout", String.valueOf(_vmwareMgr.getVcenterSessionTimeout()));
 
-            if(cmd instanceof BackupSnapshotCommand ||
-                    cmd instanceof CreatePrivateTemplateFromVolumeCommand ||
-                    cmd instanceof CreatePrivateTemplateFromSnapshotCommand ||
-                    cmd instanceof CopyVolumeCommand ||
-                    cmd instanceof CopyCommand ||
-                    cmd instanceof CreateVolumeOVACommand ||
-                    cmd instanceof PrepareOVAPackingCommand ||
-                    cmd instanceof CreateVolumeFromSnapshotCommand) {
+            if (cmd instanceof BackupSnapshotCommand || cmd instanceof CreatePrivateTemplateFromVolumeCommand ||
+                cmd instanceof CreatePrivateTemplateFromSnapshotCommand || cmd instanceof CopyVolumeCommand || cmd instanceof CopyCommand ||
+                cmd instanceof CreateVolumeOVACommand || cmd instanceof PrepareOVAPackingCommand || cmd instanceof CreateVolumeFromSnapshotCommand) {
 
                 String workerName = _vmwareMgr.composeWorkerName();
                 long checkPointId = 1;
@@ -392,7 +390,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
                 cmd.setContextParam("checkpoint2", String.valueOf(checkPointId2));
             }
 
-            return new Pair<Boolean, Long>(Boolean.TRUE,cmdTarget.first().getId());
+            return new Pair<Boolean, Long>(Boolean.TRUE, cmdTarget.first().getId());
 
         }
         return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
@@ -405,15 +403,15 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
 
     private static String resolveNameInGuid(String guid) {
         String tokens[] = guid.split("@");
-        assert(tokens.length == 2);
+        assert (tokens.length == 2);
 
         String vCenterIp = NetUtils.resolveToIp(tokens[1]);
-        if(vCenterIp == null) {
+        if (vCenterIp == null) {
             s_logger.error("Fatal : unable to resolve vCenter address " + tokens[1] + ", please check your DNS configuration");
             return guid;
         }
 
-        if(vCenterIp.equals(tokens[1]))
+        if (vCenterIp.equals(tokens[1]))
             return guid;
 
         return tokens[0] + "@" + vCenterIp;
@@ -430,10 +428,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
                 NetworkVO networkVO = _networkDao.findById(nic.getNetworkId());
                 // We need the traffic label to figure out which vSwitch has the
                 // portgroup
-                PhysicalNetworkTrafficTypeVO trafficTypeVO = _physicalNetworkTrafficTypeDao.findBy(
-                        networkVO.getPhysicalNetworkId(), networkVO.getTrafficType());
-                UnregisterNicCommand unregisterNicCommand = new UnregisterNicCommand(vm.getInstanceName(),
-                        trafficTypeVO.getVmwareNetworkLabel(), UUID.fromString(nic.getUuid()));
+                PhysicalNetworkTrafficTypeVO trafficTypeVO = _physicalNetworkTrafficTypeDao.findBy(networkVO.getPhysicalNetworkId(), networkVO.getTrafficType());
+                UnregisterNicCommand unregisterNicCommand =
+                    new UnregisterNicCommand(vm.getInstanceName(), trafficTypeVO.getVmwareNetworkLabel(), UUID.fromString(nic.getUuid()));
                 commands.add(unregisterNicCommand);
             }
         }

@@ -21,13 +21,13 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="user")
+@Table(name = "user")
 public class CloudStackUserVO {
 
-    @Column(name="api_key")
+    @Column(name = "api_key")
     private String apiKey;
 
-    @Column(name="secret_key")
+    @Column(name = "secret_key")
     private String secretKey;
 
     public String getApiKey() {
@@ -42,7 +42,7 @@ public class CloudStackUserVO {
         this.apiKey = apiKey;
     }
 
-   public void setSecretKey(String secretKey) {
+    public void setSecretKey(String secretKey) {
         this.secretKey = secretKey;
     }
 

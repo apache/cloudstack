@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -23,14 +25,13 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.VpcResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateVPC", description="Updates a VPC", responseObject=VpcResponse.class)
-public class UpdateVPCCmd extends BaseAsyncCmd{
+@APICommand(name = "updateVPC", description = "Updates a VPC", responseObject = VpcResponse.class)
+public class UpdateVPCCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVPCCmd.class.getName());
     private static final String _name = "updatevpcresponse";
 
@@ -38,16 +39,14 @@ public class UpdateVPCCmd extends BaseAsyncCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VpcResponse.class, required=true,
-            description="the id of the VPC")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcResponse.class, required = true, description = "the id of the VPC")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the VPC", required=true)
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the VPC", required = true)
     private String vpcName;
 
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the VPC")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the VPC")
     private String displayText;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -64,7 +63,6 @@ public class UpdateVPCCmd extends BaseAsyncCmd{
     public Long getId() {
         return id;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -85,7 +83,7 @@ public class UpdateVPCCmd extends BaseAsyncCmd{
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Vpc result = _vpcService.updateVpc(getId(), getVpcName(), getDisplayText());
         if (result != null) {
             VpcResponse response = _responseGenerator.createVpcResponse(result);

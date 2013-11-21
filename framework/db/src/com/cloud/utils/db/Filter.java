@@ -26,10 +26,10 @@ import com.cloud.utils.ReflectUtil;
 /**
  *  Try to use static initialization to help you in finding incorrect
  *  field names being passed in early.
- * 
+ *
  *  Something like the following:
  *  protected static final Filter s_NameFilter = new Filter(VMInstanceVO, name, true, null, null);
- * 
+ *
  *  Filter nameFilter = new Filter(s_nameFilter);
  *
  */
@@ -37,7 +37,7 @@ public class Filter {
     Long _offset;
     Long _limit;
     String _orderBy;
-    
+
     /**
      * @param clazz the VO object type
      * @param field name of the field
@@ -47,14 +47,14 @@ public class Filter {
     public Filter(Class<?> clazz, String field, boolean ascending, Long offset, Long limit) {
         _offset = offset;
         _limit = limit;
-        
+
         addOrderBy(clazz, field, ascending);
     }
-    
+
     public Filter(long limit) {
         _orderBy = " ORDER BY RAND() LIMIT " + limit;
     }
-    
+
     /**
      * Note that this copy constructor does not copy offset and limit.
      * @param that filter
@@ -64,20 +64,20 @@ public class Filter {
         this._limit = null;
         that._limit = null;
     }
-    
+
     public void addOrderBy(Class<?> clazz, String field, boolean ascending) {
         if (field == null) {
             return;
         }
         Field f;
         Pair<Class<?>, Field> pair = ReflectUtil.getAnyField(clazz, field);
-        assert(pair != null) : "Can't find field " + field + " in " + clazz.getName();
+        assert (pair != null) : "Can't find field " + field + " in " + clazz.getName();
         clazz = pair.first();
         f = pair.second();
-        
+
         Column column = f.getAnnotation(Column.class);
         String name = column != null ? column.name() : field;
-        
+
         StringBuilder order = new StringBuilder();
         if (column.table() == null || column.table().length() == 0) {
             order.append(DbUtil.getTableName(clazz));
@@ -85,30 +85,30 @@ public class Filter {
             order.append(column.table());
         }
         order.append(".").append(name).append(ascending ? " ASC " : " DESC ");
-        
+
         if (_orderBy == null) {
             _orderBy = order.insert(0, " ORDER BY ").toString();
         } else {
             _orderBy = order.insert(0, _orderBy).toString();
         }
     }
-    
+
     public String getOrderBy() {
         return _orderBy;
     }
-    
+
     public void setOffset(Long offset) {
         _offset = offset;
     }
-    
+
     public Long getOffset() {
         return _offset;
     }
-    
+
     public Long getLimit() {
         return _limit;
     }
-    
+
     public void setLimit(Long limit) {
         _limit = limit;
     }

@@ -27,53 +27,53 @@ import java.awt.image.BufferedImage;
  * screen. It also notifies its subscribers when screen is repainted.
  */
 public class BufferedImageCanvas extends Canvas {
-  private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-   // Offline screen buffer
-  private BufferedImage offlineImage;
-  
-  // Cached Graphics2D object for offline screen buffer
-  private Graphics2D graphics;
+    // Offline screen buffer
+    private BufferedImage offlineImage;
 
-  public BufferedImageCanvas(int width, int height) {
-    super();
+    // Cached Graphics2D object for offline screen buffer
+    private Graphics2D graphics;
 
-    setBackground(Color.black);
-    
-    setFocusable(true);
+    public BufferedImageCanvas(int width, int height) {
+        super();
 
-    // Don't intercept TAB key
-    setFocusTraversalKeysEnabled(false);
+        setBackground(Color.black);
 
-    setCanvasSize(width, height);
-  }
+        setFocusable(true);
 
-  public void setCanvasSize(int width, int height) {
-    this.offlineImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-    graphics = offlineImage.createGraphics();
+        // Don't intercept TAB key
+        setFocusTraversalKeysEnabled(false);
 
-    setSize(offlineImage.getWidth(), offlineImage.getHeight());
-  }
+        setCanvasSize(width, height);
+    }
 
-  @Override
-  public void update(Graphics g) {
-    // Call paint() directly, without clearing screen first
-    paint(g);
-  }
+    public void setCanvasSize(int width, int height) {
+        this.offlineImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        graphics = offlineImage.createGraphics();
 
-  @Override
-  public void paint(Graphics g) {
-    // Only part of image, requested with repaint(Rectangle), will be
-    // painted on screen.
-    g.drawImage(offlineImage, 0, 0, this);
-  }
+        setSize(offlineImage.getWidth(), offlineImage.getHeight());
+    }
 
-  public BufferedImage getOfflineImage() {
-    return offlineImage;
-  }
+    @Override
+    public void update(Graphics g) {
+        // Call paint() directly, without clearing screen first
+        paint(g);
+    }
 
-  public Graphics2D getOfflineGraphics() {
-    return graphics;
-  }
+    @Override
+    public void paint(Graphics g) {
+        // Only part of image, requested with repaint(Rectangle), will be
+        // painted on screen.
+        g.drawImage(offlineImage, 0, 0, this);
+    }
+
+    public BufferedImage getOfflineImage() {
+        return offlineImage;
+    }
+
+    public Graphics2D getOfflineGraphics() {
+        return graphics;
+    }
 
 }

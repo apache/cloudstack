@@ -18,22 +18,27 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 public class SnapshotScheduleResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the ID of the snapshot schedule")
+    @SerializedName("id")
+    @Param(description = "the ID of the snapshot schedule")
     private String id;
 
-    @SerializedName("volumeid") @Param(description="the volume ID the snapshot schedule applied for")
+    @SerializedName("volumeid")
+    @Param(description = "the volume ID the snapshot schedule applied for")
     private String volumeId;
 
-    @SerializedName("snapshotpolicyid") @Param(description="the snapshot policy ID used by the snapshot schedule")
+    @SerializedName("snapshotpolicyid")
+    @Param(description = "the snapshot policy ID used by the snapshot schedule")
     private String snapshotPolicyId;
 
-    @SerializedName("scheduled") @Param(description="time the snapshot is scheduled to be taken")
+    @SerializedName("scheduled")
+    @Param(description = "time the snapshot is scheduled to be taken")
     private Date scheduled;
 
     public String getId() {

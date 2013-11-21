@@ -18,65 +18,83 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
 import com.cloud.user.User;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = User.class)
 public class UserResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the user ID")
+    @SerializedName("id")
+    @Param(description = "the user ID")
     private String id;
 
-    @SerializedName("username") @Param(description="the user name")
+    @SerializedName("username")
+    @Param(description = "the user name")
     private String username;
 
-    @SerializedName("firstname") @Param(description="the user firstname")
+    @SerializedName("firstname")
+    @Param(description = "the user firstname")
     private String firstname;
 
-    @SerializedName("lastname") @Param(description="the user lastname")
+    @SerializedName("lastname")
+    @Param(description = "the user lastname")
     private String lastname;
 
-    @SerializedName("email") @Param(description="the user email address")
+    @SerializedName("email")
+    @Param(description = "the user email address")
     private String email;
 
-    @SerializedName("created") @Param(description="the date and time the user account was created")
+    @SerializedName("created")
+    @Param(description = "the date and time the user account was created")
     private Date created;
 
-    @SerializedName("state") @Param(description="the user state")
+    @SerializedName("state")
+    @Param(description = "the user state")
     private String state;
 
-    @SerializedName("account") @Param(description="the account name of the user")
+    @SerializedName("account")
+    @Param(description = "the account name of the user")
     private String accountName;
 
-    @SerializedName("accounttype") @Param(description="the account type of the user")
+    @SerializedName("accounttype")
+    @Param(description = "the account type of the user")
     private Short accountType;
 
-    @SerializedName("domainid") @Param(description="the domain ID of the user")
+    @SerializedName("domainid")
+    @Param(description = "the domain ID of the user")
     private String domainId;
 
-    @SerializedName("domain") @Param(description="the domain name of the user")
+    @SerializedName("domain")
+    @Param(description = "the domain name of the user")
     private String domainName;
 
-    @SerializedName("timezone") @Param(description="the timezone user was created in")
+    @SerializedName("timezone")
+    @Param(description = "the timezone user was created in")
     private String timezone;
 
-    @SerializedName("apikey") @Param(description="the api key of the user")
+    @SerializedName("apikey")
+    @Param(description = "the api key of the user")
     private String apiKey;
 
-    @SerializedName("secretkey") @Param(description="the secret key of the user")
+    @SerializedName("secretkey")
+    @Param(description = "the secret key of the user")
     private String secretKey;
 
-    @SerializedName("accountid") @Param(description="the account ID of the user")
+    @SerializedName("accountid")
+    @Param(description = "the account ID of the user")
     private String accountId;
 
-    @SerializedName("iscallerchilddomain") @Param(description="the boolean value representing if the updating target is in caller's child domain")
+    @SerializedName("iscallerchilddomain")
+    @Param(description = "the boolean value representing if the updating target is in caller's child domain")
     private boolean isCallerChildDomain;
-    
-    @SerializedName(ApiConstants.IS_DEFAULT) @Param(description="true if user is default, false otherwise", since="4.2.0")
+
+    @SerializedName(ApiConstants.IS_DEFAULT)
+    @Param(description = "true if user is default, false otherwise", since = "4.2.0")
     private Boolean isDefault;
 
     @Override
@@ -195,6 +213,7 @@ public class UserResponse extends BaseResponse {
     public void setSecretKey(String secretKey) {
         this.secretKey = secretKey;
     }
+
     public String getAccountId() {
         return accountId;
     }
@@ -210,7 +229,7 @@ public class UserResponse extends BaseResponse {
     public void setIsCallerChildDomain(boolean isCallerChildDomain) {
         this.isCallerChildDomain = isCallerChildDomain;
     }
-    
+
     public void setIsDefault(Boolean isDefault) {
         this.isDefault = isDefault;
     }

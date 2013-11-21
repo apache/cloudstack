@@ -18,7 +18,7 @@
  */
 package com.cloud.utils.exception;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.fail;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -37,11 +37,11 @@ public class ExceptionUtilTest {
         }
 
         ExceptionUtil.rethrow(fnfe, ClassNotFoundException.class);
-        
+
         try {
             ExceptionUtil.rethrow(fnfe, FileNotFoundException.class);
             fail();
-        } catch ( FileNotFoundException e ) {
+        } catch (FileNotFoundException e) {
         }
     }
 

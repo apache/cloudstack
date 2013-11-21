@@ -16,8 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
+import com.cloud.serializer.Param;
 
 public abstract class BaseResponse implements ResponseObject {
     private transient String responseName;
@@ -48,10 +49,12 @@ public abstract class BaseResponse implements ResponseObject {
         return null;
     }
 
-    @SerializedName(ApiConstants.JOB_ID) @Param(description="the UUID of the latest async job acting on this object")
+    @SerializedName(ApiConstants.JOB_ID)
+    @Param(description = "the UUID of the latest async job acting on this object")
     protected String jobId;
 
-    @SerializedName(ApiConstants.JOB_STATUS) @Param(description="the current status of the latest async job acting on this object")
+    @SerializedName(ApiConstants.JOB_STATUS)
+    @Param(description = "the current status of the latest async job acting on this object")
     private Integer jobStatus;
 
     @Override

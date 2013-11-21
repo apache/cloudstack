@@ -36,7 +36,8 @@ from marvin.integration.lib.utils import (cleanup_resources,
 from marvin.integration.lib.common import (get_domain,
                                            get_zone,
                                            get_template,
-                                           wait_for_cleanup)
+                                           wait_for_cleanup,
+                                           get_free_vlan)
 import random
 
 import netaddr
@@ -258,33 +259,6 @@ class TestSharedNetworks(cloudstackTestCase):
             raise Exception("Warning: Exception during domain cleanup : %s" % e)
 
         return
-
-    def getFreeVlan(self, apiclient, zoneid):
-        """
-        Find an unallocated VLAN outside the range allocated to the physical network.
-
-        @note: This does not guarantee that the VLAN is available for use in
-        the deployment's network gear
-        @return: physical_network, shared_vlan_tag
-        """
-        list_physical_networks_response = PhysicalNetwork.list(
-            apiclient,
-            zoneid=zoneid
-        )
-        assert isinstance(list_physical_networks_response, list)
-        assert len(list_physical_networks_response) > 0, "No physical networks found in zone %s" % zoneid
-
-        physical_network = list_physical_networks_response[0]
-        vlans = xsplit(physical_network.vlan, ['-', ','])
-
-        assert len(vlans) > 0
-        assert int(vlans[0]) < int(vlans[-1]), "VLAN range  %s was improperly split" % physical_network.vlan
-        shared_ntwk_vlan = int(vlans[-1]) + random.randrange(1, 20)
-        if shared_ntwk_vlan > 4095:
-            shared_ntwk_vlan = int(vlans[0]) - random.randrange(1, 20)
-            assert shared_ntwk_vlan > 0, "VLAN chosen %s is invalid < 0" % shared_ntwk_vlan
-        self.debug("Attempting free VLAN %s for shared network creation" % shared_ntwk_vlan)
-        return physical_network, shared_ntwk_vlan
 
     @attr(tags=["advanced", "advancedns"])
     def test_sharedNetworkOffering_01(self):
@@ -703,7 +677,9 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("User type account created: %s" % self.user_account.name)
 
-        physical_network, shared_vlan = self.getFreeVlan(self.api_client, self.zone.id)
+        physical_network, shared_vlan = get_free_vlan(self.api_client, self.zone.id)
+        if shared_vlan is None:
+            self.fail("Failed to get free vlan id for shared network")
 
         self.debug("Physical network found: %s" % physical_network.id)
 
@@ -972,7 +948,9 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("User type account created: %s" % self.user_account.name)
 
-        physical_network, shared_vlan = self.getFreeVlan(self.api_client, self.zone.id)
+        physical_network, shared_vlan = get_free_vlan(self.api_client, self.zone.id)
+        if shared_vlan is None:
+            self.fail("Failed to get free vlan id for shared network")
 
         self.debug("Physical Network found: %s" % physical_network.id)
 
@@ -1281,7 +1259,9 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Domain user account created: %s" % self.domain_user_account.id)
 
-        physical_network, shared_vlan = self.getFreeVlan(self.api_client, self.zone.id)
+        physical_network, shared_vlan = get_free_vlan(self.api_client, self.zone.id)
+        if shared_vlan is None:
+            self.fail("Failed to get free vlan id for shared network")
 
         self.debug("Physical Network found: %s" % physical_network.id)
 
@@ -1588,7 +1568,9 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Project2 created: %s" % self.project2.id)
 
-        physical_network, shared_vlan = self.getFreeVlan(self.api_client, self.zone.id)
+        physical_network, shared_vlan = get_free_vlan(self.api_client, self.zone.id)
+        if shared_vlan is None:
+            self.fail("Failed to get free vlan id for shared network")
 
         self.debug("Physical Network found: %s" % physical_network.id)
 
@@ -1792,7 +1774,9 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Domain admin account created: %s" % self.admin_account.id)
 
-        physical_network, shared_vlan = self.getFreeVlan(self.api_client, self.zone.id)
+        physical_network, shared_vlan = get_free_vlan(self.api_client, self.zone.id)
+        if shared_vlan is None:
+            self.fail("Failed to get free vlan id for shared network")
 
         self.services["network_offering"]["specifyVlan"] = "True"
         self.services["network_offering"]["specifyIpRanges"] = "True"
@@ -1935,7 +1919,9 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Admin account created: %s" % self.admin_account.id)
 
-        physical_network, shared_ntwk_vlan = self.getFreeVlan(self.api_client, self.zone.id)
+        physical_network, shared_vlan = get_free_vlan(self.api_client, self.zone.id)
+        if shared_vlan is None:
+            self.fail("Failed to get free vlan id for shared network")
 
         self.debug("Physical Network found: %s" % physical_network.id)
 
@@ -2104,7 +2090,9 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Admin account created: %s" % self.admin_account.id)
 
-        physical_network, shared_vlan = self.getFreeVlan(self.api_client, self.zone.id)
+        physical_network, shared_vlan = get_free_vlan(self.api_client, self.zone.id)
+        if shared_vlan is None:
+            self.fail("Failed to get free vlan id for shared network")
 
         self.debug("Physical Network found: %s" % physical_network.id)
 
@@ -2211,7 +2199,12 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network1"]["acltype"] = "domain"
         self.services["network1"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network1"]["physicalnetworkid"] = physical_network.id
-        self.services["network1"]["vlan"] = self.getFreeVlan(self.api_client, self.zone.id)[1] #vlan id is second return value of function
+
+        shared_vlan = get_free_vlan(self.api_client, self.zone.id)[1]
+        if shared_vlan is None:
+            self.fail("Failed to get free vlan id for shared network")
+
+        self.services["network1"]["vlan"] = shared_vlan
 
         self.network1 = Network.create(
                          self.api_client,
@@ -2452,7 +2445,10 @@ class TestSharedNetworks(cloudstackTestCase):
             )
 
         self.debug("Isolated Network Offering created: %s" % self.isolated_network_offering.id)
-        physical_network, shared_vlan = self.getFreeVlan(self.api_client, self.zone.id)
+
+        physical_network, shared_vlan = get_free_vlan(self.api_client, self.zone.id)
+        if shared_vlan is None:
+            self.fail("Failed to get free vlan id for shared network")
 
         #create network using the shared network offering created
         self.services["network"]["acltype"] = "domain"
@@ -2678,7 +2674,9 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Admin type account created: %s" % self.admin_account.id)
 
-        physical_network, shared_vlan = self.getFreeVlan(self.api_client, self.zone.id)
+        physical_network, shared_vlan = get_free_vlan(self.api_client, self.zone.id)
+        if shared_vlan is None:
+            self.fail("Failed to get free vlan id for shared network")
 
         self.debug("Physical Network found: %s" % physical_network.id)
 
@@ -2807,7 +2805,9 @@ class TestSharedNetworks(cloudstackTestCase):
 
         self.debug("Admin type account created: %s" % self.admin_account.id)
 
-        physical_network, shared_vlan = self.getFreeVlan(self.api_client, self.zone.id)
+        physical_network, shared_vlan = get_free_vlan(self.api_client, self.zone.id)
+        if shared_vlan is None:
+            self.fail("Failed to get free vlan id for shared network")
 
         self.debug("Physical Network found: %s" % physical_network.id)
 

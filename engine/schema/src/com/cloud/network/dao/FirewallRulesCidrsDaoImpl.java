@@ -31,22 +31,23 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value=FirewallRulesCidrsDao.class)
+@Local(value = FirewallRulesCidrsDao.class)
 public class FirewallRulesCidrsDaoImpl extends GenericDaoBase<FirewallRulesCidrsVO, Long> implements FirewallRulesCidrsDao {
     private static final Logger s_logger = Logger.getLogger(FirewallRulesCidrsDaoImpl.class);
     protected final SearchBuilder<FirewallRulesCidrsVO> CidrsSearch;
-    
+
     protected FirewallRulesCidrsDaoImpl() {
         CidrsSearch = createSearchBuilder();
         CidrsSearch.and("firewallRuleId", CidrsSearch.entity().getFirewallRuleId(), SearchCriteria.Op.EQ);
-        CidrsSearch.done();        
+        CidrsSearch.done();
     }
 
-    @Override @DB
+    @Override
+    @DB
     public List<String> getSourceCidrs(long firewallRuleId) {
         SearchCriteria<FirewallRulesCidrsVO> sc = CidrsSearch.create();
         sc.setParameters("firewallRuleId", firewallRuleId);
-        
+
         List<FirewallRulesCidrsVO> results = search(sc, null);
         List<String> cidrs = new ArrayList<String>(results.size());
         for (FirewallRulesCidrsVO result : results) {
@@ -55,8 +56,9 @@ public class FirewallRulesCidrsDaoImpl extends GenericDaoBase<FirewallRulesCidrs
 
         return cidrs;
     }
-    
-    @Override @DB
+
+    @Override
+    @DB
     public void persist(long firewallRuleId, List<String> sourceCidrs) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
 

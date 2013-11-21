@@ -57,7 +57,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  * in the over the wire protocol. For example, if we decide to not use Gson.
  * It does not version the changes in the actual commands. That's expected
  * to be done by adding new classes to the command and answer list.
- * 
+ *
  * A request looks as follows:
  * 1. Version - 1 byte;
  * 2. Flags - 3 bytes;
@@ -66,7 +66,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  * 5. ManagementServerId - 8 bytes;
  * 6. AgentId - 8 bytes;
  * 7. Data Package.
- * 
+ *
  */
 public class Request {
     private static final Logger s_logger = Logger.getLogger(Request.class);
@@ -90,25 +90,24 @@ public class Request {
         }
     };
 
-    protected static final short       FLAG_RESPONSE        = 0x0;
-    protected static final short       FLAG_REQUEST         = 0x1;
-    protected static final short       FLAG_STOP_ON_ERROR   = 0x2;
-    protected static final short       FLAG_IN_SEQUENCE     = 0x4;
-    protected static final short       FLAG_FROM_SERVER     = 0x20;
-    protected static final short       FLAG_CONTROL         = 0x40;
-    protected static final short       FLAG_COMPRESSED      = 0x80;
+    protected static final short FLAG_RESPONSE = 0x0;
+    protected static final short FLAG_REQUEST = 0x1;
+    protected static final short FLAG_STOP_ON_ERROR = 0x2;
+    protected static final short FLAG_IN_SEQUENCE = 0x4;
+    protected static final short FLAG_FROM_SERVER = 0x20;
+    protected static final short FLAG_CONTROL = 0x40;
+    protected static final short FLAG_COMPRESSED = 0x80;
 
-
-    protected Version   _ver;
-    protected long      _session;
-    protected long      _seq;
-    protected short     _flags;
-    protected long      _mgmtId;
-    protected long      _via;
-    protected long      _agentId;
+    protected Version _ver;
+    protected long _session;
+    protected long _seq;
+    protected short _flags;
+    protected long _mgmtId;
+    protected long _via;
+    protected long _agentId;
     protected Command[] _cmds;
-    protected String    _content;
-    protected String    _agentName;
+    protected String _content;
+    protected String _agentName;
 
     protected Request() {
     }
@@ -134,7 +133,7 @@ public class Request {
     }
 
     public Request(long agentId, long mgmtId, Command command, boolean fromServer) {
-        this(agentId, mgmtId, new Command[] { command }, true, fromServer);
+        this(agentId, mgmtId, new Command[] {command}, true, fromServer);
     }
 
     public Request(long agentId, long mgmtId, Command[] cmds, boolean stopOnError, boolean fromServer) {
@@ -259,7 +258,7 @@ public class Request {
     protected ByteBuffer serializeHeader(final int contentSize) {
         final ByteBuffer buffer = ByteBuffer.allocate(40);
         buffer.put(getVersionInByte());
-        buffer.put((byte) 0);
+        buffer.put((byte)0);
         buffer.putShort(getFlags());
         buffer.putLong(_seq);
         // The size here is uncompressed size, if the data is compressed.
@@ -276,9 +275,7 @@ public class Request {
         byte[] byteArrayIn = new byte[1024];
         ByteArrayInputStream byteIn;
         if (buffer.hasArray()) {
-            byteIn = new ByteArrayInputStream(buffer.array(),
-                    buffer.position() + buffer.arrayOffset(),
-                    buffer.remaining());
+            byteIn = new ByteArrayInputStream(buffer.array(), buffer.position() + buffer.arrayOffset(), buffer.remaining());
         } else {
             byte[] array = new byte[buffer.limit() - buffer.position()];
             buffer.get(array);
@@ -350,11 +347,11 @@ public class Request {
     }
 
     protected byte getVersionInByte() {
-        return (byte) _ver.ordinal();
+        return (byte)_ver.ordinal();
     }
 
     protected short getFlags() {
-        return (short) (((this instanceof Response) ? FLAG_RESPONSE : FLAG_REQUEST) | _flags);
+        return (short)(((this instanceof Response) ? FLAG_RESPONSE : FLAG_REQUEST) | _flags);
     }
 
     public void logD(String msg) {
@@ -449,7 +446,7 @@ public class Request {
      * correctly formed so it's possible that it throws underflow exceptions
      * but you shouldn't be concerned about that since that all bytes sent in
      * should already be formatted correctly.
-     * 
+     *
      * @param bytes bytes to be converted.
      * @return Request or Response depending on the data.
      * @throws ClassNotFoundException if the Command or Answer can not be formed.

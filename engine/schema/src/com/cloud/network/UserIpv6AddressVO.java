@@ -27,162 +27,161 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name=("user_ipv6_address"))
+@Table(name = ("user_ipv6_address"))
 public class UserIpv6AddressVO implements UserIpv6Address {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     long id;
 
-	@Column(name="ip_address")
-	@Enumerated(value=EnumType.STRING)
-	private String address = null;
+    @Column(name = "ip_address")
+    @Enumerated(value = EnumType.STRING)
+    private String address = null;
 
-	@Column(name="data_center_id", updatable=false)
-	private long dataCenterId;
+    @Column(name = "data_center_id", updatable = false)
+    private long dataCenterId;
 
-	@Column(name="vlan_id")
-	private long vlanId;
+    @Column(name = "vlan_id")
+    private long vlanId;
 
-	@Column(name="state")
-	private State state;
+    @Column(name = "state")
+    private State state;
 
-	@Column(name="mac_address")
-	private String macAddress;
+    @Column(name = "mac_address")
+    private String macAddress;
 
-	@Column(name="source_network_id")
+    @Column(name = "source_network_id")
     private Long sourceNetworkId;
 
-	@Column(name="network_id")
-	private Long networkId;
+    @Column(name = "network_id")
+    private Long networkId;
 
-	@Column(name="uuid")
-	private String uuid;
+    @Column(name = "uuid")
+    private String uuid;
 
-    @Column(name="physical_network_id")
+    @Column(name = "physical_network_id")
     private Long physicalNetworkId;
 
-	@Column(name="account_id")
-	private Long accountId = null;
+    @Column(name = "account_id")
+    private Long accountId = null;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private Long domainId = null;
-	
+
     @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
-	
-	protected UserIpv6AddressVO() {
-		this.uuid = UUID.randomUUID().toString();
-	}
 
-	public UserIpv6AddressVO(String address, long dataCenterId, String macAddress, long vlanDbId) {
-		this.address = address;
-		this.dataCenterId = dataCenterId;
-		this.vlanId = vlanDbId;
-		this.state = State.Free;
-		this.setMacAddress(macAddress);
-		this.uuid = UUID.randomUUID().toString();
-	}
+    protected UserIpv6AddressVO() {
+        this.uuid = UUID.randomUUID().toString();
+    }
 
+    public UserIpv6AddressVO(String address, long dataCenterId, String macAddress, long vlanDbId) {
+        this.address = address;
+        this.dataCenterId = dataCenterId;
+        this.vlanId = vlanDbId;
+        this.state = State.Free;
+        this.setMacAddress(macAddress);
+        this.uuid = UUID.randomUUID().toString();
+    }
 
-	@Override
-	public long getAccountId() {
-		return accountId;
-	}
+    @Override
+    public long getAccountId() {
+        return accountId;
+    }
 
-	@Override
-	public long getDomainId() {
-		return domainId;
-	}
+    @Override
+    public long getDomainId() {
+        return domainId;
+    }
 
-	@Override
-	public String getUuid() {
-		return uuid;
-	}
+    @Override
+    public String getUuid() {
+        return uuid;
+    }
 
-	@Override
-	public long getId() {
-		return id;
-	}
+    @Override
+    public long getId() {
+        return id;
+    }
 
-	@Override
-	public long getDataCenterId() {
-		return dataCenterId;
-	}
+    @Override
+    public long getDataCenterId() {
+        return dataCenterId;
+    }
 
-	@Override
-	public String getAddress() {
-		return address;
-	}
+    @Override
+    public String getAddress() {
+        return address;
+    }
 
-	@Override
-	public long getVlanId() {
-		return vlanId;
-	}
+    @Override
+    public long getVlanId() {
+        return vlanId;
+    }
 
-	@Override
-	public State getState() {
-		return state;
-	}
+    @Override
+    public State getState() {
+        return state;
+    }
 
-	@Override
-	public Long getNetworkId() {
-		return networkId;
-	}
+    @Override
+    public Long getNetworkId() {
+        return networkId;
+    }
 
-	@Override
-	public Long getSourceNetworkId() {
-		return sourceNetworkId;
-	}
+    @Override
+    public Long getSourceNetworkId() {
+        return sourceNetworkId;
+    }
 
-	@Override
-	public Long getPhysicalNetworkId() {
-		return physicalNetworkId;
-	}
+    @Override
+    public Long getPhysicalNetworkId() {
+        return physicalNetworkId;
+    }
 
-	@Override
-	public void setState(State state) {
-		this.state = state;
-	}
+    @Override
+    public void setState(State state) {
+        this.state = state;
+    }
 
-	public String getMacAddress() {
-		return macAddress;
-	}
+    @Override
+    public String getMacAddress() {
+        return macAddress;
+    }
 
-	public void setMacAddress(String macAddress) {
-		this.macAddress = macAddress;
-	}
+    public void setMacAddress(String macAddress) {
+        this.macAddress = macAddress;
+    }
 
-	public void setSourceNetworkId(Long sourceNetworkId) {
-		this.sourceNetworkId = sourceNetworkId;
-	}
+    public void setSourceNetworkId(Long sourceNetworkId) {
+        this.sourceNetworkId = sourceNetworkId;
+    }
 
-	public void setNetworkId(Long networkId) {
-		this.networkId = networkId;
-	}
+    public void setNetworkId(Long networkId) {
+        this.networkId = networkId;
+    }
 
-	public void setPhysicalNetworkId(Long physicalNetworkId) {
-		this.physicalNetworkId = physicalNetworkId;
-	}
+    public void setPhysicalNetworkId(Long physicalNetworkId) {
+        this.physicalNetworkId = physicalNetworkId;
+    }
 
-	public void setDomainId(Long domainId) {
-		this.domainId = domainId;
-	}
+    public void setDomainId(Long domainId) {
+        this.domainId = domainId;
+    }
 
-	public void setAccountId(Long accountId) {
-		this.accountId = accountId;
-	}
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
 
-	public Date getCreated() {
-		return created;
-	}
+    public Date getCreated() {
+        return created;
+    }
 
-	public void setCreated(Date created) {
-		this.created = created;
-	}
+    public void setCreated(Date created) {
+        this.created = created;
+    }
 }

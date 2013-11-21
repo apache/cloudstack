@@ -53,20 +53,20 @@ public class DeleteEntityDownloadURLCommand extends AbstractDownloadCommand {
         this.type = type;
     }
 
-	public String getExtractUrl() {
-		return extractUrl;
-	}
+    public String getExtractUrl() {
+        return extractUrl;
+    }
 
-	public void setExtractUrl(String extractUrl) {
-		this.extractUrl = extractUrl;
-	}
+    public void setExtractUrl(String extractUrl) {
+        this.extractUrl = extractUrl;
+    }
 
-	public String getParentPath() {
-		return parentPath;
-	}
+    public String getParentPath() {
+        return parentPath;
+    }
 
-	public void setParentPath(String parentPath) {
-		this.parentPath = parentPath;
-	}
+    public void setParentPath(String parentPath) {
+        this.parentPath = parentPath;
+    }
 
 }

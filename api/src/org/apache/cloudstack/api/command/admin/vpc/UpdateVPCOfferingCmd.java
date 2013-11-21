@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vpc;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -23,14 +25,13 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateVPCOffering", description="Updates VPC offering", responseObject=VpcOfferingResponse.class)
-public class UpdateVPCOfferingCmd extends BaseAsyncCmd{
+@APICommand(name = "updateVPCOffering", description = "Updates VPC offering", responseObject = VpcOfferingResponse.class)
+public class UpdateVPCOfferingCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVPCOfferingCmd.class.getName());
     private static final String _name = "updatevpcofferingresponse";
 
@@ -38,18 +39,16 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = VpcOfferingResponse.class, required=true,
-            description="the id of the VPC offering")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcOfferingResponse.class, required = true, description = "the id of the VPC offering")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the VPC offering")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the VPC offering")
     private String vpcOffName;
 
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the VPC offering")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the VPC offering")
     private String displayText;
 
-    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="update state for the VPC offering; " +
-            "supported states - Enabled/Disabled")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "update state for the VPC offering; " + "supported states - Enabled/Disabled")
     private String state;
 
     /////////////////////////////////////////////////////
@@ -72,7 +71,6 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd{
         return state;
     }
 
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -87,7 +85,7 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd{
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         VpcOffering result = _vpcProvSvc.updateVpcOffering(getId(), getVpcOfferingName(), getDisplayText(), getState());
         if (result != null) {
             VpcOfferingResponse response = _responseGenerator.createVpcOfferingResponse(result);

@@ -26,22 +26,23 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.db.GenericDao;
 
 /**
  * NetworkExternalFirewallVO contains information on the networks that are using external firewall
   */
 
 @Entity
-@Table(name="network_external_firewall_device_map")
+@Table(name = "network_external_firewall_device_map")
 public class NetworkExternalFirewallVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
     @Column(name = "network_id")
@@ -50,10 +51,10 @@ public class NetworkExternalFirewallVO implements InternalIdentity {
     @Column(name = "external_firewall_device_id")
     private long externalFirewallDeviceId;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
 
     public NetworkExternalFirewallVO(long networkId, long externalFirewallDeviceId) {
@@ -66,6 +67,7 @@ public class NetworkExternalFirewallVO implements InternalIdentity {
         this.uuid = UUID.randomUUID().toString();
     }
 
+    @Override
     public long getId() {
         return id;
     }

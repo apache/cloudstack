@@ -40,6 +40,7 @@ import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -101,8 +102,8 @@ public interface UserVmService {
      */
     UserVm resetVMSSHKey(ResetVMSSHKeyCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException;
 
-    UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException,
-            ResourceAllocationException;
+    UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException, ResourceUnavailableException,
+        InsufficientCapacityException, ResourceAllocationException;
 
     UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException;
 
@@ -130,7 +131,6 @@ public interface UserVmService {
     UserVm updateDefaultNicForVirtualMachine(UpdateDefaultNicForVMCmd cmd);
 
     UserVm recoverVirtualMachine(RecoverVMCmd cmd) throws ResourceAllocationException;
-
 
     /**
      * Creates a Basic Zone User VM in the database and returns the VM to the
@@ -203,11 +203,11 @@ public interface UserVmService {
      *             available.
      * @throws InsufficientResourcesException
      */
-    UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList, Account owner, String hostName,
-                                                  String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
-                                                  HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps,
-                                                  IpAddresses defaultIp, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList, Integer cpuSpeed, Integer memory, Integer cpuNumber, Long rootdisksize)
-            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
+    UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList,
+        Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod,
+        String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIp, Boolean displayVm, String keyboard,
+        List<Long> affinityGroupIdList, Integer cpuSpeed, Integer memory, Integer cpuNumber, Long rootdisksize) throws InsufficientCapacityException,
+        ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
      * Creates a User VM in Advanced Zone (Security Group feature is enabled) in
@@ -282,15 +282,16 @@ public interface UserVmService {
      *             available.
      * @throws InsufficientResourcesException
      */
-    UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, List<Long> securityGroupIdList,
-                                                     Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData, String sshKeyPair,
-                                                     Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList, Integer cpuSpeed, Integer memory, Integer cpuNumber, Long rootdisksize)
-            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
+    UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList,
+        List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
+        HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard,
+        List<Long> affinityGroupIdList, Integer cpuSpeed, Integer memory, Integer cpuNumber, Long rootdisksize) throws InsufficientCapacityException,
+        ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
      * Creates a User VM in Advanced Zone (Security Group feature is disabled)
      * in the database and returns the VM to the caller.
-     * 
+     *
      *
      * @param zone
      *            - availability zone for the virtual machine
@@ -357,12 +358,12 @@ public interface UserVmService {
      *             available.
      * @throws InsufficientResourcesException
      */
-    UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner, String hostName,
-                                        String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
-                                        HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps,
-                                        IpAddresses defaultIps, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList, Integer cpuSpeed, Integer memory, Integer cpuNumber, Long rootdkisksize)
+    UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner,
+        String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData,
+        String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList,
+        Integer cpuSpeed, Integer memory, Integer cpuNumber, Long rootdkisksize)
 
-            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
+    throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
      * Starts the virtual machine created from createVirtualMachine.
@@ -397,7 +398,7 @@ public interface UserVmService {
      * @param cmd
      *            - the command specifying vmId and new serviceOfferingId
      * @return the vm
-     * @throws ResourceAllocationException 
+     * @throws ResourceAllocationException
      */
     UserVm upgradeVirtualMachine(UpgradeVMCmd cmd) throws ResourceAllocationException;
 
@@ -405,11 +406,10 @@ public interface UserVmService {
 
     void deletePrivateTemplateRecord(Long templateId);
 
-
     HypervisorType getHypervisorTypeOfUserVM(long vmid);
 
-    UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException, StorageUnavailableException,
-            ResourceAllocationException;
+    UserVm createVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException,
+        StorageUnavailableException, ResourceAllocationException;
 
     UserVm getUserVm(long vmId);
 
@@ -436,7 +436,8 @@ public interface UserVmService {
      * @throws VirtualMachineMigrationException
      *             if the VM to be migrated is not in Running state
      */
-    VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
+    VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
+        VirtualMachineMigrationException;
 
     /**
      * Migrate the given VM with its volumes to the destination host. The API returns the migrated VM if it succeeds.
@@ -461,17 +462,18 @@ public interface UserVmService {
      * @throws VirtualMachineMigrationException
      *             if the VM to be migrated is not in Running state
      */
-    VirtualMachine migrateVirtualMachineWithVolume(Long vmId, Host destinationHost, Map<String, String> volumeToPool)
-            throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
-            VirtualMachineMigrationException;
+    VirtualMachine migrateVirtualMachineWithVolume(Long vmId, Host destinationHost, Map<String, String> volumeToPool) throws ResourceUnavailableException,
+        ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
 
-    UserVm moveVMToUser(AssignVMCmd moveUserVMCmd) throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    UserVm moveVMToUser(AssignVMCmd moveUserVMCmd) throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException,
+        InsufficientCapacityException;
 
     VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool);
 
     UserVm restoreVM(RestoreVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException;
 
-    UserVm upgradeVirtualMachine(ScaleVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
+    UserVm upgradeVirtualMachine(ScaleVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
+        VirtualMachineMigrationException;
 
     UserVm expungeVm(ExpungeVMCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException;
 

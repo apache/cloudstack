@@ -22,43 +22,44 @@ import java.util.List;
 
 public class S3PolicyPrincipal {
 
-	private List<String> principalList = new ArrayList<String>();
-	
-	public S3PolicyPrincipal() {
-	}
+    private List<String> principalList = new ArrayList<String>();
 
-	public String[] getPrincipals() {
-		return principalList.toArray(new String[0]);
-	}
-	
-	public void addPrincipal(String principal) {
-		principalList.add( principal );
-	}
-	
-	public boolean contains(String findPrincipal) {
-		Iterator<String> itr = principalList.iterator();
-	    while( itr.hasNext()) 
-	    {
-	    	// -> "You can specify multiple principals, or a wildcard (*) to indicate all possible users."
-	    	String onePrincipal = itr.next();
-	    	if (onePrincipal.equals("*")) return true;
-	    	if (onePrincipal.equals( findPrincipal )) return true;
-	    }
-	    return false;
-	}
+    public S3PolicyPrincipal() {
+    }
 
-	public String toString() {
-		
-		StringBuffer value = new StringBuffer();
-		Iterator<String> itr = principalList.iterator();
-		
-		value.append( "Principals: \n" );
-		while( itr.hasNext()) {
-			String onePrincipal = itr.next();
-			value.append( onePrincipal );
-			value.append( "\n" );
-		}
-		
-		return value.toString();
-	}
+    public String[] getPrincipals() {
+        return principalList.toArray(new String[0]);
+    }
+
+    public void addPrincipal(String principal) {
+        principalList.add(principal);
+    }
+
+    public boolean contains(String findPrincipal) {
+        Iterator<String> itr = principalList.iterator();
+        while (itr.hasNext()) {
+            // -> "You can specify multiple principals, or a wildcard (*) to indicate all possible users."
+            String onePrincipal = itr.next();
+            if (onePrincipal.equals("*"))
+                return true;
+            if (onePrincipal.equals(findPrincipal))
+                return true;
+        }
+        return false;
+    }
+
+    public String toString() {
+
+        StringBuffer value = new StringBuffer();
+        Iterator<String> itr = principalList.iterator();
+
+        value.append("Principals: \n");
+        while (itr.hasNext()) {
+            String onePrincipal = itr.next();
+            value.append(onePrincipal);
+            value.append("\n");
+        }
+
+        return value.toString();
+    }
 }

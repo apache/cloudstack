@@ -54,7 +54,6 @@ public abstract class BaseAsyncCmd extends BaseCmd {
      */
     public abstract String getEventDescription();
 
-
     public void setJob(Object job) {
         this.job = job;
     }

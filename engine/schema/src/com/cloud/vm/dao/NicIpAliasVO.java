@@ -16,9 +16,8 @@
 // under the License.
 package com.cloud.vm.dao;
 
-import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.NicIpAlias;
+import java.util.Date;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -28,22 +27,23 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import java.util.Date;
-import java.util.UUID;
+
+import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.NicIpAlias;
 
 @Entity
 @Table(name = "nic_ip_alias")
-public class NicIpAliasVO implements NicIpAlias  {
+public class NicIpAliasVO implements NicIpAlias {
 
-    public NicIpAliasVO(Long nicId, String ipaddr, Long vmId,
-                        Long accountId, Long domainId, Long networkId, String gateway, String netmask) {
+    public NicIpAliasVO(Long nicId, String ipaddr, Long vmId, Long accountId, Long domainId, Long networkId, String gateway, String netmask) {
         this.nicId = nicId;
         this.vmId = vmId;
         this.ip4Address = ipaddr;
         this.accountId = accountId;
         this.domainId = domainId;
         this.networkId = networkId;
-        this.netmask =netmask;
+        this.netmask = netmask;
         this.gateway = gateway;
         this.state = NicIpAlias.state.active;
         String cidr = NetUtils.getCidrFromGatewayAndNetmask(gateway, netmask);
@@ -64,10 +64,10 @@ public class NicIpAliasVO implements NicIpAlias  {
     @Column(name = "nic_Id")
     long nicId;
 
-    @Column(name="domain_id", updatable=false)
+    @Column(name = "domain_id", updatable = false)
     long domainId;
 
-    @Column(name="account_id", updatable=false)
+    @Column(name = "account_id", updatable = false)
     private Long accountId;
 
     @Column(name = "ip4_address")
@@ -97,16 +97,14 @@ public class NicIpAliasVO implements NicIpAlias  {
     @Column(name = "gateway")
     String gateway;
 
-    @Column(name= "state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
     NicIpAlias.state state;
 
     @Column(name = "start_ip_of_subnet")
     String startIpOfSubnet;
 
-
-
-
+    @Override
     public long getId() {
         return id;
     }
@@ -115,6 +113,7 @@ public class NicIpAliasVO implements NicIpAlias  {
         this.id = id;
     }
 
+    @Override
     public long getNicId() {
         return nicId;
     }
@@ -123,6 +122,7 @@ public class NicIpAliasVO implements NicIpAlias  {
         this.nicId = nicId;
     }
 
+    @Override
     public long getDomainId() {
         return domainId;
     }
@@ -131,6 +131,7 @@ public class NicIpAliasVO implements NicIpAlias  {
         this.domainId = domainId;
     }
 
+    @Override
     public long getAccountId() {
         return accountId;
     }
@@ -139,6 +140,7 @@ public class NicIpAliasVO implements NicIpAlias  {
         this.accountId = accountId;
     }
 
+    @Override
     public String getIp4Address() {
         return ip4Address;
     }
@@ -147,6 +149,7 @@ public class NicIpAliasVO implements NicIpAlias  {
         this.ip4Address = ip4Address;
     }
 
+    @Override
     public String getIp6Address() {
         return ip6Address;
     }
@@ -155,6 +158,7 @@ public class NicIpAliasVO implements NicIpAlias  {
         this.ip6Address = ip6Address;
     }
 
+    @Override
     public long getNetworkId() {
         return networkId;
     }
@@ -171,6 +175,7 @@ public class NicIpAliasVO implements NicIpAlias  {
         this.created = created;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }
@@ -179,6 +184,7 @@ public class NicIpAliasVO implements NicIpAlias  {
         this.uuid = uuid;
     }
 
+    @Override
     public long getVmId() {
         return vmId;
     }
@@ -187,6 +193,7 @@ public class NicIpAliasVO implements NicIpAlias  {
         this.vmId = vmId;
     }
 
+    @Override
     public Long getAliasCount() {
         return aliasCount;
     }
@@ -195,20 +202,22 @@ public class NicIpAliasVO implements NicIpAlias  {
         this.aliasCount = count;
     }
 
-    public void setNetmask(String netmask){
+    public void setNetmask(String netmask) {
         this.netmask = netmask;
     }
 
-    public  String getNetmask() {
+    @Override
+    public String getNetmask() {
         return netmask;
     }
 
-    public  String getGateway() {
-        return  gateway;
+    @Override
+    public String getGateway() {
+        return gateway;
     }
 
     public void setGateway(String gateway) {
-          this.gateway = gateway;
+        this.gateway = gateway;
     }
 
     public NicIpAlias.state getState() {

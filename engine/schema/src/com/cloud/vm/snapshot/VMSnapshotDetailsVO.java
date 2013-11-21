@@ -31,7 +31,7 @@ import org.apache.cloudstack.api.ResourceDetail;
 @Table(name = "vm_snapshot_details")
 public class VMSnapshotDetailsVO implements ResourceDetail {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
 

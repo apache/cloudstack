@@ -22,18 +22,17 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 
 public class DownloadCompleteState extends DownloadInactiveState {
 
-	public DownloadCompleteState(DownloadListener dl) {
-		super(dl);
-	}
+    public DownloadCompleteState(DownloadListener dl) {
+        super(dl);
+    }
 
-	@Override
-	public String getName() {
-		return Status.DOWNLOADED.toString();
+    @Override
+    public String getName() {
+        return Status.DOWNLOADED.toString();
 
-	}
+    }
 
-
-	@Override
+    @Override
     public void onEntry(String prevState, DownloadEvent event, Object evtObj) {
         super.onEntry(prevState, event, evtObj);
         if (!prevState.equals(getName())) {
@@ -45,6 +44,5 @@ public class DownloadCompleteState extends DownloadInactiveState {
 
         }
     }
-
 
 }

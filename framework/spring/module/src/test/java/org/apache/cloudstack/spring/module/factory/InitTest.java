@@ -23,7 +23,7 @@ import javax.annotation.PostConstruct;
 public class InitTest {
 
     public static boolean initted = false;
-    
+
     @PostConstruct
     public void init() {
         setInitted(true);

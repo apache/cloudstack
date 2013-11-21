@@ -18,71 +18,71 @@ package com.cloud.agent.api;
 
 public class ConsoleAccessAuthenticationAnswer extends AgentControlAnswer {
 
-	private boolean _success;
+    private boolean _success;
 
-	private boolean _isReauthenticating;
-	private String _host;
-	private int _port;
+    private boolean _isReauthenticating;
+    private String _host;
+    private int _port;
 
-	private String _tunnelUrl;
-	private String _tunnelSession;
+    private String _tunnelUrl;
+    private String _tunnelSession;
 
-	public ConsoleAccessAuthenticationAnswer() {
-		_success = false;
-		_isReauthenticating = false;
-		_port = 0;
-	}
+    public ConsoleAccessAuthenticationAnswer() {
+        _success = false;
+        _isReauthenticating = false;
+        _port = 0;
+    }
 
-	public ConsoleAccessAuthenticationAnswer(Command cmd, boolean success) {
-		super(cmd);
-		_success = success;
-	}
+    public ConsoleAccessAuthenticationAnswer(Command cmd, boolean success) {
+        super(cmd);
+        _success = success;
+    }
 
-	public boolean succeeded() {
-		return _success;
-	}
+    public boolean succeeded() {
+        return _success;
+    }
 
-	public void setSuccess(boolean value) {
-		_success = value;
-	}
+    public void setSuccess(boolean value) {
+        _success = value;
+    }
 
-	public boolean isReauthenticating() {
-		return _isReauthenticating;
-	}
+    public boolean isReauthenticating() {
+        return _isReauthenticating;
+    }
 
-	public void setReauthenticating(boolean value) {
-		_isReauthenticating = value;
-	}
+    public void setReauthenticating(boolean value) {
+        _isReauthenticating = value;
+    }
 
-	public String getHost() {
-		return _host;
-	}
+    public String getHost() {
+        return _host;
+    }
 
-	public void setHost(String host) {
-		_host = host;
-	}
+    public void setHost(String host) {
+        _host = host;
+    }
 
-	public int getPort() {
-		return _port;
-	}
+    public int getPort() {
+        return _port;
+    }
 
-	public void setPort(int port) {
-		_port = port;
-	}
+    public void setPort(int port) {
+        _port = port;
+    }
 
-	public String getTunnelUrl() {
-		return _tunnelUrl;
-	}
+    public String getTunnelUrl() {
+        return _tunnelUrl;
+    }
 
-	public void setTunnelUrl(String tunnelUrl) {
-		_tunnelUrl = tunnelUrl;
-	}
+    public void setTunnelUrl(String tunnelUrl) {
+        _tunnelUrl = tunnelUrl;
+    }
 
-	public String getTunnelSession() {
-		return _tunnelSession;
-	}
+    public String getTunnelSession() {
+        return _tunnelSession;
+    }
 
-	public void setTunnelSession(String tunnelSession) {
-		_tunnelSession = tunnelSession;
-	}
+    public void setTunnelSession(String tunnelSession) {
+        _tunnelSession = tunnelSession;
+    }
 }

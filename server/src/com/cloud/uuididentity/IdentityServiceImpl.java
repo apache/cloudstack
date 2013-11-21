@@ -16,23 +16,21 @@
 // under the License.
 package com.cloud.uuididentity;
 
-import java.util.Map;
-
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.IdentityService;
 import org.springframework.stereotype.Component;
 
-import com.cloud.utils.component.Manager;
+import org.apache.cloudstack.api.IdentityService;
+
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.uuididentity.dao.IdentityDao;
 
 @Component
-@Local(value = { IdentityService.class })
+@Local(value = {IdentityService.class})
 public class IdentityServiceImpl extends ManagerBase implements IdentityService {
-    @Inject	private IdentityDao _identityDao;
+    @Inject
+    private IdentityDao _identityDao;
 
     @Override
     public Long getIdentityId(String tableName, String identityString) {

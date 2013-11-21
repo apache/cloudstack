@@ -16,17 +16,20 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.network.lb.SslCert;
-import com.cloud.serializer.Param;
+import java.util.List;
+
 import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
-import java.util.List;
+import com.cloud.network.lb.SslCert;
+import com.cloud.serializer.Param;
+
 //import org.apache.cloudstack.api.EntityReference;
 
-@EntityReference(value= SslCert.class)
+@EntityReference(value = SslCert.class)
 public class SslCertResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
@@ -80,11 +83,11 @@ public class SslCertResponse extends BaseResponse {
         this.certchain = chain;
     }
 
-    public void setFingerprint(String fingerprint){
+    public void setFingerprint(String fingerprint) {
         this.fingerprint = fingerprint;
     }
 
-    public void setLbIds(List<String> lbIds){
+    public void setLbIds(List<String> lbIds) {
         this.lbIds = lbIds;
     }
 }

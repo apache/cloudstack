@@ -16,24 +16,34 @@
 // under the License.
 package org.apache.cloudstack.discovery;
 
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.component.PluggableService;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.command.user.discovery.ListApisCmd;
 import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
+import com.cloud.utils.component.PluggableService;
 
 public class ApiDiscoveryTest {
     private static APIChecker _apiChecker = mock(APIChecker.class);
@@ -55,8 +65,8 @@ public class ApiDiscoveryTest {
         testApiAsync = false;
         testUser = new UserVO();
 
-        _discoveryService._apiAccessCheckers =  (List<APIChecker>) mock(List.class);
-        _discoveryService._services = (List<PluggableService>) mock(List.class);
+        _discoveryService._apiAccessCheckers = mock(List.class);
+        _discoveryService._services = mock(List.class);
 
         when(_apiChecker.checkAccess(any(User.class), anyString())).thenReturn(true);
         when(_pluggableService.getCommands()).thenReturn(new ArrayList<Class<?>>());
@@ -71,7 +81,7 @@ public class ApiDiscoveryTest {
 
     @Test
     public void verifyListSingleApi() throws Exception {
-        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>) _discoveryService.listApis(testUser, testApiName);
+        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)_discoveryService.listApis(testUser, testApiName);
         ApiDiscoveryResponse response = responses.getResponses().get(0);
         assertTrue("No. of response items should be one", responses.getCount() == 1);
         assertEquals("Error in api name", testApiName, response.getName());
@@ -82,9 +92,9 @@ public class ApiDiscoveryTest {
 
     @Test
     public void verifyListApis() throws Exception {
-        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>) _discoveryService.listApis(testUser, null);
+        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)_discoveryService.listApis(testUser, null);
         assertTrue("No. of response items > 1", responses.getCount() == 1);
-        for (ApiDiscoveryResponse response: responses.getResponses()) {
+        for (ApiDiscoveryResponse response : responses.getResponses()) {
             assertFalse("API name is empty", response.getName().isEmpty());
             assertFalse("API description is empty", response.getDescription().isEmpty());
         }

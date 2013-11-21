@@ -20,14 +20,14 @@ import com.cloud.agent.api.to.IpAddressTO;
 
 public class IpAssocCommand extends NetworkElementCommand {
 
-	IpAddressTO[] ipAddresses;
+    IpAddressTO[] ipAddresses;
 
-	protected IpAssocCommand() {
-	}
+    protected IpAssocCommand() {
+    }
 
-	public IpAssocCommand(IpAddressTO[] ips) {
-		this.ipAddresses = ips;
-	}
+    public IpAssocCommand(IpAddressTO[] ips) {
+        this.ipAddresses = ips;
+    }
 
     @Override
     public boolean executeInSequence() {
@@ -37,6 +37,5 @@ public class IpAssocCommand extends NetworkElementCommand {
     public IpAddressTO[] getIpAddresses() {
         return ipAddresses;
     }
-
 
 }

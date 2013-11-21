@@ -48,18 +48,22 @@ public interface ClusterManager extends Manager {
     void broadcast(long agentId, String cmds);
 
     void registerListener(ClusterManagerListener listener);
+
     void unregisterListener(ClusterManagerListener listener);
 
     void registerDispatcher(Dispatcher dispatcher);
 
     ManagementServerHost getPeer(String peerName);
-    
+
     String getSelfPeerName();
+
     long getManagementNodeId();
+
     long getCurrentRunId();
 
     public interface Dispatcher {
         String getName();
+
         String dispatch(ClusterServicePdu pdu);
     }
 }

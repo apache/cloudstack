@@ -21,16 +21,16 @@ import java.util.List;
 
 public class EC2DescribeSnapshotsResponse {
 
-	private List<EC2Snapshot> snapshotSet = new ArrayList<EC2Snapshot>();    
+    private List<EC2Snapshot> snapshotSet = new ArrayList<EC2Snapshot>();
 
-	public EC2DescribeSnapshotsResponse() {
-	}
-	
-	public void addSnapshot( EC2Snapshot param ) {
-		snapshotSet.add( param );
-	}
-	
-	public EC2Snapshot[] getSnapshotSet() {
-		return snapshotSet.toArray(new EC2Snapshot[0]);
-	}
+    public EC2DescribeSnapshotsResponse() {
+    }
+
+    public void addSnapshot(EC2Snapshot param) {
+        snapshotSet.add(param);
+    }
+
+    public EC2Snapshot[] getSnapshotSet() {
+        return snapshotSet.toArray(new EC2Snapshot[0]);
+    }
 }

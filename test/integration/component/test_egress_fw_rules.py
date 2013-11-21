@@ -214,7 +214,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                                          networkids=[str(self.network.id)],
                                                          projectid=project.id if project else None)
         except Exception as e:
-            self.debug('error=%s' % e)
+            self.fail("Virtual machine deployment failed with exception: %s" % e)
         self.debug("Deployed instance in account: %s" % self.account.name)
 
     def exec_script_on_user_vm(self, script, exec_cmd_params, expected_result, negative_test=False):
@@ -280,15 +280,15 @@ class TestEgressFWRules(cloudstackTestCase):
             self.debug("%s %s" % (script_file, exec_cmd_params))
 
             exec_success = False
-            #Timeout set to 3 minutes
-            timeout = 180
+            #Timeout set to 6 minutes
+            timeout = 360
             while timeout:
                 self.debug('sleep %s seconds for egress rule to affect on Router.' % self.services['sleep'])
                 time.sleep(self.services['sleep'])
                 result = ssh.execute("%s %s" % (script_file, exec_cmd_params))
                 self.debug('Result is=%s' % result)
                 self.debug('Expected result is=%s' % expected_result)
-                
+
                 if str(result).strip() == expected_result:
                     exec_success = True
                     break
@@ -301,9 +301,9 @@ class TestEgressFWRules(cloudstackTestCase):
                     else: # Failed due to some other error
                         break
             #end while
-            
+
             if timeout == 0:
-                self.fail("Router network failed to come up after 3 minutes.")
+                self.fail("Router network failed to come up after 6 minutes.")
 
             ssh.execute('rm -rf %s' % script_file)
 

@@ -18,29 +18,29 @@
 package com.cloud.bridge.service.core.ec2;
 
 public class EC2AssociateAddress {
-	
-	private String publicIp;
-	private String instanceId;
-	
-	public EC2AssociateAddress() {
-		publicIp = null;
-		instanceId = null;
-	}
 
-	public String getPublicIp() {
-		return publicIp;
-	}
+    private String publicIp;
+    private String instanceId;
 
-	public void setPublicIp(String publicIp) {
-		this.publicIp = publicIp;
-	}
+    public EC2AssociateAddress() {
+        publicIp = null;
+        instanceId = null;
+    }
 
-	public String getInstanceId() {
-		return instanceId;
-	}
+    public String getPublicIp() {
+        return publicIp;
+    }
 
-	public void setInstanceId(String instanceId) {
-		this.instanceId = instanceId;
-	}
+    public void setPublicIp(String publicIp) {
+        this.publicIp = publicIp;
+    }
+
+    public String getInstanceId() {
+        return instanceId;
+    }
+
+    public void setInstanceId(String instanceId) {
+        this.instanceId = instanceId;
+    }
 
 }

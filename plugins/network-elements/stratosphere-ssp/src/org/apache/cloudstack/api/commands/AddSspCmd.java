@@ -15,18 +15,19 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.api.commands;
+
 import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.SspResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.element.SspService;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ConcurrentOperationException;
@@ -36,8 +37,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 
-
-@APICommand(name="addStratosphereSsp", responseObject=SspResponse.class, description="Adds stratosphere ssp server")
+@APICommand(name = "addStratosphereSsp", responseObject = SspResponse.class, description = "Adds stratosphere ssp server")
 public class AddSspCmd extends BaseCmd {
     private static final Logger s_logger = Logger.getLogger(AddSspCmd.class.getName());
     @Inject
@@ -45,23 +45,22 @@ public class AddSspCmd extends BaseCmd {
     @Inject
     DataCenterDao _dcDao;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
-            required=true, description="the zone ID")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the zone ID")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.URL, type=CommandType.STRING, required=true, description="stratosphere ssp server url")
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "stratosphere ssp server url")
     private String url;
 
-    @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required=false, description="stratosphere ssp api username")
+    @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = false, description = "stratosphere ssp api username")
     private String username;
 
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required=false, description="stratosphere ssp api password")
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, required = false, description = "stratosphere ssp api password")
     private String password;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="stratosphere ssp api name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "stratosphere ssp api name")
     private String name; // required because HostVO name field defined as NOT NULL.
 
-    @Parameter(name="tenantuuid", type=CommandType.STRING, required=false, description="stratosphere ssp tenant uuid")
+    @Parameter(name = "tenantuuid", type = CommandType.STRING, required = false, description = "stratosphere ssp tenant uuid")
     private String tenantUuid; // required in creating ssp tenant_network
 
     @Override
@@ -75,9 +74,8 @@ public class AddSspCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException,
-    InsufficientCapacityException, ConcurrentOperationException,
-    ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException,
+        NetworkRuleConflictException {
         s_logger.trace("execute");
         Host host = _service.addSspHost(this);
         SspResponse response = new SspResponse();

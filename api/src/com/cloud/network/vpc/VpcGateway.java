@@ -22,15 +22,11 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface VpcGateway extends Identity, ControlledEntity, InternalIdentity {
     public enum Type {
-        Private,
-        Public,
-        Vpn
+        Private, Public, Vpn
     }
 
     public enum State {
-        Creating,
-        Ready,
-        Deleting
+        Creating, Ready, Deleting
     }
 
     /**
@@ -77,6 +73,7 @@ public interface VpcGateway extends Identity, ControlledEntity, InternalIdentity
      * @return
      */
     State getState();
+
     /**
      * @return
      */

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.firewall;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -23,14 +25,15 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
 
-@APICommand(name = "updatePortForwardingRule", responseObject=FirewallRuleResponse.class, description="Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.")
+@APICommand(name = "updatePortForwardingRule",
+            responseObject = FirewallRuleResponse.class,
+            description = "Updates a port forwarding rule.  Only the private port and the virtual machine can be updated.")
 public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdatePortForwardingRuleCmd.class.getName());
     private static final String s_name = "updateportforwardingruleresponse";
@@ -39,24 +42,32 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.PRIVATE_IP, type=CommandType.STRING, description="the private IP address of the port forwarding rule")
+    @Parameter(name = ApiConstants.PRIVATE_IP, type = CommandType.STRING, description = "the private IP address of the port forwarding rule")
     private String privateIp;
 
-    @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.STRING, required=true, description="the private port of the port forwarding rule")
+    @Parameter(name = ApiConstants.PRIVATE_PORT, type = CommandType.STRING, required = true, description = "the private port of the port forwarding rule")
     private String privatePort;
 
-    @Parameter(name=ApiConstants.PROTOCOL, type=CommandType.STRING, required=true, description="the protocol for the port fowarding rule. Valid values are TCP or UDP.")
+    @Parameter(name = ApiConstants.PROTOCOL,
+               type = CommandType.STRING,
+               required = true,
+               description = "the protocol for the port fowarding rule. Valid values are TCP or UDP.")
     private String protocol;
 
-    @Parameter(name=ApiConstants.IP_ADDRESS_ID, type=CommandType.UUID, entityType = IPAddressResponse.class,
-            required=true, description="the IP address id of the port forwarding rule")
+    @Parameter(name = ApiConstants.IP_ADDRESS_ID,
+               type = CommandType.UUID,
+               entityType = IPAddressResponse.class,
+               required = true,
+               description = "the IP address id of the port forwarding rule")
     private Long publicIpId;
 
-    @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.STRING, required=true, description="the public port of the port forwarding rule")
+    @Parameter(name = ApiConstants.PUBLIC_PORT, type = CommandType.STRING, required = true, description = "the public port of the port forwarding rule")
     private String publicPort;
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
-            description="the ID of the virtual machine for the port forwarding rule")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+               type = CommandType.UUID,
+               entityType = UserVmResponse.class,
+               description = "the ID of the virtual machine for the port forwarding rule")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////
@@ -114,11 +125,11 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "updating port forwarding rule";
+        return "updating port forwarding rule";
     }
 
     @Override
-    public void execute(){
+    public void execute() {
 //FIXME:        PortForwardingRule result = _mgr.updatePortForwardingRule(this);
 //        if (result != null) {
 //            FirewallRuleResponse response = _responseGenerator.createFirewallRuleResponse(result);

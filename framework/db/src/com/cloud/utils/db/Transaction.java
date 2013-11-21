@@ -24,11 +24,11 @@ public class Transaction {
     };
 
     @SuppressWarnings("deprecation")
-    public static <T,E extends Throwable> T execute(TransactionCallbackWithException<T,E> callback) throws E {
+    public static <T, E extends Throwable> T execute(TransactionCallbackWithException<T, E> callback) throws E {
         String name = "tx-" + counter.incrementAndGet();
         short databaseId = TransactionLegacy.CLOUD_DB;
         TransactionLegacy currentTxn = TransactionLegacy.currentTxn(false);
-        if ( currentTxn != null ) {
+        if (currentTxn != null) {
             databaseId = currentTxn.getDatabaseId();
         }
         TransactionLegacy txn = TransactionLegacy.open(name, databaseId, false);

@@ -62,11 +62,14 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
     private static final Logger s_logger = Logger.getLogger(BaremetalPxeElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities;
-    
-    @Inject BaremetalPxeManager _pxeMgr;;
-    @Inject VMInstanceDao _vmDao;
-    @Inject NicDao _nicDao;
-    
+
+    @Inject
+    BaremetalPxeManager _pxeMgr;;
+    @Inject
+    VMInstanceDao _vmDao;
+    @Inject
+    NicDao _nicDao;
+
     static {
         Capability cap = new Capability(BaremetalPxeManager.BAREMETAL_PXE_CAPABILITY);
         Map<Capability, String> baremetalCaps = new HashMap<Capability, String>();
@@ -74,7 +77,7 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
         capabilities = new HashMap<Service, Map<Capability, String>>();
         capabilities.put(BaremetalPxeManager.BAREMETAL_PXE_SERVICE, baremetalCaps);
     }
-    
+
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
         return capabilities;
@@ -82,7 +85,7 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
 
     @Override
     public Provider getProvider() {
-    	return BaremetalPxeManager.BAREMETAL_PXE_SERVICE_PROVIDER;
+        return BaremetalPxeManager.BAREMETAL_PXE_SERVICE_PROVIDER;
     }
 
     private boolean canHandle(DeployDestination dest, TrafficType trafficType, GuestType networkType) {
@@ -92,13 +95,13 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
             sc.and(sc.entity().getPodId(), Op.EQ, pod.getId());
             return sc.find() != null;
         }
-        
+
         return false;
     }
-    
+
     @Override
-    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException, InsufficientCapacityException {
         if (offering.isSystemOnly() || !canHandle(dest, offering.getTrafficType(), network.getGuestType())) {
             s_logger.debug("BaremetalPxeElement can not handle network offering: " + offering.getName());
             return false;
@@ -108,12 +111,12 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
 
     @Override
     @DB
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest,
-            ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         if (vm.getType() != Type.User || vm.getHypervisorType() != HypervisorType.BareMetal) {
             return false;
         }
-        
+
         VMInstanceVO vo = _vmDao.findById(vm.getId());
         if (vo.getLastHostId() == null) {
             nic.setMacAddress(dest.getHost().getPrivateMacAddress());
@@ -121,19 +124,19 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
             assert vo != null : "Where ths nic " + nic.getId() + " going???";
             nicVo.setMacAddress(nic.getMacAddress());
             _nicDao.update(nicVo.getId(), nicVo);
-            
-        	/*This vm is just being created */
-        	if (!_pxeMgr.prepare(vm, nic, dest, context)) {
-        	    throw new CloudRuntimeException("Cannot prepare pxe server");
-        	}
+
+            /*This vm is just being created */
+            if (!_pxeMgr.prepare(vm, nic, dest, context)) {
+                throw new CloudRuntimeException("Cannot prepare pxe server");
+            }
         }
-        
+
         return false;
     }
 
     @Override
-    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         return true;
     }
 
@@ -149,7 +152,7 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
 
     @Override
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
-            ResourceUnavailableException {
+        ResourceUnavailableException {
         return true;
     }
 

@@ -38,16 +38,16 @@ import com.cloud.utils.component.ComponentContext;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 //@ContextConfiguration(locations = "classpath:/VpcTestContext.xml")
-public class VpcApiUnitTest extends TestCase{
-    @Inject VpcManagerImpl _vpcService = null;
+public class VpcApiUnitTest extends TestCase {
+    @Inject
+    VpcManagerImpl _vpcService = null;
 
     @Override
     @Before
     public void setUp() throws Exception {
         ComponentContext.initComponentsLifeCycle();
     }
-    
-    
+
     @Test
     public void getActiveVpc() {
         //test for active vpc
@@ -60,11 +60,11 @@ public class VpcApiUnitTest extends TestCase{
             if (vpc != null) {
                 result = true;
             }
-        }  catch (Exception ex) {
+        } catch (Exception ex) {
         } finally {
             assertTrue("Get active Vpc: TEST FAILED, active vpc is not returned", result);
         }
-        
+
         //test for inactive vpc
         result = false;
         vpc = null;
@@ -75,12 +75,11 @@ public class VpcApiUnitTest extends TestCase{
             if (vpc != null) {
                 result = true;
             }
-        }  catch (Exception ex) {
+        } catch (Exception ex) {
         } finally {
             assertFalse("Get active Vpc: TEST FAILED, non active vpc is returned", result);
         }
     }
-    
 
     @Test
     public void validateNtwkOffForVpc() {
@@ -95,7 +94,7 @@ public class VpcApiUnitTest extends TestCase{
         } finally {
             assertTrue("Validate network offering: Test passed: the offering is valid for vpc creation", result);
         }
-        
+
         //2) invalid offering - source nat is not included
         result = false;
         try {
@@ -105,7 +104,7 @@ public class VpcApiUnitTest extends TestCase{
         } finally {
             assertFalse("Validate network offering: TEST FAILED, can't use network offering without SourceNat service", result);
         }
-        
+
         //3) invalid offering - conserve mode is off
         result = false;
         try {
@@ -115,7 +114,7 @@ public class VpcApiUnitTest extends TestCase{
         } finally {
             assertFalse("Validate network offering: TEST FAILED, can't use network offering without conserve mode = true", result);
         }
-        
+
         //4) invalid offering - guest type shared
         result = false;
         try {
@@ -125,7 +124,7 @@ public class VpcApiUnitTest extends TestCase{
         } finally {
             assertFalse("Validate network offering: TEST FAILED, can't use network offering with guest type = Shared", result);
         }
-        
+
         //5) Invalid offering - no redundant router support
         result = false;
         try {
@@ -136,8 +135,7 @@ public class VpcApiUnitTest extends TestCase{
             assertFalse("TEST FAILED, can't use network offering with guest type = Shared", result);
         }
     }
-    
-    
+
 //    public void destroyVpc() {
 //        boolean result = false;
 //        try {

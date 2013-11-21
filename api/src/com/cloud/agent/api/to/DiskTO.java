@@ -40,9 +40,9 @@ public class DiskTO {
     private Map<String, String> _details;
 
     public DiskTO() {
-        
+
     }
-    
+
     public DiskTO(DataTO data, Long diskSeq, String path, Volume.Type type) {
         this.data = data;
         this.diskSeq = diskSeq;

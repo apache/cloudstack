@@ -33,7 +33,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 
-public interface StorageService{
+public interface StorageService {
     /**
      * Create StoragePool based on uri
      *
@@ -47,8 +47,7 @@ public interface StorageService{
      * @throws ResourceUnavailableException
      *             TODO
      */
-    StoragePool createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException,
-    UnknownHostException, ResourceUnavailableException;
+    StoragePool createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceUnavailableException;
 
     ImageStore createSecondaryStagingStore(CreateSecondaryStagingStoreCmd cmd);
 
@@ -72,8 +71,7 @@ public interface StorageService{
      * @throws InsufficientCapacityException
      *             TODO
      */
-    public StoragePool preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException,
-    InsufficientCapacityException;
+    public StoragePool preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * Complete maintenance for primary storage
@@ -84,8 +82,7 @@ public interface StorageService{
      * @throws ResourceUnavailableException
      *             TODO
      */
-    public StoragePool cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd)
-            throws ResourceUnavailableException;
+    public StoragePool cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ResourceUnavailableException;
 
     public StoragePool updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
 
@@ -108,7 +105,6 @@ public interface StorageService{
      * @throws InsufficientCapacityException
      *             TODO
      */
-    public ImageStore prepareSecondaryStorageForObjectStoreMigration(Long storeId) throws ResourceUnavailableException,
-            InsufficientCapacityException;
+    public ImageStore prepareSecondaryStorageForObjectStoreMigration(Long storeId) throws ResourceUnavailableException, InsufficientCapacityException;
 
 }

@@ -16,8 +16,16 @@
 // under the License.
 package org.apache.cloudstack.network.element;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.Arrays;
 import java.util.HashMap;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -25,10 +33,6 @@ import org.apache.cloudstack.network.dao.SspCredentialDao;
 import org.apache.cloudstack.network.dao.SspCredentialVO;
 import org.apache.cloudstack.network.dao.SspTenantDao;
 import org.apache.cloudstack.network.dao.SspUuidDao;
-import org.apache.cloudstack.network.element.SspElement;
-
-import org.junit.Before;
-import org.junit.Test;
 
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.Host;
@@ -45,15 +49,11 @@ import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.resource.ResourceManager;
 import com.cloud.vm.dao.NicDao;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.*;
-
 public class SspElementTest {
     SspElement _element = new SspElement();
 
     @Before
-    public void setUp(){
+    public void setUp() {
         _element._configDao = mock(ConfigurationDao.class);
         _element._dcDao = mock(DataCenterDao.class);
         _element._hostDao = mock(HostDao.class);
@@ -78,7 +78,7 @@ public class SspElementTest {
     SspCredentialVO credential = mock(SspCredentialVO.class);
     HostVO host = mock(HostVO.class);
 
-    public void fullyConfigured(){
+    public void fullyConfigured() {
         // when physicalNetworkServiceProvider is configured
         when(psvo.getId()).thenReturn(physicalNetworkId);
         when(psvo.getDataCenterId()).thenReturn(dataCenterId);
@@ -96,7 +96,7 @@ public class SspElementTest {
 
         when(_element._sspCredentialDao.findByZone(dataCenterId.longValue())).thenReturn(credential);
 
-        HashMap<String,String> details = new HashMap<String, String>();
+        HashMap<String, String> details = new HashMap<String, String>();
         details.put("sspHost", "v1Api");
         details.put("url", "http://a.example.jp/");
 
@@ -105,13 +105,13 @@ public class SspElementTest {
         when(host.getDetail("sspHost")).thenReturn(details.get("sspHost"));
         when(host.getDetail("url")).thenReturn(details.get("url"));
 
-        when(_element._resourceMgr.listAllHostsInOneZoneByType(Host.Type.L2Networking, dataCenterId)).thenReturn(Arrays.<HostVO>asList(host));
+        when(_element._resourceMgr.listAllHostsInOneZoneByType(Host.Type.L2Networking, dataCenterId)).thenReturn(Arrays.<HostVO> asList(host));
 
         when(_element._ntwkSrvcDao.canProviderSupportServiceInNetwork(networkId, Network.Service.Connectivity, _element.getProvider())).thenReturn(true);
     }
 
     @Test
-    public void isReadyTest(){
+    public void isReadyTest() {
         fullyConfigured();
 
         // isReady is called in changing the networkserviceprovider state to Enabled.
@@ -122,7 +122,7 @@ public class SspElementTest {
 
         // If you don't call addstratospheressp api, ssp won't be ready
         when(_element._sspCredentialDao.findByZone(dataCenterId.longValue())).thenReturn(null);
-        when(_element._resourceMgr.listAllHostsInOneZoneByType(Host.Type.L2Networking, dataCenterId)).thenReturn(Arrays.<HostVO>asList());
+        when(_element._resourceMgr.listAllHostsInOneZoneByType(Host.Type.L2Networking, dataCenterId)).thenReturn(Arrays.<HostVO> asList());
         assertFalse(_element.isReady(nspvo));
     }
 
@@ -148,7 +148,7 @@ public class SspElementTest {
 
         // If you don't call addstratospheressp api, ssp won't be active
         when(_element._sspCredentialDao.findByZone(dataCenterId.longValue())).thenReturn(null);
-        when(_element._resourceMgr.listAllHostsInOneZoneByType(Host.Type.L2Networking, dataCenterId)).thenReturn(Arrays.<HostVO>asList());
+        when(_element._resourceMgr.listAllHostsInOneZoneByType(Host.Type.L2Networking, dataCenterId)).thenReturn(Arrays.<HostVO> asList());
         assertFalse(_element.canHandle(psvo));
     }
 }

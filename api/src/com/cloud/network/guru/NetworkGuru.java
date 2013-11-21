@@ -108,7 +108,8 @@ public interface NetworkGuru extends Adapter {
      * environment.  At this time, the admin generally must be involved to
      * allocate more resources before any more guest network can be implemented.
      */
-    Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context) throws InsufficientVirtualNetworkCapcityException;
+    Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException;
 
     /**
      * Once a guest network has been designed, virtual machines can be
@@ -126,7 +127,8 @@ public interface NetworkGuru extends Adapter {
      * @throws InsufficientAddressCapacityException if there are not addresses
      *         to be assigned.
      */
-    NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException;
+    NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+        InsufficientAddressCapacityException, ConcurrentOperationException;
 
     /**
      * Once a guest network is implemented, then the virtual machine must
@@ -146,7 +148,8 @@ public interface NetworkGuru extends Adapter {
      * @throws ConcurrentOperationException if there are multiple operations
      *         happening on this guest network or vm.
      */
-    void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException;
+    void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException;
 
     /**
      * When a virtual machine is stopped, the NetworkGuru is informed via the

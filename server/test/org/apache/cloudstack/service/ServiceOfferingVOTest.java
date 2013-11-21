@@ -16,20 +16,20 @@
 // under the License.
 package org.apache.cloudstack.service;
 
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.vm.VirtualMachine;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.Assert;
 import org.mockito.MockitoAnnotations;
+
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.vm.VirtualMachine;
 
 public class ServiceOfferingVOTest {
     ServiceOfferingVO offeringCustom;
     ServiceOfferingVO offering;
 
-
     @Before
-    public void setup(){
+    public void setup() {
         MockitoAnnotations.initMocks(this);
         offeringCustom = new ServiceOfferingVO("custom", null, null, 500, 10, 10, false, "custom", false, false, "", false, VirtualMachine.Type.User, false);
         offering = new ServiceOfferingVO("normal", 1, 1000, 500, 10, 10, false, "normal", false, false, "", false, VirtualMachine.Type.User, false);
@@ -37,7 +37,7 @@ public class ServiceOfferingVOTest {
 
     // Test restoreVm when VM state not in running/stopped case
     @Test
-     public void isDynamic()  {
+    public void isDynamic() {
         Assert.assertTrue(offeringCustom.isDynamic());
     }
 

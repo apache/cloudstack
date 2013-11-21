@@ -40,13 +40,13 @@ public class AttachVolumeCommand extends Command {
     private Long bytesWriteRate;
     private Long iopsReadRate;
     private Long iopsWriteRate;
+    private String cacheMode;
 
     protected AttachVolumeCommand() {
     }
 
-    public AttachVolumeCommand(boolean attach, boolean managed, String vmName,
-            StoragePoolType pooltype, String volumePath, String volumeName,
-            Long volumeSize, Long deviceId, String chainInfo) {
+    public AttachVolumeCommand(boolean attach, boolean managed, String vmName, StoragePoolType pooltype, String volumePath, String volumeName, Long volumeSize,
+            Long deviceId, String chainInfo) {
         this.attach = attach;
         this._managed = managed;
         this.vmName = vmName;
@@ -201,5 +201,13 @@ public class AttachVolumeCommand extends Command {
 
     public Long getIopsWriteRate() {
         return iopsWriteRate;
+    }
+
+    public void setCacheMode(String cacheMode) {
+        this.cacheMode = cacheMode;
+    }
+
+    public String getCacheMode() {
+        return cacheMode;
     }
 }

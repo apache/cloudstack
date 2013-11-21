@@ -31,7 +31,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=PhysicalNetworkServiceProviderDao.class) @DB()
+@Local(value = PhysicalNetworkServiceProviderDao.class)
+@DB()
 public class PhysicalNetworkServiceProviderDaoImpl extends GenericDaoBase<PhysicalNetworkServiceProviderVO, Long> implements PhysicalNetworkServiceProviderDao {
     final SearchBuilder<PhysicalNetworkServiceProviderVO> physicalNetworkSearch;
     final SearchBuilder<PhysicalNetworkServiceProviderVO> physicalNetworkServiceProviderSearch;
@@ -47,7 +48,7 @@ public class PhysicalNetworkServiceProviderDaoImpl extends GenericDaoBase<Physic
         physicalNetworkServiceProviderSearch.and("physicalNetworkId", physicalNetworkServiceProviderSearch.entity().getPhysicalNetworkId(), Op.EQ);
         physicalNetworkServiceProviderSearch.and("serviceProvderType", physicalNetworkServiceProviderSearch.entity().getProviderName(), Op.EQ);
         physicalNetworkServiceProviderSearch.done();
-        
+
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("physicalNetworkId", AllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
         AllFieldsSearch.and("serviceProvderType", AllFieldsSearch.entity().getProviderName(), Op.EQ);
@@ -80,52 +81,52 @@ public class PhysicalNetworkServiceProviderDaoImpl extends GenericDaoBase<Physic
         sc.setParameters("serviceProvderType", providerType);
         return findOneBy(sc);
     }
-    
+
     @Override
     public void deleteProviders(long physicalNetworkId) {
         SearchCriteria<PhysicalNetworkServiceProviderVO> sc = physicalNetworkSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         remove(sc);
     }
-    
+
     @Override
     public boolean isServiceProviderEnabled(long physicalNetworkId, String providerType, String serviceType) {
-    	 SearchCriteria<PhysicalNetworkServiceProviderVO> sc = AllFieldsSearch.create();
-         sc.setParameters("physicalNetworkId", physicalNetworkId);
-         sc.setParameters("serviceProvderType", providerType);
-         sc.setParameters("state", PhysicalNetworkServiceProvider.State.Enabled.toString());
-         
-         if (serviceType.equalsIgnoreCase(Service.Dhcp.getName())) {
-             sc.setParameters("dhcpService", true);
-         } else if (serviceType.equalsIgnoreCase(Service.Dns.getName())) {
-             sc.setParameters("dnsService", true);
-         }else if (serviceType.equalsIgnoreCase(Service.Firewall.getName())) {
-             sc.setParameters("firewallService", true);
-         }else if (serviceType.equalsIgnoreCase(Service.Gateway.getName())) {
-             sc.setParameters("gatewayService", true);
-         }else if (serviceType.equalsIgnoreCase(Service.Lb.getName())) {
-             sc.setParameters("lbService", true);
-         }else if (serviceType.equalsIgnoreCase(Service.PortForwarding.getName())) {
-             sc.setParameters("pfService", true);
-         }else if (serviceType.equalsIgnoreCase(Service.SecurityGroup.getName())) {
-             sc.setParameters("securityGroupService", true);
-         }else if (serviceType.equalsIgnoreCase(Service.SourceNat.getName())) {
-             sc.setParameters("sourceNatService", true);
-         }else if (serviceType.equalsIgnoreCase(Service.StaticNat.getName())) {
-             sc.setParameters("staticNatService", true);
-         }else if (serviceType.equalsIgnoreCase(Service.UserData.getName())) {
-             sc.setParameters("userDataService", true);
-         }else if (serviceType.equalsIgnoreCase(Service.Vpn.getName())) {
-             sc.setParameters("vpnService", true);
-         }
-         
-         PhysicalNetworkServiceProviderVO map = findOneBy(sc);
+        SearchCriteria<PhysicalNetworkServiceProviderVO> sc = AllFieldsSearch.create();
+        sc.setParameters("physicalNetworkId", physicalNetworkId);
+        sc.setParameters("serviceProvderType", providerType);
+        sc.setParameters("state", PhysicalNetworkServiceProvider.State.Enabled.toString());
 
-         if (map != null) {
-        	 return true;
-         } else {
-        	 return false;
-         }
+        if (serviceType.equalsIgnoreCase(Service.Dhcp.getName())) {
+            sc.setParameters("dhcpService", true);
+        } else if (serviceType.equalsIgnoreCase(Service.Dns.getName())) {
+            sc.setParameters("dnsService", true);
+        } else if (serviceType.equalsIgnoreCase(Service.Firewall.getName())) {
+            sc.setParameters("firewallService", true);
+        } else if (serviceType.equalsIgnoreCase(Service.Gateway.getName())) {
+            sc.setParameters("gatewayService", true);
+        } else if (serviceType.equalsIgnoreCase(Service.Lb.getName())) {
+            sc.setParameters("lbService", true);
+        } else if (serviceType.equalsIgnoreCase(Service.PortForwarding.getName())) {
+            sc.setParameters("pfService", true);
+        } else if (serviceType.equalsIgnoreCase(Service.SecurityGroup.getName())) {
+            sc.setParameters("securityGroupService", true);
+        } else if (serviceType.equalsIgnoreCase(Service.SourceNat.getName())) {
+            sc.setParameters("sourceNatService", true);
+        } else if (serviceType.equalsIgnoreCase(Service.StaticNat.getName())) {
+            sc.setParameters("staticNatService", true);
+        } else if (serviceType.equalsIgnoreCase(Service.UserData.getName())) {
+            sc.setParameters("userDataService", true);
+        } else if (serviceType.equalsIgnoreCase(Service.Vpn.getName())) {
+            sc.setParameters("vpnService", true);
+        }
+
+        PhysicalNetworkServiceProviderVO map = findOneBy(sc);
+
+        if (map != null) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
 }

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.systemvm;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,13 +28,11 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "startSystemVm", responseObject=SystemVmResponse.class, description="Starts a system virtual machine.")
+@APICommand(name = "startSystemVm", responseObject = SystemVmResponse.class, description = "Starts a system virtual machine.")
 public class StartSystemVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StartSystemVMCmd.class.getName());
 
@@ -42,8 +42,11 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=SystemVmResponse.class,
-            required=true, description="The ID of the system virtual machine")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = SystemVmResponse.class,
+               required = true,
+               description = "The ID of the system virtual machine")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -80,30 +83,31 @@ public class StartSystemVMCmd extends BaseAsyncCmd {
     @Override
     public String getEventType() {
         VirtualMachine.Type type = _mgr.findSystemVMTypeById(getId());
-        if(type == VirtualMachine.Type.ConsoleProxy){
+        if (type == VirtualMachine.Type.ConsoleProxy) {
             return EventTypes.EVENT_PROXY_START;
-        }
-        else{
+        } else {
             return EventTypes.EVENT_SSVM_START;
         }
     }
 
     @Override
     public String getEventDescription() {
-        return  "starting system vm: " + getId();
+        return "starting system vm: " + getId();
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.SystemVm;
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Vm Id: "+getId());
+    public void execute() {
+        CallContext.current().setEventDetails("Vm Id: " + getId());
         VirtualMachine instance = _mgr.startSystemVM(getId());
         if (instance != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(instance);

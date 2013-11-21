@@ -26,7 +26,7 @@ public class ConfigureStaticNatRulesOnLogicalRouterAnswer extends Answer {
      * @param success
      * @param details
      */
-    public ConfigureStaticNatRulesOnLogicalRouterAnswer(Command command, boolean success, String details) {
+    public ConfigureStaticNatRulesOnLogicalRouterAnswer(final Command command, final boolean success, final String details) {
         super(command, success, details);
     }
 
@@ -34,7 +34,7 @@ public class ConfigureStaticNatRulesOnLogicalRouterAnswer extends Answer {
      * @param command
      * @param e
      */
-    public ConfigureStaticNatRulesOnLogicalRouterAnswer(Command command, Exception e) {
+    public ConfigureStaticNatRulesOnLogicalRouterAnswer(final Command command, final Exception e) {
         super(command, e);
     }
 

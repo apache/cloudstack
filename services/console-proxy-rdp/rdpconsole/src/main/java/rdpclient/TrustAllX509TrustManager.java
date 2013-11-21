@@ -21,20 +21,20 @@ import java.security.cert.X509Certificate;
 import javax.net.ssl.X509TrustManager;
 
 public class TrustAllX509TrustManager implements X509TrustManager {
-  @Override
-  public void checkClientTrusted(final X509Certificate[] chain, final String authType) {
-    // TODO: ask user to confirm self-signed certificates
-  }
+    @Override
+    public void checkClientTrusted(final X509Certificate[] chain, final String authType) {
+        // TODO: ask user to confirm self-signed certificates
+    }
 
-  @Override
-  public void checkServerTrusted(final X509Certificate[] chain, final String authType) {
-    // TODO: ask user to confirm self-signed certificates
-  }
+    @Override
+    public void checkServerTrusted(final X509Certificate[] chain, final String authType) {
+        // TODO: ask user to confirm self-signed certificates
+    }
 
-  @Override
-  public X509Certificate[] getAcceptedIssuers() {
-    // TODO: use system CA certificates here
-    return null;
-  }
+    @Override
+    public X509Certificate[] getAcceptedIssuers() {
+        // TODO: use system CA certificates here
+        return null;
+    }
 
 }

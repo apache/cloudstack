@@ -19,55 +19,56 @@ package com.cloud.api.doc;
 import java.util.ArrayList;
 
 public class Command {
-	
-	private String name;
-	private String description;
+
+    private String name;
+    private String description;
     private String usage;
-	private boolean isAsync;
-	private String sinceVersion = null;
-	private ArrayList<Argument> request;
-	private ArrayList<Argument> response;
-	
-	public Command(String name, String description) {
-		this.name = name;
-		this.description = description;
-	}
-	
-	public Command() {}
+    private boolean isAsync;
+    private String sinceVersion = null;
+    private ArrayList<Argument> request;
+    private ArrayList<Argument> response;
 
-	public String getName() {
-		return name;
-	}
+    public Command(String name, String description) {
+        this.name = name;
+        this.description = description;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public Command() {
+    }
 
-	public String getDescription() {
-		return description;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public void setDescription(String description) {
-		this.description = description;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public ArrayList<Argument> getRequest() {
-		return request;
-	}
+    public String getDescription() {
+        return description;
+    }
 
-	public void setRequest(ArrayList<Argument> request) {
-		this.request = request;
-	}
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
-	public ArrayList<Argument> getResponse() {
-		return response;
-	}
+    public ArrayList<Argument> getRequest() {
+        return request;
+    }
 
-	public void setResponse(ArrayList<Argument> response) {
-		this.response = response;
-	}
-	
-	public boolean isAsync() {
+    public void setRequest(ArrayList<Argument> request) {
+        this.request = request;
+    }
+
+    public ArrayList<Argument> getResponse() {
+        return response;
+    }
+
+    public void setResponse(ArrayList<Argument> response) {
+        this.response = response;
+    }
+
+    public boolean isAsync() {
         return isAsync;
     }
 
@@ -75,37 +76,37 @@ public class Command {
         this.isAsync = isAsync;
     }
 
-	public String getSinceVersion() {
-		return sinceVersion;
-	}
+    public String getSinceVersion() {
+        return sinceVersion;
+    }
 
-	public void setSinceVersion(String sinceVersion) {
-		this.sinceVersion = sinceVersion;
-	}
-	
-    public Argument getReqArgByName(String name){
-		for (Argument a : this.getRequest()) {
-			if (a.getName().equals(name)) {
+    public void setSinceVersion(String sinceVersion) {
+        this.sinceVersion = sinceVersion;
+    }
+
+    public Argument getReqArgByName(String name) {
+        for (Argument a : this.getRequest()) {
+            if (a.getName().equals(name)) {
                 return a;
             }
-		}
-		return null;
-	}
-	
-	public Argument getResArgByName(String name){
-		for (Argument a : this.getResponse()) {
-			if (a.getName().equals(name)) {
+        }
+        return null;
+    }
+
+    public Argument getResArgByName(String name) {
+        for (Argument a : this.getResponse()) {
+            if (a.getName().equals(name)) {
                 return a;
             }
-		}
-		return null;
-	}
-	
-	public String getUsage() {
-		return usage;
-	}
+        }
+        return null;
+    }
 
-	public void setUsage(String usage) {
-		this.usage = usage;
-	}
+    public String getUsage() {
+        return usage;
+    }
+
+    public void setUsage(String usage) {
+        this.usage = usage;
+    }
 }

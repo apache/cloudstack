@@ -19,10 +19,10 @@ package com.cloud.agent.api;
 import com.cloud.agent.api.storage.ssCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 
-
 public class ComputeChecksumCommand extends ssCommand {
-	private DataStoreTO store;
+    private DataStoreTO store;
     private String templatePath;
+
     public ComputeChecksumCommand() {
         super();
     }
@@ -36,13 +36,12 @@ public class ComputeChecksumCommand extends ssCommand {
         return templatePath;
     }
 
-	public DataStoreTO getStore() {
-		return store;
-	}
+    public DataStoreTO getStore() {
+        return store;
+    }
 
-	public void setStore(DataStoreTO store) {
-		this.store = store;
-	}
-
+    public void setStore(DataStoreTO store) {
+        this.store = store;
+    }
 
 }

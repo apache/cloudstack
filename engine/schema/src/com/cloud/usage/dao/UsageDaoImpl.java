@@ -43,38 +43,44 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value={UsageDao.class})
+@Local(value = {UsageDao.class})
 public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements UsageDao {
-	public static final Logger s_logger = Logger.getLogger(UsageDaoImpl.class.getName());
-	private static final String DELETE_ALL = "DELETE FROM cloud_usage";
-	private static final String DELETE_ALL_BY_ACCOUNTID = "DELETE FROM cloud_usage WHERE account_id = ?";
-	    private static final String INSERT_ACCOUNT = "INSERT INTO cloud_usage.account (id, account_name, type, domain_id, removed, cleanup_needed) VALUES (?,?,?,?,?,?)";
-    private static final String INSERT_USER_STATS = "INSERT INTO cloud_usage.user_statistics (id, data_center_id, account_id, public_ip_address, device_id, device_type, network_id, net_bytes_received," +
-    												" net_bytes_sent, current_bytes_received, current_bytes_sent, agg_bytes_received, agg_bytes_sent) VALUES (?,?,?,?,?,?,?,?,?,?, ?, ?, ?)";
+    public static final Logger s_logger = Logger.getLogger(UsageDaoImpl.class.getName());
+    private static final String DELETE_ALL = "DELETE FROM cloud_usage";
+    private static final String DELETE_ALL_BY_ACCOUNTID = "DELETE FROM cloud_usage WHERE account_id = ?";
+    private static final String INSERT_ACCOUNT = "INSERT INTO cloud_usage.account (id, account_name, type, domain_id, removed, cleanup_needed) VALUES (?,?,?,?,?,?)";
+    private static final String INSERT_USER_STATS =
+        "INSERT INTO cloud_usage.user_statistics (id, data_center_id, account_id, public_ip_address, device_id, device_type, network_id, net_bytes_received,"
+            + " net_bytes_sent, current_bytes_received, current_bytes_sent, agg_bytes_received, agg_bytes_sent) VALUES (?,?,?,?,?,?,?,?,?,?, ?, ?, ?)";
 
     private static final String UPDATE_ACCOUNT = "UPDATE cloud_usage.account SET account_name=?, removed=? WHERE id=?";
-    private static final String UPDATE_USER_STATS = "UPDATE cloud_usage.user_statistics SET net_bytes_received=?, net_bytes_sent=?, current_bytes_received=?, current_bytes_sent=?, agg_bytes_received=?, agg_bytes_sent=? WHERE id=?";
+    private static final String UPDATE_USER_STATS =
+        "UPDATE cloud_usage.user_statistics SET net_bytes_received=?, net_bytes_sent=?, current_bytes_received=?, current_bytes_sent=?, agg_bytes_received=?, agg_bytes_sent=? WHERE id=?";
 
     private static final String GET_LAST_ACCOUNT = "SELECT id FROM cloud_usage.account ORDER BY id DESC LIMIT 1";
     private static final String GET_LAST_USER_STATS = "SELECT id FROM cloud_usage.user_statistics ORDER BY id DESC LIMIT 1";
     private static final String GET_PUBLIC_TEMPLATES_BY_ACCOUNTID = "SELECT id FROM cloud.vm_template WHERE account_id = ? AND public = '1' AND removed IS NULL";
 
     private static final String GET_LAST_VM_DISK_STATS = "SELECT id FROM cloud_usage.vm_disk_statistics ORDER BY id DESC LIMIT 1";
-    private static final String INSERT_VM_DISK_STATS = "INSERT INTO cloud_usage.vm_disk_statistics (id, data_center_id, account_id, vm_id, volume_id, net_io_read, net_io_write, current_io_read, " +
-               "current_io_write, agg_io_read, agg_io_write, net_bytes_read, net_bytes_write, current_bytes_read, current_bytes_write, agg_bytes_read, agg_bytes_write) " +
-                       " VALUES (?,?,?,?,?,?,?,?,?,?, ?, ?, ?, ?,?, ?, ?)";
-    private static final String UPDATE_VM_DISK_STATS = "UPDATE cloud_usage.vm_disk_statistics SET net_io_read=?, net_io_write=?, current_io_read=?, current_io_write=?, agg_io_read=?, agg_io_write=?, " +
-               "net_bytes_read=?, net_bytes_write=?, current_bytes_read=?, current_bytes_write=?, agg_bytes_read=?, agg_bytes_write=?  WHERE id=?";
-    private static final String INSERT_USGAE_RECORDS = "INSERT INTO cloud_usage.cloud_usage (zone_id, account_id, domain_id, description, usage_display, usage_type, raw_usage, vm_instance_id, vm_name, offering_id, template_id, " +
-                "usage_id, type, size, network_id, start_date, end_date, virtual_size) VALUES (?,?,?,?,?,?,?,?,?, ?, ?, ?,?,?,?,?,?,?)";
+    private static final String INSERT_VM_DISK_STATS =
+        "INSERT INTO cloud_usage.vm_disk_statistics (id, data_center_id, account_id, vm_id, volume_id, net_io_read, net_io_write, current_io_read, "
+            + "current_io_write, agg_io_read, agg_io_write, net_bytes_read, net_bytes_write, current_bytes_read, current_bytes_write, agg_bytes_read, agg_bytes_write) "
+            + " VALUES (?,?,?,?,?,?,?,?,?,?, ?, ?, ?, ?,?, ?, ?)";
+    private static final String UPDATE_VM_DISK_STATS =
+        "UPDATE cloud_usage.vm_disk_statistics SET net_io_read=?, net_io_write=?, current_io_read=?, current_io_write=?, agg_io_read=?, agg_io_write=?, "
+            + "net_bytes_read=?, net_bytes_write=?, current_bytes_read=?, current_bytes_write=?, agg_bytes_read=?, agg_bytes_write=?  WHERE id=?";
+    private static final String INSERT_USGAE_RECORDS = "INSERT INTO cloud_usage.cloud_usage (zone_id, account_id, domain_id, description, usage_display, " +
+        "usage_type, raw_usage, vm_instance_id, vm_name, offering_id, template_id, "
+        + "usage_id, type, size, network_id, start_date, end_date, virtual_size) VALUES (?,?,?,?,?,?,?,?,?, ?, ?, ?,?,?,?,?,?,?)";
 
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
 
-    public UsageDaoImpl () {}
+    public UsageDaoImpl() {
+    }
 
-	@Override
+    @Override
     public void deleteRecordsForAccount(Long accountId) {
-	    String sql = ((accountId == null) ? DELETE_ALL : DELETE_ALL_BY_ACCOUNTID);
+        String sql = ((accountId == null) ? DELETE_ALL : DELETE_ALL_BY_ACCOUNTID);
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
         try {
@@ -86,51 +92,51 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             pstmt.executeUpdate();
             txn.commit();
         } catch (Exception ex) {
-        	txn.rollback();
+            txn.rollback();
             s_logger.error("error retrieving usage vm instances for account id: " + accountId);
         } finally {
             txn.close();
         }
-	}
+    }
 
-	@Override
-	public Pair<List<UsageVO>, Integer> searchAndCountAllRecords(SearchCriteria<UsageVO> sc, Filter filter) {
-	    return listAndCountIncludingRemovedBy(sc, filter);
-	}
+    @Override
+    public Pair<List<UsageVO>, Integer> searchAndCountAllRecords(SearchCriteria<UsageVO> sc, Filter filter) {
+        return listAndCountIncludingRemovedBy(sc, filter);
+    }
 
-	@Override
+    @Override
     public void saveAccounts(List<AccountVO> accounts) {
-	    TransactionLegacy txn = TransactionLegacy.currentTxn();
-	    try {
-	        txn.start();
-	        String sql = INSERT_ACCOUNT;
-	        PreparedStatement pstmt = null;
-	        pstmt = txn.prepareAutoCloseStatement(sql); // in reality I just want CLOUD_USAGE dataSource connection
-	        for (AccountVO acct : accounts) {
-	            pstmt.setLong(1, acct.getId());
-	            pstmt.setString(2, acct.getAccountName());
-	            pstmt.setShort(3, acct.getType());
-	            pstmt.setLong(4, acct.getDomainId());
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try {
+            txn.start();
+            String sql = INSERT_ACCOUNT;
+            PreparedStatement pstmt = null;
+            pstmt = txn.prepareAutoCloseStatement(sql); // in reality I just want CLOUD_USAGE dataSource connection
+            for (AccountVO acct : accounts) {
+                pstmt.setLong(1, acct.getId());
+                pstmt.setString(2, acct.getAccountName());
+                pstmt.setShort(3, acct.getType());
+                pstmt.setLong(4, acct.getDomainId());
 
-	            Date removed = acct.getRemoved();
-	            if (removed == null) {
-	                pstmt.setString(5, null);
-	            } else {
-	                pstmt.setString(5, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), acct.getRemoved()));
-	            }
+                Date removed = acct.getRemoved();
+                if (removed == null) {
+                    pstmt.setString(5, null);
+                } else {
+                    pstmt.setString(5, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), acct.getRemoved()));
+                }
 
-	            pstmt.setBoolean(6, acct.getNeedsCleanup());
+                pstmt.setBoolean(6, acct.getNeedsCleanup());
 
-	            pstmt.addBatch();
-	        }
-	        pstmt.executeBatch();
-	        txn.commit();
-	    } catch (Exception ex) {
-	        txn.rollback();
-	        s_logger.error("error saving account to cloud_usage db", ex);
+                pstmt.addBatch();
+            }
+            pstmt.executeBatch();
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            s_logger.error("error saving account to cloud_usage db", ex);
             throw new CloudRuntimeException(ex.getMessage());
-	    }
-	}
+        }
+    }
 
     @Override
     public void updateAccounts(List<AccountVO> accounts) {
@@ -162,7 +168,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
         }
     }
 
-	@Override
+    @Override
     public void saveUserStats(List<UserStatisticsVO> userStats) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
@@ -175,13 +181,13 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                 pstmt.setLong(2, userStat.getDataCenterId());
                 pstmt.setLong(3, userStat.getAccountId());
                 pstmt.setString(4, userStat.getPublicIpAddress());
-                if(userStat.getDeviceId() != null){
+                if (userStat.getDeviceId() != null) {
                     pstmt.setLong(5, userStat.getDeviceId());
                 } else {
                     pstmt.setNull(5, Types.BIGINT);
                 }
                 pstmt.setString(6, userStat.getDeviceType());
-                if(userStat.getNetworkId() != null){
+                if (userStat.getNetworkId() != null) {
                     pstmt.setLong(7, userStat.getNetworkId());
                 } else {
                     pstmt.setNull(7, Types.BIGINT);
@@ -201,7 +207,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             s_logger.error("error saving user stats to cloud_usage db", ex);
             throw new CloudRuntimeException(ex.getMessage());
         }
-	}
+    }
 
     @Override
     public void updateUserStats(List<UserStatisticsVO> userStats) {
@@ -230,7 +236,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
         }
     }
 
-	@Override
+    @Override
     public Long getLastAccountId() {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
@@ -283,9 +289,9 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
         return templateList;
     }
 
-       @Override
-       public Long getLastVmDiskStatsId() {
-               TransactionLegacy txn = TransactionLegacy.currentTxn();
+    @Override
+    public Long getLastVmDiskStatsId() {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         String sql = GET_LAST_VM_DISK_STATS;
         try {
@@ -298,11 +304,11 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             s_logger.error("error getting last vm disk stats id", ex);
         }
         return null;
-       }
+    }
 
-       @Override
-       public void updateVmDiskStats(List<VmDiskStatisticsVO> vmDiskStats) {
-               TransactionLegacy txn = TransactionLegacy.currentTxn();
+    @Override
+    public void updateVmDiskStats(List<VmDiskStatisticsVO> vmDiskStats) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
             String sql = UPDATE_VM_DISK_STATS;
@@ -332,11 +338,11 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             throw new CloudRuntimeException(ex.getMessage());
         }
 
-       }
+    }
 
-       @Override
-       public void saveVmDiskStats(List<VmDiskStatisticsVO> vmDiskStats) {
-               TransactionLegacy txn = TransactionLegacy.currentTxn();
+    @Override
+    public void saveVmDiskStats(List<VmDiskStatisticsVO> vmDiskStats) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
             String sql = INSERT_VM_DISK_STATS;
@@ -346,12 +352,12 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                 pstmt.setLong(1, vmDiskStat.getId());
                 pstmt.setLong(2, vmDiskStat.getDataCenterId());
                 pstmt.setLong(3, vmDiskStat.getAccountId());
-                if(vmDiskStat.getVmId() != null){
+                if (vmDiskStat.getVmId() != null) {
                     pstmt.setLong(4, vmDiskStat.getVmId());
                 } else {
                     pstmt.setNull(4, Types.BIGINT);
                 }
-                if(vmDiskStat.getVolumeId() != null){
+                if (vmDiskStat.getVolumeId() != null) {
                     pstmt.setLong(5, vmDiskStat.getVolumeId());
                 } else {
                     pstmt.setNull(5, Types.BIGINT);
@@ -378,11 +384,11 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             throw new CloudRuntimeException(ex.getMessage());
         }
 
-       }
+    }
 
     @Override
     public void saveUsageRecords(List<UsageVO> usageRecords) {
-       TransactionLegacy txn = TransactionLegacy.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             txn.start();
             String sql = INSERT_USGAE_RECORDS;
@@ -396,41 +402,41 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
                 pstmt.setString(5, usageRecord.getUsageDisplay());
                 pstmt.setInt(6, usageRecord.getUsageType());
                 pstmt.setDouble(7, usageRecord.getRawUsage());
-                if(usageRecord.getVmInstanceId() != null){
+                if (usageRecord.getVmInstanceId() != null) {
                     pstmt.setLong(8, usageRecord.getVmInstanceId());
                 } else {
                     pstmt.setNull(8, Types.BIGINT);
                 }
                 pstmt.setString(9, usageRecord.getVmName());
-                if(usageRecord.getOfferingId() != null){
+                if (usageRecord.getOfferingId() != null) {
                     pstmt.setLong(10, usageRecord.getOfferingId());
                 } else {
                     pstmt.setNull(10, Types.BIGINT);
                 }
-                if(usageRecord.getTemplateId() != null){
+                if (usageRecord.getTemplateId() != null) {
                     pstmt.setLong(11, usageRecord.getTemplateId());
                 } else {
                     pstmt.setNull(11, Types.BIGINT);
                 }
-                if(usageRecord.getUsageId() != null){
+                if (usageRecord.getUsageId() != null) {
                     pstmt.setLong(12, usageRecord.getUsageId());
                 } else {
                     pstmt.setNull(12, Types.BIGINT);
                 }
                 pstmt.setString(13, usageRecord.getType());
-                if(usageRecord.getSize() != null){
+                if (usageRecord.getSize() != null) {
                     pstmt.setLong(14, usageRecord.getSize());
                 } else {
                     pstmt.setNull(14, Types.BIGINT);
                 }
-                if(usageRecord.getNetworkId() != null){
+                if (usageRecord.getNetworkId() != null) {
                     pstmt.setLong(15, usageRecord.getNetworkId());
                 } else {
                     pstmt.setNull(15, Types.BIGINT);
                 }
                 pstmt.setTimestamp(16, new Timestamp(usageRecord.getStartDate().getTime()));
                 pstmt.setTimestamp(17, new Timestamp(usageRecord.getEndDate().getTime()));
-                if(usageRecord.getVirtualSize() != null){
+                if (usageRecord.getVirtualSize() != null) {
                     pstmt.setLong(18, usageRecord.getSize());
                 } else {
                     pstmt.setNull(18, Types.BIGINT);

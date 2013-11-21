@@ -16,87 +16,113 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
-public class UsageRecordResponse extends BaseResponse implements ControlledEntityResponse{
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the user account name")
+public class UsageRecordResponse extends BaseResponse implements ControlledEntityResponse {
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the user account name")
     private String accountName;
 
-    @SerializedName(ApiConstants.ACCOUNT_ID) @Param(description="the user account Id")
+    @SerializedName(ApiConstants.ACCOUNT_ID)
+    @Param(description = "the user account Id")
     private String accountId;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the resource")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the resource")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the resource")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the resource")
     private String projectName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain ID")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain the resource is associated with")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain the resource is associated with")
     private String domainName;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the zone ID")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "the zone ID")
     private String zoneId;
 
-    @SerializedName(ApiConstants.DESCRIPTION) @Param(description="description of the usage record")
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "description of the usage record")
     private String description;
 
-    @SerializedName("usage") @Param(description="usage in hours")
+    @SerializedName("usage")
+    @Param(description = "usage in hours")
     private String usage;
 
-    @SerializedName("usagetype") @Param(description="usage type ID")
+    @SerializedName("usagetype")
+    @Param(description = "usage type ID")
     private Integer usageType;
 
-    @SerializedName("rawusage") @Param(description="raw usage in hours")
+    @SerializedName("rawusage")
+    @Param(description = "raw usage in hours")
     private String rawUsage;
 
-    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="virtual machine ID")
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
+    @Param(description = "virtual machine ID")
     private String virtualMachineId;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="virtual machine name")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "virtual machine name")
     private String vmName;
 
-    @SerializedName("offeringid") @Param(description="offering ID")
-    private String  offeringId;
+    @SerializedName("offeringid")
+    @Param(description = "offering ID")
+    private String offeringId;
 
-    @SerializedName(ApiConstants.TEMPLATE_ID) @Param(description="template ID")
+    @SerializedName(ApiConstants.TEMPLATE_ID)
+    @Param(description = "template ID")
     private String templateId;
 
-    @SerializedName("usageid") @Param(description="id of the resource")
+    @SerializedName("usageid")
+    @Param(description = "id of the resource")
     private String usageId;
 
-    @SerializedName(ApiConstants.TYPE) @Param(description="resource type")
+    @SerializedName(ApiConstants.TYPE)
+    @Param(description = "resource type")
     private String type;
 
-    @SerializedName(ApiConstants.SIZE) @Param(description="resource size")
+    @SerializedName(ApiConstants.SIZE)
+    @Param(description = "resource size")
     private Long size;
 
-    @SerializedName("virtualsize") @Param(description="virtual size of resource")
+    @SerializedName("virtualsize")
+    @Param(description = "virtual size of resource")
     private Long virtualSize;
 
-    @SerializedName(ApiConstants.START_DATE) @Param(description="start date of the usage record")
+    @SerializedName(ApiConstants.START_DATE)
+    @Param(description = "start date of the usage record")
     private String startDate;
 
-    @SerializedName(ApiConstants.END_DATE) @Param(description="end date of the usage record")
+    @SerializedName(ApiConstants.END_DATE)
+    @Param(description = "end date of the usage record")
     private String endDate;
 
-    @SerializedName("issourcenat") @Param(description="True if the IPAddress is source NAT")
+    @SerializedName("issourcenat")
+    @Param(description = "True if the IPAddress is source NAT")
     private Boolean isSourceNat;
 
-    @SerializedName(ApiConstants.IS_SYSTEM) @Param(description="True if the IPAddress is system IP - allocated during vm deploy or lb rule create")
+    @SerializedName(ApiConstants.IS_SYSTEM)
+    @Param(description = "True if the IPAddress is system IP - allocated during vm deploy or lb rule create")
     private Boolean isSystem;
 
-    @SerializedName("networkid") @Param(description="id of the network")
+    @SerializedName("networkid")
+    @Param(description = "id of the network")
     private String networkId;
 
-    @SerializedName("isdefault") @Param(description="True if the resource is default")
+    @SerializedName("isdefault")
+    @Param(description = "True if the resource is default")
     private Boolean isDefault;
 
     @Override
@@ -142,7 +168,7 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     }
 
     public void setOfferingId(String offeringId) {
-        this.offeringId =  offeringId;
+        this.offeringId = offeringId;
     }
 
     public void setTemplateId(String templateId) {
@@ -193,7 +219,7 @@ public class UsageRecordResponse extends BaseResponse implements ControlledEntit
     }
 
     public void setNetworkId(String networkId) {
-        this.networkId =  networkId;
+        this.networkId = networkId;
     }
 
     public void setDefault(Boolean isDefault) {

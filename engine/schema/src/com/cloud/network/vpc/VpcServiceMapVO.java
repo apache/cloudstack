@@ -30,23 +30,23 @@ import com.cloud.network.Network.Service;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="vpc_service_map")
+@Table(name = "vpc_service_map")
 public class VpcServiceMapVO {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     long id;
 
-    @Column(name="vpc_id")
+    @Column(name = "vpc_id")
     long vpcId;
 
-    @Column(name="service")
+    @Column(name = "service")
     String service;
 
-    @Column(name="provider")
+    @Column(name = "provider")
     String provider;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 
     public long getId() {
@@ -78,13 +78,9 @@ public class VpcServiceMapVO {
         this.provider = provider.getName();
     }
 
+    @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("[VPC Service[");
         return buf.append(vpcId).append("-").append(service).append("-").append(provider).append("]").toString();
     }
 }
-
-
-
-
-

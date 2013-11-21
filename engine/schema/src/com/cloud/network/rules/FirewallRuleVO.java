@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -38,70 +38,68 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
 
 @Entity
-@Table(name="firewall_rules")
-@Inheritance(strategy=InheritanceType.JOINED)
-@DiscriminatorColumn(name="purpose", discriminatorType=DiscriminatorType.STRING, length=32)
+@Table(name = "firewall_rules")
+@Inheritance(strategy = InheritanceType.JOINED)
+@DiscriminatorColumn(name = "purpose", discriminatorType = DiscriminatorType.STRING, length = 32)
 public class FirewallRuleVO implements FirewallRule {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     long id;
 
-    @GeneratedValue(strategy=GenerationType.AUTO)
-    @Column(name=GenericDao.XID_COLUMN)
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = GenericDao.XID_COLUMN)
     String xId;
 
-    @Column(name="domain_id", updatable=false)
+    @Column(name = "domain_id", updatable = false)
     long domainId;
 
-    @Column(name="account_id", updatable=false)
+    @Column(name = "account_id", updatable = false)
     long accountId;
 
-    @Column(name="ip_address_id", updatable=false)
+    @Column(name = "ip_address_id", updatable = false)
     Long sourceIpAddressId;
 
-    @Column(name="start_port", updatable=false)
+    @Column(name = "start_port", updatable = false)
     Integer sourcePortStart;
 
-    @Column(name="end_port", updatable=false)
+    @Column(name = "end_port", updatable = false)
     Integer sourcePortEnd;
 
-    @Column(name="protocol", updatable=false)
+    @Column(name = "protocol", updatable = false)
     String protocol = NetUtils.TCP_PROTO;
 
-    @Enumerated(value=EnumType.STRING)
-    @Column(name="purpose")
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "purpose")
     Purpose purpose;
 
-    @Enumerated(value=EnumType.STRING)
-    @Column(name="state")
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "state")
     State state;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 
-    @Column(name="network_id")
+    @Column(name = "network_id")
     Long networkId;
 
-    @Column(name="icmp_code")
+    @Column(name = "icmp_code")
     Integer icmpCode;
 
-    @Column(name="icmp_type")
+    @Column(name = "icmp_type")
     Integer icmpType;
 
-
-    @Column(name="related")
+    @Column(name = "related")
     Long related;
 
-    @Column(name="type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "type")
+    @Enumerated(value = EnumType.STRING)
     FirewallRuleType type;
 
-    @Column(name="traffic_type")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "traffic_type")
+    @Enumerated(value = EnumType.STRING)
     TrafficType trafficType;
-
 
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
@@ -109,11 +107,11 @@ public class FirewallRuleVO implements FirewallRule {
     @Transient
     List<String> sourceCidrs;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     String uuid;
 
     public void setSourceCidrList(List<String> sourceCidrs) {
-        this.sourceCidrs=sourceCidrs;
+        this.sourceCidrs = sourceCidrs;
     }
 
     @Override
@@ -184,6 +182,7 @@ public class FirewallRuleVO implements FirewallRule {
     public FirewallRuleType getType() {
         return type;
     }
+
     public Date getCreated() {
         return created;
     }
@@ -192,9 +191,8 @@ public class FirewallRuleVO implements FirewallRule {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol, 
-            long networkId, long accountId, long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode,
-            Integer icmpType, Long related, TrafficType trafficType) {
+    public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol, long networkId, long accountId, long domainId,
+            Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related, TrafficType trafficType) {
         this.xId = xId;
         if (xId == null) {
             this.xId = UUID.randomUUID().toString();
@@ -222,16 +220,14 @@ public class FirewallRuleVO implements FirewallRule {
         this.trafficType = trafficType;
     }
 
-
-    public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol,
-                          long networkId, long accountId, long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode,
-                          Integer icmpType, Long related, TrafficType trafficType, FirewallRuleType type) {
+    public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol, long networkId, long accountId, long domainId,
+            Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related, TrafficType trafficType, FirewallRuleType type) {
         this(xId, ipAddressId, portStart, portEnd, protocol, networkId, accountId, domainId, purpose, sourceCidrs, icmpCode, icmpType, related, trafficType);
         this.type = type;
     }
 
-    public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId, 
-            long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related) {
+    public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId, long domainId, Purpose purpose,
+            List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related) {
         this(xId, ipAddressId, port, port, protocol, networkId, accountId, domainId, purpose, sourceCidrs, icmpCode, icmpType, related, null);
     }
 

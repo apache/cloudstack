@@ -16,10 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,11 +26,8 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.log4j.Logger;
 
-import com.cloud.exception.InvalidParameterValueException;
-
-@APICommand(name = "listServiceOfferings", description="Lists all available service offerings.", responseObject=ServiceOfferingResponse.class)
+@APICommand(name = "listServiceOfferings", description = "Lists all available service offerings.", responseObject = ServiceOfferingResponse.class)
 public class ListServiceOfferingsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
 
@@ -43,27 +37,31 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = ServiceOfferingResponse.class,
-            description="ID of the service offering")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "ID of the service offering")
     private Long id;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="name of the service offering")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "name of the service offering")
     private String serviceOfferingName;
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
-            description="the ID of the virtual machine. Pass this in if you want to see the available service offering that a virtual machine can be changed to.")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+               type = CommandType.UUID,
+               entityType = UserVmResponse.class,
+               description = "the ID of the virtual machine. Pass this in if you want to see the available service offering that a virtual machine can be changed to.")
     private Long virtualMachineId;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
-            description="the ID of the domain associated with the service offering")
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               entityType = DomainResponse.class,
+               description = "the ID of the domain associated with the service offering")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.IS_SYSTEM_OFFERING, type=CommandType.BOOLEAN, description="is this a system vm offering")
+    @Parameter(name = ApiConstants.IS_SYSTEM_OFFERING, type = CommandType.BOOLEAN, description = "is this a system vm offering")
     private Boolean isSystem;
 
-    @Parameter(name=ApiConstants.SYSTEM_VM_TYPE, type=CommandType.STRING, description="the system VM type. Possible types are \"consoleproxy\", \"secondarystoragevm\" or \"domainrouter\".")
+    @Parameter(name = ApiConstants.SYSTEM_VM_TYPE,
+               type = CommandType.STRING,
+               description = "the system VM type. Possible types are \"consoleproxy\", \"secondarystoragevm\" or \"domainrouter\".")
     private String systemVmType;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -81,7 +79,7 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
         return virtualMachineId;
     }
 
-    public Long getDomainId(){
+    public Long getDomainId() {
         return domainId;
     }
 
@@ -89,7 +87,7 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
         return isSystem == null ? false : isSystem;
     }
 
-    public String getSystemVmType(){
+    public String getSystemVmType() {
         return systemVmType;
     }
 
@@ -103,7 +101,7 @@ public class ListServiceOfferingsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         ListResponse<ServiceOfferingResponse> response = _queryService.searchForServiceOfferings(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

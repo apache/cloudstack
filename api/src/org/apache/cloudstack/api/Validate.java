@@ -23,8 +23,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ FIELD })
+@Target({FIELD})
 public @interface Validate {
     Class<?>[] validators() default Object.class;
+
     String description() default "";
 }

@@ -19,6 +19,10 @@
 
 package com.cloud.agent.manager;
 
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
@@ -55,9 +59,6 @@ import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.simulator.MockVMVO;
 import com.cloud.simulator.dao.MockVMDao;
 import com.cloud.utils.component.ManagerBase;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
 
 public class MockNetworkManagerImpl extends ManagerBase implements MockNetworkManager {
     private static final Logger s_logger = Logger.getLogger(MockVmManagerImpl.class);
@@ -94,7 +95,6 @@ public class MockNetworkManagerImpl extends ManagerBase implements MockNetworkMa
         return new SetFirewallRulesAnswer(cmd, true, results);
     }
 
-
     @Override
     public NetworkUsageAnswer getNetworkUsage(NetworkUsageCommand cmd) {
         return new NetworkUsageAnswer(cmd, null, 100L, 100L);
@@ -125,7 +125,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements MockNetworkMa
         String vmname = cmd.getVmName();
         if (_mockVmDao.findByVmName(vmname) != null) {
             s_logger.debug("Plugged NIC (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
-            return new PlugNicAnswer(cmd,  true, "success");
+            return new PlugNicAnswer(cmd, true, "success");
         }
         s_logger.error("Plug NIC failed for (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
         return new PlugNicAnswer(cmd, false, "failure");
@@ -136,7 +136,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements MockNetworkMa
         String vmname = cmd.getVmName();
         if (_mockVmDao.findByVmName(vmname) != null) {
             s_logger.debug("Plugged NIC (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
-            return new UnPlugNicAnswer(cmd,  true, "success");
+            return new UnPlugNicAnswer(cmd, true, "success");
         }
         s_logger.error("Plug NIC failed for (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
         return new UnPlugNicAnswer(cmd, false, "failure");
@@ -168,7 +168,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements MockNetworkMa
         sb.append(routerIp);
         sb.append(routerName);
 
-        String [][] rules = cmd.generateFwRules();
+        String[][] rules = cmd.generateFwRules();
         String[] aclRules = rules[0];
 
         for (int i = 0; i < aclRules.length; i++) {
@@ -193,7 +193,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements MockNetworkMa
     @Override
     public SetStaticRouteAnswer setStaticRoute(SetStaticRouteCommand cmd) {
         String[] results = new String[cmd.getStaticRoutes().length];
-        String [][] rules = cmd.generateSRouteRules();
+        String[][] rules = cmd.generateSRouteRules();
         StringBuilder sb = new StringBuilder();
         String[] srRules = rules[0];
         for (int i = 0; i < srRules.length; i++) {

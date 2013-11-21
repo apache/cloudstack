@@ -26,8 +26,7 @@ import com.cloud.agent.api.ChangeAgentCommand;
 import com.cloud.host.Status.Event;
 
 public class ChangeAgentAnswerTest {
-    ChangeAgentCommand cac = new ChangeAgentCommand(123456789L,
-            Event.AgentConnected);
+    ChangeAgentCommand cac = new ChangeAgentCommand(123456789L, Event.AgentConnected);
     ChangeAgentAnswer caa = new ChangeAgentAnswer(cac, true);
 
     @Test

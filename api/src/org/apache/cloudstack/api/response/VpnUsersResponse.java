@@ -16,39 +16,48 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.VpnUser;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = VpnUser.class)
 @SuppressWarnings("unused")
-public class VpnUsersResponse extends BaseResponse implements ControlledEntityResponse{
-    @SerializedName(ApiConstants.ID) @Param(description="the vpn userID")
+public class VpnUsersResponse extends BaseResponse implements ControlledEntityResponse {
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the vpn userID")
     private String id;
 
-    @SerializedName(ApiConstants.USERNAME) @Param(description="the username of the vpn user")
+    @SerializedName(ApiConstants.USERNAME)
+    @Param(description = "the username of the vpn user")
     private String userName;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account of the remote access vpn")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account of the remote access vpn")
     private String accountName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the account of the remote access vpn")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain id of the account of the remote access vpn")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the account of the remote access vpn")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain name of the account of the remote access vpn")
     private String domainName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vpn")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the vpn")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vpn")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the vpn")
     private String projectName;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="the state of the Vpn User")
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "the state of the Vpn User")
     private String state;
 
     public void setId(String id) {
@@ -59,6 +68,7 @@ public class VpnUsersResponse extends BaseResponse implements ControlledEntityRe
         this.userName = name;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
@@ -68,6 +78,7 @@ public class VpnUsersResponse extends BaseResponse implements ControlledEntityRe
         this.domainId = domainId;
     }
 
+    @Override
     public void setDomainName(String name) {
         this.domainName = name;
     }

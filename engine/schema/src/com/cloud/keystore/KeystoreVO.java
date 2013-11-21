@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.keystore;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,77 +23,80 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-@Entity
-@Table(name="keystore")
-public class KeystoreVO implements InternalIdentity {
-	@Id
-	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(name="id")
-	private Long id;
+import org.apache.cloudstack.api.InternalIdentity;
 
-	@Column(name="name")
-	private String name;
-	
-    @Column(name="certificate",length=65535)
+@Entity
+@Table(name = "keystore")
+public class KeystoreVO implements InternalIdentity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
+
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "certificate", length = 65535)
     private String certificate;
 
-    @Column(name="key",length=65535)
+    @Column(name = "key", length = 65535)
     private String key;
-    
-    @Column(name="domain_suffix")
+
+    @Column(name = "domain_suffix")
     private String domainSuffix;
-    
-    @Column(name="seq")
+
+    @Column(name = "seq")
     private Integer index;
 
     public KeystoreVO() {
     }
-    
-	public long getId() {
-		return id;
-	}
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    @Override
+    public long getId() {
+        return id;
+    }
 
-	public String getName() {
-		return name;
-	}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public String getCertificate() {
-		return certificate;
-	}
+    public void setName(String name) {
+        this.name = name;
+    }
 
-	public void setCertificate(String certificate) {
-		this.certificate = certificate;
-	}
+    public String getCertificate() {
+        return certificate;
+    }
 
-	public String getKey() {
-		return key;
-	}
+    public void setCertificate(String certificate) {
+        this.certificate = certificate;
+    }
 
-	public void setKey(String key) {
-		this.key = key;
-	}
+    public String getKey() {
+        return key;
+    }
 
-	public String getDomainSuffix() {
-		return domainSuffix;
-	}
+    public void setKey(String key) {
+        this.key = key;
+    }
 
-	public void setDomainSuffix(String domainSuffix) {
-		this.domainSuffix = domainSuffix;
-	}
-	
-	public void setIndex(Integer index) {
-		this.index = index;
-	}
-	
-	public Integer getIndex() {
-		return this.index;
-	}
+    public String getDomainSuffix() {
+        return domainSuffix;
+    }
+
+    public void setDomainSuffix(String domainSuffix) {
+        this.domainSuffix = domainSuffix;
+    }
+
+    public void setIndex(Integer index) {
+        this.index = index;
+    }
+
+    public Integer getIndex() {
+        return this.index;
+    }
 }

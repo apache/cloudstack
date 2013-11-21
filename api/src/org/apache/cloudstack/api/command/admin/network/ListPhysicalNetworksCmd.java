@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.admin.network;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -28,13 +30,12 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listPhysicalNetworks", description="Lists physical networks", responseObject=PhysicalNetworkResponse.class, since="3.0.0")
+@APICommand(name = "listPhysicalNetworks", description = "Lists physical networks", responseObject = PhysicalNetworkResponse.class, since = "3.0.0")
 public class ListPhysicalNetworksCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListPhysicalNetworksCmd.class.getName());
 
@@ -44,15 +45,13 @@ public class ListPhysicalNetworksCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=PhysicalNetworkResponse.class,
-            description="list physical network by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "list physical network by id")
     private Long id;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
-            description="the Zone ID for the physical network")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID for the physical network")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="search by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "search by name")
     private String networkName;
 
     /////////////////////////////////////////////////////
@@ -86,9 +85,9 @@ public class ListPhysicalNetworksCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
-        Pair<List<? extends PhysicalNetwork>, Integer> result = _networkService.searchPhysicalNetworks(getId(),getZoneId(),
-                this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(), getNetworkName());
+    public void execute() {
+        Pair<List<? extends PhysicalNetwork>, Integer> result =
+            _networkService.searchPhysicalNetworks(getId(), getZoneId(), this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(), getNetworkName());
         if (result != null) {
             ListResponse<PhysicalNetworkResponse> response = new ListResponse<PhysicalNetworkResponse>();
             List<PhysicalNetworkResponse> networkResponses = new ArrayList<PhysicalNetworkResponse>();
@@ -99,7 +98,7 @@ public class ListPhysicalNetworksCmd extends BaseListCmd {
             response.setResponses(networkResponses, result.second());
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
-        }else {
+        } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to search for physical networks");
         }
     }

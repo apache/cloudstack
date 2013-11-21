@@ -21,9 +21,10 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.UUID;
 
-import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
+
+import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
 
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
@@ -40,8 +41,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class CallContext {
     private static final Logger s_logger = Logger.getLogger(CallContext.class);
     private static ManagedThreadLocal<CallContext> s_currentContext = new ManagedThreadLocal<CallContext>();
-    private static ManagedThreadLocal<Stack<CallContext>> s_currentContextStack = 
-            new ManagedThreadLocal<Stack<CallContext>>() {
+    private static ManagedThreadLocal<Stack<CallContext>> s_currentContextStack = new ManagedThreadLocal<Stack<CallContext>>() {
                 @Override
                 protected Stack<CallContext> initialValue() {
                     return new Stack<CallContext>();
@@ -197,9 +197,21 @@ public class CallContext {
         }
         return register(user, account);
     }
+    
+    public static CallContext register(long callingUserId, long callingAccountId, String contextId) throws CloudAuthenticationException {
+        Account account = s_entityMgr.findById(Account.class, callingAccountId);
+        if (account == null) {
+            throw new CloudAuthenticationException("The account is no longer current.").add(Account.class, Long.toString(callingAccountId));
+        }
+        User user = s_entityMgr.findById(User.class, callingUserId);
+        if (user == null) {
+            throw new CloudAuthenticationException("The user is no longer current.").add(User.class, Long.toString(callingUserId));
+        }
+        return register(user, account, contextId);
+    }
 
     public static void unregisterAll() {
-        while ( unregister() != null ) {
+        while (unregister() != null) {
             // NOOP
         }
     }
@@ -228,7 +240,7 @@ public class CallContext {
         Stack<CallContext> stack = s_currentContextStack.get();
         stack.pop();
 
-        if ( ! stack.isEmpty() ) {
+        if (!stack.isEmpty()) {
             s_currentContext.set(stack.peek());
         }
 
@@ -281,7 +293,7 @@ public class CallContext {
 
     public static void setActionEventInfo(String eventType, String description) {
         CallContext context = CallContext.current();
-        if ( context != null ) {
+        if (context != null) {
             context.setEventType(eventType);
             context.setEventDescription(description);
         }
@@ -290,8 +302,11 @@ public class CallContext {
     @Override
     public String toString() {
         return new StringBuilder("CCtxt[acct=").append(getCallingAccountId())
-                .append("; user=").append(getCallingUserId())
-                .append("; id=").append(contextId)
-                .append("]").toString();
+            .append("; user=")
+            .append(getCallingUserId())
+            .append("; id=")
+            .append(contextId)
+            .append("]")
+            .toString();
     }
 }

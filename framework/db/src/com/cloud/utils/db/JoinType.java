@@ -23,7 +23,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * JoinType is only used with SecondaryTable.  Temporary solution.   
+ * JoinType is only used with SecondaryTable.  Temporary solution.
  */
 @Target(TYPE)
 @Retention(RUNTIME)

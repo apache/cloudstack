@@ -34,11 +34,11 @@ import java.util.Set;
 public class StateMachine<S, E> {
     private final HashMap<S, StateEntry> _states = new HashMap<S, StateEntry>();
     private final StateEntry _initialStateEntry;
-    
+
     public StateMachine() {
         _initialStateEntry = new StateEntry(null);
     }
-    
+
     public void addTransition(S currentState, E event, S toState) {
         StateEntry entry = null;
         if (currentState == null) {
@@ -50,9 +50,9 @@ public class StateMachine<S, E> {
                 _states.put(currentState, entry);
             }
         }
-        
+
         entry.addTransition(event, toState);
-        
+
         entry = _states.get(toState);
         if (entry == null) {
             entry = new StateEntry(toState);
@@ -60,12 +60,12 @@ public class StateMachine<S, E> {
         }
         entry.addFromTransition(event, currentState);
     }
-    
+
     public Set<E> getPossibleEvents(S s) {
         StateEntry entry = _states.get(s);
         return entry.nextStates.keySet();
     }
-    
+
     public S getNextState(S s, E e) {
         StateEntry entry = null;
         if (s == null) {
@@ -74,19 +74,19 @@ public class StateMachine<S, E> {
             entry = _states.get(s);
             assert entry != null : "Cannot retrieve transitions for state " + s.toString();
         }
-        
+
         return entry.nextStates.get(e);
     }
-    
+
     public List<S> getFromStates(S s, E e) {
         StateEntry entry = _states.get(s);
         if (entry == null) {
             return new ArrayList<S>();
         }
-        
+
         return entry.prevStates.get(e);
     }
-    
+
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder(1024);
@@ -96,38 +96,39 @@ public class StateMachine<S, E> {
         }
         return str.toString();
     }
-    
+
     private class StateEntry {
         public S state;
         public HashMap<E, S> nextStates;
         public HashMap<E, List<S>> prevStates;
-        
+
         public StateEntry(S state) {
             this.state = state;
             nextStates = new HashMap<E, S>();
             prevStates = new HashMap<E, List<S>>();
         }
-        
+
         public void addTransition(E e, S s) {
-            assert !nextStates.containsKey(e) : "State " + getStateStr() + " already contains a transition to state " + nextStates.get(e).toString() +  " via event " + e.toString() + ".  Please revisit the rule you're adding to state " + s.toString();
+            assert !nextStates.containsKey(e) : "State " + getStateStr() + " already contains a transition to state " + nextStates.get(e).toString() + " via event " +
+                e.toString() + ".  Please revisit the rule you're adding to state " + s.toString();
             nextStates.put(e, s);
         }
-        
+
         public void addFromTransition(E e, S s) {
             List<S> l = prevStates.get(e);
             if (l == null) {
                 l = new ArrayList<S>();
                 prevStates.put(e, l);
             }
-            
+
             assert !l.contains(s) : "Already contains the from transition " + e.toString() + " from state " + s.toString() + " to " + getStateStr();
             l.add(s);
         }
-        
+
         protected String getStateStr() {
             return state == null ? "Initial" : state.toString();
         }
-        
+
         public void buildString(StringBuilder str) {
             str.append("State: ").append(getStateStr()).append("\n");
             for (Map.Entry<E, S> nextState : nextStates.entrySet()) {

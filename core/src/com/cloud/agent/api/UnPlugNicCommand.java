@@ -18,7 +18,7 @@ package com.cloud.agent.api;
 
 import com.cloud.agent.api.to.NicTO;
 
-public class UnPlugNicCommand extends Command{
+public class UnPlugNicCommand extends Command {
     NicTO nic;
     String instanceName;
 

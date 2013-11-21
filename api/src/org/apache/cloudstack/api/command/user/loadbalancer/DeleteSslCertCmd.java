@@ -16,19 +16,28 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
-
-import com.cloud.network.lb.CertService;
-import org.apache.cloudstack.api.response.SslCertResponse;
-import com.cloud.exception.*;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
-
 import javax.inject.Inject;
 
-@APICommand(name = "deleteSslCert", description="Delete a certificate to cloudstack", responseObject=SuccessResponse.class)
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.SslCertResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.lb.CertService;
+import com.cloud.utils.exception.CloudRuntimeException;
+
+@APICommand(name = "deleteSslCert", description = "Delete a certificate to cloudstack", responseObject = SuccessResponse.class)
 public class DeleteSslCertCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSslCertCmd.class.getName());
 
@@ -41,9 +50,8 @@ public class DeleteSslCertCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name= ApiConstants.ID, type=CommandType.UUID, entityType = SslCertResponse.class, required=true, description="Id of SSL certificate")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SslCertResponse.class, required = true, description = "Id of SSL certificate")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -58,7 +66,8 @@ public class DeleteSslCertCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException, NetworkRuleConflictException {
         try {
             _certService.deleteSslCert(this);
             SuccessResponse rsp = new SuccessResponse();

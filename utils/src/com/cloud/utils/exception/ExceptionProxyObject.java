@@ -16,16 +16,15 @@
 // under the License.
 package com.cloud.utils.exception;
 
-
 public class ExceptionProxyObject {
     private String uuid;
     private String description;
-    
-    public ExceptionProxyObject(){
-        
+
+    public ExceptionProxyObject() {
+
     }
-    
-    public ExceptionProxyObject(String uuid, String desc){
+
+    public ExceptionProxyObject(String uuid, String desc) {
         this.uuid = uuid;
         this.description = desc;
     }
@@ -45,6 +44,5 @@ public class ExceptionProxyObject {
     public void setDescription(String description) {
         this.description = description;
     }
-    
-    
+
 }

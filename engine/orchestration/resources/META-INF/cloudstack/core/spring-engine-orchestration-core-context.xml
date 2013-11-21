@@ -67,5 +67,6 @@
     
     <bean id="virtualMachineEntityImpl" class="org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityImpl" />
     
+    <bean id="virtualMachinePowerStateSyncImpl" class="com.cloud.vm.VirtualMachinePowerStateSyncImpl" />
     
 </beans>

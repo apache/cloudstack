@@ -23,6 +23,7 @@ import com.cloud.usage.UsageVPNUserVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface UsageVPNUserDao extends GenericDao<UsageVPNUserVO, Long> {
-	public void update(UsageVPNUserVO usage);
-	public List<UsageVPNUserVO> getUsageRecords(Long accountId, Long domainId, Date startDate, Date endDate, boolean limit, int page);
+    public void update(UsageVPNUserVO usage);
+
+    public List<UsageVPNUserVO> getUsageRecords(Long accountId, Long domainId, Date startDate, Date endDate, boolean limit, int page);
 }

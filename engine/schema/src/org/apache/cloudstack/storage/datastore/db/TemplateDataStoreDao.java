@@ -28,7 +28,7 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
 public interface TemplateDataStoreDao extends GenericDao<TemplateDataStoreVO, Long>,
-StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
+        StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
 
     List<TemplateDataStoreVO> listByStoreId(long id);
 
@@ -44,14 +44,11 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     List<TemplateDataStoreVO> listByTemplateStoreStatus(long templateId, long storeId, State... states);
 
-    List<TemplateDataStoreVO> listByTemplateStoreDownloadStatus(long templateId, long storeId,
-            VMTemplateStorageResourceAssoc.Status... status);
+    List<TemplateDataStoreVO> listByTemplateStoreDownloadStatus(long templateId, long storeId, VMTemplateStorageResourceAssoc.Status... status);
 
-    List<TemplateDataStoreVO> listByTemplateZoneDownloadStatus(long templateId, Long zoneId,
-            VMTemplateStorageResourceAssoc.Status... status);
+    List<TemplateDataStoreVO> listByTemplateZoneDownloadStatus(long templateId, Long zoneId, VMTemplateStorageResourceAssoc.Status... status);
 
-    TemplateDataStoreVO findByTemplateZoneDownloadStatus(long templateId, Long zoneId,
-            VMTemplateStorageResourceAssoc.Status... status);
+    TemplateDataStoreVO findByTemplateZoneDownloadStatus(long templateId, Long zoneId, VMTemplateStorageResourceAssoc.Status... status);
 
     TemplateDataStoreVO findByStoreTemplate(long storeId, long templateId);
 

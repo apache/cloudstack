@@ -19,7 +19,6 @@ package com.cloud.vm;
 import java.util.Map;
 
 import com.cloud.agent.api.HostVmStateReportEntry;
-import com.cloud.vm.VirtualMachine.PowerState;
 
 public interface VirtualMachinePowerStateSync {
 	
@@ -28,5 +27,5 @@ public interface VirtualMachinePowerStateSync {
 	void processHostVmStateReport(long hostId, Map<String, HostVmStateReportEntry> report);
 	
 	// to adapt legacy ping report
-	void processHostVmStatePingReport(long hostId, Map<String, PowerState> report);
+	void processHostVmStatePingReport(long hostId, Map<String, HostVmStateReportEntry> report);
 }

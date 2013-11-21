@@ -68,7 +68,6 @@ public class AgentRoutingResource extends AgentStorageResource {
     long totalMem;
     protected String _mountParent;
 
-
     public AgentRoutingResource(long instanceId, AgentType agentType, SimulatorManager simMgr, String hostGuid) {
         super(instanceId, agentType, simMgr, hostGuid);
     }
@@ -81,11 +80,11 @@ public class AgentRoutingResource extends AgentStorageResource {
     public Answer executeRequest(Command cmd) {
         try {
             if (cmd instanceof StartCommand) {
-                return execute((StartCommand) cmd);
+                return execute((StartCommand)cmd);
             } else if (cmd instanceof StopCommand) {
-                return execute((StopCommand) cmd);
+                return execute((StopCommand)cmd);
             } else if (cmd instanceof CheckVirtualMachineCommand) {
-                return execute((CheckVirtualMachineCommand) cmd);
+                return execute((CheckVirtualMachineCommand)cmd);
             } else if (cmd instanceof ReadyCommand) {
                 return new ReadyAnswer((ReadyCommand)cmd);
             } else if (cmd instanceof ShutdownCommand) {
@@ -109,10 +108,10 @@ public class AgentRoutingResource extends AgentStorageResource {
             return null;
         }
         synchronized (_vms) {
-		if (_vms.size() == 0) {
-			//load vms state from database
-			_vms.putAll(_simMgr.getVmStates(hostGuid));
-		}
+            if (_vms.size() == 0) {
+                //load vms state from database
+                _vms.putAll(_simMgr.getVmStates(hostGuid));
+            }
         }
         final HashMap<String, State> newStates = sync();
         HashMap<String, Pair<Long, Long>> nwGrpStates = _simMgr.syncNetworkGroups(hostGuid);
@@ -129,15 +128,16 @@ public class AgentRoutingResource extends AgentStorageResource {
         totalCpu = agentHost.getCpuCount() * agentHost.getCpuSpeed();
         totalMem = agentHost.getMemorySize();
         for (Map.Entry<String, MockVMVO> entry : vmsMaps.entrySet()) {
-		MockVMVO vm = entry.getValue();
-		usedCpu += vm.getCpu();
-		usedMem += vm.getMemory();
-		_runningVms.put(entry.getKey(), new Pair<Long, Long>(Long.valueOf(vm.getCpu()), vm.getMemory()));
+            MockVMVO vm = entry.getValue();
+            usedCpu += vm.getCpu();
+            usedMem += vm.getMemory();
+            _runningVms.put(entry.getKey(), new Pair<Long, Long>(Long.valueOf(vm.getCpu()), vm.getMemory()));
         }
 
         List<Object> info = getHostInfo();
 
-        StartupRoutingCommand cmd = new StartupRoutingCommand((Integer) info.get(0), (Long) info.get(1), (Long) info.get(2), (Long) info.get(4), (String) info.get(3), HypervisorType.Simulator,
+        StartupRoutingCommand cmd =
+            new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), HypervisorType.Simulator,
                 RouterPrivateIpStrategy.HostLocal);
         cmd.setStateChanges(changes);
 
@@ -166,7 +166,7 @@ public class AgentRoutingResource extends AgentStorageResource {
 
         StartupStorageCommand ssCmd = initializeLocalSR();
 
-        return new StartupCommand[] { cmd, ssCmd };
+        return new StartupCommand[] {cmd, ssCmd};
     }
 
     private StartupStorageCommand initializeLocalSR() {
@@ -182,73 +182,71 @@ public class AgentRoutingResource extends AgentStorageResource {
         return cmd;
     }
 
-	protected synchronized Answer execute(StartCommand cmd)
-			throws IllegalArgumentException {
-		VirtualMachineTO vmSpec = cmd.getVirtualMachine();
-		String vmName = vmSpec.getName();
-		if (this.totalCpu < (vmSpec.getCpus() * vmSpec.getMaxSpeed() + this.usedCpu) ||
-			this.totalMem < (vmSpec.getMaxRam() + this.usedMem)) {
-			return new StartAnswer(cmd, "Not enough resource to start the vm");
-		}
-		State state = State.Stopped;
-		synchronized (_vms) {
-			_vms.put(vmName, State.Starting);
-		}
+    protected synchronized Answer execute(StartCommand cmd) throws IllegalArgumentException {
+        VirtualMachineTO vmSpec = cmd.getVirtualMachine();
+        String vmName = vmSpec.getName();
+        if (this.totalCpu < (vmSpec.getCpus() * vmSpec.getMaxSpeed() + this.usedCpu) || this.totalMem < (vmSpec.getMaxRam() + this.usedMem)) {
+            return new StartAnswer(cmd, "Not enough resource to start the vm");
+        }
+        State state = State.Stopped;
+        synchronized (_vms) {
+            _vms.put(vmName, State.Starting);
+        }
 
-		try {
-		    Answer result = _simMgr.simulate(cmd, hostGuid);
-		    if (!result.getResult()) {
-		        return new StartAnswer(cmd, result.getDetails());
-		    }
+        try {
+            Answer result = _simMgr.simulate(cmd, hostGuid);
+            if (!result.getResult()) {
+                return new StartAnswer(cmd, result.getDetails());
+            }
 
-		    this.usedCpu += vmSpec.getCpus() * vmSpec.getMaxSpeed();
-		    this.usedMem += vmSpec.getMaxRam();
-		    _runningVms.put(vmName, new Pair<Long, Long>(Long.valueOf(vmSpec.getCpus() * vmSpec.getMaxSpeed()), vmSpec.getMaxRam()));
-		    state = State.Running;
+            this.usedCpu += vmSpec.getCpus() * vmSpec.getMaxSpeed();
+            this.usedMem += vmSpec.getMaxRam();
+            _runningVms.put(vmName, new Pair<Long, Long>(Long.valueOf(vmSpec.getCpus() * vmSpec.getMaxSpeed()), vmSpec.getMaxRam()));
+            state = State.Running;
 
-		} finally {
-		    synchronized (_vms) {
-		        _vms.put(vmName, state);
-		    }
-		}
+        } finally {
+            synchronized (_vms) {
+                _vms.put(vmName, state);
+            }
+        }
 
-		return new StartAnswer(cmd);
+        return new StartAnswer(cmd);
 
-	}
+    }
 
-	protected synchronized StopAnswer execute(StopCommand cmd) {
+    protected synchronized StopAnswer execute(StopCommand cmd) {
 
-		StopAnswer answer = null;
-		String vmName = cmd.getVmName();
+        StopAnswer answer = null;
+        String vmName = cmd.getVmName();
 
-		State state = null;
-		synchronized (_vms) {
-			state = _vms.get(vmName);
-			_vms.put(vmName, State.Stopping);
-		}
-		try {
-		    Answer result = _simMgr.simulate(cmd, hostGuid);
+        State state = null;
+        synchronized (_vms) {
+            state = _vms.get(vmName);
+            _vms.put(vmName, State.Stopping);
+        }
+        try {
+            Answer result = _simMgr.simulate(cmd, hostGuid);
 
-		    if (!result.getResult()) {
-		        return new StopAnswer(cmd, result.getDetails(), false);
-		    }
+            if (!result.getResult()) {
+                return new StopAnswer(cmd, result.getDetails(), false);
+            }
 
-			answer = new StopAnswer(cmd, null, true);
-			Pair<Long, Long> data = _runningVms.get(vmName);
-			if (data != null) {
-				this.usedCpu -= data.first();
-				this.usedMem -= data.second();
-			}
-			state = State.Stopped;
+            answer = new StopAnswer(cmd, null, true);
+            Pair<Long, Long> data = _runningVms.get(vmName);
+            if (data != null) {
+                this.usedCpu -= data.first();
+                this.usedMem -= data.second();
+            }
+            state = State.Stopped;
 
-		} finally {
-			synchronized (_vms) {
-				_vms.put(vmName, state);
-			}
-		}
+        } finally {
+            synchronized (_vms) {
+                _vms.put(vmName, state);
+            }
+        }
 
         return answer;
-	}
+    }
 
     protected CheckVirtualMachineAnswer execute(final CheckVirtualMachineCommand cmd) {
         final String vmName = cmd.getVmName();
@@ -267,9 +265,9 @@ public class AgentRoutingResource extends AgentStorageResource {
         long speed = agentHost.getCpuSpeed();
         long cpus = agentHost.getCpuCount();
         long ram = agentHost.getMemorySize();
-        long dom0Ram = agentHost.getMemorySize()/10;
+        long dom0Ram = agentHost.getMemorySize() / 10;
 
-        info.add((int) cpus);
+        info.add((int)cpus);
         info.add(speed);
         info.add(ram);
         info.add(agentHost.getCapabilities());
@@ -277,17 +275,15 @@ public class AgentRoutingResource extends AgentStorageResource {
 
         return info;
     }
-    
+
     protected HashMap<String, HostVmStateReportEntry> getHostVmStateReport() {
-    	HashMap<String, HostVmStateReportEntry> report = new HashMap<String, HostVmStateReportEntry>();
-    	
-    	for(String vmName : _runningVms.keySet()) {
-    		report.put(vmName, new HostVmStateReportEntry(PowerState.PowerOn, agentHost.getName(), null));
-    	}
-    	
-    	
-    	
-    	return report;
+        HashMap<String, HostVmStateReportEntry> report = new HashMap<String, HostVmStateReportEntry>();
+
+        for (String vmName : _runningVms.keySet()) {
+            report.put(vmName, new HostVmStateReportEntry(PowerState.PowerOn, agentHost.getName(), null));
+        }
+
+        return report;
     }
 
     protected HashMap<String, State> sync() {

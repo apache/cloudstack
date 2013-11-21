@@ -20,18 +20,18 @@ package org.apache.cloudstack.framework.transport;
 
 import org.apache.cloudstack.framework.serializer.OnwireName;
 
-@OnwireName(name="TransportConnectRequestPdu")
+@OnwireName(name = "TransportConnectRequestPdu")
 public class TransportConnectResponsePdu extends TransportPdu {
-	private int _statusCode;
-	
-	public TransportConnectResponsePdu() {
-	}
+    private int _statusCode;
 
-	public int getStatusCode() {
-		return _statusCode;
-	}
-	
-	public void setStatusCode(int statusCode) {
-		_statusCode = statusCode;
-	}
+    public TransportConnectResponsePdu() {
+    }
+
+    public int getStatusCode() {
+        return _statusCode;
+    }
+
+    public void setStatusCode(int statusCode) {
+        _statusCode = statusCode;
+    }
 }

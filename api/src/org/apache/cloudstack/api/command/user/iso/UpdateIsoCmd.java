@@ -16,17 +16,18 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateIso", description="Updates an ISO file.", responseObject=TemplateResponse.class)
+@APICommand(name = "updateIso", description = "Updates an ISO file.", responseObject = TemplateResponse.class)
 public class UpdateIsoCmd extends BaseUpdateTemplateOrIsoCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateIsoCmd.class.getName());
     private static final String s_name = "updateisoresponse";
@@ -65,7 +66,7 @@ public class UpdateIsoCmd extends BaseUpdateTemplateOrIsoCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         VirtualMachineTemplate result = _templateService.updateTemplate(this);
         if (result != null) {
             TemplateResponse response = _responseGenerator.createTemplateUpdateResponse(result);

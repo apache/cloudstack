@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.user.autoscale;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,8 +31,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmGroup;
@@ -46,25 +46,38 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.MIN_MEMBERS, type = CommandType.INTEGER, description = "the minimum number of members in the vmgroup, the number of instances in the vm group will be equal to or more than this number.")
+    @Parameter(name = ApiConstants.MIN_MEMBERS,
+               type = CommandType.INTEGER,
+               description = "the minimum number of members in the vmgroup, the number of instances in the vm group will be equal to or more than this number.")
     private Integer minMembers;
 
-    @Parameter(name = ApiConstants.MAX_MEMBERS, type = CommandType.INTEGER, description = "the maximum number of members in the vmgroup, The number of instances in the vm group will be equal to or less than this number.")
+    @Parameter(name = ApiConstants.MAX_MEMBERS,
+               type = CommandType.INTEGER,
+               description = "the maximum number of members in the vmgroup, The number of instances in the vm group will be equal to or less than this number.")
     private Integer maxMembers;
 
-    @Parameter(name=ApiConstants.INTERVAL, type=CommandType.INTEGER, description="the frequency at which the conditions have to be evaluated")
+    @Parameter(name = ApiConstants.INTERVAL, type = CommandType.INTEGER, description = "the frequency at which the conditions have to be evaluated")
     private Integer interval;
 
-    @Parameter(name = ApiConstants.SCALEUP_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AutoScalePolicyResponse.class,
-            description = "list of scaleup autoscale policies")
+    @Parameter(name = ApiConstants.SCALEUP_POLICY_IDS,
+               type = CommandType.LIST,
+               collectionType = CommandType.UUID,
+               entityType = AutoScalePolicyResponse.class,
+               description = "list of scaleup autoscale policies")
     private List<Long> scaleUpPolicyIds;
 
-    @Parameter(name = ApiConstants.SCALEDOWN_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AutoScalePolicyResponse.class,
-            description = "list of scaledown autoscale policies")
+    @Parameter(name = ApiConstants.SCALEDOWN_POLICY_IDS,
+               type = CommandType.LIST,
+               collectionType = CommandType.UUID,
+               entityType = AutoScalePolicyResponse.class,
+               description = "list of scaledown autoscale policies")
     private List<Long> scaleDownPolicyIds;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmGroupResponse.class,
-            required = true, description = "the ID of the autoscale group")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = AutoScaleVmGroupResponse.class,
+               required = true,
+               description = "the ID of the autoscale group")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -119,7 +132,7 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating AutoScale Vm Group. Vm Group Id: "+getId();
+        return "Updating AutoScale Vm Group. Vm Group Id: " + getId();
     }
 
     @Override

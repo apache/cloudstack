@@ -20,19 +20,18 @@ package com.cloud.network.nicira;
  *
  */
 public class RouterNextHop {
-    private String gateway_ip_address;
-    private String type = "RouterNextHop";
+    private String gatewayIpAddress;
+    private final String type = "RouterNextHop";
 
     public RouterNextHop(String gatewayIpAddress) {
-        gateway_ip_address = gatewayIpAddress;
+        this.gatewayIpAddress = gatewayIpAddress;
     }
 
     public String getGatewayIpAddress() {
-        return gateway_ip_address;
+        return gatewayIpAddress;
     }
 
-    public void setGatewayIpAddress(String gateway_ip_address) {
-        this.gateway_ip_address = gateway_ip_address;
+    public void setGatewayIpAddress(String gatewayIpAddress) {
+        this.gatewayIpAddress = gatewayIpAddress;
     }
-
 }

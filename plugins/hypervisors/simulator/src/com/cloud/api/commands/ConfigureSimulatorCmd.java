@@ -16,12 +16,10 @@
 // under the License.
 package com.cloud.api.commands;
 
-import com.cloud.agent.manager.SimulatorManager;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -29,38 +27,43 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
+import com.cloud.agent.manager.SimulatorManager;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.user.Account;
 
-
-@APICommand(name = "configureSimulator", description="configure simulator", responseObject=SuccessResponse.class)
+@APICommand(name = "configureSimulator", description = "configure simulator", responseObject = SuccessResponse.class)
 public class ConfigureSimulatorCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(ConfigureSimulatorCmd.class.getName());
     private static final String s_name = "configuresimulatorresponse";
 
-    @Inject SimulatorManager _simMgr;
+    @Inject
+    SimulatorManager _simMgr;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="configure range: in a zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.LONG, description = "configure range: in a zone")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="configure range: in a pod")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.LONG, description = "configure range: in a pod")
     private Long podId;
 
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, description="configure range: in a cluster")
+    @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.LONG, description = "configure range: in a cluster")
     private Long clusterId;
 
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="configure range: in a host")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.LONG, description = "configure range: in a host")
     private Long hostId;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="which command needs to be configured")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "which command needs to be configured")
     private String command;
 
-    @Parameter(name=ApiConstants.VALUE, type=CommandType.STRING, required=true, description="configuration options for this command, which is seperated by ;")
+    @Parameter(name = ApiConstants.VALUE, type = CommandType.STRING, required = true, description = "configuration options for this command, which is seperated by ;")
     private String values;
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         boolean result = _simMgr.configureSimulator(zoneId, podId, clusterId, hostId, command, values);
         if (!result) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure simulator");
@@ -79,6 +82,5 @@ public class ConfigureSimulatorCmd extends BaseCmd {
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-
 
 }

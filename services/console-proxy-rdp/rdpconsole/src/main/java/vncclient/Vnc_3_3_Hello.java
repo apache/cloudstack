@@ -35,81 +35,82 @@ import streamer.PipelineImpl;
  */
 public class Vnc_3_3_Hello extends OneTimeSwitch {
 
-  public Vnc_3_3_Hello(String id) {
-    super(id);
-  }
-
-  @Override
-  protected void handleOneTimeData(ByteBuffer buf, Link link) {
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
-
-    // Initial packet is exactly 12 bytes long
-    if (!cap(buf, 12, 12, link, false))
-      return;
-
-    // Read protocol version
-    String rfbProtocol = new String(buf.data, buf.offset, buf.length, RfbConstants.US_ASCII_CHARSET);
-    buf.unref();
-
-    // Server should use RFB protocol 3.x
-    if (!rfbProtocol.contains(RfbConstants.RFB_PROTOCOL_VERSION_MAJOR))
-      throw new RuntimeException("Cannot handshake with VNC server. Unsupported protocol version: \"" + rfbProtocol + "\".");
-
-    // Send response: we support RFB 3.3 only
-    String ourProtocolString = RfbConstants.RFB_PROTOCOL_VERSION + "\n";
-
-    ByteBuffer outBuf = new ByteBuffer(ourProtocolString.getBytes(RfbConstants.US_ASCII_CHARSET));
-
-    if (verbose) {
-      outBuf.putMetadata("sender", this);
-      outBuf.putMetadata("version", RfbConstants.RFB_PROTOCOL_VERSION);
+    public Vnc_3_3_Hello(String id) {
+        super(id);
     }
 
-    pushDataToOTOut(outBuf);
+    @Override
+    protected void handleOneTimeData(ByteBuffer buf, Link link) {
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
 
-    // Switch off this element from circuit
-    switchOff();
+        // Initial packet is exactly 12 bytes long
+        if (!cap(buf, 12, 12, link, false))
+            return;
 
-  }
+        // Read protocol version
+        String rfbProtocol = new String(buf.data, buf.offset, buf.length, RfbConstants.US_ASCII_CHARSET);
+        buf.unref();
 
-  public String toString() {
-    return "Vnc3.3 Hello(" + id + ")";
-  }
+        // Server should use RFB protocol 3.x
+        if (!rfbProtocol.contains(RfbConstants.RFB_PROTOCOL_VERSION_MAJOR))
+            throw new RuntimeException("Cannot handshake with VNC server. Unsupported protocol version: \"" + rfbProtocol + "\".");
 
-  /**
-   * Example.
-   */
-  public static void main(String args[]) {
-    // System.setProperty("streamer.Link.debug", "true");
-    System.setProperty("streamer.Element.debug", "true");
-    // System.setProperty("streamer.Pipeline.debug", "true");
+        // Send response: we support RFB 3.3 only
+        String ourProtocolString = RfbConstants.RFB_PROTOCOL_VERSION + "\n";
 
-    InputStream is = new ByteArrayInputStream("RFB 003.007\ntest".getBytes(RfbConstants.US_ASCII_CHARSET));
-    ByteArrayOutputStream initOS = new ByteArrayOutputStream();
-    ByteArrayOutputStream mainOS = new ByteArrayOutputStream();
-    InputStreamSource inputStreamSource = new InputStreamSource("source", is);
-    OutputStreamSink outputStreamSink = new OutputStreamSink("mainSink", mainOS);
+        ByteBuffer outBuf = new ByteBuffer(ourProtocolString.getBytes(RfbConstants.US_ASCII_CHARSET));
 
-    Vnc_3_3_Hello hello = new Vnc_3_3_Hello("hello");
+        if (verbose) {
+            outBuf.putMetadata("sender", this);
+            outBuf.putMetadata("version", RfbConstants.RFB_PROTOCOL_VERSION);
+        }
 
-    Pipeline pipeline = new PipelineImpl("test");
+        pushDataToOTOut(outBuf);
 
-    pipeline.addAndLink(inputStreamSource, hello, outputStreamSink);
-    pipeline.add(new OutputStreamSink("initSink", initOS));
+        // Switch off this element from circuit
+        switchOff();
 
-    pipeline.link("hello >" + OneTimeSwitch.OTOUT, "initSink");
+    }
 
-    pipeline.runMainLoop("source", STDOUT, false, false);
+    @Override
+    public String toString() {
+        return "Vnc3.3 Hello(" + id + ")";
+    }
 
-    String initOut = new String(initOS.toByteArray(), RfbConstants.US_ASCII_CHARSET);
-    String mainOut = new String(mainOS.toByteArray(), RfbConstants.US_ASCII_CHARSET);
+    /**
+     * Example.
+     */
+    public static void main(String args[]) {
+        // System.setProperty("streamer.Link.debug", "true");
+        System.setProperty("streamer.Element.debug", "true");
+        // System.setProperty("streamer.Pipeline.debug", "true");
 
-    if (!"RFB 003.003\n".equals(initOut))
-      System.err.println("Unexpected value for hello response: \"" + initOut + "\".");
+        InputStream is = new ByteArrayInputStream("RFB 003.007\ntest".getBytes(RfbConstants.US_ASCII_CHARSET));
+        ByteArrayOutputStream initOS = new ByteArrayOutputStream();
+        ByteArrayOutputStream mainOS = new ByteArrayOutputStream();
+        InputStreamSource inputStreamSource = new InputStreamSource("source", is);
+        OutputStreamSink outputStreamSink = new OutputStreamSink("mainSink", mainOS);
 
-    if (!"test".equals(mainOut))
-      System.err.println("Unexpected value for main data: \"" + mainOut + "\".");
+        Vnc_3_3_Hello hello = new Vnc_3_3_Hello("hello");
 
-  }
+        Pipeline pipeline = new PipelineImpl("test");
+
+        pipeline.addAndLink(inputStreamSource, hello, outputStreamSink);
+        pipeline.add(new OutputStreamSink("initSink", initOS));
+
+        pipeline.link("hello >" + OneTimeSwitch.OTOUT, "initSink");
+
+        pipeline.runMainLoop("source", STDOUT, false, false);
+
+        String initOut = new String(initOS.toByteArray(), RfbConstants.US_ASCII_CHARSET);
+        String mainOut = new String(mainOS.toByteArray(), RfbConstants.US_ASCII_CHARSET);
+
+        if (!"RFB 003.003\n".equals(initOut))
+            System.err.println("Unexpected value for hello response: \"" + initOut + "\".");
+
+        if (!"test".equals(mainOut))
+            System.err.println("Unexpected value for main data: \"" + mainOut + "\".");
+
+    }
 }

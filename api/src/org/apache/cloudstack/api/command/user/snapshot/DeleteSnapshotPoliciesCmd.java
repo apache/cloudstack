@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.user.snapshot;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -26,11 +28,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteSnapshotPolicies", description="Deletes snapshot policies for the account.", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteSnapshotPolicies", description = "Deletes snapshot policies for the account.", responseObject = SuccessResponse.class)
 public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteSnapshotPoliciesCmd.class.getName());
 
@@ -40,12 +41,14 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = SnapshotPolicyResponse.class,
-            description="the Id of the snapshot policy")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SnapshotPolicyResponse.class, description = "the Id of the snapshot policy")
     private Long id;
 
-    @Parameter(name=ApiConstants.IDS, type=CommandType.LIST, collectionType=CommandType.UUID, entityType = SnapshotPolicyResponse.class,
-            description="list of snapshots policy IDs separated by comma")
+    @Parameter(name = ApiConstants.IDS,
+               type = CommandType.LIST,
+               collectionType = CommandType.UUID,
+               entityType = SnapshotPolicyResponse.class,
+               description = "list of snapshots policy IDs separated by comma")
     private List<Long> ids;
 
     /////////////////////////////////////////////////////
@@ -75,7 +78,7 @@ public class DeleteSnapshotPoliciesCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = _snapshotService.deleteSnapshotPolicies(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

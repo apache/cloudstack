@@ -31,5 +31,5 @@ public interface VmDiskStatisticsDao extends GenericDao<VmDiskStatisticsVO, Long
 
     List<VmDiskStatisticsVO> listActiveAndRecentlyDeleted(Date minRemovedDate, int startIndex, int limit);
 
-	List<VmDiskStatisticsVO> listUpdatedStats();
+    List<VmDiskStatisticsVO> listUpdatedStats();
 }

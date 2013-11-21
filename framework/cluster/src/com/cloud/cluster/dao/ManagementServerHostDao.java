@@ -29,20 +29,25 @@ public interface ManagementServerHostDao extends GenericDao<ManagementServerHost
     @Override
     boolean remove(Long id);
 
-	ManagementServerHostVO findByMsid(long msid);
-	int increaseAlertCount(long id);
-	
-	void update(long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate);
-	void update(long id, long runid, Date lastUpdate);
-	List<ManagementServerHostVO> getActiveList(Date cutTime);
-	List<ManagementServerHostVO> getInactiveList(Date cutTime);
+    ManagementServerHostVO findByMsid(long msid);
 
-	void invalidateRunSession(long id, long runid);
-	
-	void update(long id, long runId, State state, Date lastUpdate);
-	
-	List<ManagementServerHostVO> listBy(ManagementServerHost.State...states);
-	public List<Long> listOrphanMsids();
+    int increaseAlertCount(long id);
 
-	ManagementServerHostVO findOneInUpState(Filter filter);
+    void update(long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate);
+
+    void update(long id, long runid, Date lastUpdate);
+
+    List<ManagementServerHostVO> getActiveList(Date cutTime);
+
+    List<ManagementServerHostVO> getInactiveList(Date cutTime);
+
+    void invalidateRunSession(long id, long runid);
+
+    void update(long id, long runId, State state, Date lastUpdate);
+
+    List<ManagementServerHostVO> listBy(ManagementServerHost.State... states);
+
+    public List<Long> listOrphanMsids();
+
+    ManagementServerHostVO findOneInUpState(Filter filter);
 }

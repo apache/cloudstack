@@ -28,11 +28,10 @@ import com.cloud.network.Network.Service;
 public interface PhysicalNetworkServiceProvider extends InternalIdentity {
 
     public enum State {
-        Disabled,
-        Enabled,
-        Shutdown;
+        Disabled, Enabled, Shutdown;
     }
 
+    @Override
     long getId();
 
     State getState();

@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.capacity;
 
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.Listener;
@@ -31,77 +29,61 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
-import com.cloud.utils.db.SearchCriteria;
-
 
 public class ComputeCapacityListener implements Listener {
     private static final Logger s_logger = Logger.getLogger(ComputeCapacityListener.class);
-    CapacityDao _capacityDao;   
+    CapacityDao _capacityDao;
     CapacityManager _capacityMgr;
     float _cpuOverProvisioningFactor = 1.0f;
 
-
-    public ComputeCapacityListener(CapacityDao _capacityDao,
-    		CapacityManager _capacityMgr
-           ) {
+    public ComputeCapacityListener(CapacityDao _capacityDao, CapacityManager _capacityMgr) {
         super();
         this._capacityDao = _capacityDao;
         this._capacityMgr = _capacityMgr;
     }
-
 
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
         return false;
     }
 
-
     @Override
     public boolean processCommands(long agentId, long seq, Command[] commands) {
         return false;
     }
 
-
     @Override
-    public AgentControlAnswer processControlCommand(long agentId,
-            AgentControlCommand cmd) {
+    public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
 
         return null;
     }
-
 
     @Override
     public void processConnect(Host server, StartupCommand startup, boolean forRebalance) throws ConnectionException {
         if (!(startup instanceof StartupRoutingCommand)) {
             return;
         }
-        _capacityMgr.updateCapacityForHost(server);        
+        _capacityMgr.updateCapacityForHost(server);
     }
-
-
-
 
     @Override
     public boolean processDisconnect(long agentId, Status state) {
         return false;
     }
 
-
     @Override
     public boolean isRecurring() {
         return false;
     }
-
 
     @Override
     public int getTimeout() {
         return 0;
     }
 
-
     @Override
     public boolean processTimeout(long agentId, long seq) {
         return false;
     }
-    
+
 }

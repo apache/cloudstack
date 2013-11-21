@@ -32,10 +32,10 @@ import com.cloud.vm.VirtualMachine;
 public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Id
-    @Column(name="id", updatable=false, nullable = false)
+    @Column(name = "id", updatable = false, nullable = false)
     private long id;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
     @Column(name = "type")
@@ -47,28 +47,28 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="account_uuid")
+    @Column(name = "account_uuid")
     private String accountUuid;
 
-    @Column(name="account_name")
+    @Column(name = "account_name")
     private String accountName = null;
 
-    @Column(name="account_type")
+    @Column(name = "account_type")
     private short accountType;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="domain_uuid")
+    @Column(name = "domain_uuid")
     private String domainUuid;
 
-    @Column(name="domain_name")
+    @Column(name = "domain_name")
     private String domainName = null;
 
-    @Column(name="domain_path")
+    @Column(name = "domain_path")
     private String domainPath = null;
 
     @Column(name = "vm_id")
@@ -193,4 +193,3 @@ public class AffinityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
     }
 
 }
-
