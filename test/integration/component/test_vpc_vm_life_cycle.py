@@ -863,33 +863,6 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
 class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
 
     @classmethod
-    def getFreeVlan(cls, apiclient, zoneid):
-        """
-        Find an unallocated VLAN outside the range allocated to the physical network.
-
-        @note: This does not guarantee that the VLAN is available for use in
-        the deployment's network gear
-        @return: physical_network, shared_vlan_tag
-        """
-        list_physical_networks_response = PhysicalNetwork.list(
-            apiclient,
-            zoneid=zoneid
-        )
-        assert isinstance(list_physical_networks_response, list)
-        assert len(list_physical_networks_response) > 0, "No physical networks found in zone %s" % zoneid
-
-        physical_network = list_physical_networks_response[0]
-        vlans = xsplit(physical_network.vlan, ['-', ','])
-
-        assert len(vlans) > 0
-        assert int(vlans[0]) < int(vlans[-1]), "VLAN range  %s was improperly split" % physical_network.vlan
-        shared_ntwk_vlan = int(vlans[-1]) + random.randrange(1, 20)
-        if shared_ntwk_vlan > 4095:
-            shared_ntwk_vlan = int(vlans[0]) - random.randrange(1, 20)
-            assert shared_ntwk_vlan > 0, "VLAN chosen %s is invalid < 0" % shared_ntwk_vlan
-        return physical_network, shared_ntwk_vlan
-
-    @classmethod
     def setUpClass(cls):
         cls.api_client = super(
                                TestVMLifeCycleSharedNwVPC,
@@ -968,7 +941,10 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         cls.shared_nw_off.update(cls.api_client, state='Enabled')
 
 
-        physical_network, shared_vlan = cls.getFreeVlan(cls.api_client, cls.zone.id)
+        physical_network, shared_vlan = get_free_vlan(cls.api_client, cls.zone.id)
+        if shared_vlan is None:
+            assert False, "Failed to get free vlan id for shared network creation in the zone"
+
         #create network using the shared network offering created
         cls.services["network"]["acltype"] = "Domain"
         cls.services["network"]["physicalnetworkid"] = physical_network.id
