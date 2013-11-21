@@ -17,11 +17,11 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloud-tools</artifactId>
-        <version>4.3.0-SNAPSHOT</version>
+        <version>4.4.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <properties>
-        <client.config.base>../../client/target/cloud-client-ui-4.3.0-SNAPSHOT/WEB-INF/</client.config.base>
+        <client.config.base>../../client/target/cloud-client-ui-4.4.0-SNAPSHOT/WEB-INF/</client.config.base>
         <client.config.jars>${client.config.base}/lib</client.config.jars>
         <client.config.conf>${client.config.base}/classes</client.config.conf>
     </properties>
