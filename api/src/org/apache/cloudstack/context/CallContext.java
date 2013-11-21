@@ -197,6 +197,18 @@ public class CallContext {
         }
         return register(user, account);
     }
+    
+    public static CallContext register(long callingUserId, long callingAccountId, String contextId) throws CloudAuthenticationException {
+        Account account = s_entityMgr.findById(Account.class, callingAccountId);
+        if (account == null) {
+            throw new CloudAuthenticationException("The account is no longer current.").add(Account.class, Long.toString(callingAccountId));
+        }
+        User user = s_entityMgr.findById(User.class, callingUserId);
+        if (user == null) {
+            throw new CloudAuthenticationException("The user is no longer current.").add(User.class, Long.toString(callingUserId));
+        }
+        return register(user, account, contextId);
+    }
 
     public static void unregisterAll() {
         while ( unregister() != null ) {

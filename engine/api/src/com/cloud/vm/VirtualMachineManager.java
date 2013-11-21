@@ -103,7 +103,12 @@ public interface VirtualMachineManager extends Manager {
     void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
             ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
 
+    void orchestrateStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
+    	ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
+    
     void advanceStop(String vmUuid, boolean cleanupEvenIfUnableToStop) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+
+    void orchestrateStop(String vmUuid, boolean cleanupEvenIfUnableToStop) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
     void advanceExpunge(String vmUuid) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
@@ -112,10 +117,16 @@ public interface VirtualMachineManager extends Manager {
     void migrateAway(String vmUuid, long hostId) throws InsufficientServerCapacityException;
 
     void migrate(String vmUuid, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException;
+    
+    void orchestrateMigrate(String vmUuid, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException;
 
     void migrateWithStorage(String vmUuid, long srcId, long destId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException, ConcurrentOperationException;
-
+    
+    void orchestrateMigrateWithStorage(String vmUuid, long srcId, long destId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException, ConcurrentOperationException;
+    
     void reboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException;
+
+    void orchestrateReboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException;
 
     void advanceReboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException,
             ConcurrentOperationException, OperationTimedoutException;
@@ -132,6 +143,8 @@ public interface VirtualMachineManager extends Manager {
     VirtualMachine findById(long vmId);
 
     void storageMigration(String vmUuid, StoragePool storagePoolId);
+    
+    void orchestrateStorageMigration(String vmUuid, StoragePool storagePoolId);
 
     /**
      * @param vmInstance
@@ -156,7 +169,11 @@ public interface VirtualMachineManager extends Manager {
      * @throws InsufficientCapacityException
      */
     NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException,
-                ResourceUnavailableException, InsufficientCapacityException;
+        ResourceUnavailableException, InsufficientCapacityException;
+    
+    NicProfile orchestrateAddVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException,
+    	ResourceUnavailableException, InsufficientCapacityException;
+    
 
     /**
      * @param vm
@@ -167,6 +184,8 @@ public interface VirtualMachineManager extends Manager {
      */
     boolean removeNicFromVm(VirtualMachine vm, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException;
 
+    boolean orchestrateRemoveNicFromVm(VirtualMachine vm, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException;
+
     /**
      * @param vm
      * @param network
@@ -176,6 +195,8 @@ public interface VirtualMachineManager extends Manager {
      * @throws ConcurrentOperationException
      */
     boolean removeVmFromNetwork(VirtualMachine vm, Network network, URI broadcastUri) throws ConcurrentOperationException, ResourceUnavailableException;
+    
+    boolean orchestrateRemoveVmFromNetwork(VirtualMachine vm, Network network, URI broadcastUri) throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
      * @param nic
@@ -191,12 +212,15 @@ public interface VirtualMachineManager extends Manager {
      */
     VirtualMachineTO toVmTO(VirtualMachineProfile profile);
 
-
     VirtualMachine reConfigureVm(String vmUuid, ServiceOffering newServiceOffering, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException;
+    
+    VirtualMachine orchestrateReConfigureVm(String vmUuid, ServiceOffering newServiceOffering, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException;
 
     void findHostAndMigrate(String vmUuid, Long newSvcOfferingId, DeploymentPlanner.ExcludeList excludeHostList) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException;
 
     void migrateForScale(String vmUuid, long srcHostId, DeployDestination dest, Long newSvcOfferingId) throws ResourceUnavailableException, ConcurrentOperationException;
+    
+    void orchestrateMigrateForScale(String vmUuid, long srcHostId, DeployDestination dest, Long newSvcOfferingId) throws ResourceUnavailableException, ConcurrentOperationException;
 
 }

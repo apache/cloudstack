@@ -100,6 +100,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             txn.commit();
         } catch(Exception e) {
             s_logger.warn("Unexpected exception, ", e);
+            throw new RuntimeException(e.getMessage(), e);
         }
 	}
 	
@@ -119,9 +120,8 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         	return true;
         } catch(Exception e) {
             s_logger.warn("Unexpected exception, ", e);
+            throw new RuntimeException(e.getMessage(), e);
         }
-        
-        return false;
     }
 
 	@Override
@@ -145,6 +145,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             }
         } catch(Exception e) {
             s_logger.warn("Unexpected exception, ", e);
+            throw new RuntimeException(e.getMessage(), e);
         }
 	}
 	
@@ -180,7 +181,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             txn.commit();
         } catch(Exception e) {
             s_logger.warn("Unexpected exception, ", e);
-            txn.rollback();
+            throw new RuntimeException(e.getMessage(), e);
         }
         
         return changedRows;

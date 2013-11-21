@@ -63,6 +63,14 @@ public class AsyncJobExecutionContext  {
     public void setJob(AsyncJob job) {
 		_job = job;
 	}
+    
+    public boolean isJobDispatchedBy(String jobDispatcherName) {
+    	assert(jobDispatcherName != null);
+    	if(_job != null && _job.getDispatcher() != null && _job.getDispatcher().equals(jobDispatcherName))
+    		return true;
+    	
+    	return false;
+    }
 	
     public void completeAsyncJob(JobInfo.Status jobStatus, int resultCode, String resultObject) {
     	assert(_job != null);
@@ -159,7 +167,7 @@ public class AsyncJobExecutionContext  {
         setCurrentExecutionContext(null);
         return context;
     }
-
+    
     // This is intended to be package level access for AsyncJobManagerImpl only.
     public static void setCurrentExecutionContext(AsyncJobExecutionContext currentContext) {
 		s_currentExectionContext.set(currentContext);
