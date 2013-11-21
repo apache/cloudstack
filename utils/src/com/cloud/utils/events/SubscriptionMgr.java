@@ -146,12 +146,14 @@ public class SubscriptionMgr {
             return this.clazz == clazz && this.subscriber == subscriber && this.methodName.equals(methodName);
         }
 
+        @Override
         public boolean equals(Object o) {
             if (o == null)
                 return false;
 
             if (o instanceof SubscriberInfo) {
-                return this.clazz == ((SubscriberInfo)o).clazz && this.subscriber == ((SubscriberInfo)o).subscriber && this.methodName.equals(((SubscriberInfo)o).methodName);
+                return this.clazz == ((SubscriberInfo)o).clazz && this.subscriber == ((SubscriberInfo)o).subscriber &&
+                    this.methodName.equals(((SubscriberInfo)o).methodName);
             }
             return false;
         }

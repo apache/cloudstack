@@ -387,7 +387,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         }
         if (service != null && !((Service)services.toArray()[0] == service || service.equals(Service.Firewall))) {
             throw new InvalidParameterException("The IP " + ip.getAddress() + " is already used as " + ((Service)services.toArray()[0]).getName() + " rather than " +
-                                                service.getName());
+                service.getName());
         }
         return true;
     }
@@ -654,8 +654,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             ;
 
             if (elementCapabilities == null || !elementCapabilities.containsKey(service)) {
-                throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the element=" + element.getName() + " implementing Provider=" +
-                                                      provider);
+                throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the element=" + element.getName() +
+                    " implementing Provider=" + provider);
             }
             serviceCapabilities = elementCapabilities.get(service);
         }
@@ -693,8 +693,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
             if (elementCapabilities == null || !elementCapabilities.containsKey(service)) {
                 // TBD: We should be sending providerId and not the offering object itself.
-                throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the element=" + element.getName() + " implementing Provider=" +
-                                                      provider);
+                throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the element=" + element.getName() +
+                    " implementing Provider=" + provider);
             }
             serviceCapabilities = elementCapabilities.get(service);
         }
@@ -941,7 +941,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             Nic nic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
             if (vm.getType() == Type.User && nic != null && nic.isDefaultNic()) {
                 isUserVmsDefaultNetwork = true;
-            } else if (vm.getType() == Type.DomainRouter && ntwkOff != null && (ntwkOff.getTrafficType() == TrafficType.Public || ntwkOff.getTrafficType() == TrafficType.Guest)) {
+            } else if (vm.getType() == Type.DomainRouter && ntwkOff != null &&
+                (ntwkOff.getTrafficType() == TrafficType.Public || ntwkOff.getTrafficType() == TrafficType.Guest)) {
                 isDomRGuestOrPublicNetwork = true;
             } else if (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm) {
                 isSystemVmNetwork = true;
@@ -1078,7 +1079,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
         if (pNtwks.size() > 1) {
             if (tag == null) {
-                throw new InvalidParameterValueException("More than one physical networks exist in zone id=" + zoneId + " and no tags are specified in order to make a choice");
+                throw new InvalidParameterValueException("More than one physical networks exist in zone id=" + zoneId +
+                    " and no tags are specified in order to make a choice");
             }
 
             Long pNtwkId = null;
@@ -1146,15 +1148,15 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         }
 
         if (networkList.isEmpty()) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the default physical network with traffic=" + trafficType +
-                                                                                   " in the specified zone id");
+            InvalidParameterValueException ex =
+                new InvalidParameterValueException("Unable to find the default physical network with traffic=" + trafficType + " in the specified zone id");
             ex.addProxyObject(dcUuid, "zoneId");
             throw ex;
         }
 
         if (networkList.size() > 1) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("More than one physical networks exist in zone id=" + zoneId + " with traffic type=" +
-                                                                                   trafficType);
+            InvalidParameterValueException ex =
+                new InvalidParameterValueException("More than one physical networks exist in zone id=" + zoneId + " with traffic type=" + trafficType);
             ex.addProxyObject(dcUuid, "zoneId");
             throw ex;
         }
@@ -1187,7 +1189,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             }
         } catch (Exception ex) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Failed to retrive the default label for management traffic:" + "zone: " + zoneId + " hypervisor: " + hypervisorType + " due to:" + ex.getMessage());
+                s_logger.debug("Failed to retrive the default label for management traffic:" + "zone: " + zoneId + " hypervisor: " + hypervisorType + " due to:" +
+                    ex.getMessage());
             }
         }
         return null;
@@ -1218,7 +1221,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             }
         } catch (Exception ex) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Failed to retrive the default label for storage traffic:" + "zone: " + zoneId + " hypervisor: " + hypervisorType + " due to:" + ex.getMessage());
+                s_logger.debug("Failed to retrive the default label for storage traffic:" + "zone: " + zoneId + " hypervisor: " + hypervisorType + " due to:" +
+                    ex.getMessage());
             }
         }
         return null;
@@ -1307,12 +1311,13 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     public NetworkVO getExclusiveGuestNetwork(long zoneId) {
         List<NetworkVO> networks = _networksDao.listBy(Account.ACCOUNT_ID_SYSTEM, zoneId, GuestType.Shared, TrafficType.Guest);
         if (networks == null || networks.isEmpty()) {
-            throw new InvalidParameterValueException("Unable to find network with trafficType " + TrafficType.Guest + " and guestType " + GuestType.Shared + " in zone " + zoneId);
+            throw new InvalidParameterValueException("Unable to find network with trafficType " + TrafficType.Guest + " and guestType " + GuestType.Shared + " in zone " +
+                zoneId);
         }
 
         if (networks.size() > 1) {
-            throw new InvalidParameterValueException("Found more than 1 network with trafficType " + TrafficType.Guest + " and guestType " + GuestType.Shared + " in zone " +
-                                                     zoneId);
+            throw new InvalidParameterValueException("Found more than 1 network with trafficType " + TrafficType.Guest + " and guestType " + GuestType.Shared +
+                " in zone " + zoneId);
 
         }
 
@@ -1408,8 +1413,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                         }
                         servicesSet.delete(servicesSet.toString().length() - 2, servicesSet.toString().length());
 
-                        throw new InvalidParameterValueException("Cannot enable subset of Services, Please specify the complete list of Services: " + servicesSet.toString() +
-                                                                 "  for Service Provider " + provider.getName());
+                        throw new InvalidParameterValueException("Cannot enable subset of Services, Please specify the complete list of Services: " +
+                            servicesSet.toString() + "  for Service Provider " + provider.getName());
                     }
                 }
                 List<String> serviceList = new ArrayList<String>();
@@ -1491,24 +1496,24 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             if (element != null) {
                 Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();
                 if (elementCapabilities == null || !elementCapabilities.containsKey(service)) {
-                    throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the element=" + element.getName() + " implementing Provider=" +
-                                                          provider.getName());
+                    throw new UnsupportedServiceException("Service " + service.getName() + " is not supported by the element=" + element.getName() +
+                        " implementing Provider=" + provider.getName());
                 }
                 Map<Capability, String> serviceCapabilities = elementCapabilities.get(service);
                 if (serviceCapabilities == null || serviceCapabilities.isEmpty()) {
                     throw new UnsupportedServiceException("Service " + service.getName() + " doesn't have capabilites for element=" + element.getName() +
-                                                          " implementing Provider=" + provider.getName());
+                        " implementing Provider=" + provider.getName());
                 }
 
                 String value = serviceCapabilities.get(cap);
                 if (value == null || value.isEmpty()) {
-                    throw new UnsupportedServiceException("Service " + service.getName() + " doesn't have capability " + cap.getName() + " for element=" + element.getName() +
-                                                          " implementing Provider=" + provider.getName());
+                    throw new UnsupportedServiceException("Service " + service.getName() + " doesn't have capability " + cap.getName() + " for element=" +
+                        element.getName() + " implementing Provider=" + provider.getName());
                 }
 
                 if (!value.toLowerCase().contains(capValue.toLowerCase())) {
                     throw new UnsupportedServiceException("Service " + service.getName() + " doesn't support value " + capValue + " for capability " + cap.getName() +
-                                                          " for element=" + element.getName() + " implementing Provider=" + provider.getName());
+                        " for element=" + element.getName() + " implementing Provider=" + provider.getName());
                 }
             } else {
                 throw new UnsupportedServiceException("Unable to find network element for provider " + provider.getName());
@@ -1523,22 +1528,24 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             AccountVO networkOwner = _accountDao.findById(network.getAccountId());
             if (networkOwner == null)
                 throw new PermissionDeniedException("Unable to use network with id= " + ((network != null) ? ((NetworkVO)network).getUuid() : "") +
-                                                    ", network does not have an owner");
+                    ", network does not have an owner");
             if (owner.getType() != Account.ACCOUNT_TYPE_PROJECT && networkOwner.getType() == Account.ACCOUNT_TYPE_PROJECT) {
                 if (!_projectAccountDao.canAccessProjectAccount(owner.getAccountId(), network.getAccountId())) {
-                    throw new PermissionDeniedException("Unable to use network with id= " + ((network != null) ? ((NetworkVO)network).getUuid() : "") + ", permission denied");
+                    throw new PermissionDeniedException("Unable to use network with id= " + ((network != null) ? ((NetworkVO)network).getUuid() : "") +
+                        ", permission denied");
                 }
             } else {
                 List<NetworkVO> networkMap = _networksDao.listBy(owner.getId(), network.getId());
                 if (networkMap == null || networkMap.isEmpty()) {
-                    throw new PermissionDeniedException("Unable to use network with id= " + ((network != null) ? ((NetworkVO)network).getUuid() : "") + ", permission denied");
+                    throw new PermissionDeniedException("Unable to use network with id= " + ((network != null) ? ((NetworkVO)network).getUuid() : "") +
+                        ", permission denied");
                 }
             }
 
         } else {
             if (!isNetworkAvailableInDomain(network.getId(), owner.getDomainId())) {
                 throw new PermissionDeniedException("Shared network id=" + ((network != null) ? ((NetworkVO)network).getUuid() : "") + " is not available in domain id=" +
-                                                    owner.getDomainId());
+                    owner.getDomainId());
             }
         }
     }
@@ -1568,7 +1575,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             }
         } catch (Exception ex) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Failed to retrieve the default label for public traffic." + "zone: " + dcId + " hypervisor: " + hypervisorType + " due to: " + ex.getMessage());
+                s_logger.debug("Failed to retrieve the default label for public traffic." + "zone: " + dcId + " hypervisor: " + hypervisorType + " due to: " +
+                    ex.getMessage());
             }
         }
         return null;
@@ -1600,7 +1608,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             }
         } catch (Exception ex) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Failed to retrive the default label for management traffic:" + "zone: " + dcId + " hypervisor: " + hypervisorType + " due to:" + ex.getMessage());
+                s_logger.debug("Failed to retrive the default label for management traffic:" + "zone: " + dcId + " hypervisor: " + hypervisorType + " due to:" +
+                    ex.getMessage());
             }
         }
         return null;
@@ -1872,8 +1881,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         Integer networkRate = getNetworkRate(network.getId(), vm.getId());
 
 //        NetworkGuru guru = _networkGurus.get(network.getGuruName());
-        NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(
-            vm.getHypervisorType(), network));
+        NicProfile profile =
+            new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(
+                vm.getHypervisorType(), network));
 //        guru.updateNicProfile(profile, network);
 
         return profile;
@@ -1908,21 +1918,21 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         _allowSubdomainNetworkAccess = Boolean.valueOf(_configs.get(Config.SubDomainNetworkAccess.key()));
         _executeInSequenceNtwkElmtCmd = Boolean.valueOf(_configs.get(Config.ExecuteInSequenceNetworkElementCommands.key()));
 
-        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, TrafficType.Public, true);
+        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemPublicNetwork, TrafficType.Public, true);
         publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemPublicNetwork, publicNetworkOffering);
-        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemManagementNetwork, TrafficType.Management, false);
+        _systemNetworks.put(NetworkOffering.SystemPublicNetwork, publicNetworkOffering);
+        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemManagementNetwork, TrafficType.Management, false);
         managementNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(managementNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemManagementNetwork, managementNetworkOffering);
-        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemControlNetwork, TrafficType.Control, false);
+        _systemNetworks.put(NetworkOffering.SystemManagementNetwork, managementNetworkOffering);
+        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemControlNetwork, TrafficType.Control, false);
         controlNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(controlNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemControlNetwork, controlNetworkOffering);
-        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, TrafficType.Storage, true);
+        _systemNetworks.put(NetworkOffering.SystemControlNetwork, controlNetworkOffering);
+        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemStorageNetwork, TrafficType.Storage, true);
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemStorageNetwork, storageNetworkOffering);
-        NetworkOfferingVO privateGatewayNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPrivateGatewayNetworkOffering, GuestType.Isolated);
+        _systemNetworks.put(NetworkOffering.SystemStorageNetwork, storageNetworkOffering);
+        NetworkOfferingVO privateGatewayNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemPrivateGatewayNetworkOffering, GuestType.Isolated);
         privateGatewayNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(privateGatewayNetworkOffering);
-        _systemNetworks.put(NetworkOfferingVO.SystemPrivateGatewayNetworkOffering, privateGatewayNetworkOffering);
+        _systemNetworks.put(NetworkOffering.SystemPrivateGatewayNetworkOffering, privateGatewayNetworkOffering);
         _privateOfferingId = privateGatewayNetworkOffering.getId();
 
         IpAddressSearch = _ipAddressDao.createSearchBuilder();
@@ -1932,7 +1942,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         IpAddressSearch.and("associatedWithNetworkId", IpAddressSearch.entity().getAssociatedWithNetworkId(), Op.EQ);
         SearchBuilder<VlanVO> virtualNetworkVlanSB = _vlanDao.createSearchBuilder();
         virtualNetworkVlanSB.and("vlanType", virtualNetworkVlanSB.entity().getVlanType(), Op.EQ);
-        IpAddressSearch.join("virtualNetworkVlanSB", virtualNetworkVlanSB, IpAddressSearch.entity().getVlanId(), virtualNetworkVlanSB.entity().getId(), JoinBuilder.JoinType.INNER);
+        IpAddressSearch.join("virtualNetworkVlanSB", virtualNetworkVlanSB, IpAddressSearch.entity().getVlanId(), virtualNetworkVlanSB.entity().getId(),
+            JoinBuilder.JoinType.INNER);
         IpAddressSearch.done();
 
         NicForTrafficTypeSearch = _nicDao.createSearchBuilder();
@@ -1957,7 +1968,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
             if (implementedProvider != null) {
                 if (s_providerToNetworkElementMap.containsKey(implementedProvider.getName())) {
                     s_logger.error("Cannot start NetworkModel: Provider <-> NetworkElement must be a one-to-one map, " + "multiple NetworkElements found for Provider: " +
-                                   implementedProvider.getName());
+                        implementedProvider.getName());
                     continue;
                 }
                 s_logger.info("Add provider <-> element map entry. " + implementedProvider.getName() + "-" + element.getName() + "-" + element.getClass().getSimpleName());

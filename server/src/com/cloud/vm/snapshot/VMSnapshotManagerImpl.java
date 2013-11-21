@@ -27,14 +27,15 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.command.user.vmsnapshot.ListVMSnapshotCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -143,8 +144,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         String name = cmd.getVmSnapshotName();
         String accountName = cmd.getAccountName();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-            cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+            new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, listAll, false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -180,7 +181,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         }
 
         if (state == null) {
-            VMSnapshot.State[] status = {VMSnapshot.State.Ready, VMSnapshot.State.Creating, VMSnapshot.State.Allocated, VMSnapshot.State.Error, VMSnapshot.State.Expunging,
+            VMSnapshot.State[] status =
+                {VMSnapshot.State.Ready, VMSnapshot.State.Creating, VMSnapshot.State.Allocated, VMSnapshot.State.Error, VMSnapshot.State.Expunging,
                     VMSnapshot.State.Reverting};
             sc.setParameters("status", (Object[])status);
         } else {
@@ -267,8 +269,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         // check if there are active volume snapshots tasks
         List<VolumeVO> listVolumes = _volumeDao.findByInstance(vmId);
         for (VolumeVO volume : listVolumes) {
-            List<SnapshotVO> activeSnapshots = _snapshotDao.listByInstanceId(volume.getInstanceId(), Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary,
-                Snapshot.State.BackingUp);
+            List<SnapshotVO> activeSnapshots =
+                _snapshotDao.listByInstanceId(volume.getInstanceId(), Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp);
             if (activeSnapshots.size() > 0) {
                 throw new CloudRuntimeException("There is other active volume snapshot tasks on the instance to which the volume is attached, please try again later.");
             }
@@ -284,8 +286,9 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             vmSnapshotType = VMSnapshot.Type.DiskAndMemory;
 
         try {
-            VMSnapshotVO vmSnapshotVo = new VMSnapshotVO(userVmVo.getAccountId(), userVmVo.getDomainId(), vmId, vsDescription, vmSnapshotName, vsDisplayName,
-                userVmVo.getServiceOfferingId(), vmSnapshotType, null);
+            VMSnapshotVO vmSnapshotVo =
+                new VMSnapshotVO(userVmVo.getAccountId(), userVmVo.getDomainId(), vmId, vsDescription, vmSnapshotName, vsDisplayName, userVmVo.getServiceOfferingId(),
+                    vmSnapshotType, null);
             VMSnapshot vmSnapshot = _vmSnapshotDao.persist(vmSnapshotVo);
             if (vmSnapshot == null) {
                 throw new CloudRuntimeException("Failed to create snapshot for vm: " + vmId);
@@ -342,8 +345,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
     @Override
     public boolean hasActiveVMSnapshotTasks(Long vmId) {
-        List<VMSnapshotVO> activeVMSnapshots = _vmSnapshotDao.listByInstanceId(vmId, VMSnapshot.State.Creating, VMSnapshot.State.Expunging, VMSnapshot.State.Reverting,
-            VMSnapshot.State.Allocated);
+        List<VMSnapshotVO> activeVMSnapshots =
+            _vmSnapshotDao.listByInstanceId(vmId, VMSnapshot.State.Creating, VMSnapshot.State.Expunging, VMSnapshot.State.Reverting, VMSnapshot.State.Allocated);
         return activeVMSnapshots.size() > 0;
     }
 
@@ -504,8 +507,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             if (userVm == null)
                 return false;
 
-            List<VMSnapshotVO> vmSnapshotsInExpungingStates = _vmSnapshotDao.listByInstanceId(vm.getId(), VMSnapshot.State.Expunging, VMSnapshot.State.Reverting,
-                VMSnapshot.State.Creating);
+            List<VMSnapshotVO> vmSnapshotsInExpungingStates =
+                _vmSnapshotDao.listByInstanceId(vm.getId(), VMSnapshot.State.Expunging, VMSnapshot.State.Reverting, VMSnapshot.State.Creating);
             for (VMSnapshotVO vmSnapshotVO : vmSnapshotsInExpungingStates) {
                 VMSnapshotStrategy strategy = findVMSnapshotStrategy(vmSnapshotVO);
                 if (vmSnapshotVO.getState() == VMSnapshot.State.Expunging) {

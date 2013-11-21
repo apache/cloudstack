@@ -16,24 +16,23 @@
 // under the License.
 package common;
 
-
 import streamer.Order;
 
 public class CopyRectOrder extends Order {
-  public int srcX;
-  public int srcY;
-  public int width;
-  public int height;
-  public int x;
-  public int y;
+    public int srcX;
+    public int srcY;
+    public int width;
+    public int height;
+    public int x;
+    public int y;
 
-  public CopyRectOrder() {
-    type = OrderType.COPY_RECT;
-  }
+    public CopyRectOrder() {
+        type = OrderType.COPY_RECT;
+    }
 
-  @Override
-  public String toString() {
-    return "CopyRectOrder [srcX=" + srcX + ", srcY=" + srcY + ", width=" + width + ", height=" + height + ", x=" + x + ", y=" + y + "]";
-  }
+    @Override
+    public String toString() {
+        return "CopyRectOrder [srcX=" + srcX + ", srcY=" + srcY + ", width=" + width + ", height=" + height + ", x=" + x + ", y=" + y + "]";
+    }
 
 }

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -25,8 +27,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -67,7 +67,9 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.GUEST_VM_CIDR, type = CommandType.STRING, description = "CIDR for Guest VMs,Cloudstack allocates IPs to Guest VMs only from this CIDR")
     private String guestVmCidr;
 
-    @Parameter(name = ApiConstants.DISPLAY_NETWORK, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the network to the end user or not.")
+    @Parameter(name = ApiConstants.DISPLAY_NETWORK,
+               type = CommandType.BOOLEAN,
+               description = "an optional field, whether to the display the network to the end user or not.")
     private Boolean displayNetwork;
 
     /////////////////////////////////////////////////////
@@ -137,8 +139,9 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
             throw new InvalidParameterValueException("Couldn't find network by id");
         }
 
-        Network result = _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount, callerUser, getNetworkDomain(), getNetworkOfferingId(),
-            getChangeCidr(), getGuestVmCidr(), getDisplayNetwork());
+        Network result =
+            _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount, callerUser, getNetworkDomain(), getNetworkOfferingId(),
+                getChangeCidr(), getGuestVmCidr(), getDisplayNetwork());
 
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);

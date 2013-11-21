@@ -51,6 +51,7 @@ public class VmStatsEntry implements VmStats {
         this.entityType = entityType;
     }
 
+    @Override
     public double getCPUUtilization() {
         return cpuUtilization;
     }
@@ -59,6 +60,7 @@ public class VmStatsEntry implements VmStats {
         this.cpuUtilization = cpuUtilization;
     }
 
+    @Override
     public double getNetworkReadKBs() {
         return networkReadKBs;
     }
@@ -67,6 +69,7 @@ public class VmStatsEntry implements VmStats {
         this.networkReadKBs = networkReadKBs;
     }
 
+    @Override
     public double getNetworkWriteKBs() {
         return networkWriteKBs;
     }
@@ -75,6 +78,7 @@ public class VmStatsEntry implements VmStats {
         this.networkWriteKBs = networkWriteKBs;
     }
 
+    @Override
     public double getDiskReadIOs() {
         return diskReadIOs;
     }
@@ -83,6 +87,7 @@ public class VmStatsEntry implements VmStats {
         this.diskReadIOs = diskReadIOs;
     }
 
+    @Override
     public double getDiskWriteIOs() {
         return diskWriteIOs;
     }
@@ -91,6 +96,7 @@ public class VmStatsEntry implements VmStats {
         this.diskWriteIOs = diskWriteIOs;
     }
 
+    @Override
     public double getDiskReadKBs() {
         return diskReadKBs;
     }
@@ -99,6 +105,7 @@ public class VmStatsEntry implements VmStats {
         this.diskReadKBs = diskReadKBs;
     }
 
+    @Override
     public double getDiskWriteKBs() {
         return diskWriteKBs;
     }

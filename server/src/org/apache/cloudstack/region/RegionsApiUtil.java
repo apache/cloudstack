@@ -38,11 +38,12 @@ import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
 
+import com.thoughtworks.xstream.XStream;
+import com.thoughtworks.xstream.io.xml.DomDriver;
+
 import com.cloud.domain.DomainVO;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserAccountVO;
-import com.thoughtworks.xstream.XStream;
-import com.thoughtworks.xstream.io.xml.DomDriver;
 
 /**
  * Utility class for making API calls between peer Regions

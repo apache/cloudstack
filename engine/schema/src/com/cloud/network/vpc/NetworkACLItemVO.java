@@ -16,12 +16,22 @@
 // under the License.
 package com.cloud.network.vpc;
 
-import com.cloud.network.rules.FirewallRule;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
-
-import javax.persistence.*;
-import java.util.*;
 
 @Entity
 @Table(name = "network_acl_item")
@@ -78,8 +88,8 @@ public class NetworkACLItemVO implements NetworkACLItem {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public NetworkACLItemVO(Integer portStart, Integer portEnd, String protocol, long aclId, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, TrafficType trafficType,
-            Action action, int number) {
+    public NetworkACLItemVO(Integer portStart, Integer portEnd, String protocol, long aclId, List<String> sourceCidrs, Integer icmpCode, Integer icmpType,
+            TrafficType trafficType, Action action, int number) {
         this.sourcePortStart = portStart;
         this.sourcePortEnd = portEnd;
         this.protocol = protocol;

@@ -23,6 +23,11 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import org.mockito.Matchers;
+import org.mockito.Mockito;
+import org.springframework.test.context.ContextConfiguration;
+import org.testng.annotations.Test;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -37,18 +42,14 @@ import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.cloudstack.storage.MockLocalNfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
-import org.springframework.test.context.ContextConfiguration;
-import org.testng.annotations.Test;
 
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.download.DownloadMonitorImpl;
 import com.cloud.utils.component.ComponentContext;
@@ -81,8 +82,9 @@ public class TemplateTest extends CloudStackTestNGBase {
         ComponentContext.initComponentsLifeCycle();
 
         // create data center
-        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
-            true, null, null);
+        DataCenterVO dc =
+            new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
+                true, null, null);
         dc = dcDao.persist(dc);
         dcId = dc.getId();
 

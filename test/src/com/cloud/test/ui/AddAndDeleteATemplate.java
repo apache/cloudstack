@@ -16,10 +16,11 @@
 // under the License.
 package com.cloud.test.ui;
 
-import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import com.cloud.test.ui.AbstractSeleniumTestCase;
+
+import org.junit.Test;
+
 import com.thoughtworks.selenium.SeleniumException;
 
 public class AddAndDeleteATemplate extends AbstractSeleniumTestCase {
@@ -39,7 +40,8 @@ public class AddAndDeleteATemplate extends AbstractSeleniumTestCase {
             selenium.click("label");
             selenium.type("add_template_name", "abc");
             selenium.type("add_template_display_text", "abc");
-            String template_url = System.getProperty("add_template_url", "http://10.91.28.6/templates/centos53-x86_64/latest/f59f18fb-ae94-4f97-afd2-f84755767aca.vhd.bz2");
+            String template_url =
+                System.getProperty("add_template_url", "http://10.91.28.6/templates/centos53-x86_64/latest/f59f18fb-ae94-4f97-afd2-f84755767aca.vhd.bz2");
             selenium.type("add_template_url", template_url);
             String template_zone = System.getProperty("add_template_zone", "All Zones");
             selenium.select("add_template_zone", "label=" + template_zone);
@@ -48,10 +50,8 @@ public class AddAndDeleteATemplate extends AbstractSeleniumTestCase {
             selenium.click("//div[28]/div[11]/button[1]");
             Thread.sleep(3000);
             int i = 1;
-            try
-            {
-                for (;; i++)
-                {
+            try {
+                for (;; i++) {
                     System.out.println("i=   " + i);
                     selenium.click("//div[" + i + "]/div/div[2]/span/span");
                 }
@@ -72,13 +72,11 @@ public class AddAndDeleteATemplate extends AbstractSeleniumTestCase {
             assertTrue(selenium.isTextPresent("Adding succeeded"));
             Thread.sleep(3000);
             int status = 1;
-            while (!selenium.isTextPresent("Ready"))
-            {
+            while (!selenium.isTextPresent("Ready")) {
                 for (int j = 1; j <= i; j++)
 
                 {
-                    if (selenium.isTextPresent("Ready"))
-                    {
+                    if (selenium.isTextPresent("Ready")) {
                         status = 0;
                         break;
                     }
@@ -86,9 +84,7 @@ public class AddAndDeleteATemplate extends AbstractSeleniumTestCase {
                 }
                 if (status == 0) {
                     break;
-                }
-                else
-                {
+                } else {
                     selenium.click("//div[@id='leftmenu_submenu_featured_template']/div/div[2]");
                     Thread.sleep(3000);
                     selenium.click("//div[@id='leftmenu_submenu_my_template']/div/div[2]");

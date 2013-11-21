@@ -63,14 +63,17 @@ public class MockVMVO implements MockVm, InternalIdentity {
 
     }
 
+    @Override
     public long getId() {
         return this.id;
     }
 
+    @Override
     public String getName() {
         return this.name;
     }
 
+    @Override
     public void setName(String name) {
         this.name = name;
     }
@@ -79,6 +82,7 @@ public class MockVMVO implements MockVm, InternalIdentity {
         return this.hostId;
     }
 
+    @Override
     public void setHostId(long hostId) {
         this.hostId = hostId;
     }
@@ -91,50 +95,62 @@ public class MockVMVO implements MockVm, InternalIdentity {
         this.vmType = vmType;
     }
 
+    @Override
     public State getState() {
         return this.state;
     }
 
+    @Override
     public String getType() {
         return this.vmType;
     }
 
+    @Override
     public void setState(State state) {
         this.state = state;
     }
 
+    @Override
     public int getVncPort() {
         return this.vncPort;
     }
 
+    @Override
     public void setVncPort(int vncPort) {
         this.vncPort = vncPort;
     }
 
+    @Override
     public long getMemory() {
         return this.memory;
     }
 
+    @Override
     public void setMemory(long memory) {
         this.memory = memory;
     }
 
+    @Override
     public int getCpu() {
         return this.cpu;
     }
 
+    @Override
     public void setCpu(int cpu) {
         this.cpu = cpu;
     }
 
+    @Override
     public void setType(String type) {
         this.vmType = type;
     }
 
+    @Override
     public String getBootargs() {
         return bootargs;
     }
 
+    @Override
     public void setBootargs(String bootargs) {
         this.bootargs = bootargs;
     }

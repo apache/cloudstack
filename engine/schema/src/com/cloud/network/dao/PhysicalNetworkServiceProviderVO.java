@@ -30,10 +30,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.network.Network.Service;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "physical_network_service_providers")

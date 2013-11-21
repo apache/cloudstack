@@ -32,7 +32,6 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
@@ -43,6 +42,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
     public IdentityDaoImpl() {
     }
 
+    @Override
     @DB
     public Long getIdentityId(String tableName, String identityString) {
         assert (tableName != null);
@@ -61,9 +61,9 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
 
                 pstmt = txn.prepareAutoCloseStatement(String.format("SELECT id FROM `%s` WHERE id=? OR uuid=?", tableName)
 
-                    // TODO : after graceful period, use following line turn on more secure check
-                    // String.format("SELECT id FROM %s WHERE (id=? AND uuid IS NULL) OR uuid=?", mapper.entityTableName())
-                    );
+                // TODO : after graceful period, use following line turn on more secure check
+                // String.format("SELECT id FROM %s WHERE (id=? AND uuid IS NULL) OR uuid=?", mapper.entityTableName())
+                );
 
                 long id = 0;
                 try {
@@ -150,8 +150,8 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
         try {
             try {
                 pstmt = txn.prepareAutoCloseStatement(String.format("SELECT uuid FROM `%s` WHERE id=? OR uuid=?", tableName)
-                    // String.format("SELECT uuid FROM %s WHERE (id=? AND uuid IS NULL) OR uuid=?", tableName)
-                    );
+                // String.format("SELECT uuid FROM %s WHERE (id=? AND uuid IS NULL) OR uuid=?", tableName)
+                );
 
                 long id = 0;
                 try {
@@ -181,6 +181,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
         return identityString;
     }
 
+    @Override
     @DB
     public void initializeDefaultUuid(String tableName) {
         assert (tableName != null);

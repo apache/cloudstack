@@ -17,42 +17,20 @@
 package com.cloud.network.resource;
 
 // test imports
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertTrue;
 
-import java.util.Collections;
-
-// basic imports
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import javax.naming.ConfigurationException;
-import javax.xml.parsers.DocumentBuilderFactory;
 
-import com.cloud.agent.IAgentControl;
+import javax.naming.ConfigurationException;
+
+import org.junit.Before;
+import org.junit.Test;
+
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
-import com.cloud.agent.api.ExternalNetworkResourceUsageAnswer;
-import com.cloud.agent.api.ExternalNetworkResourceUsageCommand;
-import com.cloud.agent.api.MaintainAnswer;
-import com.cloud.agent.api.MaintainCommand;
-import com.cloud.agent.api.PingCommand;
-import com.cloud.agent.api.ReadyAnswer;
-import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
-import com.cloud.agent.api.StartupExternalFirewallCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -63,47 +41,14 @@ import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
-import com.cloud.host.Host;
-import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
-import com.cloud.resource.ServerResource;
-import com.cloud.utils.NumbersUtil;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.utils.exception.ExecutionException;
-import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.script.Script;
-
+// basic imports
 // http client handling
-import org.apache.http.client.ResponseHandler;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.BasicResponseHandler;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.NameValuePair;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.protocol.HTTP;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.net.URLDecoder;
-import javax.xml.xpath.XPathFactory;
-import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathExpression;
-import javax.xml.xpath.XPathConstants;
-import javax.xml.xpath.XPathExpressionException;
-import com.cloud.network.utils.HttpClientWrapper;
-
 // for prettyFormat()
-import javax.xml.transform.stream.StreamSource;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Source;
-import java.io.StringWriter;
 
 public class PaloAltoResourceTest {
     // configuration data
@@ -157,7 +102,7 @@ public class PaloAltoResourceTest {
         _resource.setMockContext(_context);
     }
 
-    @Test (expected=ConfigurationException.class)
+    @Test(expected = ConfigurationException.class)
     public void resourceConfigureFailure() throws ConfigurationException {
         _resource.configure("PaloAltoResource", new HashMap<String, Object>());
     }
@@ -182,7 +127,7 @@ public class PaloAltoResourceTest {
         _resource.configure("PaloAltoResource", _resource_params);
     }
 
-    @Test (expected=ConfigurationException.class)
+    @Test(expected = ConfigurationException.class)
     public void simulateFirewallNotConfigurable() throws ConfigurationException {
         if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
             System.out.println("\nTEST: simulateFirewallNotConfigurable");
@@ -194,7 +139,7 @@ public class PaloAltoResourceTest {
         _resource.configure("PaloAltoResource", _resource_params);
     }
 
-    @Test (expected=ConfigurationException.class)
+    @Test(expected = ConfigurationException.class)
     public void simulateFirewallCommitFailure() throws ConfigurationException {
         if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
             System.out.println("\nTEST: simulateFirewallCommitFailure");
@@ -221,8 +166,10 @@ public class PaloAltoResourceTest {
         assertTrue("TestZone".equals(sc[0].getDataCenter()));
     }
 
-    @Test // implement public & private interfaces, source nat, guest network
-    public void implementGuestNetwork() throws ConfigurationException, ExecutionException {
+    @Test
+    // implement public & private interfaces, source nat, guest network
+        public
+        void implementGuestNetwork() throws ConfigurationException, ExecutionException {
         if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
             System.out.println("\nTEST: implementGuestNetwork");
             System.out.println("---------------------------------------------------");
@@ -237,12 +184,14 @@ public class PaloAltoResourceTest {
         cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, "10.3.96.1/20");
         cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, "3954");
 
-        IpAssocAnswer answer = (IpAssocAnswer) _resource.executeRequest(cmd);
+        IpAssocAnswer answer = (IpAssocAnswer)_resource.executeRequest(cmd);
         assertTrue(answer.getResult());
     }
 
-    @Test // remove public & private interface details, source nat, guest network
-    public void shutdownGuestNetwork() throws ConfigurationException, ExecutionException {
+    @Test
+    // remove public & private interface details, source nat, guest network
+        public
+        void shutdownGuestNetwork() throws ConfigurationException, ExecutionException {
         if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
             System.out.println("\nTEST: shutdownGuestNetwork");
             System.out.println("---------------------------------------------------");
@@ -262,7 +211,7 @@ public class PaloAltoResourceTest {
         cmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR, "10.3.96.1/20");
         cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, "3954");
 
-        IpAssocAnswer answer = (IpAssocAnswer) _resource.executeRequest(cmd);
+        IpAssocAnswer answer = (IpAssocAnswer)_resource.executeRequest(cmd);
         assertTrue(answer.getResult());
     }
 
@@ -284,9 +233,7 @@ public class PaloAltoResourceTest {
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
         List<String> cidrList = new ArrayList<String>();
         cidrList.add("0.0.0.0/0");
-        FirewallRuleTO active = new FirewallRuleTO(8,
-            null, "192.168.80.103", "tcp", 80, 80, false, false,
-            FirewallRule.Purpose.Firewall, cidrList, null, null);
+        FirewallRuleTO active = new FirewallRuleTO(8, null, "192.168.80.103", "tcp", 80, 80, false, false, FirewallRule.Purpose.Firewall, cidrList, null, null);
         rules.add(active);
 
         SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rules);
@@ -314,9 +261,7 @@ public class PaloAltoResourceTest {
 
         long vlanId = 3954;
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
-        FirewallRuleTO revoked = new FirewallRuleTO(8,
-            null, "192.168.80.103", "tcp", 80, 80, true, false,
-            FirewallRule.Purpose.Firewall, null, null, null);
+        FirewallRuleTO revoked = new FirewallRuleTO(8, null, "192.168.80.103", "tcp", 80, 80, true, false, FirewallRule.Purpose.Firewall, null, null, null);
         rules.add(revoked);
 
         SetFirewallRulesCommand cmd = new SetFirewallRulesCommand(rules);
@@ -345,9 +290,7 @@ public class PaloAltoResourceTest {
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
         List<String> cidrList = new ArrayList<String>();
         cidrList.add("0.0.0.0/0");
-        FirewallRuleVO activeVO = new FirewallRuleVO(null, null, 80, 80, "tcp",
-            1, 1, 1, Purpose.Firewall, cidrList, null,
-            null, null, FirewallRule.TrafficType.Egress);
+        FirewallRuleVO activeVO = new FirewallRuleVO(null, null, 80, 80, "tcp", 1, 1, 1, Purpose.Firewall, cidrList, null, null, null, FirewallRule.TrafficType.Egress);
         FirewallRuleTO active = new FirewallRuleTO(activeVO, Long.toString(vlanId), null, Purpose.Firewall, FirewallRule.TrafficType.Egress);
         rules.add(active);
 
@@ -376,8 +319,7 @@ public class PaloAltoResourceTest {
 
         long vlanId = 3954;
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
-        FirewallRuleVO revokedVO = new FirewallRuleVO(null, null, 80, 80, "tcp",
-            1, 1, 1, Purpose.Firewall, null, null, null, null, FirewallRule.TrafficType.Egress);
+        FirewallRuleVO revokedVO = new FirewallRuleVO(null, null, 80, 80, "tcp", 1, 1, 1, Purpose.Firewall, null, null, null, null, FirewallRule.TrafficType.Egress);
         revokedVO.setState(State.Revoke);
         FirewallRuleTO revoked = new FirewallRuleTO(revokedVO, Long.toString(vlanId), null, Purpose.Firewall, FirewallRule.TrafficType.Egress);
         rules.add(revoked);
@@ -406,8 +348,7 @@ public class PaloAltoResourceTest {
 
         long vlanId = 3954;
         List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
-        StaticNatRuleTO active = new StaticNatRuleTO(0, "192.168.80.103", null,
-                null, "10.3.97.158", null, null, null, false, false);
+        StaticNatRuleTO active = new StaticNatRuleTO(0, "192.168.80.103", null, null, "10.3.97.158", null, null, null, false, false);
         rules.add(active);
 
         SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rules, null);
@@ -435,8 +376,7 @@ public class PaloAltoResourceTest {
 
         long vlanId = 3954;
         List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
-        StaticNatRuleTO revoked = new StaticNatRuleTO(0, "192.168.80.103", null,
-                null, "10.3.97.158", null, null, null, true, false);
+        StaticNatRuleTO revoked = new StaticNatRuleTO(0, "192.168.80.103", null, null, "10.3.97.158", null, null, null, true, false);
         rules.add(revoked);
 
         SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rules, null);
@@ -463,8 +403,7 @@ public class PaloAltoResourceTest {
 
         long vlanId = 3954;
         List<PortForwardingRuleTO> rules = new ArrayList<PortForwardingRuleTO>();
-        PortForwardingRuleTO active = new PortForwardingRuleTO(9, "192.168.80.103", 80,
-            80, "10.3.97.158", 8080, 8080, "tcp", false, false);
+        PortForwardingRuleTO active = new PortForwardingRuleTO(9, "192.168.80.103", 80, 80, "10.3.97.158", 8080, 8080, "tcp", false, false);
         rules.add(active);
 
         SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(rules);
@@ -492,8 +431,7 @@ public class PaloAltoResourceTest {
 
         long vlanId = 3954;
         List<PortForwardingRuleTO> rules = new ArrayList<PortForwardingRuleTO>();
-        PortForwardingRuleTO revoked = new PortForwardingRuleTO(9, "192.168.80.103", 80,
-            80, "10.3.97.158", 8080, 8080, "tcp", true, false);
+        PortForwardingRuleTO revoked = new PortForwardingRuleTO(9, "192.168.80.103", 80, 80, "10.3.97.158", 8080, 8080, "tcp", true, false);
         rules.add(revoked);
 
         SetPortForwardingRulesCommand cmd = new SetPortForwardingRulesCommand(rules);
@@ -504,4 +442,3 @@ public class PaloAltoResourceTest {
         assertTrue(answer.getResult());
     }
 }
-

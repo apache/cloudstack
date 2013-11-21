@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.hypervisor;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,18 +23,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import com.cloud.utils.Pair;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Command;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 
 @Component

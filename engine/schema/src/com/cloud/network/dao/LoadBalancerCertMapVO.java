@@ -16,13 +16,14 @@
 // under the License.
 package com.cloud.network.dao;
 
-import org.apache.cloudstack.api.InternalIdentity;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import java.util.UUID;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "load_balancer_cert_map")

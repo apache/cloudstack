@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.storage.upload;
 
-import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.UploadAnswer;
 
 public abstract class UploadInactiveState extends UploadState {

@@ -24,7 +24,6 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.PodVlanVO;
-import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -40,12 +39,14 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements P
     private final SearchBuilder<PodVlanVO> VlanPodSearch;
     private final SearchBuilder<PodVlanVO> PodSearchAllocated;
 
+    @Override
     public List<PodVlanVO> listAllocatedVnets(long podId) {
         SearchCriteria<PodVlanVO> sc = PodSearchAllocated.create();
         sc.setParameters("podId", podId);
         return listBy(sc);
     }
 
+    @Override
     public void add(long podId, int start, int end) {
         String insertVnet = "INSERT INTO `cloud`.`op_pod_vlan_alloc` (vlan, pod_id) VALUES ( ?, ?)";
 
@@ -65,6 +66,7 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements P
         }
     }
 
+    @Override
     public void delete(long podId) {
         String deleteVnet = "DELETE FROM `cloud`.`op_pod_vlan_alloc` WHERE pod_id = ?";
 
@@ -78,6 +80,7 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements P
         }
     }
 
+    @Override
     public PodVlanVO take(long podId, long accountId) {
         SearchCriteria<PodVlanVO> sc = FreeVlanSearch.create();
         sc.setParameters("podId", podId);
@@ -101,6 +104,7 @@ public class PodVlanDaoImpl extends GenericDaoBase<PodVlanVO, Long> implements P
         }
     }
 
+    @Override
     public void release(String vlan, long podId, long accountId) {
         SearchCriteria<PodVlanVO> sc = VlanPodSearch.create();
         sc.setParameters("vlan", vlan);

@@ -49,6 +49,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
     private final GenericSearchBuilder<DataCenterLinkLocalIpAddressVO, Integer> AllIpCount;
     private final GenericSearchBuilder<DataCenterLinkLocalIpAddressVO, Integer> AllAllocatedIpCount;
 
+    @Override
     @DB
     public DataCenterLinkLocalIpAddressVO takeIpAddress(long dcId, long podId, long instanceId, String reservationId) {
         SearchCriteria<DataCenterLinkLocalIpAddressVO> sc = AllFieldsSearch.create();
@@ -71,12 +72,14 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
         return vo;
     }
 
+    @Override
     public boolean deleteIpAddressByPod(long podId) {
         SearchCriteria<DataCenterLinkLocalIpAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("pod", podId);
         return remove(sc) > 0;
     }
 
+    @Override
     @DB
     public void addIpRange(long dcId, long podId, String start, String end) {
         String insertSql = "INSERT INTO `cloud`.`op_dc_link_local_ip_address_alloc` (ip_address, data_center_id, pod_id) VALUES (?, ?, ?)";
@@ -102,6 +105,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
         }
     }
 
+    @Override
     public void releaseIpAddress(String ipAddress, long dcId, long instanceId) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Releasing ip address: " + ipAddress + " data center " + dcId);
@@ -119,6 +123,7 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
         update(vo, sc);
     }
 
+    @Override
     public void releaseIpAddress(long nicId, String reservationId) {
         SearchCriteria<DataCenterLinkLocalIpAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("instance", nicId);
@@ -132,12 +137,14 @@ public class DataCenterLinkLocalIpAddressDaoImpl extends GenericDaoBase<DataCent
         update(vo, sc);
     }
 
+    @Override
     public List<DataCenterLinkLocalIpAddressVO> listByPodIdDcId(long podId, long dcId) {
         SearchCriteria<DataCenterLinkLocalIpAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("pod", podId);
         return listBy(sc);
     }
 
+    @Override
     public int countIPs(long podId, long dcId, boolean onlyCountAllocated) {
         SearchCriteria<Integer> sc;
         if (onlyCountAllocated) {

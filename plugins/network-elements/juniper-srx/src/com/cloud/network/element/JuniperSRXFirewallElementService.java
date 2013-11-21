@@ -18,6 +18,8 @@ package com.cloud.network.element;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.response.ExternalFirewallResponse;
+
 import com.cloud.api.commands.AddExternalFirewallCmd;
 import com.cloud.api.commands.AddSrxFirewallCmd;
 import com.cloud.api.commands.ConfigureSrxFirewallCmd;
@@ -30,8 +32,6 @@ import com.cloud.api.response.SrxFirewallResponse;
 import com.cloud.host.Host;
 import com.cloud.network.Network;
 import com.cloud.network.dao.ExternalFirewallDeviceVO;
-
-import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import com.cloud.utils.component.PluggableService;
 
 public interface JuniperSRXFirewallElementService extends PluggableService {

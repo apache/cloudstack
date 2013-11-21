@@ -82,7 +82,8 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                         //mismatch, correct the nsp_id in VR
                         PreparedStatement pstmt1 = null;
                         ResultSet rs1 = null;
-                        pstmt1 = conn.prepareStatement("SELECT  id FROM `cloud`.`physical_network_service_providers` where physical_network_id = ? AND provider_name = ? AND removed IS NULL");
+                        pstmt1 =
+                            conn.prepareStatement("SELECT  id FROM `cloud`.`physical_network_service_providers` where physical_network_id = ? AND provider_name = ? AND removed IS NULL");
                         pstmt1.setLong(1, physicalNetworkId);
                         pstmt1.setString(2, "VirtualRouter");
                         rs1 = pstmt1.executeQuery();
@@ -180,7 +181,8 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
 
                 //check if any networks were untagged and remaining to be mapped to a physical network
 
-                pstmt = conn.prepareStatement("SELECT count(n.id) FROM networks n WHERE n.physical_network_id IS NULL AND n.traffic_type = 'Guest' and n.data_center_id = ? and n.removed is null");
+                pstmt =
+                    conn.prepareStatement("SELECT count(n.id) FROM networks n WHERE n.physical_network_id IS NULL AND n.traffic_type = 'Guest' and n.data_center_id = ? and n.removed is null");
                 pstmt.setLong(1, zoneId);
                 rs = pstmt.executeQuery();
                 if (rs.next()) {
@@ -193,7 +195,8 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
 
                         //make sure that no physical network with this traffic label already exists. if yes, error out.
                         if (xenGuestLabel != null) {
-                            PreparedStatement pstmt5 = conn.prepareStatement("SELECT count(*) FROM `cloud`.`physical_network_traffic_types` pntt JOIN `cloud`.`physical_network` pn ON pntt.physical_network_id = pn.id WHERE pntt.traffic_type ='Guest' AND pn.data_center_id = ? AND pntt.xen_network_label = ?");
+                            PreparedStatement pstmt5 =
+                                conn.prepareStatement("SELECT count(*) FROM `cloud`.`physical_network_traffic_types` pntt JOIN `cloud`.`physical_network` pn ON pntt.physical_network_id = pn.id WHERE pntt.traffic_type ='Guest' AND pn.data_center_id = ? AND pntt.xen_network_label = ?");
                             pstmt5.setLong(1, zoneId);
                             pstmt5.setString(2, xenGuestLabel);
                             ResultSet rsSameLabel = pstmt5.executeQuery();
@@ -202,10 +205,10 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                                 Long sameLabelcount = rsSameLabel.getLong(1);
                                 if (sameLabelcount > 0) {
                                     s_logger.error("There are untagged networks for which we need to add a physical network with Xen traffic label = 'xen.guest.network.device' config value, which is: " +
-                                                   xenGuestLabel);
+                                        xenGuestLabel);
                                     s_logger.error("However already there are " + sameLabelcount + " physical networks setup with same traffic label, cannot upgrade");
                                     throw new CloudRuntimeException("Cannot upgrade this setup since a physical network with same traffic label: " + xenGuestLabel +
-                                                                    " already exists, Please check logs and contact Support.");
+                                        " already exists, Please check logs and contact Support.");
                                 }
                             }
                         }
@@ -216,7 +219,8 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                         addDefaultVRProvider(conn, physicalNetworkId, zoneId);
                         addDefaultSGProvider(conn, physicalNetworkId, zoneId, networkType, true);
 
-                        PreparedStatement pstmt3 = conn.prepareStatement("SELECT n.id FROM networks n WHERE n.physical_network_id IS NULL AND n.traffic_type = 'Guest' and n.data_center_id = ? and n.removed is null");
+                        PreparedStatement pstmt3 =
+                            conn.prepareStatement("SELECT n.id FROM networks n WHERE n.physical_network_id IS NULL AND n.traffic_type = 'Guest' and n.data_center_id = ? and n.removed is null");
                         pstmt3.setLong(1, zoneId);
                         ResultSet rsNet = pstmt3.executeQuery();
                         s_logger.debug("Adding PhysicalNetwork to VLAN");
@@ -235,7 +239,8 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
 
                 boolean multiplePhysicalNetworks = false;
 
-                pstmt = conn.prepareStatement("SELECT count(*) FROM `cloud`.`physical_network_traffic_types` pntt JOIN `cloud`.`physical_network` pn ON pntt.physical_network_id = pn.id WHERE pntt.traffic_type ='Guest' and pn.data_center_id = ?");
+                pstmt =
+                    conn.prepareStatement("SELECT count(*) FROM `cloud`.`physical_network_traffic_types` pntt JOIN `cloud`.`physical_network` pn ON pntt.physical_network_id = pn.id WHERE pntt.traffic_type ='Guest' and pn.data_center_id = ?");
                 pstmt.setLong(1, zoneId);
                 rs = pstmt.executeQuery();
                 if (rs.next()) {
@@ -251,7 +256,8 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                 if (multiplePhysicalNetworks) {
                     //check if guest vnet is wrongly configured by earlier upgrade. If yes error out
                     //check if any vnet is allocated and guest networks are using vnet But the physical network id does not match on the vnet and guest network.
-                    PreparedStatement pstmt4 = conn.prepareStatement("SELECT v.id, v.vnet, v.reservation_id, v.physical_network_id as vpid, n.id, n.physical_network_id as npid FROM `cloud`.`op_dc_vnet_alloc` v JOIN `cloud`.`networks` n ON CONCAT('vlan://' , v.vnet) = n.broadcast_uri WHERE v.taken IS NOT NULL AND v.data_center_id = ? AND n.removed IS NULL AND v.physical_network_id !=  n.physical_network_id");
+                    PreparedStatement pstmt4 =
+                        conn.prepareStatement("SELECT v.id, v.vnet, v.reservation_id, v.physical_network_id as vpid, n.id, n.physical_network_id as npid FROM `cloud`.`op_dc_vnet_alloc` v JOIN `cloud`.`networks` n ON CONCAT('vlan://' , v.vnet) = n.broadcast_uri WHERE v.taken IS NOT NULL AND v.data_center_id = ? AND n.removed IS NULL AND v.physical_network_id !=  n.physical_network_id");
                     pstmt4.setLong(1, zoneId);
                     ResultSet rsVNet = pstmt4.executeQuery();
                     if (rsVNet.next()) {
@@ -259,22 +265,23 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                         String networkId = rsVNet.getString(5);
                         String vpid = rsVNet.getString(4);
                         String npid = rsVNet.getString(6);
-                        s_logger.error("Guest Vnet assignment is set wrongly . Cannot upgrade until that is corrected. Example- Vnet: " + vnet + " has physical network id: " +
-                                       vpid + " ,but the guest network: " + networkId + " that uses it has physical network id: " + npid);
+                        s_logger.error("Guest Vnet assignment is set wrongly . Cannot upgrade until that is corrected. Example- Vnet: " + vnet +
+                            " has physical network id: " + vpid + " ,but the guest network: " + networkId + " that uses it has physical network id: " + npid);
 
-                        String message = "Cannot upgrade. Your setup has multiple Physical Networks and is using guest Vnet that is assigned wrongly. To upgrade, first correct the setup by doing the following: \n"
-                                         + "1. Please rollback to your 2.2.14 setup\n"
-                                         + "2. Please stop all VMs using isolated(virtual) networks through CloudStack\n"
-                                         + "3. Run following query to find if any networks still have nics allocated:\n\t"
-                                         + "a) check if any virtual guest networks still have allocated nics by running:\n\t"
-                                         + "SELECT DISTINCT op.id from `cloud`.`op_networks` op JOIN `cloud`.`networks` n on op.id=n.id WHERE nics_count != 0 AND guest_type = 'Virtual';\n\t"
-                                         + "b) If this returns any networkd ids, then ensure that all VMs are stopped, no new VM is being started, and then shutdown management server\n\t"
-                                         + "c) Clean up the nics count for the 'virtual' network id's returned in step (a) by running this:\n\t"
-                                         + "UPDATE `cloud`.`op_networks` SET nics_count = 0 WHERE  id = <enter id of virtual network>\n\t"
-                                         + "d) Restart management server and wait for all networks to shutdown. [Networks shutdown will be determined by network.gc.interval and network.gc.wait seconds] \n"
-                                         + "4. Please ensure all networks are shutdown and all guest Vnet's are free.\n"
-                                         + "5. Run upgrade. This will allocate all your guest vnet range to first physical network.  \n"
-                                         + "6. Reconfigure the vnet ranges for each physical network as desired by using updatePhysicalNetwork API \n" + "7. Start all your VMs";
+                        String message =
+                            "Cannot upgrade. Your setup has multiple Physical Networks and is using guest Vnet that is assigned wrongly. To upgrade, first correct the setup by doing the following: \n"
+                                + "1. Please rollback to your 2.2.14 setup\n"
+                                + "2. Please stop all VMs using isolated(virtual) networks through CloudStack\n"
+                                + "3. Run following query to find if any networks still have nics allocated:\n\t"
+                                + "a) check if any virtual guest networks still have allocated nics by running:\n\t"
+                                + "SELECT DISTINCT op.id from `cloud`.`op_networks` op JOIN `cloud`.`networks` n on op.id=n.id WHERE nics_count != 0 AND guest_type = 'Virtual';\n\t"
+                                + "b) If this returns any networkd ids, then ensure that all VMs are stopped, no new VM is being started, and then shutdown management server\n\t"
+                                + "c) Clean up the nics count for the 'virtual' network id's returned in step (a) by running this:\n\t"
+                                + "UPDATE `cloud`.`op_networks` SET nics_count = 0 WHERE  id = <enter id of virtual network>\n\t"
+                                + "d) Restart management server and wait for all networks to shutdown. [Networks shutdown will be determined by network.gc.interval and network.gc.wait seconds] \n"
+                                + "4. Please ensure all networks are shutdown and all guest Vnet's are free.\n"
+                                + "5. Run upgrade. This will allocate all your guest vnet range to first physical network.  \n"
+                                + "6. Reconfigure the vnet ranges for each physical network as desired by using updatePhysicalNetwork API \n" + "7. Start all your VMs";
 
                         s_logger.error(message);
                         throw new CloudRuntimeException(
@@ -285,7 +292,8 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                     pstmt4.close();
 
                     //Clean up any vnets that have no live networks/nics
-                    pstmt4 = conn.prepareStatement("SELECT v.id, v.vnet, v.reservation_id FROM `cloud`.`op_dc_vnet_alloc` v LEFT JOIN networks n ON CONCAT('vlan://' , v.vnet) = n.broadcast_uri WHERE v.taken IS NOT NULL AND v.data_center_id = ? AND n.broadcast_uri IS NULL AND n.removed IS NULL");
+                    pstmt4 =
+                        conn.prepareStatement("SELECT v.id, v.vnet, v.reservation_id FROM `cloud`.`op_dc_vnet_alloc` v LEFT JOIN networks n ON CONCAT('vlan://' , v.vnet) = n.broadcast_uri WHERE v.taken IS NOT NULL AND v.data_center_id = ? AND n.broadcast_uri IS NULL AND n.removed IS NULL");
                     pstmt4.setLong(1, zoneId);
                     rsVNet = pstmt4.executeQuery();
                     while (rsVNet.next()) {
@@ -301,7 +309,7 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                         Long instance_id = rsNic.getLong(2);
                         if (rsNic.next()) {
                             throw new CloudRuntimeException("Cannot upgrade. Please cleanup the guest vnet: " + vnetValue + " , it is being used by nic_id: " + nic_id +
-                                                            " , instance_id: " + instance_id);
+                                " , instance_id: " + instance_id);
                         }
 
                         //free this vnet
@@ -316,7 +324,8 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
 
                     //add tags to the physical networks if not present and clone offerings
 
-                    pstmt = conn.prepareStatement("SELECT pn.id as pid , ptag.tag as tag FROM `cloud`.`physical_network` pn LEFT JOIN `cloud`.`physical_network_tags` ptag ON pn.id = ptag.physical_network_id where pn.data_center_id = ?");
+                    pstmt =
+                        conn.prepareStatement("SELECT pn.id as pid , ptag.tag as tag FROM `cloud`.`physical_network` pn LEFT JOIN `cloud`.`physical_network_tags` ptag ON pn.id = ptag.physical_network_id where pn.data_center_id = ?");
                     pstmt.setLong(1, zoneId);
                     rs = pstmt.executeQuery();
                     while (rs.next()) {
@@ -338,7 +347,8 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                             PreparedStatement pstmt2 = null;
                             ResultSet rs2 = null;
 
-                            pstmt2 = conn.prepareStatement("SELECT distinct network_offering_id FROM `cloud`.`networks` where traffic_type= 'Guest' and physical_network_id = ? and removed is null");
+                            pstmt2 =
+                                conn.prepareStatement("SELECT distinct network_offering_id FROM `cloud`.`networks` where traffic_type= 'Guest' and physical_network_id = ? and removed is null");
                             pstmt2.setLong(1, physicalNetworkId);
                             rs2 = pstmt2.executeQuery();
 
@@ -449,7 +459,8 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
             while (rs.next()) {
                 String service = rs.getString(1);
                 String provider = rs.getString(2);
-                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`ntwk_offering_service_map` (`network_offering_id`, `service`, `provider`, `created`) values (?,?,?, now())");
+                pstmt =
+                    conn.prepareStatement("INSERT INTO `cloud`.`ntwk_offering_service_map` (`network_offering_id`, `service`, `provider`, `created`) values (?,?,?, now())");
                 pstmt.setLong(1, newNetworkOfferingId);
                 pstmt.setString(2, service);
                 pstmt.setString(3, provider);
@@ -458,8 +469,9 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
             rs.close();
             pstmt.close();
 
-            pstmt = conn.prepareStatement("UPDATE `cloud`.`networks` SET network_offering_id=? where physical_network_id=? and traffic_type ='Guest' and network_offering_id=" +
-                                          networkOfferingId);
+            pstmt =
+                conn.prepareStatement("UPDATE `cloud`.`networks` SET network_offering_id=? where physical_network_id=? and traffic_type ='Guest' and network_offering_id=" +
+                    networkOfferingId);
             pstmt.setLong(1, newNetworkOfferingId);
             pstmt.setLong(2, physicalNetworkId);
             pstmt.executeUpdate();

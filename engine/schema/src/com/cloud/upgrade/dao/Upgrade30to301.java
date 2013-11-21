@@ -81,8 +81,9 @@ public class Upgrade30to301 implements DbUpgrade {
                 accountId = rs.getLong(1);
 
                 //get networks count for the account
-                pstmt = conn.prepareStatement("select count(*) from `cloud`.`networks` n, `cloud`.`account_network_ref` a, `cloud`.`network_offerings` no"
-                                              + " WHERE n.acl_type='Account' and n.id=a.network_id and a.account_id=? and a.is_owner=1 and no.specify_vlan=false and no.traffic_type='Guest'");
+                pstmt =
+                    conn.prepareStatement("select count(*) from `cloud`.`networks` n, `cloud`.`account_network_ref` a, `cloud`.`network_offerings` no"
+                        + " WHERE n.acl_type='Account' and n.id=a.network_id and a.account_id=? and a.is_owner=1 and no.specify_vlan=false and no.traffic_type='Guest'");
                 pstmt.setLong(1, accountId);
                 rs1 = pstmt.executeQuery();
                 long count = 0;

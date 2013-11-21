@@ -65,6 +65,7 @@ public interface CiscoNexusVSMDevice extends InternalIdentity, Identity {
 
     public VSMDeviceState getvsmDeviceState();
 
+    @Override
     public String getUuid();
 
 }

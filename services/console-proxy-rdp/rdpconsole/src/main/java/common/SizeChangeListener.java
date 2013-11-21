@@ -18,5 +18,5 @@ package common;
 
 public interface SizeChangeListener {
 
-  public void sizeChanged(int width, int height);
+    public void sizeChanged(int width, int height);
 }

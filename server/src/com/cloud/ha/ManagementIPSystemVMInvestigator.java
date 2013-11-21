@@ -93,7 +93,8 @@ public class ManagementIPSystemVMInvestigator extends AbstractInvestigatorImpl {
                     Status vmHostState = testIpAddress(otherHost, vmHost.getPrivateIpAddress());
                     if ((vmHostState != null) && (vmHostState == Status.Up)) {
                         if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("successfully pinged vm's host IP (" + vmHost.getPrivateIpAddress() + "), but could not ping VM, returning that the VM is down");
+                            s_logger.debug("successfully pinged vm's host IP (" + vmHost.getPrivateIpAddress() +
+                                "), but could not ping VM, returning that the VM is down");
                         }
                         return Boolean.FALSE;
                     }

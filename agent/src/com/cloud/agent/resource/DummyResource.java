@@ -32,9 +32,9 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -110,14 +110,14 @@ public class DummyResource implements ServerResource {
 
     protected void fillNetworkInformation(final StartupCommand cmd) {
 
-        cmd.setPrivateIpAddress((String)getConfiguredProperty("private.ip.address", "127.0.0.1"));
-        cmd.setPrivateMacAddress((String)getConfiguredProperty("private.mac.address", "8A:D2:54:3F:7C:C3"));
-        cmd.setPrivateNetmask((String)getConfiguredProperty("private.ip.netmask", "255.255.255.0"));
+        cmd.setPrivateIpAddress(getConfiguredProperty("private.ip.address", "127.0.0.1"));
+        cmd.setPrivateMacAddress(getConfiguredProperty("private.mac.address", "8A:D2:54:3F:7C:C3"));
+        cmd.setPrivateNetmask(getConfiguredProperty("private.ip.netmask", "255.255.255.0"));
 
-        cmd.setStorageIpAddress((String)getConfiguredProperty("private.ip.address", "127.0.0.1"));
-        cmd.setStorageMacAddress((String)getConfiguredProperty("private.mac.address", "8A:D2:54:3F:7C:C3"));
-        cmd.setStorageNetmask((String)getConfiguredProperty("private.ip.netmask", "255.255.255.0"));
-        cmd.setGatewayIpAddress((String)getConfiguredProperty("gateway.ip.address", "127.0.0.1"));
+        cmd.setStorageIpAddress(getConfiguredProperty("private.ip.address", "127.0.0.1"));
+        cmd.setStorageMacAddress(getConfiguredProperty("private.mac.address", "8A:D2:54:3F:7C:C3"));
+        cmd.setStorageNetmask(getConfiguredProperty("private.ip.netmask", "255.255.255.0"));
+        cmd.setGatewayIpAddress(getConfiguredProperty("gateway.ip.address", "127.0.0.1"));
 
     }
 
@@ -133,13 +133,13 @@ public class DummyResource implements ServerResource {
     }
 
     protected StoragePoolInfo initializeLocalStorage() {
-        String hostIp = (String)getConfiguredProperty("private.ip.address", "127.0.0.1");
-        String localStoragePath = (String)getConfiguredProperty("local.storage.path", "/mnt");
+        String hostIp = getConfiguredProperty("private.ip.address", "127.0.0.1");
+        String localStoragePath = getConfiguredProperty("local.storage.path", "/mnt");
         String lh = hostIp + localStoragePath;
         String uuid = UUID.nameUUIDFromBytes(lh.getBytes()).toString();
 
-        String capacity = (String)getConfiguredProperty("local.storage.capacity", "1000000000");
-        String available = (String)getConfiguredProperty("local.storage.avail", "10000000");
+        String capacity = getConfiguredProperty("local.storage.capacity", "1000000000");
+        String available = getConfiguredProperty("local.storage.avail", "10000000");
 
         return new StoragePoolInfo(uuid, hostIp, localStoragePath, localStoragePath, StoragePoolType.Filesystem, Long.parseLong(capacity), Long.parseLong(available));
 
@@ -151,8 +151,9 @@ public class DummyResource implements ServerResource {
 
         final List<Object> info = getHostInfo();
 
-        final StartupRoutingCommand cmd = new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3),
-            HypervisorType.KVM, RouterPrivateIpStrategy.HostLocal, changes, null);
+        final StartupRoutingCommand cmd =
+            new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), HypervisorType.KVM,
+                RouterPrivateIpStrategy.HostLocal, changes, null);
         fillNetworkInformation(cmd);
         cmd.getHostDetails().putAll(getVersionStrings());
         cmd.setCluster(getConfiguredProperty("cluster", "1"));

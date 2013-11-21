@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.usage;
 
-import org.apache.cloudstack.api.InternalIdentity;
-import org.apache.cloudstack.usage.Usage;
-
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -29,6 +26,9 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+
+import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.usage.Usage;
 
 @Entity
 @Table(name = "cloud_usage")
@@ -97,8 +97,8 @@ public class UsageVO implements Usage, InternalIdentity {
     public UsageVO() {
     }
 
-    public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long vmId, String vmName, Long offeringId,
-            Long templateId, Long usageId, Long size, Date startDate, Date endDate) {
+    public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long vmId, String vmName,
+            Long offeringId, Long templateId, Long usageId, Long size, Date startDate, Date endDate) {
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -116,8 +116,8 @@ public class UsageVO implements Usage, InternalIdentity {
         this.endDate = endDate;
     }
 
-    public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long vmId, String vmName, Long offeringId,
-            Long templateId, Long usageId, Long size, Long virtualSize, Date startDate, Date endDate) {
+    public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long vmId, String vmName,
+            Long offeringId, Long templateId, Long usageId, Long size, Long virtualSize, Date startDate, Date endDate) {
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -136,8 +136,8 @@ public class UsageVO implements Usage, InternalIdentity {
         this.endDate = endDate;
     }
 
-    public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long usageId, String type, Long networkId,
-            Date startDate, Date endDate) {
+    public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long usageId, String type,
+            Long networkId, Date startDate, Date endDate) {
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -152,8 +152,8 @@ public class UsageVO implements Usage, InternalIdentity {
         this.endDate = endDate;
     }
 
-    public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long vmId, String vmName, Long offeringId,
-            Long templateId, Long usageId, Date startDate, Date endDate, String type) {
+    public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long vmId, String vmName,
+            Long offeringId, Long templateId, Long usageId, Date startDate, Date endDate, String type) {
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -172,8 +172,8 @@ public class UsageVO implements Usage, InternalIdentity {
     }
 
     //IPAddress Usage
-    public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long usageId, long size, String type,
-            Date startDate, Date endDate) {
+    public UsageVO(Long zoneId, Long accountId, Long domainId, String description, String usageDisplay, int usageType, Double rawUsage, Long usageId, long size,
+            String type, Date startDate, Date endDate) {
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -268,6 +268,7 @@ public class UsageVO implements Usage, InternalIdentity {
         return size;
     }
 
+    @Override
     public Long getVirtualSize() {
         return virtualSize;
     }

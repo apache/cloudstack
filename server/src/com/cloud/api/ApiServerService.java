@@ -29,8 +29,8 @@ public interface ApiServerService {
 
     public Long fetchDomainId(String domainUUID);
 
-    public void loginUser(HttpSession session, String username, String password, Long domainId, String domainPath, String loginIpAddress, Map<String, Object[]> requestParameters)
-        throws CloudAuthenticationException;
+    public void loginUser(HttpSession session, String username, String password, Long domainId, String domainPath, String loginIpAddress,
+        Map<String, Object[]> requestParameters) throws CloudAuthenticationException;
 
     public void logoutUser(long userId);
 

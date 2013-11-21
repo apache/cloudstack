@@ -281,7 +281,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() +
-                                   " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
+                        " already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
                 }
                 continue;
             }
@@ -296,8 +296,9 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             Float cpuOvercommitRatio = Float.parseFloat(clusterDetailsCpuOvercommit.getValue());
             Float memoryOvercommitRatio = Float.parseFloat(clusterDetailsRamOvercommmt.getValue());
 
-            boolean hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio,
-                considerReservedCapacity);
+            boolean hostHasCapacity =
+                _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio,
+                    considerReservedCapacity);
 
             if (numCpusGood && cpuFreqGood && hostHasCapacity) {
                 if (s_logger.isDebugEnabled()) {
@@ -306,7 +307,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
                 suitableHosts.add(host);
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Not using host " + host.getId() + "; numCpusGood: " + numCpusGood + "; cpuFreqGood: " + cpuFreqGood + ", host has capacity?" + hostHasCapacity);
+                    s_logger.debug("Not using host " + host.getId() + "; numCpusGood: " + numCpusGood + "; cpuFreqGood: " + cpuFreqGood + ", host has capacity?" +
+                        hostHasCapacity);
                 }
                 avoid.addHost(host.getId());
             }

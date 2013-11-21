@@ -20,15 +20,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.api.APICommand;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+
 import com.cloud.host.Host;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -73,8 +74,8 @@ public class FindHostsForMigrationCmd extends BaseListCmd {
         Pair<List<? extends Host>, Integer> result;
         Map<Host, Boolean> hostsRequiringStorageMotion;
 
-        Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigration = _mgr.listHostsForMigrationOfVM(getVirtualMachineId(),
-            this.getStartIndex(), this.getPageSizeVal());
+        Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigration =
+            _mgr.listHostsForMigrationOfVM(getVirtualMachineId(), this.getStartIndex(), this.getPageSizeVal());
         result = hostsForMigration.first();
         List<? extends Host> hostsWithCapacity = hostsForMigration.second();
         hostsRequiringStorageMotion = hostsForMigration.third();

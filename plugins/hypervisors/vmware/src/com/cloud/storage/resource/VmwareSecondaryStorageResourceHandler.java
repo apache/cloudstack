@@ -20,11 +20,13 @@ import java.util.List;
 
 import javax.naming.OperationNotSupportedException;
 
-import com.cloud.agent.api.storage.*;
-import com.cloud.agent.api.to.DataTO;
+import org.apache.log4j.Logger;
+
+import com.google.gson.Gson;
+import com.vmware.vim25.ManagedObjectReference;
+
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResourceHandler;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotCommand;
@@ -32,6 +34,9 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.hypervisor.vmware.manager.VmwareHostService;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManager;
 import com.cloud.hypervisor.vmware.manager.VmwareStorageManagerImpl;
@@ -48,8 +53,6 @@ import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
-import com.google.gson.Gson;
-import com.vmware.vim25.ManagedObjectReference;
 
 public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageResourceHandler, VmwareHostService, VmwareStorageMount {
     private static final Logger s_logger = Logger.getLogger(VmwareSecondaryStorageResourceHandler.class);
@@ -212,7 +215,8 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
 
             VmwareContext context = currentContext.get();
             if (context == null) {
-                s_logger.info("Open new VmwareContext. vCenter: " + vCenterAddress + ", user: " + username + ", password: " + StringUtils.getMaskedPasswordForDisplay(password));
+                s_logger.info("Open new VmwareContext. vCenter: " + vCenterAddress + ", user: " + username + ", password: " +
+                    StringUtils.getMaskedPasswordForDisplay(password));
                 VmwareSecondaryStorageContextFactory.setVcenterSessionTimeout(vCenterSessionTimeout);
                 context = VmwareSecondaryStorageContextFactory.getContext(vCenterAddress, username, password);
             }
@@ -274,7 +278,8 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
                 for (Pair<ManagedObjectReference, String> hostPair : hostsInCluster) {
                     HostMO hostIteratorMo = new HostMO(hostMo.getContext(), hostPair.first());
 
-                    VmwareHypervisorHostNetworkSummary netSummary = hostIteratorMo.getHyperHostNetworkSummary(hostIteratorMo.getHostType() == VmwareHostType.ESXi ? cmd.getContextParam("manageportgroup")
+                    VmwareHypervisorHostNetworkSummary netSummary =
+                        hostIteratorMo.getHyperHostNetworkSummary(hostIteratorMo.getHostType() == VmwareHostType.ESXi ? cmd.getContextParam("manageportgroup")
                             : cmd.getContextParam("serviceconsole"));
                     _resource.ensureOutgoingRuleForAddress(netSummary.getHostIp());
 
@@ -323,7 +328,8 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         if (morHyperHost.getType().equalsIgnoreCase("HostSystem")) {
             HostMO hostMo = new HostMO(context, morHyperHost);
             try {
-                VmwareHypervisorHostNetworkSummary netSummary = hostMo.getHyperHostNetworkSummary(hostMo.getHostType() == VmwareHostType.ESXi ? cmd.getContextParam("manageportgroup")
+                VmwareHypervisorHostNetworkSummary netSummary =
+                    hostMo.getHyperHostNetworkSummary(hostMo.getHostType() == VmwareHostType.ESXi ? cmd.getContextParam("manageportgroup")
                         : cmd.getContextParam("serviceconsole"));
                 assert (netSummary != null);
                 if (netSummary.getHostIp() != null && !netSummary.getHostIp().isEmpty()) {
@@ -345,19 +351,23 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
         return true;
     }
 
+    @Override
     public ManagedObjectReference getVmfsDatastore(VmwareHypervisorHost hyperHost, String datastoreName, String storageIpAddress, int storagePortNumber, String iqn,
         String initiatorChapName, String initiatorChapSecret, String mutualChapName, String mutualChapSecret) throws Exception {
         throw new OperationNotSupportedException();
     }
 
+    @Override
     public void createVmdk(Command cmd, DatastoreMO dsMo, String volumeDatastorePath, Long volumeSize) throws Exception {
         throw new OperationNotSupportedException();
     }
 
+    @Override
     public void handleDatastoreAndVmdkDetach(String iqn, String storageHost, int storagePort) throws Exception {
         throw new OperationNotSupportedException();
     }
 
+    @Override
     public void removeManagedTargetsFromCluster(List<String> managedIqns) throws Exception {
         throw new OperationNotSupportedException();
     }

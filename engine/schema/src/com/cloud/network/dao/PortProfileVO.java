@@ -25,8 +25,10 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import com.cloud.exception.InvalidParameterValueException;
+
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.exception.InvalidParameterValueException;
 
 /**
  * PortProfileVO contains information on portprofiles that are created on a Cisco Nexus 1000v VSM associated
@@ -86,6 +88,7 @@ public class PortProfileVO implements InternalIdentity {
     }
 
     // Accessor methods
+    @Override
     public long getId() {
         return id;
     }

@@ -21,11 +21,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Map.Entry;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -34,19 +35,13 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
-import org.springframework.context.annotation.Primary;
-import com.cloud.deploy.DeploymentPlanner;
+
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceInUseException;
-import com.cloud.network.Network;
-import com.cloud.network.dao.NetworkDomainVO;
-import com.cloud.network.security.SecurityGroup;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
@@ -63,7 +58,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
@@ -105,7 +99,7 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     }
 
     public void setAffinityGroupProcessors(List<AffinityGroupProcessor> affinityProcessors) {
-        this._affinityProcessors = affinityProcessors;
+        _affinityProcessors = affinityProcessors;
     }
 
     @DB
@@ -136,7 +130,8 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
 
     @DB
     @Override
-    public AffinityGroup createAffinityGroupInternal(String account, final Long domainId, final String affinityGroupName, final String affinityGroupType, final String description) {
+    public AffinityGroup createAffinityGroupInternal(String account, final Long domainId, final String affinityGroupName, final String affinityGroupType,
+        final String description) {
 
         Account caller = CallContext.current().getCallingAccount();
 
@@ -203,7 +198,8 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         AffinityGroupVO group = Transaction.execute(new TransactionCallback<AffinityGroupVO>() {
             @Override
             public AffinityGroupVO doInTransaction(TransactionStatus status) {
-                AffinityGroupVO group = new AffinityGroupVO(affinityGroupName, affinityGroupType, description, ownerFinal.getDomainId(), ownerFinal.getId(), aclTypeFinal);
+                AffinityGroupVO group =
+                    new AffinityGroupVO(affinityGroupName, affinityGroupType, description, ownerFinal.getDomainId(), ownerFinal.getId(), aclTypeFinal);
                 _affinityGroupDao.persist(group);
 
                 if (domainId != null && aclTypeFinal == ACLType.Domain) {
@@ -291,8 +287,8 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
     }
 
     @Override
-    public Pair<List<? extends AffinityGroup>, Integer> listAffinityGroups(Long affinityGroupId, String affinityGroupName, String affinityGroupType, Long vmId, Long startIndex,
-        Long pageSize) {
+    public Pair<List<? extends AffinityGroup>, Integer> listAffinityGroups(Long affinityGroupId, String affinityGroupName, String affinityGroupType, Long vmId,
+        Long startIndex, Long pageSize) {
         Filter searchFilter = new Filter(AffinityGroupVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
         Account caller = CallContext.current().getCallingAccount();
@@ -334,7 +330,8 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
             }
             _accountMgr.checkAccess(caller, null, true, userVM);
             // add join to affinity_groups_vm_map
-            groupSearch.join("vmInstanceSearch", vmInstanceSearch, groupSearch.entity().getId(), vmInstanceSearch.entity().getAffinityGroupId(), JoinBuilder.JoinType.INNER);
+            groupSearch.join("vmInstanceSearch", vmInstanceSearch, groupSearch.entity().getId(), vmInstanceSearch.entity().getAffinityGroupId(),
+                JoinBuilder.JoinType.INNER);
             sc.setJoinParameters("vmInstanceSearch", "instanceId", vmId);
         }
 
@@ -441,8 +438,8 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
         // Check that the VM is stopped
         if (!vmInstance.getState().equals(State.Stopped)) {
             s_logger.warn("Unable to update affinity groups of the virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState());
-            throw new InvalidParameterValueException("Unable update affinity groups of the virtual machine " + vmInstance.toString() + " " + "in state " + vmInstance.getState() +
-                                                     "; make sure the virtual machine is stopped and not in an error state before updating.");
+            throw new InvalidParameterValueException("Unable update affinity groups of the virtual machine " + vmInstance.toString() + " " + "in state " +
+                vmInstance.getState() + "; make sure the virtual machine is stopped and not in an error state before updating.");
         }
 
         Account caller = CallContext.current().getCallingAccount();

@@ -35,8 +35,6 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 
 import com.cloud.utils.db.EntityManager;
 

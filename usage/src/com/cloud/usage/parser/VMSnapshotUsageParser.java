@@ -25,9 +25,10 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.usage.UsageVMSnapshotVO;
 import com.cloud.usage.UsageVO;
@@ -118,7 +119,8 @@ public class VMSnapshotUsageParser {
         return true;
     }
 
-    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long volId, long zoneId, Long doId, Long vmId, long size) {
+    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long volId, long zoneId, Long doId, Long vmId,
+        long size) {
         // Our smallest increment is hourly for now
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Total running time " + runningTime + "ms");
@@ -130,8 +132,8 @@ public class VMSnapshotUsageParser {
         String usageDisplay = dFormat.format(usage);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating VMSnapshot Volume usage record for vol: " + volId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate +
-                           ", for account: " + account.getId());
+            s_logger.debug("Creating VMSnapshot Volume usage record for vol: " + volId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " +
+                endDate + ", for account: " + account.getId());
         }
 
         // Create the usage record
@@ -143,8 +145,9 @@ public class VMSnapshotUsageParser {
 
         usageDesc += " Size: " + size;
 
-        UsageVO usageRecord = new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), vmId, null, doId, null, volId,
-            size, startDate, endDate);
+        UsageVO usageRecord =
+            new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), vmId, null, doId, null, volId, size,
+                startDate, endDate);
         m_usageDao.persist(usageRecord);
     }
 

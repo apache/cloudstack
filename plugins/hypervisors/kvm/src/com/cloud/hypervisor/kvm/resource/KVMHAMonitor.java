@@ -21,19 +21,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
-
-import com.cloud.utils.script.Script;
-
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
-import org.libvirt.Secret;
 import org.libvirt.StoragePool;
-import org.libvirt.StoragePoolInfo;
 import org.libvirt.StoragePoolInfo.StoragePoolState;
 
-import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+
+import com.cloud.utils.script.Script;
 
 public class KVMHAMonitor extends KVMHABase implements Runnable {
     private static final Logger s_logger = Logger.getLogger(KVMHAMonitor.class);
@@ -46,7 +42,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
             this._storagePool.put(pool._poolUUID, pool);
         }
         this._hostIP = host;
-        this._heartBeatPath = scriptPath;
+        KVMHABase._heartBeatPath = scriptPath;
     }
 
     public void addStoragePool(NfsStoragePool pool) {

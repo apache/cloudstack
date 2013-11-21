@@ -27,8 +27,9 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.DateUtil;
 
 @Entity
 @Table(name = "cmd_exec_log")
@@ -66,6 +67,7 @@ public class CommandExecLogVO implements InternalIdentity {
         this.created = DateUtil.currentGMTTime();
     }
 
+    @Override
     public long getId() {
         return this.id;
     }

@@ -25,7 +25,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -35,7 +34,6 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.diskProtocol;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.nicModel;
 
@@ -195,7 +193,7 @@ public class LibvirtDomainXMLParser {
 
         NodeList nlList = tagNodeList.item(0).getChildNodes();
 
-        Node nValue = (Node)nlList.item(0);
+        Node nValue = nlList.item(0);
 
         return nValue.getNodeValue();
     }

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -23,7 +25,6 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilities;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = HypervisorCapabilities.class)
 public class HypervisorCapabilitiesResponse extends BaseResponse {

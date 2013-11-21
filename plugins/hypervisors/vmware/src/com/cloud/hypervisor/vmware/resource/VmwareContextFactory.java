@@ -63,7 +63,7 @@ public class VmwareContextFactory {
         String serviceUrl = "https://" + vCenterAddress + "/sdk/vimService";
         if (s_logger.isDebugEnabled())
             s_logger.debug("initialize VmwareContext. url: " + serviceUrl + ", username: " + vCenterUserName + ", password: " +
-                           StringUtils.getMaskedPasswordForDisplay(vCenterPassword));
+                StringUtils.getMaskedPasswordForDisplay(vCenterPassword));
 
         VmwareClient vimClient = new VmwareClient(vCenterAddress + "-" + s_seq++);
         vimClient.setVcenterSessionTimeout(s_vmwareMgr.getVcenterSessionTimeout());

@@ -20,27 +20,27 @@ import streamer.ByteBuffer;
 import streamer.Link;
 import streamer.OneTimeSwitch;
 
-public class ServerMCSChannelJoinConfirmPDU  extends OneTimeSwitch {
+public class ServerMCSChannelJoinConfirmPDU extends OneTimeSwitch {
 
-  protected int channel;
+    protected int channel;
 
-  public ServerMCSChannelJoinConfirmPDU(String id, int channel) {
-    super(id);
-    this.channel=channel;
-  }
+    public ServerMCSChannelJoinConfirmPDU(String id, int channel) {
+        super(id);
+        this.channel = channel;
+    }
 
-  @Override
-  protected void handleOneTimeData(ByteBuffer buf, Link link) {
-    if (buf == null)
-      return;
+    @Override
+    protected void handleOneTimeData(ByteBuffer buf, Link link) {
+        if (buf == null)
+            return;
 
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
 
-    // Ignore packet
-    buf.unref();
-    switchOff();
-  }
+        // Ignore packet
+        buf.unref();
+        switchOff();
+    }
 
 }
 

@@ -16,14 +16,15 @@
 // under the License.
 package com.cloud.network.dao;
 
+import java.util.List;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import java.util.List;
 
 @Local(value = {LoadBalancerCertMapDao.class})
 public class LoadBalancerCertMapDaoImpl extends GenericDaoBase<LoadBalancerCertMapVO, Long> implements LoadBalancerCertMapDao {

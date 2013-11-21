@@ -28,8 +28,9 @@ import javax.persistence.SecondaryTable;
 import javax.persistence.SecondaryTables;
 import javax.persistence.Table;
 
-import com.cloud.utils.net.Ip;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.net.Ip;
 
 @Entity
 @Table(name = ("elastic_lb_vm_map"))
@@ -65,6 +66,7 @@ public class ElasticLbVmMapVO implements InternalIdentity {
         this.lbId = lbId;
     }
 
+    @Override
     public long getId() {
         return id;
     }

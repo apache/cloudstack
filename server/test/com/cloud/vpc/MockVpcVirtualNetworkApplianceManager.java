@@ -23,9 +23,10 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.vpc.NetworkACLItem;
-import org.apache.cloudstack.api.command.admin.router.*;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterCmd;
+import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -42,12 +43,12 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
+import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 import com.cloud.user.User;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -71,7 +72,8 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.router.VirtualNetworkApplianceManager#savePasswordToRouter(com.cloud.network.Network, com.cloud.vm.NicProfile, com.cloud.vm.VirtualMachineProfile, java.util.List)
      */
     @Override
-    public boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile profile, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+    public boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile profile, List<? extends VirtualRouter> routers)
+        throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -86,7 +88,8 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.router.VirtualNetworkApplianceManager#saveUserDataToRouter(com.cloud.network.Network, com.cloud.vm.NicProfile, com.cloud.vm.VirtualMachineProfile, java.util.List)
      */
     @Override
-    public boolean saveUserDataToRouter(Network network, NicProfile nic, VirtualMachineProfile profile, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+    public boolean saveUserDataToRouter(Network network, NicProfile nic, VirtualMachineProfile profile, List<? extends VirtualRouter> routers)
+        throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -95,8 +98,8 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.router.VirtualNetworkApplianceManager#deployVirtualRouterInGuestNetwork(com.cloud.network.Network, com.cloud.deploy.DeployDestination, com.cloud.user.Account, java.util.Map, boolean)
      */
     @Override
-    public List<DomainRouterVO> deployVirtualRouterInGuestNetwork(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params, boolean isRedundant)
-        throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
+    public List<DomainRouterVO> deployVirtualRouterInGuestNetwork(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params,
+        boolean isRedundant) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -123,7 +126,8 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.router.VirtualNetworkApplianceManager#associatePublicIP(com.cloud.network.Network, java.util.List, java.util.List)
      */
     @Override
-    public boolean associatePublicIP(Network network, List<? extends PublicIpAddress> ipAddress, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+    public boolean associatePublicIP(Network network, List<? extends PublicIpAddress> ipAddress, List<? extends VirtualRouter> routers)
+        throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -159,7 +163,8 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.router.VirtualNetworkApplianceManager#stop(com.cloud.network.router.VirtualRouter, boolean, com.cloud.user.User, com.cloud.user.Account)
      */
     @Override
-    public VirtualRouter stop(VirtualRouter router, boolean forced, User callingUser, Account callingAccount) throws ConcurrentOperationException, ResourceUnavailableException {
+    public VirtualRouter stop(VirtualRouter router, boolean forced, User callingUser, Account callingAccount) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -217,7 +222,8 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.VirtualNetworkApplianceService#startRouter(long, boolean)
      */
     @Override
-    public VirtualRouter startRouter(long routerId, boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public VirtualRouter startRouter(long routerId, boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException,
+        InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -226,7 +232,8 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.VirtualNetworkApplianceService#rebootRouter(long, boolean)
      */
     @Override
-    public VirtualRouter rebootRouter(long routerId, boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public VirtualRouter rebootRouter(long routerId, boolean reprogramNetwork) throws ConcurrentOperationException, ResourceUnavailableException,
+        InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -306,8 +313,8 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.VpcVirtualNetworkApplianceService#addVpcRouterToGuestNetwork(com.cloud.network.router.VirtualRouter, com.cloud.network.Network, boolean)
      */
     @Override
-    public boolean addVpcRouterToGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) throws ConcurrentOperationException, ResourceUnavailableException,
-        InsufficientCapacityException {
+    public boolean addVpcRouterToGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) throws ConcurrentOperationException,
+        ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -316,7 +323,8 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
      * @see com.cloud.network.VpcVirtualNetworkApplianceService#removeVpcRouterFromGuestNetwork(com.cloud.network.router.VirtualRouter, com.cloud.network.Network, boolean)
      */
     @Override
-    public boolean removeVpcRouterFromGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean removeVpcRouterFromGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -389,7 +397,8 @@ public class MockVpcVirtualNetworkApplianceManager extends ManagerBase implement
     }
 
     @Override
-    public boolean applyLoadBalancingRules(Network network, List<? extends LoadBalancingRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+    public boolean applyLoadBalancingRules(Network network, List<? extends LoadBalancingRule> rules, List<? extends VirtualRouter> routers)
+        throws ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }

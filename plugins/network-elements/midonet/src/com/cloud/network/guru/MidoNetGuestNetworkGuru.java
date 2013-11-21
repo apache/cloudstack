@@ -19,25 +19,30 @@
 
 package com.cloud.network.guru;
 
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
-import com.cloud.network.*;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkProfile;
+import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.vm.*;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.PhysicalNetworkVO;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
+import com.cloud.vm.NicProfile;
+import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VirtualMachineProfile;
 
 @Component
 @Local(value = NetworkGuru.class)
@@ -60,7 +65,7 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
             return true;
         } else {
             s_logger.trace("We only take care of Guest networks of type   " + Network.GuestType.Isolated + " in zone of type " + NetworkType.Advanced +
-                           " using isolation method MIDO.");
+                " using isolation method MIDO.");
             return false;
         }
     }
@@ -87,7 +92,8 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
+    public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException {
         assert (network.getState() == Network.State.Implementing) : "Why are we implementing " + network;
         s_logger.debug("implement called network: " + network.toString());
 
@@ -96,8 +102,9 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
         //get physical network id
         long physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
 
-        NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(),
-            Network.State.Allocated, network.getDataCenterId(), physicalNetworkId);
+        NetworkVO implemented =
+            new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), Network.State.Allocated,
+                network.getDataCenterId(), physicalNetworkId);
 
         if (network.getGateway() != null) {
             implemented.setGateway(network.getGateway());

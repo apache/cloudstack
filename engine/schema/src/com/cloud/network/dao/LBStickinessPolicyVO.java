@@ -30,9 +30,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
+
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.utils.Pair;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("load_balancer_stickiness_policies"))
@@ -97,6 +97,7 @@ public class LBStickinessPolicyVO implements StickinessPolicy {
         this.uuid = UUID.randomUUID().toString();
     }
 
+    @Override
     public List<Pair<String, String>> getParams() {
         List<Pair<String, String>> paramsList = new ArrayList<Pair<String, String>>();
         String[] params = paramsInDB.split("[=&]");
@@ -107,26 +108,32 @@ public class LBStickinessPolicyVO implements StickinessPolicy {
         return paramsList;
     }
 
+    @Override
     public long getId() {
         return id;
     }
 
+    @Override
     public long getLoadBalancerId() {
         return loadBalancerId;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
 
+    @Override
     public String getMethodName() {
         return methodName;
     }
 
+    @Override
     public boolean isRevoke() {
         return revoke;
     }

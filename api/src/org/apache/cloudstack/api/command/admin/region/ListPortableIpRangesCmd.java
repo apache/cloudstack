@@ -16,23 +16,22 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.region;
 
-import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.apache.cloudstack.api.*;
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PortableIpRangeResponse;
 import org.apache.cloudstack.api.response.PortableIpResponse;
-import org.apache.cloudstack.api.response.RegionResponse;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
-import org.apache.cloudstack.region.Region;
-import org.apache.cloudstack.region.RegionService;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @APICommand(name = "listPortableIpRanges", description = "list portable IP ranges", responseObject = PortableIpRangeResponse.class)
 public class ListPortableIpRangesCmd extends BaseListCmd {

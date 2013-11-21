@@ -39,8 +39,8 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.user.Account;
-import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
@@ -72,6 +72,7 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
         return true;
     }
 
+    @Override
     public UserIpv6Address assignDirectIp6Address(long dcId, Account owner, Long networkId, String requestedIp6) throws InsufficientAddressCapacityException {
         Network network = _networkDao.findById(networkId);
         if (network == null) {
@@ -110,7 +111,7 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
             }
             if (ip == null) {
                 throw new InsufficientAddressCapacityException("Cannot find a usable IP in the network " + network.getName() + " after " + _ipv6RetryMax +
-                                                               "(network.ipv6.search.retry.max) times retry!", DataCenter.class, network.getDataCenterId());
+                    "(network.ipv6.search.retry.max) times retry!", DataCenter.class, network.getDataCenterId());
             }
         } else {
             for (Vlan vlan : vlans) {

@@ -129,7 +129,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
                 hosts = _resourceMgr.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
             } else {
                 s_logger.warn("Cannot find HA host with tag " + haVmTag + " in cluster id=" + cluster.getId() + ", pod id=" + cluster.getPodId() + ", data center id=" +
-                              cluster.getDataCenterId());
+                    cluster.getDataCenterId());
                 return null;
             }
             for (HostVO h : hosts) {

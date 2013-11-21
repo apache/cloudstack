@@ -55,7 +55,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private SearchBuilder<SnapshotDataStoreVO> storeSnapshotSearch;
     private SearchBuilder<SnapshotDataStoreVO> snapshotIdSearch;
     private final String parentSearch = "select store_id, store_role, snapshot_id from cloud.snapshot_store_ref where store_id = ? "
-                                        + " and store_role = ? and volume_id = ? and state = 'Ready'" + " order by created DESC " + " limit 1";
+        + " and store_role = ? and volume_id = ? and state = 'Ready'" + " order by created DESC " + " limit 1";
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

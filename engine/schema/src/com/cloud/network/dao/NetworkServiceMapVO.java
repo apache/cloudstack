@@ -25,11 +25,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.network.Network;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "ntwk_service_map")
@@ -51,6 +51,7 @@ public class NetworkServiceMapVO implements InternalIdentity {
     @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
 
+    @Override
     public long getId() {
         return id;
     }
@@ -80,6 +81,7 @@ public class NetworkServiceMapVO implements InternalIdentity {
         this.provider = provider.getName();
     }
 
+    @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("[Network Service[");
         return buf.append(networkId).append("-").append(service).append("-").append(provider).append("]").toString();

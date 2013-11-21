@@ -16,17 +16,19 @@
 // under the License.
 package com.cloud.simulator.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Formatter;
+
+import javax.ejb.Local;
+
+import org.springframework.stereotype.Component;
+
 import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.Formatter;
 
 @Component
 @Local(value = {MockConfigurationDao.class})
@@ -120,8 +122,8 @@ public class MockConfigurationDaoImpl extends GenericDaoBase<MockConfigurationVO
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         StringBuilder search = new StringBuilder();
         Formatter formatter = new Formatter(search);
-        formatter.format("select * from mockconfiguration where (name='%s') and ((data_center_id = %d and pod_id = %d and cluster_id = %d and host_id = %d)", name, dcId, podId,
-            clusterId, hostId);
+        formatter.format("select * from mockconfiguration where (name='%s') and ((data_center_id = %d and pod_id = %d and cluster_id = %d and host_id = %d)", name, dcId,
+            podId, clusterId, hostId);
         formatter.format(" or (data_center_id = %d and pod_id = %d and cluster_id = %d and host_id is null)", dcId, podId, clusterId);
         formatter.format(" or (data_center_id = %d and pod_id = %d and cluster_id is null and host_id is null)", dcId, podId);
         formatter.format(" or (data_center_id = %d and pod_id is null and cluster_id is null and host_id is null)", dcId);

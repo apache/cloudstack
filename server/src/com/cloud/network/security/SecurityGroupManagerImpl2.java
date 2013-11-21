@@ -29,14 +29,13 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.managed.context.ManagedContext;
-import org.springframework.context.annotation.Primary;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.network.security.SecurityGroupWork.Step;
+import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Profiler;
@@ -44,7 +43,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.network.security.SecurityRule.SecurityRuleType;
 
 /**
  * Same as the base class -- except it uses the abstracted security group work queue
@@ -109,8 +107,8 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         workItems.removeAll(_disabledVms);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Security Group Mgr v2: scheduling ruleset updates for " + affectedVms.size() + " vms " + " (unique=" + workItems.size() + "), current queue size=" +
-                           _workQueue.size());
+            s_logger.debug("Security Group Mgr v2: scheduling ruleset updates for " + affectedVms.size() + " vms " + " (unique=" + workItems.size() +
+                "), current queue size=" + _workQueue.size());
         }
 
         Profiler p = new Profiler();
@@ -126,8 +124,8 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         _mBean.logScheduledDetails(workItems);
         p.stop();
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Security Group Mgr v2: done scheduling ruleset updates for " + workItems.size() + " vms: num new jobs=" + newJobs + " num rows insert or updated=" +
-                           updated + " time taken=" + p.getDuration());
+            s_logger.debug("Security Group Mgr v2: done scheduling ruleset updates for " + workItems.size() + " vms: num new jobs=" + newJobs +
+                " num rows insert or updated=" + updated + " time taken=" + p.getDuration());
         }
     }
 
@@ -191,12 +189,14 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
                         nicSecIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nic.getId());
                     }
                 }
-                SecurityGroupRulesCmd cmd = generateRulesetCmd(vm.getInstanceName(), vm.getPrivateIpAddress(), vm.getPrivateMacAddress(), vm.getId(), null,
-                    work.getLogsequenceNumber(), ingressRules, egressRules, nicSecIps);
+                SecurityGroupRulesCmd cmd =
+                    generateRulesetCmd(vm.getInstanceName(), vm.getPrivateIpAddress(), vm.getPrivateMacAddress(), vm.getId(), null, work.getLogsequenceNumber(),
+                        ingressRules, egressRules, nicSecIps);
                 cmd.setMsId(_serverId);
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("SecurityGroupManager v2: sending ruleset update for vm " + vm.getInstanceName() + ":ingress num rules=" + cmd.getIngressRuleSet().length +
-                                   ":egress num rules=" + cmd.getEgressRuleSet().length + " num cidrs=" + cmd.getTotalNumCidrs() + " sig=" + cmd.getSignature());
+                    s_logger.debug("SecurityGroupManager v2: sending ruleset update for vm " + vm.getInstanceName() + ":ingress num rules=" +
+                        cmd.getIngressRuleSet().length + ":egress num rules=" + cmd.getEgressRuleSet().length + " num cidrs=" + cmd.getTotalNumCidrs() + " sig=" +
+                        cmd.getSignature());
                 }
                 Commands cmds = new Commands(cmd);
                 try {

@@ -22,6 +22,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -29,7 +31,6 @@ import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.domain.Domain;
@@ -291,14 +292,15 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType,
-        Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID) {
+    public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName,
+        short accountType, Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID) {
+    public User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId,
+        String userUUID) {
         // TODO Auto-generated method stub
         return null;
     }

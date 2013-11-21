@@ -16,12 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
 import com.cloud.storage.snapshot.SnapshotPolicy;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = SnapshotPolicy.class)
 public class SnapshotPolicyResponse extends BaseResponse {

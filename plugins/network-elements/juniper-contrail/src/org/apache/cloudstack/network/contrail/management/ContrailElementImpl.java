@@ -28,18 +28,20 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.network.contrail.api.command.CreateServiceInstanceCmd;
 import org.apache.cloudstack.network.contrail.model.InstanceIpModel;
 import org.apache.cloudstack.network.contrail.model.VMInterfaceModel;
 import org.apache.cloudstack.network.contrail.model.VirtualMachineModel;
 import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -47,40 +49,31 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
-import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.IpDeployer;
-import com.cloud.network.element.NetworkACLServiceProvider;
-import com.cloud.network.element.SourceNatServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
-import com.cloud.network.element.VpcProvider;
 import com.cloud.network.rules.StaticNat;
-import com.cloud.network.vpc.NetworkACLItem;
-import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.StaticRouteProfile;
-import com.cloud.network.vpc.Vpc;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
-import com.cloud.network.IpAddress;
 
 @Component
 @Local(value = {ContrailElement.class, StaticNatServiceProvider.class})
-public class ContrailElementImpl extends AdapterBase
-    implements ContrailElement, IpDeployer, StaticNatServiceProvider {
+public class ContrailElementImpl extends AdapterBase implements ContrailElement, IpDeployer, StaticNatServiceProvider {
 
     private static final Map<Service, Map<Capability, String>> _capabilities = InitCapabilities();
 
-    @Inject ContrailManager _manager;
-    @Inject NicDao _nicDao;
-    @Inject ServerDBSync  _dbSync;
-    private static final Logger s_logger =
-            Logger.getLogger(ContrailElement.class);
+    @Inject
+    ContrailManager _manager;
+    @Inject
+    NicDao _nicDao;
+    @Inject
+    ServerDBSync _dbSync;
+    private static final Logger s_logger = Logger.getLogger(ContrailElement.class);
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -121,21 +114,17 @@ public class ContrailElementImpl extends AdapterBase
      * Network add/update.
      */
     @Override
-    public boolean implement(Network network, NetworkOffering offering,
-            DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException, InsufficientCapacityException {
         s_logger.debug("NetworkElement implement: " + network.getName() + ", traffic type: " + network.getTrafficType());
         if (network.getTrafficType() == TrafficType.Guest) {
             s_logger.debug("ignore network " + network.getName());
             return true;
         }
-        VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(),
-                _manager.getCanonicalName(network), network.getTrafficType());
+        VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(), _manager.getCanonicalName(network), network.getTrafficType());
 
         if (vnModel == null) {
-            vnModel = new VirtualNetworkModel(network, network.getUuid(),
-                    _manager.getCanonicalName(network), network.getTrafficType());
+            vnModel = new VirtualNetworkModel(network, network.getUuid(), _manager.getCanonicalName(network), network.getTrafficType());
             vnModel.setProperties(_manager.getModelController(), network);
         }
         try {
@@ -150,11 +139,8 @@ public class ContrailElementImpl extends AdapterBase
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nicProfile,
-            VirtualMachineProfile vm,
-            DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
+    public boolean prepare(Network network, NicProfile nicProfile, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
 
         s_logger.debug("NetworkElement prepare: " + network.getName() + ", traffic type: " + network.getTrafficType());
 
@@ -165,8 +151,7 @@ public class ContrailElementImpl extends AdapterBase
 
         s_logger.debug("network: " + network.getId());
 
-        VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(),
-                _manager.getCanonicalName(network), network.getTrafficType());
+        VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(), _manager.getCanonicalName(network), network.getTrafficType());
 
         if (vnModel == null) {
             // There is no notification after a physical network is associated with the VRouter NetworkOffering
@@ -176,7 +161,7 @@ public class ContrailElementImpl extends AdapterBase
 
         VirtualMachineModel vmModel = _manager.getDatabase().lookupVirtualMachine(vm.getUuid());
         if (vmModel == null) {
-            VMInstanceVO vmVo = (VMInstanceVO) vm.getVirtualMachine();
+            VMInstanceVO vmVo = (VMInstanceVO)vm.getVirtualMachine();
             vmModel = new VirtualMachineModel(vmVo, vm.getUuid());
             vmModel.setProperties(_manager.getModelController(), vmVo);
         }
@@ -188,11 +173,11 @@ public class ContrailElementImpl extends AdapterBase
         if (vmiModel == null) {
             vmiModel = new VMInterfaceModel(nic.getUuid());
             vmiModel.addToVirtualMachine(vmModel);
-                vmiModel.addToVirtualNetwork(vnModel);
+            vmiModel.addToVirtualNetwork(vnModel);
         }
 
         try {
-            vmiModel.build(_manager.getModelController(), (VMInstanceVO) vm.getVirtualMachine(), nic);
+            vmiModel.build(_manager.getModelController(), (VMInstanceVO)vm.getVirtualMachine(), nic);
         } catch (IOException ex) {
             s_logger.warn("vm interface set", ex);
             return false;
@@ -217,10 +202,8 @@ public class ContrailElementImpl extends AdapterBase
     }
 
     @Override
-    public boolean release(Network network, NicProfile nicProfile,
-            VirtualMachineProfile vm,
-            ReservationContext context) throws ConcurrentOperationException,
-            ResourceUnavailableException {
+    public boolean release(Network network, NicProfile nicProfile, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         if (network.getTrafficType() == TrafficType.Guest) {
             return true;
         } else if (!_manager.isManagedPhysicalNetwork(network)) {
@@ -262,9 +245,7 @@ public class ContrailElementImpl extends AdapterBase
      * Network disable
      */
     @Override
-    public boolean shutdown(Network network, ReservationContext context,
-            boolean cleanup) throws ConcurrentOperationException,
-            ResourceUnavailableException {
+    public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("NetworkElement shutdown");
         return true;
     }
@@ -273,8 +254,7 @@ public class ContrailElementImpl extends AdapterBase
      * Network delete
      */
     @Override
-    public boolean destroy(Network network, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean destroy(Network network, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("NetworkElement destroy");
         return true;
     }
@@ -285,9 +265,8 @@ public class ContrailElementImpl extends AdapterBase
     }
 
     @Override
-    public boolean shutdownProviderInstances(
-            PhysicalNetworkServiceProvider provider, ReservationContext context)
-            throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         s_logger.debug("NetworkElement shutdown ProviderInstances");
         return true;
     }
@@ -305,18 +284,15 @@ public class ContrailElementImpl extends AdapterBase
         return true;
     }
 
-
     @Override
     public IpDeployer getIpDeployer(Network network) {
-    return this;
+        return this;
     }
 
     @Override
-    public boolean applyIps(Network network,
-            List<? extends PublicIpAddress> ipAddress, Set<Service> services)
-                    throws ResourceUnavailableException {
+    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> services) throws ResourceUnavailableException {
 
-        for (PublicIpAddress ip: ipAddress) {
+        for (PublicIpAddress ip : ipAddress) {
             if (ip.isSourceNat()) {
                 continue;
             }
@@ -334,9 +310,7 @@ public class ContrailElementImpl extends AdapterBase
     }
 
     @Override
-    public boolean applyStaticNats(Network config,
-            List<? extends StaticNat> rules)
-                    throws ResourceUnavailableException {
+    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
         return true;
     }
 

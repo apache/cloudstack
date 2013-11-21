@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.securitygroup;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -24,7 +26,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.log4j.Logger;
 
 @APICommand(name = "listSecurityGroups", description = "Lists security groups", responseObject = SecurityGroupResponse.class)
 public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
@@ -39,7 +40,10 @@ public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.SECURITY_GROUP_NAME, type = CommandType.STRING, description = "lists security groups by name")
     private String securityGroupName;
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, description = "lists security groups by virtual machine id", entityType = UserVmResponse.class)
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+               type = CommandType.UUID,
+               description = "lists security groups by virtual machine id",
+               entityType = UserVmResponse.class)
     private Long virtualMachineId;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, description = "list the security group by the id provided", entityType = SecurityGroupResponse.class)

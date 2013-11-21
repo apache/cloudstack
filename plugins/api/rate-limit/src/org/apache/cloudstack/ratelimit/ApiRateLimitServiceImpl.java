@@ -28,6 +28,7 @@ import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.command.admin.ratelimit.ResetApiLimitCmd;
@@ -42,8 +43,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.component.AdapterBase;
-
-import org.springframework.stereotype.Component;
 
 @Component
 @Local(value = APIChecker.class)

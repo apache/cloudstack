@@ -16,10 +16,6 @@
 // under the License.
 package com.cloud.utils.xmlobject;
 
-import static org.junit.Assert.*;
-
-import java.util.List;
-
 import org.junit.Test;
 
 public class TestXmlObject {

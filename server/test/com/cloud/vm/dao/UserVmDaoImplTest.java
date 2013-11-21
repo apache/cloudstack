@@ -31,8 +31,8 @@ public class UserVmDaoImplTest extends TestCase {
     @Inject
     UserVmDao dao;
 
-    public void makeAndVerifyEntry(Long vmId, String instanceName, String displayName, long templateId, boolean userdataFlag, Hypervisor.HypervisorType hypervisor, long guestOsId,
-        boolean haEnabled, boolean limitCpuUse, long domainId, long accountId, long serviceOfferingId, String name, Long diskOfferingId) {
+    public void makeAndVerifyEntry(Long vmId, String instanceName, String displayName, long templateId, boolean userdataFlag, Hypervisor.HypervisorType hypervisor,
+        long guestOsId, boolean haEnabled, boolean limitCpuUse, long domainId, long accountId, long serviceOfferingId, String name, Long diskOfferingId) {
 
         dao.expunge(vmId);
         String userdata;
@@ -46,8 +46,9 @@ public class UserVmDaoImplTest extends TestCase {
         }
 
         // Persist the data.
-        UserVmVO vo = new UserVmVO(vmId, instanceName, displayName, templateId, hypervisor, guestOsId, haEnabled, limitCpuUse, domainId, accountId, serviceOfferingId, userdata,
-            name, diskOfferingId);
+        UserVmVO vo =
+            new UserVmVO(vmId, instanceName, displayName, templateId, hypervisor, guestOsId, haEnabled, limitCpuUse, domainId, accountId, serviceOfferingId, userdata,
+                name, diskOfferingId);
         dao.persist(vo);
 
         vo = dao.findById(vmId);

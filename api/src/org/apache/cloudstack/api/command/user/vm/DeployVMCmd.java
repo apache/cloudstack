@@ -78,7 +78,11 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "availability zone for the virtual machine")
+    @Parameter(name = ApiConstants.ZONE_ID,
+               type = CommandType.UUID,
+               entityType = ZoneResponse.class,
+               required = true,
+               description = "availability zone for the virtual machine")
     private Long zoneId;
 
     @ACL
@@ -128,10 +132,10 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                type = CommandType.UUID,
                entityType = DiskOfferingResponse.class,
                description = "the ID of the disk offering for the virtual machine. If the template is of ISO format,"
-                             + " the diskOfferingId is for the root disk volume. Otherwise this parameter is used to indicate the "
-                             + "offering for the data disk volume. If the templateId parameter passed is from a Template object,"
-                             + " the diskOfferingId refers to a DATA Disk Volume created. If the templateId parameter passed is "
-                             + "from an ISO object, the diskOfferingId refers to a ROOT Disk Volume created.")
+                   + " the diskOfferingId is for the root disk volume. Otherwise this parameter is used to indicate the "
+                   + "offering for the data disk volume. If the templateId parameter passed is from a Template object,"
+                   + " the diskOfferingId refers to a DATA Disk Volume created. If the templateId parameter passed is "
+                   + "from an ISO object, the diskOfferingId refers to a ROOT Disk Volume created.")
     private Long diskOfferingId;
 
     @Parameter(name = ApiConstants.SIZE, type = CommandType.LONG, description = "the arbitrary size for the DATADISK volume. Mutually exclusive with diskOfferingId")
@@ -164,7 +168,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                collectionType = CommandType.UUID,
                entityType = SecurityGroupResponse.class,
                description = "comma separated list of security groups id that going to be applied to the virtual machine. "
-                             + "Should be passed only when vm is created from a zone with Basic Network support." + " Mutually exclusive with securitygroupnames parameter")
+                   + "Should be passed only when vm is created from a zone with Basic Network support." + " Mutually exclusive with securitygroupnames parameter")
     private List<Long> securityGroupIdList;
 
     @ACL
@@ -173,13 +177,13 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                collectionType = CommandType.STRING,
                entityType = SecurityGroupResponse.class,
                description = "comma separated list of security groups names that going to be applied to the virtual machine."
-                             + " Should be passed only when vm is created from a zone with Basic Network support. " + "Mutually exclusive with securitygroupids parameter")
+                   + " Should be passed only when vm is created from a zone with Basic Network support. " + "Mutually exclusive with securitygroupids parameter")
     private List<String> securityGroupNameList;
 
     @Parameter(name = ApiConstants.IP_NETWORK_LIST,
                type = CommandType.MAP,
                description = "ip to network mapping. Can't be specified with networkIds parameter."
-                             + " Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].ipv6=fc00:1234:5678::abcd&iptonetworklist[0].networkid=uuid - requests to use ip 10.10.10.11 in network id=uuid")
+                   + " Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].ipv6=fc00:1234:5678::abcd&iptonetworklist[0].networkid=uuid - requests to use ip 10.10.10.11 in network id=uuid")
     private Map ipToNetworkList;
 
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "the ip address for default vm's network")
@@ -196,7 +200,9 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Deploy vm for the project")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.START_VM, type = CommandType.BOOLEAN, description = "true if network offering supports specifying ip ranges; defaulted to true if not specified")
+    @Parameter(name = ApiConstants.START_VM,
+               type = CommandType.BOOLEAN,
+               description = "true if network offering supports specifying ip ranges; defaulted to true if not specified")
     private Boolean startVm;
 
     @ACL
@@ -205,7 +211,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                collectionType = CommandType.UUID,
                entityType = AffinityGroupResponse.class,
                description = "comma separated list of affinity groups id that are going to be applied to the virtual machine."
-                             + " Mutually exclusive with affinitygroupnames parameter")
+                   + " Mutually exclusive with affinitygroupnames parameter")
     private List<Long> affinityGroupIdList;
 
     @ACL
@@ -214,10 +220,13 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                collectionType = CommandType.STRING,
                entityType = AffinityGroupResponse.class,
                description = "comma separated list of affinity groups names that are going to be applied to the virtual machine."
-                             + "Mutually exclusive with affinitygroupids parameter")
+                   + "Mutually exclusive with affinitygroupids parameter")
     private List<String> affinityGroupNameList;
 
-    @Parameter(name = ApiConstants.DISPLAY_VM, type = CommandType.BOOLEAN, since = "4.2", description = "an optional field, whether to the display the vm to the end user or not.")
+    @Parameter(name = ApiConstants.DISPLAY_VM,
+               type = CommandType.BOOLEAN,
+               since = "4.2",
+               description = "an optional field, whether to the display the vm to the end user or not.")
     private Boolean displayVm;
 
     @Parameter(name = ApiConstants.CPU_SPEED,
@@ -226,7 +235,10 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                description = "optional field to specify the cpu speed when using dynamic compute offering.")
     private Integer cpuSpeed;
 
-    @Parameter(name = ApiConstants.MEMORY, type = CommandType.INTEGER, since = "4.3", description = "optional field to specify the memory when using dynamic compute offering")
+    @Parameter(name = ApiConstants.MEMORY,
+               type = CommandType.INTEGER,
+               since = "4.3",
+               description = "optional field to specify the memory when using dynamic compute offering")
     private Integer memory;
 
     @Parameter(name = ApiConstants.CPU_NUMBER,
@@ -561,23 +573,26 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                 if (getNetworkIds() != null) {
                     throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
                 } else {
-                    vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name, displayName, diskOfferingId,
-                        size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList(),
-                        cpuSpeed, memory, cpuNumber, rootdisksize);
+                    vm =
+                        _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name, displayName,
+                            diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard,
+                            getAffinityGroupIdList(), cpuSpeed, memory, cpuNumber, rootdisksize);
                 }
             } else {
                 if (zone.isSecurityGroupEnabled()) {
-                    vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(), owner, name,
-                        displayName, diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard,
-                        getAffinityGroupIdList(), cpuSpeed, memory, cpuNumber, rootdisksize);
+                    vm =
+                        _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(), owner, name,
+                            displayName, diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm,
+                            keyboard, getAffinityGroupIdList(), cpuSpeed, memory, cpuNumber, rootdisksize);
 
                 } else {
                     if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
                         throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
                     }
-                    vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName, diskOfferingId, size, group,
-                        getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList(), cpuSpeed, memory,
-                        cpuNumber, rootdisksize);
+                    vm =
+                        _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName, diskOfferingId, size,
+                            group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList(),
+                            cpuSpeed, memory, cpuNumber, rootdisksize);
 
                 }
             }

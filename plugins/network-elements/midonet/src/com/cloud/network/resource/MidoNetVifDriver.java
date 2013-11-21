@@ -19,25 +19,29 @@
 
 package com.cloud.network.resource;
 
-import com.cloud.hypervisor.kvm.resource.*;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.naming.ConfigurationException;
+import javax.ws.rs.core.MultivaluedMap;
+
+import org.apache.log4j.Logger;
+import org.libvirt.LibvirtException;
+import org.midonet.client.MidonetApi;
+import org.midonet.client.resource.Bridge;
+import org.midonet.client.resource.BridgePort;
+import org.midonet.client.resource.Host;
+
+import com.sun.jersey.core.util.MultivaluedMapImpl;
+
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
+import com.cloud.hypervisor.kvm.resource.VifDriverBase;
 import com.cloud.network.Networks;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import org.apache.log4j.Logger;
-import org.libvirt.LibvirtException;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.naming.ConfigurationException;
-import java.util.Map;
-import java.util.UUID;
-
-import org.midonet.client.resource.Bridge;
-import org.midonet.client.resource.BridgePort;
-import org.midonet.client.resource.Host;
-import org.midonet.client.MidonetApi;
 
 public class MidoNetVifDriver extends VifDriverBase {
 

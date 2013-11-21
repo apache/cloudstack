@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallResponse;
@@ -61,7 +60,10 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
                description = "the network id of the port forwarding rule")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "the protocol for the firewall rule. Valid values are TCP/UDP/ICMP.")
+    @Parameter(name = ApiConstants.PROTOCOL,
+               type = CommandType.STRING,
+               required = true,
+               description = "the protocol for the firewall rule. Valid values are TCP/UDP/ICMP.")
     private String protocol;
 
     @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "the starting port of firewall rule")
@@ -242,13 +244,13 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
         if (getProtocol().equalsIgnoreCase(NetUtils.ALL_PROTO)) {
             if (getSourcePortStart() != null && getSourcePortEnd() != null) {
                 throw new InvalidParameterValueException("Do not pass ports to protocol ALL, porotocol ALL do not require ports. Unable to create " +
-                                                         "firewall rule for the network id=" + networkId);
+                    "firewall rule for the network id=" + networkId);
             }
         }
 
         if (getVpcId() != null) {
             throw new InvalidParameterValueException("Unable to create firewall rule for the network id=" + networkId +
-                                                     " as firewall egress rule can be created only for non vpc networks.");
+                " as firewall egress rule can be created only for non vpc networks.");
         }
 
         try {

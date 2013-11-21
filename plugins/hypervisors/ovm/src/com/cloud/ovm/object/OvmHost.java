@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.ovm.object;
 
-import java.util.List;
 import java.util.Map;
 
 import org.apache.xmlrpc.XmlRpcException;

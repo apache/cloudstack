@@ -74,7 +74,8 @@ public class AsyncJobJoinMapDaoImpl extends GenericDaoBase<AsyncJobJoinMapVO, Lo
     }
 
     @Override
-    public Long joinJob(long jobId, long joinJobId, long joinMsid, long wakeupIntervalMs, long expirationMs, Long syncSourceId, String wakeupHandler, String wakeupDispatcher) {
+    public Long joinJob(long jobId, long joinJobId, long joinMsid, long wakeupIntervalMs, long expirationMs, Long syncSourceId, String wakeupHandler,
+        String wakeupDispatcher) {
 
         AsyncJobJoinMapVO record = new AsyncJobJoinMapVO();
         record.setJobId(jobId);

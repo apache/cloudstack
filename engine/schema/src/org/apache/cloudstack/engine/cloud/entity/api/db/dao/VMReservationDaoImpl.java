@@ -24,12 +24,11 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
-import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
-import org.apache.cloudstack.engine.cloud.entity.api.db.VolumeReservationVO;
 import org.springframework.stereotype.Component;
 
-import com.cloud.host.dao.HostTagsDaoImpl;
+import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
+import org.apache.cloudstack.engine.cloud.entity.api.db.VolumeReservationVO;
+
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -95,8 +94,8 @@ public class VMReservationDaoImpl extends GenericDaoBase<VMReservationVO, Long> 
     private void saveVolumeReservation(VMReservationVO reservation) {
         if (reservation.getVolumeReservation() != null) {
             for (Long volumeId : reservation.getVolumeReservation().keySet()) {
-                VolumeReservationVO volumeReservation = new VolumeReservationVO(reservation.getVmId(), volumeId, reservation.getVolumeReservation().get(volumeId),
-                    reservation.getId());
+                VolumeReservationVO volumeReservation =
+                    new VolumeReservationVO(reservation.getVmId(), volumeId, reservation.getVolumeReservation().get(volumeId), reservation.getId());
                 _volumeReservationDao.persist(volumeReservation);
             }
         }

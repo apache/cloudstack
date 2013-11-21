@@ -111,7 +111,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("needCacheStorage true, dest at " + destTO.getPath() + " dest role " + destStoreTO.getRole().toString() + srcTO.getPath() + " src role " +
-                           srcStoreTO.getRole().toString());
+                srcStoreTO.getRole().toString());
         }
         return true;
     }
@@ -401,8 +401,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 answer = createTemplateFromSnapshot(srcData, destData);
             } else if (srcData.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.VOLUME) {
                 answer = cloneVolume(srcData, destData);
-            } else if (destData.getType() == DataObjectType.VOLUME && srcData.getType() == DataObjectType.VOLUME && srcData.getDataStore().getRole() == DataStoreRole.Primary &&
-                       destData.getDataStore().getRole() == DataStoreRole.Primary) {
+            } else if (destData.getType() == DataObjectType.VOLUME && srcData.getType() == DataObjectType.VOLUME &&
+                srcData.getDataStore().getRole() == DataStoreRole.Primary && destData.getDataStore().getRole() == DataStoreRole.Primary) {
                 if (srcData.getId() == destData.getId()) {
                     // The volume has to be migrated across storage pools.
                     answer = migrateVolumeToPool(srcData, destData);

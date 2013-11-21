@@ -17,13 +17,12 @@
 
 package com.cloud.bridge.util;
 
-import java.text.SimpleDateFormat;
-
 import java.text.DateFormat;
 import java.text.FieldPosition;
 import java.text.ParsePosition;
-import java.util.Date;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.TimeZone;
 
 /**

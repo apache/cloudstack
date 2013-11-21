@@ -19,14 +19,12 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.exception.InternalErrorException;
-import com.cloud.network.Networks;
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
-import javax.naming.ConfigurationException;
-import java.util.Map;
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.exception.InternalErrorException;
+import com.cloud.network.Networks;
 
 public class DirectVifDriver extends VifDriverBase {
 
@@ -42,6 +40,7 @@ public class DirectVifDriver extends VifDriverBase {
      * @throws InternalErrorException
      * @throws LibvirtException
      */
+    @Override
     public LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType) throws InternalErrorException, LibvirtException {
         LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
 
@@ -59,6 +58,7 @@ public class DirectVifDriver extends VifDriverBase {
         return intf;
     }
 
+    @Override
     public void unplug(LibvirtVMDef.InterfaceDef iface) {
         // not needed, libvirt will cleanup
     }

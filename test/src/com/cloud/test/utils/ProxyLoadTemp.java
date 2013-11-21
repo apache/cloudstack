@@ -38,8 +38,7 @@ public class ProxyLoadTemp {
         Runtime.getRuntime().addShutdownHook(new ShutdownThread(new ProxyLoadTemp()));
         ConsoleProxy.proxyIp = "172-16-1-101";
 
-        try
-        {
+        try {
             BufferedReader consoleInput = new BufferedReader(new FileReader("console.input"));
             boolean eof = false;
             s_logger.info("Started reading file");
@@ -49,11 +48,9 @@ public class ProxyLoadTemp {
                 if (line == null) {
                     s_logger.info("Line " + numThreads + " is null");
                     eof = true;
-                }
-                else {
+                } else {
                     String[] result = null;
-                    try
-                    {
+                    try {
                         s_logger.info("Starting parsing line " + line);
                         result = parseLine(line, "[,]");
                         s_logger.info("Line retrieved from the file is " + result[0] + " " + result[1] + " " + result[2]);
@@ -81,6 +78,7 @@ public class ProxyLoadTemp {
             this.temp = temp;
         }
 
+        @Override
         public void run() {
             s_logger.info("Program was running in " + numThreads + " threads");
 
@@ -89,8 +87,8 @@ public class ProxyLoadTemp {
                 if (proxyList.get(j).getConnectionsMade() != 0) {
                     av = proxyList.get(j).getResponseTime() / proxyList.get(j).getConnectionsMade();
                 }
-                s_logger.info("Information for " + j + " thread: Number of requests sent is " + proxyList.get(j).getConnectionsMade() + ". Average response time is " + av +
-                              " milliseconds");
+                s_logger.info("Information for " + j + " thread: Number of requests sent is " + proxyList.get(j).getConnectionsMade() + ". Average response time is " +
+                    av + " milliseconds");
                 sum = sum + av;
 
             }
@@ -100,15 +98,11 @@ public class ProxyLoadTemp {
         }
     }
 
-    public static String[] parseLine(String line, String del) throws Exception
-    {
+    public static String[] parseLine(String line, String del) throws Exception {
         String del1 = del.substring(1, del.length() - 1);
-        if (line.contains(del1) != true)
-        {
+        if (line.contains(del1) != true) {
             throw new Exception();
-        }
-        else
-        {
+        } else {
             String[] token = line.split(del);
             return token;
         }

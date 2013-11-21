@@ -18,16 +18,20 @@
  */
 package com.cloud.network.element;
 
+import java.util.ArrayList;
+import java.util.List;
+// Used for translation between MidoNet firewall rules and
+// CloudStack firewall rules
+
+import org.midonet.client.dto.DtoRule;
+import org.midonet.client.resource.Rule;
+
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
-import org.midonet.client.dto.DtoRule;
-import org.midonet.client.resource.*;
-import com.google.common.collect.*;
-
-import java.util.*;
-// Used for translation between MidoNet firewall rules and
-// CloudStack firewall rules
 
 public class SimpleFirewallRule {
 

@@ -30,6 +30,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.trilead.ssh2.SCPClient;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.HostVmStateReportEntry;
@@ -42,7 +44,6 @@ import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.vm.VirtualMachine.State;
-import com.trilead.ssh2.SCPClient;
 
 public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
     private static final Logger s_logger = Logger.getLogger(BaremetalPingPxeResource.class);
@@ -155,8 +156,9 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
                 throw new ConfigurationException(String.format("Cannot connect to PING PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, _password));
             }
 
-            String script = String.format("python /usr/bin/prepare_tftp_bootfile.py restore %1$s %2$s %3$s %4$s %5$s %6$s %7$s %8$s %9$s %10$s %11$s", _tftpDir, cmd.getMac(),
-                _storageServer, _share, _dir, cmd.getTemplate(), _cifsUserName, _cifsPassword, cmd.getIp(), cmd.getNetMask(), cmd.getGateWay());
+            String script =
+                String.format("python /usr/bin/prepare_tftp_bootfile.py restore %1$s %2$s %3$s %4$s %5$s %6$s %7$s %8$s %9$s %10$s %11$s", _tftpDir, cmd.getMac(),
+                    _storageServer, _share, _dir, cmd.getTemplate(), _cifsUserName, _cifsPassword, cmd.getIp(), cmd.getNetMask(), cmd.getGateWay());
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, script)) {
                 return new PreparePxeServerAnswer(cmd, "prepare PING at " + _ip + " failed, command:" + script);
             }
@@ -182,8 +184,9 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
                 throw new ConfigurationException(String.format("Cannot connect to PING PXE server(IP=%1$s, username=%2$s, password=%3$s", _ip, _username, _password));
             }
 
-            String script = String.format("python /usr/bin/prepare_tftp_bootfile.py backup %1$s %2$s %3$s %4$s %5$s %6$s %7$s %8$s %9$s %10$s %11$s", _tftpDir, cmd.getMac(),
-                _storageServer, _share, _dir, cmd.getTemplate(), _cifsUserName, _cifsPassword, cmd.getIp(), cmd.getNetMask(), cmd.getGateWay());
+            String script =
+                String.format("python /usr/bin/prepare_tftp_bootfile.py backup %1$s %2$s %3$s %4$s %5$s %6$s %7$s %8$s %9$s %10$s %11$s", _tftpDir, cmd.getMac(),
+                    _storageServer, _share, _dir, cmd.getTemplate(), _cifsUserName, _cifsPassword, cmd.getIp(), cmd.getNetMask(), cmd.getGateWay());
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, script)) {
                 return new Answer(cmd, false, "prepare for creating template failed, command:" + script);
             }

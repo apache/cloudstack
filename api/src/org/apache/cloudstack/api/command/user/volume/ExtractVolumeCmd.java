@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import java.net.URISyntaxException;
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -29,8 +29,6 @@ import org.apache.cloudstack.api.response.ExtractResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.event.EventTypes;
@@ -97,10 +95,12 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
         return s_name;
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.Volume;
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }

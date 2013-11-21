@@ -107,8 +107,8 @@ public class VpcGatewayVO implements VpcGateway {
      * @param account_id
      * @param sourceNat
      */
-    public VpcGatewayVO(String ip4Address, Type type, long vpcId, long zoneId, long networkId, String broadcastUri, String gateway, String netmask, long accountId, long domainId,
-            boolean sourceNat, long networkACLId) {
+    public VpcGatewayVO(String ip4Address, Type type, long vpcId, long zoneId, long networkId, String broadcastUri, String gateway, String netmask, long accountId,
+            long domainId, boolean sourceNat, long networkACLId) {
         this.ip4Address = ip4Address;
         this.type = type;
         this.vpcId = vpcId;

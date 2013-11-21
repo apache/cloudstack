@@ -26,6 +26,7 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.command.admin.network.CreateStorageNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteStorageNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListStorageNetworkIpRangeCmd;
@@ -45,12 +46,12 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.QueryBuilder;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionCallbackWithException;
-import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.SecondaryStorageVmVO;
@@ -92,7 +93,7 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
         for (StorageNetworkIpRangeVO range : curRanges) {
             if (NetUtils.ipRangesOverlap(startIp, endIp, range.getStartIp(), range.getEndIp())) {
                 throw new InvalidParameterValueException("The Storage network Start IP and endIP address range overlap with private IP :" + range.getStartIp() + " - " +
-                                                         range.getEndIp());
+                    range.getEndIp());
             }
         }
     }
@@ -100,7 +101,8 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
     private void createStorageIpEntires(TransactionLegacy txn, long rangeId, String startIp, String endIp, long zoneId) throws SQLException {
         long startIPLong = NetUtils.ip2Long(startIp);
         long endIPLong = NetUtils.ip2Long(endIp);
-        String insertSql = "INSERT INTO `cloud`.`op_dc_storage_network_ip_address` (range_id, ip_address, mac_address, taken) VALUES (?, ?, (select mac_address from `cloud`.`data_center` where id=?), ?)";
+        String insertSql =
+            "INSERT INTO `cloud`.`op_dc_storage_network_ip_address` (range_id, ip_address, mac_address, taken) VALUES (?, ?, (select mac_address from `cloud`.`data_center` where id=?), ?)";
         String updateSql = "UPDATE `cloud`.`data_center` set mac_address = mac_address+1 where id=?";
         PreparedStatement stmt = null;
         Connection conn = txn.getConnection();
@@ -359,8 +361,8 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
 
     @Override
     public List<SecondaryStorageVmVO> getSSVMWithNoStorageNetwork(long zoneId) {
-        List<SecondaryStorageVmVO> ssvms = _ssvmDao.getSecStorageVmListInStates(null, zoneId, VirtualMachine.State.Starting, VirtualMachine.State.Running,
-            VirtualMachine.State.Stopping);
+        List<SecondaryStorageVmVO> ssvms =
+            _ssvmDao.getSecStorageVmListInStates(null, zoneId, VirtualMachine.State.Starting, VirtualMachine.State.Running, VirtualMachine.State.Stopping);
         return ssvms;
     }
 

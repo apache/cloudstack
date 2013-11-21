@@ -16,16 +16,18 @@
 // under the License.
 package com.cloud.hypervisor.kvm.discoverer;
 
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.resource.Discoverer;
+import javax.ejb.Local;
+
 import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.resource.Discoverer;
 
 @Local(value = Discoverer.class)
 public class LxcServerDiscoverer extends LibvirtServerDiscoverer {
     private static final Logger s_logger = Logger.getLogger(LxcServerDiscoverer.class);
 
+    @Override
     public Hypervisor.HypervisorType getHypervisorType() {
         return Hypervisor.HypervisorType.LXC;
     }

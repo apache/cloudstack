@@ -18,6 +18,8 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -26,8 +28,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.api.response.CiscoVnmcResourceResponse;
 import com.cloud.exception.ConcurrentOperationException;
@@ -91,7 +91,8 @@ public class AddCiscoVnmcResourceCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             CiscoVnmcController CiscoVnmcResourceVO = _ciscoVnmcElementService.addCiscoVnmcResource(this);
             if (CiscoVnmcResourceVO != null) {

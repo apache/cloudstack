@@ -26,16 +26,16 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.usage.UsageTypes;
 
-import com.cloud.usage.UsageServer;
 import com.cloud.usage.UsageVMInstanceVO;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageVMInstanceDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
-import org.springframework.stereotype.Component;
 
 @Component
 public class VMInstanceUsageParser {
@@ -165,8 +165,8 @@ public class VMInstanceUsageParser {
         String usageDisplay = dFormat.format(usage);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating VM usage record for vm: " + vmName + ", type: " + type + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate +
-                           ", for account: " + account.getId());
+            s_logger.debug("Creating VM usage record for vm: " + vmName + ", type: " + type + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " +
+                endDate + ", for account: " + account.getId());
         }
 
         // Create the usage record
@@ -177,8 +177,9 @@ public class VMInstanceUsageParser {
             usageDesc += " running time";
         }
         usageDesc += " (ServiceOffering: " + serviceOfferingId + ") (Template: " + templateId + ")";
-        UsageVO usageRecord = new UsageVO(Long.valueOf(zoneId), account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage),
-            Long.valueOf(vmId), vmName, Long.valueOf(serviceOfferingId), Long.valueOf(templateId), Long.valueOf(vmId), startDate, endDate, hypervisorType);
+        UsageVO usageRecord =
+            new UsageVO(Long.valueOf(zoneId), account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), Long.valueOf(vmId),
+                vmName, Long.valueOf(serviceOfferingId), Long.valueOf(templateId), Long.valueOf(vmId), startDate, endDate, hypervisorType);
         m_usageDao.persist(usageRecord);
     }
 

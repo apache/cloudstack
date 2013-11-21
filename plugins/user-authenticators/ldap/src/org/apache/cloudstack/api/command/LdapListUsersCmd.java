@@ -21,6 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -33,7 +35,6 @@ import org.apache.cloudstack.ldap.LdapManager;
 import org.apache.cloudstack.ldap.LdapUser;
 import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
 import org.apache.cloudstack.query.QueryService;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
@@ -48,7 +49,10 @@ public class LdapListUsersCmd extends BaseListCmd {
     @Inject
     private QueryService _queryService;
 
-    @Parameter(name = "listtype", type = CommandType.STRING, required = false, description = "Determines whether all ldap users are returned or just non-cloudstack users")
+    @Parameter(name = "listtype",
+               type = CommandType.STRING,
+               required = false,
+               description = "Determines whether all ldap users are returned or just non-cloudstack users")
     private String listType;
 
     public LdapListUsersCmd() {

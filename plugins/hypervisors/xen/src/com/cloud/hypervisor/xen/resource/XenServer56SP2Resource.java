@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.resource.ServerResource;
@@ -65,7 +66,7 @@ public class XenServer56SP2Resource extends XenServer56FP1Resource {
         long staticMax = Math.min(recommendedValue, 4l * dynamicMinRam);  // XS constraint for stability
         if (dynamicMaxRam > staticMax) { // XS contraint that dynamic max <= static max
             s_logger.warn("dynamixMax " + dynamicMaxRam + " cant be greater than static max " + staticMax +
-                          ", can lead to stability issues. Setting static max as much as dynamic max ");
+                ", can lead to stability issues. Setting static max as much as dynamic max ");
             return dynamicMaxRam;
         }
         return staticMax;

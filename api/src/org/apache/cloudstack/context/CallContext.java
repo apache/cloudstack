@@ -21,9 +21,10 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.UUID;
 
-import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
+
+import org.apache.cloudstack.managed.threadlocal.ManagedThreadLocal;
 
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.user.Account;
@@ -288,6 +289,12 @@ public class CallContext {
 
     @Override
     public String toString() {
-        return new StringBuilder("CCtxt[acct=").append(getCallingAccountId()).append("; user=").append(getCallingUserId()).append("; id=").append(contextId).append("]").toString();
+        return new StringBuilder("CCtxt[acct=").append(getCallingAccountId())
+            .append("; user=")
+            .append(getCallingUserId())
+            .append("; id=")
+            .append(contextId)
+            .append("]")
+            .toString();
     }
 }

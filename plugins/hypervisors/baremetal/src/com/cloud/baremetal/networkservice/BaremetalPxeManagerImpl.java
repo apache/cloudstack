@@ -223,8 +223,8 @@ public class BaremetalPxeManagerImpl extends ManagerBase implements BaremetalPxe
             throw new CloudRuntimeException(String.format("Cannot find physical network in zone %s", vm.getDataCenterId()));
         }
         if (phys.size() > 1) {
-            throw new CloudRuntimeException(String.format("Baremetal only supports one physical network in zone, but zone %s has %s physical networks", vm.getDataCenterId(),
-                phys.size()));
+            throw new CloudRuntimeException(String.format("Baremetal only supports one physical network in zone, but zone %s has %s physical networks",
+                vm.getDataCenterId(), phys.size()));
         }
         PhysicalNetworkVO phy = phys.get(0);
 

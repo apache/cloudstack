@@ -23,12 +23,13 @@ import java.io.IOException;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 
-import org.apache.cloudstack.spring.module.factory.CloudStackSpringContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.ConfigurableWebApplicationContext;
 import org.springframework.web.context.ContextLoaderListener;
+
+import org.apache.cloudstack.spring.module.factory.CloudStackSpringContext;
 
 public class CloudStackContextLoaderListener extends ContextLoaderListener {
 
@@ -56,7 +57,7 @@ public class CloudStackContextLoaderListener extends ContextLoaderListener {
         }
 
         configuredParentName = event.getServletContext().getInitParameter(WEB_PARENT_MODULE);
-        if ( configuredParentName == null ) {
+        if (configuredParentName == null) {
             configuredParentName = WEB_PARENT_MODULE_DEFAULT;
         }
 
@@ -67,8 +68,7 @@ public class CloudStackContextLoaderListener extends ContextLoaderListener {
     protected void customizeContext(ServletContext servletContext, ConfigurableWebApplicationContext applicationContext) {
         super.customizeContext(servletContext, applicationContext);
 
-        String[] newLocations = cloudStackContext.getConfigLocationsForWeb(configuredParentName,
-                applicationContext.getConfigLocations());
+        String[] newLocations = cloudStackContext.getConfigLocationsForWeb(configuredParentName, applicationContext.getConfigLocations());
 
         applicationContext.setConfigLocations(newLocations);
     }

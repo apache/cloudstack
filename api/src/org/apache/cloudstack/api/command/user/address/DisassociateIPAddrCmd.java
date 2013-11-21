@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.address;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -27,8 +29,6 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -47,7 +47,7 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IPAddressResponse.class, required = true, description = "the id of the public ip address"
-                                                                                                                                     + " to disassociate")
+        + " to disassociate")
     private Long id;
 
     // unexposed parameter needed for events logging

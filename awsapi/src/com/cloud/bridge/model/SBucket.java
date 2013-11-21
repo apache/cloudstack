@@ -16,11 +16,6 @@
 // under the License.
 package com.cloud.bridge.model;
 
-import java.io.Serializable;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
-
 /**
  * Holds the relation
  *  Id,

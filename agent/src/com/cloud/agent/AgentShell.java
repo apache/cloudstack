@@ -401,6 +401,7 @@ public class AgentShell implements IAgentShell, Daemon {
         return _nextAgentId++;
     }
 
+    @Override
     public void start() {
         try {
             /* By default we only search for log4j.xml */
@@ -444,10 +445,12 @@ public class AgentShell implements IAgentShell, Daemon {
         }
     }
 
+    @Override
     public void stop() {
         _exit = true;
     }
 
+    @Override
     public void destroy() {
 
     }

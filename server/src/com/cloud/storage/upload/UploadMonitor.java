@@ -37,7 +37,8 @@ public interface UploadMonitor extends Manager {
 
     public void cancelAllUploads(Long templateId);
 
-    public Long extractTemplate(VMTemplateVO template, String url, TemplateDataStoreVO tmpltStoreRef, Long dataCenterId, long eventId, long asyncJobId, AsyncJobManager asyncMgr);
+    public Long extractTemplate(VMTemplateVO template, String url, TemplateDataStoreVO tmpltStoreRef, Long dataCenterId, long eventId, long asyncJobId,
+        AsyncJobManager asyncMgr);
 
     boolean isTypeUploadInProgress(Long typeId, Type type);
 

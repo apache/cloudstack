@@ -17,10 +17,11 @@
 
 package com.cloud.agent.api;
 
-import com.cloud.vm.VirtualMachine;
+import java.util.List;
+
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
-import java.util.List;
+import com.cloud.vm.VirtualMachine;
 
 public class RevertToVMSnapshotAnswer extends Answer {
 

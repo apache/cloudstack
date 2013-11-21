@@ -23,6 +23,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -30,7 +32,6 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.server.ResourceTag;
@@ -60,7 +61,7 @@ public class CreateTagsCmd extends BaseAsyncCmd {
     private List<String> resourceIds;
 
     @Parameter(name = ApiConstants.CUSTOMER, type = CommandType.STRING, description = "identifies client specific tag. "
-                                                                                      + "When the value is not null, the tag can't be used by cloudStack code internally")
+        + "When the value is not null, the tag can't be used by cloudStack code internally")
     private String customer;
 
     /////////////////////////////////////////////////////

@@ -24,30 +24,30 @@ import streamer.ByteBuffer;
 
 public class AwtKeyEventSource extends BaseElement implements KeyListener {
 
-  public AwtKeyEventSource(String id) {
-    super(id);
-  }
+    public AwtKeyEventSource(String id) {
+        super(id);
+    }
 
-  @Override
-  public void keyTyped(KeyEvent e) {
-    // Nothing to do
+    @Override
+    public void keyTyped(KeyEvent e) {
+        // Nothing to do
 
-  }
+    }
 
-  @Override
-  public void keyPressed(KeyEvent e) {
-    sendEvent(e, true);
-  }
+    @Override
+    public void keyPressed(KeyEvent e) {
+        sendEvent(e, true);
+    }
 
-  @Override
-  public void keyReleased(KeyEvent e) {
-    sendEvent(e, false);
-  }
+    @Override
+    public void keyReleased(KeyEvent e) {
+        sendEvent(e, false);
+    }
 
-  private void sendEvent(KeyEvent e, boolean pressed) {
-    ByteBuffer buf=new ByteBuffer(new KeyOrder(e, pressed));
+    private void sendEvent(KeyEvent e, boolean pressed) {
+        ByteBuffer buf = new ByteBuffer(new KeyOrder(e, pressed));
 
-    pushDataToAllOuts(buf);
-  }
+        pushDataToAllOuts(buf);
+    }
 
 }

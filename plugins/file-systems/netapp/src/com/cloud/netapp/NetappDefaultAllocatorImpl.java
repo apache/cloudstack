@@ -21,9 +21,9 @@ import java.rmi.ServerException;
 import java.util.HashMap;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import netapp.manage.NaException;
+
+import org.apache.log4j.Logger;
 
 public class NetappDefaultAllocatorImpl implements NetappAllocator {
     private static HashMap<String, Integer> _poolNameToLastVolumeIdAllocated = new HashMap<String, Integer>();
@@ -34,6 +34,7 @@ public class NetappDefaultAllocatorImpl implements NetappAllocator {
         _netappMgr = netappMgr;
     }
 
+    @Override
     public synchronized NetappVolumeVO chooseLeastFullVolumeFromPool(String poolName, long lunSizeGb) {
         List<NetappVolumeVO> volumesOnPoolAscending = _netappMgr.listVolumesAscending(poolName);
 
@@ -69,6 +70,7 @@ public class NetappDefaultAllocatorImpl implements NetappAllocator {
      * @throws IOException
      * @throws NaException
      */
+    @Override
     public synchronized NetappVolumeVO chooseVolumeFromPool(String poolName, long lunSizeGb) {
         int pos = 0; //0 by default
         List<NetappVolumeVO> volumesOnPoolAscending = _netappMgr.listVolumesAscending(poolName);

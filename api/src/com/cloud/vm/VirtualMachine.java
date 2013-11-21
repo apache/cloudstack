@@ -38,15 +38,16 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
     }
 
     public enum State {
-        Starting(true, "VM is being started.  At this state, you should find host id filled which means it's being started on that host."), Running(
-                false,
-                "VM is running.  host id has the host that it is running on."), Stopping(true, "VM is being stopped.  host id has the host that it is being stopped on."), Stopped(
-                false,
-                "VM is stopped.  host id should be null."), Destroyed(false, "VM is marked for destroy."), Expunging(true, "VM is being   expunged."), Migrating(
-                true,
-                "VM is being migrated.  host id holds to from host"), Error(false, "VM is in error"), Unknown(false, "VM state is unknown."), Shutdowned(
-                false,
-                "VM is shutdowned from inside");
+        Starting(true, "VM is being started.  At this state, you should find host id filled which means it's being started on that host."),
+        Running(false, "VM is running.  host id has the host that it is running on."),
+        Stopping(true, "VM is being stopped.  host id has the host that it is being stopped on."),
+        Stopped(false, "VM is stopped.  host id should be null."),
+        Destroyed(false, "VM is marked for destroy."),
+        Expunging(true, "VM is being   expunged."),
+        Migrating(true, "VM is being migrated.  host id holds to from host"),
+        Error(false, "VM is in error"),
+        Unknown(false, "VM state is unknown."),
+        Shutdowned(false, "VM is shutdowned from inside");
 
         private final boolean _transitional;
         String _description;

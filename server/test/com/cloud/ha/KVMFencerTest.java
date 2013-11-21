@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -106,7 +107,7 @@ public class KVMFencerTest {
         Mockito.when(resourceManager.listAllHostsInCluster(1l)).thenReturn(Arrays.asList(host, secondHost));
 
         FenceAnswer answer = new FenceAnswer(null, true, "ok");
-        Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(FenceCommand.class))).thenReturn(answer);
+        Mockito.when(agentManager.send(Matchers.anyLong(), Matchers.any(FenceCommand.class))).thenReturn(answer);
 
         Assert.assertTrue(fencer.fenceOff(virtualMachine, host));
     }
@@ -129,7 +130,7 @@ public class KVMFencerTest {
 
         Mockito.when(resourceManager.listAllHostsInCluster(1l)).thenReturn(Arrays.asList(host, secondHost));
 
-        Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(FenceCommand.class))).thenThrow(new AgentUnavailableException(2l));
+        Mockito.when(agentManager.send(Matchers.anyLong(), Matchers.any(FenceCommand.class))).thenThrow(new AgentUnavailableException(2l));
 
         Assert.assertFalse(fencer.fenceOff(virtualMachine, host));
     }
@@ -152,7 +153,7 @@ public class KVMFencerTest {
 
         Mockito.when(resourceManager.listAllHostsInCluster(1l)).thenReturn(Arrays.asList(host, secondHost));
 
-        Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(FenceCommand.class))).thenThrow(new OperationTimedoutException(null, 2l, 0l, 0, false));
+        Mockito.when(agentManager.send(Matchers.anyLong(), Matchers.any(FenceCommand.class))).thenThrow(new OperationTimedoutException(null, 2l, 0l, 0, false));
 
         Assert.assertFalse(fencer.fenceOff(virtualMachine, host));
     }

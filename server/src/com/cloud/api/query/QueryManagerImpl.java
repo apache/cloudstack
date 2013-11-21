@@ -359,8 +359,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
         Pair<List<UserAccountJoinVO>, Integer> result = searchForUsersInternal(cmd);
         ListResponse<UserResponse> response = new ListResponse<UserResponse>();
-        List<UserResponse> userResponses = ViewResponseHelper.createUserResponse(CallContext.current().getCallingAccount().getDomainId(),
-            result.first().toArray(new UserAccountJoinVO[result.first().size()]));
+        List<UserResponse> userResponses =
+            ViewResponseHelper.createUserResponse(CallContext.current().getCallingAccount().getDomainId(),
+                result.first().toArray(new UserAccountJoinVO[result.first().size()]));
         response.setResponses(userResponses, result.second());
         return response;
     }
@@ -483,8 +484,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Integer entryTime = cmd.getEntryTime();
         Integer duration = cmd.getDuration();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-            cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+            new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -590,8 +591,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         String customerName = cmd.getCustomer();
         boolean listAll = cmd.listAll();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-            cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+            new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
 
         _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, listAll, false);
         Long domainId = domainIdRecursiveListProject.first();
@@ -660,8 +661,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-            cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+            new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -699,8 +700,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<UserVmResponse> searchForUserVMs(ListVMsCmd cmd) {
         Pair<List<UserVmJoinVO>, Integer> result = searchForUserVMsInternal(cmd);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
-        List<UserVmResponse> vmResponses = ViewResponseHelper.createUserVmResponse("virtualmachine", cmd.getDetails(),
-            result.first().toArray(new UserVmJoinVO[result.first().size()]));
+        List<UserVmResponse> vmResponses =
+            ViewResponseHelper.createUserVmResponse("virtualmachine", cmd.getDetails(), result.first().toArray(new UserVmJoinVO[result.first().size()]));
         response.setResponses(vmResponses, result.second());
         return response;
     }
@@ -713,8 +714,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Long id = cmd.getId();
         Map<String, String> tags = cmd.getTags();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-            cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+            new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, listAll, false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -964,7 +965,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         return response;
     }
 
-    private Pair<List<SecurityGroupJoinVO>, Integer> searchForSecurityGroupsInternal(ListSecurityGroupsCmd cmd) throws PermissionDeniedException, InvalidParameterValueException {
+    private Pair<List<SecurityGroupJoinVO>, Integer> searchForSecurityGroupsInternal(ListSecurityGroupsCmd cmd) throws PermissionDeniedException,
+        InvalidParameterValueException {
         Account caller = CallContext.current().getCallingAccount();
         Long instanceId = cmd.getVirtualMachineId();
         String securityGroup = cmd.getSecurityGroupName();
@@ -982,8 +984,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             return listSecurityGroupRulesByVM(instanceId.longValue(), cmd.getStartIndex(), cmd.getPageSizeVal());
         }
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-            cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+            new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -1065,8 +1067,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Override
     public ListResponse<DomainRouterResponse> searchForRouters(ListRoutersCmd cmd) {
-        Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(), cmd.getState(), cmd.getZoneId(), cmd.getPodId(),
-            cmd.getClusterId(), cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getVersion());
+        Pair<List<DomainRouterJoinVO>, Integer> result =
+            searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(), cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getClusterId(), cmd.getHostId(),
+                cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getVersion());
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
 
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
@@ -1076,8 +1079,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     @Override
     public ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd) {
-        Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(), cmd.getState(), cmd.getZoneId(), cmd.getPodId(), null,
-            cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), null);
+        Pair<List<DomainRouterJoinVO>, Integer> result =
+            searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(), cmd.getState(), cmd.getZoneId(), cmd.getPodId(), null, cmd.getHostId(), cmd.getKeyword(),
+                cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), null);
         ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
 
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
@@ -1091,8 +1095,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-            cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+            new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -1346,8 +1350,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<ProjectInvitationResponse> listProjectInvitations(ListProjectInvitationsCmd cmd) {
         Pair<List<ProjectInvitationJoinVO>, Integer> invites = listProjectInvitationsInternal(cmd);
         ListResponse<ProjectInvitationResponse> response = new ListResponse<ProjectInvitationResponse>();
-        List<ProjectInvitationResponse> projectInvitationResponses = ViewResponseHelper.createProjectInvitationResponse(invites.first().toArray(
-            new ProjectInvitationJoinVO[invites.first().size()]));
+        List<ProjectInvitationResponse> projectInvitationResponses =
+            ViewResponseHelper.createProjectInvitationResponse(invites.first().toArray(new ProjectInvitationJoinVO[invites.first().size()]));
 
         response.setResponses(projectInvitationResponses, invites.second());
         return response;
@@ -1368,7 +1372,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+            new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
         _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject, listAll, true);
         domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();
@@ -1411,8 +1416,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<ProjectAccountResponse> listProjectAccounts(ListProjectAccountsCmd cmd) {
         Pair<List<ProjectAccountJoinVO>, Integer> projectAccounts = listProjectAccountsInternal(cmd);
         ListResponse<ProjectAccountResponse> response = new ListResponse<ProjectAccountResponse>();
-        List<ProjectAccountResponse> projectResponses = ViewResponseHelper.createProjectAccountResponse(projectAccounts.first().toArray(
-            new ProjectAccountJoinVO[projectAccounts.first().size()]));
+        List<ProjectAccountResponse> projectResponses =
+            ViewResponseHelper.createProjectAccountResponse(projectAccounts.first().toArray(new ProjectAccountJoinVO[projectAccounts.first().size()]));
         response.setResponses(projectResponses, projectAccounts.second());
         return response;
     }
@@ -1615,8 +1620,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             podId = cmd.getPodId();
         }
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-            cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+            new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -1869,8 +1874,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         List<Long> permittedAccounts = new ArrayList<Long>();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-            cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+            new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), null, permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -2202,7 +2207,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<DiskOfferingResponse> searchForDiskOfferings(ListDiskOfferingsCmd cmd) {
         Pair<List<DiskOfferingJoinVO>, Integer> result = searchForDiskOfferingsInternal(cmd);
         ListResponse<DiskOfferingResponse> response = new ListResponse<DiskOfferingResponse>();
-        List<DiskOfferingResponse> offeringResponses = ViewResponseHelper.createDiskOfferingResponse(result.first().toArray(new DiskOfferingJoinVO[result.first().size()]));
+        List<DiskOfferingResponse> offeringResponses =
+            ViewResponseHelper.createDiskOfferingResponse(result.first().toArray(new DiskOfferingJoinVO[result.first().size()]));
         response.setResponses(offeringResponses, result.second());
         return response;
     }
@@ -2326,7 +2332,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<ServiceOfferingResponse> searchForServiceOfferings(ListServiceOfferingsCmd cmd) {
         Pair<List<ServiceOfferingJoinVO>, Integer> result = searchForServiceOfferingsInternal(cmd);
         ListResponse<ServiceOfferingResponse> response = new ListResponse<ServiceOfferingResponse>();
-        List<ServiceOfferingResponse> offeringResponses = ViewResponseHelper.createServiceOfferingResponse(result.first().toArray(new ServiceOfferingJoinVO[result.first().size()]));
+        List<ServiceOfferingResponse> offeringResponses =
+            ViewResponseHelper.createServiceOfferingResponse(result.first().toArray(new ServiceOfferingJoinVO[result.first().size()]));
         response.setResponses(offeringResponses, result.second());
         return response;
     }
@@ -2470,7 +2477,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<ZoneResponse> listDataCenters(ListZonesByCmd cmd) {
         Pair<List<DataCenterJoinVO>, Integer> result = listDataCentersInternal(cmd);
         ListResponse<ZoneResponse> response = new ListResponse<ZoneResponse>();
-        List<ZoneResponse> dcResponses = ViewResponseHelper.createDataCenterResponse(cmd.getShowCapacities(), result.first().toArray(new DataCenterJoinVO[result.first().size()]));
+        List<ZoneResponse> dcResponses =
+            ViewResponseHelper.createDataCenterResponse(cmd.getShowCapacities(), result.first().toArray(new DataCenterJoinVO[result.first().size()]));
         response.setResponses(dcResponses, result.second());
         return response;
     }
@@ -2720,8 +2728,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         List<Long> permittedAccountIds = new ArrayList<Long>();
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-            cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+            new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject, listAll, false);
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         List<Account> permittedAccounts = new ArrayList<Account>();
@@ -2732,8 +2740,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         boolean showDomr = ((templateFilter != TemplateFilter.selfexecutable) && (templateFilter != TemplateFilter.featured));
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
-        return searchForTemplatesInternal(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(),
-            hypervisorType, showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags);
+        return searchForTemplatesInternal(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, cmd.getPageSizeVal(), cmd.getStartIndex(),
+            cmd.getZoneId(), hypervisorType, showDomr, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags);
     }
 
     private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso,
@@ -2793,7 +2801,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             if (!permittedAccounts.isEmpty()) {
                 domain = _domainDao.findById(permittedAccounts.get(0).getDomainId());
             } else {
-                domain = _domainDao.findById(DomainVO.ROOT_DOMAIN);
+                domain = _domainDao.findById(Domain.ROOT_DOMAIN);
             }
 
             // List<HypervisorType> hypers = null;
@@ -3004,8 +3012,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         List<Long> permittedAccountIds = new ArrayList<Long>();
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-            cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+            new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds, domainIdRecursiveListProject, listAll, false);
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         List<Account> permittedAccounts = new ArrayList<Account>();
@@ -3020,10 +3028,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     @Override
-    public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName, String affinityGroupType, Long vmId, String accountName,
-        Long domainId, boolean isRecursive, boolean listAll, Long startIndex, Long pageSize) {
-        Pair<List<AffinityGroupJoinVO>, Integer> result = listAffinityGroupsInternal(affinityGroupId, affinityGroupName, affinityGroupType, vmId, accountName, domainId,
-            isRecursive, listAll, startIndex, pageSize);
+    public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName, String affinityGroupType, Long vmId,
+        String accountName, Long domainId, boolean isRecursive, boolean listAll, Long startIndex, Long pageSize) {
+        Pair<List<AffinityGroupJoinVO>, Integer> result =
+            listAffinityGroupsInternal(affinityGroupId, affinityGroupName, affinityGroupType, vmId, accountName, domainId, isRecursive, listAll, startIndex, pageSize);
         ListResponse<AffinityGroupResponse> response = new ListResponse<AffinityGroupResponse>();
         List<AffinityGroupResponse> agResponses = ViewResponseHelper.createAffinityGroupResponses(result.first());
         response.setResponses(agResponses, result.second());
@@ -3047,15 +3055,17 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         List<Long> permittedAccounts = new ArrayList<Long>();
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+            new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
         _accountMgr.buildACLSearchParameters(caller, affinityGroupId, accountName, null, permittedAccounts, domainIdRecursiveListProject, listAll, true);
         domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(AffinityGroupJoinVO.class, "id", true, startIndex, pageSize);
-        SearchCriteria<AffinityGroupJoinVO> sc = buildAffinityGroupSearchCriteria(domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria, affinityGroupId,
-            affinityGroupName, affinityGroupType);
+        SearchCriteria<AffinityGroupJoinVO> sc =
+            buildAffinityGroupSearchCriteria(domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria, affinityGroupId, affinityGroupName,
+                affinityGroupType);
 
         Pair<List<AffinityGroupJoinVO>, Integer> uniqueGroupsPair = _affinityGroupJoinDao.searchAndCount(sc, searchFilter);
         // search group details by ids
@@ -3074,23 +3084,26 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         if (!permittedAccounts.isEmpty()) {
             // add domain level affinity groups
             if (domainId != null) {
-                SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria,
-                    affinityGroupId, affinityGroupName, affinityGroupType);
+                SearchCriteria<AffinityGroupJoinVO> scDomain =
+                    buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId, affinityGroupName,
+                        affinityGroupType);
                 vrs.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, domainId));
             } else {
 
                 for (Long permAcctId : permittedAccounts) {
                     Account permittedAcct = _accountDao.findById(permAcctId);
-                    SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria,
-                        affinityGroupId, affinityGroupName, affinityGroupType);
+                    SearchCriteria<AffinityGroupJoinVO> scDomain =
+                        buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId, affinityGroupName,
+                            affinityGroupType);
 
                     vrs.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, permittedAcct.getDomainId()));
                 }
             }
         } else if (((permittedAccounts.isEmpty()) && (domainId != null) && isRecursive)) {
             // list all domain level affinity groups for the domain admin case
-            SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria,
-                affinityGroupId, affinityGroupName, affinityGroupType);
+            SearchCriteria<AffinityGroupJoinVO> scDomain =
+                buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId, affinityGroupName,
+                    affinityGroupType);
             vrs.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, domainId));
         }
 

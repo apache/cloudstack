@@ -16,16 +16,15 @@
 // under the License.
 package com.cloud.usage;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
-import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "external_public_ip_statistics")
@@ -63,6 +62,7 @@ public class ExternalPublicIpStatisticsVO implements InternalIdentity {
         this.currentBytesSent = 0;
     }
 
+    @Override
     public long getId() {
         return id;
     }

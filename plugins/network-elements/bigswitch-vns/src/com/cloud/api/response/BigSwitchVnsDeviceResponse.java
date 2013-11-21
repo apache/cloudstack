@@ -16,13 +16,15 @@
 // under the License.
 package com.cloud.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
+
 import com.cloud.api.commands.VnsConstants;
 import com.cloud.network.BigSwitchVnsDeviceVO;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = BigSwitchVnsDeviceVO.class)
 public class BigSwitchVnsDeviceResponse extends BaseResponse {

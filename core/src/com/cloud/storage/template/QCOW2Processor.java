@@ -81,6 +81,7 @@ public class QCOW2Processor extends AdapterBase implements Processor {
         return info;
     }
 
+    @Override
     public Long getVirtualSize(File file) {
         FileInputStream strm = null;
         byte[] b = new byte[8];

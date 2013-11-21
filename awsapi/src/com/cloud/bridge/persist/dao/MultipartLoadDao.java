@@ -33,7 +33,6 @@ import com.cloud.bridge.service.core.s3.S3MetaDataEntry;
 import com.cloud.bridge.service.core.s3.S3MultipartPart;
 import com.cloud.bridge.service.core.s3.S3MultipartUpload;
 import com.cloud.bridge.util.OrderedPair;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 public class MultipartLoadDao {
@@ -258,7 +257,8 @@ public class MultipartLoadDao {
      * @return an array of S3MultipartPart objects
      * @throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
      */
-    public S3MultipartPart[] getParts(int uploadId, int maxParts, int startAt) throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
+    public S3MultipartPart[] getParts(int uploadId, int maxParts, int startAt) throws InstantiationException, IllegalAccessException, ClassNotFoundException,
+        SQLException {
         S3MultipartPart[] parts = new S3MultipartPart[maxParts];
         int i = 0;
         List<MultiPartPartsVO> partsVO;

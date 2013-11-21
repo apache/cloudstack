@@ -16,10 +16,10 @@
 // under the License.
 package com.cloud.bridge.io;
 
-import org.apache.log4j.Logger;
-
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
+
+import org.apache.log4j.Logger;
 
 /**
  * A DIME stream is actually composed of multiple encoded streams.

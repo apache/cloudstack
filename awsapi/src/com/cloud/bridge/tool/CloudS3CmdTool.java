@@ -222,7 +222,7 @@ public class CloudS3CmdTool {
             ListBucketResult result = response.getListBucketResponse();
             System.out.println("\tContent of Bucket " + result.getName());
             System.out.println("\tListing with prefix: " + result.getPrefix() + ", delimiter: " + result.getDelimiter() + ", marker: " + result.getMarker() + ", max: " +
-                               result.getMaxKeys());
+                result.getMaxKeys());
 
             ListEntry[] entries = result.getContents();
             if (entries != null) {

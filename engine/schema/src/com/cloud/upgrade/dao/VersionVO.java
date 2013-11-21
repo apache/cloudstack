@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -30,6 +28,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "version")
@@ -63,6 +63,7 @@ public class VersionVO implements InternalIdentity {
     protected VersionVO() {
     }
 
+    @Override
     public long getId() {
         return id;
     }

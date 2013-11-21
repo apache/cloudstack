@@ -56,9 +56,11 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements SnapshotDao {
     public static final Logger s_logger = Logger.getLogger(SnapshotDaoImpl.class.getName());
     // TODO: we should remove these direct sqls
-    private static final String GET_LAST_SNAPSHOT = "SELECT snapshots.id FROM snapshot_store_ref, snapshots where snapshots.id = snapshot_store_ref.snapshot_id AND snapshosts.volume_id = ? AND snapshot_store_ref.role = ? ORDER BY created DESC";
+    private static final String GET_LAST_SNAPSHOT =
+        "SELECT snapshots.id FROM snapshot_store_ref, snapshots where snapshots.id = snapshot_store_ref.snapshot_id AND snapshosts.volume_id = ? AND snapshot_store_ref.role = ? ORDER BY created DESC";
     private static final String UPDATE_SNAPSHOT_VERSION = "UPDATE snapshots SET version = ? WHERE volume_id = ? AND version = ?";
-    private static final String GET_SECHOST_ID = "SELECT store_id FROM snapshots, snapshot_store_ref where snapshots.id = snapshot_store_ref.snapshot_id AND volume_id = ? AND backup_snap_id IS NOT NULL AND sechost_id IS NOT NULL LIMIT 1";
+    private static final String GET_SECHOST_ID =
+        "SELECT store_id FROM snapshots, snapshot_store_ref where snapshots.id = snapshot_store_ref.snapshot_id AND volume_id = ? AND backup_snap_id IS NOT NULL AND sechost_id IS NOT NULL LIMIT 1";
     private static final String UPDATE_SECHOST_ID = "UPDATE snapshots SET sechost_id = ? WHERE data_center_id = ?";
 
     private SearchBuilder<SnapshotVO> VolumeIdSearch;
@@ -324,7 +326,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     public boolean updateState(State currentState, Event event, State nextState, SnapshotVO snapshot, Object data) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
-        SnapshotVO snapshotVO = (SnapshotVO)snapshot;
+        SnapshotVO snapshotVO = snapshot;
         snapshotVO.setState(nextState);
         super.update(snapshotVO.getId(), snapshotVO);
         txn.commit();

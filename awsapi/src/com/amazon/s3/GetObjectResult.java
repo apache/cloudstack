@@ -214,7 +214,8 @@ public class GetObjectResult extends com.amazon.s3.Result implements org.apache.
     }
 
     public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+        org.apache.axis2.databinding.ADBException {
         serialize(parentQName, factory, xmlWriter, false);
     }
 
@@ -370,9 +371,8 @@ public class GetObjectResult extends com.amazon.s3.Result implements org.apache.
     /**
      * Util method to write an attribute with the ns prefix
      */
-    private void
-        writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+    private void writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue,
+        javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
         if (xmlWriter.getPrefix(namespace) == null) {
             xmlWriter.writeNamespace(prefix, namespace);
             xmlWriter.setPrefix(prefix, namespace);
@@ -669,7 +669,8 @@ public class GetObjectResult extends com.amazon.s3.Result implements org.apache.
                     }
                     // call the converter utility  to convert and set the array
 
-                    object.setMetadata((com.amazon.s3.MetadataEntry[])org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(com.amazon.s3.MetadataEntry.class, list2));
+                    object.setMetadata((com.amazon.s3.MetadataEntry[])org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(com.amazon.s3.MetadataEntry.class,
+                        list2));
 
                 }  // End of if for expected property start element
 
@@ -688,7 +689,8 @@ public class GetObjectResult extends com.amazon.s3.Result implements org.apache.
                     } else {
                         if (reader.getEventType() == javax.xml.stream.XMLStreamConstants.START_ELEMENT &&
                             reader.getName().equals(
-                                new javax.xml.namespace.QName(org.apache.axiom.om.impl.MTOMConstants.XOP_NAMESPACE_URI, org.apache.axiom.om.impl.MTOMConstants.XOP_INCLUDE))) {
+                                new javax.xml.namespace.QName(org.apache.axiom.om.impl.MTOMConstants.XOP_NAMESPACE_URI,
+                                    org.apache.axiom.om.impl.MTOMConstants.XOP_INCLUDE))) {
                             java.lang.String id = org.apache.axiom.om.util.ElementHelper.getContentID(reader, "UTF-8");
                             object.setData(((org.apache.axiom.soap.impl.builder.MTOMStAXSOAPModelBuilder)((org.apache.axiom.om.impl.llom.OMStAXWrapper)reader).getBuilder()).getDataHandler(id));
                             reader.next();

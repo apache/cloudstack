@@ -37,7 +37,7 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "changeServiceForSystemVm",
             responseObject = SystemVmResponse.class,
             description = "Changes the service offering for a system vm (console proxy or secondary storage). " + "The system vm must be in a \"Stopped\" state for "
-                          + "this command to take effect.")
+                + "this command to take effect.")
 public class UpgradeSystemVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeVMCmd.class.getName());
     private static final String s_name = "changeserviceforsystemvmresponse";

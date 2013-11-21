@@ -28,7 +28,6 @@ import javax.persistence.Table;
 
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("s2s_vpn_gateway"))
@@ -99,6 +98,7 @@ public class Site2SiteVpnGatewayVO implements Site2SiteVpnGateway {
         this.removed = removed;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }

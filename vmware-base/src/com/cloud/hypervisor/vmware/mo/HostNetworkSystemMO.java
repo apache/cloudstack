@@ -18,10 +18,11 @@ package com.cloud.hypervisor.vmware.mo;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.HostVirtualSwitchSpec;
 import com.vmware.vim25.ManagedObjectReference;
+
+import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class HostNetworkSystemMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(HostNetworkSystemMO.class);

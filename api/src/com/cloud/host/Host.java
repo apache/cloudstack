@@ -30,23 +30,10 @@ import com.cloud.utils.fsm.StateObject;
  */
 public interface Host extends StateObject<Status>, Identity, InternalIdentity {
     public enum Type {
-        Storage(false),
-        Routing(false),
-        SecondaryStorage(false),
-        SecondaryStorageCmdExecutor(false),
-        ConsoleProxy(true),
-        ExternalFirewall(false),
-        ExternalLoadBalancer(false),
-        ExternalVirtualSwitchSupervisor(false),
-        PxeServer(false),
-        BaremetalPxe(false),
-        BaremetalDhcp(false),
-        TrafficMonitor(false),
+        Storage(false), Routing(false), SecondaryStorage(false), SecondaryStorageCmdExecutor(false), ConsoleProxy(true), ExternalFirewall(false), ExternalLoadBalancer(
+                false), ExternalVirtualSwitchSupervisor(false), PxeServer(false), BaremetalPxe(false), BaremetalDhcp(false), TrafficMonitor(false),
 
-        ExternalDhcp(false),
-        SecondaryStorageVM(true),
-        LocalSecondaryStorage(false),
-        L2Networking(false);
+        ExternalDhcp(false), SecondaryStorageVM(true), LocalSecondaryStorage(false), L2Networking(false);
         boolean _virtual;
 
         private Type(boolean virtual) {

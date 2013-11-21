@@ -22,12 +22,11 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.bridge.model.CloudStackUserVO;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 
 @Component
 @Local(value = {CloudStackUserDao.class})

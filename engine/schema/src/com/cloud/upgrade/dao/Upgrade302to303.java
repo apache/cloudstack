@@ -29,6 +29,7 @@ import java.sql.SQLException;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
+
 //
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -90,8 +91,9 @@ public class Upgrade302to303 implements DbUpgrade {
                 pNetworksResults = pNetworkStmt.executeQuery();
                 while (pNetworksResults.next()) {
                     long physicalNetworkId = pNetworksResults.getLong(1);
-                    PreparedStatement fetchF5NspStmt = conn.prepareStatement("SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" +
-                                                                             physicalNetworkId + " and provider_name = 'F5BigIp'");
+                    PreparedStatement fetchF5NspStmt =
+                        conn.prepareStatement("SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId +
+                            " and provider_name = 'F5BigIp'");
                     ResultSet rsF5NSP = fetchF5NspStmt.executeQuery();
                     boolean hasF5Nsp = rsF5NSP.next();
                     fetchF5NspStmt.close();
@@ -110,8 +112,9 @@ public class Upgrade302to303 implements DbUpgrade {
                         }
                     }
 
-                    PreparedStatement fetchSRXNspStmt = conn.prepareStatement("SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" +
-                                                                              physicalNetworkId + " and provider_name = 'JuniperSRX'");
+                    PreparedStatement fetchSRXNspStmt =
+                        conn.prepareStatement("SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId +
+                            " and provider_name = 'JuniperSRX'");
                     ResultSet rsSRXNSP = fetchSRXNspStmt.executeQuery();
                     boolean hasSrxNsp = rsSRXNSP.next();
                     fetchSRXNspStmt.close();
@@ -154,8 +157,9 @@ public class Upgrade302to303 implements DbUpgrade {
         PreparedStatement pstmtUpdate = null;
         try {
             s_logger.debug("Adding F5 Big IP load balancer with host id " + hostId + " in to physical network" + physicalNetworkId);
-            String insertF5 = "INSERT INTO `cloud`.`external_load_balancer_devices` (physical_network_id, host_id, provider_name, "
-                              + "device_name, capacity, is_dedicated, device_state, allocation_state, is_inline, is_managed, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String insertF5 =
+                "INSERT INTO `cloud`.`external_load_balancer_devices` (physical_network_id, host_id, provider_name, "
+                    + "device_name, capacity, is_dedicated, device_state, allocation_state, is_inline, is_managed, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             pstmtUpdate = conn.prepareStatement(insertF5);
             pstmtUpdate.setLong(1, physicalNetworkId);
             pstmtUpdate.setLong(2, hostId);
@@ -185,8 +189,9 @@ public class Upgrade302to303 implements DbUpgrade {
         PreparedStatement pstmtUpdate = null;
         try {
             s_logger.debug("Adding SRX firewall device with host id " + hostId + " in to physical network" + physicalNetworkId);
-            String insertSrx = "INSERT INTO `cloud`.`external_firewall_devices` (physical_network_id, host_id, provider_name, "
-                               + "device_name, capacity, is_dedicated, device_state, allocation_state, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            String insertSrx =
+                "INSERT INTO `cloud`.`external_firewall_devices` (physical_network_id, host_id, provider_name, "
+                    + "device_name, capacity, is_dedicated, device_state, allocation_state, uuid) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             pstmtUpdate = conn.prepareStatement(insertSrx);
             pstmtUpdate.setLong(1, physicalNetworkId);
             pstmtUpdate.setLong(2, hostId);
@@ -215,10 +220,11 @@ public class Upgrade302to303 implements DbUpgrade {
         try {
             // add physical network service provider - F5BigIp
             s_logger.debug("Adding PhysicalNetworkServiceProvider F5BigIp" + " in to physical network" + physicalNetworkId);
-            String insertPNSP = "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
-                                + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
-                                + "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`,"
-                                + "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,0,0,0,1,0,0,0,0)";
+            String insertPNSP =
+                "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
+                    + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
+                    + "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`,"
+                    + "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,0,0,0,1,0,0,0,0)";
 
             pstmtUpdate = conn.prepareStatement(insertPNSP);
             pstmtUpdate.setString(1, UUID.randomUUID().toString());
@@ -243,10 +249,11 @@ public class Upgrade302to303 implements DbUpgrade {
         try {
             // add physical network service provider - JuniperSRX
             s_logger.debug("Adding PhysicalNetworkServiceProvider JuniperSRX");
-            String insertPNSP = "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
-                                + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
-                                + "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`,"
-                                + "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,1,1,1,0,1,1,0,0)";
+            String insertPNSP =
+                "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ,"
+                    + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
+                    + "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`,"
+                    + "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,1,1,1,0,1,1,0,0)";
 
             pstmtUpdate = conn.prepareStatement(insertPNSP);
             pstmtUpdate.setString(1, UUID.randomUUID().toString());
@@ -272,7 +279,8 @@ public class Upgrade302to303 implements DbUpgrade {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
-            pstmt = conn.prepareStatement("select name, value from `cloud`.`configuration` where name in ('router.ram.size', 'secondary.storage.vm', 'security.hash.key') and category <> 'Hidden'");
+            pstmt =
+                conn.prepareStatement("select name, value from `cloud`.`configuration` where name in ('router.ram.size', 'secondary.storage.vm', 'security.hash.key') and category <> 'Hidden'");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 String name = rs.getString(1);

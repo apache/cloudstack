@@ -16,10 +16,11 @@
 // under the License.
 package com.cloud.test.ui;
 
-import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import com.cloud.test.ui.AbstractSeleniumTestCase;
+
+import org.junit.Test;
+
 import com.thoughtworks.selenium.SeleniumException;
 
 public class UIScenarioTest extends AbstractSeleniumTestCase {
@@ -34,8 +35,7 @@ public class UIScenarioTest extends AbstractSeleniumTestCase {
             Thread.sleep(3000);
             assertTrue(selenium.isTextPresent("admin"));
             selenium.click("//div[@id='leftmenu_instances']/div");
-            selenium
-                .click("//div[@id='leftmenu_instances_stopped_instances']/div/span");
+            selenium.click("//div[@id='leftmenu_instances_stopped_instances']/div/span");
 
             Thread.sleep(3000);
             selenium.click("//div[@id='midmenu_startvm_link']/div/div[2]");
@@ -51,10 +51,8 @@ public class UIScenarioTest extends AbstractSeleniumTestCase {
                 }
                 Thread.sleep(10000);
             }
-            assertTrue(selenium
-                .isTextPresent("Start Instance action succeeded"));
-            selenium
-                .click("//div[@id='leftmenu_instances_running_instances']/div/span");
+            assertTrue(selenium.isTextPresent("Start Instance action succeeded"));
+            selenium.click("//div[@id='leftmenu_instances_running_instances']/div/span");
 
             Thread.sleep(3000);
             selenium.click("//div[@id='midmenu_stopvm_link']/div/div[2]");

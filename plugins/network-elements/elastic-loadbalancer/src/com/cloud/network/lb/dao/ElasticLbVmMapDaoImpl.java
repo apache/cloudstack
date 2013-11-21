@@ -26,18 +26,14 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.network.ElasticLbVmMapVO;
 import com.cloud.network.dao.LoadBalancerDao;
-import com.cloud.network.dao.LoadBalancerDaoImpl;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.router.VirtualRouter.Role;
-import com.cloud.network.router.VirtualRouter.Role;
-
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.DomainRouterDaoImpl;
 
 @Component
 @Local(value = {ElasticLbVmMapDao.class})
@@ -77,8 +73,8 @@ public class ElasticLbVmMapDaoImpl extends GenericDaoBase<ElasticLbVmMapVO, Long
         LoadBalancerSearch = _loadbalancerDao.createSearchBuilder();
         LoadBalancersForElbVmSearch = createSearchBuilder();
         LoadBalancersForElbVmSearch.and("elbVmId", LoadBalancersForElbVmSearch.entity().getElbVmId(), SearchCriteria.Op.EQ);
-        LoadBalancerSearch.join("LoadBalancersForElbVm", LoadBalancersForElbVmSearch, LoadBalancerSearch.entity().getId(), LoadBalancersForElbVmSearch.entity().getLbId(),
-            JoinType.INNER);
+        LoadBalancerSearch.join("LoadBalancersForElbVm", LoadBalancersForElbVmSearch, LoadBalancerSearch.entity().getId(),
+            LoadBalancersForElbVmSearch.entity().getLbId(), JoinType.INNER);
         LoadBalancersForElbVmSearch.done();
         LoadBalancerSearch.done();
 
@@ -128,6 +124,7 @@ public class ElasticLbVmMapDaoImpl extends GenericDaoBase<ElasticLbVmMapVO, Long
         return findOneBy(sc);
     }
 
+    @Override
     public List<DomainRouterVO> listUnusedElbVms() {
         SearchCriteria<DomainRouterVO> sc = ElbVmSearch.create();
         sc.setParameters("role", Role.LB);

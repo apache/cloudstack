@@ -16,13 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.GuestVlan;
+import com.cloud.serializer.Param;
 
 @EntityReference(value = GuestVlan.class)
 @SuppressWarnings("unused")
@@ -67,14 +68,17 @@ public class GuestVlanRangeResponse extends BaseResponse implements ControlledEn
         this.id = id;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
 
+    @Override
     public void setDomainId(String domainId) {
         this.domainId = domainId;
     }
 
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
@@ -83,10 +87,12 @@ public class GuestVlanRangeResponse extends BaseResponse implements ControlledEn
         this.guestVlanRange = guestVlanRange;
     }
 
+    @Override
     public void setProjectId(String projectId) {
         this.projectId = projectId;
     }
 
+    @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }

@@ -215,7 +215,7 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
             InputStream in = !chunked ? new BufferedInputStream(request.getResponseBodyAsStream()) : new ChunkedInputStream(request.getResponseBodyAsStream());
 
             s_logger.info("Starting download from " + getDownloadUrl() + " to s3 bucket " + s3.getBucketName() + " remoteSize=" + remoteSize + " , max size=" +
-                          maxTemplateSizeInByte);
+                maxTemplateSizeInByte);
 
             Date start = new Date();
             // compute s3 key
@@ -261,7 +261,7 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
                 // single part upload, with 5GB limit in Amazon
                 S3Utils.putObject(s3, putObjectRequest);
                 while (status != TemplateDownloader.Status.DOWNLOAD_FINISHED && status != TemplateDownloader.Status.UNRECOVERABLE_ERROR &&
-                       status != TemplateDownloader.Status.ABORTED) {
+                    status != TemplateDownloader.Status.ABORTED) {
                     // wait for completion
                 }
             }

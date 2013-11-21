@@ -229,6 +229,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         return type;
     }
 
+    @Override
     public long getUpdated() {
         return updated;
     }

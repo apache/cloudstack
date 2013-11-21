@@ -17,6 +17,7 @@
 package com.cloud.dc.dao;
 
 import java.util.List;
+
 import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
@@ -78,6 +79,7 @@ public class ClusterVSMMapDaoImpl extends GenericDaoBase<ClusterVSMMapVO, Long> 
         return listBy(sc);
     }
 
+    @Override
     public boolean remove(Long id) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();

@@ -16,20 +16,21 @@
 // under the License.
 package com.cloud.configuration;
 
-import com.cloud.dc.VlanVO;
-import com.cloud.network.Network;
-import com.cloud.network.NetworkModel;
-import com.cloud.utils.Pair;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.mockito.Mockito.when;
+import com.cloud.dc.VlanVO;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
+import com.cloud.utils.Pair;
 
 public class ValidateIpRangeTest {
     @Mock
@@ -53,15 +54,16 @@ public class ValidateIpRangeTest {
 
     @Test
     public void SameSubnetTest() {
-        Pair<Boolean, Pair<String, String>> sameSubnet = configurationMgr.validateIpRange("10.147.33.104", "10.147.33.105", "10.147.33.1", "255.255.255.128", vlanVOList, true,
-            false, null, null, null, null, network);
+        Pair<Boolean, Pair<String, String>> sameSubnet =
+            configurationMgr.validateIpRange("10.147.33.104", "10.147.33.105", "10.147.33.1", "255.255.255.128", vlanVOList, true, false, null, null, null, null, network);
         Assert.assertTrue(sameSubnet.first());
     }
 
     @Test
     public void NewSubnetTest() {
-        Pair<Boolean, Pair<String, String>> sameSubnet = configurationMgr.validateIpRange("10.147.33.140", "10.147.33.145", "10.147.33.130", "255.255.255.192", vlanVOList, true,
-            false, null, null, null, null, network);
+        Pair<Boolean, Pair<String, String>> sameSubnet =
+            configurationMgr.validateIpRange("10.147.33.140", "10.147.33.145", "10.147.33.130", "255.255.255.192", vlanVOList, true, false, null, null, null, null,
+                network);
         Assert.assertTrue(!sameSubnet.first());
     }
 

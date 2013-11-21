@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -25,7 +27,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ProviderResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -42,7 +43,11 @@ public class DeleteNetworkServiceProviderCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProviderResponse.class, required = true, description = "the ID of the network service provider")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = ProviderResponse.class,
+               required = true,
+               description = "the ID of the network service provider")
     private Long id;
 
     /////////////////////////////////////////////////////

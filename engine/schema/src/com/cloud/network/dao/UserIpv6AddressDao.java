@@ -18,7 +18,6 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import com.cloud.network.Network;
 import com.cloud.network.UserIpv6AddressVO;
 import com.cloud.utils.db.GenericDao;
 

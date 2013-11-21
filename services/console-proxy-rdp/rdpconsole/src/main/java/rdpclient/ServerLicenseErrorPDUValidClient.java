@@ -22,24 +22,24 @@ import streamer.OneTimeSwitch;
 
 public class ServerLicenseErrorPDUValidClient extends OneTimeSwitch {
 
-  public ServerLicenseErrorPDUValidClient(String id) {
-    super(id);
-  }
+    public ServerLicenseErrorPDUValidClient(String id) {
+        super(id);
+    }
 
-  @Override
-  protected void handleOneTimeData(ByteBuffer buf, Link link) {
-    if (buf == null)
-      return;
+    @Override
+    protected void handleOneTimeData(ByteBuffer buf, Link link) {
+        if (buf == null)
+            return;
 
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
 
-    // Ignore packet
-    buf.unref();
-    switchOff();
-  }
+        // Ignore packet
+        buf.unref();
+        switchOff();
+    }
 
-  /* @formatter:off */
+    /* @formatter:off */
 //   * Server Error alert
 //
 //03 00 00 22 02 F0 80 68 00 01 03 EB 70 14 80 00 F1 BC FF 03 10 00 07 00 00 00 02 00 00 00 04 00 00 00

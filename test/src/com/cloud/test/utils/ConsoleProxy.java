@@ -29,13 +29,10 @@ public class ConsoleProxy implements Runnable {
     private String command;
     private int connectionsMade;
     private long responseTime;
-    public static final Logger s_logger = Logger.getLogger(ConsoleProxy.class
-        .getClass());
+    public static final Logger s_logger = Logger.getLogger(ConsoleProxy.class.getClass());
 
     public ConsoleProxy(String port, String sid, String host) {
-        this.command = "https://" + proxyIp
-                       + ".realhostip.com:8000/getscreen?w=100&h=75&host=" + host
-                       + "&port=" + port + "&sid=" + sid;
+        this.command = "https://" + proxyIp + ".realhostip.com:8000/getscreen?w=100&h=75&host=" + host + "&port=" + port + "&sid=" + sid;
         s_logger.info("Command for a console proxy is " + this.command);
         this.connectionsMade = 0;
         this.responseTime = 0;
@@ -49,6 +46,7 @@ public class ConsoleProxy implements Runnable {
         return this.responseTime;
     }
 
+    @Override
     public void run() {
         while (true) {
 
@@ -96,13 +94,11 @@ public class ConsoleProxy implements Runnable {
                 int index = line.indexOf("Length:");
                 if (index == -1) {
                     continue;
-                }
-                else {
+                } else {
                     int index1 = line.indexOf("Length: 1827");
                     if (index1 == -1) {
                         return status;
-                    }
-                    else
+                    } else
                         status = line;
                 }
 

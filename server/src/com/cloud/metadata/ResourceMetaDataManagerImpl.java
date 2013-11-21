@@ -24,14 +24,15 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.RemoteAccessVpnDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.dc.dao.DataCenterDetailsDao;
 import com.cloud.event.ActionEvent;
@@ -81,7 +82,8 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     @Inject
     RemoteAccessVpnDetailsDao _vpnDetailsDao;
 
-    private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> _daoMap = new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
+    private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> _daoMap =
+        new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

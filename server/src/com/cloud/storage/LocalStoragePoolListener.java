@@ -18,8 +18,9 @@ package com.cloud.storage;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;

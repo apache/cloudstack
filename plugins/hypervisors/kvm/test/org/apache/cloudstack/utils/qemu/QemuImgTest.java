@@ -16,16 +16,18 @@
 // under the License.
 package org.apache.cloudstack.utils.qemu;
 
-import org.junit.Ignore;
-import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.UUID;
+
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
+import org.junit.Ignore;
+import org.junit.Test;
+
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
 @Ignore
 public class QemuImgTest {

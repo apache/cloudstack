@@ -191,7 +191,8 @@ public class DescribeReservedInstancesListingsType implements org.apache.axis2.d
     }
 
     public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+        org.apache.axis2.databinding.ADBException {
         serialize(parentQName, factory, xmlWriter, false);
     }
 
@@ -236,7 +237,8 @@ public class DescribeReservedInstancesListingsType implements org.apache.axis2.d
             if (localReservedInstancesListingSet == null) {
                 throw new org.apache.axis2.databinding.ADBException("reservedInstancesListingSet cannot be null!!");
             }
-            localReservedInstancesListingSet.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "reservedInstancesListingSet"), factory, xmlWriter);
+            localReservedInstancesListingSet.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "reservedInstancesListingSet"), factory,
+                xmlWriter);
         }
         if (localReservedInstancesSetTracker) {
             if (localReservedInstancesSet == null) {
@@ -257,9 +259,8 @@ public class DescribeReservedInstancesListingsType implements org.apache.axis2.d
     /**
      * Util method to write an attribute with the ns prefix
      */
-    private void
-        writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+    private void writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue,
+        javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
         if (xmlWriter.getPrefix(namespace) == null) {
             xmlWriter.writeNamespace(prefix, namespace);
             xmlWriter.setPrefix(prefix, namespace);
@@ -483,7 +484,8 @@ public class DescribeReservedInstancesListingsType implements org.apache.axis2.d
                 while (!reader.isStartElement() && !reader.isEndElement())
                     reader.next();
 
-                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "reservedInstancesListingSet").equals(reader.getName())) {
+                if (reader.isStartElement() &&
+                    new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "reservedInstancesListingSet").equals(reader.getName())) {
 
                     object.setReservedInstancesListingSet(com.amazon.ec2.DescribeReservedInstancesListingSetType.Factory.parse(reader));
 

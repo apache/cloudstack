@@ -19,16 +19,16 @@ package org.apache.cloudstack.api.command.test;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
+
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
 
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.StorageService;

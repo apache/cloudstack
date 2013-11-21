@@ -74,7 +74,8 @@ public class AddBigSwitchVnsDeviceCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             BigSwitchVnsDeviceVO bigswitchVnsDeviceVO = _bigswitchVnsElementService.addBigSwitchVnsDevice(this);
             if (bigswitchVnsDeviceVO != null) {

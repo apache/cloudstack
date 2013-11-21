@@ -17,6 +17,7 @@
 package com.cloud.utils.nio;
 
 public class TrustAllManager implements javax.net.ssl.TrustManager, javax.net.ssl.X509TrustManager {
+    @Override
     public java.security.cert.X509Certificate[] getAcceptedIssuers() {
         return null;
     }
@@ -29,10 +30,12 @@ public class TrustAllManager implements javax.net.ssl.TrustManager, javax.net.ss
         return true;
     }
 
+    @Override
     public void checkServerTrusted(java.security.cert.X509Certificate[] certs, String authType) throws java.security.cert.CertificateException {
         return;
     }
 
+    @Override
     public void checkClientTrusted(java.security.cert.X509Certificate[] certs, String authType) throws java.security.cert.CertificateException {
         return;
     }

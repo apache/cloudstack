@@ -16,16 +16,15 @@
 // under the License.
 package com.cloud.network.dao;
 
-import com.cloud.network.lb.SslCert;
-import com.cloud.utils.db.Encrypt;
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.InternalIdentity;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import java.util.UUID;
+
+import com.cloud.network.lb.SslCert;
+import com.cloud.utils.db.Encrypt;
 
 @Entity
 @Table(name = "sslcerts")

@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.GET;
-import javax.ws.rs.QueryParam;
 
 /**
  * All entities returned by the Cloud Orchestration Platform must implement

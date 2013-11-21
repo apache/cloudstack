@@ -19,25 +19,17 @@ package org.apache.cloudstack.api;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
-import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
 import org.apache.cloudstack.api.response.UcsProfileResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.server.ManagementService;
 import com.cloud.ucs.manager.UcsManager;
 import com.cloud.user.Account;
 
@@ -48,7 +40,11 @@ public class ListUcsProfileCmd extends BaseListCmd {
     @Inject
     UcsManager mgr;
 
-    @Parameter(name = ApiConstants.UCS_MANAGER_ID, type = CommandType.UUID, entityType = UcsManagerResponse.class, description = "the id for the ucs manager", required = true)
+    @Parameter(name = ApiConstants.UCS_MANAGER_ID,
+               type = CommandType.UUID,
+               entityType = UcsManagerResponse.class,
+               description = "the id for the ucs manager",
+               required = true)
     private Long ucsManagerId;
 
     public Long getUcsManagerId() {
@@ -60,8 +56,8 @@ public class ListUcsProfileCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
-        NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException, NetworkRuleConflictException {
         try {
             ListResponse<UcsProfileResponse> response = mgr.listUcsProfiles(this);
             response.setResponseName(getCommandName());

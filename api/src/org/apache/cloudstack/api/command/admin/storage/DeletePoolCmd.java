@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.storage;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -24,7 +26,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
@@ -43,7 +44,7 @@ public class DeletePoolCmd extends BaseCmd {
     private Long id;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force destroy storage pool "
-                                                                                                       + "(force expunge volumes in Destroyed state as a part of pool removal)")
+        + "(force expunge volumes in Destroyed state as a part of pool removal)")
     private Boolean forced;
 
     // ///////////////////////////////////////////////////
@@ -81,7 +82,8 @@ public class DeletePoolCmd extends BaseCmd {
         } else {
             StoragePool pool = _storageService.getStoragePool(id);
             if (pool != null && pool.getStatus() == StoragePoolStatus.Removed) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to finish storage pool removal. The storage pool will not be used but cleanup is needed");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
+                    "Failed to finish storage pool removal. The storage pool will not be used but cleanup is needed");
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete storage pool");
             }

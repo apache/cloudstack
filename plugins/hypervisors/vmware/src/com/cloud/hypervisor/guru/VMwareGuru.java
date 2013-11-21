@@ -27,16 +27,11 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
-import com.cloud.host.Host;
-import com.cloud.storage.Storage;
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.Command;
@@ -44,8 +39,8 @@ import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.UnregisterNicCommand;
-import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
 import com.cloud.agent.api.storage.CreateVolumeOVACommand;
 import com.cloud.agent.api.storage.PrepareOVAPackingCommand;
 import com.cloud.agent.api.to.DataObjectType;
@@ -79,6 +74,7 @@ import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.secstorage.CommandExecLogVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.Storage;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
@@ -146,7 +142,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             details = new HashMap<String, String>();
 
         String nicDeviceType = details.get(VmDetailConstants.NIC_ADAPTER);
-        if (vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO || vm.getVirtualMachine() instanceof SecondaryStorageVmVO) {
+        if (vm.getVirtualMachine() instanceof DomainRouterVO || vm.getVirtualMachine() instanceof ConsoleProxyVO ||
+            vm.getVirtualMachine() instanceof SecondaryStorageVmVO) {
 
             if (nicDeviceType == null) {
                 details.put(VmDetailConstants.NIC_ADAPTER, _vmwareMgr.getSystemVMDefaultNicAdapterType());
@@ -331,8 +328,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
                 return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
             }
 
-            if (destData.getObjectType() == DataObjectType.VOLUME && destStoreTO.getRole() == DataStoreRole.Primary && srcData.getObjectType() == DataObjectType.TEMPLATE &&
-                srcStoreTO.getRole() == DataStoreRole.Primary) {
+            if (destData.getObjectType() == DataObjectType.VOLUME && destStoreTO.getRole() == DataStoreRole.Primary &&
+                srcData.getObjectType() == DataObjectType.TEMPLATE && srcStoreTO.getRole() == DataStoreRole.Primary) {
                 needDelegation = false;
             } else {
                 needDelegation = true;
@@ -375,9 +372,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             cmd.setContextParam("noderuninfo", String.format("%d-%d", _clusterMgr.getManagementNodeId(), _clusterMgr.getCurrentRunId()));
             cmd.setContextParam("vCenterSessionTimeout", String.valueOf(_vmwareMgr.getVcenterSessionTimeout()));
 
-            if (cmd instanceof BackupSnapshotCommand || cmd instanceof CreatePrivateTemplateFromVolumeCommand || cmd instanceof CreatePrivateTemplateFromSnapshotCommand ||
-                cmd instanceof CopyVolumeCommand || cmd instanceof CopyCommand || cmd instanceof CreateVolumeOVACommand || cmd instanceof PrepareOVAPackingCommand ||
-                cmd instanceof CreateVolumeFromSnapshotCommand) {
+            if (cmd instanceof BackupSnapshotCommand || cmd instanceof CreatePrivateTemplateFromVolumeCommand ||
+                cmd instanceof CreatePrivateTemplateFromSnapshotCommand || cmd instanceof CopyVolumeCommand || cmd instanceof CopyCommand ||
+                cmd instanceof CreateVolumeOVACommand || cmd instanceof PrepareOVAPackingCommand || cmd instanceof CreateVolumeFromSnapshotCommand) {
 
                 String workerName = _vmwareMgr.composeWorkerName();
                 long checkPointId = 1;
@@ -432,7 +429,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
                 // We need the traffic label to figure out which vSwitch has the
                 // portgroup
                 PhysicalNetworkTrafficTypeVO trafficTypeVO = _physicalNetworkTrafficTypeDao.findBy(networkVO.getPhysicalNetworkId(), networkVO.getTrafficType());
-                UnregisterNicCommand unregisterNicCommand = new UnregisterNicCommand(vm.getInstanceName(), trafficTypeVO.getVmwareNetworkLabel(), UUID.fromString(nic.getUuid()));
+                UnregisterNicCommand unregisterNicCommand =
+                    new UnregisterNicCommand(vm.getInstanceName(), trafficTypeVO.getVmwareNetworkLabel(), UUID.fromString(nic.getUuid()));
                 commands.add(unregisterNicCommand);
             }
         }

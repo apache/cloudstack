@@ -20,9 +20,20 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
 import javax.ejb.Local;
+
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
+
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Network;
+import com.xensource.xenapi.PIF;
+import com.xensource.xenapi.Types.IpConfigurationMode;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VLAN;
+import com.xensource.xenapi.VM;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckOnHostAnswer;
@@ -36,14 +47,6 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.Network;
-import com.xensource.xenapi.PIF;
-import com.xensource.xenapi.Types.IpConfigurationMode;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VLAN;
-import com.xensource.xenapi.VM;
 
 @Local(value = ServerResource.class)
 public class XenServer56Resource extends CitrixResourceBase {

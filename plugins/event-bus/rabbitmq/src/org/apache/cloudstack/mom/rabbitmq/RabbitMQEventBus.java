@@ -19,18 +19,6 @@
 
 package org.apache.cloudstack.mom.rabbitmq;
 
-import com.rabbitmq.client.*;
-
-import org.apache.cloudstack.framework.events.*;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
-
-import com.cloud.utils.Ternary;
-import com.cloud.utils.component.ManagerBase;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-
 import java.io.IOException;
 import java.net.ConnectException;
 import java.util.Map;
@@ -38,6 +26,32 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+
+import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AlreadyClosedException;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
+import com.rabbitmq.client.MessageProperties;
+import com.rabbitmq.client.ShutdownListener;
+import com.rabbitmq.client.ShutdownSignalException;
+
+import org.apache.cloudstack.framework.events.Event;
+import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.cloudstack.framework.events.EventSubscriber;
+import org.apache.cloudstack.framework.events.EventTopic;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+
+import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ManagerBase;
 
 @Local(value = EventBus.class)
 public class RabbitMQEventBus extends ManagerBase implements EventBus {
@@ -108,31 +122,32 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
     }
 
     public void setServer(String amqpHost) {
-        this.amqpHost = amqpHost;
+        RabbitMQEventBus.amqpHost = amqpHost;
     }
 
     public void setUsername(String username) {
-        this.username = username;
+        RabbitMQEventBus.username = username;
     }
 
     public void setPassword(String password) {
-        this.password = password;
+        RabbitMQEventBus.password = password;
     }
 
     public void setPort(Integer port) {
-        this.port = port;
+        RabbitMQEventBus.port = port;
     }
 
+    @Override
     public void setName(String name) {
         this.name = name;
     }
 
     public void setExchange(String exchange) {
-        this.amqpExchangeName = exchange;
+        RabbitMQEventBus.amqpExchangeName = exchange;
     }
 
     public void setRetryInterval(Integer retryInterval) {
-        this.retryInterval = retryInterval;
+        RabbitMQEventBus.retryInterval = retryInterval;
     }
 
     /** Call to subscribe to interested set of events

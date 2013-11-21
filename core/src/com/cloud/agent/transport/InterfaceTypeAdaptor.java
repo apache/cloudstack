@@ -19,7 +19,6 @@ package com.cloud.agent.transport;
 import java.lang.reflect.Type;
 import java.util.Map;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
@@ -28,6 +27,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class InterfaceTypeAdaptor<T> implements JsonDeserializer<T>, JsonSerializer<T> {
 

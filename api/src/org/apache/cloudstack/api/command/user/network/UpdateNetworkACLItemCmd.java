@@ -16,23 +16,23 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.vpc.NetworkACLItem;
-import com.cloud.user.Account;
-import com.cloud.utils.net.NetUtils;
-
-import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.NetworkACLItemResponse;
-import org.apache.cloudstack.api.response.NetworkACLResponse;
-import org.apache.cloudstack.api.response.NetworkResponse;
-import org.apache.cloudstack.context.CallContext;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.NetworkACLItemResponse;
+import org.apache.cloudstack.context.CallContext;
+
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.user.Account;
 
 @APICommand(name = "updateNetworkACLItem", description = "Updates ACL Item with specified Id", responseObject = NetworkACLItemResponse.class)
 public class UpdateNetworkACLItemCmd extends BaseAsyncCmd {
@@ -44,10 +44,16 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkACLItemResponse.class, required = true, description = "the ID of the network ACL Item")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = NetworkACLItemResponse.class,
+               required = true,
+               description = "the ID of the network ACL Item")
     private Long id;
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "the protocol for the ACL rule. Valid values are TCP/UDP/ICMP/ALL or valid protocol number")
+    @Parameter(name = ApiConstants.PROTOCOL,
+               type = CommandType.STRING,
+               description = "the protocol for the ACL rule. Valid values are TCP/UDP/ICMP/ALL or valid protocol number")
     private String protocol;
 
     @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "the starting port of ACL")
@@ -66,7 +72,7 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCmd {
     private Integer icmpCode;
 
     @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "the traffic type for the ACL,"
-                                                                                          + "can be Ingress or Egress, defaulted to Ingress if not specified")
+        + "can be Ingress or Egress, defaulted to Ingress if not specified")
     private String trafficType;
 
     @Parameter(name = ApiConstants.NUMBER, type = CommandType.INTEGER, description = "The network of the vm the ACL will be created for")
@@ -157,8 +163,9 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException {
         CallContext.current().setEventDetails("Rule Id: " + getId());
-        NetworkACLItem aclItem = _networkACLService.updateNetworkACLItem(getId(), getProtocol(), getSourceCidrList(), getTrafficType(), getAction(), getNumber(),
-            getSourcePortStart(), getSourcePortEnd(), getIcmpCode(), getIcmpType());
+        NetworkACLItem aclItem =
+            _networkACLService.updateNetworkACLItem(getId(), getProtocol(), getSourceCidrList(), getTrafficType(), getAction(), getNumber(), getSourcePortStart(),
+                getSourcePortEnd(), getIcmpCode(), getIcmpType());
         if (aclItem == null) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update network ACL Item");
         }

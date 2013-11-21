@@ -38,8 +38,8 @@ public class VncServerPacketReceiver implements Runnable {
     private final FrameBufferUpdateListener fburListener;
     private final ConsoleProxyClientListener clientListener;
 
-    public VncServerPacketReceiver(DataInputStream is, BufferedImageCanvas canvas, VncScreenDescription screen, VncClient vncConnection, FrameBufferUpdateListener fburListener,
-            ConsoleProxyClientListener clientListener) {
+    public VncServerPacketReceiver(DataInputStream is, BufferedImageCanvas canvas, VncScreenDescription screen, VncClient vncConnection,
+            FrameBufferUpdateListener fburListener, ConsoleProxyClientListener clientListener) {
         this.screen = screen;
         this.canvas = canvas;
         this.is = is;

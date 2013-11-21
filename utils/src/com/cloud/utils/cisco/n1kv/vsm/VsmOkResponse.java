@@ -26,6 +26,7 @@ public class VsmOkResponse extends VsmResponse {
         initialize();
     }
 
+    @Override
     protected void parse(Element root) {
         NodeList list = root.getElementsByTagName("nf:rpc-error");
         if (list.getLength() == 0) {

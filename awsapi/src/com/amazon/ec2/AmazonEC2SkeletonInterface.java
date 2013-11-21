@@ -50,7 +50,8 @@ public interface AmazonEC2SkeletonInterface {
                                 * @param resetNetworkInterfaceAttribute
      */
 
-    public com.amazon.ec2.ResetNetworkInterfaceAttributeResponse resetNetworkInterfaceAttribute(com.amazon.ec2.ResetNetworkInterfaceAttribute resetNetworkInterfaceAttribute);
+    public com.amazon.ec2.ResetNetworkInterfaceAttributeResponse resetNetworkInterfaceAttribute(
+        com.amazon.ec2.ResetNetworkInterfaceAttribute resetNetworkInterfaceAttribute);
 
     /**
      * Auto generated method signature
@@ -427,7 +428,8 @@ public interface AmazonEC2SkeletonInterface {
                                 * @param createReservedInstancesListing
      */
 
-    public com.amazon.ec2.CreateReservedInstancesListingResponse createReservedInstancesListing(com.amazon.ec2.CreateReservedInstancesListing createReservedInstancesListing);
+    public com.amazon.ec2.CreateReservedInstancesListingResponse createReservedInstancesListing(
+        com.amazon.ec2.CreateReservedInstancesListing createReservedInstancesListing);
 
     /**
      * Auto generated method signature
@@ -627,7 +629,8 @@ public interface AmazonEC2SkeletonInterface {
                                 * @param cancelReservedInstancesListing
      */
 
-    public com.amazon.ec2.CancelReservedInstancesListingResponse cancelReservedInstancesListing(com.amazon.ec2.CancelReservedInstancesListing cancelReservedInstancesListing);
+    public com.amazon.ec2.CancelReservedInstancesListingResponse cancelReservedInstancesListing(
+        com.amazon.ec2.CancelReservedInstancesListing cancelReservedInstancesListing);
 
     /**
      * Auto generated method signature
@@ -683,8 +686,8 @@ public interface AmazonEC2SkeletonInterface {
                                 * @param describeSpotDatafeedSubscription
      */
 
-    public com.amazon.ec2.DescribeSpotDatafeedSubscriptionResponse
-        describeSpotDatafeedSubscription(com.amazon.ec2.DescribeSpotDatafeedSubscription describeSpotDatafeedSubscription);
+    public com.amazon.ec2.DescribeSpotDatafeedSubscriptionResponse describeSpotDatafeedSubscription(
+        com.amazon.ec2.DescribeSpotDatafeedSubscription describeSpotDatafeedSubscription);
 
     /**
      * Auto generated method signature
@@ -732,7 +735,8 @@ public interface AmazonEC2SkeletonInterface {
                                 * @param createSpotDatafeedSubscription
      */
 
-    public com.amazon.ec2.CreateSpotDatafeedSubscriptionResponse createSpotDatafeedSubscription(com.amazon.ec2.CreateSpotDatafeedSubscription createSpotDatafeedSubscription);
+    public com.amazon.ec2.CreateSpotDatafeedSubscriptionResponse createSpotDatafeedSubscription(
+        com.amazon.ec2.CreateSpotDatafeedSubscription createSpotDatafeedSubscription);
 
     /**
      * Auto generated method signature
@@ -757,7 +761,8 @@ public interface AmazonEC2SkeletonInterface {
                                 * @param modifyNetworkInterfaceAttribute
      */
 
-    public com.amazon.ec2.ModifyNetworkInterfaceAttributeResponse modifyNetworkInterfaceAttribute(com.amazon.ec2.ModifyNetworkInterfaceAttribute modifyNetworkInterfaceAttribute);
+    public com.amazon.ec2.ModifyNetworkInterfaceAttributeResponse modifyNetworkInterfaceAttribute(
+        com.amazon.ec2.ModifyNetworkInterfaceAttribute modifyNetworkInterfaceAttribute);
 
     /**
      * Auto generated method signature
@@ -1119,7 +1124,8 @@ public interface AmazonEC2SkeletonInterface {
                                 * @param deleteSpotDatafeedSubscription
      */
 
-    public com.amazon.ec2.DeleteSpotDatafeedSubscriptionResponse deleteSpotDatafeedSubscription(com.amazon.ec2.DeleteSpotDatafeedSubscription deleteSpotDatafeedSubscription);
+    public com.amazon.ec2.DeleteSpotDatafeedSubscriptionResponse deleteSpotDatafeedSubscription(
+        com.amazon.ec2.DeleteSpotDatafeedSubscription deleteSpotDatafeedSubscription);
 
     /**
      * Auto generated method signature

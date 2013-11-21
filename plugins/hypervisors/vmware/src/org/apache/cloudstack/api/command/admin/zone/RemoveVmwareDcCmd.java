@@ -69,7 +69,7 @@ public class RemoveVmwareDcCmd extends BaseCmd {
             }
         } catch (ResourceInUseException ex) {
             s_logger.warn("The zone has one or more resources (like cluster), hence not able to remove VMware datacenter from zone."
-                          + " Please remove all resource from zone, and retry. Exception: ", ex);
+                + " Please remove all resource from zone, and retry. Exception: ", ex);
             ServerApiException e = new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
             for (String proxyObj : ex.getIdProxyList()) {
                 e.addProxyObject(proxyObj);

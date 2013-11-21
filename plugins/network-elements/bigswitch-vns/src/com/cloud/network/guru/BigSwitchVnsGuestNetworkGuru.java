@@ -127,7 +127,8 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
+    public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException {
         assert (network.getState() == State.Implementing) : "Why are we implementing " + network;
 
         long dcId = dest.getDataCenter().getId();
@@ -135,8 +136,9 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
         //get physical network id
         long physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
 
-        NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
-            network.getDataCenterId(), physicalNetworkId);
+        NetworkVO implemented =
+            new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
+                network.getDataCenterId(), physicalNetworkId);
 
         if (network.getGateway() != null) {
             implemented.setGateway(network.getGateway());
@@ -146,7 +148,8 @@ public class BigSwitchVnsGuestNetworkGuru extends GuestNetworkGuru {
             implemented.setCidr(network.getCidr());
         }
 
-        String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), context.getReservationId(), UseSystemGuestVlans.valueIn(network.getAccountId()));
+        String vnet =
+            _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), context.getReservationId(), UseSystemGuestVlans.valueIn(network.getAccountId()));
         if (vnet == null) {
             throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a " + "part of network " + network + " implement ", DataCenter.class, dcId);
         }

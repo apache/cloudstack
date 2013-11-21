@@ -22,11 +22,11 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.AffinityGroupJoinVO;

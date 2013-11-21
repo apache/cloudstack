@@ -22,11 +22,12 @@ import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
 
+import com.google.gson.reflect.TypeToken;
+
 import com.cloud.gate.testcase.BaseTestCase;
 import com.cloud.stack.CloudStackClient;
 import com.cloud.stack.CloudStackCommand;
 import com.cloud.stack.models.CloudStackUserVm;
-import com.google.gson.reflect.TypeToken;
 
 public class CloudStackClientTestCase extends BaseTestCase {
     protected final static Logger logger = Logger.getLogger(CloudStackClientTestCase.class);
@@ -57,8 +58,9 @@ public class CloudStackClientTestCase extends BaseTestCase {
         command.setParam("page", "1");
         command.setParam("pagesize", "20");
         try {
-            List<CloudStackUserVm> vms = client.listCall(command, API_KEY, SECRET_KEY, "listvirtualmachinesresponse", "virtualmachine", new TypeToken<List<CloudStackUserVm>>() {
-            }.getType());
+            List<CloudStackUserVm> vms =
+                client.listCall(command, API_KEY, SECRET_KEY, "listvirtualmachinesresponse", "virtualmachine", new TypeToken<List<CloudStackUserVm>>() {
+                }.getType());
 
             for (CloudStackUserVm vm : vms) {
                 logger.info("id: " + vm.getId() + ", name: " + vm.getName());

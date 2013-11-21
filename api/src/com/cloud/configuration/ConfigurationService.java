@@ -18,8 +18,6 @@ package com.cloud.configuration;
 
 import java.util.List;
 
-import javax.naming.NamingException;
-
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;

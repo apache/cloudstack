@@ -59,18 +59,22 @@ public class RegionVO implements Region {
         this.gslbEnabled = true;
     }
 
+    @Override
     public int getId() {
         return id;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public void setName(String name) {
         this.name = name;
     }
 
+    @Override
     public String getEndPoint() {
         return endPoint;
     }

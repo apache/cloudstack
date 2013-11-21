@@ -70,7 +70,7 @@ public class RawRect extends AbstractRect {
 
             default:
                 throw new RuntimeException("Unsupported data buffer in buffered image: expected data buffer of type int (DataBufferInt). Actual data buffer type: " +
-                                           dataBuf.getClass().getSimpleName());
+                    dataBuf.getClass().getSimpleName());
         }
     }
 }

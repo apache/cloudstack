@@ -16,11 +16,10 @@
 // under the License.
 package com.cloud.network.vpc;
 
+import java.util.List;
+
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.user.Account;
-
-import java.util.List;
 
 public interface NetworkACLManager {
 

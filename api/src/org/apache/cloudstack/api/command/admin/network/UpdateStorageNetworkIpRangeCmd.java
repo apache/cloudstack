@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -23,7 +25,6 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.event.EventTypes;
@@ -44,7 +45,11 @@ public class UpdateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StorageNetworkIpRangeResponse.class, required = true, description = "UUID of storage network ip range")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = StorageNetworkIpRangeResponse.class,
+               required = true,
+               description = "UUID of storage network ip range")
     private Long id;
 
     @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "the beginning IP address")
@@ -93,7 +98,8 @@ public class UpdateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             StorageNetworkIpRange result = _storageNetworkService.updateIpRange(this);
             StorageNetworkIpRangeResponse response = _responseGenerator.createStorageNetworkIpRangeResponse(result);

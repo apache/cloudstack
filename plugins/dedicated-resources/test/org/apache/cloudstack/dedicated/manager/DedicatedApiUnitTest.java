@@ -28,10 +28,6 @@ import javax.inject.Inject;
 
 import junit.framework.Assert;
 
-import org.apache.cloudstack.affinity.AffinityGroupService;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.dedicated.DedicatedResourceManagerImpl;
-import org.apache.cloudstack.test.utils.SpringUtils;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
@@ -50,6 +46,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
+import org.apache.cloudstack.affinity.AffinityGroupService;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.dedicated.DedicatedResourceManagerImpl;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;

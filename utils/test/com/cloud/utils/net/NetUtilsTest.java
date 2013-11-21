@@ -36,7 +36,8 @@ public class NetUtilsTest extends TestCase {
     public void testGetRandomIpFromCidr() {
         String cidr = "192.168.124.1";
         long ip = NetUtils.getRandomIpFromCidr(cidr, 24, new TreeSet<Long>());
-        assertEquals("The ip " + NetUtils.long2Ip(ip) + " retrieved must be within the cidr " + cidr + "/24", cidr.substring(0, 12), NetUtils.long2Ip(ip).substring(0, 12));
+        assertEquals("The ip " + NetUtils.long2Ip(ip) + " retrieved must be within the cidr " + cidr + "/24", cidr.substring(0, 12), NetUtils.long2Ip(ip)
+            .substring(0, 12));
 
         ip = NetUtils.getRandomIpFromCidr(cidr, 16, new TreeSet<Long>());
         assertEquals("The ip " + NetUtils.long2Ip(ip) + " retrieved must be within the cidr " + cidr + "/16", cidr.substring(0, 8), NetUtils.long2Ip(ip).substring(0, 8));

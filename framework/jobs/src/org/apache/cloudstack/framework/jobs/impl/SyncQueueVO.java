@@ -17,9 +17,8 @@
 
 package org.apache.cloudstack.framework.jobs.impl;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.Date;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -28,6 +27,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "sync_queue")
@@ -61,6 +62,7 @@ public class SyncQueueVO implements InternalIdentity {
     @Column(name = "queue_size_limit")
     private long queueSizeLimit = 0;
 
+    @Override
     public long getId() {
         return id;
     }
@@ -105,6 +107,7 @@ public class SyncQueueVO implements InternalIdentity {
         this.lastUpdated = lastUpdated;
     }
 
+    @Override
     public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append("SyncQueueVO {id:").append(getId());

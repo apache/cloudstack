@@ -33,9 +33,9 @@ import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.SecurityGroupRuleAnswer;
+import com.cloud.agent.api.SecurityGroupRuleAnswer.FailureReason;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.api.SecurityGroupRuleAnswer.FailureReason;
 import com.cloud.agent.manager.Commands;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Host;
@@ -92,9 +92,11 @@ public class SecurityGroupListener implements Listener {
                 } else {
                     _workDao.updateStep(ruleAnswer.getVmId(), ruleAnswer.getLogSequenceNumber(), Step.Error);
                     ;
-                    s_logger.debug("Failed to program rule " + ruleAnswer.toString() + " into host " + agentId + " due to " + ruleAnswer.getDetails() + " and updated  jobs");
+                    s_logger.debug("Failed to program rule " + ruleAnswer.toString() + " into host " + agentId + " due to " + ruleAnswer.getDetails() +
+                        " and updated  jobs");
                     if (ruleAnswer.getReason() == FailureReason.CANNOT_BRIDGE_FIREWALL) {
-                        s_logger.debug("Not retrying security group rules for vm " + ruleAnswer.getVmId() + " on failure since host " + agentId + " cannot do bridge firewalling");
+                        s_logger.debug("Not retrying security group rules for vm " + ruleAnswer.getVmId() + " on failure since host " + agentId +
+                            " cannot do bridge firewalling");
                     } else if (ruleAnswer.getReason() == FailureReason.PROGRAMMING_FAILED) {
                         if (checkShouldRetryOnFailure(ruleAnswer.getVmId())) {
                             s_logger.debug("Retrying security group rules on failure for vm " + ruleAnswer.getVmId());

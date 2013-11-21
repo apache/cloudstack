@@ -24,8 +24,6 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.netapp.LunVO;
-import com.cloud.netapp.NetappVolumeVO;
-import com.cloud.netapp.PoolVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;

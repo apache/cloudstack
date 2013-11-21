@@ -34,10 +34,11 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "autoscale_vmprofiles")

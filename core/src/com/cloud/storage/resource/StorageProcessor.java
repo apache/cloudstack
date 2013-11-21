@@ -27,8 +27,6 @@ import org.apache.cloudstack.storage.command.ForgetObjectCmd;
 import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 
 import com.cloud.agent.api.Answer;
-import org.apache.cloudstack.storage.command.ForgetObjectCmd;
-import org.apache.cloudstack.storage.command.IntroduceObjectCmd;
 
 public interface StorageProcessor {
     public Answer copyTemplateToPrimaryStorage(CopyCommand cmd);

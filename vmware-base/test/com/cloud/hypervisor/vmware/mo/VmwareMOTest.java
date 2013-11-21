@@ -17,8 +17,6 @@
 
 package com.cloud.hypervisor.vmware.mo;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-
 public class VmwareMOTest {
 
     public static void main(String args[]) {

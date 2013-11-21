@@ -27,12 +27,14 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 
 import com.cloud.event.dao.EventDao;
 import com.cloud.server.ManagementServer;
+import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
@@ -136,7 +138,8 @@ public class ActionEventUtils {
         return event.getId();
     }
 
-    private static Event persistActionEvent(Long userId, Long accountId, Long domainId, String level, String type, Event.State state, String description, Long startEventId) {
+    private static Event persistActionEvent(Long userId, Long accountId, Long domainId, String level, String type, Event.State state, String description,
+        Long startEventId) {
         EventVO event = new EventVO();
         event.setUserId(userId);
         event.setAccountId(accountId);
@@ -174,8 +177,8 @@ public class ActionEventUtils {
             entityUuid = (String)context.getContextParameter(EntityUuid);
         }
 
-        org.apache.cloudstack.framework.events.Event event = new org.apache.cloudstack.framework.events.Event(ManagementServer.Name, eventCategory, eventType,
-            EventTypes.getEntityForEvent(eventType), null);
+        org.apache.cloudstack.framework.events.Event event =
+            new org.apache.cloudstack.framework.events.Event(ManagementService.Name, eventCategory, eventType, EventTypes.getEntityForEvent(eventType), null);
 
         Map<String, String> eventDescription = new HashMap<String, String>();
         Account account = _accountDao.findById(accountId);

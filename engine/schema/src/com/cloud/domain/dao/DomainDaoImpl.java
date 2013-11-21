@@ -105,8 +105,8 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
             throw new IllegalArgumentException("Domain name is null.  Please specify a valid domain name.");
         }
 
-        long parent = DomainVO.ROOT_DOMAIN;
-        if (domain.getParent() != null && domain.getParent().longValue() >= DomainVO.ROOT_DOMAIN) {
+        long parent = Domain.ROOT_DOMAIN;
+        if (domain.getParent() != null && domain.getParent().longValue() >= Domain.ROOT_DOMAIN) {
             parent = domain.getParent().longValue();
         }
 
@@ -147,7 +147,7 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
     @DB
     public boolean remove(Long id) {
         // check for any active users / domains assigned to the given domain id and don't remove the domain if there are any
-        if (id != null && id.longValue() == DomainVO.ROOT_DOMAIN) {
+        if (id != null && id.longValue() == Domain.ROOT_DOMAIN) {
             s_logger.error("Can not remove domain " + id + " as it is ROOT domain");
             return false;
         }

@@ -154,6 +154,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
 
     Long getPoolId();
 
+    @Override
     State getState();
 
     Date getAttached();

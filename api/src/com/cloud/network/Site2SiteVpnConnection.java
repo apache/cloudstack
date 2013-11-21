@@ -26,6 +26,7 @@ public interface Site2SiteVpnConnection extends ControlledEntity, InternalIdenti
         Pending, Connected, Disconnected, Error,
     }
 
+    @Override
     public long getId();
 
     public String getUuid();

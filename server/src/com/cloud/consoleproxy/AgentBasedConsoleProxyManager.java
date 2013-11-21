@@ -155,7 +155,8 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
             String publicIp = host.getPublicIpAddress();
             if (publicIp == null) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host " + host.getName() + "/" + host.getPrivateIpAddress() + " does not have public interface, we will return its private IP for cosole proxy.");
+                    s_logger.debug("Host " + host.getName() + "/" + host.getPrivateIpAddress() +
+                        " does not have public interface, we will return its private IP for cosole proxy.");
                 }
                 publicIp = host.getPrivateIpAddress();
             }

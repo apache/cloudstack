@@ -35,6 +35,7 @@ public class Test extends TestCase {
         this.setParam(new HashMap<String, String>());
     }
 
+    @Override
     public boolean executeTest() {
 
         int error = 0;
@@ -64,8 +65,9 @@ public class Test extends TestCase {
         for (String portValue : port) {
             try {
                 s_logger.info("public port is " + portValue);
-                String url = "http://" + this.getParam().get("hostip") + ":8096/?command=createNetworkRule&publicPort=" + portValue +
-                             "&privatePort=22&protocol=tcp&isForward=true&securityGroupId=1&account=admin";
+                String url =
+                    "http://" + this.getParam().get("hostip") + ":8096/?command=createNetworkRule&publicPort=" + portValue +
+                        "&privatePort=22&protocol=tcp&isForward=true&securityGroupId=1&account=admin";
                 HttpClient client = new HttpClient();
                 HttpMethod method = new GetMethod(url);
                 int responseCode = client.executeMethod(method);

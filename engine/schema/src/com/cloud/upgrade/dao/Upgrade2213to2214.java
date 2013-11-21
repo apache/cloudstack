@@ -154,7 +154,8 @@ public class Upgrade2213to2214 implements DbUpgrade {
         keys.add("u_op_vm_ruleset_log__instance_id");
         DbUpgradeUtils.dropKeysIfExist(conn, "cloud.op_vm_ruleset_log", keys, false);
         try {
-            PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`op_vm_ruleset_log` ADD CONSTRAINT `u_op_vm_ruleset_log__instance_id` UNIQUE (`instance_id`)");
+            PreparedStatement pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`op_vm_ruleset_log` ADD CONSTRAINT `u_op_vm_ruleset_log__instance_id` UNIQUE (`instance_id`)");
             pstmt.executeUpdate();
             pstmt.close();
         } catch (SQLException e) {
@@ -190,7 +191,8 @@ public class Upgrade2213to2214 implements DbUpgrade {
 
         try {
             PreparedStatement pstmt;
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT `fk_ssh_keypairs__account_id` FOREIGN KEY `fk_ssh_keypairs__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE");
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT `fk_ssh_keypairs__account_id` FOREIGN KEY `fk_ssh_keypairs__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
             pstmt.close();
         } catch (SQLException e) {
@@ -199,7 +201,8 @@ public class Upgrade2213to2214 implements DbUpgrade {
 
         try {
             PreparedStatement pstmt;
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT `fk_ssh_keypairs__domain_id` FOREIGN KEY `fk_ssh_keypairs__domain_id` (`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE");
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT `fk_ssh_keypairs__domain_id` FOREIGN KEY `fk_ssh_keypairs__domain_id` (`domain_id`) REFERENCES `domain` (`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
             pstmt.close();
         } catch (SQLException e) {
@@ -226,7 +229,8 @@ public class Upgrade2213to2214 implements DbUpgrade {
         DbUpgradeUtils.dropKeysIfExist(conn, "cloud.storage_pool_details", keys, true);
         DbUpgradeUtils.dropKeysIfExist(conn, "cloud.storage_pool_details", keys, false);
         try {
-            PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`storage_pool_details` ADD CONSTRAINT `fk_storage_pool_details__pool_id` FOREIGN KEY `fk_storage_pool_details__pool_id`(`pool_id`) REFERENCES `storage_pool`(`id`) ON DELETE CASCADE");
+            PreparedStatement pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`storage_pool_details` ADD CONSTRAINT `fk_storage_pool_details__pool_id` FOREIGN KEY `fk_storage_pool_details__pool_id`(`pool_id`) REFERENCES `storage_pool`(`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
             pstmt.close();
         } catch (SQLException e) {
@@ -240,7 +244,8 @@ public class Upgrade2213to2214 implements DbUpgrade {
         DbUpgradeUtils.dropKeysIfExist(conn, "cloud.security_group", keys, true);
         DbUpgradeUtils.dropKeysIfExist(conn, "cloud.security_group", keys, false);
         try {
-            PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`security_group` ADD CONSTRAINT `fk_security_group__account_id` FOREIGN KEY `fk_security_group__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE");
+            PreparedStatement pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`security_group` ADD CONSTRAINT `fk_security_group__account_id` FOREIGN KEY `fk_security_group__account_id` (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
             pstmt.close();
         } catch (SQLException e) {
@@ -264,13 +269,17 @@ public class Upgrade2213to2214 implements DbUpgrade {
         DbUpgradeUtils.dropKeysIfExist(conn, "cloud.vm_instance", keys, true);
         DbUpgradeUtils.dropKeysIfExist(conn, "cloud.vm_instance", keys, false);
         try {
-            PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__host_id` FOREIGN KEY (`host_id`) REFERENCES `host` (`id`)");
+            PreparedStatement pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__host_id` FOREIGN KEY (`host_id`) REFERENCES `host` (`id`)");
             pstmt.executeUpdate();
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__last_host_id` FOREIGN KEY (`last_host_id`) REFERENCES `host` (`id`)");
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__last_host_id` FOREIGN KEY (`last_host_id`) REFERENCES `host` (`id`)");
             pstmt.executeUpdate();
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`)");
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`)");
             pstmt.executeUpdate();
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__service_offering_id` FOREIGN KEY (`service_offering_id`) REFERENCES `service_offering` (`id`)");
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`vm_instance` ADD CONSTRAINT `fk_vm_instance__service_offering_id` FOREIGN KEY (`service_offering_id`) REFERENCES `service_offering` (`id`)");
             pstmt.executeUpdate();
             pstmt.close();
         } catch (SQLException e) {
@@ -291,11 +300,14 @@ public class Upgrade2213to2214 implements DbUpgrade {
         DbUpgradeUtils.dropKeysIfExist(conn, "cloud.user_ip_address", keys, true);
         DbUpgradeUtils.dropKeysIfExist(conn, "cloud.user_ip_address", keys, false);
         try {
-            PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`)");
+            PreparedStatement pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__account_id` FOREIGN KEY (`account_id`) REFERENCES `account`(`id`)");
             pstmt.executeUpdate();
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__vlan_db_id` FOREIGN KEY (`vlan_db_id`) REFERENCES `vlan`(`id`) ON DELETE CASCADE");
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__vlan_db_id` FOREIGN KEY (`vlan_db_id`) REFERENCES `vlan`(`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE");
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`user_ip_address` ADD CONSTRAINT `fk_user_ip_address__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
             pstmt.close();
         } catch (SQLException e) {

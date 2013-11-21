@@ -17,10 +17,7 @@
 package com.cloud.utils.db;
 
 import java.sql.PreparedStatement;
-import java.util.Date;
-import java.util.TimeZone;
 
-import com.cloud.utils.DateUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DbTestDao extends GenericDaoBase<DbTestVO, Long> implements GenericDao<DbTestVO, Long> {

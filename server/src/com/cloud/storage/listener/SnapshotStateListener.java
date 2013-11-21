@@ -17,27 +17,26 @@
 
 package com.cloud.storage.listener;
 
-import javax.inject.Inject;
-
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-
-import com.cloud.event.EventCategory;
-import com.cloud.server.ManagementServer;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Snapshot.State;
-import com.cloud.storage.Snapshot.Event;
-import com.cloud.storage.Snapshot.State;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.utils.fsm.StateListener;
-import com.cloud.utils.component.ComponentContext;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+
+import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventBusException;
+
+import com.cloud.event.EventCategory;
+import com.cloud.server.ManagementServer;
+import com.cloud.server.ManagementService;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.Event;
+import com.cloud.storage.Snapshot.State;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.fsm.StateListener;
 
 public class SnapshotStateListener implements StateListener<State, Event, SnapshotVO> {
 
@@ -70,8 +69,9 @@ public class SnapshotStateListener implements StateListener<State, Event, Snapsh
         }
 
         String resourceName = getEntityFromClassName(Snapshot.class.getName());
-        org.apache.cloudstack.framework.events.Event eventMsg = new org.apache.cloudstack.framework.events.Event(ManagementServer.Name,
-            EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(), event, resourceName, vo.getUuid());
+        org.apache.cloudstack.framework.events.Event eventMsg =
+            new org.apache.cloudstack.framework.events.Event(ManagementService.Name, EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(), event, resourceName,
+                vo.getUuid());
         Map<String, String> eventDescription = new HashMap<String, String>();
         eventDescription.put("resource", resourceName);
         eventDescription.put("id", vo.getUuid());

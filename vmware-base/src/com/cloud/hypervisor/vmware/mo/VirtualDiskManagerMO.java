@@ -18,10 +18,11 @@ package com.cloud.hypervisor.vmware.mo;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.HostDiskDimensionsChs;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.VirtualDiskSpec;
+
+import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class VirtualDiskManagerMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(VirtualDiskManagerMO.class);
@@ -38,8 +39,8 @@ public class VirtualDiskManagerMO extends BaseMO {
         super(context, morType, morValue);
     }
 
-    public void copyVirtualDisk(String srcName, ManagedObjectReference morSrcDc, String destName, ManagedObjectReference morDestDc, VirtualDiskSpec diskSpec, boolean force)
-        throws Exception {
+    public void copyVirtualDisk(String srcName, ManagedObjectReference morSrcDc, String destName, ManagedObjectReference morDestDc, VirtualDiskSpec diskSpec,
+        boolean force) throws Exception {
 
         ManagedObjectReference morTask = _context.getService().copyVirtualDiskTask(_mor, srcName, morSrcDc, destName, morDestDc, diskSpec, force);
 

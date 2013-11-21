@@ -100,7 +100,8 @@ public class VMSnapshotHelperImpl implements VMSnapshotHelper {
         if (storagePool == null) {
             throw new InvalidParameterValueException("storage pool is not found");
         }
-        List<HostVO> listHost = hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, storagePool.getClusterId(), storagePool.getPodId(), storagePool.getDataCenterId(), null);
+        List<HostVO> listHost =
+            hostDao.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, storagePool.getClusterId(), storagePool.getPodId(), storagePool.getDataCenterId(), null);
         if (listHost == null || listHost.size() == 0) {
             throw new InvalidParameterValueException("no host in up state is found");
         }

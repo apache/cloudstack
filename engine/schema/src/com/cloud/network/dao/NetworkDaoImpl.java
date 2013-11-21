@@ -25,15 +25,16 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+
 import com.cloud.network.Network;
+import com.cloud.network.Network.Event;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
-import com.cloud.network.Network.Event;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
@@ -42,10 +43,17 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.utils.db.*;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.SequenceFetcher;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.net.NetUtils;
 
 @Component
@@ -191,7 +199,8 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         SearchBuilder<NetworkAccountVO> join4 = _accountsDao.createSearchBuilder();
         join4.and("account", join4.entity().getAccountId(), Op.EQ);
         join4.and("isOwner", join4.entity().isOwner(), Op.EQ);
-        NetworksRegularUserCanCreateSearch.join("accounts", join4, NetworksRegularUserCanCreateSearch.entity().getId(), join4.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
+        NetworksRegularUserCanCreateSearch.join("accounts", join4, NetworksRegularUserCanCreateSearch.entity().getId(), join4.entity().getNetworkId(),
+            JoinBuilder.JoinType.INNER);
         SearchBuilder<NetworkOfferingVO> join5 = _ntwkOffDao.createSearchBuilder();
         join5.and("specifyVlan", join5.entity().getSpecifyVlan(), Op.EQ);
         NetworksRegularUserCanCreateSearch.join("ntwkOff", join5, NetworksRegularUserCanCreateSearch.entity().getNetworkOfferingId(), join5.entity().getId(),
@@ -221,8 +230,8 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         OfferingAccountNetworkSearch.select(null, Func.DISTINCT, OfferingAccountNetworkSearch.entity().getId());
         SearchBuilder<NetworkOfferingVO> ntwkOfferingJoin = _ntwkOffDao.createSearchBuilder();
         ntwkOfferingJoin.and("isSystem", ntwkOfferingJoin.entity().isSystemOnly(), Op.EQ);
-        OfferingAccountNetworkSearch.join("ntwkOfferingSearch", ntwkOfferingJoin, OfferingAccountNetworkSearch.entity().getNetworkOfferingId(), ntwkOfferingJoin.entity().getId(),
-            JoinBuilder.JoinType.LEFT);
+        OfferingAccountNetworkSearch.join("ntwkOfferingSearch", ntwkOfferingJoin, OfferingAccountNetworkSearch.entity().getNetworkOfferingId(), ntwkOfferingJoin.entity()
+            .getId(), JoinBuilder.JoinType.LEFT);
         SearchBuilder<NetworkAccountVO> ntwkAccountJoin = _accountsDao.createSearchBuilder();
         ntwkAccountJoin.and("accountId", ntwkAccountJoin.entity().getAccountId(), Op.EQ);
         OfferingAccountNetworkSearch.join("ntwkAccountSearch", ntwkAccountJoin, OfferingAccountNetworkSearch.entity().getId(), ntwkAccountJoin.entity().getNetworkId(),

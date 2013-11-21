@@ -18,6 +18,8 @@ package com.cloud.network.element;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
+
 import com.cloud.api.commands.AddExternalLoadBalancerCmd;
 import com.cloud.api.commands.AddF5LoadBalancerCmd;
 import com.cloud.api.commands.ConfigureF5LoadBalancerCmd;
@@ -30,8 +32,6 @@ import com.cloud.api.response.F5LoadBalancerResponse;
 import com.cloud.host.Host;
 import com.cloud.network.Network;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
-
-import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
 import com.cloud.utils.component.PluggableService;
 
 @SuppressWarnings("deprecation")

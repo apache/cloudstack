@@ -28,7 +28,6 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.AsyncJob.JournalType;
 
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDao;

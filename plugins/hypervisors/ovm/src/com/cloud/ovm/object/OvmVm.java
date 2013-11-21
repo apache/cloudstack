@@ -22,8 +22,6 @@ import java.util.Map;
 
 import org.apache.xmlrpc.XmlRpcException;
 
-import com.cloud.ovm.object.OvmHost.Details;
-
 public class OvmVm extends OvmObject {
     public static final String CD = "CD";
     public static final String HDD = "HDD";

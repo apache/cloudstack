@@ -17,7 +17,8 @@
 
 package org.apache.cloudstack.alert.snmp;
 
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.io.IOException;
+
 import org.snmp4j.CommunityTarget;
 import org.snmp4j.PDU;
 import org.snmp4j.Snmp;
@@ -29,7 +30,7 @@ import org.snmp4j.smi.UnsignedInteger32;
 import org.snmp4j.smi.VariableBinding;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
 
-import java.io.IOException;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SnmpHelper {
     private Snmp _snmp;

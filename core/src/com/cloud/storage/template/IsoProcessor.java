@@ -24,8 +24,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.StorageLayer;
 import com.cloud.utils.component.AdapterBase;
 
 @Local(value = Processor.class)

@@ -23,8 +23,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.user.OwnedBy;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.user.OwnedBy;
 
 @Entity
 @Table(name = "account_network_ref")

@@ -18,9 +18,10 @@
 
 package com.cloud.bridge.io;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.FilterInputStream;
+
 import org.apache.log4j.Logger;
 
 /**
@@ -362,7 +363,8 @@ public class DimeDelimitedInputStream extends FilterInputStream {
         int typeLength = ((((int)header[6]) << 8) & 0xff00) | ((int)header[7]);
 
         //DATA_LENGTH
-        recordLength = ((((long)header[8]) << 24) & 0xff000000L) | ((((long)header[9]) << 16) & 0xff0000L) | ((((long)header[10]) << 8) & 0xff00L) | ((long)header[11] & 0xffL);
+        recordLength =
+            ((((long)header[8]) << 24) & 0xff000000L) | ((((long)header[9]) << 16) & 0xff0000L) | ((((long)header[10]) << 8) & 0xff00L) | ((long)header[11] & 0xffL);
 
         //OPTIONS + PADDING
         if (0 != optionsLength) {
@@ -419,8 +421,8 @@ public class DimeDelimitedInputStream extends FilterInputStream {
                 throw streamInError;
             }
         }
-        logger.debug("MB:" + MB + ", ME:" + ME + ", CF:" + moreChunks + "Option length:" + optionsLength + ", ID length:" + idLength + ", typeLength:" + typeLength + ", TYPE_T:" +
-                     tnf);
+        logger.debug("MB:" + MB + ", ME:" + ME + ", CF:" + moreChunks + "Option length:" + optionsLength + ", ID length:" + idLength + ", typeLength:" + typeLength +
+            ", TYPE_T:" + tnf);
         logger.debug("id:\"" + id + "\"");
         logger.debug("type:\"" + type + "\"");
         logger.debug("recordlength:\"" + recordLength + "\"");

@@ -18,6 +18,8 @@ package org.apache.cloudstack.engine.datacenter.entity.api;
 
 import javax.inject.Inject;
 
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineClusterVO;
@@ -28,7 +30,6 @@ import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineClusterDa
 import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineDataCenterDao;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineHostDao;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.EngineHostPodDao;
-import org.springframework.stereotype.Component;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.fsm.NoTransitionException;

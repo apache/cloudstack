@@ -27,6 +27,7 @@ public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity {
     String State_Enabled = "enabled";
     String State_Disabled = "disabled";
 
+    @Override
     long getId();
 
     @Override

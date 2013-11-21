@@ -110,7 +110,7 @@ public class S3PolicyArnCondition extends S3PolicyCondition {
                         return false;
                 }
                 logger.info("S3PolicyArnCondition eval - SID: " + SID + ", " + condition + ", key: " + keyName + ", valuePassedIn: " + toCompareWith + ", valueInRule: " +
-                            valueList[i] + ", result: " + keyResult);
+                    valueList[i] + ", result: " + keyResult);
             }
 
             // -> if all key values are false, false then that key is false and then the entire condition is then false

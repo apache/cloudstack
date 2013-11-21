@@ -19,15 +19,12 @@
 package com.cloud.baremetal.networkservice;
 
 import java.util.HashMap;
-
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.baremetal.manager.BaremetalManager;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -36,16 +33,12 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
-import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
-import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -82,7 +75,7 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
             return false;
         }
 
-        return pxeMgr.addUserData(nic, (VirtualMachineProfile)vm);
+        return pxeMgr.addUserData(nic, vm);
     }
 
     @Override
@@ -115,14 +108,15 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-        ResourceUnavailableException, InsufficientCapacityException {
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
@@ -139,7 +133,8 @@ public class BaremetalUserdataElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }

@@ -26,8 +26,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.APICommand;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.APICommand;
 
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
@@ -68,11 +69,13 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
         }
 
         RoleType roleType = _accountService.getRoleType(account);
-        boolean isAllowed = commandsPropertiesOverrides.contains(commandName) ? commandsPropertiesRoleBasedApisMap.get(roleType).contains(commandName)
-                : annotationRoleBasedApisMap.get(roleType).contains(commandName);
+        boolean isAllowed =
+            commandsPropertiesOverrides.contains(commandName) ? commandsPropertiesRoleBasedApisMap.get(roleType).contains(commandName) : annotationRoleBasedApisMap.get(
+                roleType).contains(commandName);
 
         if (!isAllowed) {
-            throw new PermissionDeniedException("The API does not exist or is blacklisted. Role type=" + roleType.toString() + " is not allowed to request the api: " + commandName);
+            throw new PermissionDeniedException("The API does not exist or is blacklisted. Role type=" + roleType.toString() + " is not allowed to request the api: " +
+                commandName);
         }
         return isAllowed;
     }

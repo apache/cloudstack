@@ -16,20 +16,19 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -48,7 +47,10 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.FORMAT, type = CommandType.STRING, required = true, description = "the format for the volume. Possible values include QCOW2, OVA, and VHD.")
+    @Parameter(name = ApiConstants.FORMAT,
+               type = CommandType.STRING,
+               required = true,
+               description = "the format for the volume. Possible values include QCOW2, OVA, and VHD.")
     private String format;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the volume")
@@ -126,8 +128,8 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
-        NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException, NetworkRuleConflictException {
 
         Volume volume = _volumeService.uploadVolume(this);
         if (volume != null) {

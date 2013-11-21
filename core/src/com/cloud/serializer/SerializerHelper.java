@@ -26,9 +26,10 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.google.gson.Gson;
+
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
-import com.google.gson.Gson;
 
 /**
  * Note: toPairList and appendPairList only support simple POJO objects currently
@@ -155,7 +156,7 @@ public class SerializerHelper {
         } catch (NoSuchMethodException e1) {
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("POJO " + o.getClass().getName() + " does not have " + methodName + "() method for property: " + propName +
-                               ", will check is-prefixed method to see if it is boolean property");
+                    ", will check is-prefixed method to see if it is boolean property");
             }
         }
 

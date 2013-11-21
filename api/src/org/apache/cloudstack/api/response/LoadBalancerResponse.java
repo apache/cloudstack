@@ -18,11 +18,12 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class LoadBalancerResponse extends BaseResponse implements ControlledEntityResponse {
@@ -134,6 +135,7 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
         this.algorithm = algorithm;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
@@ -143,6 +145,7 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
         this.domainId = domainId;
     }
 
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }

@@ -55,8 +55,8 @@ public class IpSqlGenerator {
                     for (int j = ipS2; j <= ipE2; j++) {
                         for (int k = ipS3; k <= ipE3; k++) {
                             for (int l = ipS4; l <= ipE4; l++) {
-                                out.writeBytes("INSERT INTO `vmops`.`dc_ip_address_alloc` (ip_address, data_center_id, pod_id) VALUES ('"
-                                               + i + "." + j + "." + k + "." + l + "'," + dcId + "," + podId + ");\r\n");
+                                out.writeBytes("INSERT INTO `vmops`.`dc_ip_address_alloc` (ip_address, data_center_id, pod_id) VALUES ('" + i + "." + j + "." + k + "." +
+                                    l + "'," + dcId + "," + podId + ");\r\n");
                             }
                         }
                     }
@@ -71,8 +71,8 @@ public class IpSqlGenerator {
                     for (int j = ipS2; j <= ipE2; j++) {
                         for (int k = ipS3; k <= ipE3; k++) {
                             for (int l = ipS4; l <= ipE4; l++) {
-                                out.writeBytes("INSERT INTO `vmops`.`user_ip_address` (ip_address, data_center_id) VALUES ('"
-                                               + i + "." + j + "." + k + "." + l + "'," + dcId + ");\r\n");
+                                out.writeBytes("INSERT INTO `vmops`.`user_ip_address` (ip_address, data_center_id) VALUES ('" + i + "." + j + "." + k + "." + l + "'," +
+                                    dcId + ");\r\n");
                             }
                         }
                     }

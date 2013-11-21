@@ -25,24 +25,24 @@ import streamer.OneTimeSwitch;
  *
  * @see http://msdn.microsoft.com/en-us/library/cc240682.aspx
  */
-public class ServerMCSConnectResponse  extends OneTimeSwitch {
+public class ServerMCSConnectResponse extends OneTimeSwitch {
 
-  public ServerMCSConnectResponse(String id) {
-    super(id);
-  }
+    public ServerMCSConnectResponse(String id) {
+        super(id);
+    }
 
-  @Override
-  protected void handleOneTimeData(ByteBuffer buf, Link link) {
-    if (buf == null)
-      return;
+    @Override
+    protected void handleOneTimeData(ByteBuffer buf, Link link) {
+        if (buf == null)
+            return;
 
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
 
-    // Ignore packet
-    buf.unref();
-    switchOff();
-  }
+        // Ignore packet
+        buf.unref();
+        switchOff();
+    }
 
 }
 

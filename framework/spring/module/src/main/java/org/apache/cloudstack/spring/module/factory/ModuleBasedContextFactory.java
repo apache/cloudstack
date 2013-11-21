@@ -42,22 +42,22 @@ public class ModuleBasedContextFactory {
     protected Map<String, ModuleDefinition> wireUpModules(String root, Collection<ModuleDefinition> defs) throws IOException {
         Map<String, ModuleDefinition> modules = new HashMap<String, ModuleDefinition>();
 
-        for ( ModuleDefinition def : defs ) {
+        for (ModuleDefinition def : defs) {
             modules.put(def.getName(), def);
         }
 
         ModuleDefinition rootDef = null;
         Map<String, ModuleDefinition> result = new HashMap<String, ModuleDefinition>();
 
-        for ( ModuleDefinition def : modules.values() ) {
-            if ( def.getName().equals(root) ) {
+        for (ModuleDefinition def : modules.values()) {
+            if (def.getName().equals(root)) {
                 rootDef = def;
             }
 
-            if ( def.getParentName() != null ) {
+            if (def.getParentName() != null) {
                 ModuleDefinition parentDef = modules.get(def.getParentName());
 
-                if ( parentDef != null )
+                if (parentDef != null)
                     parentDef.addChild(def);
             }
         }
@@ -66,17 +66,16 @@ public class ModuleBasedContextFactory {
     }
 
     protected Map<String, ModuleDefinition> traverse(ModuleDefinition base, Map<String, ModuleDefinition> result) {
-        if ( base == null )
+        if (base == null)
             return result;
 
-        if ( result.containsKey(base.getName()) ) {
-            throw new RuntimeException("Circular dependency to [" + base.getName() + "] from current set " +
-                    result.keySet());
+        if (result.containsKey(base.getName())) {
+            throw new RuntimeException("Circular dependency to [" + base.getName() + "] from current set " + result.keySet());
         }
 
         result.put(base.getName(), base);
 
-        for ( ModuleDefinition childDef : base.getChildren() )
+        for (ModuleDefinition childDef : base.getChildren())
             traverse(childDef, result);
 
         return result;

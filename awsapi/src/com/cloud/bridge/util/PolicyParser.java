@@ -25,15 +25,15 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import com.cloud.bridge.service.core.s3.S3BucketPolicy;
+import com.cloud.bridge.service.core.s3.S3BucketPolicy.PolicyAccess;
 import com.cloud.bridge.service.core.s3.S3ConditionFactory;
 import com.cloud.bridge.service.core.s3.S3PolicyAction;
+import com.cloud.bridge.service.core.s3.S3PolicyAction.PolicyActions;
 import com.cloud.bridge.service.core.s3.S3PolicyCondition;
+import com.cloud.bridge.service.core.s3.S3PolicyCondition.ConditionKeys;
 import com.cloud.bridge.service.core.s3.S3PolicyConditionBlock;
 import com.cloud.bridge.service.core.s3.S3PolicyPrincipal;
 import com.cloud.bridge.service.core.s3.S3PolicyStatement;
-import com.cloud.bridge.service.core.s3.S3BucketPolicy.PolicyAccess;
-import com.cloud.bridge.service.core.s3.S3PolicyAction.PolicyActions;
-import com.cloud.bridge.service.core.s3.S3PolicyCondition.ConditionKeys;
 import com.cloud.bridge.service.exception.PermissionDeniedException;
 
 /**
@@ -345,8 +345,8 @@ public class PolicyParser {
             testBucketName = testBucketName.substring(0, offset);
 
         if (!testBucketName.equals(bucketName))
-            throw new PermissionDeniedException("The S3 Bucket Policy must only refer to the single bucket: \"" + bucketName + "\", but it referres to the following resource: \"" +
-                                                resourcePath + "\"");
+            throw new PermissionDeniedException("The S3 Bucket Policy must only refer to the single bucket: \"" + bucketName +
+                "\", but it referres to the following resource: \"" + resourcePath + "\"");
     }
 
     public static void badPolicy(String place, String badValue) throws ParseException {

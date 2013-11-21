@@ -16,10 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 public class ExternalFirewallResponse extends NetworkDeviceResponse {
 
@@ -67,10 +68,12 @@ public class ExternalFirewallResponse extends NetworkDeviceResponse {
     @Param(description = "the timeout (in seconds) for requests to the external firewall")
     private String timeout;
 
+    @Override
     public String getId() {
         return id;
     }
 
+    @Override
     public void setId(String id) {
         this.id = id;
     }

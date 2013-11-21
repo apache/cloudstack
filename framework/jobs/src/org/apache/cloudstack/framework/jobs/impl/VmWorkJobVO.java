@@ -24,8 +24,6 @@ import javax.persistence.Enumerated;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
-
 import com.cloud.vm.VirtualMachine;
 
 @Entity

@@ -102,12 +102,14 @@ public class Upgrade224to225 implements DbUpgrade {
                     pstmt.setLong(1, accountId);
                     ResultSet rs1 = pstmt.executeQuery();
                     if (!rs1.next()) {
-                        throw new CloudRuntimeException("Unable to create default security group for account id=" + accountId + ": unable to get accountName/domainId info");
+                        throw new CloudRuntimeException("Unable to create default security group for account id=" + accountId +
+                            ": unable to get accountName/domainId info");
                     }
                     String accountName = rs1.getString(1);
                     Long domainId = rs1.getLong(2);
 
-                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`security_group` (name, description, account_name, account_id, domain_id) VALUES ('default', 'Default Security Group', ?, ?, ?)");
+                    pstmt =
+                        conn.prepareStatement("INSERT INTO `cloud`.`security_group` (name, description, account_name, account_id, domain_id) VALUES ('default', 'Default Security Group', ?, ?, ?)");
                     pstmt.setString(1, accountName);
                     pstmt.setLong(2, accountId);
                     pstmt.setLong(3, domainId);
@@ -312,7 +314,8 @@ public class Upgrade224to225 implements DbUpgrade {
 
             for (String key : keyToTableMap.keySet()) {
                 String tableName = keyToTableMap.get(key);
-                pstmt = conn.prepareStatement("SELECT * FROM information_schema.table_constraints a JOIN information_schema.key_column_usage b ON a.table_schema = b.table_schema AND a.constraint_name = b.constraint_name WHERE a.table_schema=database() AND a.constraint_type='FOREIGN KEY' and a.constraint_name=?");
+                pstmt =
+                    conn.prepareStatement("SELECT * FROM information_schema.table_constraints a JOIN information_schema.key_column_usage b ON a.table_schema = b.table_schema AND a.constraint_name = b.constraint_name WHERE a.table_schema=database() AND a.constraint_type='FOREIGN KEY' and a.constraint_name=?");
                 pstmt.setString(1, key);
                 ResultSet rs = pstmt.executeQuery();
                 if (rs.next()) {
@@ -338,7 +341,8 @@ public class Upgrade224to225 implements DbUpgrade {
             ResultSet rs = pstmt.executeQuery();
             if (!rs.next()) {
                 s_logger.debug("Adding missing ovs tunnel account");
-                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`ovs_tunnel_account` (`from`, `to`, `account`, `key`, `port_name`, `state`) VALUES (0, 0, 0, 0, 'lock', 'SUCCESS')");
+                pstmt =
+                    conn.prepareStatement("INSERT INTO `cloud`.`ovs_tunnel_account` (`from`, `to`, `account`, `key`, `port_name`, `state`) VALUES (0, 0, 0, 0, 'lock', 'SUCCESS')");
                 pstmt.executeUpdate();
             }
         } catch (SQLException e) {

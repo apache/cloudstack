@@ -31,6 +31,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.AddUcsManagerCmd;
 import org.apache.cloudstack.api.AssociateUcsProfileToBladeCmd;
 import org.apache.cloudstack.api.DeleteUcsManagerCmd;
@@ -63,7 +64,6 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.xmlobject.XmlObject;
 import com.cloud.utils.xmlobject.XmlObjectParser;
@@ -327,7 +327,8 @@ public class UcsManagerImpl implements UcsManager {
         s_logger.debug(String.format("association response is %s", res));
 
         if (xo.get("outConfig.computeBlade.association").equals("none")) {
-            throw new CloudRuntimeException(String.format("cannot associated a profile to blade[dn:%s]. please check your UCS manasger for detailed error information", dn));
+            throw new CloudRuntimeException(String.format("cannot associated a profile to blade[dn:%s]. please check your UCS manasger for detailed error information",
+                dn));
         }
 
         return xo.get("outConfig.computeBlade.association").equals("associated");

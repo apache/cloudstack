@@ -36,9 +36,6 @@ import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.XmlRpcClientException;
 
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.APIVersion;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
@@ -48,6 +45,10 @@ import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.UuidInvalid;
 import com.xensource.xenapi.Types.XenAPIException;
+
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class XenServerConnectionPool {
     private static final Logger s_logger = Logger.getLogger(XenServerConnectionPool.class);
@@ -537,8 +538,9 @@ public class XenServerConnectionPool {
                         mConn = null;
                     }
                 } catch (UuidInvalid e) {
-                    String msg = "Host(" + hostUuid + ") doesn't belong to pool(" + poolUuid + "), please execute 'xe pool-join master-address=" + mConn.getIp() +
-                                 " master-username=" + mConn.getUsername();
+                    String msg =
+                        "Host(" + hostUuid + ") doesn't belong to pool(" + poolUuid + "), please execute 'xe pool-join master-address=" + mConn.getIp() +
+                            " master-username=" + mConn.getUsername();
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug(msg);
                     }
@@ -705,7 +707,8 @@ public class XenServerConnectionPool {
         return s;
     }
 
-    protected Session loginWithPassword(Connection conn, String username, Queue<String> password, String version) throws BadServerResponse, XenAPIException, XmlRpcException {
+    protected Session loginWithPassword(Connection conn, String username, Queue<String> password, String version) throws BadServerResponse, XenAPIException,
+        XmlRpcException {
         Session s = null;
         boolean logged_in = false;
         Exception ex = null;

@@ -20,14 +20,16 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 
-import com.cloud.consoleproxy.util.Logger;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
+import com.cloud.consoleproxy.util.Logger;
+
 public class ConsoleProxyCmdHandler implements HttpHandler {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyCmdHandler.class);
 
+    @Override
     public void handle(HttpExchange t) throws IOException {
         try {
             Thread.currentThread().setName("Cmd Thread " + Thread.currentThread().getId() + " " + t.getRemoteAddress());

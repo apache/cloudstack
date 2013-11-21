@@ -44,6 +44,14 @@ public interface ObjectInDataStoreStateMachine extends StateObject<ObjectInDataS
     }
 
     enum Event {
-        CreateRequested, CreateOnlyRequested, DestroyRequested, OperationSuccessed, OperationFailed, CopyingRequested, MigrationRequested, ResizeRequested, ExpungeRequested
+        CreateRequested,
+        CreateOnlyRequested,
+        DestroyRequested,
+        OperationSuccessed,
+        OperationFailed,
+        CopyingRequested,
+        MigrationRequested,
+        ResizeRequested,
+        ExpungeRequested
     }
 }

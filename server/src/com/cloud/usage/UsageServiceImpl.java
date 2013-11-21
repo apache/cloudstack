@@ -27,6 +27,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
@@ -35,8 +38,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.domain.DomainVO;
@@ -124,7 +125,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Account userAccount = null;
-        Account caller = (Account)CallContext.current().getCallingAccount();
+        Account caller = CallContext.current().getCallingAccount();
         Long usageType = cmd.getUsageType();
         Long projectId = cmd.getProjectId();
 
@@ -183,8 +184,8 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ, false);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId + ", between " + startDate + " and " + endDate + ", using pageSize: " +
-                           cmd.getPageSizeVal() + " and startIndex: " + cmd.getStartIndex());
+            s_logger.debug("getting usage records for account: " + accountId + ", domainId: " + domainId + ", between " + startDate + " and " + endDate +
+                ", using pageSize: " + cmd.getPageSizeVal() + " and startIndex: " + cmd.getStartIndex());
         }
 
         Filter usageFilter = new Filter(UsageVO.class, "startDate", false, cmd.getStartIndex(), cmd.getPageSizeVal());

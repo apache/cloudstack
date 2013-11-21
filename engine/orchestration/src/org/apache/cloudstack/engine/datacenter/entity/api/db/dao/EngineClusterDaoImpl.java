@@ -28,13 +28,14 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineClusterVO;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostPodVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
@@ -230,7 +231,8 @@ public class EngineClusterDaoImpl extends GenericDaoBase<EngineClusterVO, Long> 
 
         GenericSearchBuilder<EngineClusterVO, Long> clusterIdSearch = createSearchBuilder(Long.class);
         clusterIdSearch.selectFields(clusterIdSearch.entity().getId());
-        clusterIdSearch.join("disabledPodIdSearch", disabledPodIdSearch, clusterIdSearch.entity().getPodId(), disabledPodIdSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        clusterIdSearch.join("disabledPodIdSearch", disabledPodIdSearch, clusterIdSearch.entity().getPodId(), disabledPodIdSearch.entity().getId(),
+            JoinBuilder.JoinType.INNER);
         clusterIdSearch.done();
 
         SearchCriteria<Long> sc = clusterIdSearch.create();
@@ -276,7 +278,12 @@ public class EngineClusterDaoImpl extends GenericDaoBase<EngineClusterVO, Long> 
             EngineClusterVO dbCluster = findByIdIncludingRemoved(vo.getId());
             if (dbCluster != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-                str.append(": DB Data={id=").append(dbCluster.getId()).append("; state=").append(dbCluster.getState()).append(";updatedTime=").append(dbCluster.getLastUpdated());
+                str.append(": DB Data={id=")
+                    .append(dbCluster.getId())
+                    .append("; state=")
+                    .append(dbCluster.getState())
+                    .append(";updatedTime=")
+                    .append(dbCluster.getLastUpdated());
                 str.append(": New Data={id=")
                     .append(vo.getId())
                     .append("; state=")

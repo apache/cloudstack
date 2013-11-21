@@ -27,9 +27,10 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "user")
@@ -276,6 +277,7 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
         this.loginAttempts = loginAttempts;
     }
 
+    @Override
     public int getLoginAttempts() {
         return loginAttempts;
     }

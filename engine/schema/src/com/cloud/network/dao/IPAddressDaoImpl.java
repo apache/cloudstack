@@ -16,7 +16,18 @@
 // under the License.
 package com.cloud.network.dao;
 
-import com.cloud.dc.DataCenterVnetVO;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Date;
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
@@ -33,17 +44,6 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.net.Ip;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import javax.ejb.Local;
-import javax.inject.Inject;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Date;
-import java.util.List;
 
 @Component
 @Local(value = {IPAddressDao.class})
@@ -112,7 +112,8 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         SearchBuilder<VlanVO> virtaulNetworkVlan = _vlanDao.createSearchBuilder();
         virtaulNetworkVlan.and("vlanType", virtaulNetworkVlan.entity().getVlanType(), SearchCriteria.Op.EQ);
 
-        AllIpCountForDashboard.join("vlan", virtaulNetworkVlan, virtaulNetworkVlan.entity().getId(), AllIpCountForDashboard.entity().getVlanId(), JoinBuilder.JoinType.INNER);
+        AllIpCountForDashboard.join("vlan", virtaulNetworkVlan, virtaulNetworkVlan.entity().getId(), AllIpCountForDashboard.entity().getVlanId(),
+            JoinBuilder.JoinType.INNER);
         virtaulNetworkVlan.done();
         AllIpCountForDashboard.done();
 
@@ -289,7 +290,8 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         int ipCount = 0;
         try {
-            String sql = "SELECT count(*) FROM user_ip_address u INNER JOIN vlan v on (u.vlan_db_id = v.id AND v.data_center_id = ? AND v.vlan_id = ? AND v.vlan_gateway = ? AND v.vlan_netmask = ? AND u.account_id = ?)";
+            String sql =
+                "SELECT count(*) FROM user_ip_address u INNER JOIN vlan v on (u.vlan_db_id = v.id AND v.data_center_id = ? AND v.vlan_id = ? AND v.vlan_gateway = ? AND v.vlan_netmask = ? AND u.account_id = ?)";
 
             PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
             pstmt.setLong(1, dcId);

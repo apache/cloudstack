@@ -25,7 +25,6 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = DeploymentPlanner.class)
@@ -41,7 +40,8 @@ public class UserConcentratedPodPlanner extends FirstFitPlanner implements Deplo
      * @return List<Long> ordered list of Cluster Ids
      */
     @Override
-    protected List<Long> reorderClusters(long id, boolean isZone, Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo, VirtualMachineProfile vmProfile, DeploymentPlan plan) {
+    protected List<Long> reorderClusters(long id, boolean isZone, Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo, VirtualMachineProfile vmProfile,
+        DeploymentPlan plan) {
         List<Long> clusterIdsByCapacity = clusterCapacityInfo.first();
         if (vmProfile.getOwner() == null || !isZone) {
             return clusterIdsByCapacity;

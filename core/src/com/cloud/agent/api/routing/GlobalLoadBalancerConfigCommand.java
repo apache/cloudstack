@@ -17,9 +17,9 @@
 
 package com.cloud.agent.api.routing;
 
-import com.cloud.agent.api.Command;
-
 import java.util.List;
+
+import com.cloud.agent.api.Command;
 
 /**
  * GlobalLoadBalancerConfigCommand used for sending the GSLB configuration to GSLB service provider

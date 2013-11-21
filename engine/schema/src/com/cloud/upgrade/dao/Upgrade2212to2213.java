@@ -80,7 +80,8 @@ public class Upgrade2212to2213 implements DbUpgrade {
         }
 
         try {
-            PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE");
+            PreparedStatement pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to reinsert data center key for the network", e);

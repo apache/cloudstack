@@ -30,7 +30,8 @@ package com.amazon.ec2;
 
 public class ExtensionMapper {
 
-    public static java.lang.Object getTypeObject(java.lang.String namespaceURI, java.lang.String typeName, javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception {
+    public static java.lang.Object getTypeObject(java.lang.String namespaceURI, java.lang.String typeName, javax.xml.stream.XMLStreamReader reader)
+        throws java.lang.Exception {
 
         if ("http://ec2.amazonaws.com/doc/2012-08-15/".equals(namespaceURI) && "CreateInternetGatewayType".equals(typeName)) {
 

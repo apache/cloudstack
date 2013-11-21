@@ -20,11 +20,12 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
 import org.apache.cloudstack.api.response.UserResponse;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.ViewResponseHelper;
@@ -198,18 +199,19 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         long primaryStorageLimit = ApiDBUtils.findCorrectResourceLimit(account.getPrimaryStorageLimit(), account.getType(), ResourceType.primary_storage);
         String primaryStorageLimitDisplay = (accountIsAdmin || primaryStorageLimit == -1) ? "Unlimited" : String.valueOf(primaryStorageLimit / ResourceType.bytesToGiB);
         long primaryStorageTotal = (account.getPrimaryStorageTotal() == null) ? 0 : (account.getPrimaryStorageTotal() / ResourceType.bytesToGiB);
-        String primaryStorageAvail = (accountIsAdmin || primaryStorageLimit == -1) ? "Unlimited" : String.valueOf((primaryStorageLimit / ResourceType.bytesToGiB) -
-                                                                                                                  primaryStorageTotal);
+        String primaryStorageAvail =
+            (accountIsAdmin || primaryStorageLimit == -1) ? "Unlimited" : String.valueOf((primaryStorageLimit / ResourceType.bytesToGiB) - primaryStorageTotal);
         response.setPrimaryStorageLimit(primaryStorageLimitDisplay);
         response.setPrimaryStorageTotal(primaryStorageTotal);
         response.setPrimaryStorageAvailable(primaryStorageAvail);
 
         //get resource limits for secondary storage space and convert it from Bytes to GiB
         long secondaryStorageLimit = ApiDBUtils.findCorrectResourceLimit(account.getSecondaryStorageLimit(), account.getType(), ResourceType.secondary_storage);
-        String secondaryStorageLimitDisplay = (accountIsAdmin || secondaryStorageLimit == -1) ? "Unlimited" : String.valueOf(secondaryStorageLimit / ResourceType.bytesToGiB);
+        String secondaryStorageLimitDisplay =
+            (accountIsAdmin || secondaryStorageLimit == -1) ? "Unlimited" : String.valueOf(secondaryStorageLimit / ResourceType.bytesToGiB);
         long secondaryStorageTotal = (account.getSecondaryStorageTotal() == null) ? 0 : (account.getSecondaryStorageTotal() / ResourceType.bytesToGiB);
-        String secondaryStorageAvail = (accountIsAdmin || secondaryStorageLimit == -1) ? "Unlimited" : String.valueOf((secondaryStorageLimit / ResourceType.bytesToGiB) -
-                                                                                                                      secondaryStorageTotal);
+        String secondaryStorageAvail =
+            (accountIsAdmin || secondaryStorageLimit == -1) ? "Unlimited" : String.valueOf((secondaryStorageLimit / ResourceType.bytesToGiB) - secondaryStorageTotal);
         response.setSecondaryStorageLimit(secondaryStorageLimitDisplay);
         response.setSecondaryStorageTotal(secondaryStorageTotal);
         response.setSecondaryStorageAvailable(secondaryStorageAvail);

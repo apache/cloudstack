@@ -16,18 +16,18 @@
 // under the License.package com.cloud.utils;
 package com.cloud.utils;
 
+import static com.cloud.utils.ReflectUtil.flattenProperties;
+import static com.google.common.collect.Lists.newArrayList;
+import static java.lang.Boolean.TRUE;
+import static java.util.Collections.emptyList;
+import static org.junit.Assert.assertEquals;
+
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Test;
-
-import static com.cloud.utils.ReflectUtil.flattenProperties;
-import static com.google.common.collect.Lists.newArrayList;
-import static java.lang.Boolean.TRUE;
-import static java.util.Collections.emptyList;
-import static org.junit.Assert.assertEquals;
 
 public final class ReflectUtilTest {
 

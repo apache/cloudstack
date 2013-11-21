@@ -16,11 +16,9 @@
 // under the License.
 package com.cloud.network.vpc;
 
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.List;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 public interface NetworkACLItem extends InternalIdentity {
 

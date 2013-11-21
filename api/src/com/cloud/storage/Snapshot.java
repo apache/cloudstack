@@ -53,6 +53,7 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, 
         //it's a state, user can't see the snapshot from ui, while the snapshot may still exist on the storage
         Error;
 
+        @Override
         public String toString() {
             return this.name();
         }
@@ -68,6 +69,7 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, 
 
     public static final long MANUAL_POLICY_ID = 0L;
 
+    @Override
     long getAccountId();
 
     long getVolumeId();
@@ -78,6 +80,7 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, 
 
     Type getRecurringType();
 
+    @Override
     State getState();
 
     HypervisorType getHypervisorType();

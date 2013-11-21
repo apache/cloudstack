@@ -89,6 +89,7 @@ public class Argument implements Comparable {
         this.sinceVersion = sinceVersion;
     }
 
+    @Override
     public int compareTo(Object anotherAgrument) throws ClassCastException {
         if (!(anotherAgrument instanceof Argument))
             throw new ClassCastException("An Argument object expected.");

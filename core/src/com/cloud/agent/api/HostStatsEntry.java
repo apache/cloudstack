@@ -31,8 +31,8 @@ public class HostStatsEntry implements HostStats {
     public HostStatsEntry() {
     }
 
-    public HostStatsEntry(long hostId, double cpuUtilization, double networkReadKBs, double networkWriteKBs, String entityType, double totalMemoryKBs, double freeMemoryKBs,
-            double xapiMemoryUsageKBs, double averageLoad) {
+    public HostStatsEntry(long hostId, double cpuUtilization, double networkReadKBs, double networkWriteKBs, String entityType, double totalMemoryKBs,
+            double freeMemoryKBs, double xapiMemoryUsageKBs, double averageLoad) {
         this.hostId = hostId;
         this.entityType = entityType;
         this.cpuUtilization = cpuUtilization;

@@ -35,8 +35,8 @@ import com.cloud.bridge.service.core.s3.S3MultipartPart;
 import com.cloud.bridge.service.exception.FileNotExistException;
 import com.cloud.bridge.service.exception.InternalErrorException;
 import com.cloud.bridge.service.exception.OutOfStorageException;
-import com.cloud.bridge.util.StringHelper;
 import com.cloud.bridge.util.OrderedPair;
+import com.cloud.bridge.util.StringHelper;
 
 public class S3FileSystemBucketAdapter implements S3BucketAdapter {
     protected final static Logger logger = Logger.getLogger(S3FileSystemBucketAdapter.class);
@@ -134,7 +134,8 @@ public class S3FileSystemBucketAdapter implements S3BucketAdapter {
      * @return OrderedPair with the first value the MD5 of the final object, and the second value the length of the final object
      */
     @Override
-    public OrderedPair<String, Long> concatentateObjects(String mountedRoot, String destBucket, String fileName, String sourceBucket, S3MultipartPart[] parts, OutputStream client) {
+    public OrderedPair<String, Long> concatentateObjects(String mountedRoot, String destBucket, String fileName, String sourceBucket, S3MultipartPart[] parts,
+        OutputStream client) {
         MessageDigest md5;
         long totalLength = 0;
 

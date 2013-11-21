@@ -17,10 +17,18 @@
 
 package org.apache.cloudstack.region.gslb;
 
-import com.cloud.region.ha.GlobalLoadBalancerRule;
-
-import javax.persistence.*;
 import java.util.UUID;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import com.cloud.region.ha.GlobalLoadBalancerRule;
 
 @Entity
 @Table(name = ("global_load_balancing_rules"))
@@ -69,8 +77,8 @@ public class GlobalLoadBalancerRuleVO implements GlobalLoadBalancerRule {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public GlobalLoadBalancerRuleVO(String name, String description, String gslbDomain, String algorithm, String persistence, String serviceType, int regionId, long accountId,
-            long domainId, State state) {
+    public GlobalLoadBalancerRuleVO(String name, String description, String gslbDomain, String algorithm, String persistence, String serviceType, int regionId,
+            long accountId, long domainId, State state) {
         this.name = name;
         this.description = description;
         this.region = regionId;

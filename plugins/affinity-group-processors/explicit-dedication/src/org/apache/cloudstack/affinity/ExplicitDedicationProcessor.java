@@ -24,6 +24,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 
@@ -243,7 +244,7 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
 
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("ExplicitDedicationProcessor returns Avoid List as: Deploy avoids pods: " + avoid.getPodsToAvoid() + ", clusters: " +
-                                   avoid.getClustersToAvoid() + ", hosts: " + avoid.getHostsToAvoid());
+                        avoid.getClustersToAvoid() + ", hosts: " + avoid.getHostsToAvoid());
                 }
             }
         }

@@ -22,12 +22,11 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.response.ListResponse;
+
 import com.cloud.baremetal.networkservice.BaremetalPxeManager;
-import com.cloud.baremetal.networkservice.BaremetalPxePingResponse;
 import com.cloud.baremetal.networkservice.BaremetalPxeResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -58,8 +57,8 @@ public class ListBaremetalPxeServersCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
-        NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException, NetworkRuleConflictException {
         try {
             ListResponse<BaremetalPxeResponse> response = new ListResponse<BaremetalPxeResponse>();
             List<BaremetalPxeResponse> pxeResponses = _pxeMgr.listPxeServers(this);

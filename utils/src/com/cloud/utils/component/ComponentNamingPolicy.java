@@ -27,6 +27,7 @@ public class ComponentNamingPolicy implements NamingPolicy {
 
     public static final ComponentNamingPolicy INSTANCE = new ComponentNamingPolicy();
 
+    @Override
     public String getClassName(String prefix, String source, Object key, Predicate names) {
         if (prefix == null) {
             prefix = "net.sf.cglib.empty.Object";
@@ -49,10 +50,12 @@ public class ComponentNamingPolicy implements NamingPolicy {
         return "ByCloudStack";
     }
 
+    @Override
     public int hashCode() {
         return getTag().hashCode();
     }
 
+    @Override
     public boolean equals(Object o) {
         return (o instanceof ComponentNamingPolicy) && ((ComponentNamingPolicy)o).getTag().equals(getTag());
     }

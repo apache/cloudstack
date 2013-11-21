@@ -33,7 +33,6 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
@@ -84,7 +83,8 @@ public interface NetworkElement extends Adapter {
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
+    boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException;
 
     /**
      * The network is being shutdown.
@@ -121,7 +121,8 @@ public interface NetworkElement extends Adapter {
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
+    boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException;
 
     /**
      * This should return true if out of multiple services provided by this element, only some can be enabled. If all the services MUST be provided, this should return false.

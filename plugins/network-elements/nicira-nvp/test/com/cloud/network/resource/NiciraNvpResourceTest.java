@@ -292,7 +292,7 @@ public class NiciraNvpResourceTest {
 
         doThrow(new NiciraNvpApiException()).when(nvpApi).modifyLogicalSwitchPortAttachment((String)any(), (String)any(), (Attachment)any());
         UpdateLogicalSwitchPortAnswer dlspa =
-                (UpdateLogicalSwitchPortAnswer)resource.executeRequest(new UpdateLogicalSwitchPortCommand("aaaa", "bbbb", "cccc", "owner", "nicname"));
+            (UpdateLogicalSwitchPortAnswer)resource.executeRequest(new UpdateLogicalSwitchPortCommand("aaaa", "bbbb", "cccc", "owner", "nicname"));
         assertFalse(dlspa.getResult());
     }
 

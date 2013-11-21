@@ -50,6 +50,7 @@ public class Profiler {
         return stopTickInMs != null;
     }
 
+    @Override
     public String toString() {
         if (startTickInMs == null)
             return "Not Started";

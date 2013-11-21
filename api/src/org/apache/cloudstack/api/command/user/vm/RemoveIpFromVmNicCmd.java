@@ -32,11 +32,9 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.user.Account;
-import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 
 @APICommand(name = "removeIpFromNic", description = "Assigns secondary IP to NIC.", responseObject = SuccessResponse.class)

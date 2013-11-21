@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.cloud.ovm.object.OvmHost.Details;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonDeserializationContext;
@@ -69,7 +68,7 @@ public class Coder {
     }
 
     public static <T> T fromJson(String str, Class<T> clz) {
-        return (T)_gson.fromJson(str, clz);
+        return _gson.fromJson(str, clz);
     }
 
     @SuppressWarnings("unchecked")

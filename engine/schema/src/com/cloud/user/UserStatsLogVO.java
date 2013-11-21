@@ -57,8 +57,8 @@ public class UserStatsLogVO {
     public UserStatsLogVO() {
     }
 
-    public UserStatsLogVO(long userStatsId, long netBytesReceived, long netBytesSent, long currentBytesReceived, long currentBytesSent, long aggBytesReceived, long aggBytesSent,
-            Date updatedTime) {
+    public UserStatsLogVO(long userStatsId, long netBytesReceived, long netBytesSent, long currentBytesReceived, long currentBytesSent, long aggBytesReceived,
+            long aggBytesSent, Date updatedTime) {
         this.userStatsId = userStatsId;
         this.netBytesReceived = netBytesReceived;
         this.netBytesSent = netBytesSent;

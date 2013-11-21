@@ -446,8 +446,9 @@ public class VirtualRoutingResource implements Manager {
                 cfgFilePath = tmpCfgFile.getAbsolutePath();
             }
 
-            final String result = setLoadBalancerConfig(cfgFilePath, rules[LoadBalancerConfigurator.ADD], rules[LoadBalancerConfigurator.REMOVE],
-                rules[LoadBalancerConfigurator.STATS], routerIp);
+            final String result =
+                setLoadBalancerConfig(cfgFilePath, rules[LoadBalancerConfigurator.ADD], rules[LoadBalancerConfigurator.REMOVE], rules[LoadBalancerConfigurator.STATS],
+                    routerIp);
 
             return new Answer(cmd, result == null, result);
         } catch (final IOException e) {
@@ -486,8 +487,9 @@ public class VirtualRoutingResource implements Manager {
         String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         for (IpAddressTO ip : ips) {
-            result = assignPublicIpAddress(routerName, routerIp, ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(), ip.isSourceNat(), ip.getBroadcastUri(), ip.getVlanGateway(),
-                ip.getVlanNetmask(), ip.getVifMacAddress(), 2, false);
+            result =
+                assignPublicIpAddress(routerName, routerIp, ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(), ip.isSourceNat(), ip.getBroadcastUri(), ip.getVlanGateway(),
+                    ip.getVlanNetmask(), ip.getVifMacAddress(), 2, false);
             if (result != null) {
                 results[i++] = IpAssocAnswer.errorResult;
             } else {

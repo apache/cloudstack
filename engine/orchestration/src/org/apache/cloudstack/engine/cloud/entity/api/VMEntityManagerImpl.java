@@ -138,8 +138,8 @@ public class VMEntityManagerImpl implements VMEntityManager {
     }
 
     @Override
-    public String reserveVirtualMachine(VMEntityVO vmEntityVO, String plannerToUse, DeploymentPlan planToDeploy, ExcludeList exclude) throws InsufficientCapacityException,
-        ResourceUnavailableException {
+    public String reserveVirtualMachine(VMEntityVO vmEntityVO, String plannerToUse, DeploymentPlan planToDeploy, ExcludeList exclude)
+        throws InsufficientCapacityException, ResourceUnavailableException {
 
         //call planner and get the deployDestination.
         //load vm instance and offerings and call virtualMachineManagerImpl
@@ -148,8 +148,9 @@ public class VMEntityManagerImpl implements VMEntityManager {
         VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm);
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodIdToDeployIn(), null, null, null, null);
         if (planToDeploy != null && planToDeploy.getDataCenterId() != 0) {
-            plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(),
-                planToDeploy.getPoolId(), planToDeploy.getPhysicalNetworkId());
+            plan =
+                new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(),
+                    planToDeploy.getPoolId(), planToDeploy.getPhysicalNetworkId());
         }
 
         boolean planChangedByReadyVolume = false;
@@ -169,12 +170,13 @@ public class VMEntityManagerImpl implements VMEntityManager {
                             // cannot satisfy the plan passed in to the
                             // planner
                             throw new ResourceUnavailableException(
-                                "Root volume is ready in different cluster, Deployment plan provided cannot be satisfied, unable to create a deployment for " + vm, Cluster.class,
-                                clusterIdSpecified);
+                                "Root volume is ready in different cluster, Deployment plan provided cannot be satisfied, unable to create a deployment for " + vm,
+                                Cluster.class, clusterIdSpecified);
                         }
                     }
-                    plan = new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(),
-                        vol.getPoolId(), null, null);
+                    plan =
+                        new DataCenterDeployment(planToDeploy.getDataCenterId(), planToDeploy.getPodId(), planToDeploy.getClusterId(), planToDeploy.getHostId(),
+                            vol.getPoolId(), null, null);
                 } else {
                     plan = new DataCenterDeployment(rootVolDcId, rootVolPodId, rootVolClusterId, null, vol.getPoolId(), null, null);
                     planChangedByReadyVolume = true;
@@ -223,8 +225,8 @@ public class VMEntityManagerImpl implements VMEntityManager {
         VMReservationVO vmReservation = _reservationDao.findByReservationId(reservationId);
         if (vmReservation != null) {
 
-            DataCenterDeployment reservedPlan = new DataCenterDeployment(vm.getDataCenterId(), vmReservation.getPodId(), vmReservation.getClusterId(), vmReservation.getHostId(),
-                null, null);
+            DataCenterDeployment reservedPlan =
+                new DataCenterDeployment(vm.getDataCenterId(), vmReservation.getPodId(), vmReservation.getClusterId(), vmReservation.getHostId(), null, null);
             try {
                 _itMgr.start(vm.getUuid(), params, reservedPlan);
             } catch (Exception ex) {

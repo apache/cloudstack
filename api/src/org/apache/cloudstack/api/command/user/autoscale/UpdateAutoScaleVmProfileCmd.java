@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.user.autoscale;
 
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -30,8 +32,6 @@ import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmProfile;
@@ -47,10 +47,17 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScaleVmProfileResponse.class, required = true, description = "the ID of the autoscale vm profile")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = AutoScaleVmProfileResponse.class,
+               required = true,
+               description = "the ID of the autoscale vm profile")
     private Long id;
 
-    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "the template of the auto deployed virtual machine")
+    @Parameter(name = ApiConstants.TEMPLATE_ID,
+               type = CommandType.UUID,
+               entityType = TemplateResponse.class,
+               description = "the template of the auto deployed virtual machine")
     private Long templateId;
 
     @Parameter(name = ApiConstants.AUTOSCALE_VM_DESTROY_TIME,

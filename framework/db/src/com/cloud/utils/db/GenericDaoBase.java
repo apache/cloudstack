@@ -552,7 +552,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
                 final Enum<?>[] enums = (Enum<?>[])field.getType().getEnumConstants();
                 for (final Enum<?> e : enums) {
-                    if ((enumType == EnumType.STRING && e.name().equalsIgnoreCase(rs.getString(index))) || (enumType == EnumType.ORDINAL && e.ordinal() == rs.getInt(index))) {
+                    if ((enumType == EnumType.STRING && e.name().equalsIgnoreCase(rs.getString(index))) ||
+                        (enumType == EnumType.ORDINAL && e.ordinal() == rs.getInt(index))) {
                         field.set(entity, e);
                         return;
                     }

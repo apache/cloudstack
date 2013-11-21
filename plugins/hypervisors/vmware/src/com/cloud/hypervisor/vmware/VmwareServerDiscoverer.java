@@ -27,8 +27,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.log4j.Logger;
+
+import com.vmware.vim25.ClusterDasConfigInfo;
+import com.vmware.vim25.ManagedObjectReference;
+
+import org.apache.cloudstack.api.ApiConstants;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -60,7 +64,6 @@ import com.cloud.hypervisor.vmware.resource.VmwareResource;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.Network;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.VmwareTrafficLabel;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
@@ -79,8 +82,6 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
-import com.vmware.vim25.ClusterDasConfigInfo;
-import com.vmware.vim25.ManagedObjectReference;
 
 @Local(value = Discoverer.class)
 public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
@@ -124,8 +125,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     }
 
     @Override
-    public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags)
-        throws DiscoveryException {
+    public Map<? extends ServerResource, Map<String, String>>
+        find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags) throws DiscoveryException {
 
         if (s_logger.isInfoEnabled())
             s_logger.info("Discover host. dc: " + dcId + ", pod: " + podId + ", cluster: " + clusterId + ", uri host: " + url.getHost());
@@ -157,7 +158,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
             if (usernameNotProvided || passwordNotProvided) {
                 // Retrieve credentials associated with VMware DC
                 s_logger.info("Username and/or Password not provided while adding cluster to cloudstack zone. "
-                              + "Hence using both username & password provided while adding VMware DC to CloudStack zone.");
+                    + "Hence using both username & password provided while adding VMware DC to CloudStack zone.");
                 username = vmwareDc.getUser();
                 password = vmwareDc.getPassword();
                 clusterDetails.put("username", username);
@@ -250,7 +251,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
             publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId, HypervisorType.VMware);
 
             // Process traffic label information provided at zone level and cluster level
-            publicTrafficLabelObj = getTrafficInfo(TrafficType.Public, publicTrafficLabel, defaultVirtualSwitchType, paramPublicVswitchType, paramPublicVswitchName, clusterId);
+            publicTrafficLabelObj =
+                getTrafficInfo(TrafficType.Public, publicTrafficLabel, defaultVirtualSwitchType, paramPublicVswitchType, paramPublicVswitchName, clusterId);
 
             // Configuration Check: A physical network cannot be shared by different types of virtual switches.
             //
@@ -269,8 +271,10 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
             PhysicalNetwork pNetworkPublic = pNetworkListPublicTraffic.get(0);
             if (pNetworkListGuestTraffic.contains(pNetworkPublic)) {
                 if (publicTrafficLabelObj.getVirtualSwitchType() != guestTrafficLabelObj.getVirtualSwitchType()) {
-                    String msg = "Both public traffic and guest traffic is over same physical network " + pNetworkPublic +
-                                 ". And virtual switch type chosen for each traffic is different" + ". A physical network cannot be shared by different types of virtual switches.";
+                    String msg =
+                        "Both public traffic and guest traffic is over same physical network " + pNetworkPublic +
+                            ". And virtual switch type chosen for each traffic is different" +
+                            ". A physical network cannot be shared by different types of virtual switches.";
                     s_logger.error(msg);
                     throw new InvalidParameterValueException(msg);
                 }
@@ -486,13 +490,15 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         }
 
         if (!vCenterHost.equalsIgnoreCase(url.getHost())) {
-            msg = "This cluster " + clusterName + " belongs to vCenter " + url.getHost() + ". But this zone is associated with VMware DC from vCenter " + vCenterHost +
-                  ". Make sure the cluster being added belongs to vCenter " + vCenterHost + " and VMware DC " + vmwareDcNameFromDb;
+            msg =
+                "This cluster " + clusterName + " belongs to vCenter " + url.getHost() + ". But this zone is associated with VMware DC from vCenter " + vCenterHost +
+                    ". Make sure the cluster being added belongs to vCenter " + vCenterHost + " and VMware DC " + vmwareDcNameFromDb;
             s_logger.error(msg);
             throw new DiscoveryException(msg);
         } else if (!vmwareDcNameFromDb.equalsIgnoreCase(vmwareDcNameFromApi)) {
-            msg = "This cluster " + clusterName + " belongs to VMware DC " + vmwareDcNameFromApi + " .But this zone is associated with VMware DC " + vmwareDcNameFromDb +
-                  ". Make sure the cluster being added belongs to VMware DC " + vmwareDcNameFromDb + " in vCenter " + vCenterHost;
+            msg =
+                "This cluster " + clusterName + " belongs to VMware DC " + vmwareDcNameFromApi + " .But this zone is associated with VMware DC " + vmwareDcNameFromDb +
+                    ". Make sure the cluster being added belongs to VMware DC " + vmwareDcNameFromDb + " in vCenter " + vCenterHost;
             s_logger.error(msg);
             throw new DiscoveryException(msg);
         }
@@ -560,8 +566,9 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         Long id;
         if (tmplt == null) {
             id = _tmpltDao.getNextInSequence(Long.class, "id");
-            VMTemplateVO template = VMTemplateVO.createPreHostIso(id, isoName, isoName, ImageFormat.ISO, true, true, TemplateType.PERHOST, null, null, true, 64,
-                Account.ACCOUNT_ID_SYSTEM, null, "VMware Tools Installer ISO", false, 1, false, HypervisorType.VMware);
+            VMTemplateVO template =
+                VMTemplateVO.createPreHostIso(id, isoName, isoName, ImageFormat.ISO, true, true, TemplateType.PERHOST, null, null, true, 64, Account.ACCOUNT_ID_SYSTEM,
+                    null, "VMware Tools Installer ISO", false, 1, false, HypervisorType.VMware);
             _tmpltDao.persist(template);
         } else {
             id = tmplt.getId();
@@ -656,7 +663,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         return trafficLabelObj;
     }
 
-    private VmwareTrafficLabel getTrafficInfo(TrafficType trafficType, String zoneWideTrafficLabel, Map<String, String> clusterDetails, VirtualSwitchType defVirtualSwitchType) {
+    private VmwareTrafficLabel getTrafficInfo(TrafficType trafficType, String zoneWideTrafficLabel, Map<String, String> clusterDetails,
+        VirtualSwitchType defVirtualSwitchType) {
         VmwareTrafficLabel trafficLabelObj = null;
         try {
             trafficLabelObj = new VmwareTrafficLabel(zoneWideTrafficLabel, trafficType, defVirtualSwitchType);

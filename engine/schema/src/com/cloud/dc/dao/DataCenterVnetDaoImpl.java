@@ -67,6 +67,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     @Inject
     protected AccountGuestVlanMapDao _accountGuestVlanMapDao;
 
+    @Override
     public List<DataCenterVnetVO> listAllocatedVnets(long physicalNetworkId) {
         SearchCriteria<DataCenterVnetVO> sc = DcSearchAllocated.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
@@ -80,6 +81,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         return listBy(sc).size();
     }
 
+    @Override
     public List<DataCenterVnetVO> listAllocatedVnetsInRange(long dcId, long physicalNetworkId, Integer start, Integer end) {
         SearchCriteria<DataCenterVnetVO> sc = DcSearchAllocatedInRange.create();
         sc.setParameters("dc", dcId);
@@ -88,6 +90,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         return listBy(sc);
     }
 
+    @Override
     public void lockRange(long dcId, long physicalNetworkId, Integer start, Integer end) {
         SearchCriteria<DataCenterVnetVO> sc = SearchRange.create();
         sc.setParameters("dc", dcId);
@@ -96,6 +99,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         lockRows(sc, null, true);
     }
 
+    @Override
     public List<DataCenterVnetVO> findVnet(long dcId, String vnet) {
         SearchCriteria<DataCenterVnetVO> sc = VnetDcSearch.create();
         ;
@@ -104,12 +108,14 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         return listBy(sc);
     }
 
+    @Override
     public int countZoneVlans(long dcId, boolean onlyCountAllocated) {
         SearchCriteria<Integer> sc = onlyCountAllocated ? countAllocatedZoneVlans.create() : countZoneVlans.create();
         sc.setParameters("dc", dcId);
         return customSearch(sc, null).get(0);
     }
 
+    @Override
     public List<DataCenterVnetVO> findVnet(long dcId, long physicalNetworkId, String vnet) {
         SearchCriteria<DataCenterVnetVO> sc = VnetDcSearch.create();
         sc.setParameters("dc", dcId);
@@ -119,6 +125,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         return listBy(sc);
     }
 
+    @Override
     @DB
     //In the List<string> argument each string is a vlan. not a vlanRange.
         public
@@ -143,6 +150,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     }
 
     //In the List<string> argument each string is a vlan. not a vlanRange.
+    @Override
     public void deleteVnets(TransactionLegacy txn, long dcId, long physicalNetworkId, List<String> vnets) {
         String deleteVnet = "DELETE FROM `cloud`.`op_dc_vnet_alloc` WHERE data_center_id=? AND physical_network_id=? AND taken IS NULL AND vnet=?";
         try {
@@ -159,12 +167,14 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         }
     }
 
+    @Override
     public void delete(long physicalNetworkId) {
         SearchCriteria<DataCenterVnetVO> sc = VnetDcSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         remove(sc);
     }
 
+    @Override
     @DB
     public DataCenterVnetVO take(long physicalNetworkId, long accountId, String reservationId, List<Long> vlanDbIds) {
         SearchCriteria<DataCenterVnetVO> sc;
@@ -191,6 +201,7 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
         return vo;
     }
 
+    @Override
     public void release(String vnet, long physicalNetworkId, long accountId, String reservationId) {
         SearchCriteria<DataCenterVnetVO> sc = VnetDcSearchAllocated.create();
         sc.setParameters("vnet", vnet);

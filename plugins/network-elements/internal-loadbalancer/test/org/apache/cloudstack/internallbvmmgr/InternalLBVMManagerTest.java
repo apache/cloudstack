@@ -29,6 +29,7 @@ import junit.framework.TestCase;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -116,14 +117,16 @@ public class InternalLBVMManagerTest extends TestCase {
     public void setUp() {
         //mock system offering creation as it's used by configure() method called by initComponentsLifeCycle
         Mockito.when(_accountMgr.getAccount(1L)).thenReturn(new AccountVO());
-        ServiceOfferingVO off = new ServiceOfferingVO("alena", 1, 1, 1, 1, 1, false, "alena", false, false, null, false, VirtualMachine.Type.InternalLoadBalancerVm, false);
+        ServiceOfferingVO off =
+            new ServiceOfferingVO("alena", 1, 1, 1, 1, 1, false, "alena", false, false, null, false, VirtualMachine.Type.InternalLoadBalancerVm, false);
         off = setId(off, 1);
-        Mockito.when(_svcOffDao.persistSystemServiceOffering(Mockito.any(ServiceOfferingVO.class))).thenReturn(off);
+        Mockito.when(_svcOffDao.persistSystemServiceOffering(Matchers.any(ServiceOfferingVO.class))).thenReturn(off);
 
         ComponentContext.initComponentsLifeCycle();
 
-        vm = new DomainRouterVO(1L, off.getId(), 1, "alena", 1, HypervisorType.XenServer, 1, 1, 1, false, 0, false, null, false, false, VirtualMachine.Type.InternalLoadBalancerVm,
-            null);
+        vm =
+            new DomainRouterVO(1L, off.getId(), 1, "alena", 1, HypervisorType.XenServer, 1, 1, 1, false, 0, false, null, false, false,
+                VirtualMachine.Type.InternalLoadBalancerVm, null);
         vm.setRole(Role.INTERNAL_LB_VM);
         vm = setId(vm, 1);
         vm.setPrivateIpAddress("10.2.2.2");
@@ -145,7 +148,7 @@ public class InternalLBVMManagerTest extends TestCase {
         answers[0] = answer;
 
         try {
-            Mockito.when(_agentMgr.send(Mockito.anyLong(), Mockito.any(Commands.class))).thenReturn(answers);
+            Mockito.when(_agentMgr.send(Matchers.anyLong(), Matchers.any(Commands.class))).thenReturn(answers);
         } catch (AgentUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -155,15 +158,15 @@ public class InternalLBVMManagerTest extends TestCase {
         }
 
         createNetwork();
-        Mockito.when(_ntwkModel.getNetwork(Mockito.anyLong())).thenReturn(ntwk);
+        Mockito.when(_ntwkModel.getNetwork(Matchers.anyLong())).thenReturn(ntwk);
 
-        Mockito.when(_itMgr.toNicTO(Mockito.any(NicProfile.class), Mockito.any(HypervisorType.class))).thenReturn(null);
-        Mockito.when(_domainRouterDao.findById(Mockito.anyLong())).thenReturn(vm);
+        Mockito.when(_itMgr.toNicTO(Matchers.any(NicProfile.class), Matchers.any(HypervisorType.class))).thenReturn(null);
+        Mockito.when(_domainRouterDao.findById(Matchers.anyLong())).thenReturn(vm);
         DataCenterVO dc = new DataCenterVO(1L, null, null, null, null, null, null, null, null, null, NetworkType.Advanced, null, null);
-        Mockito.when(_dcDao.findById(Mockito.anyLong())).thenReturn(dc);
+        Mockito.when(_dcDao.findById(Matchers.anyLong())).thenReturn(dc);
         NetworkOfferingVO networkOfferingVO = new NetworkOfferingVO();
         networkOfferingVO.setConcurrentConnections(500);
-        Mockito.when(_offeringDao.findById(Mockito.anyLong())).thenReturn(networkOfferingVO);
+        Mockito.when(_offeringDao.findById(Matchers.anyLong())).thenReturn(networkOfferingVO);
 
         Mockito.when(_domainRouterDao.findById(validVmId)).thenReturn(vm);
         Mockito.when(_domainRouterDao.findById(invalidVmId)).thenReturn(null);

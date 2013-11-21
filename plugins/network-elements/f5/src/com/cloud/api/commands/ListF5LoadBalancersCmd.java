@@ -22,13 +22,18 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import com.cloud.api.response.F5LoadBalancerResponse;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+
+import com.cloud.api.response.F5LoadBalancerResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -52,7 +57,10 @@ public class ListF5LoadBalancersCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name = ApiConstants.LOAD_BALANCER_DEVICE_ID, type = CommandType.UUID, entityType = F5LoadBalancerResponse.class, description = "f5 load balancer device ID")
+    @Parameter(name = ApiConstants.LOAD_BALANCER_DEVICE_ID,
+               type = CommandType.UUID,
+               entityType = F5LoadBalancerResponse.class,
+               description = "f5 load balancer device ID")
     private Long lbDeviceId;
 
     /////////////////////////////////////////////////////
@@ -72,7 +80,8 @@ public class ListF5LoadBalancersCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             List<ExternalLoadBalancerDeviceVO> lbDevices = _f5DeviceManagerService.listF5LoadBalancers(this);
             ListResponse<F5LoadBalancerResponse> response = new ListResponse<F5LoadBalancerResponse>();

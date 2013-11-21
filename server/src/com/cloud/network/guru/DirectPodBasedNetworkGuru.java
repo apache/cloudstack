@@ -22,6 +22,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 
 import com.cloud.configuration.ZoneConfig;
@@ -93,8 +94,8 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
-        ConcurrentOperationException {
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+        InsufficientAddressCapacityException, ConcurrentOperationException {
 
         DataCenterVO dc = _dcDao.findById(network.getDataCenterId());
         ReservationStrategy rsStrategy = ReservationStrategy.Start;
@@ -184,8 +185,8 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                         if (placeholderNic != null) {
                             IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), placeholderNic.getIp4Address());
                             ip = PublicIp.createFromAddrAndVlan(userIp, _vlanDao.findById(userIp.getVlanId()));
-                            s_logger.debug("Nic got an ip address " + placeholderNic.getIp4Address() + " stored in placeholder nic for the network " + network + " and gateway " +
-                                           podRangeGateway);
+                            s_logger.debug("Nic got an ip address " + placeholderNic.getIp4Address() + " stored in placeholder nic for the network " + network +
+                                " and gateway " + podRangeGateway);
                         }
                     }
 

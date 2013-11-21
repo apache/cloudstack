@@ -22,8 +22,9 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.engine.datacenter.entity.api.db.DcDetailVO;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.engine.datacenter.entity.api.db.DcDetailVO;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;

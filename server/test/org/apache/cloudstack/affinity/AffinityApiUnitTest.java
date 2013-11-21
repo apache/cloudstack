@@ -33,15 +33,11 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.junit.After;
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
-import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
-import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -55,15 +51,14 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.dc.dao.DedicatedResourceDao;
-import com.cloud.event.ActionEventUtils;
-import com.cloud.dc.dao.DedicatedResourceDao;
-import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.event.EventVO;
@@ -75,8 +70,8 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
-import com.cloud.user.UserVO;
 import com.cloud.user.DomainManager;
+import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.ComponentContext;
@@ -148,12 +143,12 @@ public class AffinityApiUnitTest {
         _affinityService.setAffinityGroupProcessors(affinityProcessors);
 
         AffinityGroupVO group = new AffinityGroupVO("group1", "mock", "mock group", domainId, 200L, ControlledEntity.ACLType.Account);
-        Mockito.when(_affinityGroupDao.persist(Mockito.any(AffinityGroupVO.class))).thenReturn(group);
-        Mockito.when(_affinityGroupDao.findById(Mockito.anyLong())).thenReturn(group);
-        Mockito.when(_affinityGroupDao.findByAccountAndName(Mockito.anyLong(), Mockito.anyString())).thenReturn(group);
-        Mockito.when(_affinityGroupDao.lockRow(Mockito.anyLong(), anyBoolean())).thenReturn(group);
-        Mockito.when(_affinityGroupDao.expunge(Mockito.anyLong())).thenReturn(true);
-        Mockito.when(_eventDao.persist(Mockito.any(EventVO.class))).thenReturn(new EventVO());
+        Mockito.when(_affinityGroupDao.persist(Matchers.any(AffinityGroupVO.class))).thenReturn(group);
+        Mockito.when(_affinityGroupDao.findById(Matchers.anyLong())).thenReturn(group);
+        Mockito.when(_affinityGroupDao.findByAccountAndName(Matchers.anyLong(), Matchers.anyString())).thenReturn(group);
+        Mockito.when(_affinityGroupDao.lockRow(Matchers.anyLong(), anyBoolean())).thenReturn(group);
+        Mockito.when(_affinityGroupDao.expunge(Matchers.anyLong())).thenReturn(true);
+        Mockito.when(_eventDao.persist(Matchers.any(EventVO.class))).thenReturn(new EventVO());
     }
 
     @After
@@ -212,8 +207,9 @@ public class AffinityApiUnitTest {
     }
 
     @Configuration
-    @ComponentScan(basePackageClasses = {AffinityGroupServiceImpl.class, ActionEventUtils.class}, includeFilters = {@Filter(value = TestConfiguration.Library.class,
-                                                                                                                            type = FilterType.CUSTOM)}, useDefaultFilters = false)
+    @ComponentScan(basePackageClasses = {AffinityGroupServiceImpl.class, ActionEventUtils.class},
+                   includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
+                   useDefaultFilters = false)
     public static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         @Bean

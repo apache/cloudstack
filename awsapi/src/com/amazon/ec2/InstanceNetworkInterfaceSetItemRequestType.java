@@ -407,7 +407,8 @@ public class InstanceNetworkInterfaceSetItemRequestType implements org.apache.ax
     }
 
     public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+        org.apache.axis2.databinding.ADBException {
         serialize(parentQName, factory, xmlWriter, false);
     }
 
@@ -687,9 +688,8 @@ public class InstanceNetworkInterfaceSetItemRequestType implements org.apache.ax
     /**
      * Util method to write an attribute with the ns prefix
      */
-    private void
-        writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+    private void writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue,
+        javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
         if (xmlWriter.getPrefix(namespace) == null) {
             xmlWriter.writeNamespace(prefix, namespace);
             xmlWriter.setPrefix(prefix, namespace);
@@ -1072,7 +1072,8 @@ public class InstanceNetworkInterfaceSetItemRequestType implements org.apache.ax
                 while (!reader.isStartElement() && !reader.isEndElement())
                     reader.next();
 
-                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "privateIpAddressesSet").equals(reader.getName())) {
+                if (reader.isStartElement() &&
+                    new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "privateIpAddressesSet").equals(reader.getName())) {
 
                     object.setPrivateIpAddressesSet(com.amazon.ec2.PrivateIpAddressesSetRequestType.Factory.parse(reader));
 
@@ -1087,7 +1088,8 @@ public class InstanceNetworkInterfaceSetItemRequestType implements org.apache.ax
                 while (!reader.isStartElement() && !reader.isEndElement())
                     reader.next();
 
-                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "secondaryPrivateIpAddressCount").equals(reader.getName())) {
+                if (reader.isStartElement() &&
+                    new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "secondaryPrivateIpAddressCount").equals(reader.getName())) {
 
                     java.lang.String content = reader.getElementText();
 

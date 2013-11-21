@@ -21,6 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -29,7 +31,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.api.response.CiscoAsa1000vResourceResponse;
 import com.cloud.exception.ConcurrentOperationException;
@@ -83,7 +84,8 @@ public class ListCiscoAsa1000vResourcesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             List<CiscoAsa1000vDeviceVO> ciscoAsa1000vDevices = _ciscoAsa1000vService.listCiscoAsa1000vResources(this);
             ListResponse<CiscoAsa1000vResourceResponse> response = new ListResponse<CiscoAsa1000vResourceResponse>();

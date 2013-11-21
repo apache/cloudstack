@@ -26,6 +26,7 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListApplicationLoadBalancersCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -103,8 +104,8 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_LOAD_BALANCER_CREATE, eventDescription = "creating load balancer")
-    public ApplicationLoadBalancerRule createApplicationLoadBalancer(String name, String description, Scheme scheme, long sourceIpNetworkId, String sourceIp, int sourcePort,
-        int instancePort, String algorithm, long networkId, long lbOwnerId) throws InsufficientAddressCapacityException, NetworkRuleConflictException,
+    public ApplicationLoadBalancerRule createApplicationLoadBalancer(String name, String description, Scheme scheme, long sourceIpNetworkId, String sourceIp,
+        int sourcePort, int instancePort, String algorithm, long networkId, long lbOwnerId) throws InsufficientAddressCapacityException, NetworkRuleConflictException,
         InsufficientVirtualNetworkCapcityException {
 
         //Validate LB rule guest network
@@ -129,8 +130,9 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         return createApplicationLoadBalancer(name, description, scheme, sourceIpNtwk, sourceIp, sourcePort, instancePort, algorithm, lbOwner, guestNtwk);
     }
 
-    protected ApplicationLoadBalancerRule createApplicationLoadBalancer(String name, String description, Scheme scheme, Network sourceIpNtwk, String sourceIp, int sourcePort,
-        int instancePort, String algorithm, Account lbOwner, Network guestNtwk) throws NetworkRuleConflictException, InsufficientVirtualNetworkCapcityException {
+    protected ApplicationLoadBalancerRule createApplicationLoadBalancer(String name, String description, Scheme scheme, Network sourceIpNtwk, String sourceIp,
+        int sourcePort, int instancePort, String algorithm, Account lbOwner, Network guestNtwk) throws NetworkRuleConflictException,
+        InsufficientVirtualNetworkCapcityException {
 
         //Only Internal scheme is supported in this release
         if (scheme != Scheme.Internal) {
@@ -146,12 +148,14 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         //3) Get source ip address
         Ip sourceIpAddr = getSourceIp(scheme, sourceIpNtwk, sourceIp);
 
-        ApplicationLoadBalancerRuleVO newRule = new ApplicationLoadBalancerRuleVO(name, description, sourcePort, instancePort, algorithm, guestNtwk.getId(), lbOwner.getId(),
-            lbOwner.getDomainId(), sourceIpAddr, sourceIpNtwk.getId(), scheme);
+        ApplicationLoadBalancerRuleVO newRule =
+            new ApplicationLoadBalancerRuleVO(name, description, sourcePort, instancePort, algorithm, guestNtwk.getId(), lbOwner.getId(), lbOwner.getDomainId(),
+                sourceIpAddr, sourceIpNtwk.getId(), scheme);
 
         //4) Validate Load Balancing rule on the providers
-        LoadBalancingRule loadBalancing = new LoadBalancingRule(newRule, new ArrayList<LbDestination>(), new ArrayList<LbStickinessPolicy>(), new ArrayList<LbHealthCheckPolicy>(),
-            sourceIpAddr, null, null);
+        LoadBalancingRule loadBalancing =
+            new LoadBalancingRule(newRule, new ArrayList<LbDestination>(), new ArrayList<LbStickinessPolicy>(), new ArrayList<LbHealthCheckPolicy>(), sourceIpAddr, null,
+                null);
         if (!_lbMgr.validateLbRule(loadBalancing)) {
             throw new InvalidParameterValueException("LB service provider cannot support this rule");
         }
@@ -176,8 +180,8 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
                     if (!_firewallDao.setStateToAdd(newRule)) {
                         throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                     }
-                    s_logger.debug("Load balancer " + newRule.getId() + " for Ip address " + newRule.getSourceIp().addr() + ", source port " + newRule.getSourcePortStart() +
-                                   ", instance port " + newRule.getDefaultPortStart() + " is added successfully.");
+                    s_logger.debug("Load balancer " + newRule.getId() + " for Ip address " + newRule.getSourceIp().addr() + ", source port " +
+                        newRule.getSourcePortStart() + ", instance port " + newRule.getDefaultPortStart() + " is added successfully.");
                     CallContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
                     Network ntwk = _networkModel.getNetwork(newRule.getNetworkId());
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_LOAD_BALANCER_CREATE, newRule.getAccountId(), ntwk.getDataCenterId(), newRule.getId(), null,
@@ -382,8 +386,8 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-            cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+            new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -512,8 +516,8 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
                 (newLbRule.getSourcePortStart().intValue() <= lbRule.getSourcePortEnd().intValue() && newLbRule.getSourcePortEnd().intValue() >= lbRule.getSourcePortEnd()
                     .intValue())) {
 
-                throw new NetworkRuleConflictException("The range specified, " + newLbRule.getSourcePortStart() + "-" + newLbRule.getSourcePortEnd() + ", conflicts with rule " +
-                                                       lbRule.getId() + " which has " + lbRule.getSourcePortStart() + "-" + lbRule.getSourcePortEnd());
+                throw new NetworkRuleConflictException("The range specified, " + newLbRule.getSourcePortStart() + "-" + newLbRule.getSourcePortEnd() +
+                    ", conflicts with rule " + lbRule.getId() + " which has " + lbRule.getSourcePortStart() + "-" + lbRule.getSourcePortEnd());
             }
         }
 

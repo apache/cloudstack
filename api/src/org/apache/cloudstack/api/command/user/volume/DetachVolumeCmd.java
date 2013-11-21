@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,8 +28,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Volume;
@@ -84,10 +84,12 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
         return "volume";
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.Volume;
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }

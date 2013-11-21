@@ -22,6 +22,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface AutoScalePolicy extends ControlledEntity, InternalIdentity {
 
+    @Override
     long getId();
 
     String getUuid();

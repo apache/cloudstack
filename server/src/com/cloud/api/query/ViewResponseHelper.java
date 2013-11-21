@@ -16,27 +16,12 @@
 // under the License.
 package com.cloud.api.query;
 
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.vo.AccountJoinVO;
-import com.cloud.api.query.vo.AffinityGroupJoinVO;
-import com.cloud.api.query.vo.AsyncJobJoinVO;
-import com.cloud.api.query.vo.DataCenterJoinVO;
-import com.cloud.api.query.vo.DiskOfferingJoinVO;
-import com.cloud.api.query.vo.DomainRouterJoinVO;
-import com.cloud.api.query.vo.EventJoinVO;
-import com.cloud.api.query.vo.HostJoinVO;
-import com.cloud.api.query.vo.InstanceGroupJoinVO;
-import com.cloud.api.query.vo.ProjectAccountJoinVO;
-import com.cloud.api.query.vo.ProjectInvitationJoinVO;
-import com.cloud.api.query.vo.ProjectJoinVO;
-import com.cloud.api.query.vo.ResourceTagJoinVO;
-import com.cloud.api.query.vo.SecurityGroupJoinVO;
-import com.cloud.api.query.vo.ServiceOfferingJoinVO;
-import com.cloud.api.query.vo.StoragePoolJoinVO;
-import com.cloud.api.query.vo.UserAccountJoinVO;
-import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.api.query.vo.VolumeJoinVO;
-import com.cloud.user.Account;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.Hashtable;
+import java.util.List;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -48,8 +33,8 @@ import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.HostForMigrationResponse;
 import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -58,22 +43,35 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.UpgradeRouterTemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.vo.AccountJoinVO;
+import com.cloud.api.query.vo.AffinityGroupJoinVO;
+import com.cloud.api.query.vo.AsyncJobJoinVO;
+import com.cloud.api.query.vo.DataCenterJoinVO;
+import com.cloud.api.query.vo.DiskOfferingJoinVO;
+import com.cloud.api.query.vo.DomainRouterJoinVO;
+import com.cloud.api.query.vo.EventJoinVO;
+import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
+import com.cloud.api.query.vo.InstanceGroupJoinVO;
+import com.cloud.api.query.vo.ProjectAccountJoinVO;
+import com.cloud.api.query.vo.ProjectInvitationJoinVO;
+import com.cloud.api.query.vo.ProjectJoinVO;
+import com.cloud.api.query.vo.ResourceTagJoinVO;
+import com.cloud.api.query.vo.SecurityGroupJoinVO;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
+import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
-
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.Hashtable;
-import java.util.List;
+import com.cloud.api.query.vo.UserAccountJoinVO;
+import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.user.Account;
 
 /**
  * Helper class to generate response from DB view VO objects.

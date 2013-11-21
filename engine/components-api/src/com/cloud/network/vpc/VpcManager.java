@@ -106,8 +106,10 @@ public interface VpcManager {
      * @throws InsufficientCapacityException
      * @throws ResourceAllocationException
      */
-    Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
-        PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Long aclId, Account caller, Boolean displayNetworkEnabled)
+    Network
+        createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
+            Long domainId, PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Long aclId, Account caller,
+            Boolean displayNetworkEnabled)
 
         throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
@@ -159,7 +161,8 @@ public interface VpcManager {
      * @param gateway
      * @param networkOwner TODO
      */
-    void validateNtwkOffForNtwkInVpc(Long networkId, long newNtwkOffId, String newCidr, String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner, Long aclId);
+        void
+        validateNtwkOffForNtwkInVpc(Long networkId, long newNtwkOffId, String newCidr, String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner, Long aclId);
 
     List<PrivateGateway> getVpcPrivateGateways(long vpcId);
 }

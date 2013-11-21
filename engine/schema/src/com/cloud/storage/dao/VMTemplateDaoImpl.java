@@ -28,10 +28,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
@@ -80,11 +81,11 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     TemplateDataStoreDao _templateDataStoreDao;
 
     private static final String SELECT_S3_CANDIDATE_TEMPLATES = "SELECT t.id, t.unique_name, t.name, t.public, t.featured, "
-                                                                + "t.type, t.hvm, t.bits, t.url, t.format, t.created, t.account_id, t.checksum, t.display_text, "
-                                                                + "t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones, t.hypervisor_type "
-                                                                + "FROM vm_template t JOIN template_host_ref r ON t.id=r.template_id JOIN host h ON h.id=r.host_id "
-                                                                + "WHERE t.hypervisor_type IN (SELECT hypervisor_type FROM host) AND r.download_state = 'DOWNLOADED' AND "
-                                                                + "r.template_id NOT IN (SELECT template_id FROM template_s3_ref) AND r.destroyed = 0 AND t.type <> 'PERHOST'";
+        + "t.type, t.hvm, t.bits, t.url, t.format, t.created, t.account_id, t.checksum, t.display_text, "
+        + "t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones, t.hypervisor_type "
+        + "FROM vm_template t JOIN template_host_ref r ON t.id=r.template_id JOIN host h ON h.id=r.host_id "
+        + "WHERE t.hypervisor_type IN (SELECT hypervisor_type FROM host) AND r.download_state = 'DOWNLOADED' AND "
+        + "r.template_id NOT IN (SELECT template_id FROM template_s3_ref) AND r.destroyed = 0 AND t.type <> 'PERHOST'";
 
     protected SearchBuilder<VMTemplateVO> TemplateNameSearch;
     protected SearchBuilder<VMTemplateVO> UniqueNameSearch;
@@ -214,8 +215,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     @Override
     public List<Long> listPrivateTemplatesByHost(Long hostId) {
 
-        String sql = "select * from template_host_ref as thr INNER JOIN vm_template as t ON t.id=thr.template_id "
-                     + "where thr.host_id=? and t.public=0 and t.featured=0 and t.type='USER' and t.removed is NULL";
+        String sql =
+            "select * from template_host_ref as thr INNER JOIN vm_template as t ON t.id=thr.template_id "
+                + "where thr.host_id=? and t.public=0 and t.featured=0 and t.type='USER' and t.removed is NULL";
 
         List<Long> l = new ArrayList<Long>();
 
@@ -342,8 +344,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         hostHyperSearch2.and("removed", hostHyperSearch2.entity().getRemoved(), SearchCriteria.Op.NULL);
         hostHyperSearch2.groupBy(hostHyperSearch2.entity().getHypervisorType());
 
-        readySystemTemplateSearch.join("tmplHyper", hostHyperSearch2, hostHyperSearch2.entity().getHypervisorType(), readySystemTemplateSearch.entity().getHypervisorType(),
-            JoinBuilder.JoinType.INNER);
+        readySystemTemplateSearch.join("tmplHyper", hostHyperSearch2, hostHyperSearch2.entity().getHypervisorType(), readySystemTemplateSearch.entity()
+            .getHypervisorType(), JoinBuilder.JoinType.INNER);
         hostHyperSearch2.done();
         readySystemTemplateSearch.done();
 

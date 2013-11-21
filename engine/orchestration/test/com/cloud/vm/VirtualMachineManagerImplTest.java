@@ -32,6 +32,7 @@ import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -232,7 +233,7 @@ public class VirtualMachineManagerImplTest {
         when(_vmInstance.getType()).thenReturn(VirtualMachine.Type.User);
         when(_host.getId()).thenReturn(1L);
         when(_hostDao.findById(anyLong())).thenReturn(null);
-        when(_entityMgr.findById(Mockito.eq(ServiceOffering.class), anyLong())).thenReturn(getSvcoffering(512));
+        when(_entityMgr.findById(Matchers.eq(ServiceOffering.class), anyLong())).thenReturn(getSvcoffering(512));
         when(_workDao.persist(_work)).thenReturn(_work);
         when(_workDao.update("1", _work)).thenReturn(true);
         when(_work.getId()).thenReturn("1");
@@ -268,8 +269,9 @@ public class VirtualMachineManagerImplTest {
         doReturn(1L).when(_vmInstance).getDataCenterId();
         doReturn(1L).when(hostVO).getClusterId();
         when(CapacityManager.CpuOverprovisioningFactor.valueIn(1L)).thenReturn(1.0f);
-        ScaleVmCommand reconfigureCmd = new ScaleVmCommand("myVmName", newServiceOffering.getCpu(), newServiceOffering.getSpeed(), newServiceOffering.getSpeed(),
-            newServiceOffering.getRamSize(), newServiceOffering.getRamSize(), newServiceOffering.getLimitCpuUse());
+        ScaleVmCommand reconfigureCmd =
+            new ScaleVmCommand("myVmName", newServiceOffering.getCpu(), newServiceOffering.getSpeed(), newServiceOffering.getSpeed(), newServiceOffering.getRamSize(),
+                newServiceOffering.getRamSize(), newServiceOffering.getLimitCpuUse());
         Answer answer = new ScaleVmAnswer(reconfigureCmd, true, "details");
         when(_agentMgr.send(2l, reconfigureCmd)).thenReturn(null);
         _vmMgr.reConfigureVm(_vmInstance.getUuid(), getSvcoffering(256), false);
@@ -307,7 +309,8 @@ public class VirtualMachineManagerImplTest {
         boolean ha = false;
         boolean useLocalStorage = false;
 
-        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
+        ServiceOfferingVO serviceOffering =
+            new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
         return serviceOffering;
     }
 
@@ -430,8 +433,8 @@ public class VirtualMachineManagerImplTest {
     // Check migration of a vm fails when src and destination pool are not of same type; that is, one is shared and
     // other is local.
     @Test(expected = CloudRuntimeException.class)
-    public void testMigrateWithVolumeFail1() throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException,
-        OperationTimedoutException {
+    public void testMigrateWithVolumeFail1() throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
+        VirtualMachineMigrationException, OperationTimedoutException {
 
         initializeMockConfigForMigratingVmWithVolumes();
         when(_srcHostMock.getClusterId()).thenReturn(3L);
@@ -445,8 +448,8 @@ public class VirtualMachineManagerImplTest {
 
     // Check migration of a vm fails when vm is not in Running state.
     @Test(expected = ConcurrentOperationException.class)
-    public void testMigrateWithVolumeFail2() throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException,
-        OperationTimedoutException {
+    public void testMigrateWithVolumeFail2() throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
+        VirtualMachineMigrationException, OperationTimedoutException {
 
         initializeMockConfigForMigratingVmWithVolumes();
         when(_srcHostMock.getClusterId()).thenReturn(3L);

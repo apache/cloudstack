@@ -16,15 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.systemvm;
 
-import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ManagementServerException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.VirtualMachineMigrationException;
-import com.cloud.host.Host;
-import com.cloud.user.Account;
-import com.cloud.vm.VirtualMachine;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -34,7 +27,16 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ManagementServerException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
+import com.cloud.host.Host;
+import com.cloud.user.Account;
+import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "migrateSystemVm", description = "Attempts Migration of a system virtual machine to the host specified.", responseObject = SystemVmResponse.class)
 public class MigrateSystemVMCmd extends BaseAsyncCmd {
@@ -46,10 +48,18 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "destination Host ID to migrate VM to")
+    @Parameter(name = ApiConstants.HOST_ID,
+               type = CommandType.UUID,
+               entityType = HostResponse.class,
+               required = true,
+               description = "destination Host ID to migrate VM to")
     private Long hostId;
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = SystemVmResponse.class, required = true, description = "the ID of the virtual machine")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+               type = CommandType.UUID,
+               entityType = SystemVmResponse.class,
+               required = true,
+               description = "the ID of the virtual machine")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////

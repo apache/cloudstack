@@ -38,202 +38,202 @@ import rdpclient.TrustAllX509TrustManager;
 
 public class SocketWrapper extends PipelineImpl {
 
-  protected InputStreamSource source;
-  protected OutputStreamSink sink;
-  protected Socket socket;
-  protected InetSocketAddress address;
+    protected InputStreamSource source;
+    protected OutputStreamSink sink;
+    protected Socket socket;
+    protected InetSocketAddress address;
 
-  protected SSLSocket sslSocket;
+    protected SSLSocket sslSocket;
 
-  //protected String SSL_VERSION_TO_USE = "TLSv1.2";
-  /*DEBUG*/protected String SSL_VERSION_TO_USE = "TLSv1";
+    //protected String SSL_VERSION_TO_USE = "TLSv1.2";
+    /*DEBUG*/protected String SSL_VERSION_TO_USE = "TLSv1";
 
-  public SocketWrapper(String id) {
-    super(id);
-  }
-
-  @Override
-  protected HashMap<String, Element> initElementMap(String id) {
-    HashMap<String, Element> map = new HashMap<String, Element>();
-
-    source = new InputStreamSource(id + "." + OUT, this);
-    sink = new OutputStreamSink(id + "." + IN, this);
-
-    // Pass requests to read data to socket input stream
-    map.put(OUT, source);
-
-    // All incoming data, which is sent to this socket wrapper, will be sent
-    // to socket remote
-    map.put(IN, sink);
-
-    return map;
-  }
-
-  /**
-   * Connect this socket wrapper to remote server and start main loop on
-   * IputStreamSource stdout link, to watch for incoming data, and
-   * OutputStreamSink stdin link, to pull for outgoing data.
-   *
-   * @param address
-   * @throws IOException
-   */
-  public void connect(InetSocketAddress address) throws IOException {
-    this.address = address;
-
-    // Connect socket to server
-    socket = SocketFactory.getDefault().createSocket();
-    try {
-      socket.connect(address);
-
-      InputStream is = socket.getInputStream();
-      source.setInputStream(is);
-
-      OutputStream os = socket.getOutputStream();
-      sink.setOutputStream(os);
-
-      // Start polling for data to send to remote sever
-      runMainLoop(IN, STDIN, true, true);
-
-      // Push incoming data from server to handlers
-      runMainLoop(OUT, STDOUT, false, false);
-
-    } finally {
-      socket.close();
-    }
-  }
-
-  @Override
-  public void handleEvent(Event event, Direction direction) {
-    switch (event) {
-    case SOCKET_UPGRADE_TO_SSL:
-      upgradeToSsl();
-      break;
-    default:
-      super.handleEvent(event, direction);
-      break;
-    }
-  }
-
-  public void upgradeToSsl() {
-
-    if (sslSocket != null)
-      // Already upgraded
-      return;
-
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Upgrading socket to SSL.");
-
-    try {
-      // Use most secure implementation of SSL available now.
-      // JVM will try to negotiate TLS1.2, then will fallback to TLS1.0, if
-      // TLS1.2 is not supported.
-      SSLContext sslContext = SSLContext.getInstance(SSL_VERSION_TO_USE);
-
-      // Trust all certificates (FIXME: insecure)
-      sslContext.init(null, new TrustManager[] { new TrustAllX509TrustManager() }, null);
-
-      SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
-      sslSocket = (SSLSocket) sslSocketFactory.createSocket(socket, address.getHostName(), address.getPort(), true);
-      sslSocket.startHandshake();
-
-      InputStream sis = sslSocket.getInputStream();
-      source.setInputStream(sis);
-
-      OutputStream sos = sslSocket.getOutputStream();
-      sink.setOutputStream(sos);
-
-    } catch (Exception e) {
-      throw new RuntimeException("Cannot upgrade socket to SSL: " + e.getMessage(), e);
+    public SocketWrapper(String id) {
+        super(id);
     }
 
-  }
+    @Override
+    protected HashMap<String, Element> initElementMap(String id) {
+        HashMap<String, Element> map = new HashMap<String, Element>();
 
-  @Override
-  public void validate() {
-    for (Element element : elements.values())
-      element.validate();
+        source = new InputStreamSource(id + "." + OUT, this);
+        sink = new OutputStreamSink(id + "." + IN, this);
 
-    if (get(IN).getPads(Direction.IN).size() == 0)
-      throw new RuntimeException("[ " + this + "] Input of socket is not connected.");
+        // Pass requests to read data to socket input stream
+        map.put(OUT, source);
 
-    if (get(OUT).getPads(Direction.OUT).size() == 0)
-      throw new RuntimeException("[ " + this + "] Output of socket is not connected.");
+        // All incoming data, which is sent to this socket wrapper, will be sent
+        // to socket remote
+        map.put(IN, sink);
 
-  }
-
-  public void shutdown() {
-    try {
-      handleEvent(Event.STREAM_CLOSE, Direction.IN);
-    } catch (Exception e) {
+        return map;
     }
-    try {
-      handleEvent(Event.STREAM_CLOSE, Direction.OUT);
-    } catch (Exception e) {
-    }
-    try {
-      if (sslSocket != null)
-        sslSocket.close();
-    } catch (Exception e) {
-    }
-    try {
-      socket.close();
-    } catch (Exception e) {
-    }
-  }
 
-  @Override
-  public String toString() {
-    return "SocketWrapper(" + id + ")";
-  }
+    /**
+     * Connect this socket wrapper to remote server and start main loop on
+     * IputStreamSource stdout link, to watch for incoming data, and
+     * OutputStreamSink stdin link, to pull for outgoing data.
+     *
+     * @param address
+     * @throws IOException
+     */
+    public void connect(InetSocketAddress address) throws IOException {
+        this.address = address;
 
-  /**
-   * Example.
-   */
-  public static void main(String args[]) {
-    try {
-      System.setProperty("streamer.Link.debug", "true");
-      System.setProperty("streamer.Element.debug", "true");
-      System.setProperty("rdpclient.MockServer.debug", "true");
+        // Connect socket to server
+        socket = SocketFactory.getDefault().createSocket();
+        try {
+            socket.connect(address);
 
-      Pipeline pipeline = new PipelineImpl("echo client");
+            InputStream is = socket.getInputStream();
+            source.setInputStream(is);
 
-      SocketWrapper socketWrapper = new SocketWrapper("socket");
+            OutputStream os = socket.getOutputStream();
+            sink.setOutputStream(os);
 
-      pipeline.add(socketWrapper);
-      pipeline.add(new BaseElement("echo"));
+            // Start polling for data to send to remote sever
+            runMainLoop(IN, STDIN, true, true);
 
-      pipeline.link("socket", "echo", "socket");
+            // Push incoming data from server to handlers
+            runMainLoop(OUT, STDOUT, false, false);
 
-      final byte[] mockData = new byte[] { 0x01, 0x02, 0x03 };
-      MockServer server = new MockServer(new Packet[] { new Packet("Server hello") {
-        {
-          type = SERVER;
-          data = mockData;
+        } finally {
+            socket.close();
         }
-      }, new Packet("Client hello") {
-        {
-          type = CLIENT;
-          data = mockData;
-        }
-      }, new Packet("Server hello") {
-        {
-          type = SERVER;
-          data = mockData;
-        }
-      }, new Packet("Client hello") {
-        {
-          type = CLIENT;
-          data = mockData;
-        }
-      } });
-      server.start();
-      InetSocketAddress address = server.getAddress();
-
-      socketWrapper.connect(address);
-
-    } catch (IOException e) {
-      e.printStackTrace(System.err);
     }
 
-  }
+    @Override
+    public void handleEvent(Event event, Direction direction) {
+        switch (event) {
+            case SOCKET_UPGRADE_TO_SSL:
+                upgradeToSsl();
+                break;
+            default:
+                super.handleEvent(event, direction);
+                break;
+        }
+    }
+
+    public void upgradeToSsl() {
+
+        if (sslSocket != null)
+            // Already upgraded
+            return;
+
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Upgrading socket to SSL.");
+
+        try {
+            // Use most secure implementation of SSL available now.
+            // JVM will try to negotiate TLS1.2, then will fallback to TLS1.0, if
+            // TLS1.2 is not supported.
+            SSLContext sslContext = SSLContext.getInstance(SSL_VERSION_TO_USE);
+
+            // Trust all certificates (FIXME: insecure)
+            sslContext.init(null, new TrustManager[] {new TrustAllX509TrustManager()}, null);
+
+            SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
+            sslSocket = (SSLSocket)sslSocketFactory.createSocket(socket, address.getHostName(), address.getPort(), true);
+            sslSocket.startHandshake();
+
+            InputStream sis = sslSocket.getInputStream();
+            source.setInputStream(sis);
+
+            OutputStream sos = sslSocket.getOutputStream();
+            sink.setOutputStream(sos);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot upgrade socket to SSL: " + e.getMessage(), e);
+        }
+
+    }
+
+    @Override
+    public void validate() {
+        for (Element element : elements.values())
+            element.validate();
+
+        if (get(IN).getPads(Direction.IN).size() == 0)
+            throw new RuntimeException("[ " + this + "] Input of socket is not connected.");
+
+        if (get(OUT).getPads(Direction.OUT).size() == 0)
+            throw new RuntimeException("[ " + this + "] Output of socket is not connected.");
+
+    }
+
+    public void shutdown() {
+        try {
+            handleEvent(Event.STREAM_CLOSE, Direction.IN);
+        } catch (Exception e) {
+        }
+        try {
+            handleEvent(Event.STREAM_CLOSE, Direction.OUT);
+        } catch (Exception e) {
+        }
+        try {
+            if (sslSocket != null)
+                sslSocket.close();
+        } catch (Exception e) {
+        }
+        try {
+            socket.close();
+        } catch (Exception e) {
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "SocketWrapper(" + id + ")";
+    }
+
+    /**
+     * Example.
+     */
+    public static void main(String args[]) {
+        try {
+            System.setProperty("streamer.Link.debug", "true");
+            System.setProperty("streamer.Element.debug", "true");
+            System.setProperty("rdpclient.MockServer.debug", "true");
+
+            Pipeline pipeline = new PipelineImpl("echo client");
+
+            SocketWrapper socketWrapper = new SocketWrapper("socket");
+
+            pipeline.add(socketWrapper);
+            pipeline.add(new BaseElement("echo"));
+
+            pipeline.link("socket", "echo", "socket");
+
+            final byte[] mockData = new byte[] {0x01, 0x02, 0x03};
+            MockServer server = new MockServer(new Packet[] {new Packet("Server hello") {
+                {
+                    type = SERVER;
+                    data = mockData;
+                }
+            }, new Packet("Client hello") {
+                {
+                    type = CLIENT;
+                    data = mockData;
+                }
+            }, new Packet("Server hello") {
+                {
+                    type = SERVER;
+                    data = mockData;
+                }
+            }, new Packet("Client hello") {
+                {
+                    type = CLIENT;
+                    data = mockData;
+                }
+            }});
+            server.start();
+            InetSocketAddress address = server.getAddress();
+
+            socketWrapper.connect(address);
+
+        } catch (IOException e) {
+            e.printStackTrace(System.err);
+        }
+
+    }
 }

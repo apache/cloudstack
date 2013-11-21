@@ -21,7 +21,6 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -67,14 +66,14 @@ public class AgentBasedStandaloneConsoleProxyManager extends AgentBasedConsolePr
             }
             if (s_logger.isDebugEnabled())
                 s_logger.debug("Assign standalone console proxy running at " + allocatedHost.getName() + " to user vm " + userVmId + " with public IP " +
-                               allocatedHost.getPublicIpAddress());
+                    allocatedHost.getPublicIpAddress());
 
             // only private IP, public IP, host id have meaningful values, rest of all are place-holder values
             String publicIp = allocatedHost.getPublicIpAddress();
             if (publicIp == null) {
                 if (s_logger.isDebugEnabled())
                     s_logger.debug("Host " + allocatedHost.getName() + "/" + allocatedHost.getPrivateIpAddress() +
-                                   " does not have public interface, we will return its private IP for cosole proxy.");
+                        " does not have public interface, we will return its private IP for cosole proxy.");
                 publicIp = allocatedHost.getPrivateIpAddress();
             }
 

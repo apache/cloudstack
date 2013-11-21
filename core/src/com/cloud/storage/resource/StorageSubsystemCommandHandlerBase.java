@@ -75,11 +75,12 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             destData.getDataStore().getRole() == DataStoreRole.Primary) {
             //copy template to primary storage
             return processor.copyTemplateToPrimaryStorage(cmd);
-        } else if (srcData.getObjectType() == DataObjectType.TEMPLATE && srcDataStore.getRole() == DataStoreRole.Primary && destDataStore.getRole() == DataStoreRole.Primary) {
+        } else if (srcData.getObjectType() == DataObjectType.TEMPLATE && srcDataStore.getRole() == DataStoreRole.Primary &&
+            destDataStore.getRole() == DataStoreRole.Primary) {
             //clone template to a volume
             return processor.cloneVolumeFromBaseTemplate(cmd);
         } else if (srcData.getObjectType() == DataObjectType.VOLUME &&
-                   (srcData.getDataStore().getRole() == DataStoreRole.ImageCache || srcDataStore.getRole() == DataStoreRole.Image)) {
+            (srcData.getDataStore().getRole() == DataStoreRole.ImageCache || srcDataStore.getRole() == DataStoreRole.Image)) {
             //copy volume from image cache to primary
             return processor.copyVolumeFromImageCacheToPrimary(cmd);
         } else if (srcData.getObjectType() == DataObjectType.VOLUME && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
@@ -89,7 +90,7 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
                 return processor.createTemplateFromVolume(cmd);
             }
         } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.SNAPSHOT &&
-                   srcData.getDataStore().getRole() == DataStoreRole.Primary) {
+            srcData.getDataStore().getRole() == DataStoreRole.Primary) {
             return processor.backupSnapshot(cmd);
         } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.VOLUME) {
             return processor.createVolumeFromSnapshot(cmd);

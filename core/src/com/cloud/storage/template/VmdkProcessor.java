@@ -22,9 +22,10 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;

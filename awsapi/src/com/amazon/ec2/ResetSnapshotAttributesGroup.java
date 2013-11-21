@@ -126,7 +126,8 @@ public class ResetSnapshotAttributesGroup implements org.apache.axis2.databindin
     }
 
     public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+        org.apache.axis2.databinding.ADBException {
         serialize(parentQName, factory, xmlWriter, false);
     }
 
@@ -159,9 +160,8 @@ public class ResetSnapshotAttributesGroup implements org.apache.axis2.databindin
     /**
      * Util method to write an attribute with the ns prefix
      */
-    private void
-        writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+    private void writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue,
+        javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
         if (xmlWriter.getPrefix(namespace) == null) {
             xmlWriter.writeNamespace(prefix, namespace);
             xmlWriter.setPrefix(prefix, namespace);
@@ -343,7 +343,8 @@ public class ResetSnapshotAttributesGroup implements org.apache.axis2.databindin
                 // from anyAttributes.
                 java.util.Vector handledAttributes = new java.util.Vector();
 
-                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "createVolumePermission").equals(reader.getName())) {
+                if (reader.isStartElement() &&
+                    new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "createVolumePermission").equals(reader.getName())) {
 
                     object.setCreateVolumePermission(com.amazon.ec2.EmptyElementType.Factory.parse(reader));
 

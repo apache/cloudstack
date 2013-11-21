@@ -18,9 +18,8 @@ package com.cloud.network.dao;
 
 import java.util.List;
 
-import com.cloud.network.VirtualRouterProvider;
-import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.VirtualRouterProvider.Type;
+import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface VirtualRouterProviderDao extends GenericDao<VirtualRouterProviderVO, Long> {

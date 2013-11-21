@@ -19,7 +19,6 @@ package com.cloud.network;
 import java.util.List;
 
 import com.cloud.network.dao.IPAddressVO;
-
 import com.cloud.utils.component.Manager;
 
 public interface NetworkUsageManager extends Manager {

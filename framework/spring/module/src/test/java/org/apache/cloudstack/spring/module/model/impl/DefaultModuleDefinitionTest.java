@@ -18,25 +18,27 @@
  */
 package org.apache.cloudstack.spring.module.model.impl;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.cloudstack.spring.module.util.ModuleLocationUtils;
 import org.junit.Test;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
+
+import org.apache.cloudstack.spring.module.util.ModuleLocationUtils;
 
 public class DefaultModuleDefinitionTest {
 
     ResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
 
     protected DefaultModuleDefinition createDef(String name) {
-        Resource resource =
-                resolver.getResource(ModuleLocationUtils.getModuleLocation("testfiles", name));
+        Resource resource = resolver.getResource(ModuleLocationUtils.getModuleLocation("testfiles", name));
 
         return new DefaultModuleDefinition("testfiles", resource, resolver);
     }
@@ -48,7 +50,7 @@ public class DefaultModuleDefinitionTest {
         try {
             def.init();
             fail();
-        } catch ( IOException e ) {
+        } catch (IOException e) {
             assertTrue(e.getMessage().contains("Missing name property"));
         }
 
@@ -61,7 +63,7 @@ public class DefaultModuleDefinitionTest {
         try {
             def.init();
             fail();
-        } catch ( IOException e ) {
+        } catch (IOException e) {
             assertTrue(e.getMessage().contains("Missing name property"));
         }
 
@@ -74,7 +76,7 @@ public class DefaultModuleDefinitionTest {
         try {
             def.init();
             fail();
-        } catch ( IOException e ) {
+        } catch (IOException e) {
             assertTrue(e.getMessage().contains("is expected to exist at"));
         }
     }
@@ -93,7 +95,7 @@ public class DefaultModuleDefinitionTest {
         try {
             def.init();
             fail();
-        } catch ( IOException e ) {
+        } catch (IOException e) {
             assertTrue(e.getMessage().contains("do not appear to be the same resource"));
         }
     }
@@ -117,9 +119,9 @@ public class DefaultModuleDefinitionTest {
     protected void has(List<Resource> resources, String... files) throws IOException {
         int count = 0;
 
-        for ( Resource r : resources ) {
-            for ( String file : files ) {
-                if ( r.getURL().toExternalForm().contains(file) ) {
+        for (Resource r : resources) {
+            for (String file : files) {
+                if (r.getURL().toExternalForm().contains(file)) {
                     count++;
                     break;
                 }

@@ -18,8 +18,6 @@
  */
 package org.apache.cloudstack.framework.codestyle;
 
-import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-
 public class AsyncSampleListenerStyleCaller {
     AsyncSampleCallee _ds;
 

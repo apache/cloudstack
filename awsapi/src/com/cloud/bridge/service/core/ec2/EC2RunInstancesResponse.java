@@ -19,8 +19,6 @@ package com.cloud.bridge.service.core.ec2;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.bridge.service.core.ec2.EC2Instance;
-
 public class EC2RunInstancesResponse {
 
     private List<EC2Instance> instanceSet = new ArrayList<EC2Instance>();

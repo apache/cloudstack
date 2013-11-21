@@ -27,6 +27,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -147,41 +148,41 @@ public class NetworkACLServiceTest extends TestCase {
 
     @Test
     public void testCreateACL() throws Exception {
-        Mockito.when(_entityMgr.findById(Mockito.eq(Vpc.class), Mockito.anyLong())).thenReturn(new VpcVO());
+        Mockito.when(_entityMgr.findById(Matchers.eq(Vpc.class), Matchers.anyLong())).thenReturn(new VpcVO());
         Mockito.when(_networkAclMgr.createNetworkACL("acl_new", "acl desc", 1L)).thenReturn(acl);
         assertNotNull(_aclService.createNetworkACL("acl_new", "acl desc", 1L));
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testDeleteDefaultACL() throws Exception {
-        Mockito.when(_networkACLDao.findById(Mockito.anyLong())).thenReturn(acl);
+        Mockito.when(_networkACLDao.findById(Matchers.anyLong())).thenReturn(acl);
         Mockito.when(_networkAclMgr.deleteNetworkACL(acl)).thenReturn(true);
         _aclService.deleteNetworkACL(1L);
     }
 
     @Test
     public void testCreateACLItem() throws Exception {
-        Mockito.when(_entityMgr.findById(Mockito.eq(Vpc.class), Mockito.anyLong())).thenReturn(new VpcVO());
-        Mockito.when(_networkAclMgr.getNetworkACL(Mockito.anyLong())).thenReturn(acl);
+        Mockito.when(_entityMgr.findById(Matchers.eq(Vpc.class), Matchers.anyLong())).thenReturn(new VpcVO());
+        Mockito.when(_networkAclMgr.getNetworkACL(Matchers.anyLong())).thenReturn(acl);
         Mockito.when(
-            _networkAclMgr.createNetworkACLItem(Mockito.anyInt(), Mockito.anyInt(), Mockito.anyString(), Mockito.anyList(), Mockito.anyInt(), Mockito.anyInt(),
-                Mockito.any(NetworkACLItem.TrafficType.class), Mockito.anyLong(), Mockito.anyString(), Mockito.anyInt())).thenReturn(new NetworkACLItemVO());
-        Mockito.when(_networkACLItemDao.findByAclAndNumber(Mockito.anyLong(), Mockito.anyInt())).thenReturn(null);
+            _networkAclMgr.createNetworkACLItem(Matchers.anyInt(), Matchers.anyInt(), Matchers.anyString(), Matchers.anyList(), Matchers.anyInt(), Matchers.anyInt(),
+                Matchers.any(NetworkACLItem.TrafficType.class), Matchers.anyLong(), Matchers.anyString(), Matchers.anyInt())).thenReturn(new NetworkACLItemVO());
+        Mockito.when(_networkACLItemDao.findByAclAndNumber(Matchers.anyLong(), Matchers.anyInt())).thenReturn(null);
         assertNotNull(_aclService.createNetworkACLItem(createACLItemCmd));
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testCreateACLItemDuplicateNumber() throws Exception {
-        Mockito.when(_entityMgr.findById(Mockito.eq(Vpc.class), Mockito.anyLong())).thenReturn(new VpcVO());
-        Mockito.when(_networkAclMgr.getNetworkACL(Mockito.anyLong())).thenReturn(acl);
-        Mockito.when(_networkACLItemDao.findByAclAndNumber(Mockito.anyLong(), Mockito.anyInt())).thenReturn(new NetworkACLItemVO());
+        Mockito.when(_entityMgr.findById(Matchers.eq(Vpc.class), Matchers.anyLong())).thenReturn(new VpcVO());
+        Mockito.when(_networkAclMgr.getNetworkACL(Matchers.anyLong())).thenReturn(acl);
+        Mockito.when(_networkACLItemDao.findByAclAndNumber(Matchers.anyLong(), Matchers.anyInt())).thenReturn(new NetworkACLItemVO());
         _aclService.createNetworkACLItem(createACLItemCmd);
     }
 
     @Test
     public void testDeleteACLItem() throws Exception {
-        Mockito.when(_networkACLItemDao.findById(Mockito.anyLong())).thenReturn(aclItem);
-        Mockito.when(_networkAclMgr.revokeNetworkACLItem(Mockito.anyLong())).thenReturn(true);
+        Mockito.when(_networkACLItemDao.findById(Matchers.anyLong())).thenReturn(aclItem);
+        Mockito.when(_networkAclMgr.revokeNetworkACLItem(Matchers.anyLong())).thenReturn(true);
         assertTrue(_aclService.revokeNetworkACLItem(1L));
     }
 

@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.admin.network;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -28,7 +30,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.user.Account;
@@ -85,8 +86,8 @@ public class ListPhysicalNetworksCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        Pair<List<? extends PhysicalNetwork>, Integer> result = _networkService.searchPhysicalNetworks(getId(), getZoneId(), this.getKeyword(), this.getStartIndex(),
-            this.getPageSizeVal(), getNetworkName());
+        Pair<List<? extends PhysicalNetwork>, Integer> result =
+            _networkService.searchPhysicalNetworks(getId(), getZoneId(), this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(), getNetworkName());
         if (result != null) {
             ListResponse<PhysicalNetworkResponse> response = new ListResponse<PhysicalNetworkResponse>();
             List<PhysicalNetworkResponse> networkResponses = new ArrayList<PhysicalNetworkResponse>();

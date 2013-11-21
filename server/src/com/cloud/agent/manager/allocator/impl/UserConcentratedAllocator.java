@@ -32,6 +32,7 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.manager.allocator.PodAllocator;
+import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.DataCenter;
@@ -107,8 +108,8 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
                     // enough memory for the service offering, plus
                     // some extra padding for xen overhead
                     long[] hostCandiates = new long[1];
-                    boolean enoughCapacity = dataCenterAndPodHasEnoughCapacity(zoneId, podId, (offering.getRamSize()) * 1024L * 1024L, CapacityVO.CAPACITY_TYPE_MEMORY,
-                        hostCandiates);
+                    boolean enoughCapacity =
+                        dataCenterAndPodHasEnoughCapacity(zoneId, podId, (offering.getRamSize()) * 1024L * 1024L, Capacity.CAPACITY_TYPE_MEMORY, hostCandiates);
 
                     if (!enoughCapacity) {
                         if (s_logger.isDebugEnabled()) {
@@ -118,7 +119,8 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
                     }
 
                     // test for enough CPU in the pod
-                    enoughCapacity = dataCenterAndPodHasEnoughCapacity(zoneId, podId, (offering.getCpu() * offering.getSpeed()), CapacityVO.CAPACITY_TYPE_CPU, hostCandiates);
+                    enoughCapacity =
+                        dataCenterAndPodHasEnoughCapacity(zoneId, podId, (offering.getCpu() * offering.getSpeed()), Capacity.CAPACITY_TYPE_CPU, hostCandiates);
                     if (!enoughCapacity) {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Not enough cpu available in zone/pod to allocate storage for user VM (zone: " + zoneId + ", pod: " + podId + ")");
@@ -170,7 +172,7 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
         boolean enoughCapacity = false;
         if (capacities != null) {
             for (CapacityVO capacity : capacities) {
-                if (capacityType == CapacityVO.CAPACITY_TYPE_CPU || capacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {
+                if (capacityType == Capacity.CAPACITY_TYPE_CPU || capacityType == Capacity.CAPACITY_TYPE_MEMORY) {
                     //
                     // for CPU/Memory, we now switch to static allocation
                     //
@@ -217,7 +219,7 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
             if (millisecondsSinceLastUpdate > secondsToSkipVMs * 1000L) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Skip counting " + vm.getState().toString() + " vm " + vm.getInstanceName() + " in capacity allocation as it has been " +
-                                   vm.getState().toString().toLowerCase() + " for " + millisecondsSinceLastUpdate / 60000 + " minutes");
+                        vm.getState().toString().toLowerCase() + " for " + millisecondsSinceLastUpdate / 60000 + " minutes");
                 }
                 return true;
             }
@@ -236,7 +238,7 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
      * @return
      */
     private long calcHostAllocatedCpuMemoryCapacity(long hostId, short capacityType) {
-        assert (capacityType == CapacityVO.CAPACITY_TYPE_MEMORY || capacityType == CapacityVO.CAPACITY_TYPE_CPU) : "Invalid capacity type passed in calcHostAllocatedCpuCapacity()";
+        assert (capacityType == Capacity.CAPACITY_TYPE_MEMORY || capacityType == Capacity.CAPACITY_TYPE_CPU) : "Invalid capacity type passed in calcHostAllocatedCpuCapacity()";
 
         // List<VMInstanceVO> vms = _vmInstanceDao.listByLastHostId(hostId);
         List<VMInstanceVO> vms = null;
@@ -257,19 +259,19 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
 
             so = _offeringDao.findById(vm.getId(), vm.getServiceOfferingId());
 
-            if (capacityType == CapacityVO.CAPACITY_TYPE_MEMORY) {
+            if (capacityType == Capacity.CAPACITY_TYPE_MEMORY) {
                 usedCapacity += so.getRamSize() * 1024L * 1024L;
 
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Counting memory capacity used by vm: " + vm.getId() + ", size: " + so.getRamSize() + "MB, host: " + hostId + ", currently counted: " +
-                                   usedCapacity + " Bytes");
+                        usedCapacity + " Bytes");
                 }
-            } else if (capacityType == CapacityVO.CAPACITY_TYPE_CPU) {
+            } else if (capacityType == Capacity.CAPACITY_TYPE_CPU) {
                 usedCapacity += so.getCpu() * so.getSpeed();
 
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Counting cpu capacity used by vm: " + vm.getId() + ", cpu: " + so.getCpu() + ", speed: " + so.getSpeed() + ", currently counted: " +
-                                   usedCapacity + " Bytes");
+                        usedCapacity + " Bytes");
                 }
             }
         }

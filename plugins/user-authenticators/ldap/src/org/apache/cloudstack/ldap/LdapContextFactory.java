@@ -53,7 +53,8 @@ public class LdapContextFactory {
         return createInitialDirContext(principal, password, null, isSystemContext);
     }
 
-    private DirContext createInitialDirContext(final String principal, final String password, final String providerUrl, final boolean isSystemContext) throws NamingException {
+    private DirContext createInitialDirContext(final String principal, final String password, final String providerUrl, final boolean isSystemContext)
+        throws NamingException {
         return new InitialDirContext(getEnvironment(principal, password, providerUrl, isSystemContext));
     }
 

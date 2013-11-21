@@ -76,7 +76,8 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     private Long vpcId;
 
     public DomainRouterVO(long id, long serviceOfferingId, long elementId, String name, long templateId, HypervisorType hypervisorType, long guestOSId, long domainId,
-            long accountId, boolean isRedundantRouter, int priority, boolean isPriorityBumpUp, RedundantState redundantState, boolean haEnabled, boolean stopPending, Long vpcId) {
+            long accountId, boolean isRedundantRouter, int priority, boolean isPriorityBumpUp, RedundantState redundantState, boolean haEnabled, boolean stopPending,
+            Long vpcId) {
         super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.elementId = elementId;
         this.isRedundantRouter = isRedundantRouter;
@@ -196,6 +197,7 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
         this.stopPending = stopPending;
     }
 
+    @Override
     public String getTemplateVersion() {
         return this.templateVersion;
     }

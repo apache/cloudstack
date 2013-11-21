@@ -96,8 +96,8 @@ public class CloudOrchestrator implements OrchestrationService {
     public CloudOrchestrator() {
     }
 
-    public VirtualMachineEntity createFromScratch(String uuid, String iso, String os, String hypervisor, String hostName, int cpu, int speed, long memory, List<String> networks,
-        List<String> computeTags, Map<String, String> details, String owner) {
+    public VirtualMachineEntity createFromScratch(String uuid, String iso, String os, String hypervisor, String hostName, int cpu, int speed, long memory,
+        List<String> networks, List<String> computeTags, Map<String, String> details, String owner) {
         return null;
     }
 
@@ -150,9 +150,9 @@ public class CloudOrchestrator implements OrchestrationService {
     }
 
     @Override
-    public VirtualMachineEntity createVirtualMachine(String id, String owner, String templateId, String hostName, String displayName, String hypervisor, int cpu, int speed,
-        long memory, Long diskSize, List<String> computeTags, List<String> rootDiskTags, Map<String, NicProfile> networkNicMap, DeploymentPlan plan, Long rootDiskSize)
-        throws InsufficientCapacityException {
+    public VirtualMachineEntity createVirtualMachine(String id, String owner, String templateId, String hostName, String displayName, String hypervisor, int cpu,
+        int speed, long memory, Long diskSize, List<String> computeTags, List<String> rootDiskTags, Map<String, NicProfile> networkNicMap, DeploymentPlan plan,
+        Long rootDiskSize) throws InsufficientCapacityException {
 
         // VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks, vmEntityManager);
 
@@ -198,14 +198,15 @@ public class CloudOrchestrator implements OrchestrationService {
             dataDiskOfferings.put(diskOffering, size);
         }
 
-        _itMgr.allocate(vm.getInstanceName(), _templateDao.findById(new Long(templateId)), offering, rootDiskOffering, dataDiskOfferings, networkIpMap, plan, hypervisorType);
+        _itMgr.allocate(vm.getInstanceName(), _templateDao.findById(new Long(templateId)), offering, rootDiskOffering, dataDiskOfferings, networkIpMap, plan,
+            hypervisorType);
 
         return vmEntity;
     }
 
     @Override
-    public VirtualMachineEntity createVirtualMachineFromScratch(String id, String owner, String isoId, String hostName, String displayName, String hypervisor, String os, int cpu,
-        int speed, long memory, Long diskSize, List<String> computeTags, List<String> rootDiskTags, Map<String, NicProfile> networkNicMap, DeploymentPlan plan)
+    public VirtualMachineEntity createVirtualMachineFromScratch(String id, String owner, String isoId, String hostName, String displayName, String hypervisor, String os,
+        int cpu, int speed, long memory, Long diskSize, List<String> computeTags, List<String> rootDiskTags, Map<String, NicProfile> networkNicMap, DeploymentPlan plan)
         throws InsufficientCapacityException {
 
         // VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks, vmEntityManager);

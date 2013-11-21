@@ -17,6 +17,27 @@
 
 package org.apache.cloudstack.api.command.user.region.ha.gslb;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.FirewallRuleResponse;
+import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.rules.LoadBalancer;
@@ -25,23 +46,6 @@ import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.Account;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
-
-import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.FirewallRuleResponse;
-import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 @APICommand(name = "assignToGlobalLoadBalancerRule",
             description = "Assign load balancer rule or list of load " + "balancer rules to a global load balancer rules.",
@@ -77,7 +81,7 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.GSLB_LBRULE_WEIGHT_MAP,
                type = CommandType.MAP,
                description = "Map of LB rule id's and corresponding weights (between 1-100) in the GSLB rule, if not specified weight of "
-                             + "a LB rule is defaulted to 1. Specified as 'gslblbruleweightsmap[0].loadbalancerid=UUID" + "&gslblbruleweightsmap[0].weight=10'",
+                   + "a LB rule is defaulted to 1. Specified as 'gslblbruleweightsmap[0].loadbalancerid=UUID" + "&gslblbruleweightsmap[0].weight=10'",
                required = false)
     private Map gslbLbRuleWieghtMap;
 
@@ -156,7 +160,8 @@ public class AssignToGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Global Load balancer rule Id: " + getGlobalLoadBalancerRuleId() + " VmIds: " + StringUtils.join(getLoadBalancerRulesIds(), ","));
+        CallContext.current().setEventDetails(
+            "Global Load balancer rule Id: " + getGlobalLoadBalancerRuleId() + " VmIds: " + StringUtils.join(getLoadBalancerRulesIds(), ","));
         boolean result = _gslbService.assignToGlobalLoadBalancerRule(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

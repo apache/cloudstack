@@ -40,7 +40,8 @@ public interface CiscoVnmcConnection {
 
     public boolean associateTenantVDCEdgeDhcpPolicy(String tenantName, String intfName) throws ExecutionException;
 
-    public boolean createTenantVDCEdgeDhcpPolicy(String tenantName, String startIp, String endIp, String subnet, String nameServerIp, String domain) throws ExecutionException;
+    public boolean createTenantVDCEdgeDhcpPolicy(String tenantName, String startIp, String endIp, String subnet, String nameServerIp, String domain)
+        throws ExecutionException;
 
     public boolean associateTenantVDCEdgeDhcpServerPolicy(String tenantName, String intfName) throws ExecutionException;
 
@@ -79,8 +80,8 @@ public interface CiscoVnmcConnection {
 
     public boolean deleteTenantVDCPFRule(String tenantName, long ruleId, String policyIdentifier) throws ExecutionException;
 
-    public boolean createTenantVDCAclRuleForPF(String tenantName, long ruleId, String policyIdentifier, String protocol, String ipAddress, String startPort, String endPort)
-        throws ExecutionException;
+    public boolean createTenantVDCAclRuleForPF(String tenantName, long ruleId, String policyIdentifier, String protocol, String ipAddress, String startPort,
+        String endPort) throws ExecutionException;
 
     public boolean createTenantVDCPFPolicy(String tenantName, String identifier) throws ExecutionException;
 

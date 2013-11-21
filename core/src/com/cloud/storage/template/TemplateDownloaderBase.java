@@ -18,8 +18,9 @@ package com.cloud.storage.template;
 
 import java.io.File;
 
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.storage.StorageLayer;
 
@@ -119,6 +120,7 @@ public abstract class TemplateDownloaderBase extends ManagedContextRunnable impl
         return true;
     }
 
+    @Override
     public long getMaxTemplateSizeInBytes() {
         return this.MAX_TEMPLATE_SIZE_IN_BYTES;
     }

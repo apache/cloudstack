@@ -19,12 +19,14 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.exception.InternalErrorException;
-import org.libvirt.LibvirtException;
+import java.util.Map;
 
 import javax.naming.ConfigurationException;
-import java.util.Map;
+
+import org.libvirt.LibvirtException;
+
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.exception.InternalErrorException;
 
 public interface VifDriver {
 

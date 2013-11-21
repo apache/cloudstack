@@ -24,15 +24,15 @@ import java.io.OutputStream;
 
 import javax.xml.XMLConstants;
 import javax.xml.namespace.QName;
+import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import javax.xml.stream.XMLOutputFactory;
 
 import org.apache.axiom.om.OMAbstractFactory;
 import org.apache.axiom.om.OMFactory;
-import org.apache.axis2.databinding.utils.writer.MTOMAwareXMLSerializer;
 import org.apache.axis2.databinding.ADBBean;
 import org.apache.axis2.databinding.ADBException;
+import org.apache.axis2.databinding.utils.writer.MTOMAwareXMLSerializer;
 
 /**
  * Provide an MTOM aware serializable output stream writer to be consumed by implementors of the

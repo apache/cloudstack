@@ -23,6 +23,8 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import junit.framework.Assert;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.bridge.util.DateHelper;
@@ -32,8 +34,6 @@ import com.cloud.bridge.util.XSerializer;
 import com.cloud.bridge.util.XSerializerJsonAdapter;
 import com.cloud.bridge.util.XSerializerXmlAdapter;
 import com.cloud.gate.testcase.BaseTestCase;
-
-import junit.framework.Assert;
 
 class SubFoo {
     @XElement(name = "Name")

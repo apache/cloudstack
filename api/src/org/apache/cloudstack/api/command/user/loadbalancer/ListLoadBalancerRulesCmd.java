@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.user.loadbalancer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
@@ -30,7 +32,6 @@ import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.utils.Pair;
@@ -51,7 +52,10 @@ public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the load balancer rule")
     private String loadBalancerRuleName;
 
-    @Parameter(name = ApiConstants.PUBLIC_IP_ID, type = CommandType.UUID, entityType = IPAddressResponse.class, description = "the public IP address id of the load balancer rule ")
+    @Parameter(name = ApiConstants.PUBLIC_IP_ID,
+               type = CommandType.UUID,
+               entityType = IPAddressResponse.class,
+               description = "the public IP address id of the load balancer rule ")
     private Long publicIpId;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,

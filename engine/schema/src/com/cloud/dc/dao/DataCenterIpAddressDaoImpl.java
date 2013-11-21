@@ -47,6 +47,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
     private final GenericSearchBuilder<DataCenterIpAddressVO, Integer> AllIpCount;
     private final GenericSearchBuilder<DataCenterIpAddressVO, Integer> AllAllocatedIpCount;
 
+    @Override
     @DB
     public DataCenterIpAddressVO takeIpAddress(long dcId, long podId, long instanceId, String reservationId) {
         SearchCriteria<DataCenterIpAddressVO> sc = AllFieldsSearch.create();
@@ -68,6 +69,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         return vo;
     }
 
+    @Override
     @DB
     public DataCenterIpAddressVO takeDataCenterIpAddress(long dcId, String reservationId) {
         SearchCriteria<DataCenterIpAddressVO> sc = AllFieldsSearch.create();
@@ -107,10 +109,12 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         return update(vo, sc) >= 1;
     }
 
+    @Override
     @DB
     public void addIpRange(long dcId, long podId, String start, String end) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        String insertSql = "INSERT INTO `cloud`.`op_dc_ip_address_alloc` (ip_address, data_center_id, pod_id, mac_address) VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?))";
+        String insertSql =
+            "INSERT INTO `cloud`.`op_dc_ip_address_alloc` (ip_address, data_center_id, pod_id, mac_address) VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?))";
         String updateSql = "UPDATE `cloud`.`data_center` set mac_address = mac_address+1 where id=?";
         PreparedStatement stmt = null;
 
@@ -139,6 +143,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         }
     }
 
+    @Override
     public void releaseIpAddress(String ipAddress, long dcId, Long instanceId) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Releasing ip address: " + ipAddress + " data center " + dcId);
@@ -156,6 +161,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         update(vo, sc);
     }
 
+    @Override
     public void releaseIpAddress(long nicId, String reservationId) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Releasing ip address for reservationId=" + reservationId + ", instance=" + nicId);
@@ -171,6 +177,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         update(vo, sc);
     }
 
+    @Override
     public List<DataCenterIpAddressVO> listByPodIdDcId(long podId, long dcId) {
         SearchCriteria<DataCenterIpAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("pod", podId);

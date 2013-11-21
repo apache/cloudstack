@@ -18,18 +18,21 @@ package com.cloud.hypervisor.kvm.storage;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
 import java.util.Arrays;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
-import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.DiskTO;
-
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.kvm.resource.KVMHABase;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.PoolType;
 import com.cloud.hypervisor.kvm.resource.KVMHAMonitor;
@@ -37,10 +40,6 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 public class KVMStoragePoolManager {
     private static final Logger s_logger = Logger.getLogger(KVMStoragePoolManager.class);

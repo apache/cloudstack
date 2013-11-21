@@ -18,6 +18,8 @@ package com.cloud.network.element;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.response.ExternalFirewallResponse;
+
 import com.cloud.api.commands.AddExternalFirewallCmd;
 import com.cloud.api.commands.AddPaloAltoFirewallCmd;
 import com.cloud.api.commands.ConfigurePaloAltoFirewallCmd;
@@ -30,11 +32,9 @@ import com.cloud.api.response.PaloAltoFirewallResponse;
 import com.cloud.host.Host;
 import com.cloud.network.Network;
 import com.cloud.network.dao.ExternalFirewallDeviceVO;
-
-import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import com.cloud.utils.component.PluggableService;
 
-public interface PaloAltoFirewallElementService  extends PluggableService {
+public interface PaloAltoFirewallElementService extends PluggableService {
 
     /**
      * adds a Palo Alto firewall device in to a physical network
@@ -73,16 +73,23 @@ public interface PaloAltoFirewallElementService  extends PluggableService {
 
     public PaloAltoFirewallResponse createPaloAltoFirewallResponse(ExternalFirewallDeviceVO fwDeviceVO);
 
+    @Deprecated
+    // API helper function supported for backward compatibility
+        public
+        Host addExternalFirewall(AddExternalFirewallCmd cmd);
 
-    @Deprecated // API helper function supported for backward compatibility
-    public Host addExternalFirewall(AddExternalFirewallCmd cmd);
+    @Deprecated
+    // API helper function supported for backward compatibility
+        public
+        boolean deleteExternalFirewall(DeleteExternalFirewallCmd cmd);
 
-    @Deprecated // API helper function supported for backward compatibility
-    public boolean deleteExternalFirewall(DeleteExternalFirewallCmd cmd);
+    @Deprecated
+    // API helper function supported for backward compatibility
+        public
+        List<Host> listExternalFirewalls(ListExternalFirewallsCmd cmd);
 
-    @Deprecated // API helper function supported for backward compatibility
-    public List<Host> listExternalFirewalls(ListExternalFirewallsCmd cmd);
-
-    @Deprecated // API helper function supported for backward compatibility
-    public ExternalFirewallResponse createExternalFirewallResponse(Host externalFirewall);
+    @Deprecated
+    // API helper function supported for backward compatibility
+        public
+        ExternalFirewallResponse createExternalFirewallResponse(Host externalFirewall);
 }

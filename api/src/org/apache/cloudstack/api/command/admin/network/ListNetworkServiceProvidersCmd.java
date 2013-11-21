@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.admin.network;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -26,7 +28,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.ProviderResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.user.Account;
@@ -88,8 +89,8 @@ public class ListNetworkServiceProvidersCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        Pair<List<? extends PhysicalNetworkServiceProvider>, Integer> serviceProviders = _networkService.listNetworkServiceProviders(getPhysicalNetworkId(), getName(), getState(),
-            this.getStartIndex(), this.getPageSizeVal());
+        Pair<List<? extends PhysicalNetworkServiceProvider>, Integer> serviceProviders =
+            _networkService.listNetworkServiceProviders(getPhysicalNetworkId(), getName(), getState(), this.getStartIndex(), this.getPageSizeVal());
         ListResponse<ProviderResponse> response = new ListResponse<ProviderResponse>();
         List<ProviderResponse> serviceProvidersResponses = new ArrayList<ProviderResponse>();
         for (PhysicalNetworkServiceProvider serviceProvider : serviceProviders.first()) {

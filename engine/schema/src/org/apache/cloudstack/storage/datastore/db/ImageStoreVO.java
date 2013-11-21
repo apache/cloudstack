@@ -90,14 +90,17 @@ public class ImageStoreVO implements ImageStore {
         this.role = role;
     }
 
+    @Override
     public long getId() {
         return this.id;
     }
 
+    @Override
     public String getName() {
         return this.name;
     }
 
+    @Override
     public String getProviderName() {
         return this.providerName;
     }
@@ -114,6 +117,7 @@ public class ImageStoreVO implements ImageStore {
         this.protocol = protocol;
     }
 
+    @Override
     public String getProtocol() {
         return this.protocol;
     }
@@ -122,6 +126,7 @@ public class ImageStoreVO implements ImageStore {
         this.dcId = dcId;
     }
 
+    @Override
     public Long getDataCenterId() {
         return this.dcId;
     }
@@ -138,6 +143,7 @@ public class ImageStoreVO implements ImageStore {
         this.uuid = uuid;
     }
 
+    @Override
     public String getUuid() {
         return this.uuid;
     }

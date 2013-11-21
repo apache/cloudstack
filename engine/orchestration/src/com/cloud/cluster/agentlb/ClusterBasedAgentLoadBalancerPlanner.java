@@ -55,7 +55,7 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
 
         if (allHosts.size() <= avLoad) {
             s_logger.debug("Agent load = " + allHosts.size() + " for management server " + msId + " doesn't exceed average system agent load = " + avLoad +
-                           "; so it doesn't participate in agent rebalancing process");
+                "; so it doesn't participate in agent rebalancing process");
             return null;
         }
 
@@ -65,7 +65,8 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
         List<HostVO> directHosts = sc.list();
 
         if (directHosts.isEmpty()) {
-            s_logger.debug("No direct agents in status " + Status.Up + " exist for the management server " + msId + "; so it doesn't participate in agent rebalancing process");
+            s_logger.debug("No direct agents in status " + Status.Up + " exist for the management server " + msId +
+                "; so it doesn't participate in agent rebalancing process");
             return null;
         }
 
@@ -91,7 +92,7 @@ public class ClusterBasedAgentLoadBalancerPlanner extends AdapterBase implements
         List<HostVO> hostsToReturn = new ArrayList<HostVO>();
 
         s_logger.debug("Management server " + msId + " can give away " + hostsToGive + " as it currently owns " + allHosts.size() +
-                       " and the average agent load in the system is " + avLoad + "; finalyzing list of hosts to give away...");
+            " and the average agent load in the system is " + avLoad + "; finalyzing list of hosts to give away...");
         for (Long cluster : hostToClusterMap.keySet()) {
             List<HostVO> hostsInCluster = hostToClusterMap.get(cluster);
             hostsLeft = hostsLeft - hostsInCluster.size();

@@ -17,7 +17,6 @@
 package com.cloud.bridge.service.core.s3;
 
 import java.util.Calendar;
-import java.util.TimeZone;
 
 public class S3ListAllMyBucketsEntry {
     private String name;

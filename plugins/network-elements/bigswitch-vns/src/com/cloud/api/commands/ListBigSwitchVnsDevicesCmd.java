@@ -21,6 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -29,7 +31,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.api.response.BigSwitchVnsDeviceResponse;
 import com.cloud.exception.ConcurrentOperationException;
@@ -55,7 +56,10 @@ public class ListBigSwitchVnsDevicesCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name = VnsConstants.BIGSWITCH_VNS_DEVICE_ID, type = CommandType.UUID, entityType = BigSwitchVnsDeviceResponse.class, description = "bigswitch vns device ID")
+    @Parameter(name = VnsConstants.BIGSWITCH_VNS_DEVICE_ID,
+               type = CommandType.UUID,
+               entityType = BigSwitchVnsDeviceResponse.class,
+               description = "bigswitch vns device ID")
     private Long bigswitchVnsDeviceId;
 
     /////////////////////////////////////////////////////
@@ -75,7 +79,8 @@ public class ListBigSwitchVnsDevicesCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             List<BigSwitchVnsDeviceVO> bigswitchDevices = _bigswitchVnsElementService.listBigSwitchVnsDevices(this);
             ListResponse<BigSwitchVnsDeviceResponse> response = new ListResponse<BigSwitchVnsDeviceResponse>();

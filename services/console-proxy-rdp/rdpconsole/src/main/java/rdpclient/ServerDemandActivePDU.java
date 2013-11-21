@@ -25,7 +25,6 @@ import streamer.MockSource;
 import streamer.Order;
 import streamer.Pipeline;
 import streamer.PipelineImpl;
-
 import common.ScreenDescription;
 
 /**
@@ -34,366 +33,366 @@ import common.ScreenDescription;
  */
 public class ServerDemandActivePDU extends BaseElement {
 
-  /**
-   * Demand Active PDU.
-   */
-  public static final int PDUTYPE_DEMANDACTIVEPDU = 0x1;
+    /**
+     * Demand Active PDU.
+     */
+    public static final int PDUTYPE_DEMANDACTIVEPDU = 0x1;
 
-  protected RdpState state;
-  protected ScreenDescription screen;
+    protected RdpState state;
+    protected ScreenDescription screen;
 
-  public ServerDemandActivePDU(String id, ScreenDescription screen, RdpState state) {
-    super(id);
-    this.state = state;
-    this.screen = screen;
-  }
-
-  @Override
-  public void handleData(ByteBuffer buf, Link link) {
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
-
-    // Total length of packet
-    int length = buf.readSignedShortLE(); // Ignore
-    if (buf.length != length)
-      throw new RuntimeException("Incorrect length of packet. Length: " + length + ", data: " + buf + ".");
-
-    int type = buf.readSignedShortLE() & 0xf;
-    if (type != PDUTYPE_DEMANDACTIVEPDU)
-      throw new RuntimeException("Unknown PDU type. Expected type: Demand Active PDU (0x1), actual tyoe: " + type + ", data: " + buf + ".");
-
-    // TS_SHARECONTROLHEADER::pduSource = 0x03ea (1002)
-    int pduSource = buf.readSignedShortLE();
-    if (pduSource != 1002)
-      throw new RuntimeException("Unexepcted source of demand active PDU. Expected source: 1002, actual source: " + pduSource + ".");
-
-    // (4 bytes): A 32-bit, unsigned integer. The share identifier for the
-    // packet (see [T128] section 8.4.2 for more information regarding share
-    // IDs).
-    long shareId = buf.readUnsignedIntLE();
-    state.serverShareId = shareId;
-
-    // Ignore rest of server data because it is not used by this client.
-    // (2 bytes): A 16-bit, unsigned integer. The size in bytes of the
-    // sourceDescriptor field.
-    int lengthSourceDescriptor = buf.readUnsignedShortLE();
-
-    // (2 bytes): A 16-bit, unsigned integer. The combined size in bytes of the
-    // numberCapabilities, pad2Octets, and capabilitySets fields.
-    int lengthCombinedCapabilities = buf.readUnsignedShortLE();
-
-    // (variable): A variable-length array of bytes containing a source
-    // descriptor,
-    // ByteBuffer sourceDescriptor = buf.readBytes(lengthSourceDescriptor);
-    buf.skipBytes(lengthSourceDescriptor);
-
-    // (variable): An array of Capability Set (section 2.2.1.13.1.1.1)
-    // structures. The number of capability sets is specified by the
-    // numberCapabilities field.
-    handleCapabiltySets(buf.readBytes(lengthCombinedCapabilities));
-
-    // (4 bytes): A 32-bit, unsigned integer. The session identifier. This field
-    // is ignored by the client.
-    buf.skipBytes(4);
-
-    /* DEBUG */buf.assertThatBufferIsFullyRead();
-
-    buf.unref();
-
-    sendHandshakePackets();
-  }
-
-  /**
-   * General Capability Set
-   */
-  public static final int CAPSTYPE_GENERAL = 0x0001;
-  /**
-   * Bitmap Capability Set
-   */
-  public static final int CAPSTYPE_BITMAP = 0x0002;
-  /**
-   * Order Capability Set
-   */
-  public static final int CAPSTYPE_ORDER = 0x0003;
-  /**
-   * Revision 1 Bitmap Cache Capability Set
-   */
-  public static final int CAPSTYPE_BITMAPCACHE = 0x0004;
-  /**
-   * Control Capability Set
-   */
-  public static final int CAPSTYPE_CONTROL = 0x0005;
-  /**
-   * Window Activation Capability Set
-   */
-  public static final int CAPSTYPE_ACTIVATION = 0x0007;
-  /**
-   * Pointer Capability Set
-   */
-  public static final int CAPSTYPE_POINTER = 0x0008;
-  /**
-   * Share Capability Set
-   */
-  public static final int CAPSTYPE_SHARE = 0x0009;
-  /**
-   * Color Table Cache Capability Set
-   */
-  public static final int CAPSTYPE_COLORCACHE = 0x000A;
-  /**
-   * Sound Capability Set
-   */
-  public static final int CAPSTYPE_SOUND = 0x000C;
-  /**
-   * Input Capability Set
-   */
-  public static final int CAPSTYPE_INPUT = 0x000D;
-  /**
-   * Font Capability Set
-   */
-  public static final int CAPSTYPE_FONT = 0x000E;
-  /**
-   * Brush Capability Set
-   */
-  public static final int CAPSTYPE_BRUSH = 0x000F;
-  /**
-   * Glyph Cache Capability Set
-   */
-  public static final int CAPSTYPE_GLYPHCACHE = 0x0010;
-  /**
-   * Offscreen Bitmap Cache Capability Set
-   */
-  public static final int CAPSTYPE_OFFSCREENCACHE = 0x0011;
-  /**
-   * Bitmap Cache Host Support Capability Set
-   */
-  public static final int CAPSTYPE_BITMAPCACHE_HOSTSUPPORT = 0x0012;
-  /**
-   * Revision 2 Bitmap Cache Capability Set
-   */
-  public static final int CAPSTYPE_BITMAPCACHE_REV2 = 0x0013;
-  /**
-   * Virtual Channel Capability Set
-   */
-  public static final int CAPSTYPE_VIRTUALCHANNEL = 0x0014;
-  /**
-   * DrawNineGrid Cache Capability Set
-   */
-  public static final int CAPSTYPE_DRAWNINEGRIDCACHE = 0x0015;
-  /**
-   * Draw GDI+ Cache Capability Set
-   */
-  public static final int CAPSTYPE_DRAWGDIPLUS = 0x0016;
-  /**
-   * Remote Programs Capability Set
-   */
-  public static final int CAPSTYPE_RAIL = 0x0017;
-  /**
-   * Window List Capability Set
-   */
-  public static final int CAPSTYPE_WINDOW = 0x0018;
-  /**
-   * Desktop Composition Extension Capability Set
-   */
-  public static final int CAPSETTYPE_COMPDESK = 0x0019;
-  /**
-   * Multifragment Update Capability Set
-   */
-  public static final int CAPSETTYPE_MULTIFRAGMENTUPDATE = 0x001A;
-  /**
-   * Large Pointer Capability Set
-   */
-  public static final int CAPSETTYPE_LARGE_POINTER = 0x001B;
-  /**
-   * Surface Commands Capability Set
-   */
-  public static final int CAPSETTYPE_SURFACE_COMMANDS = 0x001C;
-  /**
-   * Bitmap Codecs Capability Set
-   */
-  public static final int CAPSETTYPE_BITMAP_CODECS = 0x001D;
-  /**
-   * Frame Acknowledge Capability Set
-   */
-  public static final int CAPSSETTYPE_FRAME_ACKNOWLEDGE = 0x001E;
-
-  /**
-   * @see http://msdn.microsoft.com/en-us/library/cc240486.aspx
-   */
-  protected void handleCapabiltySets(ByteBuffer buf) {
-    // (2 bytes): A 16-bit, unsigned integer. The number of capability sets
-    // included in the Demand Active PDU.
-    int numberCapabilities = buf.readSignedShortLE();
-
-    // (2 bytes): Padding.
-    buf.skipBytes(2);
-
-    for (int i = 0; i < numberCapabilities; i++) {
-      // (2 bytes): A 16-bit, unsigned integer. The type identifier of the
-      // capability set.
-      int capabilitySetType = buf.readUnsignedShortLE();
-
-      // (2 bytes): A 16-bit, unsigned integer. The length in bytes of the
-      // capability data, including the size of the capabilitySetType and
-      // lengthCapability fields.
-      int lengthCapability = buf.readUnsignedShortLE();
-
-      // (variable): Capability set data which conforms to the structure of the
-      // type given by the capabilitySetType field.
-      ByteBuffer capabilityData = buf.readBytes(lengthCapability - 4);
-
-      switch (capabilitySetType) {
-      case CAPSTYPE_GENERAL:
-        break;
-      case CAPSTYPE_BITMAP:
-        handleBitmapCapabilities(capabilityData);
-        break;
-      case CAPSTYPE_ORDER:
-        break;
-      case CAPSTYPE_BITMAPCACHE:
-        break;
-      case CAPSTYPE_CONTROL:
-        break;
-      case CAPSTYPE_ACTIVATION:
-        break;
-      case CAPSTYPE_POINTER:
-        break;
-      case CAPSTYPE_SHARE:
-        break;
-      case CAPSTYPE_COLORCACHE:
-        break;
-      case CAPSTYPE_SOUND:
-        break;
-      case CAPSTYPE_INPUT:
-        break;
-      case CAPSTYPE_FONT:
-        break;
-      case CAPSTYPE_BRUSH:
-        break;
-      case CAPSTYPE_GLYPHCACHE:
-        break;
-      case CAPSTYPE_OFFSCREENCACHE:
-        break;
-      case CAPSTYPE_BITMAPCACHE_HOSTSUPPORT:
-        break;
-      case CAPSTYPE_BITMAPCACHE_REV2:
-        break;
-      case CAPSTYPE_VIRTUALCHANNEL:
-        break;
-      case CAPSTYPE_DRAWNINEGRIDCACHE:
-        break;
-      case CAPSTYPE_DRAWGDIPLUS:
-        break;
-      case CAPSTYPE_RAIL:
-        break;
-      case CAPSTYPE_WINDOW:
-        break;
-      case CAPSETTYPE_COMPDESK:
-        break;
-      case CAPSETTYPE_MULTIFRAGMENTUPDATE:
-        break;
-      case CAPSETTYPE_LARGE_POINTER:
-        break;
-      case CAPSETTYPE_SURFACE_COMMANDS:
-        break;
-      case CAPSETTYPE_BITMAP_CODECS:
-        break;
-      case CAPSSETTYPE_FRAME_ACKNOWLEDGE:
-        break;
-      default:
-        // Ignore
-        break;
-      }
-
-      capabilityData.unref();
+    public ServerDemandActivePDU(String id, ScreenDescription screen, RdpState state) {
+        super(id);
+        this.state = state;
+        this.screen = screen;
     }
 
-    // TODO
+    @Override
+    public void handleData(ByteBuffer buf, Link link) {
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
 
-    buf.unref();
-  }
+        // Total length of packet
+        int length = buf.readSignedShortLE(); // Ignore
+        if (buf.length != length)
+            throw new RuntimeException("Incorrect length of packet. Length: " + length + ", data: " + buf + ".");
 
-  /**
-   * @see http://msdn.microsoft.com/en-us/library/cc240554.aspx
-   */
-  protected void handleBitmapCapabilities(ByteBuffer buf) {
+        int type = buf.readSignedShortLE() & 0xf;
+        if (type != PDUTYPE_DEMANDACTIVEPDU)
+            throw new RuntimeException("Unknown PDU type. Expected type: Demand Active PDU (0x1), actual tyoe: " + type + ", data: " + buf + ".");
 
-    // (2 bytes): A 16-bit, unsigned integer. The server MUST set this field to
-    // the color depth of the session, while the client SHOULD set this field to
-    // the color depth requested in the Client Core Data (section 2.2.1.3.2).
-    int preferredBitsPerPixel = buf.readUnsignedShortLE();
-    screen.setPixelFormatRGBTrueColor(preferredBitsPerPixel);
+        // TS_SHARECONTROLHEADER::pduSource = 0x03ea (1002)
+        int pduSource = buf.readSignedShortLE();
+        if (pduSource != 1002)
+            throw new RuntimeException("Unexepcted source of demand active PDU. Expected source: 1002, actual source: " + pduSource + ".");
 
-    // receive1BitPerPixel (2 bytes): A 16-bit, unsigned integer. Indicates
-    // whether the client can receive 1 bpp. This field is ignored and SHOULD be
-    // set to TRUE (0x0001).
-    buf.skipBytes(2);
+        // (4 bytes): A 32-bit, unsigned integer. The share identifier for the
+        // packet (see [T128] section 8.4.2 for more information regarding share
+        // IDs).
+        long shareId = buf.readUnsignedIntLE();
+        state.serverShareId = shareId;
 
-    // receive4BitsPerPixel(2 bytes): A 16-bit, unsigned integer. Indicates
-    // whether the client can receive 4 bpp. This field is ignored and SHOULD be
-    // set to TRUE (0x0001).
-    buf.skipBytes(2);
+        // Ignore rest of server data because it is not used by this client.
+        // (2 bytes): A 16-bit, unsigned integer. The size in bytes of the
+        // sourceDescriptor field.
+        int lengthSourceDescriptor = buf.readUnsignedShortLE();
 
-    // receive8BitsPerPixel (2 bytes): A 16-bit, unsigned integer. Indicates
-    // whether the client can receive 8 bpp. This field is ignored and SHOULD be
-    // set to TRUE (0x0001).
-    buf.skipBytes(2);
+        // (2 bytes): A 16-bit, unsigned integer. The combined size in bytes of the
+        // numberCapabilities, pad2Octets, and capabilitySets fields.
+        int lengthCombinedCapabilities = buf.readUnsignedShortLE();
 
-    // (2 bytes): A 16-bit, unsigned integer. The width of the desktop in the
-    // session.
-    int desktopWidth = buf.readUnsignedShortLE();
+        // (variable): A variable-length array of bytes containing a source
+        // descriptor,
+        // ByteBuffer sourceDescriptor = buf.readBytes(lengthSourceDescriptor);
+        buf.skipBytes(lengthSourceDescriptor);
 
-    // (2 bytes): A 16-bit, unsigned integer. The height of the desktop in the
-    // session.
-    int desktopHeight = buf.readUnsignedShortLE();
+        // (variable): An array of Capability Set (section 2.2.1.13.1.1.1)
+        // structures. The number of capability sets is specified by the
+        // numberCapabilities field.
+        handleCapabiltySets(buf.readBytes(lengthCombinedCapabilities));
 
-    screen.setFramebufferSize(desktopWidth, desktopHeight);
+        // (4 bytes): A 32-bit, unsigned integer. The session identifier. This field
+        // is ignored by the client.
+        buf.skipBytes(4);
 
-    // pad2octets (2 bytes): A 16-bit, unsigned integer. Padding. Values in this
-    // field MUST be ignored.
+        /* DEBUG */buf.assertThatBufferIsFullyRead();
 
-    // desktopResizeFlag (2 bytes): A 16-bit, unsigned integer. Indicates
-    // whether resizing the desktop by using a Deactivation-Reactivation
-    // Sequence is supported.
+        buf.unref();
 
-    // bitmapCompressionFlag (2 bytes): A 16-bit, unsigned integer. Indicates
-    // whether bitmap compression is supported. This field MUST be set to TRUE
-    // (0x0001) because support for compressed bitmaps is required for a
-    // connection to proceed.
+        sendHandshakePackets();
+    }
 
-    // highColorFlags (1 byte): An 8-bit, unsigned integer. Client support for
-    // 16 bpp color modes. This field is ignored and SHOULD be set to zero.
+    /**
+     * General Capability Set
+     */
+    public static final int CAPSTYPE_GENERAL = 0x0001;
+    /**
+     * Bitmap Capability Set
+     */
+    public static final int CAPSTYPE_BITMAP = 0x0002;
+    /**
+     * Order Capability Set
+     */
+    public static final int CAPSTYPE_ORDER = 0x0003;
+    /**
+     * Revision 1 Bitmap Cache Capability Set
+     */
+    public static final int CAPSTYPE_BITMAPCACHE = 0x0004;
+    /**
+     * Control Capability Set
+     */
+    public static final int CAPSTYPE_CONTROL = 0x0005;
+    /**
+     * Window Activation Capability Set
+     */
+    public static final int CAPSTYPE_ACTIVATION = 0x0007;
+    /**
+     * Pointer Capability Set
+     */
+    public static final int CAPSTYPE_POINTER = 0x0008;
+    /**
+     * Share Capability Set
+     */
+    public static final int CAPSTYPE_SHARE = 0x0009;
+    /**
+     * Color Table Cache Capability Set
+     */
+    public static final int CAPSTYPE_COLORCACHE = 0x000A;
+    /**
+     * Sound Capability Set
+     */
+    public static final int CAPSTYPE_SOUND = 0x000C;
+    /**
+     * Input Capability Set
+     */
+    public static final int CAPSTYPE_INPUT = 0x000D;
+    /**
+     * Font Capability Set
+     */
+    public static final int CAPSTYPE_FONT = 0x000E;
+    /**
+     * Brush Capability Set
+     */
+    public static final int CAPSTYPE_BRUSH = 0x000F;
+    /**
+     * Glyph Cache Capability Set
+     */
+    public static final int CAPSTYPE_GLYPHCACHE = 0x0010;
+    /**
+     * Offscreen Bitmap Cache Capability Set
+     */
+    public static final int CAPSTYPE_OFFSCREENCACHE = 0x0011;
+    /**
+     * Bitmap Cache Host Support Capability Set
+     */
+    public static final int CAPSTYPE_BITMAPCACHE_HOSTSUPPORT = 0x0012;
+    /**
+     * Revision 2 Bitmap Cache Capability Set
+     */
+    public static final int CAPSTYPE_BITMAPCACHE_REV2 = 0x0013;
+    /**
+     * Virtual Channel Capability Set
+     */
+    public static final int CAPSTYPE_VIRTUALCHANNEL = 0x0014;
+    /**
+     * DrawNineGrid Cache Capability Set
+     */
+    public static final int CAPSTYPE_DRAWNINEGRIDCACHE = 0x0015;
+    /**
+     * Draw GDI+ Cache Capability Set
+     */
+    public static final int CAPSTYPE_DRAWGDIPLUS = 0x0016;
+    /**
+     * Remote Programs Capability Set
+     */
+    public static final int CAPSTYPE_RAIL = 0x0017;
+    /**
+     * Window List Capability Set
+     */
+    public static final int CAPSTYPE_WINDOW = 0x0018;
+    /**
+     * Desktop Composition Extension Capability Set
+     */
+    public static final int CAPSETTYPE_COMPDESK = 0x0019;
+    /**
+     * Multifragment Update Capability Set
+     */
+    public static final int CAPSETTYPE_MULTIFRAGMENTUPDATE = 0x001A;
+    /**
+     * Large Pointer Capability Set
+     */
+    public static final int CAPSETTYPE_LARGE_POINTER = 0x001B;
+    /**
+     * Surface Commands Capability Set
+     */
+    public static final int CAPSETTYPE_SURFACE_COMMANDS = 0x001C;
+    /**
+     * Bitmap Codecs Capability Set
+     */
+    public static final int CAPSETTYPE_BITMAP_CODECS = 0x001D;
+    /**
+     * Frame Acknowledge Capability Set
+     */
+    public static final int CAPSSETTYPE_FRAME_ACKNOWLEDGE = 0x001E;
 
-    // drawingFlags (1 byte): An 8-bit, unsigned integer. Flags describing
-    // support for 32 bpp bitmaps.
+    /**
+     * @see http://msdn.microsoft.com/en-us/library/cc240486.aspx
+     */
+    protected void handleCapabiltySets(ByteBuffer buf) {
+        // (2 bytes): A 16-bit, unsigned integer. The number of capability sets
+        // included in the Demand Active PDU.
+        int numberCapabilities = buf.readSignedShortLE();
 
-    // multipleRectangleSupport (2 bytes): A 16-bit, unsigned integer. Indicates
-    // whether the use of multiple bitmap rectangles is supported in the Bitmap
-    // Update (section 2.2.9.1.1.3.1.2). This field MUST be set to TRUE (0x0001)
-    // because multiple rectangle support is required for a connection to
-    // proceed.
+        // (2 bytes): Padding.
+        buf.skipBytes(2);
 
-    // pad2octetsB (2 bytes): A 16-bit, unsigned integer. Padding. Values in
-    // this field MUST be ignored.
-  }
+        for (int i = 0; i < numberCapabilities; i++) {
+            // (2 bytes): A 16-bit, unsigned integer. The type identifier of the
+            // capability set.
+            int capabilitySetType = buf.readUnsignedShortLE();
 
-  /**
-   * Send all client requests in one hop, to simplify logic.
-   */
-  protected void sendHandshakePackets() {
-    // Send reactivation sequence in bulk
-    pushDataToPad("confirm_active", new ByteBuffer((Order) null));
-  }
+            // (2 bytes): A 16-bit, unsigned integer. The length in bytes of the
+            // capability data, including the size of the capabilitySetType and
+            // lengthCapability fields.
+            int lengthCapability = buf.readUnsignedShortLE();
 
-  /**
-   * Example.
-   *
-   */
-  public static void main(String args[]) {
-    // System.setProperty("streamer.Link.debug", "true");
-    System.setProperty("streamer.Element.debug", "true");
-    // System.setProperty("streamer.Pipeline.debug", "true");
+            // (variable): Capability set data which conforms to the structure of the
+            // type given by the capabilitySetType field.
+            ByteBuffer capabilityData = buf.readBytes(lengthCapability - 4);
 
-    /* @formatter:off */
+            switch (capabilitySetType) {
+                case CAPSTYPE_GENERAL:
+                    break;
+                case CAPSTYPE_BITMAP:
+                    handleBitmapCapabilities(capabilityData);
+                    break;
+                case CAPSTYPE_ORDER:
+                    break;
+                case CAPSTYPE_BITMAPCACHE:
+                    break;
+                case CAPSTYPE_CONTROL:
+                    break;
+                case CAPSTYPE_ACTIVATION:
+                    break;
+                case CAPSTYPE_POINTER:
+                    break;
+                case CAPSTYPE_SHARE:
+                    break;
+                case CAPSTYPE_COLORCACHE:
+                    break;
+                case CAPSTYPE_SOUND:
+                    break;
+                case CAPSTYPE_INPUT:
+                    break;
+                case CAPSTYPE_FONT:
+                    break;
+                case CAPSTYPE_BRUSH:
+                    break;
+                case CAPSTYPE_GLYPHCACHE:
+                    break;
+                case CAPSTYPE_OFFSCREENCACHE:
+                    break;
+                case CAPSTYPE_BITMAPCACHE_HOSTSUPPORT:
+                    break;
+                case CAPSTYPE_BITMAPCACHE_REV2:
+                    break;
+                case CAPSTYPE_VIRTUALCHANNEL:
+                    break;
+                case CAPSTYPE_DRAWNINEGRIDCACHE:
+                    break;
+                case CAPSTYPE_DRAWGDIPLUS:
+                    break;
+                case CAPSTYPE_RAIL:
+                    break;
+                case CAPSTYPE_WINDOW:
+                    break;
+                case CAPSETTYPE_COMPDESK:
+                    break;
+                case CAPSETTYPE_MULTIFRAGMENTUPDATE:
+                    break;
+                case CAPSETTYPE_LARGE_POINTER:
+                    break;
+                case CAPSETTYPE_SURFACE_COMMANDS:
+                    break;
+                case CAPSETTYPE_BITMAP_CODECS:
+                    break;
+                case CAPSSETTYPE_FRAME_ACKNOWLEDGE:
+                    break;
+                default:
+                    // Ignore
+                    break;
+            }
+
+            capabilityData.unref();
+        }
+
+        // TODO
+
+        buf.unref();
+    }
+
+    /**
+     * @see http://msdn.microsoft.com/en-us/library/cc240554.aspx
+     */
+    protected void handleBitmapCapabilities(ByteBuffer buf) {
+
+        // (2 bytes): A 16-bit, unsigned integer. The server MUST set this field to
+        // the color depth of the session, while the client SHOULD set this field to
+        // the color depth requested in the Client Core Data (section 2.2.1.3.2).
+        int preferredBitsPerPixel = buf.readUnsignedShortLE();
+        screen.setPixelFormatRGBTrueColor(preferredBitsPerPixel);
+
+        // receive1BitPerPixel (2 bytes): A 16-bit, unsigned integer. Indicates
+        // whether the client can receive 1 bpp. This field is ignored and SHOULD be
+        // set to TRUE (0x0001).
+        buf.skipBytes(2);
+
+        // receive4BitsPerPixel(2 bytes): A 16-bit, unsigned integer. Indicates
+        // whether the client can receive 4 bpp. This field is ignored and SHOULD be
+        // set to TRUE (0x0001).
+        buf.skipBytes(2);
+
+        // receive8BitsPerPixel (2 bytes): A 16-bit, unsigned integer. Indicates
+        // whether the client can receive 8 bpp. This field is ignored and SHOULD be
+        // set to TRUE (0x0001).
+        buf.skipBytes(2);
+
+        // (2 bytes): A 16-bit, unsigned integer. The width of the desktop in the
+        // session.
+        int desktopWidth = buf.readUnsignedShortLE();
+
+        // (2 bytes): A 16-bit, unsigned integer. The height of the desktop in the
+        // session.
+        int desktopHeight = buf.readUnsignedShortLE();
+
+        screen.setFramebufferSize(desktopWidth, desktopHeight);
+
+        // pad2octets (2 bytes): A 16-bit, unsigned integer. Padding. Values in this
+        // field MUST be ignored.
+
+        // desktopResizeFlag (2 bytes): A 16-bit, unsigned integer. Indicates
+        // whether resizing the desktop by using a Deactivation-Reactivation
+        // Sequence is supported.
+
+        // bitmapCompressionFlag (2 bytes): A 16-bit, unsigned integer. Indicates
+        // whether bitmap compression is supported. This field MUST be set to TRUE
+        // (0x0001) because support for compressed bitmaps is required for a
+        // connection to proceed.
+
+        // highColorFlags (1 byte): An 8-bit, unsigned integer. Client support for
+        // 16 bpp color modes. This field is ignored and SHOULD be set to zero.
+
+        // drawingFlags (1 byte): An 8-bit, unsigned integer. Flags describing
+        // support for 32 bpp bitmaps.
+
+        // multipleRectangleSupport (2 bytes): A 16-bit, unsigned integer. Indicates
+        // whether the use of multiple bitmap rectangles is supported in the Bitmap
+        // Update (section 2.2.9.1.1.3.1.2). This field MUST be set to TRUE (0x0001)
+        // because multiple rectangle support is required for a connection to
+        // proceed.
+
+        // pad2octetsB (2 bytes): A 16-bit, unsigned integer. Padding. Values in
+        // this field MUST be ignored.
+    }
+
+    /**
+     * Send all client requests in one hop, to simplify logic.
+     */
+    protected void sendHandshakePackets() {
+        // Send reactivation sequence in bulk
+        pushDataToPad("confirm_active", new ByteBuffer((Order)null));
+    }
+
+    /**
+     * Example.
+     *
+     */
+    public static void main(String args[]) {
+        // System.setProperty("streamer.Link.debug", "true");
+        System.setProperty("streamer.Element.debug", "true");
+        // System.setProperty("streamer.Pipeline.debug", "true");
+
+        /* @formatter:off */
     byte[] packet = new byte[] {
         0x67, 0x01,  //  TS_SHARECONTROLHEADER::totalLength = 0x0167 = 359 bytes
         0x11, 0x00,  //  TS_SHARECONTROLHEADER::pduType = 0x0011 0x0011 = 0x0010 | 0x0001  = TS_PROTOCOL_VERSION | PDUTYPE_DEMANDACTIVEPDU
@@ -645,17 +644,17 @@ public class ServerDemandActivePDU extends BaseElement {
     };
     /* @formatter:on */
 
-    RdpState rdpState = new RdpState();
-    ScreenDescription screenDescription = new ScreenDescription();
+        RdpState rdpState = new RdpState();
+        ScreenDescription screenDescription = new ScreenDescription();
 
-    MockSource source = new MockSource("source", ByteBuffer.convertByteArraysToByteBuffers(packet));
-    Element demandActive = new ServerDemandActivePDU("demand_active", screenDescription, rdpState);
-    Element sink = new FakeSink("sink");
+        MockSource source = new MockSource("source", ByteBuffer.convertByteArraysToByteBuffers(packet));
+        Element demandActive = new ServerDemandActivePDU("demand_active", screenDescription, rdpState);
+        Element sink = new FakeSink("sink");
 
-    Pipeline pipeline = new PipelineImpl("test");
-    pipeline.add(source, demandActive, sink);
-    pipeline.link("source", "demand_active", "sink");
-    pipeline.runMainLoop("source", STDOUT, false, false);
-  }
+        Pipeline pipeline = new PipelineImpl("test");
+        pipeline.add(source, demandActive, sink);
+        pipeline.link("source", "demand_active", "sink");
+        pipeline.runMainLoop("source", STDOUT, false, false);
+    }
 
 }

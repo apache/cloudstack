@@ -30,8 +30,9 @@ import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 
 import com.cloud.agent.api.storage.CreateEntityDownloadURLAnswer;
 import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
@@ -184,8 +185,8 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
     private boolean hvm;
 
     @Override
-    public String uploadPublicTemplate(long id, String url, String name, ImageFormat format, Long accountId, String descr, String cksum, String installPathPrefix, String userName,
-        String passwd, long templateSizeInBytes) {
+    public String uploadPublicTemplate(long id, String url, String name, ImageFormat format, Long accountId, String descr, String cksum, String installPathPrefix,
+        String userName, String passwd, long templateSizeInBytes) {
 
         UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
@@ -308,8 +309,9 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
             break;*/
             case PURGE:
                 td.stopUpload();
-                answer = new UploadAnswer(jobId, getUploadPct(jobId), getUploadError(jobId), getUploadStatus2(jobId), getUploadLocalPath(jobId), getInstallPath(jobId),
-                    getUploadTemplateSize(jobId));
+                answer =
+                    new UploadAnswer(jobId, getUploadPct(jobId), getUploadError(jobId), getUploadStatus2(jobId), getUploadLocalPath(jobId), getInstallPath(jobId),
+                        getUploadTemplateSize(jobId));
                 jobs.remove(jobId);
                 return answer;
             default:
@@ -328,8 +330,9 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
         String user = null;
         String password = null;
-        String jobId = uploadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(),
-            cmd.getInstallPath(), user, password, cmd.getTemplateSizeInBytes());
+        String jobId =
+            uploadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.getAccountId(), cmd.getDescription(), cmd.getChecksum(),
+                cmd.getInstallPath(), user, password, cmd.getTemplateSizeInBytes());
         sleep();
         if (jobId == null) {
             return new UploadAnswer(null, 0, "Internal Error", com.cloud.storage.UploadVO.Status.UPLOAD_ERROR, "", "", 0);

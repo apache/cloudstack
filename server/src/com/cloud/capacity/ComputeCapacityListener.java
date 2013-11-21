@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.capacity;
 
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.Listener;
@@ -31,7 +29,6 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
-import com.cloud.utils.db.SearchCriteria;
 
 public class ComputeCapacityListener implements Listener {
     private static final Logger s_logger = Logger.getLogger(ComputeCapacityListener.class);

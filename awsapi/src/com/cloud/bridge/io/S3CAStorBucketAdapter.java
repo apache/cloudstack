@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.bridge.io;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -30,11 +28,28 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
+import java.util.HashSet;
 
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
 
+import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Logger;
+
+import com.caringo.client.ResettableFileInputStream;
+import com.caringo.client.ScspClient;
+import com.caringo.client.ScspExecutionException;
+import com.caringo.client.ScspHeaders;
+import com.caringo.client.ScspQueryArgs;
+import com.caringo.client.ScspResponse;
+import com.caringo.client.locate.Locator;
+import com.caringo.client.locate.StaticLocator;
+import com.caringo.client.locate.ZeroconfLocator;
 
 import com.cloud.bridge.service.core.s3.S3BucketAdapter;
 import com.cloud.bridge.service.core.s3.S3MultipartPart;
@@ -43,23 +58,8 @@ import com.cloud.bridge.service.exception.FileNotExistException;
 import com.cloud.bridge.service.exception.InternalErrorException;
 import com.cloud.bridge.service.exception.OutOfStorageException;
 import com.cloud.bridge.service.exception.UnsupportedException;
-import com.cloud.bridge.util.StringHelper;
 import com.cloud.bridge.util.OrderedPair;
-
-import com.caringo.client.locate.Locator;
-import com.caringo.client.locate.StaticLocator;
-import com.caringo.client.locate.ZeroconfLocator;
-import com.caringo.client.ResettableFileInputStream;
-import com.caringo.client.ScspClient;
-import com.caringo.client.ScspExecutionException;
-import com.caringo.client.ScspHeaders;
-import com.caringo.client.ScspQueryArgs;
-import com.caringo.client.ScspResponse;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
+import com.cloud.bridge.util.StringHelper;
 
 /**
  * Creates an SCSP client to a CAStor cluster, configured in "storage.root",
@@ -152,7 +152,7 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
         }
         try {
             s_logger.info("CAStor client starting: " + (_domain == null ? "default domain" : "domain " + _domain) + " " +
-                          (clusterName == null ? Arrays.toString(castorNodes) : clusterName) + " :" + castorPort);
+                (clusterName == null ? Arrays.toString(castorNodes) : clusterName) + " :" + castorPort);
             _scspClient = new ScspClient(_locator, castorPort, DEFAULT_MAX_POOL_SIZE, DEFAULT_MAX_RETRIES, CONNECTION_TIMEOUT, CM_IDLE_TIMEOUT);
             _scspClient.start();
         } catch (Exception e) {
@@ -198,7 +198,8 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
             ScspResponse bwResponse = myClient(mountedRoot).write(bucket, new ByteArrayInputStream("".getBytes()), 0, domainQueryArg(), new ScspHeaders());
             if (bwResponse.getHttpStatusCode() != HTTP_CREATED) {
                 if (bwResponse.getHttpStatusCode() == HTTP_PRECONDITION_FAILED)
-                    s_logger.error("CAStor unable to create bucket " + bucket + " because domain " + (this._domain == null ? "(default)" : this._domain) + " does not exist");
+                    s_logger.error("CAStor unable to create bucket " + bucket + " because domain " + (this._domain == null ? "(default)" : this._domain) +
+                        " does not exist");
                 else
                     s_logger.error("CAStor unable to create bucket " + bucket + ": " + bwResponse.getHttpStatusCode());
                 throw new OutOfStorageException("CAStor unable to create bucket " + bucket + ": " + bwResponse.getHttpStatusCode());
@@ -279,8 +280,8 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
             }
 
             try {
-                ScspResponse bwResponse = myClient(mountedRoot).write(bucket + "/" + fileName, new ResettableFileInputStream(spoolFile), streamLen, domainQueryArg(),
-                    new ScspHeaders());
+                ScspResponse bwResponse =
+                    myClient(mountedRoot).write(bucket + "/" + fileName, new ResettableFileInputStream(spoolFile), streamLen, domainQueryArg(), new ScspHeaders());
                 if (bwResponse.getHttpStatusCode() >= HTTP_UNSUCCESSFUL) {
                     s_logger.error("CAStor write responded with error " + bwResponse.getHttpStatusCode());
                     throw new OutOfStorageException("Unable to write object to CAStor " + bucket + "/" + fileName + ": " + bwResponse.getHttpStatusCode());
@@ -319,7 +320,8 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
      * @return OrderedPair with the first value the MD5 of the final object, and the second value the length of the final object
      */
     @Override
-    public OrderedPair<String, Long> concatentateObjects(String mountedRoot, String destBucket, String fileName, String sourceBucket, S3MultipartPart[] parts, OutputStream client) {
+    public OrderedPair<String, Long> concatentateObjects(String mountedRoot, String destBucket, String fileName, String sourceBucket, S3MultipartPart[] parts,
+        OutputStream client) {
         // TODO
         throw new UnsupportedException("Multipart upload support not yet implemented in CAStor plugin");
 

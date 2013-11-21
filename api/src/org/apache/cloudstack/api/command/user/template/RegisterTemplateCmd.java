@@ -21,6 +21,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,8 +37,6 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
@@ -61,7 +61,10 @@ public class RegisterTemplateCmd extends BaseCmd {
                length = 4096)
     private String displayText;
 
-    @Parameter(name = ApiConstants.FORMAT, type = CommandType.STRING, required = true, description = "the format for the template. Possible values include QCOW2, RAW, and VHD.")
+    @Parameter(name = ApiConstants.FORMAT,
+               type = CommandType.STRING,
+               required = true,
+               description = "the format for the template. Possible values include QCOW2, RAW, and VHD.")
     private String format;
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "the target hypervisor for the template")
@@ -83,7 +86,9 @@ public class RegisterTemplateCmd extends BaseCmd {
                description = "the ID of the OS Type that best represents the OS of this template.")
     private Long osTypeId;
 
-    @Parameter(name = ApiConstants.PASSWORD_ENABLED, type = CommandType.BOOLEAN, description = "true if the template supports the password reset feature; default is false")
+    @Parameter(name = ApiConstants.PASSWORD_ENABLED,
+               type = CommandType.BOOLEAN,
+               description = "true if the template supports the password reset feature; default is false")
     private Boolean passwordEnabled;
 
     @Parameter(name = ApiConstants.SSHKEY_ENABLED, type = CommandType.BOOLEAN, description = "true if the template supports the sshkey upload feature; default is false")

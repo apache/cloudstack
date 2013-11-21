@@ -62,13 +62,15 @@ public class Upgrade228to229 implements DbUpgrade {
         PreparedStatement pstmt;
         try {
             /*fk_cluster__data_center_id has been wrongly added in previous upgrade(not sure which one), 228to229 upgrade drops it and re-add again*/
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`cluster` ADD CONSTRAINT `fk_cluster__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`) ON DELETE CASCADE");
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`cluster` ADD CONSTRAINT `fk_cluster__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `cloud`.`data_center`(`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
 
             pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`snapshots` ADD INDEX `i_snapshots__removed`(`removed`)");
             pstmt.executeUpdate();
 
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`network_tags` ADD CONSTRAINT `fk_network_tags__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE");
+            pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`network_tags` ADD CONSTRAINT `fk_network_tags__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
 
             pstmt.close();

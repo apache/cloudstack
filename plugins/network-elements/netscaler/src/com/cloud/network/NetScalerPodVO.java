@@ -16,14 +16,12 @@
 // under the License.
 package com.cloud.network;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * NetScalerPodVO contains information about a EIP deployment where on datacenter L3 router a PBR (policy
@@ -54,6 +52,7 @@ public class NetScalerPodVO implements InternalIdentity {
         this.podId = podId;
     }
 
+    @Override
     public long getId() {
         return id;
     }

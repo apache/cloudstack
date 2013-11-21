@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.dc;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -33,8 +31,8 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "dc_storage_network_ip_range")
 @SecondaryTables({@SecondaryTable(name = "networks", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "network_id", referencedColumnName = "id")}),
-        @SecondaryTable(name = "host_pod_ref", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "pod_id", referencedColumnName = "id")}),
-        @SecondaryTable(name = "data_center", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "data_center_id", referencedColumnName = "id")})})
+    @SecondaryTable(name = "host_pod_ref", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "pod_id", referencedColumnName = "id")}),
+    @SecondaryTable(name = "data_center", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "data_center_id", referencedColumnName = "id")})})
 public class StorageNetworkIpRangeVO implements StorageNetworkIpRange {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -93,6 +91,7 @@ public class StorageNetworkIpRangeVO implements StorageNetworkIpRange {
         this.uuid = UUID.randomUUID().toString();
     }
 
+    @Override
     public long getId() {
         return id;
     }
@@ -121,6 +120,7 @@ public class StorageNetworkIpRangeVO implements StorageNetworkIpRange {
         this.networkId = nwId;
     }
 
+    @Override
     public Integer getVlan() {
         return vlan;
     }
@@ -133,6 +133,7 @@ public class StorageNetworkIpRangeVO implements StorageNetworkIpRange {
         this.startIp = start;
     }
 
+    @Override
     public String getStartIp() {
         return startIp;
     }
@@ -141,14 +142,17 @@ public class StorageNetworkIpRangeVO implements StorageNetworkIpRange {
         this.endIp = end;
     }
 
+    @Override
     public String getEndIp() {
         return endIp;
     }
 
+    @Override
     public String getNetmask() {
         return netmask;
     }
 
+    @Override
     public String getGateway() {
         return this.gateway;
     }

@@ -57,6 +57,7 @@ public class NetworkOfferingDetailsVO implements InternalIdentity {
         this.value = value;
     }
 
+    @Override
     public long getId() {
         return id;
     }

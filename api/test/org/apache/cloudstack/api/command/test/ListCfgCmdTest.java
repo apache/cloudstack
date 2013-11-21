@@ -16,21 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.test;
 
-import com.cloud.configuration.ConfigurationService;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.resource.ResourceService;
-import com.cloud.server.ManagementService;
-import com.cloud.utils.Pair;
+import java.util.ArrayList;
+import java.util.List;
 
 import junit.framework.Assert;
 import junit.framework.TestCase;
-
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
-import org.apache.cloudstack.api.response.ConfigurationResponse;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.config.Configuration;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -38,8 +28,14 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
+import org.apache.cloudstack.api.response.ConfigurationResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.config.Configuration;
+
+import com.cloud.server.ManagementService;
+import com.cloud.utils.Pair;
 
 public class ListCfgCmdTest extends TestCase {
 
@@ -50,6 +46,7 @@ public class ListCfgCmdTest extends TestCase {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    @Override
     @Before
     public void setUp() {
         responseGenerator = Mockito.mock(ResponseGenerator.class);

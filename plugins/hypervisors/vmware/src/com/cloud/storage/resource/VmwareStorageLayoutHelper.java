@@ -33,7 +33,8 @@ import com.cloud.utils.Pair;
 public class VmwareStorageLayoutHelper {
     private static final Logger s_logger = Logger.getLogger(VmwareStorageLayoutHelper.class);
 
-    public static String[] getVmdkFilePairDatastorePath(DatastoreMO dsMo, String vmName, String vmdkName, VmwareStorageLayoutType layoutType, boolean linkedVmdk) throws Exception {
+    public static String[] getVmdkFilePairDatastorePath(DatastoreMO dsMo, String vmName, String vmdkName, VmwareStorageLayoutType layoutType, boolean linkedVmdk)
+        throws Exception {
 
         String[] filePair = new String[2];
         switch (layoutType) {

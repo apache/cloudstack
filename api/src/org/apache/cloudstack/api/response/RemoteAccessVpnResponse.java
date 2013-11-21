@@ -16,13 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = RemoteAccessVpn.class)
 @SuppressWarnings("unused")
@@ -84,6 +85,7 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
         this.presharedKey = presharedKey;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
@@ -93,6 +95,7 @@ public class RemoteAccessVpnResponse extends BaseResponse implements ControlledE
         this.domainId = domainId;
     }
 
+    @Override
     public void setDomainName(String name) {
         this.domainName = name;
     }

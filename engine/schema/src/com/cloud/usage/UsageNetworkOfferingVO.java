@@ -60,7 +60,8 @@ public class UsageNetworkOfferingVO {
     protected UsageNetworkOfferingVO() {
     }
 
-    public UsageNetworkOfferingVO(long zoneId, long accountId, long domainId, long vmInstanceId, long networkOfferingId, long nicId, boolean isDefault, Date created, Date deleted) {
+    public UsageNetworkOfferingVO(long zoneId, long accountId, long domainId, long vmInstanceId, long networkOfferingId, long nicId, boolean isDefault, Date created,
+            Date deleted) {
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;

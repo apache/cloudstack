@@ -37,8 +37,7 @@ import org.w3c.dom.NodeList;
 
 public class TestCaseEngine {
 
-    public static final Logger s_logger = Logger.getLogger(TestCaseEngine.class
-        .getName());
+    public static final Logger s_logger = Logger.getLogger(TestCaseEngine.class.getName());
     public static String fileName = "../metadata/adapter.xml";
     public static HashMap<String, String> globalParameters = new HashMap<String, String>();
     protected static HashMap<String, String> _componentMap = new HashMap<String, String>();
@@ -92,8 +91,7 @@ public class TestCaseEngine {
         try {
             // parse adapter.xml file to get list of tests to execute
             File file = new File(fileName);
-            DocumentBuilderFactory factory = DocumentBuilderFactory
-                .newInstance();
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document doc = builder.parse(file);
             doc.getDocumentElement().normalize();
@@ -110,12 +108,12 @@ public class TestCaseEngine {
             // execute test
             for (int i = 0; i < _numThreads; i++) {
                 if (_numThreads > 1) {
-                    s_logger.info("STARTING STRESS TEST IN "
-                                  + _numThreads + " THREADS");
+                    s_logger.info("STARTING STRESS TEST IN " + _numThreads + " THREADS");
                 } else {
                     s_logger.info("STARTING FUNCTIONAL TEST");
                 }
                 new Thread(new Runnable() {
+                    @Override
                     public void run() {
                         do {
                             if (_numThreads == 1) {
@@ -134,14 +132,11 @@ public class TestCaseEngine {
                                 }
                             } else {
                                 Random ran = new Random();
-                                Integer randomNumber = (Integer)Math.abs(ran
-                                    .nextInt(_keys.size()));
+                                Integer randomNumber = Math.abs(ran.nextInt(_keys.size()));
                                 try {
                                     String key = _keys.get(randomNumber);
-                                    Class<?> c = Class.forName(_componentMap
-                                        .get(key));
-                                    TestCase component = (TestCase)c
-                                        .newInstance();
+                                    Class<?> c = Class.forName(_componentMap.get(key));
+                                    TestCase component = (TestCase)c.newInstance();
                                     executeTest(key, c, component);
                                 } catch (Exception e) {
                                     s_logger.error("Error in thread ", e);
@@ -166,14 +161,12 @@ public class TestCaseEngine {
             Element paramElement = (Element)paramLst.item(i);
 
             if (paramElement.getNodeType() == Node.ELEMENT_NODE) {
-                Element itemElement = (Element)paramElement;
+                Element itemElement = paramElement;
                 NodeList itemName = itemElement.getElementsByTagName("name");
                 Element itemNameElement = (Element)itemName.item(0);
-                NodeList itemVariable = itemElement
-                    .getElementsByTagName("variable");
+                NodeList itemVariable = itemElement.getElementsByTagName("variable");
                 Element itemVariableElement = (Element)itemVariable.item(0);
-                globalParameters.put(itemVariableElement.getTextContent(),
-                    itemNameElement.getTextContent());
+                globalParameters.put(itemVariableElement.getTextContent(), itemNameElement.getTextContent());
             }
         }
     }
@@ -184,14 +177,12 @@ public class TestCaseEngine {
             Element testElement = (Element)testLst.item(j);
 
             if (testElement.getNodeType() == Node.ELEMENT_NODE) {
-                Element itemElement = (Element)testElement;
+                Element itemElement = testElement;
 
                 // get test case name
-                NodeList testCaseNameList = itemElement
-                    .getElementsByTagName("testname");
+                NodeList testCaseNameList = itemElement.getElementsByTagName("testname");
                 if (testCaseNameList != null) {
-                    testCaseName = ((Element)testCaseNameList.item(0))
-                        .getTextContent();
+                    testCaseName = ((Element)testCaseNameList.item(0)).getTextContent();
                 }
 
                 if (isSanity == true && !testCaseName.equals("SANITY TEST"))
@@ -202,21 +193,17 @@ public class TestCaseEngine {
                 // set class name
                 NodeList className = itemElement.getElementsByTagName("class");
                 if ((className.getLength() == 0) || (className == null)) {
-                    _componentMap.put(testCaseName,
-                        "com.cloud.test.regression.VMApiTest");
+                    _componentMap.put(testCaseName, "com.cloud.test.regression.VMApiTest");
                 } else {
-                    String name = ((Element)className.item(0))
-                        .getTextContent();
+                    String name = ((Element)className.item(0)).getTextContent();
                     _componentMap.put(testCaseName, name);
                 }
 
                 // set input file name
-                NodeList inputFileNameLst = itemElement
-                    .getElementsByTagName("filename");
+                NodeList inputFileNameLst = itemElement.getElementsByTagName("filename");
                 _inputFile.put(testCaseName, new ArrayList<String>());
                 for (int k = 0; k < inputFileNameLst.getLength(); k++) {
-                    String inputFileName = ((Element)inputFileNameLst.item(k))
-                        .getTextContent();
+                    String inputFileName = ((Element)inputFileNameLst.item(k)).getTextContent();
                     _inputFile.get(testCaseName).add(inputFileName);
                 }
             }

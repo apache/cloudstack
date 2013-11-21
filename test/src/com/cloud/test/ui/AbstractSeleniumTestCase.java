@@ -20,12 +20,8 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import junit.framework.TestSuite;
-import junit.framework.Test;
-import junit.framework.JUnit4TestAdapter;
-import org.openqa.selenium.server.SeleniumServer;
 import org.openqa.selenium.server.RemoteControlConfiguration;
-import org.junit.runners.Suite;
+import org.openqa.selenium.server.SeleniumServer;
 
 import com.thoughtworks.selenium.DefaultSelenium;
 
@@ -53,8 +49,7 @@ public abstract class AbstractSeleniumTestCase {
         selenium.stop();
     }
 
-    protected static DefaultSelenium createSeleniumClient(String url)
-        throws Exception {
+    protected static DefaultSelenium createSeleniumClient(String url) throws Exception {
         return new DefaultSelenium("localhost", 4444, "*firefox", url);
     }
 }

@@ -109,7 +109,8 @@ public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             NiciraNvpDeviceVO niciraNvpDeviceVO = niciraNvpElementService.addNiciraNvpDevice(this);
             if (niciraNvpDeviceVO != null) {

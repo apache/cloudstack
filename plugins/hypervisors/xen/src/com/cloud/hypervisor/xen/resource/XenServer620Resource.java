@@ -64,7 +64,7 @@ public class XenServer620Resource extends XenServer610Resource {
         long staticMax = Math.min(recommendedValue, 4l * dynamicMinRam);  // XS constraint for stability
         if (dynamicMaxRam > staticMax) { // XS contraint that dynamic max <= static max
             s_logger.warn("dynamixMax " + dynamicMaxRam + " cant be greater than static max " + staticMax +
-                          ", can lead to stability issues. Setting static max as much as dynamic max ");
+                ", can lead to stability issues. Setting static max as much as dynamic max ");
             return dynamicMaxRam;
         }
         return staticMax;

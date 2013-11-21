@@ -26,25 +26,24 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.utils.Pair;
-
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
-import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.LoadBalancerTO.DestinationTO;
 import com.cloud.agent.api.to.LoadBalancerTO.StickinessPolicyTO;
+import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
+import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
 
 public class HAProxyConfigurator implements LoadBalancerConfigurator {
 
     private static final Logger s_logger = Logger.getLogger(HAProxyConfigurator.class);
     private static final String blankLine = "\t ";
-    private static String[] globalSection = {"global", "\tlog 127.0.0.1:3914   local0 warning", "\tmaxconn 4096", "\tmaxpipes 1024", "\tchroot /var/lib/haproxy", "\tuser haproxy",
-            "\tgroup haproxy", "\tdaemon"};
+    private static String[] globalSection = {"global", "\tlog 127.0.0.1:3914   local0 warning", "\tmaxconn 4096", "\tmaxpipes 1024", "\tchroot /var/lib/haproxy",
+        "\tuser haproxy", "\tgroup haproxy", "\tdaemon"};
 
     private static String[] defaultsSection = {"defaults", "\tlog     global", "\tmode    tcp", "\toption  dontlognull", "\tretries 3", "\toption redispatch",
-            "\toption forwardfor", "\toption forceclose", "\ttimeout connect    5000", "\ttimeout client     50000", "\ttimeout server     50000"};
+        "\toption forwardfor", "\toption forceclose", "\ttimeout connect    5000", "\ttimeout client     50000", "\ttimeout server     50000"};
 
     private static String[] defaultListen = {"listen  vmops 0.0.0.0:9", "\toption transparent"};
 
@@ -527,7 +526,10 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             s_logger.info("Haproxy mode http enabled");
             rule.append("\n\tmode http\n\toption httpclose");
         }
-        rule.append("\n\tstats enable\n\tstats uri     ").append(lbCmd.lbStatsUri).append("\n\tstats realm   Haproxy\\ Statistics\n\tstats auth    ").append(lbCmd.lbStatsAuth);
+        rule.append("\n\tstats enable\n\tstats uri     ")
+            .append(lbCmd.lbStatsUri)
+            .append("\n\tstats realm   Haproxy\\ Statistics\n\tstats auth    ")
+            .append(lbCmd.lbStatsAuth);
         rule.append("\n");
         String result = rule.toString();
         if (s_logger.isDebugEnabled()) {
@@ -587,9 +589,10 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                  * stats will be available on the default http serving port, no
                  * special stats port
                  */
-                StringBuilder subRule = new StringBuilder("\tstats enable\n\tstats uri     ").append(lbCmd.lbStatsUri)
-                    .append("\n\tstats realm   Haproxy\\ Statistics\n\tstats auth    ")
-                    .append(lbCmd.lbStatsAuth);
+                StringBuilder subRule =
+                    new StringBuilder("\tstats enable\n\tstats uri     ").append(lbCmd.lbStatsUri)
+                        .append("\n\tstats realm   Haproxy\\ Statistics\n\tstats auth    ")
+                        .append(lbCmd.lbStatsAuth);
                 result.add(subRule.toString());
             }
 

@@ -26,17 +26,14 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.AffinityGroupService;
-
-import com.cloud.server.ResourceMetaDataService;
-
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.usage.UsageService;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.domain.Domain;
@@ -54,10 +51,10 @@ import com.cloud.network.StorageNetworkService;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.as.AutoScaleService;
 import com.cloud.network.firewall.FirewallService;
-import com.cloud.network.vpc.NetworkACLService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;
+import com.cloud.network.vpc.NetworkACLService;
 import com.cloud.network.vpc.VpcProvisioningService;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpn.RemoteAccessVpnService;
@@ -66,6 +63,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
+import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.DataStoreProviderApiService;
 import com.cloud.storage.StorageService;
@@ -272,7 +270,7 @@ public abstract class BaseCmd {
             int arrayStartLastIndex = key.lastIndexOf('[');
             if (arrayStartIndex != arrayStartLastIndex) {
                 throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key +
-                                                                                     "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
+                    "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
             }
 
             if (arrayStartIndex > 0) {
@@ -281,7 +279,7 @@ public abstract class BaseCmd {
                 if ((arrayEndIndex < arrayStartIndex) || (arrayEndIndex != arrayEndLastIndex)) {
                     // malformed parameter
                     throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key +
-                                                                                         "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
+                        "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
                 }
 
                 // Now that we have an array object, check for a field name in the case of a complex object
@@ -289,7 +287,7 @@ public abstract class BaseCmd {
                 String fieldName = null;
                 if (fieldIndex < arrayEndIndex) {
                     throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key +
-                                                                                         "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
+                        "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
                 } else {
                     fieldName = key.substring(fieldIndex + 1);
                 }
@@ -314,7 +312,7 @@ public abstract class BaseCmd {
 
                 if (!parsedIndex) {
                     throw new ServerApiException(ApiErrorCode.MALFORMED_PARAMETER_ERROR, "Unable to decode parameter " + key +
-                                                                                         "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
+                        "; if specifying an object array, please use parameter[index].field=XXX, e.g. userGroupList[0].group=httpGroup");
                 }
 
                 Object value = lowercaseParams.get(paramName);
@@ -349,7 +347,8 @@ public abstract class BaseCmd {
     }
 
     public static boolean isAdmin(short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
+        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
+            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
     }
 
     public static boolean isRootAdmin(short accountType) {
@@ -381,7 +380,7 @@ public abstract class BaseCmd {
                     return account.getId();
                 } else {
                     throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() +
-                                                        " as it's no longer active");
+                        " as it's no longer active");
                 }
             } else {
                 // idList is not used anywhere, so removed it now
@@ -397,8 +396,9 @@ public abstract class BaseCmd {
                 if (!enabledOnly || project.getState() == Project.State.Active) {
                     return project.getProjectAccountId();
                 } else {
-                    PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() +
-                                                                                 " as it's no longer active");
+                    PermissionDeniedException ex =
+                        new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() +
+                            " as it's no longer active");
                     ex.addProxyObject(project.getUuid(), "projectId");
                     throw ex;
                 }

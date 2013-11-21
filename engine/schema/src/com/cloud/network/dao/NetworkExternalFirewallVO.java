@@ -26,8 +26,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.db.GenericDao;
 
 /**
  * NetworkExternalFirewallVO contains information on the networks that are using external firewall
@@ -66,6 +67,7 @@ public class NetworkExternalFirewallVO implements InternalIdentity {
         this.uuid = UUID.randomUUID().toString();
     }
 
+    @Override
     public long getId() {
         return id;
     }

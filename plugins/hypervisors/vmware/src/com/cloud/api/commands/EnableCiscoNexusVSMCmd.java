@@ -19,19 +19,24 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+
+import com.cloud.api.response.CiscoNexusVSMResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.CiscoNexusVSMDevice;
 import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.user.Account;
-import com.cloud.api.response.CiscoNexusVSMResponse;
-import com.cloud.network.CiscoNexusVSMDevice;
 
 @APICommand(name = "enableCiscoNexusVSM", responseObject = CiscoNexusVSMResponse.class, description = "Enable a Cisco Nexus VSM device")
 public class EnableCiscoNexusVSMCmd extends BaseAsyncCmd {
@@ -65,7 +70,8 @@ public class EnableCiscoNexusVSMCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         CiscoNexusVSMDevice result = _ciscoNexusVSMService.enableCiscoNexusVSM(this);
         if (result != null) {
             CiscoNexusVSMResponse response = _ciscoNexusVSMService.createCiscoNexusVSMDetailedResponse(result);

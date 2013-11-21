@@ -29,12 +29,14 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.trilead.ssh2.SCPClient;
+
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -133,7 +135,6 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
-import com.trilead.ssh2.SCPClient;
 
 public class OvmResourceBase implements ServerResource, HypervisorResource {
     private static final Logger s_logger = Logger.getLogger(OvmResourceBase.class);
@@ -513,8 +514,9 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
                 vol = OvmVolume.createDataDsik(_conn, primaryStorage.getUuid(), Long.toString(disk.getSize()), disk.getType() == Volume.Type.ROOT);
             }
 
-            VolumeTO volume = new VolumeTO(cmd.getVolumeId(), disk.getType(), primaryStorage.getType(), primaryStorage.getUuid(), primaryStorage.getPath(), vol.name, vol.path,
-                vol.size, null);
+            VolumeTO volume =
+                new VolumeTO(cmd.getVolumeId(), disk.getType(), primaryStorage.getType(), primaryStorage.getUuid(), primaryStorage.getPath(), vol.name, vol.path,
+                    vol.size, null);
             return new CreateAnswer(cmd, volume);
         } catch (Exception e) {
             s_logger.debug("CreateCommand failed", e);
@@ -1115,8 +1117,9 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             OvmVif.Details vif = getVifFromVm(cmd.getVmName(), null);
             String vifDeviceName = vif.name;
             String bridgeName = vif.bridge;
-            result = addNetworkRules(cmd.getVmName(), Long.toString(cmd.getVmId()), cmd.getGuestIp(), cmd.getSignature(), String.valueOf(cmd.getSeqNum()), cmd.getGuestMac(),
-                cmd.stringifyRules(), vifDeviceName, bridgeName);
+            result =
+                addNetworkRules(cmd.getVmName(), Long.toString(cmd.getVmId()), cmd.getGuestIp(), cmd.getSignature(), String.valueOf(cmd.getSeqNum()), cmd.getGuestMac(),
+                    cmd.stringifyRules(), vifDeviceName, bridgeName);
         } catch (XmlRpcException e) {
             s_logger.error(e);
             result = false;
@@ -1127,7 +1130,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             return new SecurityGroupRuleAnswer(cmd, false, "programming network rules failed");
         } else {
             s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " guestIp=" + cmd.getGuestIp() + ":ingress num rules=" + cmd.getIngressRuleSet().length +
-                          ":egress num rules=" + cmd.getEgressRuleSet().length);
+                ":egress num rules=" + cmd.getEgressRuleSet().length);
             return new SecurityGroupRuleAnswer(cmd);
         }
     }
@@ -1171,8 +1174,8 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         return OvmSecurityGroup.deleteAllNetworkRulesForVm(_conn, vmName, vif);
     }
 
-    protected boolean addNetworkRules(String vmName, String vmId, String guestIp, String signature, String seqno, String vifMacAddress, String rules, String vifDeviceName,
-        String bridgeName) throws XmlRpcException {
+    protected boolean addNetworkRules(String vmName, String vmId, String guestIp, String signature, String seqno, String vifMacAddress, String rules,
+        String vifDeviceName, String bridgeName) throws XmlRpcException {
         if (!_canBridgeFirewall) {
             return false;
         }
@@ -1308,12 +1311,15 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
                 break;
             }
             if (!isNetworkSetupByName(info.getPrivateNetworkName())) {
-                msg = "For Physical Network id:" + info.getPhysicalNetworkId() + ", Private Network is not configured on the backend by name " + info.getPrivateNetworkName();
+                msg =
+                    "For Physical Network id:" + info.getPhysicalNetworkId() + ", Private Network is not configured on the backend by name " +
+                        info.getPrivateNetworkName();
                 errorout = true;
                 break;
             }
             if (!isNetworkSetupByName(info.getPublicNetworkName())) {
-                msg = "For Physical Network id:" + info.getPhysicalNetworkId() + ", Public Network is not configured on the backend by name " + info.getPublicNetworkName();
+                msg =
+                    "For Physical Network id:" + info.getPhysicalNetworkId() + ", Public Network is not configured on the backend by name " + info.getPublicNetworkName();
                 errorout = true;
                 break;
             }

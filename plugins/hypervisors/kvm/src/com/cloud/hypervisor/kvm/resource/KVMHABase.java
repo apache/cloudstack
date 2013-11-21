@@ -17,11 +17,6 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;

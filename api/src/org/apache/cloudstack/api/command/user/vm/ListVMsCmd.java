@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -38,7 +40,6 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 
@@ -84,15 +85,18 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the target hypervisor for the template")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.STORAGE_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, description = "the storage ID where vm's volumes belong to")
+    @Parameter(name = ApiConstants.STORAGE_ID,
+               type = CommandType.UUID,
+               entityType = StoragePoolResponse.class,
+               description = "the storage ID where vm's volumes belong to")
     private Long storageId;
 
     @Parameter(name = ApiConstants.DETAILS,
                type = CommandType.LIST,
                collectionType = CommandType.STRING,
                description = "comma separated list of host details requested, "
-                             + "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min, affgrp]."
-                             + " If no parameter is passed in, the details will be defaulted to all")
+                   + "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min, affgrp]."
+                   + " If no parameter is passed in, the details will be defaulted to all")
     private List<String> viewDetails;
 
     @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "list vms by template")

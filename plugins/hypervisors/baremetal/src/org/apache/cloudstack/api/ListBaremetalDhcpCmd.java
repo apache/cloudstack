@@ -22,16 +22,9 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
-import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.response.ListResponse;
 
 import com.cloud.baremetal.networkservice.BaremetalDhcpManager;
 import com.cloud.baremetal.networkservice.BaremetalDhcpResponse;
@@ -74,8 +67,8 @@ public class ListBaremetalDhcpCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
-        NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException, NetworkRuleConflictException {
         try {
             ListResponse<BaremetalDhcpResponse> response = new ListResponse<BaremetalDhcpResponse>();
             List<BaremetalDhcpResponse> dhcpResponses = _dhcpMgr.listBaremetalDhcps(this);

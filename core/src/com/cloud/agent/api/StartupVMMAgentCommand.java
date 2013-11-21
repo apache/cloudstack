@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.agent.api;
 
-import com.cloud.agent.api.Command;
 import com.cloud.host.Host;
 
 /**

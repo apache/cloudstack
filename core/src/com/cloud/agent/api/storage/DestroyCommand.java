@@ -35,8 +35,9 @@ public class DestroyCommand extends StorageCommand {
     }
 
     public DestroyCommand(StoragePool pool, VMTemplateStorageResourceAssoc templatePoolRef) {
-        volume = new VolumeTO(templatePoolRef.getId(), null, pool.getPoolType(), pool.getUuid(), null, pool.getPath(), templatePoolRef.getInstallPath(),
-            templatePoolRef.getTemplateSize(), null);
+        volume =
+            new VolumeTO(templatePoolRef.getId(), null, pool.getPoolType(), pool.getUuid(), null, pool.getPath(), templatePoolRef.getInstallPath(),
+                templatePoolRef.getTemplateSize(), null);
     }
 
     public VolumeTO getVolume() {

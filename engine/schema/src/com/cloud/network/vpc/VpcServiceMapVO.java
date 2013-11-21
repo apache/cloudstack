@@ -78,6 +78,7 @@ public class VpcServiceMapVO {
         this.provider = provider.getName();
     }
 
+    @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("[VPC Service[");
         return buf.append(vpcId).append("-").append(service).append("-").append(provider).append("]").toString();

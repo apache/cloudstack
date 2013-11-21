@@ -16,19 +16,17 @@
 // under the License.
 package com.cloud.event.dao;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.response.EventResponse;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.EventJoinVO;
-
-import org.apache.cloudstack.api.response.EventResponse;
-import org.springframework.stereotype.Component;
-
 import com.cloud.event.Event;
 import com.cloud.event.Event.State;
 import com.cloud.utils.db.Filter;

@@ -27,17 +27,17 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.agent.AgentManager;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -128,7 +128,7 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
             if (p.getPod().getAllocationState() != Grouping.AllocationState.Enabled) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Pod name: " + p.getPod().getName() + ", podId: " + p.getPod().getId() + " is in " + p.getPod().getAllocationState().name() +
-                                   " state, skipping this and trying other pods");
+                        " state, skipping this and trying other pods");
                 }
                 continue;
             }
@@ -136,7 +136,7 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
             if (p.getCluster() != null && p.getCluster().getAllocationState() != Grouping.AllocationState.Enabled) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Cluster name: " + p.getCluster().getName() + ", clusterId: " + clusterId + " is in " + p.getCluster().getAllocationState().name() +
-                                   " state, skipping this and trying other pod-clusters");
+                        " state, skipping this and trying other pod-clusters");
                 }
                 continue;
             }

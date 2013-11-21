@@ -32,18 +32,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.PropertiesConfiguration;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.jasypt.encryption.pbe.config.SimpleStringPBEConfig;
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 import org.jasypt.properties.EncryptableProperties;
 
 import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
-
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
 
 /*
  * EncryptionSecretKeyChanger updates Management Secret Key / DB Secret Key or both.
@@ -420,6 +418,6 @@ public class EncryptionSecretKeyChanger {
 
     private static void usage() {
         System.out.println("Usage: \tEncryptionSecretKeyChanger \n" + "\t\t-m <Mgmt Secret Key> \n" + "\t\t-d <DB Secret Key> \n" + "\t\t-n [New Mgmt Secret Key] \n"
-                           + "\t\t-e [New DB Secret Key]");
+            + "\t\t-e [New DB Secret Key]");
     }
 }

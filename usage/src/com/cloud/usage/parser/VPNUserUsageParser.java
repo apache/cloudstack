@@ -26,16 +26,16 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.usage.UsageTypes;
 
-import com.cloud.usage.UsageVPNUserVO;
-import com.cloud.usage.UsageServer;
 import com.cloud.usage.UsageVO;
+import com.cloud.usage.UsageVPNUserVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageVPNUserDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
-import org.springframework.stereotype.Component;
 
 @Component
 public class VPNUserUsageParser {
@@ -137,15 +137,16 @@ public class VPNUserUsageParser {
         String usageDisplay = dFormat.format(usage);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating VPN user:" + userId + " usage record, usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate + ", for account: " +
-                           account.getId());
+            s_logger.debug("Creating VPN user:" + userId + " usage record, usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate +
+                ", for account: " + account.getId());
         }
 
         // Create the usage record
         String usageDesc = "VPN User: " + userName + ", Id: " + userId + " usage time";
 
-        UsageVO usageRecord = new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), null, null, null, null,
-            userId, null, startDate, endDate);
+        UsageVO usageRecord =
+            new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), null, null, null, null, userId, null,
+                startDate, endDate);
         m_usageDao.persist(usageRecord);
     }
 

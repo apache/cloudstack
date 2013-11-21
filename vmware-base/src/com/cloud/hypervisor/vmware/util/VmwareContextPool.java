@@ -23,9 +23,9 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 
 public class VmwareContextPool {
     private static final Logger s_logger = Logger.getLogger(VmwareContextPool.class);
@@ -85,7 +85,7 @@ public class VmwareContextPool {
 
                 if (s_logger.isTraceEnabled())
                     s_logger.trace("Return a VmwareContext from the idle pool: " + poolKey + ". current pool size: " + l.size() + ", outstanding count: " +
-                                   VmwareContext.getOutstandingContextCount());
+                        VmwareContext.getOutstandingContextCount());
                 return context;
             }
 
@@ -110,7 +110,7 @@ public class VmwareContextPool {
 
                 if (s_logger.isTraceEnabled())
                     s_logger.trace("Recycle VmwareContext into idle pool: " + context.getPoolKey() + ", current idle pool size: " + l.size() + ", outstanding count: " +
-                                   VmwareContext.getOutstandingContextCount());
+                        VmwareContext.getOutstandingContextCount());
             } else {
                 if (s_logger.isTraceEnabled())
                     s_logger.trace("VmwareContextPool queue exceeds limits, queue size: " + l.size());

@@ -26,21 +26,22 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostPodVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.org.Grouping;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.UpdateBuilder;
 
 @Component(value = "EngineHostPodDao")
 @Local(value = {EngineHostPodDao.class})
@@ -162,7 +163,7 @@ public class EngineHostPodDaoImpl extends GenericDaoBase<EngineHostPodVO, Long> 
         builder.set(vo, "state", nextState);
         builder.set(vo, "lastUpdated", new Date());
 
-        int rows = update((EngineHostPodVO)vo, sc);
+        int rows = update(vo, sc);
 
         if (rows == 0 && s_logger.isDebugEnabled()) {
             EngineHostPodVO dbDC = findByIdIncludingRemoved(vo.getId());

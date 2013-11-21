@@ -24,7 +24,6 @@ import static com.cloud.utils.StringUtils.join;
 import static java.io.File.createTempFile;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.unmodifiableList;
@@ -48,7 +47,6 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 
 import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.HttpMethod;
 import com.amazonaws.auth.AWSCredentials;
@@ -180,7 +178,8 @@ public final class S3Utils {
     }
 
     // multi-part upload object
-    public static void mputObject(final ClientOptions clientOptions, final InputStream sourceStream, final String bucketName, final String key) throws InterruptedException {
+    public static void mputObject(final ClientOptions clientOptions, final InputStream sourceStream, final String bucketName, final String key)
+        throws InterruptedException {
 
         assert clientOptions != null;
         assert sourceStream != null;
@@ -245,7 +244,8 @@ public final class S3Utils {
     }
 
     @SuppressWarnings("unchecked")
-    public static File getFile(final ClientOptions clientOptions, final String bucketName, final String key, final File targetDirectory, final FileNamingStrategy namingStrategy) {
+    public static File getFile(final ClientOptions clientOptions, final String bucketName, final String key, final File targetDirectory,
+        final FileNamingStrategy namingStrategy) {
 
         assert clientOptions != null;
         assert isNotBlank(bucketName);
@@ -282,12 +282,13 @@ public final class S3Utils {
 
         } catch (FileNotFoundException e) {
 
-            throw new CloudRuntimeException(format("Failed open file %1$s in order to get object %2$s from bucket %3$s.", targetDirectory.getAbsoluteFile(), bucketName, key), e);
+            throw new CloudRuntimeException(format("Failed open file %1$s in order to get object %2$s from bucket %3$s.", targetDirectory.getAbsoluteFile(), bucketName,
+                key), e);
 
         } catch (IOException e) {
 
-            throw new CloudRuntimeException(format("Unable to allocate temporary file in directory %1$s to download %2$s:%3$s from S3", targetDirectory.getAbsolutePath(),
-                bucketName, key), e);
+            throw new CloudRuntimeException(format("Unable to allocate temporary file in directory %1$s to download %2$s:%3$s from S3",
+                targetDirectory.getAbsolutePath(), bucketName, key), e);
 
         } finally {
 
@@ -513,7 +514,8 @@ public final class S3Utils {
         final List<String> errorMessages = new ArrayList<String>();
 
         if (bucket.length() < MIN_BUCKET_NAME_LENGTH) {
-            errorMessages.add(format("The length of %1$s " + "for the %2$s must have a length of at least %3$s " + "characters", bucket, bucketLabel, MIN_BUCKET_NAME_LENGTH));
+            errorMessages.add(format("The length of %1$s " + "for the %2$s must have a length of at least %3$s " + "characters", bucket, bucketLabel,
+                MIN_BUCKET_NAME_LENGTH));
         }
 
         if (bucket.length() > MAX_BUCKET_NAME_LENGTH) {

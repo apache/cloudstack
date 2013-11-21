@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckRouterAnswer;
@@ -53,9 +56,6 @@ import com.cloud.simulator.MockVMVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachine.State;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public interface MockVmManager extends Manager {
 

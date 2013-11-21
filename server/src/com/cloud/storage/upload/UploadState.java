@@ -22,7 +22,6 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.UploadAnswer;
-import com.cloud.storage.upload.UploadState.UploadEvent;
 
 public abstract class UploadState {
 

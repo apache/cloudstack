@@ -24,9 +24,10 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
@@ -46,8 +47,8 @@ import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.Storage;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateProp;
@@ -105,7 +106,8 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
 
     @Override
     public StartupCommand[] initialize() {
-        final StartupStorageCommand cmd = new StartupStorageCommand("dummy", StoragePoolType.NetworkFilesystem, 1024 * 1024 * 1024 * 100L, new HashMap<String, TemplateProp>());
+        final StartupStorageCommand cmd =
+            new StartupStorageCommand("dummy", StoragePoolType.NetworkFilesystem, 1024 * 1024 * 1024 * 100L, new HashMap<String, TemplateProp>());
 
         cmd.setResourceType(Storage.StorageResourceType.SECONDARY_STORAGE);
         cmd.setIqn(null);
@@ -170,7 +172,8 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
         Map<String, TemplateProp> tmpltInfo = new HashMap<String, TemplateProp>();
         if (tmplts != null) {
             for (VMTemplateVO tmplt : tmplts) {
-                TemplateProp routingInfo = new TemplateProp(tmplt.getUniqueName(), TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + File.separator, false, false);
+                TemplateProp routingInfo =
+                    new TemplateProp(tmplt.getUniqueName(), TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + File.separator, false, false);
                 tmpltInfo.put(tmplt.getUniqueName(), routingInfo);
             }
         }

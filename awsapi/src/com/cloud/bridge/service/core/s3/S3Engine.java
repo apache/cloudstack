@@ -85,7 +85,6 @@ import com.cloud.bridge.util.PolicyParser;
 import com.cloud.bridge.util.StringHelper;
 import com.cloud.bridge.util.Triple;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 /**
@@ -222,8 +221,8 @@ public class S3Engine {
                 throw new ObjectAlreadyExistsException("Bucket already exists");
 
             shost_storagelocation_pair = allocBucketStorageHost(request.getBucketName(), null);
-            SBucketVO sbucket = new SBucketVO(request.getBucketName(), DateHelper.currentGMTTime(), UserContext.current().getCanonicalUserId(),
-                shost_storagelocation_pair.getFirst());
+            SBucketVO sbucket =
+                new SBucketVO(request.getBucketName(), DateHelper.currentGMTTime(), UserContext.current().getCanonicalUserId(), shost_storagelocation_pair.getFirst());
 
             shost_storagelocation_pair.getFirst().getBuckets().add(sbucket);
             // bucketDao.save(sbucket);
@@ -642,8 +641,8 @@ public class S3Engine {
      * We are required to keep the connection alive by returning whitespace characters back periodically.
      */
 
-    public S3PutObjectInlineResponse
-        concatentateMultipartUploads(HttpServletResponse httpResp, S3PutObjectInlineRequest request, S3MultipartPart[] parts, OutputStream outputStream) throws IOException {
+    public S3PutObjectInlineResponse concatentateMultipartUploads(HttpServletResponse httpResp, S3PutObjectInlineRequest request, S3MultipartPart[] parts,
+        OutputStream outputStream) throws IOException {
         // [A] Set up and initial error checking
         S3PutObjectInlineResponse response = new S3PutObjectInlineResponse();
         String bucketName = request.getBucketName();
@@ -680,8 +679,9 @@ public class S3Engine {
             // explicit transaction control to avoid holding transaction during
             // long file concatenation process
             txn.start();
-            OrderedPair<String, Long> result = bucketAdapter.concatentateObjects(host_storagelocation_pair.getSecond(), bucket.getName(), itemFileName,
-                ServiceProvider.getInstance().getMultipartDir(), parts, outputStream);
+            OrderedPair<String, Long> result =
+                bucketAdapter.concatentateObjects(host_storagelocation_pair.getSecond(), bucket.getName(), itemFileName, ServiceProvider.getInstance().getMultipartDir(),
+                    parts, outputStream);
 
             response.setETag(result.getFirst());
             response.setLastModified(DateHelper.toCalendar(object_objectitem_pair.getSecond().getLastModifiedTime()));
@@ -1237,8 +1237,8 @@ public class S3Engine {
      *
      * TODO - how does the versionIdMarker work when there is a deletion marker in the object?
      */
-    private S3ListBucketObjectEntry[]
-        composeListBucketContentEntries(List<SObjectVO> l, String prefix, String delimiter, int maxKeys, boolean enableVersion, String versionIdMarker) {
+    private S3ListBucketObjectEntry[] composeListBucketContentEntries(List<SObjectVO> l, String prefix, String delimiter, int maxKeys, boolean enableVersion,
+        String versionIdMarker) {
         List<S3ListBucketObjectEntry> entries = new ArrayList<S3ListBucketObjectEntry>();
         SObjectItemVO latest = null;
         boolean hitIdMarker = false;
@@ -1425,7 +1425,8 @@ public class S3Engine {
      * @throws IOException
      */
     @SuppressWarnings("deprecation")
-    public OrderedPair<SObjectVO, SObjectItemVO> allocObjectItem(SBucketVO bucket, String nameKey, S3MetaDataEntry[] meta, S3AccessControlList acl, String cannedAccessPolicy) {
+    public OrderedPair<SObjectVO, SObjectItemVO> allocObjectItem(SBucketVO bucket, String nameKey, S3MetaDataEntry[] meta, S3AccessControlList acl,
+        String cannedAccessPolicy) {
         SObjectItemVO item = null;
         int versionSeq = 1;
         int versioningStatus = bucket.getVersioningStatus();
@@ -1684,7 +1685,8 @@ public class S3Engine {
      * @return S3BucketPolicy
      * @throws SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException, ParseException
      */
-    public static S3BucketPolicy loadPolicy(S3PolicyContext context) throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException, ParseException {
+    public static S3BucketPolicy loadPolicy(S3PolicyContext context) throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException,
+        ParseException {
         OrderedPair<S3BucketPolicy, Integer> result = ServiceProvider.getInstance().getBucketPolicy(context.getBucketName());
         S3BucketPolicy policy = result.getFirst();
         if (null == policy) {

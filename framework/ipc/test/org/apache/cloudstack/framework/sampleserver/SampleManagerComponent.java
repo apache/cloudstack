@@ -24,6 +24,9 @@ import java.util.TimerTask;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
@@ -33,8 +36,6 @@ import org.apache.cloudstack.framework.rpc.RpcProvider;
 import org.apache.cloudstack.framework.rpc.RpcServerCall;
 import org.apache.cloudstack.framework.rpc.RpcServiceDispatcher;
 import org.apache.cloudstack.framework.rpc.RpcServiceHandler;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 @Component
 public class SampleManagerComponent {
@@ -59,6 +60,7 @@ public class SampleManagerComponent {
         _eventBus.subscribe("network", MessageDispatcher.getDispatcher(this));
 
         _timer.schedule(new TimerTask() {
+            @Override
             public void run() {
                 testRpc();
             }
@@ -79,16 +81,21 @@ public class SampleManagerComponent {
         cmd.setStoragePool("Pool1");
         cmd.setVolumeId("vol1");
 
-        _rpcProvider.newCall().setCommand("StoragePrepare").setCommandArg(cmd).setTimeout(10000).addCallbackListener(new RpcCallbackListener<SampleStoragePrepareAnswer>() {
-            @Override
-            public void onSuccess(SampleStoragePrepareAnswer result) {
-                s_logger.info("StoragePrepare return result: " + result.getResult());
-            }
+        _rpcProvider.newCall()
+            .setCommand("StoragePrepare")
+            .setCommandArg(cmd)
+            .setTimeout(10000)
+            .addCallbackListener(new RpcCallbackListener<SampleStoragePrepareAnswer>() {
+                @Override
+                public void onSuccess(SampleStoragePrepareAnswer result) {
+                    s_logger.info("StoragePrepare return result: " + result.getResult());
+                }
 
-            @Override
-            public void onFailure(RpcException e) {
-                s_logger.info("StoragePrepare failed");
-            }
-        }).apply();
+                @Override
+                public void onFailure(RpcException e) {
+                    s_logger.info("StoragePrepare failed");
+                }
+            })
+            .apply();
     }
 }

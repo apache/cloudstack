@@ -22,43 +22,43 @@ import streamer.Link;
 
 public class ServerX224DataPdu extends BaseElement {
 
-  public static final int X224_TPDU_LAST_DATA_UNIT = 0x80;
-  public static final int X224_TPDU_DATA = 0xF0;
+    public static final int X224_TPDU_LAST_DATA_UNIT = 0x80;
+    public static final int X224_TPDU_DATA = 0xF0;
 
-  public ServerX224DataPdu(String id) {
-    super(id);
-  }
+    public ServerX224DataPdu(String id) {
+        super(id);
+    }
 
-  @Override
-  public void handleData(ByteBuffer buf, Link link) {
-    if (buf == null)
-      return;
+    @Override
+    public void handleData(ByteBuffer buf, Link link) {
+        if (buf == null)
+            return;
 
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
 
-    int headerLength = buf.readVariableSignedIntLE();
+        int headerLength = buf.readVariableSignedIntLE();
 
-    if (headerLength != 2)
-      throw new RuntimeException("Unexpected X224 Data PDU header length. Expected header length: 2 , actual header length: " + headerLength + ".");
+        if (headerLength != 2)
+            throw new RuntimeException("Unexpected X224 Data PDU header length. Expected header length: 2 , actual header length: " + headerLength + ".");
 
-    // Read X224 type and options
-    int type = buf.readUnsignedByte(); // High nibble: type, low nibble:
+        // Read X224 type and options
+        int type = buf.readUnsignedByte(); // High nibble: type, low nibble:
 
-    if ((type & 0xf0) != X224_TPDU_DATA)
-      throw new RuntimeException("[" + this + "] ERROR: Unexepcted X224 packet type. Expected packet type: " + X224_TPDU_DATA
-          + " (X224_TPDU_DATA), actual packet type: " + type + ", buf: " + buf + ".");
+        if ((type & 0xf0) != X224_TPDU_DATA)
+            throw new RuntimeException("[" + this + "] ERROR: Unexepcted X224 packet type. Expected packet type: " + X224_TPDU_DATA +
+                " (X224_TPDU_DATA), actual packet type: " + type + ", buf: " + buf + ".");
 
-    int options = buf.readUnsignedByte();
+        int options = buf.readUnsignedByte();
 
-    if ((options & X224_TPDU_LAST_DATA_UNIT) != X224_TPDU_LAST_DATA_UNIT)
-      throw new RuntimeException("Unexepcted X224 packet options. Expected options: " + X224_TPDU_LAST_DATA_UNIT
-          + " (X224_TPDU_LAST_DATA_UNIT), actual packet options: " + options + ", buf: " + buf + ".");
+        if ((options & X224_TPDU_LAST_DATA_UNIT) != X224_TPDU_LAST_DATA_UNIT)
+            throw new RuntimeException("Unexepcted X224 packet options. Expected options: " + X224_TPDU_LAST_DATA_UNIT +
+                " (X224_TPDU_LAST_DATA_UNIT), actual packet options: " + options + ", buf: " + buf + ".");
 
-    ByteBuffer payload = buf.readBytes(buf.length - buf.cursor);
+        ByteBuffer payload = buf.readBytes(buf.length - buf.cursor);
 
-    buf.unref();
+        buf.unref();
 
-    pushDataToAllOuts(payload);
-  }
+        pushDataToAllOuts(payload);
+    }
 }

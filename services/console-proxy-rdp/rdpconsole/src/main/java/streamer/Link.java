@@ -22,45 +22,45 @@ package streamer;
  */
 public interface Link extends DataSource, DataSink, Runnable {
 
-  /**
-   * Wire this link with given sink.
-   *
-   * @param sink
-   *          an Element
-   * @return same sink element, for chaining
-   */
-  Element setSink(Element sink);
+    /**
+     * Wire this link with given sink.
+     *
+     * @param sink
+     *          an Element
+     * @return same sink element, for chaining
+     */
+    Element setSink(Element sink);
 
-  /**
-   * Wire this link with given source.
-   *
-   * @param source
-   *          an Element
-   * @return same source element, for chaining
-   */
-  Element setSource(Element source);
+    /**
+     * Wire this link with given source.
+     *
+     * @param source
+     *          an Element
+     * @return same source element, for chaining
+     */
+    Element setSource(Element source);
 
-  Element getSource();
+    Element getSource();
 
-  Element getSink();
+    Element getSink();
 
-  /**
-   * Hold all data in cache, don't pass data to sink until resumed.
-   */
-  void pause();
+    /**
+     * Hold all data in cache, don't pass data to sink until resumed.
+     */
+    void pause();
 
-  /**
-   * Resume transfer.
-   */
-  void resume();
+    /**
+     * Resume transfer.
+     */
+    void resume();
 
-  /**
-   * Change mode of operation of this link from push mode to pull mode.
-   */
-  void setPullMode();
+    /**
+     * Change mode of operation of this link from push mode to pull mode.
+     */
+    void setPullMode();
 
-  /**
-   * Drop this link.
-   */
-  void drop();
+    /**
+     * Drop this link.
+     */
+    void drop();
 }

@@ -40,7 +40,9 @@ import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
-@APICommand(name = "createNetworkACL", description = "Creates a ACL rule in the given network (the network has to belong to VPC)", responseObject = NetworkACLItemResponse.class)
+@APICommand(name = "createNetworkACL",
+            description = "Creates a ACL rule in the given network (the network has to belong to VPC)",
+            responseObject = NetworkACLItemResponse.class)
 public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkACLCmd.class.getName());
 
@@ -71,14 +73,20 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this icmp message")
     private Integer icmpCode;
 
-    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "The network of the vm the ACL will be created for")
+    @Parameter(name = ApiConstants.NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = NetworkResponse.class,
+               description = "The network of the vm the ACL will be created for")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, description = "The network of the vm the ACL will be created for")
+    @Parameter(name = ApiConstants.ACL_ID,
+               type = CommandType.UUID,
+               entityType = NetworkACLResponse.class,
+               description = "The network of the vm the ACL will be created for")
     private Long aclId;
 
     @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "the traffic type for the ACL,"
-                                                                                          + "can be Ingress or Egress, defaulted to Ingress if not specified")
+        + "can be Ingress or Egress, defaulted to Ingress if not specified")
     private String trafficType;
 
     @Parameter(name = ApiConstants.NUMBER, type = CommandType.INTEGER, description = "The network of the vm the ACL will be created for")

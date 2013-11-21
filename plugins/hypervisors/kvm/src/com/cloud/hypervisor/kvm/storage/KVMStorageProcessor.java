@@ -18,6 +18,8 @@
  */
 package com.cloud.hypervisor.kvm.storage;
 
+import static com.cloud.utils.S3Utils.putFile;
+
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -34,6 +36,21 @@ import java.util.Map;
 import java.util.UUID;
 
 import javax.naming.ConfigurationException;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
+import org.libvirt.Connect;
+import org.libvirt.Domain;
+import org.libvirt.DomainInfo;
+import org.libvirt.DomainSnapshot;
+import org.libvirt.LibvirtException;
+
+import com.ceph.rados.IoCTX;
+import com.ceph.rados.Rados;
+import com.ceph.rados.RadosException;
+import com.ceph.rbd.Rbd;
+import com.ceph.rbd.RbdException;
+import com.ceph.rbd.RbdImage;
 
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -54,20 +71,7 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
-import org.libvirt.Connect;
-import org.libvirt.Domain;
-import org.libvirt.DomainInfo;
-import org.libvirt.DomainSnapshot;
-import org.libvirt.LibvirtException;
 
-import com.ceph.rados.IoCTX;
-import com.ceph.rados.Rados;
-import com.ceph.rados.RadosException;
-import com.ceph.rbd.Rbd;
-import com.ceph.rbd.RbdException;
-import com.ceph.rbd.RbdImage;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -95,8 +99,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.S3Utils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-
-import static com.cloud.utils.S3Utils.putFile;
 
 public class KVMStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(KVMStorageProcessor.class);
@@ -354,8 +356,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                 primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
             } catch (CloudRuntimeException e) {
                 if (e.getMessage().contains("not found")) {
-                    primaryPool = storagePoolMgr.createStoragePool(primaryStore.getUuid(), primaryStore.getHost(), primaryStore.getPort(), primaryStore.getPath(), null,
-                        primaryStore.getPoolType());
+                    primaryPool =
+                        storagePoolMgr.createStoragePool(primaryStore.getUuid(), primaryStore.getHost(), primaryStore.getPort(), primaryStore.getPath(), null,
+                            primaryStore.getPoolType());
                 } else {
                     return new CopyCmdAnswer(e.getMessage());
                 }
@@ -475,8 +478,9 @@ public class KVMStorageProcessor implements StorageProcessor {
             } else {
                 s_logger.debug("Converting RBD disk " + disk.getPath() + " into template " + templateName);
 
-                QemuImgFile srcFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(primary.getSourceHost(), primary.getSourcePort(), primary.getAuthUserName(),
-                    primary.getAuthSecret(), disk.getPath()));
+                QemuImgFile srcFile =
+                    new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(primary.getSourceHost(), primary.getSourcePort(), primary.getAuthUserName(),
+                        primary.getAuthSecret(), disk.getPath()));
                 srcFile.setFormat(PhysicalDiskFormat.RAW);
 
                 QemuImgFile destFile = new QemuImgFile(tmpltPath + "/" + templateName + ".qcow2");
@@ -487,7 +491,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     q.convert(srcFile, destFile);
                 } catch (QemuImgException e) {
                     s_logger.error("Failed to create new template while converting " + srcFile.getFileName() + " to " + destFile.getFileName() + " the error was: " +
-                                   e.getMessage());
+                        e.getMessage());
                 }
 
                 File templateProp = new File(tmpltPath + "/template.properties");
@@ -1023,8 +1027,8 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
-    protected static MessageFormat SnapshotXML = new MessageFormat("   <domainsnapshot>" + "       <name>{0}</name>" + "          <domain>" + "            <uuid>{1}</uuid>"
-                                                                   + "        </domain>" + "    </domainsnapshot>");
+    protected static MessageFormat SnapshotXML = new MessageFormat("   <domainsnapshot>" + "       <name>{0}</name>" + "          <domain>"
+        + "            <uuid>{1}</uuid>" + "        </domain>" + "    </domainsnapshot>");
 
     @Override
     public Answer createSnapshot(CreateObjectCommand cmd) {

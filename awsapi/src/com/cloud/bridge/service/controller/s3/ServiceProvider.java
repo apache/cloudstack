@@ -34,13 +34,15 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.axis2.AxisFault;
-import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
 import org.springframework.stereotype.Component;
 
 import com.amazon.ec2.AmazonEC2SkeletonInterface;
 import com.amazon.s3.AmazonS3SkeletonInterface;
+
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+
 import com.cloud.bridge.model.MHostVO;
 import com.cloud.bridge.model.SHost;
 import com.cloud.bridge.model.SHostVO;
@@ -60,7 +62,6 @@ import com.cloud.bridge.util.NetHelper;
 import com.cloud.bridge.util.OrderedPair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component

@@ -18,12 +18,13 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
+import java.util.Map;
+
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 
-import java.util.Map;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
 
 public interface DataStoreDriver {
     Map<String, String> getCapabilities();

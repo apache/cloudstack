@@ -120,8 +120,8 @@ public class S3PolicyStringCondition extends S3PolicyCondition {
                     default:
                         return false;
                 }
-                logger.info("S3PolicyStringCondition eval - SID: " + SID + ", " + condition + ", key: " + keyName + ", valuePassedIn: " + toCompareWith + ", valueInRule: " +
-                            valueList[i] + ", result: " + keyResult);
+                logger.info("S3PolicyStringCondition eval - SID: " + SID + ", " + condition + ", key: " + keyName + ", valuePassedIn: " + toCompareWith +
+                    ", valueInRule: " + valueList[i] + ", result: " + keyResult);
             }
 
             // -> if all key values are false, false then that key is false and then the entire condition is then false

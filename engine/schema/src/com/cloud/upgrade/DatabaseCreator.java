@@ -46,11 +46,11 @@ public class DatabaseCreator {
 
     protected static void printHelp(String cmd) {
         System.out.println("\nDatabaseCreator creates the database schema by removing the \n" + "previous schema, creating the schema, and running \n"
-                           + "through the database updaters.");
+            + "through the database updaters.");
         System.out.println("Usage: " + cmd + " [options] [db.properties file] [schema.sql files] [database upgrade class]\nOptions:" +
-                           "\n   --database=a,b comma separate databases to initialize, use the db name in db.properties defined as db.xyz.host, xyz should be passed" +
-                           "\n   --rootpassword=password, by default it will try with an empty password" + "\n   --dry or -d, this would not run any process, just does a dry run" +
-                           "\n   --verbose or -v to print running sql commands, by default it won't print them" + "\n   --help or -h for help");
+            "\n   --database=a,b comma separate databases to initialize, use the db name in db.properties defined as db.xyz.host, xyz should be passed" +
+            "\n   --rootpassword=password, by default it will try with an empty password" + "\n   --dry or -d, this would not run any process, just does a dry run" +
+            "\n   --verbose or -v to print running sql commands, by default it won't print them" + "\n   --help or -h for help");
     }
 
     private static boolean fileExists(String file) {

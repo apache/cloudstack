@@ -399,7 +399,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
-    public List<ManagedObjectReference> addHostToPodCluster(VmwareContext serviceContext, long dcId, Long podId, Long clusterId, String hostInventoryPath) throws Exception {
+    public List<ManagedObjectReference> addHostToPodCluster(VmwareContext serviceContext, long dcId, Long podId, Long clusterId, String hostInventoryPath)
+        throws Exception {
         ManagedObjectReference mor = null;
         if (serviceContext != null) {
             mor = serviceContext.getHostMorByPath(hostInventoryPath);
@@ -462,8 +463,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Deprecated
-    private ManagedObjectReference addHostToVCenterCluster(VmwareContext serviceContext, ManagedObjectReference morCluster, String host, String userName, String password)
-        throws Exception {
+    private ManagedObjectReference
+        addHostToVCenterCluster(VmwareContext serviceContext, ManagedObjectReference morCluster, String host, String userName, String password) throws Exception {
 
         VmwareClient vclient = serviceContext.getVimClient();
         ManagedObjectReference morHost = vclient.getDecendentMoRef(morCluster, "HostSystem", host);
@@ -631,7 +632,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                         s_logger.info("Inject SSH key pairs before copying systemvm.iso into secondary storage");
                         _configServer.updateKeyPairs();
 
-                        s_logger.info("Copy System VM patch ISO file to secondary storage. source ISO: " + srcIso.getAbsolutePath() + ", destination: " + destIso.getAbsolutePath());
+                        s_logger.info("Copy System VM patch ISO file to secondary storage. source ISO: " + srcIso.getAbsolutePath() + ", destination: " +
+                            destIso.getAbsolutePath());
                         try {
                             FileUtil.copyfile(srcIso, destIso);
                         } catch (IOException e) {
@@ -1040,7 +1042,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         if (vCenterHost == null) {
             throw new InvalidParameterValueException("Missing or invalid parameter name. "
-                                                     + "Please provide valid VMware vCenter server's IP address or fully qualified domain name.");
+                + "Please provide valid VMware vCenter server's IP address or fully qualified domain name.");
         }
 
         if (zoneId == null) {
@@ -1059,11 +1061,12 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             Long associatedVmwareDcId = vmwareDcZoneMap.getVmwareDcId();
             VmwareDatacenterVO associatedVmwareDc = _vmwareDcDao.findById(associatedVmwareDcId);
             if (associatedVmwareDc.getVcenterHost().equalsIgnoreCase(vCenterHost) && associatedVmwareDc.getVmwareDatacenterName().equalsIgnoreCase(vmwareDcName)) {
-                s_logger.info("Ignoring API call addVmwareDc, because VMware DC " + vCenterHost + "/" + vmwareDcName + " is already associated with specified zone with id " +
-                              zoneId);
+                s_logger.info("Ignoring API call addVmwareDc, because VMware DC " + vCenterHost + "/" + vmwareDcName +
+                    " is already associated with specified zone with id " + zoneId);
                 return associatedVmwareDc;
             } else {
-                throw new CloudRuntimeException("Zone " + zoneId + " is already associated with a VMware datacenter. " + "Only 1 VMware DC can be associated with a zone.");
+                throw new CloudRuntimeException("Zone " + zoneId + " is already associated with a VMware datacenter. " +
+                    "Only 1 VMware DC can be associated with a zone.");
             }
         }
         // Zone validation to check if the zone already has resources.

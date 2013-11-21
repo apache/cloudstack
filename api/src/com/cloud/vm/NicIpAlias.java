@@ -31,6 +31,7 @@ public interface NicIpAlias extends ControlledEntity, Identity, InternalIdentity
         active, revoked,
     }
 
+    @Override
     long getId();
 
     long getNicId();

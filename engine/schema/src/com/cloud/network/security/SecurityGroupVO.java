@@ -25,9 +25,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
 @Entity
 @Table(name = ("security_group"))
 public class SecurityGroupVO implements SecurityGroup {

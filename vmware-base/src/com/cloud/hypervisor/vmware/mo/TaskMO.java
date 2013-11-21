@@ -16,12 +16,13 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.LocalizableMessage;
 import com.vmware.vim25.LocalizedMethodFault;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.TaskInfo;
 import com.vmware.vim25.TaskInfoState;
+
+import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class TaskMO extends BaseMO {
     public TaskMO(VmwareContext context, ManagedObjectReference morTask) {

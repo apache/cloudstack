@@ -31,6 +31,7 @@ public interface PhysicalNetworkServiceProvider extends InternalIdentity {
         Disabled, Enabled, Shutdown;
     }
 
+    @Override
     long getId();
 
     State getState();

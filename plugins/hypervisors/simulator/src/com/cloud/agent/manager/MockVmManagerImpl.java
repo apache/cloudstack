@@ -16,6 +16,19 @@
 // under the License.
 package com.cloud.agent.manager;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckRouterAnswer;
@@ -74,17 +87,6 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.State;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @Local(value = {MockVmManager.class})
@@ -601,8 +603,8 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
                 s_logger.info("New seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum);
                 updateSeqnoAndSig = true;
                 if (!cmd.getSignature().equals(currSig)) {
-                    s_logger.info("New seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum + " new signature received:" + cmd.getSignature() + " curr=" + currSig +
-                                  ", updated iptables");
+                    s_logger.info("New seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum + " new signature received:" + cmd.getSignature() + " curr=" +
+                        currSig + ", updated iptables");
                     action = ", updated iptables";
                     reason = reason + "seqno_increased_sig_changed";
                 } else {
@@ -614,12 +616,14 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
                 reason = reason + "seqno_decreased";
             } else {
                 if (!cmd.getSignature().equals(currSig)) {
-                    s_logger.info("Identical seqno received: " + cmd.getSeqNum() + " new signature received:" + cmd.getSignature() + " curr=" + currSig + ", updated iptables");
+                    s_logger.info("Identical seqno received: " + cmd.getSeqNum() + " new signature received:" + cmd.getSignature() + " curr=" + currSig +
+                        ", updated iptables");
                     action = ", updated iptables";
                     reason = reason + "seqno_same_sig_changed";
                     updateSeqnoAndSig = true;
                 } else {
-                    s_logger.info("Identical seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum + " no change in signature:" + cmd.getSignature() + ", do nothing");
+                    s_logger.info("Identical seqno received: " + cmd.getSeqNum() + " curr=" + currSeqnum + " no change in signature:" + cmd.getSignature() +
+                        ", do nothing");
                     reason = reason + "seqno_same_sig_same";
                 }
             }
@@ -629,9 +633,9 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             action = ", updated iptables";
             reason = ", seqno_new";
         }
-        s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " seqno=" + cmd.getSeqNum() + " signature=" + cmd.getSignature() + " guestIp=" + cmd.getGuestIp() +
-                      ", numIngressRules=" + cmd.getIngressRuleSet().length + ", numEgressRules=" + cmd.getEgressRuleSet().length + " total cidrs=" + cmd.getTotalNumCidrs() +
-                      action + reason);
+        s_logger.info("Programmed network rules for vm " + cmd.getVmName() + " seqno=" + cmd.getSeqNum() + " signature=" + cmd.getSignature() + " guestIp=" +
+            cmd.getGuestIp() + ", numIngressRules=" + cmd.getIngressRuleSet().length + ", numEgressRules=" + cmd.getEgressRuleSet().length + " total cidrs=" +
+            cmd.getTotalNumCidrs() + action + reason);
         return updateSeqnoAndSig;
     }
 

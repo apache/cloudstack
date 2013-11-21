@@ -29,7 +29,6 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageIPAddressVO;
-import com.cloud.user.Account;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.TransactionLegacy;
@@ -40,21 +39,22 @@ public class UsageIPAddressDaoImpl extends GenericDaoBase<UsageIPAddressVO, Long
     public static final Logger s_logger = Logger.getLogger(UsageIPAddressDaoImpl.class.getName());
 
     protected static final String UPDATE_RELEASED = "UPDATE usage_ip_address SET released = ? WHERE account_id = ? AND public_ip_address = ? and released IS NULL";
-    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released "
-                                                                 + "FROM usage_ip_address "
-                                                                 + "WHERE account_id = ? AND ((released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR "
-                                                                 + "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?)))";
-    protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released "
-                                                                + "FROM usage_ip_address "
-                                                                + "WHERE domain_id = ? AND ((released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR "
-                                                                + "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?)))";
+    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT =
+        "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released " + "FROM usage_ip_address "
+            + "WHERE account_id = ? AND ((released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR "
+            + "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?)))";
+    protected static final String GET_USAGE_RECORDS_BY_DOMAIN =
+        "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released " + "FROM usage_ip_address "
+            + "WHERE domain_id = ? AND ((released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR "
+            + "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?)))";
     protected static final String GET_ALL_USAGE_RECORDS = "SELECT id, account_id, domain_id, zone_id, public_ip_address, is_source_nat, is_system, assigned, released "
-                                                          + "FROM usage_ip_address " + "WHERE (released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR "
-                                                          + "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?))";
+        + "FROM usage_ip_address " + "WHERE (released IS NULL AND assigned <= ?) OR (assigned BETWEEN ? AND ?) OR "
+        + "      (released BETWEEN ? AND ?) OR ((assigned <= ?) AND (released >= ?))";
 
     public UsageIPAddressDaoImpl() {
     }
 
+    @Override
     public void update(UsageIPAddressVO usage) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;

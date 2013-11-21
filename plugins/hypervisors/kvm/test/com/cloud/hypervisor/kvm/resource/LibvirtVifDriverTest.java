@@ -19,19 +19,23 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
-import com.cloud.network.Networks.TrafficType;
-import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource.BridgeType;
-
-import org.junit.Before;
-import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyMap;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import javax.naming.ConfigurationException;
 
-import static org.mockito.Mockito.*;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource.BridgeType;
+import com.cloud.network.Networks.TrafficType;
 
 public class LibvirtVifDriverTest {
     private LibvirtComputingResource res;

@@ -30,7 +30,8 @@ package com.amazon.s3;
 
 public class ExtensionMapper {
 
-    public static java.lang.Object getTypeObject(java.lang.String namespaceURI, java.lang.String typeName, javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception {
+    public static java.lang.Object getTypeObject(java.lang.String namespaceURI, java.lang.String typeName, javax.xml.stream.XMLStreamReader reader)
+        throws java.lang.Exception {
 
         if ("http://s3.amazonaws.com/doc/2006-03-01/".equals(namespaceURI) && "PutObjectResult".equals(typeName)) {
 

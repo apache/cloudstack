@@ -160,7 +160,7 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
 
         if (lClusterDefaultMinIops > lClusterDefaultMaxIops) {
             throw new CloudRuntimeException("The parameter '" + SolidFireUtil.CLUSTER_DEFAULT_MIN_IOPS + "' must be less than " + "or equal to the parameter '" +
-                                            SolidFireUtil.CLUSTER_DEFAULT_MAX_IOPS + "'.");
+                SolidFireUtil.CLUSTER_DEFAULT_MAX_IOPS + "'.");
         }
 
         if (Float.compare(fClusterDefaultBurstIopsPercentOfMaxIops, 1.0f) < 0) {

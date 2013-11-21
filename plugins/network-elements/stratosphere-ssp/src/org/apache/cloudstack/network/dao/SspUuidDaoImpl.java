@@ -107,6 +107,7 @@ public class SspUuidDaoImpl extends GenericDaoBase<SspUuidVO, Long> implements S
         return null;
     }
 
+    @Override
     public int removeUuid(String uuid) {
         SearchCriteria<SspUuidVO> cs = uuidfetch.create();
         cs.setParameters("uuid", uuid);

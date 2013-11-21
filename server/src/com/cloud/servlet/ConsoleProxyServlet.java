@@ -56,7 +56,6 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
@@ -479,13 +478,13 @@ public class ConsoleProxyServlet extends HttpServlet {
                 } catch (PermissionDeniedException ex) {
                     if (accountObj.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                         if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() + " does not match the account id in session " + accountObj.getId() +
-                                           " and caller is a normal user");
+                            s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() + " does not match the account id in session " +
+                                accountObj.getId() + " and caller is a normal user");
                         }
                     } else if (accountObj.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || accountObj.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) {
                         if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() + " does not match the account id in session " + accountObj.getId() +
-                                           " and the domain-admin caller does not manage the target domain");
+                            s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() + " does not match the account id in session " +
+                                accountObj.getId() + " and the domain-admin caller does not manage the target domain");
                         }
                     }
                     return false;
@@ -590,7 +589,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 
             if (!user.getState().equals(Account.State.enabled) || !account.getState().equals(Account.State.enabled)) {
                 s_logger.debug("disabled or locked user accessing the api, userid = " + user.getId() + "; name = " + user.getUsername() + "; state: " + user.getState() +
-                               "; accountState: " + account.getState());
+                    "; accountState: " + account.getState());
                 return false;
             }
 

@@ -16,10 +16,16 @@
 // under the License.
 package com.cloud.network.dao;
 
-import com.cloud.network.GuestVlan;
-
-import javax.persistence.*;
 import java.util.UUID;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import com.cloud.network.GuestVlan;
 
 @Entity
 @Table(name = "account_vnet_map")

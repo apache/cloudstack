@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.firewall;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -23,7 +25,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -47,7 +48,10 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.PRIVATE_PORT, type = CommandType.STRING, required = true, description = "the private port of the port forwarding rule")
     private String privatePort;
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "the protocol for the port fowarding rule. Valid values are TCP or UDP.")
+    @Parameter(name = ApiConstants.PROTOCOL,
+               type = CommandType.STRING,
+               required = true,
+               description = "the protocol for the port fowarding rule. Valid values are TCP or UDP.")
     private String protocol;
 
     @Parameter(name = ApiConstants.IP_ADDRESS_ID,

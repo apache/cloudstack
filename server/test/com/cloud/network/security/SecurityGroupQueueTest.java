@@ -21,9 +21,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.cloud.utils.Profiler;
-
 import junit.framework.TestCase;
+
+import com.cloud.utils.Profiler;
 
 public class SecurityGroupQueueTest extends TestCase {
     public final static SecurityGroupWorkQueue queue = new LocalSecurityGroupWorkQueue();
@@ -40,6 +40,7 @@ public class SecurityGroupQueueTest extends TestCase {
             }
         }
 
+        @Override
         public void run() {
             _newWorkQueued = queue.submitWorkForVms(vmIds);
         }
@@ -61,6 +62,7 @@ public class SecurityGroupQueueTest extends TestCase {
             this._numJobsToDequeue = numJobsToDequeu;
         }
 
+        @Override
         public void run() {
             List<SecurityGroupWork> result = new ArrayList<SecurityGroupWork>();
             try {

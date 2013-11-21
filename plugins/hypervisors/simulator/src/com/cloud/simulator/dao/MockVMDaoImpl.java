@@ -16,6 +16,16 @@
 // under the License.
 package com.cloud.simulator.dao;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.springframework.stereotype.Component;
+
 import com.cloud.simulator.MockHostVO;
 import com.cloud.simulator.MockVMVO;
 import com.cloud.utils.db.GenericDaoBase;
@@ -23,14 +33,6 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VirtualMachine;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @Component
 @Local(value = {MockVMDao.class})

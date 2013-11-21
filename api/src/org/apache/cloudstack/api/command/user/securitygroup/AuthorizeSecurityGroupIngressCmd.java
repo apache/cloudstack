@@ -22,6 +22,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,15 +37,14 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.net.NetUtils;
 
-@APICommand(name = "authorizeSecurityGroupIngress", responseObject = SecurityGroupRuleResponse.class, description = "Authorizes a particular ingress rule for this security group")
+@APICommand(name = "authorizeSecurityGroupIngress",
+            responseObject = SecurityGroupRuleResponse.class,
+            description = "Authorizes a particular ingress rule for this security group")
 @SuppressWarnings("rawtypes")
 public class AuthorizeSecurityGroupIngressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AuthorizeSecurityGroupIngressCmd.class.getName());

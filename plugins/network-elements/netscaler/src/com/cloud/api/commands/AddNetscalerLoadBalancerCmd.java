@@ -15,20 +15,29 @@
 
 package com.cloud.api.commands;
 
-import com.cloud.api.response.NetscalerLoadBalancerResponse;
-import com.cloud.event.EventTypes;
-import com.cloud.exception.*;
-import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
-import com.cloud.network.element.NetscalerLoadBalancerElementService;
-import com.cloud.utils.exception.CloudRuntimeException;
-
-import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
-import org.apache.cloudstack.context.CallContext;
+import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+import org.apache.cloudstack.context.CallContext;
+
+import com.cloud.api.response.NetscalerLoadBalancerResponse;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
+import com.cloud.network.element.NetscalerLoadBalancerElementService;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "addNetscalerLoadBalancer", responseObject = NetscalerLoadBalancerResponse.class, description = "Adds a netscaler load balancer device")
 public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
@@ -64,7 +73,10 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
                description = "Netscaler device type supports NetscalerMPXLoadBalancer, NetscalerVPXLoadBalancer, NetscalerSDXLoadBalancer")
     private String deviceType;
 
-    @Parameter(name = ApiConstants.GSLB_PROVIDER, type = CommandType.BOOLEAN, required = false, description = "true if NetScaler device being added is for providing GSLB service")
+    @Parameter(name = ApiConstants.GSLB_PROVIDER,
+               type = CommandType.BOOLEAN,
+               required = false,
+               description = "true if NetScaler device being added is for providing GSLB service")
     private boolean isGslbProvider;
 
     @Parameter(name = ApiConstants.GSLB_PROVIDER_PUBLIC_IP, type = CommandType.STRING, required = false, description = "public IP of the site")
@@ -114,7 +126,8 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             ExternalLoadBalancerDeviceVO lbDeviceVO = _netsclarLbService.addNetscalerLoadBalancer(this);
             if (lbDeviceVO != null) {

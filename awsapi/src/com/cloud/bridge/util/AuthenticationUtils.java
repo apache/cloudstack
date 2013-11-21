@@ -16,12 +16,13 @@
 // under the License.
 package com.cloud.bridge.util;
 
-import org.apache.log4j.Logger;
-
+import java.math.BigInteger;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+
 import javax.security.auth.x500.X500Principal;
-import java.math.BigInteger;
+
+import org.apache.log4j.Logger;
 
 public class AuthenticationUtils {
     protected final static Logger logger = Logger.getLogger(AuthenticationUtils.class);

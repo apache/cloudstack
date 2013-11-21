@@ -16,29 +16,25 @@
 // under the License.
 package com.cloud.network;
 
-import com.cloud.capacity.CapacityManagerImpl;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DataCenterVnetDao;
-import com.cloud.network.NetworkServiceImpl;
-import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionLegacy;
-
-import org.junit.*;
-import org.mockito.ArgumentCaptor;
-import org.mockito.MockitoAnnotations.*;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DataCenterVnetDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.utils.db.TransactionLegacy;
 
 public class UpdatePhysicalNetworkTest {
     private PhysicalNetworkDao _physicalNetworkDao = mock(PhysicalNetworkDao.class);
@@ -51,7 +47,7 @@ public class UpdatePhysicalNetworkTest {
 
     public NetworkServiceImpl setUp() {
         NetworkServiceImpl networkService = new NetworkServiceImpl();
-        ((NetworkServiceImpl)networkService)._dcDao = _datacenterDao;
+        networkService._dcDao = _datacenterDao;
         networkService._physicalNetworkDao = _physicalNetworkDao;
         networkService._datacneter_vnet = _DatacenterVnetDao;
         return networkService;

@@ -37,12 +37,14 @@ public class NetworkRuleConfigDaoImpl extends GenericDaoBase<NetworkRuleConfigVO
         SecurityGroupIdSearch.done();
     }
 
+    @Override
     public List<NetworkRuleConfigVO> listBySecurityGroupId(long securityGroupId) {
         SearchCriteria<NetworkRuleConfigVO> sc = SecurityGroupIdSearch.create();
         sc.setParameters("securityGroupId", securityGroupId);
         return listBy(sc);
     }
 
+    @Override
     public void deleteBySecurityGroup(long securityGroupId) {
         SearchCriteria<NetworkRuleConfigVO> sc = SecurityGroupIdSearch.create();
         sc.setParameters("securityGroupId", securityGroupId);

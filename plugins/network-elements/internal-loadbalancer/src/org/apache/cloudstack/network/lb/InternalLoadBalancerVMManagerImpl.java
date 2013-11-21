@@ -77,7 +77,6 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbHealthCheckPolicy;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
-import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
@@ -203,7 +202,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                 if (dest.getHost().getHypervisorType() == HypervisorType.VMware) {
                     if (s_logger.isInfoEnabled()) {
                         s_logger.info("Check if we need to add management server explicit route to Internal LB. pod cidr: " + dest.getPod().getCidrAddress() + "/" +
-                                      dest.getPod().getCidrSize() + ", pod gateway: " + dest.getPod().getGateway() + ", management host: " + _mgmtHost);
+                            dest.getPod().getCidrSize() + ", pod gateway: " + dest.getPod().getGateway() + ", management host: " + _mgmtHost);
                     }
 
                     if (s_logger.isInfoEnabled()) {
@@ -238,7 +237,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
     }
 
     @Override
-    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException {
+    public boolean finalizeDeployment(Commands cmds, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context)
+        throws ResourceUnavailableException {
 
         DomainRouterVO internalLbVm = _internalLbVmDao.findById(profile.getId());
 
@@ -376,9 +376,10 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         //if offering wasn't set, try to get the default one
         if (_internalLbVmOfferingId == 0L) {
             boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-            ServiceOfferingVO newOff = new ServiceOfferingVO("System Offering For Internal LB VM", 1, InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_RAMSIZE,
-                InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_CPU_MHZ, null, null, true, null, useLocalStorage, true, null, true, VirtualMachine.Type.InternalLoadBalancerVm,
-                true);
+            ServiceOfferingVO newOff =
+                new ServiceOfferingVO("System Offering For Internal LB VM", 1, InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_RAMSIZE,
+                    InternalLoadBalancerVMManager.DEFAULT_INTERNALLB_VM_CPU_MHZ, null, null, true, null, useLocalStorage, true, null, true,
+                    VirtualMachine.Type.InternalLoadBalancerVm, true);
             newOff.setUniqueName(ServiceOffering.internalLbVmDefaultOffUniqueName);
             newOff = _serviceOfferingDao.persistSystemServiceOffering(newOff);
             _internalLbVmOfferingId = newOff.getId();
@@ -459,8 +460,10 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
 
         Network guestNetwork = _ntwkModel.getNetwork(guestNetworkId);
         Nic guestNic = _nicDao.findByNtwkIdAndInstanceId(guestNetwork.getId(), internalLbVm.getId());
-        NicProfile guestNicProfile = new NicProfile(guestNic, guestNetwork, guestNic.getBroadcastUri(), guestNic.getIsolationUri(), _ntwkModel.getNetworkRate(guestNetwork.getId(),
-            internalLbVm.getId()), _ntwkModel.isSecurityGroupSupportedInNetwork(guestNetwork), _ntwkModel.getNetworkTag(internalLbVm.getHypervisorType(), guestNetwork));
+        NicProfile guestNicProfile =
+            new NicProfile(guestNic, guestNetwork, guestNic.getBroadcastUri(), guestNic.getIsolationUri(), _ntwkModel.getNetworkRate(guestNetwork.getId(),
+                internalLbVm.getId()), _ntwkModel.isSecurityGroupSupportedInNetwork(guestNetwork), _ntwkModel.getNetworkTag(internalLbVm.getHypervisorType(),
+                guestNetwork));
 
         NetworkOffering offering = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId());
         String maxconn = null;
@@ -469,8 +472,9 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         } else {
             maxconn = offering.getConcurrentConnections().toString();
         }
-        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs, guestNic.getIp4Address(), guestNic.getIp4Address(), internalLbVm.getPrivateIpAddress(), _itMgr.toNicTO(
-            guestNicProfile, internalLbVm.getHypervisorType()), internalLbVm.getVpcId(), maxconn, offering.isKeepAliveEnabled());
+        LoadBalancerConfigCommand cmd =
+            new LoadBalancerConfigCommand(lbs, guestNic.getIp4Address(), guestNic.getIp4Address(), internalLbVm.getPrivateIpAddress(), _itMgr.toNicTO(guestNicProfile,
+                internalLbVm.getHypervisorType()), internalLbVm.getVpcId(), maxconn, offering.isKeepAliveEnabled());
 
         cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
         cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
@@ -595,8 +599,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         long internalLbProviderId = getInternalLbProviderId(guestNetwork);
 
         try {
-            assert guestNetwork.getState() == Network.State.Implemented || guestNetwork.getState() == Network.State.Setup || guestNetwork.getState() == Network.State.Implementing : "Network is not yet fully implemented: " +
-                                                                                                                                                                                     guestNetwork;
+            assert guestNetwork.getState() == Network.State.Implemented || guestNetwork.getState() == Network.State.Setup ||
+                guestNetwork.getState() == Network.State.Implementing : "Network is not yet fully implemented: " + guestNetwork;
             assert guestNetwork.getTrafficType() == TrafficType.Guest;
 
             //deploy internal lb vm
@@ -611,7 +615,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
 
             LinkedHashMap<Network, NicProfile> networks = createInternalLbVmNetworks(guestNetwork, plan, requestedGuestIp);
             //Pass startVm=false as we are holding the network lock that needs to be released at the end of vm allocation
-            DomainRouterVO internalLbVm = deployInternalLbVm(owner, dest, plan, params, internalLbProviderId, _internalLbVmOfferingId, guestNetwork.getVpcId(), networks, false);
+            DomainRouterVO internalLbVm =
+                deployInternalLbVm(owner, dest, plan, params, internalLbProviderId, _internalLbVmOfferingId, guestNetwork.getVpcId(), networks, false);
             if (internalLbVm != null) {
                 _internalLbVmDao.addRouterToGuestNetwork(internalLbVm, guestNetwork);
                 internalLbVms.add(internalLbVm);
@@ -705,9 +710,10 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         return internalLbVms;
     }
 
-    protected DomainRouterVO deployInternalLbVm(Account owner, DeployDestination dest, DeploymentPlan plan, Map<Param, Object> params, long internalLbProviderId, long svcOffId,
-        Long vpcId, LinkedHashMap<Network, NicProfile> networks, boolean startVm) throws ConcurrentOperationException, InsufficientAddressCapacityException,
-        InsufficientServerCapacityException, InsufficientCapacityException, StorageUnavailableException, ResourceUnavailableException {
+    protected DomainRouterVO deployInternalLbVm(Account owner, DeployDestination dest, DeploymentPlan plan, Map<Param, Object> params, long internalLbProviderId,
+        long svcOffId, Long vpcId, LinkedHashMap<Network, NicProfile> networks, boolean startVm) throws ConcurrentOperationException,
+        InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException, StorageUnavailableException,
+        ResourceUnavailableException {
 
         ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(svcOffId);
 
@@ -752,9 +758,10 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                     continue;
                 }
 
-                internalLbVm = new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId, VirtualMachineName.getSystemVmName(id, _instance, _internalLbVmNamePrefix),
-                    template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), false, 0, false, RedundantState.UNKNOWN, false,
-                    false, VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
+                internalLbVm =
+                    new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId, VirtualMachineName.getSystemVmName(id, _instance, _internalLbVmNamePrefix),
+                        template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), false, 0, false,
+                        RedundantState.UNKNOWN, false, false, VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
                 internalLbVm.setRole(Role.INTERNAL_LB_VM);
                 internalLbVm = _internalLbVmDao.persist(internalLbVm);
                 _itMgr.allocate(internalLbVm.getInstanceName(), template, routerOffering, networks, plan, null);
@@ -777,7 +784,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                 } catch (InsufficientCapacityException ex) {
                     if (startRetry < 2 && iter.hasNext()) {
                         s_logger.debug("Failed to start the Internal lb vm  " + internalLbVm + " with hypervisor type " + hType + ", " +
-                                       "destroying it and recreating one more time");
+                            "destroying it and recreating one more time");
                         // destroy the internal lb vm
                         destroyInternalLbVm(internalLbVm.getId(), _accountMgr.getSystemAccount(), User.UID_SYSTEM);
                         continue;
@@ -795,8 +802,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         return internalLbVm;
     }
 
-    protected DomainRouterVO startInternalLbVm(DomainRouterVO internalLbVm, Account caller, long callerUserId, Map<Param, Object> params) throws StorageUnavailableException,
-        InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    protected DomainRouterVO startInternalLbVm(DomainRouterVO internalLbVm, Account caller, long callerUserId, Map<Param, Object> params)
+        throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting Internal LB VM " + internalLbVm);
         _itMgr.start(internalLbVm.getUuid(), params, null);
         if (internalLbVm.isStopPending()) {
@@ -829,14 +836,15 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         }
 
         if (hypervisors.isEmpty()) {
-            throw new InsufficientServerCapacityException("Unable to create internal lb vm, " + "there are no clusters in the zone ", DataCenter.class, dest.getDataCenter()
-                .getId());
+            throw new InsufficientServerCapacityException("Unable to create internal lb vm, " + "there are no clusters in the zone ", DataCenter.class,
+                dest.getDataCenter().getId());
         }
         return hypervisors;
     }
 
     @Override
-    public boolean applyLoadBalancingRules(Network network, final List<LoadBalancingRule> rules, List<? extends VirtualRouter> internalLbVms) throws ResourceUnavailableException {
+    public boolean applyLoadBalancingRules(Network network, final List<LoadBalancingRule> rules, List<? extends VirtualRouter> internalLbVms)
+        throws ResourceUnavailableException {
         if (rules == null || rules.isEmpty()) {
             s_logger.debug("No lb rules to be applied for network " + network);
             return true;

@@ -22,7 +22,6 @@ import org.apache.axis2.engine.ServiceLifeCycle;
 import org.apache.log4j.Logger;
 
 import com.cloud.bridge.service.controller.s3.ServiceProvider;
-import com.cloud.utils.db.Transaction;
 
 /**
  * ServiceEngineLifecycle is used to participate Axis service life cycle management

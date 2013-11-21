@@ -19,13 +19,13 @@ package org.apache.cloudstack.network.contrail.model;
 
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
-
+import net.juniper.contrail.api.ApiConnector;
 import net.juniper.contrail.api.ObjectReference;
 import net.juniper.contrail.api.types.InstanceIp;
 import net.juniper.contrail.api.types.VirtualMachineInterface;
 import net.juniper.contrail.api.types.VirtualNetwork;
-import net.juniper.contrail.api.ApiConnector;
+
+import org.apache.log4j.Logger;
 
 import com.cloud.exception.InternalErrorException;
 
@@ -55,7 +55,7 @@ public class InstanceIpModel extends ModelObjectBase {
     public int compareTo(ModelObject o) {
         InstanceIpModel other;
         try {
-            other = (InstanceIpModel) o;
+            other = (InstanceIpModel)o;
         } catch (ClassCastException ex) {
             String clsname = o.getClass().getName();
             return InstanceIpModel.class.getName().compareTo(clsname);
@@ -89,8 +89,7 @@ public class InstanceIpModel extends ModelObjectBase {
     }
 
     @Override
-    public void update(ModelController controller)
-            throws InternalErrorException, IOException {
+    public void update(ModelController controller) throws InternalErrorException, IOException {
         assert _vmiModel != null;
 
         ApiConnector api = controller.getApiAccessor();
@@ -100,7 +99,7 @@ public class InstanceIpModel extends ModelObjectBase {
         VirtualMachineInterface vmi = _vmiModel.getVMInterface();
         VirtualNetwork vnet = vnModel.getVirtualNetwork();
         if (vnet == null) {
-            vnet = (VirtualNetwork) api.findById(VirtualNetwork.class, _vmiModel.getNetworkUuid());
+            vnet = (VirtualNetwork)api.findById(VirtualNetwork.class, _vmiModel.getNetworkUuid());
         }
 
         String ipid = api.findByName(InstanceIp.class, null, _name);
@@ -113,21 +112,21 @@ public class InstanceIpModel extends ModelObjectBase {
             }
             ip_obj.setVirtualMachineInterface(vmi);
             if (!api.create(ip_obj)) {
-                throw new InternalErrorException("Unable to create instance-ip " +  _name);
+                throw new InternalErrorException("Unable to create instance-ip " + _name);
             }
             api.read(ip_obj);
             _uuid = ip_obj.getUuid();
             if (_ipAddress == null) {
                 if (!api.read(ip_obj)) {
-                    throw new InternalErrorException("Unable to read instance-ip " +  _name);
+                    throw new InternalErrorException("Unable to read instance-ip " + _name);
                 }
             }
             _ipAddress = ip_obj.getAddress();
         } else {
             // Ensure that the instance-ip has the correct value and is pointing at the VMI.
-            InstanceIp ip_obj = (InstanceIp) api.findById(InstanceIp.class, ipid);
+            InstanceIp ip_obj = (InstanceIp)api.findById(InstanceIp.class, ipid);
             if (ip_obj == null) {
-                throw new InternalErrorException("Unable to read instance-ip " +  _name);
+                throw new InternalErrorException("Unable to read instance-ip " + _name);
             }
             boolean update = false;
             String ipnet_id = ObjectReference.getReferenceListUuid(ip_obj.getVirtualNetwork());
@@ -169,6 +168,5 @@ public class InstanceIpModel extends ModelObjectBase {
         // TODO Auto-generated method stub
         return false;
     }
-
 
 }

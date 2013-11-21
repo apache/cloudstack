@@ -75,18 +75,18 @@ public class CreateNetworkCmd extends BaseCmd {
     private Long physicalNetworkId;
 
     @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, description = "the gateway of the network. Required "
-                                                                                     + "for Shared networks and Isolated networks when it belongs to VPC")
+        + "for Shared networks and Isolated networks when it belongs to VPC")
     private String gateway;
 
     @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, description = "the netmask of the network. Required "
-                                                                                     + "for Shared networks and Isolated networks when it belongs to VPC")
+        + "for Shared networks and Isolated networks when it belongs to VPC")
     private String netmask;
 
     @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "the beginning IP address in the network IP range")
     private String startIp;
 
     @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, description = "the ending IP address in the network IP"
-                                                                                    + " range. If not specified, will be defaulted to startIP")
+        + " range. If not specified, will be defaulted to startIP")
     private String endIp;
 
     @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "the ID or VID of the network")
@@ -98,10 +98,9 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "network domain")
     private String networkDomain;
 
-    @Parameter(name = ApiConstants.ACL_TYPE,
-               type = CommandType.STRING,
-               description = "Access control type; supported values" + " are account and domain. In 3.0 all shared networks should have aclType=Domain, and all Isolated networks"
-                             + " - Account. Account means that only the account owner can use the network, domain - all accouns in the domain can use the network")
+    @Parameter(name = ApiConstants.ACL_TYPE, type = CommandType.STRING, description = "Access control type; supported values"
+        + " are account and domain. In 3.0 all shared networks should have aclType=Domain, and all Isolated networks"
+        + " - Account. Account means that only the account owner can use the network, domain - all accouns in the domain can use the network")
     private String aclType;
 
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account who will own the network")
@@ -116,7 +115,7 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name = ApiConstants.SUBDOMAIN_ACCESS,
                type = CommandType.BOOLEAN,
                description = "Defines whether to allow"
-                             + " subdomains to use networks dedicated to their parent domain(s). Should be used with aclType=Domain, defaulted to allow.subdomain.network.access global config if not specified")
+                   + " subdomains to use networks dedicated to their parent domain(s). Should be used with aclType=Domain, defaulted to allow.subdomain.network.access global config if not specified")
     private Boolean subdomainAccess;
 
     @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "the VPC network belongs to")
@@ -129,13 +128,15 @@ public class CreateNetworkCmd extends BaseCmd {
     private String endIpv6;
 
     @Parameter(name = ApiConstants.IP6_GATEWAY, type = CommandType.STRING, description = "the gateway of the IPv6 network. Required "
-                                                                                         + "for Shared networks and Isolated networks when it belongs to VPC")
+        + "for Shared networks and Isolated networks when it belongs to VPC")
     private String ip6Gateway;
 
     @Parameter(name = ApiConstants.IP6_CIDR, type = CommandType.STRING, description = "the CIDR of IPv6 network, must be at least /64")
     private String ip6Cidr;
 
-    @Parameter(name = ApiConstants.DISPLAY_NETWORK, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the network to the end user or not.")
+    @Parameter(name = ApiConstants.DISPLAY_NETWORK,
+               type = CommandType.BOOLEAN,
+               description = "an optional field, whether to the display the network to the end user or not.")
     private Boolean displayNetwork;
 
     @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, description = "Network ACL Id associated for the network")

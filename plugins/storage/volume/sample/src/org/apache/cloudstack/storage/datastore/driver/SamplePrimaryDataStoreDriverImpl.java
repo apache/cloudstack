@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.storage.datastore.driver;
 
+import java.util.Map;
+
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
@@ -42,9 +44,6 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class SamplePrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver {
     private static final Logger s_logger = Logger.getLogger(SamplePrimaryDataStoreDriverImpl.class);

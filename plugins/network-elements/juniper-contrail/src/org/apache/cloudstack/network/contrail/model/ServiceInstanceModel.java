@@ -21,12 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-
-import org.apache.cloudstack.network.contrail.management.ContrailManager;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
+import net.juniper.contrail.api.ApiConnector;
 import net.juniper.contrail.api.ObjectReference;
 import net.juniper.contrail.api.types.NetworkPolicy;
 import net.juniper.contrail.api.types.PolicyEntriesType;
@@ -38,7 +33,11 @@ import net.juniper.contrail.api.types.ServiceTemplate;
 import net.juniper.contrail.api.types.ServiceTemplateType;
 import net.juniper.contrail.api.types.VirtualNetwork;
 import net.juniper.contrail.api.types.VirtualNetworkPolicyType;
-import net.juniper.contrail.api.ApiConnector;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.network.contrail.management.ContrailManager;
 
 import com.cloud.offering.ServiceOffering;
 import com.cloud.template.VirtualMachineTemplate;
@@ -73,8 +72,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
      * @param left
      * @param right
      */
-    public ServiceInstanceModel(Project project, String name, VirtualMachineTemplate template,
-            ServiceOffering serviceOffering, VirtualNetwork left, VirtualNetwork right) {
+    public ServiceInstanceModel(Project project, String name, VirtualMachineTemplate template, ServiceOffering serviceOffering, VirtualNetwork left, VirtualNetwork right) {
         String parent_name;
         if (project != null) {
             parent_name = StringUtils.join(project.getQualifiedName(), ':');
@@ -83,8 +81,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
         }
         _fq_name = parent_name + ":" + name;
 
-        _mgmtName = ContrailManager.VNC_ROOT_DOMAIN + ":" + ContrailManager.VNC_DEFAULT_PROJECT + ":"
-                + ContrailManager.managementNetworkName;
+        _mgmtName = ContrailManager.VNC_ROOT_DOMAIN + ":" + ContrailManager.VNC_DEFAULT_PROJECT + ":" + ContrailManager.managementNetworkName;
         _left = left;
         _right = right;
         _leftName = StringUtils.join(left.getQualifiedName(), ":");
@@ -102,7 +99,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
      * @param uuid
      */
     public ServiceInstanceModel(String uuid) {
-        _uuid  = uuid;
+        _uuid = uuid;
     }
 
     public String getQualifiedName() {
@@ -113,10 +110,8 @@ public class ServiceInstanceModel extends ModelObjectBase {
         return _fq_name.substring(_fq_name.lastIndexOf(':') + 1);
     }
 
-    private void applyNetworkPolicy(ModelController controller, NetworkPolicy policy,
-            VirtualNetwork left, VirtualNetwork right) {
-        left.setNetworkPolicy(policy, new VirtualNetworkPolicyType(
-                new VirtualNetworkPolicyType.SequenceType(1, 0), null));
+    private void applyNetworkPolicy(ModelController controller, NetworkPolicy policy, VirtualNetwork left, VirtualNetwork right) {
+        left.setNetworkPolicy(policy, new VirtualNetworkPolicyType(new VirtualNetworkPolicyType.SequenceType(1, 0), null));
         // TODO: network_ipam_refs attr is missing
         left.clearNetworkIpam();
         try {
@@ -126,8 +121,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
             throw new CloudRuntimeException("Unable to update virtual-network", ex);
         }
 
-        right.setNetworkPolicy(policy, new VirtualNetworkPolicyType(
-                new VirtualNetworkPolicyType.SequenceType(1, 0), null));
+        right.setNetworkPolicy(policy, new VirtualNetworkPolicyType(new VirtualNetworkPolicyType.SequenceType(1, 0), null));
         // TODO: network_ipam_refs attr is missing
         right.clearNetworkIpam();
         try {
@@ -151,20 +145,20 @@ public class ServiceInstanceModel extends ModelObjectBase {
         ObjectReference ref = siObj.getServiceTemplate().get(0);
         if (ref != null) {
             try {
-                ServiceTemplate tmpl = (ServiceTemplate) api.findById(ServiceTemplate.class, ref.getUuid());
+                ServiceTemplate tmpl = (ServiceTemplate)api.findById(ServiceTemplate.class, ref.getUuid());
                 _templateId = tmpl.getUuid();
             } catch (IOException ex) {
                 s_logger.warn("service-template read", ex);
             }
         }
         try {
-            Project project = (Project) api.findById(Project.class, siObj.getParentUuid());
+            Project project = (Project)api.findById(Project.class, siObj.getParentUuid());
             if (project != null) {
                 _projectId = project.getUuid();
             }
             String policyId = api.findByName(NetworkPolicy.class, project, siObj.getName());
             if (policyId != null) {
-                _policy = (NetworkPolicy) api.findById(NetworkPolicy.class, policyId);
+                _policy = (NetworkPolicy)api.findById(NetworkPolicy.class, policyId);
             }
         } catch (IOException ex) {
             s_logger.warn("network-policy read", ex);
@@ -175,7 +169,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
     public int compareTo(ModelObject o) {
         ServiceInstanceModel other;
         try {
-            other = (ServiceInstanceModel) o;
+            other = (ServiceInstanceModel)o;
         } catch (ClassCastException ex) {
             String clsname = o.getClass().getName();
             return ServiceInstanceModel.class.getName().compareTo(clsname);
@@ -184,15 +178,15 @@ public class ServiceInstanceModel extends ModelObjectBase {
     }
 
     private ServiceInstance createServiceInstance(ModelController controller) {
-        Project project  = null;
+        Project project = null;
         if (_projectId != null) {
             try {
                 ApiConnector api = controller.getApiAccessor();
-                project = (Project) api.findById(Project.class, _projectId);
-           } catch (IOException ex) {
+                project = (Project)api.findById(Project.class, _projectId);
+            } catch (IOException ex) {
                 s_logger.warn("project read", ex);
                 throw new CloudRuntimeException("Unable to create service-instance object", ex);
-           }
+            }
         }
 
         ServiceInstance si_obj = new ServiceInstance();
@@ -201,8 +195,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
         }
         si_obj.setName(getName());
         si_obj.setServiceTemplate(_tmpl);
-        si_obj.setProperties(new ServiceInstanceType(false, _mgmtName, _leftName, null, _rightName, null,
-                new ServiceInstanceType.ServiceScaleOutType(1, false)));
+        si_obj.setProperties(new ServiceInstanceType(false, _mgmtName, _leftName, null, _rightName, null, new ServiceInstanceType.ServiceScaleOutType(1, false)));
         try {
             ApiConnector api = controller.getApiAccessor();
             api.create(si_obj);
@@ -228,9 +221,8 @@ public class ServiceInstanceModel extends ModelObjectBase {
         List<PolicyRuleType.PortType> portAny = new ArrayList<PolicyRuleType.PortType>();
         portAny.add(new PolicyRuleType.PortType(0, 65535));
 
-        PolicyRuleType rule = new PolicyRuleType(
-                new PolicyRuleType.SequenceType(1, 0), /* uuid */ null, "<>", "any",
-                srcList, portAny, /* application */ null, dstList, portAny,
+        PolicyRuleType rule =
+            new PolicyRuleType(new PolicyRuleType.SequenceType(1, 0), /* uuid */null, "<>", "any", srcList, portAny, /* application */null, dstList, portAny,
                 new PolicyRuleType.ActionListType("pass", "in-network", siList, null));
         policy_map.addPolicyRule(rule);
         policy.setEntries(policy_map);
@@ -270,7 +262,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
         ServiceTemplate tmpl;
         try {
             ApiConnector api = controller.getApiAccessor();
-            tmpl = (ServiceTemplate) api.findById(ServiceTemplate.class, _templateId);
+            tmpl = (ServiceTemplate)api.findById(ServiceTemplate.class, _templateId);
         } catch (IOException ex) {
             s_logger.warn("service-template read", ex);
             throw new CloudRuntimeException("Unable to create service-template object", ex);

@@ -588,7 +588,8 @@ public class DescribeInstanceAttributeResponseTypeChoice_type0 implements org.ap
     }
 
     public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+        org.apache.axis2.databinding.ADBException {
         serialize(parentQName, factory, xmlWriter, false);
     }
 
@@ -603,7 +604,8 @@ public class DescribeInstanceAttributeResponseTypeChoice_type0 implements org.ap
 
             java.lang.String namespacePrefix = registerPrefix(xmlWriter, "http://ec2.amazonaws.com/doc/2012-08-15/");
             if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)) {
-                writeAttribute("xsi", "http://www.w3.org/2001/XMLSchema-instance", "type", namespacePrefix + ":DescribeInstanceAttributeResponseTypeChoice_type0", xmlWriter);
+                writeAttribute("xsi", "http://www.w3.org/2001/XMLSchema-instance", "type", namespacePrefix + ":DescribeInstanceAttributeResponseTypeChoice_type0",
+                    xmlWriter);
             } else {
                 writeAttribute("xsi", "http://www.w3.org/2001/XMLSchema-instance", "type", "DescribeInstanceAttributeResponseTypeChoice_type0", xmlWriter);
             }
@@ -643,8 +645,8 @@ public class DescribeInstanceAttributeResponseTypeChoice_type0 implements org.ap
             if (localInstanceInitiatedShutdownBehavior == null) {
                 throw new org.apache.axis2.databinding.ADBException("instanceInitiatedShutdownBehavior cannot be null!!");
             }
-            localInstanceInitiatedShutdownBehavior.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "instanceInitiatedShutdownBehavior"),
-                factory, xmlWriter);
+            localInstanceInitiatedShutdownBehavior.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                "instanceInitiatedShutdownBehavior"), factory, xmlWriter);
         }
         if (localRootDeviceNameTracker) {
             if (localRootDeviceName == null) {
@@ -688,9 +690,8 @@ public class DescribeInstanceAttributeResponseTypeChoice_type0 implements org.ap
     /**
      * Util method to write an attribute with the ns prefix
      */
-    private void
-        writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+    private void writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue,
+        javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
         if (xmlWriter.getPrefix(namespace) == null) {
             xmlWriter.writeNamespace(prefix, namespace);
             xmlWriter.setPrefix(prefix, namespace);
@@ -1000,7 +1001,8 @@ public class DescribeInstanceAttributeResponseTypeChoice_type0 implements org.ap
 
                 else
 
-                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "disableApiTermination").equals(reader.getName())) {
+                if (reader.isStartElement() &&
+                    new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "disableApiTermination").equals(reader.getName())) {
 
                     object.setDisableApiTermination(com.amazon.ec2.NullableAttributeBooleanValueType.Factory.parse(reader));
 

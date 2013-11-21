@@ -67,8 +67,8 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
         if (!has) {
             throw new CloudRuntimeException(
                 "Local storage with Id " +
-                        poolId +
-                        " shows there are multiple hosts connect to it, but 'select id, status, removed, private_ip_address from host where id in (select host_id from storage_pool_host_ref where pool_id=?)' returns nothing");
+                    poolId +
+                    " shows there are multiple hosts connect to it, but 'select id, status, removed, private_ip_address from host where id in (select host_id from storage_pool_host_ref where pool_id=?)' returns nothing");
         } else {
             return buf.toString();
         }
@@ -81,16 +81,19 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
             Connection conn;
             try {
                 conn = txn.getConnection();
-                PreparedStatement pstmt = conn.prepareStatement("SELECT pool_id FROM host INNER JOIN storage_pool_host_ref INNER JOIN storage_pool WHERE storage_pool.id = storage_pool_host_ref.pool_id and storage_pool.pool_type='LVM' AND host.id=storage_pool_host_ref.host_id AND host.removed IS NULL group by pool_id having count(*) > 1");
+                PreparedStatement pstmt =
+                    conn.prepareStatement("SELECT pool_id FROM host INNER JOIN storage_pool_host_ref INNER JOIN storage_pool WHERE storage_pool.id = storage_pool_host_ref.pool_id and storage_pool.pool_type='LVM' AND host.id=storage_pool_host_ref.host_id AND host.removed IS NULL group by pool_id having count(*) > 1");
                 ResultSet rs = pstmt.executeQuery();
 
                 boolean noDuplicate = true;
                 StringBuffer helpInfo = new StringBuffer();
-                String note = "DATABASE INTEGRITY ERROR\nManagement server detected there are some hosts connect to the same loacal storage, please contact CloudStack support team for solution. Below are detialed info, please attach all of them to CloudStack support. Thank you\n";
+                String note =
+                    "DATABASE INTEGRITY ERROR\nManagement server detected there are some hosts connect to the same loacal storage, please contact CloudStack support team for solution. Below are detialed info, please attach all of them to CloudStack support. Thank you\n";
                 helpInfo.append(note);
                 while (rs.next()) {
                     long poolId = rs.getLong(1);
-                    pstmt = conn.prepareStatement("select id, status, removed, private_ip_address from host where id in (select host_id from storage_pool_host_ref where pool_id=?)");
+                    pstmt =
+                        conn.prepareStatement("select id, status, removed, private_ip_address from host where id in (select host_id from storage_pool_host_ref where pool_id=?)");
                     pstmt.setLong(1, poolId);
                     ResultSet dhrs = pstmt.executeQuery();
                     String help = formatDuplicateHostToReadText(poolId, dhrs);

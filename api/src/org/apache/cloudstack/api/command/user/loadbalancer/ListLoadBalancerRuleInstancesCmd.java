@@ -17,8 +17,9 @@
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -27,7 +28,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
@@ -49,7 +49,11 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
                description = "true if listing all virtual machines currently applied to the load balancer rule; default is true")
     private Boolean applied;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the load balancer rule")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = FirewallRuleResponse.class,
+               required = true,
+               description = "the ID of the load balancer rule")
     private Long id;
 
     /////////////////////////////////////////////////////

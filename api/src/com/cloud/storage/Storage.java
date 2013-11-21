@@ -21,11 +21,14 @@ import java.util.List;
 
 public class Storage {
     public static enum ImageFormat {
-        QCOW2(true, true, false, "qcow2"), RAW(false, false, false, "raw"), VHD(true, true, true, "vhd"), ISO(false, false, false, "iso"), OVA(true, true, true, "ova"), VHDX(
-                true,
-                true,
-                true,
-                "vhdx"), BAREMETAL(false, false, false, "BAREMETAL"), TAR(false, false, false, "tar");
+        QCOW2(true, true, false, "qcow2"),
+        RAW(false, false, false, "raw"),
+        VHD(true, true, true, "vhd"),
+        ISO(false, false, false, "iso"),
+        OVA(true, true, true, "ova"),
+        VHDX(true, true, true, "vhdx"),
+        BAREMETAL(false, false, false, "BAREMETAL"),
+        TAR(false, false, false, "tar");
 
         private final boolean thinProvisioned;
         private final boolean supportSparse;

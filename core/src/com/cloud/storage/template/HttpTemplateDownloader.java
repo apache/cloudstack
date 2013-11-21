@@ -39,6 +39,7 @@ import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 
@@ -75,8 +76,8 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
     private ResourceType resourceType = ResourceType.TEMPLATE;
     private final HttpMethodRetryHandler myretryhandler;
 
-    public HttpTemplateDownloader(StorageLayer storageLayer, String downloadUrl, String toDir, DownloadCompleteCallback callback, long maxTemplateSizeInBytes, String user,
-            String password, Proxy proxy, ResourceType resourceType) {
+    public HttpTemplateDownloader(StorageLayer storageLayer, String downloadUrl, String toDir, DownloadCompleteCallback callback, long maxTemplateSizeInBytes,
+            String user, String password, Proxy proxy, ResourceType resourceType) {
         _storage = storageLayer;
         this.downloadUrl = downloadUrl;
         setToDir(toDir);

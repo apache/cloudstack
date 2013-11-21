@@ -59,8 +59,8 @@ public class MacAddress {
     public String toString(String separator) {
         StringBuilder buff = new StringBuilder();
         Formatter formatter = new Formatter(buff);
-        formatter.format("%02x%s%02x%s%02x%s%02x%s%02x%s%02x", _addr >> 40 & 0xff, separator, _addr >> 32 & 0xff, separator, _addr >> 24 & 0xff, separator, _addr >> 16 & 0xff,
-            separator, _addr >> 8 & 0xff, separator, _addr & 0xff);
+        formatter.format("%02x%s%02x%s%02x%s%02x%s%02x%s%02x", _addr >> 40 & 0xff, separator, _addr >> 32 & 0xff, separator, _addr >> 24 & 0xff, separator,
+            _addr >> 16 & 0xff, separator, _addr >> 8 & 0xff, separator, _addr & 0xff);
         return buff.toString();
 
         /*

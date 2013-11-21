@@ -21,6 +21,7 @@ import com.vmware.vim25.ComputeResourceSummary;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.VirtualMachineConfigSpec;
+
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 /**
@@ -51,8 +52,8 @@ public interface VmwareHypervisorHost {
 
     boolean createVm(VirtualMachineConfigSpec vmSpec) throws Exception;
 
-    boolean createBlankVm(String vmName, String vmInternalCSName, int cpuCount, int cpuSpeedMHz, int cpuReservedMHz, boolean limitCpuUse, int memoryMB, int memoryReserveMB,
-        String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent) throws Exception;
+    boolean createBlankVm(String vmName, String vmInternalCSName, int cpuCount, int cpuSpeedMHz, int cpuReservedMHz, boolean limitCpuUse, int memoryMB,
+        int memoryReserveMB, String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent) throws Exception;
 
     void importVmFromOVF(String ovfFilePath, String vmName, DatastoreMO dsMo, String diskOption) throws Exception;
 

@@ -23,14 +23,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.deploy.DeployDestination;
@@ -39,8 +38,6 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -96,7 +93,7 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
                                 avoid.addHost(groupVM.getLastHostId());
                                 if (s_logger.isDebugEnabled()) {
                                     s_logger.debug("Added host " + groupVM.getLastHostId() + " to avoid set, since VM " + groupVM.getId() +
-                                                   " is present on the host, in Stopped state but has reserved capacity");
+                                        " is present on the host, in Stopped state but has reserved capacity");
                                 }
                             }
                         }
@@ -136,8 +133,8 @@ public class HostAntiAffinityProcessor extends AffinityProcessorBase implements 
                 VMReservationVO vmReservation = _reservationDao.findByVmId(groupVMId);
                 if (vmReservation != null && vmReservation.getHostId() != null && vmReservation.getHostId().equals(plannedHostId)) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Planned destination for VM " + vm.getId() + " conflicts with an existing VM " + vmReservation.getVmId() + " reserved on the same host " +
-                                       plannedHostId);
+                        s_logger.debug("Planned destination for VM " + vm.getId() + " conflicts with an existing VM " + vmReservation.getVmId() +
+                            " reserved on the same host " + plannedHostId);
                     }
                     return false;
                 }

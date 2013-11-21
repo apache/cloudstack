@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.bridge.model;
 
-import java.io.Serializable;
 import java.util.Date;
 
 import javax.persistence.Column;

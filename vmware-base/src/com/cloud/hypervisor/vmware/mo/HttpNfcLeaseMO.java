@@ -20,24 +20,20 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.rmi.RemoteException;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.w3c.dom.Element;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.HttpNfcLeaseInfo;
 import com.vmware.vim25.HttpNfcLeaseManifestEntry;
 import com.vmware.vim25.HttpNfcLeaseState;
 import com.vmware.vim25.LocalizedMethodFault;
 import com.vmware.vim25.ManagedObjectReference;
-import com.vmware.vim25.ObjectSpec;
 import com.vmware.vim25.OvfCreateImportSpecResult;
 import com.vmware.vim25.OvfFileItem;
-import com.vmware.vim25.PropertyFilterSpec;
-import com.vmware.vim25.PropertySpec;
+
+import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class HttpNfcLeaseMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(HttpNfcLeaseMO.class);

@@ -23,7 +23,6 @@ import java.io.File;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.net.URI;
 
 import javax.naming.ConfigurationException;
 
@@ -102,7 +101,8 @@ public class BridgeVifDriver extends VifDriverBase {
         String trafficLabel = nic.getName();
         if (nic.getType() == Networks.TrafficType.Guest) {
             Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 128 : 0;
-            if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan && !vNetId.equalsIgnoreCase("untagged") || nic.getBroadcastType() == Networks.BroadcastDomainType.Vxlan) {
+            if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan && !vNetId.equalsIgnoreCase("untagged") ||
+                nic.getBroadcastType() == Networks.BroadcastDomainType.Vxlan) {
                 if (trafficLabel != null && !trafficLabel.isEmpty()) {
                     s_logger.debug("creating a vNet dev and bridge for guest traffic per traffic label " + trafficLabel);
                     String brName = createVnetBr(vNetId, trafficLabel, protocol);
@@ -273,7 +273,7 @@ public class BridgeVifDriver extends VifDriverBase {
         }
         if (!foundLinkLocalBr) {
             Script.runSimpleBashScript("ifconfig " + linkLocalBr + " 169.254.0.1;" + "ip route add " + NetUtils.getLinkLocalCIDR() + " dev " + linkLocalBr + " src " +
-                                       NetUtils.getLinkLocalGateway());
+                NetUtils.getLinkLocalGateway());
         }
     }
 

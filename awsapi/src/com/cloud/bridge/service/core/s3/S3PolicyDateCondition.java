@@ -134,8 +134,8 @@ public class S3PolicyDateCondition extends S3PolicyCondition {
                     default:
                         return false;
                 }
-                logger.info("S3PolicyDateCondition eval - SID: " + SID + ", " + condition + ", key: " + keyName + ", valuePassedIn: " + DatatypeConverter.printDateTime(tod) +
-                            ", valueInRule: " + DatatypeConverter.printDateTime(valueList[i]) + ", result: " + keyResult);
+                logger.info("S3PolicyDateCondition eval - SID: " + SID + ", " + condition + ", key: " + keyName + ", valuePassedIn: " +
+                    DatatypeConverter.printDateTime(tod) + ", valueInRule: " + DatatypeConverter.printDateTime(valueList[i]) + ", result: " + keyResult);
             }
 
             // -> if all key values are, false then that key is false and then the entire condition is then false

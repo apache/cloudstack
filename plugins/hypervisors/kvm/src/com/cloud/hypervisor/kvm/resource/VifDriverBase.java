@@ -19,12 +19,14 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.exception.InternalErrorException;
-import org.libvirt.LibvirtException;
+import java.util.Map;
 
 import javax.naming.ConfigurationException;
-import java.util.Map;
+
+import org.libvirt.LibvirtException;
+
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.exception.InternalErrorException;
 
 public abstract class VifDriverBase implements VifDriver {
 
@@ -39,8 +41,10 @@ public abstract class VifDriverBase implements VifDriver {
         _pifs = (Map<String, String>)params.get("libvirt.host.pifs");
     }
 
+    @Override
     public abstract LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType) throws InternalErrorException, LibvirtException;
 
+    @Override
     public abstract void unplug(LibvirtVMDef.InterfaceDef iface);
 
     protected LibvirtVMDef.InterfaceDef.nicModel getGuestNicModel(String guestOSType) {

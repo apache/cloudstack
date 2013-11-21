@@ -23,6 +23,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -31,7 +33,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network.Capability;
@@ -110,10 +111,8 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
                description = "true if network offering supports persistent networks; defaulted to false if not specified")
     private Boolean isPersistent;
 
-    @Parameter(name = ApiConstants.DETAILS,
-               type = CommandType.MAP,
-               since = "4.2.0",
-               description = "Network offering details in key/value pairs." + " Supported keys are internallbprovider/publiclbprovider with service provider as a value")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.2.0", description = "Network offering details in key/value pairs."
+        + " Supported keys are internallbprovider/publiclbprovider with service provider as a value")
     protected Map details;
 
     @Parameter(name = ApiConstants.EGRESS_DEFAULT_POLICY,
@@ -127,7 +126,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
                description = "if true keepalive will be turned on in the loadbalancer. At the time of writing this has only an effect on haproxy; the mode http and httpclose options are unset in the haproxy conf file.")
     private Boolean keepAliveEnabled;
 
-    @Parameter(name = ApiConstants.MAX_CONNECTIONS, type = CommandType.INTEGER, description = "maximum number of concurrent connections supported by the network offering")
+    @Parameter(name = ApiConstants.MAX_CONNECTIONS,
+               type = CommandType.INTEGER,
+               description = "maximum number of concurrent connections supported by the network offering")
     private Integer maxConnections;
 
     /////////////////////////////////////////////////////
@@ -242,9 +243,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             while (iter.hasNext()) {
                 HashMap<String, String> svcCapabilityMap = (HashMap<String, String>)iter.next();
                 Capability capability = null;
-                String svc = (String)svcCapabilityMap.get("service");
-                String capabilityName = (String)svcCapabilityMap.get("capabilitytype");
-                String capabilityValue = (String)svcCapabilityMap.get("capabilityvalue");
+                String svc = svcCapabilityMap.get("service");
+                String capabilityName = svcCapabilityMap.get("capabilitytype");
+                String capabilityValue = svcCapabilityMap.get("capabilityvalue");
 
                 if (capabilityName != null) {
                     capability = Capability.getCapability(capabilityName);

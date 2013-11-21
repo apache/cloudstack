@@ -19,22 +19,18 @@ package org.apache.cloudstack.api.command.user.loadbalancer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.response.FirewallRuleResponse;
-
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
-import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.network.rules.HealthCheckPolicy;
 import com.cloud.network.rules.LoadBalancer;
-import com.cloud.user.Account;
 
 @APICommand(name = "listLBHealthCheckPolicies", description = "Lists load balancer HealthCheck policies.", responseObject = LBHealthCheckResponse.class, since = "4.2.0")
 public class ListLBHealthCheckPoliciesCmd extends BaseListCmd {
@@ -45,7 +41,11 @@ public class ListLBHealthCheckPoliciesCmd extends BaseListCmd {
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the load balancer rule")
+    @Parameter(name = ApiConstants.LBID,
+               type = CommandType.UUID,
+               entityType = FirewallRuleResponse.class,
+               required = true,
+               description = "the ID of the load balancer rule")
     private Long lbRuleId;
 
     // ///////////////////////////////////////////////////

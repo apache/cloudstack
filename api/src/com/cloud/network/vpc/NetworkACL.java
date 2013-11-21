@@ -17,7 +17,6 @@
 
 package com.cloud.network.vpc;
 
-import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface NetworkACL extends InternalIdentity {
@@ -30,6 +29,7 @@ public interface NetworkACL extends InternalIdentity {
 
     Long getVpcId();
 
+    @Override
     long getId();
 
     String getName();

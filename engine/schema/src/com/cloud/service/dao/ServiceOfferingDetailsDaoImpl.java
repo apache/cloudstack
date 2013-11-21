@@ -18,8 +18,9 @@ package com.cloud.service.dao;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
 import com.cloud.service.ServiceOfferingDetailsVO;
 

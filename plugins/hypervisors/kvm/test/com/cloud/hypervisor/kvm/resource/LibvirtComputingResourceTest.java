@@ -39,6 +39,7 @@ import org.libvirt.DomainInfo;
 import org.libvirt.DomainInterfaceStats;
 import org.libvirt.LibvirtException;
 import org.libvirt.NodeInfo;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -156,7 +157,8 @@ public class LibvirtComputingResourceTest {
         String vncPassword = "mySuperSecretPassword";
 
         LibvirtComputingResource lcr = new LibvirtComputingResource();
-        VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
+        VirtualMachineTO to =
+            new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
 
@@ -245,7 +247,7 @@ public class LibvirtComputingResourceTest {
         nodeInfo.model = "Foo processor";
         Mockito.when(connect.nodeInfo()).thenReturn(nodeInfo);
         // this is testing the interface stats, returns an increasing number of sent and received bytes
-        Mockito.when(domain.interfaceStats(Mockito.anyString())).thenAnswer(new Answer<DomainInterfaceStats>() {
+        Mockito.when(domain.interfaceStats(Matchers.anyString())).thenAnswer(new Answer<DomainInterfaceStats>() {
             // increment with less than a KB, so this should be less than 1 KB
             final static int increment = 1000;
             int rx_bytes = 1000;
@@ -262,7 +264,7 @@ public class LibvirtComputingResourceTest {
 
         });
 
-        Mockito.when(domain.blockStats(Mockito.anyString())).thenAnswer(new Answer<DomainBlockStats>() {
+        Mockito.when(domain.blockStats(Matchers.anyString())).thenAnswer(new Answer<DomainBlockStats>() {
             // a little less than a KB
             final static int increment = 1000;
 

@@ -96,7 +96,7 @@ public class PropertyMapDynamicBean implements DynamicMBean {
 
     @Override
     public synchronized AttributeList setAttributes(AttributeList list) {
-        Attribute[] attrs = (Attribute[])list.toArray(new Attribute[0]);
+        Attribute[] attrs = list.toArray(new Attribute[0]);
         AttributeList retList = new AttributeList();
         for (Attribute attr : attrs) {
             String name = attr.getName();

@@ -35,8 +35,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
@@ -132,11 +133,13 @@ public class Agent implements HandlerFactory, IAgentControl {
 
         Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
 
-        _ugentTaskPool = new ThreadPoolExecutor(shell.getPingRetries(), 2 * shell.getPingRetries(), 10, TimeUnit.MINUTES, new SynchronousQueue<Runnable>(), new NamedThreadFactory(
-            "UgentTask"));
+        _ugentTaskPool =
+            new ThreadPoolExecutor(shell.getPingRetries(), 2 * shell.getPingRetries(), 10, TimeUnit.MINUTES, new SynchronousQueue<Runnable>(), new NamedThreadFactory(
+                "UgentTask"));
 
-        _executor = new ThreadPoolExecutor(_shell.getWorkers(), 5 * _shell.getWorkers(), 1, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(
-            "agentRequest-Handler"));
+        _executor =
+            new ThreadPoolExecutor(_shell.getWorkers(), 5 * _shell.getWorkers(), 1, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(
+                "agentRequest-Handler"));
     }
 
     public Agent(IAgentShell shell, int localAgentId, ServerResource resource) throws ConfigurationException {
@@ -168,14 +171,16 @@ public class Agent implements HandlerFactory, IAgentControl {
         s_logger.debug("Adding shutdown hook");
         Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
 
-        _ugentTaskPool = new ThreadPoolExecutor(shell.getPingRetries(), 2 * shell.getPingRetries(), 10, TimeUnit.MINUTES, new SynchronousQueue<Runnable>(), new NamedThreadFactory(
-            "UgentTask"));
+        _ugentTaskPool =
+            new ThreadPoolExecutor(shell.getPingRetries(), 2 * shell.getPingRetries(), 10, TimeUnit.MINUTES, new SynchronousQueue<Runnable>(), new NamedThreadFactory(
+                "UgentTask"));
 
-        _executor = new ThreadPoolExecutor(_shell.getWorkers(), 5 * _shell.getWorkers(), 1, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(
-            "agentRequest-Handler"));
+        _executor =
+            new ThreadPoolExecutor(_shell.getWorkers(), 5 * _shell.getWorkers(), 1, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(
+                "agentRequest-Handler"));
 
         s_logger.info("Agent [id = " + (_id != null ? _id : "new") + " : type = " + getResourceName() + " : zone = " + _shell.getZone() + " : pod = " + _shell.getPod() +
-                      " : workers = " + _shell.getWorkers() + " : host = " + _shell.getHost() + " : port = " + _shell.getPort());
+            " : workers = " + _shell.getWorkers() + " : host = " + _shell.getHost() + " : port = " + _shell.getPort());
     }
 
     public String getVersion() {
@@ -489,7 +494,7 @@ public class Agent implements HandlerFactory, IAgentControl {
 
                     } else {
                         if (cmd instanceof ReadyCommand) {
-                            processReadyCommand((ReadyCommand)cmd);
+                            processReadyCommand(cmd);
                         }
                         _inProgress.incrementAndGet();
                         try {

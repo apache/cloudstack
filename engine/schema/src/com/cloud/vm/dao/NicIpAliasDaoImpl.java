@@ -16,6 +16,13 @@
 // under the License.
 package com.cloud.vm.dao;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.ejb.Local;
+
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -23,11 +30,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.vm.NicIpAlias;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import java.util.ArrayList;
-import java.util.List;
 
 @Component
 @Local(value = NicIpAliasDao.class)

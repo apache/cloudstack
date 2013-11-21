@@ -103,7 +103,8 @@ public class DescribeReservedInstancesListingsResponseSetType implements org.apa
 
         java.util.List list = org.apache.axis2.databinding.utils.ConverterUtil.toList(localItem);
         list.add(param);
-        this.localItem = (com.amazon.ec2.DescribeReservedInstancesListingsResponseSetItemType[])list.toArray(new com.amazon.ec2.DescribeReservedInstancesListingsResponseSetItemType[list.size()]);
+        this.localItem =
+            (com.amazon.ec2.DescribeReservedInstancesListingsResponseSetItemType[])list.toArray(new com.amazon.ec2.DescribeReservedInstancesListingsResponseSetItemType[list.size()]);
 
     }
 
@@ -142,7 +143,8 @@ public class DescribeReservedInstancesListingsResponseSetType implements org.apa
     }
 
     public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+        org.apache.axis2.databinding.ADBException {
         serialize(parentQName, factory, xmlWriter, false);
     }
 
@@ -177,7 +179,8 @@ public class DescribeReservedInstancesListingsResponseSetType implements org.apa
 
             java.lang.String namespacePrefix = registerPrefix(xmlWriter, "http://ec2.amazonaws.com/doc/2012-08-15/");
             if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)) {
-                writeAttribute("xsi", "http://www.w3.org/2001/XMLSchema-instance", "type", namespacePrefix + ":DescribeReservedInstancesListingsResponseSetType", xmlWriter);
+                writeAttribute("xsi", "http://www.w3.org/2001/XMLSchema-instance", "type", namespacePrefix + ":DescribeReservedInstancesListingsResponseSetType",
+                    xmlWriter);
             } else {
                 writeAttribute("xsi", "http://www.w3.org/2001/XMLSchema-instance", "type", "DescribeReservedInstancesListingsResponseSetType", xmlWriter);
             }
@@ -208,9 +211,8 @@ public class DescribeReservedInstancesListingsResponseSetType implements org.apa
     /**
      * Util method to write an attribute with the ns prefix
      */
-    private void
-        writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+    private void writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue,
+        javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
         if (xmlWriter.getPrefix(namespace) == null) {
             xmlWriter.writeNamespace(prefix, namespace);
             xmlWriter.setPrefix(prefix, namespace);

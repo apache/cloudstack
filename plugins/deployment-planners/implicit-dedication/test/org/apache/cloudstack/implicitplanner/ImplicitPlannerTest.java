@@ -19,7 +19,6 @@ package org.apache.cloudstack.implicitplanner;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -35,7 +34,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.cloud.hypervisor.Hypervisor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,6 +57,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.test.utils.SpringUtils;
 
+import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -377,15 +376,15 @@ public class ImplicitPlannerTest {
         clustersWithEnoughCapacity.add(2L);
         clustersWithEnoughCapacity.add(3L);
         when(
-            capacityDao.listClustersInZoneOrPodByHostCapacities(dataCenterId, noOfCpusInOffering * cpuSpeedInOffering, ramInOffering * 1024L * 1024L, CapacityVO.CAPACITY_TYPE_CPU,
-                true)).thenReturn(clustersWithEnoughCapacity);
+            capacityDao.listClustersInZoneOrPodByHostCapacities(dataCenterId, noOfCpusInOffering * cpuSpeedInOffering, ramInOffering * 1024L * 1024L,
+                Capacity.CAPACITY_TYPE_CPU, true)).thenReturn(clustersWithEnoughCapacity);
 
         Map<Long, Double> clusterCapacityMap = new HashMap<Long, Double>();
         clusterCapacityMap.put(1L, 2048D);
         clusterCapacityMap.put(2L, 2048D);
         clusterCapacityMap.put(3L, 2048D);
         Pair<List<Long>, Map<Long, Double>> clustersOrderedByCapacity = new Pair<List<Long>, Map<Long, Double>>(clustersWithEnoughCapacity, clusterCapacityMap);
-        when(capacityDao.orderClustersByAggregateCapacity(dataCenterId, CapacityVO.CAPACITY_TYPE_CPU, true)).thenReturn(clustersOrderedByCapacity);
+        when(capacityDao.orderClustersByAggregateCapacity(dataCenterId, Capacity.CAPACITY_TYPE_CPU, true)).thenReturn(clustersOrderedByCapacity);
 
         List<Long> disabledClusters = new ArrayList<Long>();
         List<Long> clustersWithDisabledPods = new ArrayList<Long>();

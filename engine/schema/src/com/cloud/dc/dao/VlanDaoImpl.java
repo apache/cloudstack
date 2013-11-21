@@ -16,6 +16,19 @@
 // under the License.
 package com.cloud.dc.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.springframework.stereotype.Component;
+
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
@@ -30,23 +43,13 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 @Component
 @Local(value = {VlanDao.class})
 public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao {
 
-    private final String FindZoneWideVlans = "SELECT * FROM vlan WHERE data_center_id=? and vlan_type=? and vlan_id!=? and id not in (select vlan_db_id from account_vlan_map)";
+    private final String FindZoneWideVlans =
+        "SELECT * FROM vlan WHERE data_center_id=? and vlan_type=? and vlan_id!=? and id not in (select vlan_db_id from account_vlan_map)";
 
     protected SearchBuilder<VlanVO> ZoneVlanIdSearch;
     protected SearchBuilder<VlanVO> ZoneSearch;

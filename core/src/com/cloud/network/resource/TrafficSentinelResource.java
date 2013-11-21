@@ -204,8 +204,9 @@ public class TrafficSentinelResource implements ServerResource {
 
             try {
                 //Query traffic Sentinel
-                trafficSentinel = new URL(_url + "/inmsf/Query?script=" + URLEncoder.encode(getScript(cmd.getPublicIps(), cmd.getStart(), cmd.getEnd()), "UTF-8") +
-                                          "&authenticate=basic&resultFormat=txt");
+                trafficSentinel =
+                    new URL(_url + "/inmsf/Query?script=" + URLEncoder.encode(getScript(cmd.getPublicIps(), cmd.getStart(), cmd.getEnd()), "UTF-8") +
+                        "&authenticate=basic&resultFormat=txt");
 
                 BufferedReader in = new BufferedReader(new InputStreamReader(trafficSentinel.openStream()));
 

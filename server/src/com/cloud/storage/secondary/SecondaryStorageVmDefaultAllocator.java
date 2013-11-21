@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Random;
 
 import javax.ejb.Local;
-import javax.naming.ConfigurationException;
 
 import org.springframework.stereotype.Component;
 

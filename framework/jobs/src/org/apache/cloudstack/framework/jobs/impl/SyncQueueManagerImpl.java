@@ -23,6 +23,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueDao;
 import org.apache.cloudstack.framework.jobs.dao.SyncQueueItemDao;
 

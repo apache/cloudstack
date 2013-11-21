@@ -36,6 +36,7 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
@@ -149,13 +150,13 @@ public class DbUtilTest {
     @Test
     public void getGlobalLock() throws SQLException {
         Mockito.when(dataSource.getConnection()).thenReturn(connection);
-        Mockito.when(connection.prepareStatement(Mockito.anyString())).thenReturn(preparedStatement);
+        Mockito.when(connection.prepareStatement(Matchers.anyString())).thenReturn(preparedStatement);
         Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
         Mockito.when(resultSet.first()).thenReturn(true);
         Mockito.when(resultSet.getInt(1)).thenReturn(1);
         Assert.assertTrue(DbUtil.getGlobalLock("TEST", 600));
 
-        Mockito.verify(connection).prepareStatement(Mockito.anyString());
+        Mockito.verify(connection).prepareStatement(Matchers.anyString());
         Mockito.verify(preparedStatement).close();
         Mockito.verify(resultSet).close();
     }
@@ -163,13 +164,13 @@ public class DbUtilTest {
     @Test
     public void getGlobalLockTimeout() throws SQLException {
         Mockito.when(dataSource.getConnection()).thenReturn(connection);
-        Mockito.when(connection.prepareStatement(Mockito.anyString())).thenReturn(preparedStatement);
+        Mockito.when(connection.prepareStatement(Matchers.anyString())).thenReturn(preparedStatement);
         Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
         Mockito.when(resultSet.first()).thenReturn(true);
         Mockito.when(resultSet.getInt(1)).thenReturn(0);
         Assert.assertFalse(DbUtil.getGlobalLock("TEST", 600));
 
-        Mockito.verify(connection).prepareStatement(Mockito.anyString());
+        Mockito.verify(connection).prepareStatement(Matchers.anyString());
         Mockito.verify(preparedStatement).close();
         Mockito.verify(resultSet).close();
         Mockito.verify(connection).close();
@@ -236,7 +237,7 @@ public class DbUtilTest {
 
     @Test
     public void releaseGlobalLock() throws SQLException {
-        Mockito.when(connection.prepareStatement(Mockito.anyString())).thenReturn(preparedStatement);
+        Mockito.when(connection.prepareStatement(Matchers.anyString())).thenReturn(preparedStatement);
         Mockito.when(preparedStatement.executeQuery()).thenReturn(resultSet);
         Mockito.when(resultSet.first()).thenReturn(true);
         Mockito.when(resultSet.getInt(1)).thenReturn(1);

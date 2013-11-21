@@ -136,8 +136,9 @@ public class AgentRoutingResource extends AgentStorageResource {
 
         List<Object> info = getHostInfo();
 
-        StartupRoutingCommand cmd = new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3),
-            HypervisorType.Simulator, RouterPrivateIpStrategy.HostLocal);
+        StartupRoutingCommand cmd =
+            new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), HypervisorType.Simulator,
+                RouterPrivateIpStrategy.HostLocal);
         cmd.setStateChanges(changes);
 
         Map<String, String> hostDetails = new HashMap<String, String>();

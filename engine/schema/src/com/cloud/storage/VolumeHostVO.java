@@ -113,6 +113,7 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
     @Enumerated(EnumType.STRING)
     ObjectInDataStoreStateMachine.State state;
 
+    @Override
     public String getInstallPath() {
         return installPath;
     }
@@ -153,6 +154,7 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
         this.downloadState = downloadState;
     }
 
+    @Override
     public long getId() {
         return id;
     }
@@ -169,6 +171,7 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
         lastUpdated = date;
     }
 
+    @Override
     public void setInstallPath(String installPath) {
         this.installPath = installPath;
     }
@@ -192,8 +195,8 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
         this.state = ObjectInDataStoreStateMachine.State.Allocated;
     }
 
-    public VolumeHostVO(long hostId, long volumeId, long zoneId, Date lastUpdated, int downloadPercent, Status downloadState, String localDownloadPath, String errorString,
-            String jobId, String installPath, String downloadUrl, String checksum, ImageFormat format) {
+    public VolumeHostVO(long hostId, long volumeId, long zoneId, Date lastUpdated, int downloadPercent, Status downloadState, String localDownloadPath,
+            String errorString, String jobId, String installPath, String downloadUrl, String checksum, ImageFormat format) {
         // super();
         this.hostId = hostId;
         this.volumeId = volumeId;
@@ -238,6 +241,7 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
         return jobId;
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (obj instanceof VolumeHostVO) {
             VolumeHostVO other = (VolumeHostVO)obj;
@@ -246,6 +250,7 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
         return false;
     }
 
+    @Override
     public int hashCode() {
         Long tid = new Long(volumeId);
         Long hid = new Long(hostId);
@@ -296,6 +301,7 @@ public class VolumeHostVO implements InternalIdentity, DataObjectInStore {
         return -1;
     }
 
+    @Override
     public String toString() {
         return new StringBuilder("VolumeHost[").append(id).append("-").append(volumeId).append("-").append(hostId).append(installPath).append("]").toString();
     }

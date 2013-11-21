@@ -38,6 +38,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.net.util.SubnetUtils;
 import org.apache.log4j.Logger;
 
 import com.googlecode.ipv6.IPv6Address;
@@ -46,7 +47,6 @@ import com.googlecode.ipv6.IPv6Network;
 
 import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.Pair;
-import org.apache.commons.net.util.SubnetUtils;
 import com.cloud.utils.script.Script;
 
 public class NetUtils {

@@ -23,16 +23,12 @@ import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
-import com.cloud.bridge.model.MultiPartPartsVO;
 import com.cloud.bridge.model.MultiPartUploadsVO;
-import com.cloud.bridge.model.SBucketVO;
 import com.cloud.bridge.util.OrderedPair;
-import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component

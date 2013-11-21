@@ -300,7 +300,8 @@ public class NiciraNvpApi {
         executeUpdateObject(logicalRouterPort, uri, Collections.<String, String> emptyMap());
     }
 
-    public void modifyLogicalRouterPortAttachment(final String logicalRouterUuid, final String logicalRouterPortUuid, final Attachment attachment) throws NiciraNvpApiException {
+    public void modifyLogicalRouterPortAttachment(final String logicalRouterUuid, final String logicalRouterPortUuid, final Attachment attachment)
+        throws NiciraNvpApiException {
         String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/lport/" + logicalRouterPortUuid + "/attachment";
         executeUpdateObject(attachment, uri, Collections.<String, String> emptyMap());
     }
@@ -324,8 +325,8 @@ public class NiciraNvpApi {
         executeDeleteObject(uri);
     }
 
-    public NiciraNvpList<LogicalRouterPort> findLogicalRouterPortByGatewayServiceAndVlanId(final String logicalRouterUuid, final String gatewayServiceUuid, final long vlanId)
-        throws NiciraNvpApiException {
+    public NiciraNvpList<LogicalRouterPort> findLogicalRouterPortByGatewayServiceAndVlanId(final String logicalRouterUuid, final String gatewayServiceUuid,
+        final long vlanId) throws NiciraNvpApiException {
         String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/lport";
         Map<String, String> params = new HashMap<String, String>();
         params.put("attachment_gwsvc_uuid", gatewayServiceUuid);
@@ -393,7 +394,8 @@ public class NiciraNvpApi {
         pm.releaseConnection();
     }
 
-    protected <T> T executeCreateObject(final T newObject, final Type returnObjectType, final String uri, final Map<String, String> parameters) throws NiciraNvpApiException {
+    protected <T> T executeCreateObject(final T newObject, final Type returnObjectType, final String uri, final Map<String, String> parameters)
+        throws NiciraNvpApiException {
         if (host == null || host.isEmpty() || adminuser == null || adminuser.isEmpty() || adminpass == null || adminpass.isEmpty()) {
             throw new NiciraNvpApiException("Hostname/credentials are null or empty");
         }
@@ -576,8 +578,8 @@ public class NiciraNvpApi {
         }
 
         @Override
-        public Socket createSocket(final String host, final int port, final InetAddress localAddress, final int localPort, final HttpConnectionParams params) throws IOException,
-            UnknownHostException, ConnectTimeoutException {
+        public Socket createSocket(final String host, final int port, final InetAddress localAddress, final int localPort, final HttpConnectionParams params)
+            throws IOException, UnknownHostException, ConnectTimeoutException {
             int timeout = params.getConnectionTimeout();
             if (timeout == 0) {
                 return createSocket(host, port, localAddress, localPort);

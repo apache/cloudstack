@@ -54,6 +54,7 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
     public ConsoleProxyVncClient() {
     }
 
+    @Override
     public boolean isHostConnected() {
         if (client != null)
             return client.isHostConnected();
@@ -76,6 +77,7 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
 
         client = new VncClient(this);
         worker = new Thread(new Runnable() {
+            @Override
             public void run() {
                 String tunnelUrl = getClientParam().getClientTunnelUrl();
                 String tunnelSession = getClientParam().getClientTunnelSession();
@@ -87,8 +89,8 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
                             s_logger.info("Connect to VNC server via tunnel. url: " + tunnelUrl + ", session: " + tunnelSession);
 
                             ConsoleProxy.ensureRoute(uri.getHost());
-                            client.connectTo(uri.getHost(), uri.getPort(), uri.getPath() + "?" + uri.getQuery(), tunnelSession, "https".equalsIgnoreCase(uri.getScheme()),
-                                getClientHostPassword());
+                            client.connectTo(uri.getHost(), uri.getPort(), uri.getPath() + "?" + uri.getQuery(), tunnelSession,
+                                "https".equalsIgnoreCase(uri.getScheme()), getClientHostPassword());
                         } else {
                             s_logger.info("Connect to VNC server directly. host: " + getClientHostAddress() + ", port: " + getClientHostPort());
                             ConsoleProxy.ensureRoute(getClientHostAddress());
@@ -142,6 +144,7 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
     public void onClientConnected() {
     }
 
+    @Override
     public void onClientClose() {
         s_logger.info("Received client close indication. remove viewer from map.");
 
@@ -154,6 +157,7 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
         client.requestUpdate(false);
     }
 
+    @Override
     public void sendClientRawKeyboardEvent(InputEventType event, int code, int modifiers) {
         if (client == null)
             return;
@@ -180,6 +184,7 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
         }
     }
 
+    @Override
     public void sendClientMouseEvent(InputEventType event, int x, int y, int code, int modifiers) {
         if (client == null)
             return;

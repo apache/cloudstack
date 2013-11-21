@@ -83,7 +83,8 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.SOURCE_NAT_SUPPORTED,
                type = CommandType.BOOLEAN,
                required = false,
-               description = "source NAT supported value. Default value false. If 'true' source NAT is enabled on the private gateway" + " 'false': sourcenat is not supported")
+               description = "source NAT supported value. Default value false. If 'true' source NAT is enabled on the private gateway"
+                   + " 'false': sourcenat is not supported")
     private Boolean isSourceNat;
 
     @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, required = false, description = "the ID of the network ACL")
@@ -144,8 +145,9 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     public void create() throws ResourceAllocationException {
         PrivateGateway result = null;
         try {
-            result = _vpcService.createVpcPrivateGateway(getVpcId(), getPhysicalNetworkId(), getBroadcastUri(), getStartIp(), getGateway(), getNetmask(), getEntityOwnerId(),
-                getNetworkOfferingId(), getIsSourceNat(), getAclId());
+            result =
+                _vpcService.createVpcPrivateGateway(getVpcId(), getPhysicalNetworkId(), getBroadcastUri(), getStartIp(), getGateway(), getNetmask(), getEntityOwnerId(),
+                    getNetworkOfferingId(), getIsSourceNat(), getAclId());
         } catch (InsufficientCapacityException ex) {
             s_logger.info(ex);
             s_logger.trace(ex);

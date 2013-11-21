@@ -16,14 +16,14 @@
 // under the License.
 package com.cloud.dc;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "pod_vlan_map")
@@ -48,6 +48,7 @@ public class PodVlanMapVO implements InternalIdentity {
     public PodVlanMapVO() {
     }
 
+    @Override
     public long getId() {
         return id;
     }

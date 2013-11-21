@@ -16,13 +16,16 @@
 // under the License.
 package org.apache.cloudstack.region;
 
-import com.cloud.domain.Domain;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
-import com.cloud.user.UserAccount;
-import com.cloud.utils.component.Manager;
-import com.cloud.utils.component.ManagerBase;
+import java.util.List;
+import java.util.Map;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.command.admin.account.DeleteAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.DisableAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.EnableAccountCmd;
@@ -34,14 +37,14 @@ import org.apache.cloudstack.api.command.admin.user.DisableUserCmd;
 import org.apache.cloudstack.api.command.admin.user.EnableUserCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.command.user.region.ListRegionsCmd;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.List;
-import java.util.Map;
+import com.cloud.domain.Domain;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.user.Account;
+import com.cloud.user.UserAccount;
+import com.cloud.utils.component.Manager;
+import com.cloud.utils.component.ManagerBase;
 
 @Component
 @Local(value = {RegionService.class})

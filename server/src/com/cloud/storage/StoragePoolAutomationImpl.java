@@ -119,7 +119,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
             for (StoragePoolVO sp : spes) {
                 if (sp.getStatus() == StoragePoolStatus.PrepareForMaintenance) {
                     throw new CloudRuntimeException("Only one storage pool in a cluster can be in PrepareForMaintenance mode, " + sp.getId() +
-                                                    " is already in  PrepareForMaintenance mode ");
+                        " is already in  PrepareForMaintenance mode ");
                 }
             }
             StoragePool storagePool = (StoragePool)store;

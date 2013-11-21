@@ -16,9 +16,11 @@
 // under the License.
 package com.cloud.server.api.response;
 
-import org.apache.cloudstack.api.BaseResponse;
-import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
+import org.apache.cloudstack.api.BaseResponse;
+
+import com.cloud.serializer.Param;
 
 public class BaremetalTemplateResponse extends BaseResponse {
     @SerializedName("id")

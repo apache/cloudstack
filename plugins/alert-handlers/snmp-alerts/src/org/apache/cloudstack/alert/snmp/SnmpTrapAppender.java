@@ -17,14 +17,15 @@
 
 package org.apache.cloudstack.alert.snmp;
 
-import com.cloud.utils.net.NetUtils;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
+
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.spi.ErrorCode;
 import org.apache.log4j.spi.LoggingEvent;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringTokenizer;
+import com.cloud.utils.net.NetUtils;
 
 public class SnmpTrapAppender extends AppenderSkeleton {
     private String _delimiter = ",";
@@ -81,8 +82,8 @@ public class SnmpTrapAppender extends AppenderSkeleton {
             return;
         }
 
-        if (_oldSnmpManagerIpAddresses != null && _oldSnmpManagerIpAddresses.equals(_snmpManagerIpAddresses) && _oldSnmpManagerCommunities.equals(_snmpManagerCommunities) &&
-            _oldSnmpManagerPorts.equals(_snmpManagerPorts)) {
+        if (_oldSnmpManagerIpAddresses != null && _oldSnmpManagerIpAddresses.equals(_snmpManagerIpAddresses) &&
+            _oldSnmpManagerCommunities.equals(_snmpManagerCommunities) && _oldSnmpManagerPorts.equals(_snmpManagerPorts)) {
             return;
         }
 

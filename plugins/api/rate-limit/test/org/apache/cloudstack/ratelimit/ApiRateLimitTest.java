@@ -16,6 +16,12 @@
 // under the License.
 package org.apache.cloudstack.ratelimit;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.Collections;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -23,13 +29,12 @@ import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.response.ApiLimitResponse;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.ratelimit.ApiRateLimitServiceImpl;
-
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import org.apache.cloudstack.api.response.ApiLimitResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.configuration.Config;
 import com.cloud.exception.RequestLimitException;
@@ -38,9 +43,6 @@ import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
 
 public class ApiRateLimitTest {
 

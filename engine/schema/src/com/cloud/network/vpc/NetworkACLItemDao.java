@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.network.vpc;
 
-import com.cloud.utils.db.GenericDao;
-
 import java.util.List;
+
+import com.cloud.utils.db.GenericDao;
 
 /*
  * Data Access Object for network_acl_item table

@@ -16,12 +16,12 @@
 // under the License.
 package com.cloud.vm.dao;
 
+import java.net.URI;
+import java.util.List;
+
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
-
-import java.net.URI;
-import java.util.List;
 
 public interface NicDao extends GenericDao<NicVO, Long> {
     List<NicVO> listByVmId(long instanceId);

@@ -29,7 +29,6 @@ import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.SerialVersionUID;
 import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 public class CloudStartupServlet extends HttpServlet {

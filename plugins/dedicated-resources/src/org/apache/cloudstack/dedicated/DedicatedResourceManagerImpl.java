@@ -24,9 +24,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.component.AdapterBase;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -48,8 +48,6 @@ import org.apache.cloudstack.api.response.DedicatePodResponse;
 import org.apache.cloudstack.api.response.DedicateZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
@@ -190,7 +188,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                             clustersToRelease.add(dCluster);
                         } else {
                             s_logger.error("Cluster " + cluster.getName() + " under this Zone " + dc.getName() + " is dedicated to different account/domain");
-                            throw new CloudRuntimeException("Cluster " + cluster.getName() + " under this Zone " + dc.getName() + " is dedicated to different account/domain");
+                            throw new CloudRuntimeException("Cluster " + cluster.getName() + " under this Zone " + dc.getName() +
+                                " is dedicated to different account/domain");
                         }
                     } else {
                         if (dCluster.getAccountId() == null && dCluster.getDomainId() == domainId) {
@@ -325,7 +324,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                             clustersToRelease.add(dCluster);
                         } else {
                             s_logger.error("Cluster " + cluster.getName() + " under this Pod " + pod.getName() + " is dedicated to different account/domain");
-                            throw new CloudRuntimeException("Cluster " + cluster.getName() + " under this Pod " + pod.getName() + " is dedicated to different account/domain");
+                            throw new CloudRuntimeException("Cluster " + cluster.getName() + " under this Pod " + pod.getName() +
+                                " is dedicated to different account/domain");
                         }
                     } else {
                         if (dCluster.getAccountId() == null && dCluster.getDomainId() == domainId) {
@@ -454,7 +454,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                 DedicatedResourceVO dHost = _dedicatedDao.findByHostId(host.getId());
                 if (dHost != null) {
                     if (!(childDomainIds.contains(dHost.getDomainId()))) {
-                        throw new CloudRuntimeException("Host " + host.getName() + " under this Cluster " + cluster.getName() + " is dedicated to different account/domain");
+                        throw new CloudRuntimeException("Host " + host.getName() + " under this Cluster " + cluster.getName() +
+                            " is dedicated to different account/domain");
                     }
                     /*if all dedicated resources belongs to same account and domain then we should release dedication
                     and make new entry for this cluster */
@@ -667,14 +668,16 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
             for (UserVmVO vm : allVmsOnHost) {
                 if (vm.getAccountId() != accountId) {
                     s_logger.info("Host " + vm.getHostId() + " found to be unsuitable for explicit dedication as it is " + "running instances of another account");
-                    throw new CloudRuntimeException("Host " + hostId + " found to be unsuitable for explicit dedication as it is " + "running instances of another account");
+                    throw new CloudRuntimeException("Host " + hostId + " found to be unsuitable for explicit dedication as it is " +
+                        "running instances of another account");
                 }
             }
         } else {
             for (UserVmVO vm : allVmsOnHost) {
                 if (!domainIds.contains(vm.getDomainId())) {
                     s_logger.info("Host " + vm.getHostId() + " found to be unsuitable for explicit dedication as it is " + "running instances of another domain");
-                    throw new CloudRuntimeException("Host " + hostId + " found to be unsuitable for explicit dedication as it is " + "running instances of another domain");
+                    throw new CloudRuntimeException("Host " + hostId + " found to be unsuitable for explicit dedication as it is " +
+                        "running instances of another domain");
                 }
             }
         }

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -24,7 +26,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
@@ -37,7 +38,11 @@ public class DeleteServiceOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, required = true, description = "the ID of the service offering")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = ServiceOfferingResponse.class,
+               required = true,
+               description = "the ID of the service offering")
     private Long id;
 
     /////////////////////////////////////////////////////

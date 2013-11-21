@@ -27,10 +27,11 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.bridge.util.JsonAccessor;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+
+import com.cloud.bridge.util.JsonAccessor;
 
 /**
  * CloudStackClient implements a simple CloudStack client object, it can be used to execute CloudStack commands
@@ -85,8 +86,8 @@ public class CloudStackClient {
         return this;
     }
 
-    public <T> T call(CloudStackCommand cmd, String apiKey, String secretKey, boolean followToAsyncResult, String responseName, String responseObjName, Class<T> responseClz)
-        throws Exception {
+    public <T> T call(CloudStackCommand cmd, String apiKey, String secretKey, boolean followToAsyncResult, String responseName, String responseObjName,
+        Class<T> responseClz) throws Exception {
 
         assert (responseName != null);
 
@@ -104,7 +105,7 @@ public class CloudStackClient {
                     switch (jobStatus) {
                         case 2:
                             throw new Exception(queryAsyncJobResponse.getAsString("queryasyncjobresultresponse.jobresult.errortext") + " Error Code - " +
-                                                queryAsyncJobResponse.getAsString("queryasyncjobresultresponse.jobresult.errorcode"));
+                                queryAsyncJobResponse.getAsString("queryasyncjobresultresponse.jobresult.errorcode"));
 
                         case 0:
                             try {
@@ -138,7 +139,8 @@ public class CloudStackClient {
     }
 
     // collectionType example :  new TypeToken<List<String>>() {}.getType();
-    public <T> List<T> listCall(CloudStackCommand cmd, String apiKey, String secretKey, String responseName, String responseObjName, Type collectionType) throws Exception {
+    public <T> List<T> listCall(CloudStackCommand cmd, String apiKey, String secretKey, String responseName, String responseObjName, Type collectionType)
+        throws Exception {
 
         assert (responseName != null);
 

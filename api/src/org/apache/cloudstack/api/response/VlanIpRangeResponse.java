@@ -16,13 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.dc.Vlan;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = Vlan.class)
 @SuppressWarnings("unused")
@@ -131,14 +132,17 @@ public class VlanIpRangeResponse extends BaseResponse implements ControlledEntit
         this.vlan = vlan;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
 
+    @Override
     public void setDomainId(String domainId) {
         this.domainId = domainId;
     }
 
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }

@@ -21,8 +21,9 @@ import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -133,7 +134,8 @@ public class DirectAgentAttache extends AgentAttache {
         protected synchronized void runInContext() {
             try {
                 if (_outstandingTaskCount.incrementAndGet() > _agentMgr.getDirectAgentThreadCap()) {
-                    s_logger.warn("Task execution for direct attache(" + _id + ") has reached maximum outstanding limit(" + _agentMgr.getDirectAgentThreadCap() + "), bailing out");
+                    s_logger.warn("Task execution for direct attache(" + _id + ") has reached maximum outstanding limit(" + _agentMgr.getDirectAgentThreadCap() +
+                        "), bailing out");
                     return;
                 }
 
@@ -195,7 +197,8 @@ public class DirectAgentAttache extends AgentAttache {
             long seq = _req.getSequence();
             try {
                 if (_outstandingTaskCount.incrementAndGet() > _agentMgr.getDirectAgentThreadCap()) {
-                    s_logger.warn("Task execution for direct attache(" + _id + ") has reached maximum outstanding limit(" + _agentMgr.getDirectAgentThreadCap() + "), bailing out");
+                    s_logger.warn("Task execution for direct attache(" + _id + ") has reached maximum outstanding limit(" + _agentMgr.getDirectAgentThreadCap() +
+                        "), bailing out");
                     bailout();
                     return;
                 }

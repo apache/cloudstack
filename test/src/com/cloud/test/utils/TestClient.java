@@ -109,6 +109,7 @@ public class TestClient {
 
             for (int i = 0; i < numThreads; i++) {
                 new Thread(new Runnable() {
+                    @Override
                     public void run() {
                         do {
                             String username = null;
@@ -186,8 +187,8 @@ public class TestClient {
                                 if (success) {
                                     s_logger.info("***** Completed test for user : " + username + " in " + ((System.currentTimeMillis() - now) / 1000L) + " seconds");
                                 } else {
-                                    s_logger.info("##### FAILED test for user : " + username + " in " + ((System.currentTimeMillis() - now) / 1000L) + " seconds with reason : " +
-                                                  reason);
+                                    s_logger.info("##### FAILED test for user : " + username + " in " + ((System.currentTimeMillis() - now) / 1000L) +
+                                        " seconds with reason : " + reason);
                                 }
                             } catch (Exception e) {
                                 s_logger.warn("Error in thread", e);
@@ -250,8 +251,7 @@ public class TestClient {
                 byte[] buffer = new byte[8192];
                 while (true) {
                     if ((stdout.available() == 0) && (stderr.available() == 0)) {
-                        int conditions = sess.waitForCondition(ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA
-                                                               | ChannelCondition.EOF, 120000);
+                        int conditions = sess.waitForCondition(ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA | ChannelCondition.EOF, 120000);
 
                         if ((conditions & ChannelCondition.TIMEOUT) != 0) {
                             s_logger.info("Timeout while waiting for data from peer.");
@@ -335,8 +335,7 @@ public class TestClient {
                 byte[] buffer = new byte[8192];
                 while (true) {
                     if ((stdout.available() == 0) && (stderr.available() == 0)) {
-                        int conditions = sess.waitForCondition(ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA
-                                                               | ChannelCondition.EOF, 120000);
+                        int conditions = sess.waitForCondition(ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA | ChannelCondition.EOF, 120000);
 
                         if ((conditions & ChannelCondition.TIMEOUT) != 0) {
                             s_logger.info("Timeout while waiting for data from peer.");

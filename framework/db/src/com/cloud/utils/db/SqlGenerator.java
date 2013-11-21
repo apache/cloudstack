@@ -313,7 +313,8 @@ public class SqlGenerator {
                 }
             }
             if (attrs.size() != 0) {
-                Pair<StringBuilder, Attribute[]> pair = new Pair<StringBuilder, Attribute[]>(buildUpdateSql(tableName, attrs), attrs.toArray(new Attribute[attrs.size()]));
+                Pair<StringBuilder, Attribute[]> pair =
+                    new Pair<StringBuilder, Attribute[]>(buildUpdateSql(tableName, attrs), attrs.toArray(new Attribute[attrs.size()]));
                 sqls.add(pair);
             }
         }

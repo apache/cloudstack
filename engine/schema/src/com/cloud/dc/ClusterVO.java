@@ -28,14 +28,12 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
-import com.cloud.org.Managed.ManagedState;
 import com.cloud.org.Grouping;
+import com.cloud.org.Managed.ManagedState;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "cluster")
@@ -96,22 +94,27 @@ public class ClusterVO implements Cluster {
         this.uuid = UUID.randomUUID().toString();
     }
 
+    @Override
     public long getId() {
         return id;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public long getDataCenterId() {
         return dataCenterId;
     }
 
+    @Override
     public long getPodId() {
         return podId;
     }
 
+    @Override
     public Cluster.ClusterType getClusterType() {
         return clusterType;
     }
@@ -120,6 +123,7 @@ public class ClusterVO implements Cluster {
         this.clusterType = clusterType;
     }
 
+    @Override
     public AllocationState getAllocationState() {
         return allocationState;
     }
@@ -128,6 +132,7 @@ public class ClusterVO implements Cluster {
         this.allocationState = allocationState;
     }
 
+    @Override
     public ManagedState getManagedState() {
         return managedState;
     }
@@ -154,6 +159,7 @@ public class ClusterVO implements Cluster {
         return this.id == that.id;
     }
 
+    @Override
     public HypervisorType getHypervisorType() {
         return HypervisorType.getType(hypervisorType);
     }

@@ -18,10 +18,9 @@ package com.cloud.agent.api;
 
 import java.util.List;
 
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+
+import com.cloud.vm.VirtualMachine;
 
 public class CreateVMSnapshotCommand extends VMSnapshotBaseCommand {
 

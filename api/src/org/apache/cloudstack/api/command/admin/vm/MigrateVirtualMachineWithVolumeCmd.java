@@ -21,16 +21,16 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.cloudstack.api.*;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -39,12 +39,13 @@ import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
-import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
-@APICommand(name = "migrateVirtualMachineWithVolume", description = "Attempts Migration of a VM with its volumes to a different host", responseObject = UserVmResponse.class)
+@APICommand(name = "migrateVirtualMachineWithVolume",
+            description = "Attempts Migration of a VM with its volumes to a different host",
+            responseObject = UserVmResponse.class)
 public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(MigrateVMCmd.class.getName());
 
@@ -54,13 +55,24 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, required = true, description = "Destination Host ID to migrate VM to.")
+    @Parameter(name = ApiConstants.HOST_ID,
+               type = CommandType.UUID,
+               entityType = HostResponse.class,
+               required = true,
+               description = "Destination Host ID to migrate VM to.")
     private Long hostId;
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "the ID of the virtual machine")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+               type = CommandType.UUID,
+               entityType = UserVmResponse.class,
+               required = true,
+               description = "the ID of the virtual machine")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.MIGRATE_TO, type = CommandType.MAP, required = false, description = "Map of pool to which each volume should be migrated (volume/pool pair)")
+    @Parameter(name = ApiConstants.MIGRATE_TO,
+               type = CommandType.MAP,
+               required = false,
+               description = "Map of pool to which each volume should be migrated (volume/pool pair)")
     private Map migrateVolumeTo;
 
     /////////////////////////////////////////////////////

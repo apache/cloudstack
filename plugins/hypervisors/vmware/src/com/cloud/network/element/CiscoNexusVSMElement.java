@@ -66,7 +66,6 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = NetworkElement.class)
@@ -98,13 +97,14 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-        ResourceUnavailableException, InsufficientCapacityException {
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         return true;
     }
 
     @Override
-    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         return true;
     }
 
@@ -124,7 +124,8 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     }
 
     @Override
-    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         return true;
     }
 
@@ -219,6 +220,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
         return response;
     }
 
+    @Override
     public CiscoNexusVSMResponse createCiscoNexusVSMDetailedResponse(CiscoNexusVSMDevice vsmDeviceVO) {
         CiscoNexusVSMResponse response = new CiscoNexusVSMResponse();
         response.setId(vsmDeviceVO.getUuid());
@@ -248,6 +250,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
         return cmdList;
     }
 
+    @Override
     @DB
     public Pair<Boolean, Long> validateAndAddVsm(final String vsmIp, final String vsmUser, final String vsmPassword, final long clusterId, String clusterName)
         throws ResourceInUseException {
@@ -274,8 +277,8 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
                 List<ClusterVSMMapVO> clusterList = _clusterVSMDao.listByVSMId(vsm.getId());
                 if (clusterList != null && !clusterList.isEmpty()) {
                     s_logger.error("Failed to add cluster: specified Nexus VSM is already associated with another cluster");
-                    ResourceInUseException ex = new ResourceInUseException(
-                        "Failed to add cluster: specified Nexus VSM is already associated with another cluster with specified Id");
+                    ResourceInUseException ex =
+                        new ResourceInUseException("Failed to add cluster: specified Nexus VSM is already associated with another cluster with specified Id");
                     // get clusterUuid to report error
                     ClusterVO cluster = _clusterDao.findById(clusterList.get(0).getClusterId());
                     ex.addProxyObject(cluster.getUuid());

@@ -50,6 +50,7 @@ public class UcsBladeVO implements InternalIdentity, Identity {
     @Column(name = "profile_dn")
     private String profileDn;
 
+    @Override
     public long getId() {
         return id;
     }
@@ -82,6 +83,7 @@ public class UcsBladeVO implements InternalIdentity, Identity {
         this.dn = dn;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }

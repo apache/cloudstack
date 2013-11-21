@@ -18,8 +18,10 @@ package com.cloud.test.longrun;
 
 import java.util.ArrayList;
 import java.util.Random;
+
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
+
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.Session;
 
@@ -43,6 +45,7 @@ public class guestNetwork implements Runnable {
         this.virtualMachines = virtualMachines;
     }
 
+    @Override
     public void run() {
         NDC.push("Following thread has started" + Thread.currentThread().getName());
         int retry = 0;
@@ -52,21 +55,18 @@ public class guestNetwork implements Runnable {
         while (true) {
             try {
                 if (retry > 0) {
-                    s_logger.info("Retry attempt : " + retry
-                                  + " ...sleeping 120 seconds before next attempt");
+                    s_logger.info("Retry attempt : " + retry + " ...sleeping 120 seconds before next attempt");
                     Thread.sleep(120000);
                 }
                 for (VirtualMachine vm : this.virtualMachines) {
 
-                    s_logger.info("Attempting to SSH into linux host " + this.publicIp
-                                  + " with retry attempt: " + retry);
+                    s_logger.info("Attempting to SSH into linux host " + this.publicIp + " with retry attempt: " + retry);
                     Connection conn = new Connection(this.publicIp);
                     conn.connect(null, 600000, 600000);
 
                     s_logger.info("SSHed successfully into linux host " + this.publicIp);
 
-                    boolean isAuthenticated = conn.authenticateWithPassword("root",
-                        "password");
+                    boolean isAuthenticated = conn.authenticateWithPassword("root", "password");
 
                     if (isAuthenticated == false) {
                         s_logger.info("Authentication failed");
@@ -84,7 +84,8 @@ public class guestNetwork implements Runnable {
 
                     //execute wget command
                     sess = conn.openSession();
-                    String downloadCommand = new String("wget http://172.16.0.220/scripts/checkDiskSpace.sh; chmod +x *sh; ./checkDiskSpace.sh; rm -rf checkDiskSpace.sh");
+                    String downloadCommand =
+                        new String("wget http://172.16.0.220/scripts/checkDiskSpace.sh; chmod +x *sh; ./checkDiskSpace.sh; rm -rf checkDiskSpace.sh");
                     s_logger.info("Executing " + downloadCommand);
                     sess.execCommand(downloadCommand);
                     Thread.sleep(120000);
@@ -97,8 +98,7 @@ public class guestNetwork implements Runnable {
                 s_logger.error(ex);
                 retry++;
                 if (retry == retryNum) {
-                    s_logger.info("Performance Guest Network test failed with error "
-                                  + ex.getMessage());
+                    s_logger.info("Performance Guest Network test failed with error " + ex.getMessage());
                 }
             }
         }

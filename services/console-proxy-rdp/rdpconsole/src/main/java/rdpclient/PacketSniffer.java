@@ -25,51 +25,51 @@ import streamer.Link;
 /**
  * Try to determine packet content by it header fingerprint.
  */
-public class PacketSniffer  extends BaseElement {
+public class PacketSniffer extends BaseElement {
 
-  protected Pair regexps[]=null;
+    protected Pair regexps[] = null;
 
-  public PacketSniffer(String id, Pair[] regexps) {
-    super(id);
-    this.regexps=regexps;
-  }
-
-  @Override
-  public void handleData(ByteBuffer buf, Link link) {
-
-    matchPacket(buf);
-
-    super.handleData(buf, link);
-  }
-
-  private void matchPacket(ByteBuffer buf) {
-    String header = buf.toPlainHexString(100);
-    for (Pair pair : regexps) {
-      if (pair.regexp.matcher(header).find()) {
-        System.out.println("[" + this + "] INFO: Packet: " + pair.name + ".");
-        return;
-      }
+    public PacketSniffer(String id, Pair[] regexps) {
+        super(id);
+        this.regexps = regexps;
     }
 
-    System.out.println("[" + this + "] INFO: Unknown packet: " + header + ".");
-  }
+    @Override
+    public void handleData(ByteBuffer buf, Link link) {
 
-  protected static class Pair {
-    String name;
-    Pattern regexp;
+        matchPacket(buf);
 
-    protected Pair(String name, String regexp) {
-      this.name = name;
-      this.regexp = Pattern.compile("^" + replaceShortcuts(regexp), Pattern.CASE_INSENSITIVE);
+        super.handleData(buf, link);
     }
 
-    private static String replaceShortcuts(String regexp) {
-      String result = regexp;
-      result = result.replaceAll("XX\\*", "([0-9a-fA-F]{2} )*?");
-      result = result.replaceAll("XX\\?", "([0-9a-fA-F]{2} )?");
-      result = result.replaceAll("XX", "[0-9a-fA-F]{2}");
-      return result;
+    private void matchPacket(ByteBuffer buf) {
+        String header = buf.toPlainHexString(100);
+        for (Pair pair : regexps) {
+            if (pair.regexp.matcher(header).find()) {
+                System.out.println("[" + this + "] INFO: Packet: " + pair.name + ".");
+                return;
+            }
+        }
+
+        System.out.println("[" + this + "] INFO: Unknown packet: " + header + ".");
     }
-  }
+
+    protected static class Pair {
+        String name;
+        Pattern regexp;
+
+        protected Pair(String name, String regexp) {
+            this.name = name;
+            this.regexp = Pattern.compile("^" + replaceShortcuts(regexp), Pattern.CASE_INSENSITIVE);
+        }
+
+        private static String replaceShortcuts(String regexp) {
+            String result = regexp;
+            result = result.replaceAll("XX\\*", "([0-9a-fA-F]{2} )*?");
+            result = result.replaceAll("XX\\?", "([0-9a-fA-F]{2} )?");
+            result = result.replaceAll("XX", "[0-9a-fA-F]{2}");
+            return result;
+        }
+    }
 
 }

@@ -35,6 +35,7 @@ public class Deploy extends TestCase {
         this.setParam(new HashMap<String, String>());
     }
 
+    @Override
     public boolean executeTest() {
         int error = 0;
         Element rootElement = this.getInputFile().get(0).getDocumentElement();
@@ -55,8 +56,7 @@ public class Deploy extends TestCase {
             if (api.getResponseCode() != 200) {
                 error++;
                 s_logger.error("The command " + api.getUrl() + " failed");
-            }
-            else {
+            } else {
                 s_logger.info("The command " + api.getUrl() + " passsed");
             }
         }
@@ -100,8 +100,7 @@ public class Deploy extends TestCase {
         if (result == false) {
             s_logger.error("DEPLOYMENT FAILED");
             System.exit(1);
-        }
-        else {
+        } else {
             s_logger.info("DEPLOYMENT IS SUCCESSFUL");
         }
 

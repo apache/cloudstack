@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.utils.component.ComponentMethodInterceptor;
@@ -92,7 +93,8 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
 
             if (actionEvent.create()) {
                 //This start event has to be used for subsequent events of this action
-                startEventId = ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_INFO, eventType, "Successfully created entity for " + eventDescription);
+                startEventId =
+                    ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_INFO, eventType, "Successfully created entity for " + eventDescription);
                 ctx.setStartEventId(startEventId);
             } else {
                 ActionEventUtils.onCompletedActionEvent(userId, accountId, EventVO.LEVEL_INFO, eventType, "Successfully completed " + eventDescription, startEventId);
@@ -114,7 +116,8 @@ public class ActionEventInterceptor implements ComponentMethodInterceptor, Metho
                 return;
 
             if (actionEvent.create()) {
-                long eventId = ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, eventType, "Error while creating entity for " + eventDescription);
+                long eventId =
+                    ActionEventUtils.onCreatedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, eventType, "Error while creating entity for " + eventDescription);
                 ctx.setStartEventId(eventId);
             } else {
                 ActionEventUtils.onCompletedActionEvent(userId, accountId, EventVO.LEVEL_ERROR, eventType, "Error while " + eventDescription, startEventId);

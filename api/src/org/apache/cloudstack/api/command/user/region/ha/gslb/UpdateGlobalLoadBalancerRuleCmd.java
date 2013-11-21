@@ -17,16 +17,22 @@
 
 package org.apache.cloudstack.api.command.user.region.ha.gslb;
 
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
+
 import com.cloud.event.EventTypes;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.user.Account;
-import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
-import org.apache.cloudstack.api.response.LoadBalancerResponse;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
 
 @APICommand(name = "updateGlobalLoadBalancerRule", description = "update global load balancer rules.", responseObject = GlobalLoadBalancerResponse.class)
 public class UpdateGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
@@ -52,7 +58,7 @@ public class UpdateGlobalLoadBalancerRuleCmd extends BaseAsyncCmd {
                type = CommandType.STRING,
                required = false,
                description = "load balancer algorithm (roundrobin, leastconn, proximity) "
-                             + "that is used to distributed traffic across the zones participating in global server load balancing, if not specified defaults to 'round robin'")
+                   + "that is used to distributed traffic across the zones participating in global server load balancing, if not specified defaults to 'round robin'")
     private String algorithm;
 
     @Parameter(name = ApiConstants.GSLB_STICKY_SESSION_METHOD,

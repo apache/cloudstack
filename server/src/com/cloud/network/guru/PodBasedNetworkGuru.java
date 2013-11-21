@@ -35,8 +35,8 @@ import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.StorageNetworkManager;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
@@ -46,7 +46,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = {NetworkGuru.class})
@@ -83,7 +82,8 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
             return null;
         }
 
-        NetworkVO config = new NetworkVO(type, Mode.Static, BroadcastDomainType.Native, offering.getId(), Network.State.Setup, plan.getDataCenterId(), plan.getPhysicalNetworkId());
+        NetworkVO config =
+            new NetworkVO(type, Mode.Static, BroadcastDomainType.Native, offering.getId(), Network.State.Setup, plan.getDataCenterId(), plan.getPhysicalNetworkId());
         return config;
     }
 
@@ -96,7 +96,8 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+        InsufficientAddressCapacityException {
         TrafficType trafficType = config.getTrafficType();
         assert trafficType == TrafficType.Management || trafficType == TrafficType.Storage : "Well, I can't take care of this config now can I? " + config;
 
@@ -157,7 +158,8 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public Network implement(Network config, NetworkOffering offering, DeployDestination destination, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
+    public Network implement(Network config, NetworkOffering offering, DeployDestination destination, ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException {
         return config;
     }
 

@@ -98,8 +98,9 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
             return null;
         }
 
-        NetworkVO config = new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.LinkLocal, offering.getId(), Network.State.Setup, plan.getDataCenterId(),
-            plan.getPhysicalNetworkId());
+        NetworkVO config =
+            new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.LinkLocal, offering.getId(), Network.State.Setup, plan.getDataCenterId(),
+                plan.getPhysicalNetworkId());
         config.setCidr(_cidr);
         config.setGateway(_gateway);
 
@@ -111,7 +112,8 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     }
 
     @Override
-    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+        InsufficientAddressCapacityException {
 
         if (vm.getHypervisorType() == HypervisorType.VMware && !isRouterVm(vm)) {
             NicProfile nicProf = new NicProfile(Nic.ReservationStrategy.Create, null, null, null, null);
@@ -205,7 +207,8 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     }
 
     @Override
-    public Network implement(Network config, NetworkOffering offering, DeployDestination destination, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
+    public Network implement(Network config, NetworkOffering offering, DeployDestination destination, ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException {
         assert config.getTrafficType() == TrafficType.Control : "Why are you sending this configuration to me " + config;
         return config;
     }

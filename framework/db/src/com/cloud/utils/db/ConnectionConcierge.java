@@ -30,8 +30,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.management.StandardMBean;
 
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;

@@ -29,7 +29,8 @@ package com.amazon.s3;
 
 public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.AbstractInOutMessageReceiver {
 
-    public void invokeBusinessLogic(org.apache.axis2.context.MessageContext msgContext, org.apache.axis2.context.MessageContext newMsgContext) throws org.apache.axis2.AxisFault {
+    public void invokeBusinessLogic(org.apache.axis2.context.MessageContext msgContext, org.apache.axis2.context.MessageContext newMsgContext)
+        throws org.apache.axis2.AxisFault {
 
         try {
 
@@ -52,12 +53,13 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
                 if ("getBucketLoggingStatus".equals(methodName)) {
 
                     com.amazon.s3.GetBucketLoggingStatusResponse getBucketLoggingStatusResponse33 = null;
-                    com.amazon.s3.GetBucketLoggingStatus wrappedParam = (com.amazon.s3.GetBucketLoggingStatus)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.s3.GetBucketLoggingStatus.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.s3.GetBucketLoggingStatus wrappedParam =
+                        (com.amazon.s3.GetBucketLoggingStatus)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.s3.GetBucketLoggingStatus.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     getBucketLoggingStatusResponse33 =
 
-                            skel.getBucketLoggingStatus(wrappedParam);
+                    skel.getBucketLoggingStatus(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), getBucketLoggingStatusResponse33, false);
                 } else
@@ -65,12 +67,13 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
                 if ("copyObject".equals(methodName)) {
 
                     com.amazon.s3.CopyObjectResponse copyObjectResponse35 = null;
-                    com.amazon.s3.CopyObject wrappedParam = (com.amazon.s3.CopyObject)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.s3.CopyObject.class,
-                        getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.s3.CopyObject wrappedParam =
+                        (com.amazon.s3.CopyObject)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.s3.CopyObject.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     copyObjectResponse35 =
 
-                            skel.copyObject(wrappedParam);
+                    skel.copyObject(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), copyObjectResponse35, false);
                 } else
@@ -78,13 +81,13 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
                 if ("getBucketAccessControlPolicy".equals(methodName)) {
 
                     com.amazon.s3.GetBucketAccessControlPolicyResponse getBucketAccessControlPolicyResponse37 = null;
-                    com.amazon.s3.GetBucketAccessControlPolicy wrappedParam = (com.amazon.s3.GetBucketAccessControlPolicy)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.s3.GetBucketAccessControlPolicy.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.s3.GetBucketAccessControlPolicy wrappedParam =
+                        (com.amazon.s3.GetBucketAccessControlPolicy)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.s3.GetBucketAccessControlPolicy.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     getBucketAccessControlPolicyResponse37 =
 
-                            skel.getBucketAccessControlPolicy(wrappedParam);
+                    skel.getBucketAccessControlPolicy(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), getBucketAccessControlPolicyResponse37, false);
                 } else
@@ -92,12 +95,13 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
                 if ("listBucket".equals(methodName)) {
 
                     com.amazon.s3.ListBucketResponse listBucketResponse39 = null;
-                    com.amazon.s3.ListBucket wrappedParam = (com.amazon.s3.ListBucket)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.s3.ListBucket.class,
-                        getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.s3.ListBucket wrappedParam =
+                        (com.amazon.s3.ListBucket)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.s3.ListBucket.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     listBucketResponse39 =
 
-                            skel.listBucket(wrappedParam);
+                    skel.listBucket(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), listBucketResponse39, false);
                 } else
@@ -105,12 +109,13 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
                 if ("putObject".equals(methodName)) {
 
                     com.amazon.s3.PutObjectResponse putObjectResponse41 = null;
-                    com.amazon.s3.PutObject wrappedParam = (com.amazon.s3.PutObject)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.s3.PutObject.class,
-                        getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.s3.PutObject wrappedParam =
+                        (com.amazon.s3.PutObject)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.s3.PutObject.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     putObjectResponse41 =
 
-                            skel.putObject(wrappedParam);
+                    skel.putObject(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), putObjectResponse41, false);
                 } else
@@ -118,12 +123,13 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
                 if ("createBucket".equals(methodName)) {
 
                     com.amazon.s3.CreateBucketResponse createBucketResponse43 = null;
-                    com.amazon.s3.CreateBucket wrappedParam = (com.amazon.s3.CreateBucket)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.s3.CreateBucket.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.s3.CreateBucket wrappedParam =
+                        (com.amazon.s3.CreateBucket)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.s3.CreateBucket.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createBucketResponse43 =
 
-                            skel.createBucket(wrappedParam);
+                    skel.createBucket(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createBucketResponse43, false);
                 } else
@@ -131,12 +137,13 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
                 if ("listAllMyBuckets".equals(methodName)) {
 
                     com.amazon.s3.ListAllMyBucketsResponse listAllMyBucketsResponse45 = null;
-                    com.amazon.s3.ListAllMyBuckets wrappedParam = (com.amazon.s3.ListAllMyBuckets)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.s3.ListAllMyBuckets.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.s3.ListAllMyBuckets wrappedParam =
+                        (com.amazon.s3.ListAllMyBuckets)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.s3.ListAllMyBuckets.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     listAllMyBucketsResponse45 =
 
-                            skel.listAllMyBuckets(wrappedParam);
+                    skel.listAllMyBuckets(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), listAllMyBucketsResponse45, false);
                 } else
@@ -144,12 +151,13 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
                 if ("getObject".equals(methodName)) {
 
                     com.amazon.s3.GetObjectResponse getObjectResponse47 = null;
-                    com.amazon.s3.GetObject wrappedParam = (com.amazon.s3.GetObject)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.s3.GetObject.class,
-                        getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.s3.GetObject wrappedParam =
+                        (com.amazon.s3.GetObject)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.s3.GetObject.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     getObjectResponse47 =
 
-                            skel.getObject(wrappedParam);
+                    skel.getObject(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), getObjectResponse47, false);
                 } else
@@ -157,12 +165,13 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
                 if ("deleteBucket".equals(methodName)) {
 
                     com.amazon.s3.DeleteBucketResponse deleteBucketResponse49 = null;
-                    com.amazon.s3.DeleteBucket wrappedParam = (com.amazon.s3.DeleteBucket)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.s3.DeleteBucket.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.s3.DeleteBucket wrappedParam =
+                        (com.amazon.s3.DeleteBucket)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.s3.DeleteBucket.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteBucketResponse49 =
 
-                            skel.deleteBucket(wrappedParam);
+                    skel.deleteBucket(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteBucketResponse49, false);
                 } else
@@ -170,12 +179,13 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
                 if ("setBucketLoggingStatus".equals(methodName)) {
 
                     com.amazon.s3.SetBucketLoggingStatusResponse setBucketLoggingStatusResponse51 = null;
-                    com.amazon.s3.SetBucketLoggingStatus wrappedParam = (com.amazon.s3.SetBucketLoggingStatus)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.s3.SetBucketLoggingStatus.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.s3.SetBucketLoggingStatus wrappedParam =
+                        (com.amazon.s3.SetBucketLoggingStatus)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.s3.SetBucketLoggingStatus.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     setBucketLoggingStatusResponse51 =
 
-                            skel.setBucketLoggingStatus(wrappedParam);
+                    skel.setBucketLoggingStatus(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), setBucketLoggingStatusResponse51, false);
                 } else
@@ -183,13 +193,13 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
                 if ("getObjectAccessControlPolicy".equals(methodName)) {
 
                     com.amazon.s3.GetObjectAccessControlPolicyResponse getObjectAccessControlPolicyResponse53 = null;
-                    com.amazon.s3.GetObjectAccessControlPolicy wrappedParam = (com.amazon.s3.GetObjectAccessControlPolicy)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.s3.GetObjectAccessControlPolicy.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.s3.GetObjectAccessControlPolicy wrappedParam =
+                        (com.amazon.s3.GetObjectAccessControlPolicy)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.s3.GetObjectAccessControlPolicy.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     getObjectAccessControlPolicyResponse53 =
 
-                            skel.getObjectAccessControlPolicy(wrappedParam);
+                    skel.getObjectAccessControlPolicy(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), getObjectAccessControlPolicyResponse53, false);
                 } else
@@ -197,12 +207,13 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
                 if ("deleteObject".equals(methodName)) {
 
                     com.amazon.s3.DeleteObjectResponse deleteObjectResponse55 = null;
-                    com.amazon.s3.DeleteObject wrappedParam = (com.amazon.s3.DeleteObject)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.s3.DeleteObject.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.s3.DeleteObject wrappedParam =
+                        (com.amazon.s3.DeleteObject)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.s3.DeleteObject.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteObjectResponse55 =
 
-                            skel.deleteObject(wrappedParam);
+                    skel.deleteObject(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteObjectResponse55, false);
                 } else
@@ -210,13 +221,13 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
                 if ("setBucketAccessControlPolicy".equals(methodName)) {
 
                     com.amazon.s3.SetBucketAccessControlPolicyResponse setBucketAccessControlPolicyResponse57 = null;
-                    com.amazon.s3.SetBucketAccessControlPolicy wrappedParam = (com.amazon.s3.SetBucketAccessControlPolicy)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.s3.SetBucketAccessControlPolicy.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.s3.SetBucketAccessControlPolicy wrappedParam =
+                        (com.amazon.s3.SetBucketAccessControlPolicy)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.s3.SetBucketAccessControlPolicy.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     setBucketAccessControlPolicyResponse57 =
 
-                            skel.setBucketAccessControlPolicy(wrappedParam);
+                    skel.setBucketAccessControlPolicy(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), setBucketAccessControlPolicyResponse57, false);
                 } else
@@ -224,13 +235,13 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
                 if ("setObjectAccessControlPolicy".equals(methodName)) {
 
                     com.amazon.s3.SetObjectAccessControlPolicyResponse setObjectAccessControlPolicyResponse59 = null;
-                    com.amazon.s3.SetObjectAccessControlPolicy wrappedParam = (com.amazon.s3.SetObjectAccessControlPolicy)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.s3.SetObjectAccessControlPolicy.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.s3.SetObjectAccessControlPolicy wrappedParam =
+                        (com.amazon.s3.SetObjectAccessControlPolicy)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.s3.SetObjectAccessControlPolicy.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     setObjectAccessControlPolicyResponse59 =
 
-                            skel.setObjectAccessControlPolicy(wrappedParam);
+                    skel.setObjectAccessControlPolicy(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), setObjectAccessControlPolicyResponse59, false);
                 } else
@@ -238,12 +249,13 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
                 if ("putObjectInline".equals(methodName)) {
 
                     com.amazon.s3.PutObjectInlineResponse putObjectInlineResponse61 = null;
-                    com.amazon.s3.PutObjectInline wrappedParam = (com.amazon.s3.PutObjectInline)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.s3.PutObjectInline.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.s3.PutObjectInline wrappedParam =
+                        (com.amazon.s3.PutObjectInline)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.s3.PutObjectInline.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     putObjectInlineResponse61 =
 
-                            skel.putObjectInline(wrappedParam);
+                    skel.putObjectInline(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), putObjectInlineResponse61, false);
                 } else
@@ -251,12 +263,13 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
                 if ("getObjectExtended".equals(methodName)) {
 
                     com.amazon.s3.GetObjectExtendedResponse getObjectExtendedResponse63 = null;
-                    com.amazon.s3.GetObjectExtended wrappedParam = (com.amazon.s3.GetObjectExtended)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.s3.GetObjectExtended.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.s3.GetObjectExtended wrappedParam =
+                        (com.amazon.s3.GetObjectExtended)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.s3.GetObjectExtended.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     getObjectExtendedResponse63 =
 
-                            skel.getObjectExtended(wrappedParam);
+                    skel.getObjectExtended(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), getObjectExtendedResponse63, false);
 
@@ -592,8 +605,8 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
 
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.GetBucketLoggingStatusResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.GetBucketLoggingStatusResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -700,8 +713,8 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.ListAllMyBucketsResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope
+        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.ListAllMyBucketsResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -754,8 +767,8 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.SetBucketLoggingStatusResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.SetBucketLoggingStatusResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -844,8 +857,8 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.PutObjectInlineResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope
+        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.PutObjectInlineResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -862,8 +875,8 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.GetObjectExtendedResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.GetObjectExtendedResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 

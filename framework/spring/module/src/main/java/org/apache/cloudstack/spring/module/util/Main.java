@@ -32,7 +32,7 @@ public class Main {
         CloudStackSpringContext context = new CloudStackSpringContext();
         context.registerShutdownHook();
 
-        if ( Boolean.getBoolean("force.exit") ) {
+        if (Boolean.getBoolean("force.exit")) {
             System.exit(0);
         }
     }
@@ -41,14 +41,13 @@ public class Main {
         return System.currentTimeMillis() - start;
     }
 
-
     public static void main(String... args) {
         Main main = new Main();
 
         try {
             main.start();
             System.out.println("STARTUP COMPLETE [" + main.getTime() + "] ms");
-        } catch ( Exception e ) {
+        } catch (Exception e) {
             e.printStackTrace();
             System.out.println("STARTUP FAILED [" + main.getTime() + "] ms");
             System.err.println("STARTUP FAILED [" + main.getTime() + "] ms");

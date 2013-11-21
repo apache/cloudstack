@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.admin.usage;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -27,7 +29,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.ProviderResponse;
 import org.apache.cloudstack.api.response.TrafficTypeResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.user.Account;

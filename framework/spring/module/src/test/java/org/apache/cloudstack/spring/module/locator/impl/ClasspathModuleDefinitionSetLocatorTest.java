@@ -18,13 +18,14 @@
  */
 package org.apache.cloudstack.spring.module.locator.impl;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.Collection;
 
-import org.apache.cloudstack.spring.module.model.ModuleDefinition;
 import org.junit.Test;
+
+import org.apache.cloudstack.spring.module.model.ModuleDefinition;
 
 public class ClasspathModuleDefinitionSetLocatorTest {
 

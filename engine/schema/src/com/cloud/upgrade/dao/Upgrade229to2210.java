@@ -72,7 +72,8 @@ public class Upgrade229to2210 implements DbUpgrade {
         ResultSet rs = null;
         long currentSnapshotId = 0;
         try {
-            pstmt = conn.prepareStatement("select id, prev_snap_id from snapshots where sechost_id is NULL and prev_snap_id is not NULL and status=\"BackedUp\" and removed is NULL order by id");
+            pstmt =
+                conn.prepareStatement("select id, prev_snap_id from snapshots where sechost_id is NULL and prev_snap_id is not NULL and status=\"BackedUp\" and removed is NULL order by id");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long id = rs.getLong(1);
@@ -111,7 +112,8 @@ public class Upgrade229to2210 implements DbUpgrade {
         long currentRuleId = 0;
         try {
             // Host and Primary storage capacity types
-            pstmt = conn.prepareStatement("select id, ip_address_id, start_port, end_port, protocol, account_id, domain_id, network_id from firewall_rules where state != 'Revoke'");
+            pstmt =
+                conn.prepareStatement("select id, ip_address_id, start_port, end_port, protocol, account_id, domain_id, network_id from firewall_rules where state != 'Revoke'");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long id = rs.getLong(1);
@@ -125,7 +127,8 @@ public class Upgrade229to2210 implements DbUpgrade {
                 currentRuleId = id;
                 Long firewallRuleId = null;
 
-                pstmt = conn.prepareStatement("INSERT INTO firewall_rules (ip_address_id, start_port, end_port, protocol, account_id, domain_id, network_id, purpose, state, xid, created, related) VALUES (?, ?, ?, ?, ?, ?, ?, 'Firewall', 'Active', ?, now(), ?)");
+                pstmt =
+                    conn.prepareStatement("INSERT INTO firewall_rules (ip_address_id, start_port, end_port, protocol, account_id, domain_id, network_id, purpose, state, xid, created, related) VALUES (?, ?, ?, ?, ?, ?, ?, 'Firewall', 'Active', ?, now(), ?)");
 
                 pstmt.setLong(1, ipId);
                 pstmt.setInt(2, startPort);
@@ -141,7 +144,8 @@ public class Upgrade229to2210 implements DbUpgrade {
                 pstmt.executeUpdate();
 
                 //get new FirewallRule update
-                pstmt = conn.prepareStatement("SELECT id from firewall_rules where purpose='Firewall' and start_port=? and end_port=? and protocol=? and ip_address_id=? and network_id=? and related=?");
+                pstmt =
+                    conn.prepareStatement("SELECT id from firewall_rules where purpose='Firewall' and start_port=? and end_port=? and protocol=? and ip_address_id=? and network_id=? and related=?");
                 pstmt.setInt(1, startPort);
                 pstmt.setInt(2, endPort);
                 pstmt.setString(3, protocol);
@@ -154,8 +158,8 @@ public class Upgrade229to2210 implements DbUpgrade {
                 if (rs1.next()) {
                     firewallRuleId = rs1.getLong(1);
                 } else {
-                    throw new CloudRuntimeException("Unable to find just inserted firewall rule for ptocol " + protocol + ", start_port " + startPort + " and end_port " + endPort +
-                                                    " and ip address id=" + ipId);
+                    throw new CloudRuntimeException("Unable to find just inserted firewall rule for ptocol " + protocol + ", start_port " + startPort + " and end_port " +
+                        endPort + " and ip address id=" + ipId);
                 }
 
                 pstmt = conn.prepareStatement("select id from firewall_rules_cidrs where firewall_rule_id=?");

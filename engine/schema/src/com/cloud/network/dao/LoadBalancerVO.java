@@ -65,8 +65,8 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
     public LoadBalancerVO() {
     }
 
-    public LoadBalancerVO(String xId, String name, String description, long srcIpId, int srcPort, int dstPort, String algorithm, long networkId, long accountId, long domainId,
-            String lbProtocol) {
+    public LoadBalancerVO(String xId, String name, String description, long srcIpId, int srcPort, int dstPort, String algorithm, long networkId, long accountId,
+            long domainId, String lbProtocol) {
         super(xId, srcIpId, srcPort, NetUtils.TCP_PROTO, networkId, accountId, domainId, Purpose.LoadBalancing, null, null, null, null);
         this.name = name;
         this.description = description;
@@ -106,6 +106,7 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
         this.name = name;
     }
 
+    @Override
     public String getLbProtocol() {
         return lbProtocol;
     }

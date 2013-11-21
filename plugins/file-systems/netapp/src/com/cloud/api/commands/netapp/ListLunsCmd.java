@@ -23,13 +23,14 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -37,7 +38,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.LunVO;
 import com.cloud.netapp.NetappManager;
-import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.ListLunsCmdResponse;
 
 @APICommand(name = "listLunsOnFiler", description = "List LUN", responseObject = ListLunsCmdResponse.class)
@@ -52,7 +52,8 @@ public class ListLunsCmd extends BaseCmd {
     NetappManager netappMgr;
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             List<LunVO> lunList = netappMgr.listLunsOnFiler(poolName);
             ListResponse<ListLunsCmdResponse> listResponse = new ListResponse<ListLunsCmdResponse>();

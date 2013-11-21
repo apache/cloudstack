@@ -19,9 +19,10 @@ package org.apache.cloudstack.network.guru;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.network.element.SspElement;
 import org.apache.cloudstack.network.element.SspManager;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
@@ -40,7 +41,6 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
@@ -99,7 +99,8 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
      * @see org.apache.cloudstack.network.guru.GuestNetworkGuru#implement(com.cloud.network.Network, com.cloud.offering.NetworkOffering, com.cloud.deploy.DeployDestination, com.cloud.vm.ReservationContext)
      */
     @Override
-    public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
+    public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException {
         s_logger.trace("implement " + network.toString());
         super.implement(network, offering, dest, context);
         _sspMgr.createNetwork(network, offering, dest, context);

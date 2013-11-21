@@ -17,6 +17,28 @@
 
 package org.apache.cloudstack.region.gslb;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.command.user.region.ha.gslb.AssignToGlobalLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.region.ha.gslb.CreateGlobalLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.region.ha.gslb.DeleteGlobalLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.region.ha.gslb.ListGlobalLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.region.ha.gslb.RemoveFromGlobalLoadBalancerRuleCmd;
+import org.apache.cloudstack.api.command.user.region.ha.gslb.UpdateGlobalLoadBalancerRuleCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.region.dao.RegionDao;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.routing.GlobalLoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.SiteLoadBalancerConfig;
@@ -27,7 +49,11 @@ import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
-import com.cloud.network.dao.*;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LoadBalancerDao;
+import com.cloud.network.dao.LoadBalancerVO;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
@@ -42,22 +68,6 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-
-import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.api.command.user.region.ha.gslb.*;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.region.Region;
-import org.apache.cloudstack.region.dao.RegionDao;
-import org.apache.log4j.Logger;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @Local(value = {GlobalLoadBalancingRulesService.class})
 public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingRulesService {
@@ -140,8 +150,9 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         GlobalLoadBalancerRuleVO newGslbRule = Transaction.execute(new TransactionCallback<GlobalLoadBalancerRuleVO>() {
             @Override
             public GlobalLoadBalancerRuleVO doInTransaction(TransactionStatus status) {
-                GlobalLoadBalancerRuleVO newGslbRule = new GlobalLoadBalancerRuleVO(name, description, domainName, algorithm, stickyMethod, serviceType, regionId,
-                    gslbOwner.getId(), gslbOwner.getDomainId(), GlobalLoadBalancerRule.State.Staged);
+                GlobalLoadBalancerRuleVO newGslbRule =
+                    new GlobalLoadBalancerRuleVO(name, description, domainName, algorithm, stickyMethod, serviceType, regionId, gslbOwner.getId(),
+                        gslbOwner.getDomainId(), GlobalLoadBalancerRule.State.Staged);
                 _gslbRuleDao.persist(newGslbRule);
 
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_GLOBAL_LOAD_BALANCER_CREATE, newGslbRule.getAccountId(), 0, newGslbRule.getId(), name,
@@ -158,7 +169,9 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
     @Override
     @DB
-    @ActionEvent(eventType = EventTypes.EVENT_ASSIGN_TO_GLOBAL_LOAD_BALANCER_RULE, eventDescription = "Assigning a load balancer rule to global load balancer rule", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_ASSIGN_TO_GLOBAL_LOAD_BALANCER_RULE,
+                 eventDescription = "Assigning a load balancer rule to global load balancer rule",
+                 async = true)
     public boolean assignToGlobalLoadBalancerRule(AssignToGlobalLoadBalancerRuleCmd assignToGslbCmd) {
 
         CallContext ctx = CallContext.current();
@@ -238,7 +251,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         // for each of the physical network check if GSLB service provider configured
         for (Pair<Long, Long> physicalNetwork : physcialNetworks) {
             if (!checkGslbServiceEnabledInZone(physicalNetwork.first(), physicalNetwork.second())) {
-                throw new InvalidParameterValueException("GSLB service is not enabled in the Zone:" + physicalNetwork.first() + " and physical network " + physicalNetwork.second());
+                throw new InvalidParameterValueException("GSLB service is not enabled in the Zone:" + physicalNetwork.first() + " and physical network " +
+                    physicalNetwork.second());
             }
         }
 
@@ -292,7 +306,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
     @Override
     @DB
-    @ActionEvent(eventType = EventTypes.EVENT_REMOVE_FROM_GLOBAL_LOAD_BALANCER_RULE, eventDescription = "Removing a load balancer rule to be part of global load balancer rule")
+    @ActionEvent(eventType = EventTypes.EVENT_REMOVE_FROM_GLOBAL_LOAD_BALANCER_RULE,
+                 eventDescription = "Removing a load balancer rule to be part of global load balancer rule")
     public boolean removeFromGlobalLoadBalancerRule(RemoveFromGlobalLoadBalancerRuleCmd removeFromGslbCmd) {
 
         CallContext ctx = CallContext.current();
@@ -322,7 +337,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         List<GlobalLoadBalancerLbRuleMapVO> gslbLbMapVos = _gslbLbMapDao.listByGslbRuleId(gslbRuleId);
         if (gslbLbMapVos == null) {
             throw new InvalidParameterValueException(" There are no load balancer rules that are assigned to global " + " load balancer rule id: " + gslbRule.getUuid() +
-                                                     " that are available for deletion");
+                " that are available for deletion");
         }
 
         for (Long lbRuleId : lbRuleIdsToremove) {
@@ -344,7 +359,8 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         for (Long lbRuleId : lbRuleIdsToremove) {
             LoadBalancerVO loadBalancer = _lbDao.findById(lbRuleId);
             if (oldLbRuleIds != null && !oldLbRuleIds.contains(loadBalancer.getId())) {
-                throw new InvalidParameterValueException("Load balancer ID " + loadBalancer.getUuid() + " is not assigned" + " to global load balancer rule: " + gslbRule.getUuid());
+                throw new InvalidParameterValueException("Load balancer ID " + loadBalancer.getUuid() + " is not assigned" + " to global load balancer rule: " +
+                    gslbRule.getUuid());
             }
         }
 
@@ -636,8 +652,9 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             gslbSiteIds.add(new Pair<Long, Long>(dataCenterId, physicalNetworkId));
 
             IPAddressVO ip = _ipAddressDao.findById(loadBalancer.getSourceIpAddressId());
-            SiteLoadBalancerConfig siteLb = new SiteLoadBalancerConfig(gslbLbMapVo.isRevoke(), serviceType, ip.getAddress().addr(),
-                Integer.toString(loadBalancer.getDefaultPortStart()), dataCenterId);
+            SiteLoadBalancerConfig siteLb =
+                new SiteLoadBalancerConfig(gslbLbMapVo.isRevoke(), serviceType, ip.getAddress().addr(), Integer.toString(loadBalancer.getDefaultPortStart()),
+                    dataCenterId);
 
             siteLb.setGslbProviderPublicIp(_gslbProvider.getZoneGslbProviderPublicIp(dataCenterId, physicalNetworkId));
             siteLb.setGslbProviderPrivateIp(_gslbProvider.getZoneGslbProviderPrivateIp(dataCenterId, physicalNetworkId));

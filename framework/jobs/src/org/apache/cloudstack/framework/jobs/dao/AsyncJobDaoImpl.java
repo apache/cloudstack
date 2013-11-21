@@ -169,8 +169,9 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
     @Override
     @DB
     public void resetJobProcess(long msid, int jobResultCode, String jobResultMessage) {
-        String sql = "UPDATE async_job SET job_status=" + JobInfo.Status.FAILED.ordinal() + ", job_result_code=" + jobResultCode + ", job_result='" + jobResultMessage +
-                     "' where job_status=" + JobInfo.Status.IN_PROGRESS.ordinal() + " AND (job_executing_msid=? OR (job_executing_msid IS NULL AND job_init_msid=?))";
+        String sql =
+            "UPDATE async_job SET job_status=" + JobInfo.Status.FAILED.ordinal() + ", job_result_code=" + jobResultCode + ", job_result='" + jobResultMessage +
+                "' where job_status=" + JobInfo.Status.IN_PROGRESS.ordinal() + " AND (job_executing_msid=? OR (job_executing_msid IS NULL AND job_init_msid=?))";
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;

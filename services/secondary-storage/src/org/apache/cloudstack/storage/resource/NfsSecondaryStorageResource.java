@@ -370,7 +370,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
     }
 
-    protected Answer copySnapshotToTemplateFromNfsToNfsXenserver(CopyCommand cmd, SnapshotObjectTO srcData, NfsTO srcDataStore, TemplateObjectTO destData, NfsTO destDataStore) {
+    protected Answer copySnapshotToTemplateFromNfsToNfsXenserver(CopyCommand cmd, SnapshotObjectTO srcData, NfsTO srcDataStore, TemplateObjectTO destData,
+        NfsTO destDataStore) {
         String srcMountPoint = getRootDir(srcDataStore.getUrl());
         String snapshotPath = srcData.getPath();
         int index = snapshotPath.lastIndexOf("/");
@@ -540,8 +541,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 return copySnapshotToTemplateFromNfsToNfs(cmd, (SnapshotObjectTO)srcData, (NfsTO)srcDataStore, (TemplateObjectTO)destData, (NfsTO)destDataStore);
             } else if (destDataStore instanceof SwiftTO) {
                 //create template on the same data store
-                CopyCmdAnswer answer = (CopyCmdAnswer)copySnapshotToTemplateFromNfsToNfs(cmd, (SnapshotObjectTO)srcData, (NfsTO)srcDataStore, (TemplateObjectTO)destData,
-                    (NfsTO)srcDataStore);
+                CopyCmdAnswer answer =
+                    (CopyCmdAnswer)copySnapshotToTemplateFromNfsToNfs(cmd, (SnapshotObjectTO)srcData, (NfsTO)srcDataStore, (TemplateObjectTO)destData,
+                        (NfsTO)srcDataStore);
                 if (!answer.getResult()) {
                     return answer;
                 }
@@ -574,8 +576,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 return new CopyCmdAnswer(template);
             } else if (destDataStore instanceof S3TO) {
                 //create template on the same data store
-                CopyCmdAnswer answer = (CopyCmdAnswer)copySnapshotToTemplateFromNfsToNfs(cmd, (SnapshotObjectTO)srcData, (NfsTO)srcDataStore, (TemplateObjectTO)destData,
-                    (NfsTO)srcDataStore);
+                CopyCmdAnswer answer =
+                    (CopyCmdAnswer)copySnapshotToTemplateFromNfsToNfs(cmd, (SnapshotObjectTO)srcData, (NfsTO)srcDataStore, (TemplateObjectTO)destData,
+                        (NfsTO)srcDataStore);
                 if (!answer.getResult()) {
                     return answer;
                 }
@@ -732,8 +735,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 s_logger.debug("Failed to get md5sum: " + file.getAbsoluteFile());
             }
 
-            DownloadAnswer answer = new DownloadAnswer(null, 100, null, VMTemplateStorageResourceAssoc.Status.DOWNLOADED, swiftPath, swiftPath, file.length(), file.length(),
-                md5sum);
+            DownloadAnswer answer =
+                new DownloadAnswer(null, 100, null, VMTemplateStorageResourceAssoc.Status.DOWNLOADED, swiftPath, swiftPath, file.length(), file.length(), md5sum);
             return answer;
         } catch (Exception e) {
             s_logger.debug("Failed to register template into swift", e);
@@ -881,8 +884,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     String swiftDownload(SwiftTO swift, String container, String rfilename, String lFullPath) {
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
-        command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName() +
-                    " -K " + swift.getKey() + " download " + container + " " + rfilename + " -o " + lFullPath);
+        command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" +
+            swift.getUserName() + " -K " + swift.getKey() + " download " + container + " " + rfilename + " -o " + lFullPath);
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         if (result != null) {
@@ -908,7 +911,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
         command.add("cd " + ldir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" +
-                    swift.getUserName() + " -K " + swift.getKey() + " download " + container);
+            swift.getUserName() + " -K " + swift.getKey() + " download " + container);
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         if (result != null) {
@@ -951,11 +954,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             Script command = new Script("/bin/bash", s_logger);
             command.add("-c");
             if (size <= SWIFT_MAX_SIZE) {
-                command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" +
-                            swift.getUserName() + " -K " + swift.getKey() + " upload " + container + " " + file);
+                command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " +
+                    swift.getAccount() + ":" + swift.getUserName() + " -K " + swift.getKey() + " upload " + container + " " + file);
             } else {
-                command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" +
-                            swift.getUserName() + " -K " + swift.getKey() + " upload -S " + SWIFT_MAX_SIZE + " " + container + " " + file);
+                command.add("cd " + lDir + ";/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " +
+                    swift.getAccount() + ":" + swift.getUserName() + " -K " + swift.getKey() + " upload -S " + SWIFT_MAX_SIZE + " " + container + " " + file);
             }
             OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
             String result = command.execute(parser);
@@ -982,8 +985,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     String[] swiftList(SwiftTO swift, String container, String rFilename) {
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
-        command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName() +
-                    " -K " + swift.getKey() + " list " + container + " " + rFilename);
+        command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" +
+            swift.getUserName() + " -K " + swift.getKey() + " list " + container + " " + rFilename);
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         if (result == null && parser.getLines() != null) {
@@ -1004,8 +1007,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     String swiftDelete(SwiftTO swift, String container, String object) {
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
-        command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName() +
-                    " -K " + swift.getKey() + " delete " + container + " " + object);
+        command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" +
+            swift.getUserName() + " -K " + swift.getKey() + " delete " + container + " " + object);
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         if (result != null) {
@@ -1071,7 +1074,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 S3Utils.deleteDirectory(s3, bucket, path);
                 return new Answer(cmd, true, String.format("Deleted snapshot %1%s from bucket %2$s.", path, bucket));
             } catch (Exception e) {
-                final String errorMessage = String.format("Failed to delete snapshot %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
+                final String errorMessage =
+                    String.format("Failed to delete snapshot %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
                 s_logger.error(errorMessage, e);
                 return new Answer(cmd, false, errorMessage);
             }
@@ -1357,7 +1361,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 S3Utils.deleteObject(s3, bucket, path);
                 return new Answer(cmd, true, String.format("Deleted snapshot %1%s from bucket %2$s.", path, bucket));
             } catch (Exception e) {
-                final String errorMessage = String.format("Failed to delete snapshot %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
+                final String errorMessage =
+                    String.format("Failed to delete snapshot %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
                 s_logger.error(errorMessage, e);
                 return new Answer(cmd, false, errorMessage);
             }
@@ -1741,7 +1746,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 S3Utils.deleteDirectory(s3, bucket, path);
                 return new Answer(cmd, true, String.format("Deleted template %1$s from bucket %2$s.", path, bucket));
             } catch (Exception e) {
-                final String errorMessage = String.format("Failed to delete template %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
+                final String errorMessage =
+                    String.format("Failed to delete template %1$s from bucket %2$s due to the following error: %3$s", path, bucket, e.getMessage());
                 s_logger.error(errorMessage, e);
                 return new Answer(cmd, false, errorMessage);
             }
@@ -2344,8 +2350,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         }
 
         if (!foundUser || !foundPswd) {
-            String errMsg = "Missing user and password from URI. Make sure they" + "are in the query string and separated by '&'.  E.g. "
-                            + "cifs://example.com/some_share?user=foo&password=bar";
+            String errMsg =
+                "Missing user and password from URI. Make sure they" + "are in the query string and separated by '&'.  E.g. "
+                    + "cifs://example.com/some_share?user=foo&password=bar";
             s_logger.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }

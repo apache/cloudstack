@@ -95,7 +95,8 @@ public class Upgrade227to228 implements DbUpgrade {
     private void updateDomainLevelNetworks(Connection conn) {
         s_logger.debug("Updating domain level specific networks...");
         try {
-            PreparedStatement pstmt = conn.prepareStatement("SELECT n.id FROM networks n, network_offerings o WHERE n.shared=1 AND o.system_only=0 AND o.id=n.network_offering_id");
+            PreparedStatement pstmt =
+                conn.prepareStatement("SELECT n.id FROM networks n, network_offerings o WHERE n.shared=1 AND o.system_only=0 AND o.id=n.network_offering_id");
             ResultSet rs = pstmt.executeQuery();
             ArrayList<Object[]> networks = new ArrayList<Object[]>();
             while (rs.next()) {
@@ -132,7 +133,8 @@ public class Upgrade227to228 implements DbUpgrade {
     private void updateVolumeUsageRecords(Connection conn) {
         try {
             s_logger.debug("Inserting missing usage_event records for destroyed volumes...");
-            PreparedStatement pstmt = conn.prepareStatement("select id, account_id, data_center_id, name from volumes where state='Destroy' and id in (select resource_id from usage_event where type='volume.create') and id not in (select resource_id from usage_event where type='volume.delete')");
+            PreparedStatement pstmt =
+                conn.prepareStatement("select id, account_id, data_center_id, name from volumes where state='Destroy' and id in (select resource_id from usage_event where type='volume.create') and id not in (select resource_id from usage_event where type='volume.delete')");
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
                 long volumeId = rs.getLong(1);
@@ -140,7 +142,8 @@ public class Upgrade227to228 implements DbUpgrade {
                 long zoneId = rs.getLong(3);
                 String volumeName = rs.getString(4);
 
-                pstmt = conn.prepareStatement("insert into usage_event (type, account_id, created, zone_id, resource_name, resource_id) values ('VOLUME.DELETE', ?, now(), ?, ?, ?)");
+                pstmt =
+                    conn.prepareStatement("insert into usage_event (type, account_id, created, zone_id, resource_name, resource_id) values ('VOLUME.DELETE', ?, now(), ?, ?, ?)");
                 pstmt.setLong(1, accountId);
                 pstmt.setLong(2, zoneId);
                 pstmt.setString(3, volumeName);

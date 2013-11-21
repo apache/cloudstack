@@ -190,8 +190,9 @@ public class UploadListener implements Listener {
         } else {
             extractId = ApiDBUtils.findTemplateById(uploadObj.getTypeId()).getUuid();
         }
-        resultObj = new ExtractResponse(extractId, typeName, ApiDBUtils.findAccountById(accountId).getUuid(), Status.NOT_UPLOADED.toString(), ApiDBUtils.findUploadById(uploadId)
-            .getUuid());
+        resultObj =
+            new ExtractResponse(extractId, typeName, ApiDBUtils.findAccountById(accountId).getUuid(), Status.NOT_UPLOADED.toString(), ApiDBUtils.findUploadById(uploadId)
+                .getUuid());
         resultObj.setResponseName(responseNameMap.get(type.toString()));
         updateDatabase(Status.NOT_UPLOADED, cmd.getUrl(), "");
     }

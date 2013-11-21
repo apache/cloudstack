@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
-import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -46,12 +45,14 @@ public class RouterNetworkDaoImpl extends GenericDaoBase<RouterNetworkVO, Long> 
         AllFieldsSearch.done();
     }
 
+    @Override
     public List<Long> getRouterNetworks(long routerId) {
         SearchCriteria<Long> sc = RouterNetworksSearch.create();
         sc.setParameters("routerId", routerId);
         return customSearch(sc, null);
     }
 
+    @Override
     public RouterNetworkVO findByRouterAndNetwork(long routerId, long networkId) {
         SearchCriteria<RouterNetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("routerId", routerId);

@@ -16,18 +16,20 @@
 // under the License.
 package com.cloud.utils.testcase;
 
+import java.nio.channels.ClosedChannelException;
+import java.util.Random;
+
+import junit.framework.TestCase;
+
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+
 import com.cloud.utils.nio.HandlerFactory;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioClient;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.nio.Task.Type;
-import junit.framework.TestCase;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-
-import java.nio.channels.ClosedChannelException;
-import java.util.Random;
 
 /**
  *
@@ -68,6 +70,7 @@ public class NioTest extends TestCase {
         }
     }
 
+    @Override
     public void setUp() {
         s_logger.info("Test");
 
@@ -91,6 +94,7 @@ public class NioTest extends TestCase {
         }
     }
 
+    @Override
     public void tearDown() {
         while (!isTestsDone()) {
             try {

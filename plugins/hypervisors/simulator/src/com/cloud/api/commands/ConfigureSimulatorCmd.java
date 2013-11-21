@@ -16,12 +16,10 @@
 // under the License.
 package com.cloud.api.commands;
 
-import com.cloud.agent.manager.SimulatorManager;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -29,9 +27,13 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
+import com.cloud.agent.manager.SimulatorManager;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.user.Account;
 
 @APICommand(name = "configureSimulator", description = "configure simulator", responseObject = SuccessResponse.class)
 public class ConfigureSimulatorCmd extends BaseCmd {
@@ -60,7 +62,8 @@ public class ConfigureSimulatorCmd extends BaseCmd {
     private String values;
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         boolean result = _simMgr.configureSimulator(zoneId, podId, clusterId, hostId, command, values);
         if (!result) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure simulator");

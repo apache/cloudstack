@@ -41,7 +41,12 @@ import com.cloud.utils.db.GenericDao;
 @Table(name = "vm_snapshots")
 public class VMSnapshotVO implements VMSnapshot {
     @Id
-    @TableGenerator(name = "vm_snapshots_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "vm_snapshots_seq", allocationSize = 1)
+    @TableGenerator(name = "vm_snapshots_sq",
+                    table = "sequence",
+                    pkColumnName = "name",
+                    valueColumnName = "value",
+                    pkColumnValue = "vm_snapshots_seq",
+                    allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.TABLE)
     @Column(name = "id")
     Long id;
@@ -105,6 +110,7 @@ public class VMSnapshotVO implements VMSnapshot {
         this.options = options;
     }
 
+    @Override
     public Long getParent() {
         return parent;
     }
@@ -117,6 +123,7 @@ public class VMSnapshotVO implements VMSnapshot {
 
     }
 
+    @Override
     public Date getRemoved() {
         return removed;
     }
@@ -134,6 +141,7 @@ public class VMSnapshotVO implements VMSnapshot {
         this.current = current;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
@@ -203,6 +211,7 @@ public class VMSnapshotVO implements VMSnapshot {
         this.displayName = displayName;
     }
 
+    @Override
     public Boolean getCurrent() {
         return current;
     }

@@ -118,8 +118,9 @@ public class StorageAllocatorTest {
     }
 
     protected void createDb() {
-        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
-            true, null, null);
+        DataCenterVO dc =
+            new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
+                true, null, null);
         dc = dcDao.persist(dc);
         dcId = dc.getId();
 
@@ -162,7 +163,9 @@ public class StorageAllocatorTest {
         diskOffering = diskOfferingDao.persist(diskOffering);
         diskOfferingId = diskOffering.getId();
 
-        volume = new VolumeVO(Volume.Type.ROOT, "volume", dcId, 1, 1, diskOffering.getId(), diskOffering.getDiskSize(), diskOffering.getMinIops(), diskOffering.getMaxIops(), "");
+        volume =
+            new VolumeVO(Volume.Type.ROOT, "volume", dcId, 1, 1, diskOffering.getId(), diskOffering.getDiskSize(), diskOffering.getMinIops(), diskOffering.getMaxIops(),
+                "");
         volume = volumeDao.persist(volume);
         volumeId = volume.getId();
     }

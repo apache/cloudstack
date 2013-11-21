@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.user.network;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -27,7 +29,6 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.offering.NetworkOffering;
 
@@ -89,7 +90,9 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
                description = "true if need to list only netwok offerings where source nat is supported, false otherwise")
     private Boolean sourceNatSupported;
 
-    @Parameter(name = ApiConstants.SPECIFY_IP_RANGES, type = CommandType.BOOLEAN, description = "true if need to list only network offerings which support specifying ip ranges")
+    @Parameter(name = ApiConstants.SPECIFY_IP_RANGES,
+               type = CommandType.BOOLEAN,
+               description = "true if need to list only network offerings which support specifying ip ranges")
     private Boolean specifyIpRanges;
 
     @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "list network offerings by tags", length = 4096)

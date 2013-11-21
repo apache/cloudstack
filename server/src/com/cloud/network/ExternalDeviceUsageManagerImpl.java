@@ -31,6 +31,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
@@ -255,8 +256,8 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
         String publicIp = _networkModel.getIp(lb.getSourceIpAddressId()).getAddress().addr();
         DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
-        String statsEntryIdentifier = "account " + account.getAccountName() + ", zone " + zone.getName() + ", network ID " + networkId + ", host ID " +
-                                      externalLoadBalancer.getName();
+        String statsEntryIdentifier =
+            "account " + account.getAccountName() + ", zone " + zone.getName() + ", network ID " + networkId + ", host ID " + externalLoadBalancer.getName();
 
         long newCurrentBytesSent = 0;
         long newCurrentBytesReceived = 0;
@@ -306,8 +307,9 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                     long oldNetBytesReceived = userStats.getNetBytesReceived();
                     long oldCurrentBytesSent = userStats.getCurrentBytesSent();
                     long oldCurrentBytesReceived = userStats.getCurrentBytesReceived();
-                    String warning = "Received an external network stats byte count that was less than the stored value. Zone ID: " + userStats.getDataCenterId() +
-                                     ", account ID: " + userStats.getAccountId() + ".";
+                    String warning =
+                        "Received an external network stats byte count that was less than the stored value. Zone ID: " + userStats.getDataCenterId() + ", account ID: " +
+                            userStats.getAccountId() + ".";
 
                     userStats.setCurrentBytesSent(newCurrentBytesSent);
                     if (oldCurrentBytesSent > newCurrentBytesSent) {
@@ -487,8 +489,9 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
             long oldNetBytesReceived = userStats.getNetBytesReceived();
             long oldCurrentBytesSent = userStats.getCurrentBytesSent();
             long oldCurrentBytesReceived = userStats.getCurrentBytesReceived();
-            String warning = "Received an external network stats byte count that was less than the stored value. Zone ID: " + userStats.getDataCenterId() + ", account ID: " +
-                             userStats.getAccountId() + ".";
+            String warning =
+                "Received an external network stats byte count that was less than the stored value. Zone ID: " + userStats.getDataCenterId() + ", account ID: " +
+                    userStats.getAccountId() + ".";
 
             userStats.setCurrentBytesSent(newCurrentBytesSent);
             if (oldCurrentBytesSent > newCurrentBytesSent) {
@@ -517,12 +520,14 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
         }
 
         // Updates an existing stats entry with new data from the specified usage answer.
-        private boolean updateStatsEntry(long accountId, long zoneId, long networkId, String publicIp, long hostId, ExternalNetworkResourceUsageAnswer answer, boolean inline) {
+        private boolean updateStatsEntry(long accountId, long zoneId, long networkId, String publicIp, long hostId, ExternalNetworkResourceUsageAnswer answer,
+            boolean inline) {
             AccountVO account = _accountDao.findById(accountId);
             DataCenterVO zone = _dcDao.findById(zoneId);
             NetworkVO network = _networkDao.findById(networkId);
             HostVO host = _hostDao.findById(hostId);
-            String statsEntryIdentifier = "account " + account.getAccountName() + ", zone " + zone.getName() + ", network ID " + networkId + ", host ID " + host.getName();
+            String statsEntryIdentifier =
+                "account " + account.getAccountName() + ", zone " + zone.getName() + ", network ID " + networkId + ", host ID " + host.getName();
 
             long newCurrentBytesSent = 0;
             long newCurrentBytesReceived = 0;

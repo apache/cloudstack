@@ -25,7 +25,6 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InternalErrorException;
@@ -33,6 +32,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * VhdProcessor processes the downloaded template for VHD.  It

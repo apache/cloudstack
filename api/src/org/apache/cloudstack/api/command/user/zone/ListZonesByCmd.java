@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -28,7 +30,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 
@@ -47,7 +48,7 @@ public class ListZonesByCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.AVAILABLE,
                type = CommandType.BOOLEAN,
                description = "true if you want to retrieve all available Zones. False if you only want to return the Zones"
-                             + " from which you have at least one VM. Default is false.")
+                   + " from which you have at least one VM. Default is false.")
     private Boolean available;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the ID of the domain associated with the zone")

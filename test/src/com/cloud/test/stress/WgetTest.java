@@ -55,8 +55,7 @@ public class WgetTest {
 
         int i = 0;
         if (host == null || host.equals("")) {
-            s_logger
-                .info("Did not receive a host back from test, ignoring ssh test");
+            s_logger.info("Did not receive a host back from test, ignoring ssh test");
             System.exit(2);
         }
 
@@ -68,21 +67,18 @@ public class WgetTest {
 
         try {
             if (retry > 0) {
-                s_logger.info("Retry attempt : " + retry
-                              + " ...sleeping 120 seconds before next attempt");
+                s_logger.info("Retry attempt : " + retry + " ...sleeping 120 seconds before next attempt");
                 Thread.sleep(120000);
             }
 
-            s_logger.info("Attempting to SSH into linux host " + host
-                          + " with retry attempt: " + retry);
+            s_logger.info("Attempting to SSH into linux host " + host + " with retry attempt: " + retry);
 
             Connection conn = new Connection(host);
             conn.connect(null, 60000, 60000);
 
             s_logger.info("User + ssHed successfully into linux host " + host);
 
-            boolean isAuthenticated = conn.authenticateWithPassword("root",
-                password);
+            boolean isAuthenticated = conn.authenticateWithPassword("root", password);
 
             if (isAuthenticated == false) {
                 s_logger.info("Authentication failed for root with password" + password);
@@ -106,14 +102,10 @@ public class WgetTest {
             byte[] buffer = new byte[8192];
             while (true) {
                 if ((stdout.available() == 0) && (stderr.available() == 0)) {
-                    int conditions = sess.waitForCondition(
-                        ChannelCondition.STDOUT_DATA
-                                | ChannelCondition.STDERR_DATA
-                                | ChannelCondition.EOF, 120000);
+                    int conditions = sess.waitForCondition(ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA | ChannelCondition.EOF, 120000);
 
                     if ((conditions & ChannelCondition.TIMEOUT) != 0) {
-                        s_logger
-                            .info("Timeout while waiting for data from peer.");
+                        s_logger.info("Timeout while waiting for data from peer.");
                         System.exit(2);
                     }
 

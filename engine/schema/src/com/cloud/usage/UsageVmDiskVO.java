@@ -67,8 +67,8 @@ public class UsageVmDiskVO {
     protected UsageVmDiskVO() {
     }
 
-    public UsageVmDiskVO(Long accountId, long zoneId, Long vmId, Long volumeId, long ioRead, long ioWrite, long aggIORead, long aggIOWrite, long bytesRead, long bytesWrite,
-            long aggBytesRead, long aggBytesWrite, long eventTimeMillis) {
+    public UsageVmDiskVO(Long accountId, long zoneId, Long vmId, Long volumeId, long ioRead, long ioWrite, long aggIORead, long aggIOWrite, long bytesRead,
+            long bytesWrite, long aggBytesRead, long aggBytesWrite, long eventTimeMillis) {
         this.accountId = accountId;
         this.zoneId = zoneId;
         this.vmId = vmId;

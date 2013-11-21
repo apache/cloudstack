@@ -42,7 +42,11 @@ public class RevertToVMSnapshotCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RevertToVMSnapshotCmd.class.getName());
     private static final String s_name = "reverttovmsnapshotresponse";
 
-    @Parameter(name = ApiConstants.VM_SNAPSHOT_ID, type = CommandType.UUID, required = true, entityType = VMSnapshotResponse.class, description = "The ID of the vm snapshot")
+    @Parameter(name = ApiConstants.VM_SNAPSHOT_ID,
+               type = CommandType.UUID,
+               required = true,
+               entityType = VMSnapshotResponse.class,
+               description = "The ID of the vm snapshot")
     private Long vmSnapShotId;
 
     public Long getVmSnapShotId() {

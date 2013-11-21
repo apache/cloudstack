@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.consoleproxy.vnc;
 
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -106,7 +107,8 @@ public class VncClientPacketSender implements Runnable, PaintNotificationListene
     @Override
     public void imagePaintedOnScreen() {
         if (!updateRequestSent) {
-            queue.add(new FramebufferUpdateRequestPacket(RfbConstants.FRAMEBUFFER_INCREMENTAL_UPDATE_REQUEST, 0, 0, screen.getFramebufferWidth(), screen.getFramebufferHeight()));
+            queue.add(new FramebufferUpdateRequestPacket(RfbConstants.FRAMEBUFFER_INCREMENTAL_UPDATE_REQUEST, 0, 0, screen.getFramebufferWidth(),
+                screen.getFramebufferHeight()));
             updateRequestSent = true;
         }
     }
@@ -164,8 +166,9 @@ public class VncClientPacketSender implements Runnable, PaintNotificationListene
      * @return VNC mouse button mask
      */
     public static int mapAwtModifiersToVncButtonMask(int modifiers) {
-        int mask = (((modifiers & MouseEvent.BUTTON1_DOWN_MASK) != 0) ? 0x1 : 0) | (((modifiers & MouseEvent.BUTTON2_DOWN_MASK) != 0) ? 0x2 : 0) |
-                   (((modifiers & MouseEvent.BUTTON3_DOWN_MASK) != 0) ? 0x4 : 0);
+        int mask =
+            (((modifiers & InputEvent.BUTTON1_DOWN_MASK) != 0) ? 0x1 : 0) | (((modifiers & InputEvent.BUTTON2_DOWN_MASK) != 0) ? 0x2 : 0) |
+                (((modifiers & InputEvent.BUTTON3_DOWN_MASK) != 0) ? 0x4 : 0);
         return mask;
     }
 

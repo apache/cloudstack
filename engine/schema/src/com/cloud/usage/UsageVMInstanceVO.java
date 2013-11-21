@@ -62,8 +62,8 @@ public class UsageVMInstanceVO {
     protected UsageVMInstanceVO() {
     }
 
-    public UsageVMInstanceVO(int usageType, long zoneId, long accountId, long vmInstanceId, String vmName, long serviceOfferingId, long templateId, String hypervisorType,
-            Date startDate, Date endDate) {
+    public UsageVMInstanceVO(int usageType, long zoneId, long accountId, long vmInstanceId, String vmName, long serviceOfferingId, long templateId,
+            String hypervisorType, Date startDate, Date endDate) {
         this.usageType = usageType;
         this.zoneId = zoneId;
         this.accountId = accountId;

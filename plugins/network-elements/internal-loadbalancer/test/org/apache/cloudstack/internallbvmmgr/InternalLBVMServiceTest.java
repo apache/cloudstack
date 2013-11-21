@@ -26,6 +26,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -86,22 +87,25 @@ public class InternalLBVMServiceTest extends TestCase {
     public void setUp() {
         //mock system offering creation as it's used by configure() method called by initComponentsLifeCycle
         Mockito.when(_accountMgr.getAccount(1L)).thenReturn(new AccountVO());
-        ServiceOfferingVO off = new ServiceOfferingVO("alena", 1, 1, 1, 1, 1, false, "alena", false, false, null, false, VirtualMachine.Type.InternalLoadBalancerVm, false);
+        ServiceOfferingVO off =
+            new ServiceOfferingVO("alena", 1, 1, 1, 1, 1, false, "alena", false, false, null, false, VirtualMachine.Type.InternalLoadBalancerVm, false);
         off = setId(off, 1);
-        Mockito.when(_svcOffDao.persistSystemServiceOffering(Mockito.any(ServiceOfferingVO.class))).thenReturn(off);
+        Mockito.when(_svcOffDao.persistSystemServiceOffering(Matchers.any(ServiceOfferingVO.class))).thenReturn(off);
 
         ComponentContext.initComponentsLifeCycle();
 
         Mockito.when(_accountMgr.getSystemUser()).thenReturn(new UserVO(1));
         Mockito.when(_accountMgr.getSystemAccount()).thenReturn(new AccountVO(2));
-        Mockito.when(_accountDao.findByIdIncludingRemoved(Mockito.anyLong())).thenReturn(new AccountVO(2));
+        Mockito.when(_accountDao.findByIdIncludingRemoved(Matchers.anyLong())).thenReturn(new AccountVO(2));
         CallContext.register(_accountMgr.getSystemUser(), _accountMgr.getSystemAccount());
 
-        DomainRouterVO validVm = new DomainRouterVO(validVmId, off.getId(), 1, "alena", 1, HypervisorType.XenServer, 1, 1, 1, false, 0, false, null, false, false,
-            VirtualMachine.Type.InternalLoadBalancerVm, null);
+        DomainRouterVO validVm =
+            new DomainRouterVO(validVmId, off.getId(), 1, "alena", 1, HypervisorType.XenServer, 1, 1, 1, false, 0, false, null, false, false,
+                VirtualMachine.Type.InternalLoadBalancerVm, null);
         validVm.setRole(Role.INTERNAL_LB_VM);
-        DomainRouterVO nonInternalLbVm = new DomainRouterVO(validVmId, off.getId(), 1, "alena", 1, HypervisorType.XenServer, 1, 1, 1, false, 0, false, null, false, false,
-            VirtualMachine.Type.DomainRouter, null);
+        DomainRouterVO nonInternalLbVm =
+            new DomainRouterVO(validVmId, off.getId(), 1, "alena", 1, HypervisorType.XenServer, 1, 1, 1, false, 0, false, null, false, false,
+                VirtualMachine.Type.DomainRouter, null);
         nonInternalLbVm.setRole(Role.VIRTUAL_ROUTER);
 
         Mockito.when(_domainRouterDao.findById(validVmId)).thenReturn(validVm);

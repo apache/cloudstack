@@ -16,14 +16,14 @@
 // under the License.
 package com.cloud.netapp;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "netapp_volume")
@@ -134,6 +134,7 @@ public class NetappVolumeVO implements InternalIdentity {
         this.volumeSize = volumeSize;
     }
 
+    @Override
     public long getId() {
         return id;
     }

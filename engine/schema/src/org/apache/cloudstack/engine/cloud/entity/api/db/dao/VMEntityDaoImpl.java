@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.engine.cloud.entity.api.db.dao;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,18 +23,17 @@ import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
-import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.engine.cloud.entity.api.db.VMEntityVO;
+import org.apache.cloudstack.engine.cloud.entity.api.db.VMReservationVO;
+
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.vm.NicProfile;
 
 @Component
 @Local(value = {VMEntityDao.class})

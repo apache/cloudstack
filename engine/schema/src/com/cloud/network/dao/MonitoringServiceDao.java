@@ -17,9 +17,9 @@
 
 package com.cloud.network.dao;
 
-import com.cloud.utils.db.GenericDao;
-
 import java.util.List;
+
+import com.cloud.utils.db.GenericDao;
 
 public interface MonitoringServiceDao extends GenericDao<MonitoringServiceVO, Long> {
 

@@ -34,9 +34,27 @@ import javax.persistence.TemporalType;
  */
 public class Attribute {
     public enum Flag {
-        Insertable(0x01), Updatable(0x02), Nullable(0x04), DaoGenerated(0x08), DbGenerated(0x10), Embedded(0x20), Id(0x40), Selectable(0x80), Time(0x100), Date(0x200), TimeStamp(
-                0x400), SequenceGV(0x1000), TableGV(0x2000), AutoGV(0x4000), Created(0x10000), Removed(0x20000), DC(0x40000), CharDT(0x100000), StringDT(0x200000), IntegerDT(
-                0x400000), Encrypted(0x800000);
+        Insertable(0x01),
+        Updatable(0x02),
+        Nullable(0x04),
+        DaoGenerated(0x08),
+        DbGenerated(0x10),
+        Embedded(0x20),
+        Id(0x40),
+        Selectable(0x80),
+        Time(0x100),
+        Date(0x200),
+        TimeStamp(0x400),
+        SequenceGV(0x1000),
+        TableGV(0x2000),
+        AutoGV(0x4000),
+        Created(0x10000),
+        Removed(0x20000),
+        DC(0x40000),
+        CharDT(0x100000),
+        StringDT(0x200000),
+        IntegerDT(0x400000),
+        Encrypted(0x800000);
 
         int place;
 

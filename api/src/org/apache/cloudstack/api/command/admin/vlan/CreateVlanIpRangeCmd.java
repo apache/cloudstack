@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vlan;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -29,7 +31,6 @@ import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.VlanIpRangeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.Vlan;
 import com.cloud.exception.ConcurrentOperationException;
@@ -48,7 +49,9 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account who will own the VLAN. If VLAN is Zone wide, this parameter should be ommited")
+    @Parameter(name = ApiConstants.ACCOUNT,
+               type = CommandType.STRING,
+               description = "account who will own the VLAN. If VLAN is Zone wide, this parameter should be ommited")
     private String accountName;
 
     @Parameter(name = ApiConstants.PROJECT_ID,
@@ -82,7 +85,7 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     private String startIp;
 
     @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "the ID or VID of the VLAN. If not specified,"
-                                                                                  + " will be defaulted to the vlan of the network or if vlan of the network is null - to Untagged")
+        + " will be defaulted to the vlan of the network or if vlan of the network is null - to Untagged")
     private String vlan;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID of the VLAN IP range")
@@ -101,7 +104,7 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     private String endIpv6;
 
     @Parameter(name = ApiConstants.IP6_GATEWAY, type = CommandType.STRING, description = "the gateway of the IPv6 network. Required "
-                                                                                         + "for Shared networks and Isolated networks when it belongs to VPC")
+        + "for Shared networks and Isolated networks when it belongs to VPC")
     private String ip6Gateway;
 
     @Parameter(name = ApiConstants.IP6_CIDR, type = CommandType.STRING, description = "the CIDR of IPv6 network, must be at least /64")

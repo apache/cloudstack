@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vm;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -26,8 +28,6 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -60,7 +60,11 @@ public class MigrateVMCmd extends BaseAsyncCmd {
                description = "Destination Host ID to migrate VM to. Required for live migrating a VM from host to host")
     private Long hostId;
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "the ID of the virtual machine")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+               type = CommandType.UUID,
+               entityType = UserVmResponse.class,
+               required = true,
+               description = "the ID of the virtual machine")
     private Long virtualMachineId;
 
     @Parameter(name = ApiConstants.STORAGE_ID,

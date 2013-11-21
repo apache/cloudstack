@@ -26,16 +26,16 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.usage.UsageTypes;
 
-import com.cloud.usage.UsageServer;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.UsageVolumeVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageVolumeDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
-import org.springframework.stereotype.Component;
 
 @Component
 public class VolumeUsageParser {
@@ -115,8 +115,8 @@ public class VolumeUsageParser {
             // Only create a usage record if we have a runningTime of bigger than zero.
             if (useTime > 0L) {
                 VolInfo info = diskOfferingMap.get(volIdKey);
-                createUsageRecord(UsageTypes.VOLUME, useTime, startDate, endDate, account, info.getVolumeId(), info.getZoneId(), info.getDiskOfferingId(), info.getTemplateId(),
-                    info.getSize());
+                createUsageRecord(UsageTypes.VOLUME, useTime, startDate, endDate, account, info.getVolumeId(), info.getZoneId(), info.getDiskOfferingId(),
+                    info.getTemplateId(), info.getSize());
             }
         }
 
@@ -135,8 +135,8 @@ public class VolumeUsageParser {
         usageDataMap.put(key, volUsageInfo);
     }
 
-    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long volId, long zoneId, Long doId, Long templateId,
-        long size) {
+    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long volId, long zoneId, Long doId,
+        Long templateId, long size) {
         // Our smallest increment is hourly for now
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Total running time " + runningTime + "ms");
@@ -149,7 +149,7 @@ public class VolumeUsageParser {
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating Volume usage record for vol: " + volId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate +
-                           ", for account: " + account.getId());
+                ", for account: " + account.getId());
         }
 
         // Create the usage record
@@ -161,8 +161,9 @@ public class VolumeUsageParser {
             usageDesc += " (DiskOffering: " + doId + ")";
         }
 
-        UsageVO usageRecord = new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), null, null, doId, templateId,
-            volId, size, startDate, endDate);
+        UsageVO usageRecord =
+            new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), null, null, doId, templateId, volId,
+                size, startDate, endDate);
         m_usageDao.persist(usageRecord);
     }
 

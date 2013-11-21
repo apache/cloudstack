@@ -16,12 +16,20 @@
 // under the License.
 package com.cloud.network.dao;
 
+import java.util.UUID;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
-
-import javax.persistence.*;
-import java.util.UUID;
 
 /**
  * ExternalLoadBalancerDeviceVO contains information on external load balancer devices (F5/Netscaler VPX,MPX,SDX) added into a deployment
@@ -92,7 +100,8 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
         Provider   // This state is set only for device that can dynamically provision LB appliances
     }
 
-    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name, long capacity, boolean dedicated, boolean gslbProvider) {
+    public ExternalLoadBalancerDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name, long capacity, boolean dedicated,
+            boolean gslbProvider) {
         this.physicalNetworkId = physicalNetworkId;
         this.providerName = provider_name;
         this.deviceName = device_name;
@@ -123,6 +132,7 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
         this.uuid = UUID.randomUUID().toString();
     }
 
+    @Override
     public long getId() {
         return id;
     }
@@ -215,6 +225,7 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
         return gslbSitePrivateIP;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }

@@ -53,6 +53,7 @@ public class WatchConsoleProxyLoadCommand extends ProxyCommand implements CronCo
         return proxyCmdPort;
     }
 
+    @Override
     public int getInterval() {
         return interval;
     }

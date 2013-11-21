@@ -16,14 +16,13 @@
 // under the License.
 package rdpclient;
 
-
 /**
  * Try to determine packet content by it header fingerprint.
  */
 public class ServerPacketSniffer extends PacketSniffer {
 
-  private static final Pair[] serverRegexps = new Pair[] {
-  // @formatter:off
+    private static final Pair[] serverRegexps = new Pair[] {
+// @formatter:off
   new Pair("Server FastPath update",             "04"),
   new Pair("Server X224ConnectionRequest",       "03 00 XX XX 0E D0"),
   new Pair("Server MCSConnectResponse",          "03 00 XX XX 02 F0 80 7F 66 5A"),
@@ -42,11 +41,10 @@ public class ServerPacketSniffer extends PacketSniffer {
 //  new Pair("Server FastPath update with flags or continuation",  ".*"),
   // @formatter:on
 
-  };
+        };
 
-  public ServerPacketSniffer(String id) {
-    super(id, serverRegexps);
-  }
-
+    public ServerPacketSniffer(String id) {
+        super(id, serverRegexps);
+    }
 
 }

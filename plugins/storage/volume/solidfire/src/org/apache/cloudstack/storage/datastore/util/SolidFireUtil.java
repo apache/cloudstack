@@ -17,8 +17,8 @@
 package org.apache.cloudstack.storage.datastore.util;
 
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -27,8 +27,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -37,8 +37,8 @@ import javax.net.ssl.X509TrustManager;
 import org.apache.http.HttpResponse;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpPost;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.SSLSocketFactory;
@@ -46,9 +46,10 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.BasicClientConnectionManager;
 
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SolidFireUtil {
     public static final String PROVIDER_NAME = "SolidFire";
@@ -76,11 +77,12 @@ public class SolidFireUtil {
 
     public static final String USE_MUTUAL_CHAP_FOR_VMWARE = "useMutualChapForVMware";
 
-    public static long createSolidFireVolume(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, String strSfVolumeName, long lSfAccountId, long lTotalSize,
-        boolean bEnable512e, final String strCloudStackVolumeSize, long lMinIops, long lMaxIops, long lBurstIops) {
+    public static long createSolidFireVolume(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, String strSfVolumeName, long lSfAccountId,
+        long lTotalSize, boolean bEnable512e, final String strCloudStackVolumeSize, long lMinIops, long lMaxIops, long lBurstIops) {
         final Gson gson = new GsonBuilder().create();
 
-        VolumeToCreate volumeToCreate = new VolumeToCreate(strSfVolumeName, lSfAccountId, lTotalSize, bEnable512e, strCloudStackVolumeSize, lMinIops, lMaxIops, lBurstIops);
+        VolumeToCreate volumeToCreate =
+            new VolumeToCreate(strSfVolumeName, lSfAccountId, lTotalSize, bEnable512e, strCloudStackVolumeSize, lMinIops, lMaxIops, lBurstIops);
 
         String strVolumeToCreateJson = gson.toJson(volumeToCreate);
 
@@ -414,8 +416,8 @@ public class SolidFireUtil {
             private final VolumeToCreateParamsQoS qos;
             private final VolumeToCreateParamsAttributes attributes;
 
-            private VolumeToCreateParams(final String strVolumeName, final long lAccountId, final long lTotalSize, final boolean bEnable512e, final String strCloudStackVolumeSize,
-                    final long lMinIOPS, final long lMaxIOPS, final long lBurstIOPS) {
+            private VolumeToCreateParams(final String strVolumeName, final long lAccountId, final long lTotalSize, final boolean bEnable512e,
+                    final String strCloudStackVolumeSize, final long lMinIOPS, final long lMaxIOPS, final long lBurstIOPS) {
                 name = strVolumeName;
                 accountID = lAccountId;
                 totalSize = lTotalSize;
@@ -700,12 +702,15 @@ public class SolidFireUtil {
         try {
             SSLContext sslContext = SSLContext.getInstance("SSL");
             X509TrustManager tm = new X509TrustManager() {
+                @Override
                 public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException {
                 }
 
+                @Override
                 public void checkServerTrusted(X509Certificate[] xcs, String string) throws CertificateException {
                 }
 
+                @Override
                 public X509Certificate[] getAcceptedIssuers() {
                     return null;
                 }

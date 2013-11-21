@@ -28,12 +28,12 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.cloud.server.LockMasterListener;
 import junit.framework.Assert;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -59,9 +59,6 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.agent.AgentManager;
-
-import com.cloud.agent.AgentManager;
-
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
@@ -77,6 +74,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.org.Cluster;
 import com.cloud.org.Managed;
 import com.cloud.resource.ResourceState;
+import com.cloud.server.LockMasterListener;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
@@ -151,8 +149,9 @@ public class EndpointSelectorTest {
     public void setUp() {
         // create data center
 
-        DataCenterVO dc = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, DataCenter.NetworkType.Basic, null,
-            null, true, true, null, null);
+        DataCenterVO dc =
+            new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, DataCenter.NetworkType.Basic, null,
+                null, true, true, null, null);
         dc = dcDao.persist(dc);
         dcId = dc.getId();
         // create pod
@@ -178,7 +177,7 @@ public class EndpointSelectorTest {
         imageStore.setProtocol("nfs");
         imageStore = imageStoreDao.persist(imageStore);
 
-        when(primaryDataStoreProvider.configure(Mockito.anyMap())).thenReturn(true);
+        when(primaryDataStoreProvider.configure(Matchers.anyMap())).thenReturn(true);
         Set<DataStoreProvider.DataStoreProviderType> types = new HashSet<DataStoreProvider.DataStoreProviderType>();
         types.add(DataStoreProvider.DataStoreProviderType.PRIMARY);
 

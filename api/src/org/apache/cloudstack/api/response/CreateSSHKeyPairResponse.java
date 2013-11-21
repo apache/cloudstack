@@ -16,8 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
+import com.cloud.serializer.Param;
 
 public class CreateSSHKeyPairResponse extends SSHKeyPairResponse {
 

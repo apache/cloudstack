@@ -71,18 +71,22 @@ public class SnapshotScheduleVO implements SnapshotSchedule {
         this.asyncJobId = null;
     }
 
+    @Override
     public long getId() {
         return id;
     }
 
+    @Override
     public Long getVolumeId() {
         return volumeId;
     }
 
+    @Override
     public Long getPolicyId() {
         return policyId;
     }
 
+    @Override
     public void setPolicyId(long policyId) {
         this.policyId = policyId;
     }
@@ -90,26 +94,32 @@ public class SnapshotScheduleVO implements SnapshotSchedule {
     /**
      * @return the scheduledTimestamp
      */
+    @Override
     public Date getScheduledTimestamp() {
         return scheduledTimestamp;
     }
 
+    @Override
     public void setScheduledTimestamp(Date scheduledTimestamp) {
         this.scheduledTimestamp = scheduledTimestamp;
     }
 
+    @Override
     public Long getAsyncJobId() {
         return asyncJobId;
     }
 
+    @Override
     public void setAsyncJobId(Long asyncJobId) {
         this.asyncJobId = asyncJobId;
     }
 
+    @Override
     public Long getSnapshotId() {
         return snapshotId;
     }
 
+    @Override
     public void setSnapshotId(Long snapshotId) {
         this.snapshotId = snapshotId;
     }

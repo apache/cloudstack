@@ -44,6 +44,7 @@ import org.w3c.dom.NodeList;
 
 import com.amazon.s3.CopyObjectResponse;
 import com.amazon.s3.GetObjectAccessControlPolicyResponse;
+
 import com.cloud.bridge.io.MTOMAwareResultStreamWriter;
 import com.cloud.bridge.model.SAcl;
 import com.cloud.bridge.model.SAclVO;
@@ -342,7 +343,8 @@ public class S3ObjectAction implements ServletAction {
         DataHandler dataHandler = engineResponse.getData();
         if (dataHandler != null) {
             response.addHeader("ETag", "\"" + engineResponse.getETag() + "\"");
-            response.addHeader("Last-Modified", DateHelper.getDateDisplayString(DateHelper.GMT_TIMEZONE, engineResponse.getLastModified().getTime(), "E, d MMM yyyy HH:mm:ss z"));
+            response.addHeader("Last-Modified",
+                DateHelper.getDateDisplayString(DateHelper.GMT_TIMEZONE, engineResponse.getLastModified().getTime(), "E, d MMM yyyy HH:mm:ss z"));
 
             response.setContentLength((int)engineResponse.getContentLength());
             S3RestServlet.writeResponse(response, dataHandler.getInputStream());
@@ -493,7 +495,8 @@ public class S3ObjectAction implements ServletAction {
         DataHandler dataHandler = engineResponse.getData();
         if (dataHandler != null) {
             response.addHeader("ETag", "\"" + engineResponse.getETag() + "\"");
-            response.addHeader("Last-Modified", DateHelper.getDateDisplayString(DateHelper.GMT_TIMEZONE, engineResponse.getLastModified().getTime(), "E, d MMM yyyy HH:mm:ss z"));
+            response.addHeader("Last-Modified",
+                DateHelper.getDateDisplayString(DateHelper.GMT_TIMEZONE, engineResponse.getLastModified().getTime(), "E, d MMM yyyy HH:mm:ss z"));
 
             response.setContentLength((int)engineResponse.getContentLength());
         }
@@ -1035,10 +1038,10 @@ public class S3ObjectAction implements ServletAction {
             }
 
             // -> cannot have HTTP separators in an HTTP header
-            if (-1 != name.indexOf('(') || -1 != name.indexOf(')') || -1 != name.indexOf('@') || -1 != name.indexOf('<') || -1 != name.indexOf('>') || -1 != name.indexOf('\"') ||
-                -1 != name.indexOf('[') || -1 != name.indexOf(']') || -1 != name.indexOf('=') || -1 != name.indexOf(',') || -1 != name.indexOf(';') || -1 != name.indexOf(':') ||
-                -1 != name.indexOf('\\') || -1 != name.indexOf('/') || -1 != name.indexOf(' ') || -1 != name.indexOf('{') || -1 != name.indexOf('}') || -1 != name.indexOf('?') ||
-                -1 != name.indexOf('\t'))
+            if (-1 != name.indexOf('(') || -1 != name.indexOf(')') || -1 != name.indexOf('@') || -1 != name.indexOf('<') || -1 != name.indexOf('>') ||
+                -1 != name.indexOf('\"') || -1 != name.indexOf('[') || -1 != name.indexOf(']') || -1 != name.indexOf('=') || -1 != name.indexOf(',') ||
+                -1 != name.indexOf(';') || -1 != name.indexOf(':') || -1 != name.indexOf('\\') || -1 != name.indexOf('/') || -1 != name.indexOf(' ') ||
+                -1 != name.indexOf('{') || -1 != name.indexOf('}') || -1 != name.indexOf('?') || -1 != name.indexOf('\t'))
                 ignoreMeta = true;
 
             if (ignoreMeta)

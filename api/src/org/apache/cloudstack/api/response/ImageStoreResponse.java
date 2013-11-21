@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.response;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -26,7 +28,6 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.serializer.Param;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.ScopeType;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = ImageStore.class)
 public class ImageStoreResponse extends BaseResponse {

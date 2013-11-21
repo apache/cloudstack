@@ -95,9 +95,9 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.net.NetUtils;
 
@@ -181,7 +181,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                             }
                             if (!isRequiredParamPresent) {
                                 throw new InvalidParameterException("Parameter " + autoScaleCounterParam.getParamName() + " has to be set in AutoScaleVmProfile's " +
-                                                                    ApiConstants.COUNTERPARAM_LIST);
+                                    ApiConstants.COUNTERPARAM_LIST);
                             }
                         }
                     }
@@ -334,8 +334,9 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
          */
         ApiDispatcher.processParameters(new DeployVMCmd(), deployParams);
 
-        AutoScaleVmProfileVO profileVO = new AutoScaleVmProfileVO(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getServiceOfferingId(), cmd.getTemplateId(),
-            cmd.getOtherDeployParams(), cmd.getCounterParamList(), cmd.getDestroyVmGraceperiod(), autoscaleUserId);
+        AutoScaleVmProfileVO profileVO =
+            new AutoScaleVmProfileVO(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getServiceOfferingId(), cmd.getTemplateId(), cmd.getOtherDeployParams(),
+                cmd.getCounterParamList(), cmd.getDestroyVmGraceperiod(), autoscaleUserId);
         profileVO = checkValidityAndPersist(profileVO);
         s_logger.info("Successfully create AutoScale Vm Profile with Id: " + profileVO.getId());
 
@@ -571,8 +572,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             long pageSizeVal = cmd.getPageSizeVal();
             Account caller = CallContext.current().getCallingAccount();
 
-            Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive,
-                null);
+            Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+                new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
             _accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject, listAll, false);
             domainId = domainIdRecursiveListProject.first();
             isRecursive = domainIdRecursiveListProject.second();
@@ -704,8 +705,9 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
                 "there are Vms already bound to the specified LoadBalancing Rule. User bound Vms and AutoScaled Vm Group cannot co-exist on a Load Balancing Rule");
         }
 
-        AutoScaleVmGroupVO vmGroupVO = new AutoScaleVmGroupVO(cmd.getLbRuleId(), zoneId, loadBalancer.getDomainId(), loadBalancer.getAccountId(), minMembers, maxMembers,
-            loadBalancer.getDefaultPortStart(), interval, cmd.getProfileId(), AutoScaleVmGroup.State_New);
+        AutoScaleVmGroupVO vmGroupVO =
+            new AutoScaleVmGroupVO(cmd.getLbRuleId(), zoneId, loadBalancer.getDomainId(), loadBalancer.getAccountId(), minMembers, maxMembers,
+                loadBalancer.getDefaultPortStart(), interval, cmd.getProfileId(), AutoScaleVmGroup.State_New);
 
         vmGroupVO = checkValidityAndPersist(vmGroupVO, cmd.getScaleUpPolicyIds(), cmd.getScaleDownPolicyIds());
         s_logger.info("Successfully created Autoscale Vm Group with Id: " + vmGroupVO.getId());
@@ -832,7 +834,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     }
 
     @DB
-    protected AutoScaleVmGroupVO checkValidityAndPersist(final AutoScaleVmGroupVO vmGroup, final List<Long> passedScaleUpPolicyIds, final List<Long> passedScaleDownPolicyIds) {
+    protected AutoScaleVmGroupVO checkValidityAndPersist(final AutoScaleVmGroupVO vmGroup, final List<Long> passedScaleUpPolicyIds,
+        final List<Long> passedScaleDownPolicyIds) {
         int minMembers = vmGroup.getMinMembers();
         int maxMembers = vmGroup.getMaxMembers();
         int interval = vmGroup.getInterval();
@@ -854,7 +857,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         }
 
         if (minMembers > maxMembers) {
-            throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " (" + minMembers + ")cannot be greater than " + ApiConstants.MAX_MEMBERS + " (" + maxMembers + ")");
+            throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " (" + minMembers + ")cannot be greater than " + ApiConstants.MAX_MEMBERS + " (" +
+                maxMembers + ")");
         }
 
         if (interval < 0) {
@@ -878,7 +882,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             getAutoScalePolicies("scaledownpolicyid", currentScaleDownPolicyIds, counters, interval, false);
             policyIds.addAll(currentScaleDownPolicyIds);
         }
-        AutoScaleVmProfileVO profileVO = getEntityInDatabase(CallContext.current().getCallingAccount(), ApiConstants.VMPROFILE_ID, vmGroup.getProfileId(), _autoScaleVmProfileDao);
+        AutoScaleVmProfileVO profileVO =
+            getEntityInDatabase(CallContext.current().getCallingAccount(), ApiConstants.VMPROFILE_ID, vmGroup.getProfileId(), _autoScaleVmProfileDao);
 
         LoadBalancerVO loadBalancer = getEntityInDatabase(CallContext.current().getCallingAccount(), ApiConstants.LBID, vmGroup.getLoadBalancerId(), _lbDao);
         validateAutoScaleCounters(loadBalancer.getNetworkId(), counters, profileVO.getCounterParams());
@@ -1076,7 +1081,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         if (policyId != null) {
             SearchBuilder<AutoScalePolicyConditionMapVO> asPolicyConditionSearch = _autoScalePolicyConditionMapDao.createSearchBuilder();
             asPolicyConditionSearch.and("policyId", asPolicyConditionSearch.entity().getPolicyId(), SearchCriteria.Op.EQ);
-            sb.join("asPolicyConditionSearch", asPolicyConditionSearch, sb.entity().getId(), asPolicyConditionSearch.entity().getConditionId(), JoinBuilder.JoinType.INNER);
+            sb.join("asPolicyConditionSearch", asPolicyConditionSearch, sb.entity().getId(), asPolicyConditionSearch.entity().getConditionId(),
+                JoinBuilder.JoinType.INNER);
         }
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);

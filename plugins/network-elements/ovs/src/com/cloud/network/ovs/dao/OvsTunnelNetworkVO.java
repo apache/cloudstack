@@ -17,14 +17,14 @@
 
 package com.cloud.network.ovs.dao;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("ovs_tunnel_network"))
@@ -81,6 +81,7 @@ public class OvsTunnelNetworkVO implements InternalIdentity {
         return key;
     }
 
+    @Override
     public long getId() {
         return id;
     }

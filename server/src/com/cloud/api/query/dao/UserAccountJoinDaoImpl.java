@@ -21,12 +21,11 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
-
-import com.cloud.api.query.vo.UserAccountJoinVO;
-
-import org.apache.cloudstack.api.response.UserResponse;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.api.response.UserResponse;
+
+import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.utils.db.GenericDaoBase;

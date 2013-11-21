@@ -204,8 +204,9 @@ public class SnapshotDescriptor {
                 numDisks = Integer.parseInt(numDisksStr);
                 DiskInfo[] disks = new DiskInfo[numDisks];
                 for (int i = 0; i < numDisks; i++) {
-                    disks[i] = new DiskInfo(_properties.getProperty(String.format("snapshot%d.disk%d.fileName", id, i)), _properties.getProperty(String.format(
-                        "snapshot%d.disk%d.node", id, i)));
+                    disks[i] =
+                        new DiskInfo(_properties.getProperty(String.format("snapshot%d.disk%d.fileName", id, i)), _properties.getProperty(String.format(
+                            "snapshot%d.disk%d.node", id, i)));
                 }
 
                 SnapshotInfo info = new SnapshotInfo();

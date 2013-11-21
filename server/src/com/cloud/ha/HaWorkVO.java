@@ -29,12 +29,13 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.ha.HighAvailabilityManager.Step;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "op_ha_work")
@@ -88,6 +89,7 @@ public class HaWorkVO implements InternalIdentity {
     protected HaWorkVO() {
     }
 
+    @Override
     public long getId() {
         return id;
     }

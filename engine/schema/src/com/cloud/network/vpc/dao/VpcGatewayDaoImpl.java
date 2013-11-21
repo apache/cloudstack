@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network.vpc.dao;
 
+import java.util.List;
+
 import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
@@ -26,8 +28,6 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-
-import java.util.List;
 
 @Component
 @Local(value = VpcGatewayDao.class)

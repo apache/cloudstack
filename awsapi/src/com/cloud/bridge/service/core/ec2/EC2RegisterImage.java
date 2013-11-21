@@ -71,7 +71,8 @@ public class EC2RegisterImage {
     public void setArchitecture(String param) {
         if (null != param) {
             if (!param.contains(":") || param.split(":").length < 4) {
-                throw new EC2ServiceException(ClientError.InvalidParameterValue, "Supported format for " + "parameter 'architecture' is format:zonename:ostypename:hypervisor");
+                throw new EC2ServiceException(ClientError.InvalidParameterValue, "Supported format for "
+                    + "parameter 'architecture' is format:zonename:ostypename:hypervisor");
             }
             String parts[] = param.split(":");
             format = parts[0];

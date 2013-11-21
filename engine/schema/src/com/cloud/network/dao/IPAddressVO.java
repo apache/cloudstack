@@ -253,6 +253,7 @@ public class IPAddressVO implements IpAddress {
         return state;
     }
 
+    @Override
     public void setState(State state) {
         this.state = state;
     }
@@ -284,6 +285,7 @@ public class IPAddressVO implements IpAddress {
         this.uuid = uuid;
     }
 
+    @Override
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
     }

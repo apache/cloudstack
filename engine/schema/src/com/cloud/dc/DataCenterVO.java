@@ -31,12 +31,10 @@ import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.network.Network.Provider;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "data_center")
@@ -190,8 +188,8 @@ public class DataCenterVO implements DataCenter {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType,
-            String zoneToken, String domainSuffix, boolean securityGroupEnabled, boolean localStorageEnabled, String ip6Dns1, String ip6Dns2) {
+    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId,
+            NetworkType zoneType, String zoneToken, String domainSuffix, boolean securityGroupEnabled, boolean localStorageEnabled, String ip6Dns1, String ip6Dns2) {
         this.name = name;
         this.description = description;
         this.dns1 = dns1;
@@ -388,6 +386,7 @@ public class DataCenterVO implements DataCenter {
         details.put(name, value);
     }
 
+    @Override
     public AllocationState getAllocationState() {
         return allocationState;
     }

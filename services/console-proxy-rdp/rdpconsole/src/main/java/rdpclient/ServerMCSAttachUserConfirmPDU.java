@@ -35,83 +35,84 @@ import streamer.PipelineImpl;
  */
 public class ServerMCSAttachUserConfirmPDU extends OneTimeSwitch {
 
-  public static final int MCS_ATTACH_USER_CONFIRM_PDU = 0xb;
+    public static final int MCS_ATTACH_USER_CONFIRM_PDU = 0xb;
 
-  public static final int INITIATOR_PRESENT = 0x2;
+    public static final int INITIATOR_PRESENT = 0x2;
 
-  protected RdpState state;
+    protected RdpState state;
 
-  public ServerMCSAttachUserConfirmPDU(String id, RdpState state) {
-    super(id);
-    this.state = state;
-  }
+    public ServerMCSAttachUserConfirmPDU(String id, RdpState state) {
+        super(id);
+        this.state = state;
+    }
 
-  @Override
-  protected void handleOneTimeData(ByteBuffer buf, Link link) {
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
+    @Override
+    protected void handleOneTimeData(ByteBuffer buf, Link link) {
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
 
-    int typeAndFlags = buf.readUnsignedByte();
-    int type = typeAndFlags >> 2;
-    int flags = typeAndFlags & 0x3;
+        int typeAndFlags = buf.readUnsignedByte();
+        int type = typeAndFlags >> 2;
+        int flags = typeAndFlags & 0x3;
 
-    if (type != MCS_ATTACH_USER_CONFIRM_PDU)
-      throw new RuntimeException("["+this+"] ERROR: Incorrect type of MCS AttachUserConfirm PDU. Expected value: 11, actual value: " + type + ", data: " + buf + ".");
+        if (type != MCS_ATTACH_USER_CONFIRM_PDU)
+            throw new RuntimeException("[" + this + "] ERROR: Incorrect type of MCS AttachUserConfirm PDU. Expected value: 11, actual value: " + type + ", data: " + buf +
+                ".");
 
-    if (flags != INITIATOR_PRESENT)
-      throw new RuntimeException("Initator field is not present in MCS AttachUserConfirm PDU. Data: " + buf + ".");
+        if (flags != INITIATOR_PRESENT)
+            throw new RuntimeException("Initator field is not present in MCS AttachUserConfirm PDU. Data: " + buf + ".");
 
-    int rtSuccess = buf.readUnsignedByte() >> 4;
-    if (rtSuccess != 0)
-      throw new RuntimeException("["+this+"] ERROR: Cannot attach user: request failed. Error code: " + rtSuccess + ", data: " + buf + ".");
+        int rtSuccess = buf.readUnsignedByte() >> 4;
+        if (rtSuccess != 0)
+            throw new RuntimeException("[" + this + "] ERROR: Cannot attach user: request failed. Error code: " + rtSuccess + ", data: " + buf + ".");
 
-    // If the initiator field is present, the client stores the value of the
-    // initiator in the User Channel ID store , because the initiator specifies
-    // the User Channel ID.
-    state.serverUserChannelId = buf.readUnsignedShort() + 1001;
+        // If the initiator field is present, the client stores the value of the
+        // initiator in the User Channel ID store , because the initiator specifies
+        // the User Channel ID.
+        state.serverUserChannelId = buf.readUnsignedShort() + 1001;
 
-    buf.unref();
+        buf.unref();
 
-    // Next: client MCS Channel Join Request PDU (s)
-    switchOff();
-  }
+        // Next: client MCS Channel Join Request PDU (s)
+        switchOff();
+    }
 
-  /**
-   * Example.
-   */
-  /**
-   * Example.
-   *
-   * @see http://msdn.microsoft.com/en-us/library/cc240842.aspx
-   * @see http://msdn.microsoft.com/en-us/library/cc240500.aspx
-   */
-  public static void main(String args[]) {
-    // System.setProperty("streamer.Link.debug", "true");
-    System.setProperty("streamer.Element.debug", "true");
-    // System.setProperty("streamer.Pipeline.debug", "true");
+    /**
+     * Example.
+     */
+    /**
+     * Example.
+     *
+     * @see http://msdn.microsoft.com/en-us/library/cc240842.aspx
+     * @see http://msdn.microsoft.com/en-us/library/cc240500.aspx
+     */
+    public static void main(String args[]) {
+        // System.setProperty("streamer.Link.debug", "true");
+        System.setProperty("streamer.Element.debug", "true");
+        // System.setProperty("streamer.Pipeline.debug", "true");
 
-    byte[] packet = new byte[] { (byte) 0x2E, // MCS user confirm (001011..,
-                                              // 0xb), InitiatorPresent: 1
-                                              // (......01, 0x1)
-        (byte) 0x00, // RT successfull (0000...., 0x0)
-        // Initiator: 1001+3 = 1004
-        (byte) 0x00, (byte) 0x03, };
+        byte[] packet = new byte[] {(byte)0x2E, // MCS user confirm (001011..,
+                                                // 0xb), InitiatorPresent: 1
+                                                // (......01, 0x1)
+            (byte)0x00, // RT successfull (0000...., 0x0)
+            // Initiator: 1001+3 = 1004
+            (byte)0x00, (byte)0x03,};
 
-    RdpState rdpState = new RdpState();
-    MockSource source = new MockSource("source", ByteBuffer.convertByteArraysToByteBuffers(packet, new byte[] { 1, 2, 3 }));
-    Element atachUserConfirm = new ServerMCSAttachUserConfirmPDU("attach_user_confirm", rdpState);
-    Element sink = new MockSink("sink");
-    Element mainSink = new MockSink("mainSink", ByteBuffer.convertByteArraysToByteBuffers(new byte[] { 1, 2, 3 }));
+        RdpState rdpState = new RdpState();
+        MockSource source = new MockSource("source", ByteBuffer.convertByteArraysToByteBuffers(packet, new byte[] {1, 2, 3}));
+        Element atachUserConfirm = new ServerMCSAttachUserConfirmPDU("attach_user_confirm", rdpState);
+        Element sink = new MockSink("sink");
+        Element mainSink = new MockSink("mainSink", ByteBuffer.convertByteArraysToByteBuffers(new byte[] {1, 2, 3}));
 
-    Pipeline pipeline = new PipelineImpl("test");
-    pipeline.add(source, atachUserConfirm, sink, mainSink);
-    pipeline.link("source", "attach_user_confirm", "mainSink");
-    pipeline.link("attach_user_confirm >" + OTOUT, "sink");
-    pipeline.runMainLoop("source", STDOUT, false, false);
+        Pipeline pipeline = new PipelineImpl("test");
+        pipeline.add(source, atachUserConfirm, sink, mainSink);
+        pipeline.link("source", "attach_user_confirm", "mainSink");
+        pipeline.link("attach_user_confirm >" + OTOUT, "sink");
+        pipeline.runMainLoop("source", STDOUT, false, false);
 
-    if (rdpState.serverUserChannelId != 1004)
-      System.err.println("Incorrect user channel ID. Expected value: 1004, actual value: " + rdpState.serverUserChannelId + ".");
-  }
+        if (rdpState.serverUserChannelId != 1004)
+            System.err.println("Incorrect user channel ID. Expected value: 1004, actual value: " + rdpState.serverUserChannelId + ".");
+    }
 
 }
 

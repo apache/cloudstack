@@ -67,6 +67,7 @@ public class MockSecurityRulesVO implements InternalIdentity {
         this.hostId = hostId;
     }
 
+    @Override
     public long getId() {
         return this.id;
     }

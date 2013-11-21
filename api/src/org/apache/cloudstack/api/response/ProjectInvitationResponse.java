@@ -16,13 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = ProjectInvitation.class)
 @SuppressWarnings("unused")
@@ -63,22 +64,27 @@ public class ProjectInvitationResponse extends BaseResponse implements Controlle
         this.id = id;
     }
 
+    @Override
     public void setProjectId(String projectId) {
         this.projectId = projectId;
     }
 
+    @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
     }
 
+    @Override
     public void setDomainId(String domainId) {
         this.domainId = domainId;
     }
 
+    @Override
     public void setDomainName(String domain) {
         this.domainName = domain;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }

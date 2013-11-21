@@ -84,16 +84,16 @@ public class OvmStoragePool extends OvmObject {
         c.call("OvmStoragePool.prepareOCFS2Nodes", params);
     }
 
-    public static Map<String, String> createTemplateFromVolume(Connection c, String secStorageMountPath, String installPath, String volumePath, int timeout) throws XmlRpcException {
+    public static Map<String, String> createTemplateFromVolume(Connection c, String secStorageMountPath, String installPath, String volumePath, int timeout)
+        throws XmlRpcException {
         Object[] params = {secStorageMountPath, installPath, volumePath};
         String res = (String)c.callTimeoutInSec("OvmStoragePool.createTemplateFromVolume", params, timeout);
         Map info = Coder.mapFromJson(res);
         return info;
     }
 
-    public static String
-        copyVolume(Connection c, String secStorageMountPath, String volumeFolderOnSecStorage, String volumePath, String storagePoolUuid, Boolean toSec, int timeout)
-            throws XmlRpcException {
+    public static String copyVolume(Connection c, String secStorageMountPath, String volumeFolderOnSecStorage, String volumePath, String storagePoolUuid, Boolean toSec,
+        int timeout) throws XmlRpcException {
         Object[] params = {secStorageMountPath, volumeFolderOnSecStorage, volumePath, storagePoolUuid, toSec};
         String res = (String)c.callTimeoutInSec("OvmStoragePool.copyVolume", params, timeout);
         Map info = Coder.mapFromJson(res);

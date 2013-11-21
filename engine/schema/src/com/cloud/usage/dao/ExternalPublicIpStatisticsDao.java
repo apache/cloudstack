@@ -19,7 +19,6 @@ package com.cloud.usage.dao;
 import java.util.List;
 
 import com.cloud.usage.ExternalPublicIpStatisticsVO;
-import com.cloud.user.UserStatisticsVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface ExternalPublicIpStatisticsDao extends GenericDao<ExternalPublicIpStatisticsVO, Long> {

@@ -18,13 +18,14 @@ package com.cloud.api.response;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.EntityReference;
-import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
+import com.cloud.serializer.Param;
 
 @EntityReference(value = ExternalLoadBalancerDeviceVO.class)
 @SuppressWarnings("unused")
@@ -84,8 +85,8 @@ public class NetscalerLoadBalancerResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.POD_IDS)
     @Param(description = "Used when NetScaler device is provider of EIP service."
-                         + " This parameter represents the list of pod's, for which there exists a policy based route on datacenter L3 router to "
-                         + "route pod's subnet IP to a NetScaler device.")
+        + " This parameter represents the list of pod's, for which there exists a policy based route on datacenter L3 router to "
+        + "route pod's subnet IP to a NetScaler device.")
     private List<Long> podIds;
 
     public void setId(String lbDeviceId) {

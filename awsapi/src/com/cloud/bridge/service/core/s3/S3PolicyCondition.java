@@ -28,7 +28,22 @@ import com.cloud.bridge.service.exception.PermissionDeniedException;
 public abstract class S3PolicyCondition {
 
     public enum ConditionKeys {
-        UnknownKey, CurrentTime, SecureTransport, SourceIp, SourceArn, UserAgent, EpochTime, Referer, Acl, Location, Prefix, Delimiter, MaxKeys, CopySource, MetaData, VersionId
+        UnknownKey,
+        CurrentTime,
+        SecureTransport,
+        SourceIp,
+        SourceArn,
+        UserAgent,
+        EpochTime,
+        Referer,
+        Acl,
+        Location,
+        Prefix,
+        Delimiter,
+        MaxKeys,
+        CopySource,
+        MetaData,
+        VersionId
     }
 
     protected PolicyConditions condition = null;

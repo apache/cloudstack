@@ -20,11 +20,10 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
@@ -51,7 +50,11 @@ public class DeleteSrxFirewallCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.FIREWALL_DEVICE_ID, type = CommandType.UUID, entityType = SrxFirewallResponse.class, required = true, description = "srx firewall device ID")
+    @Parameter(name = ApiConstants.FIREWALL_DEVICE_ID,
+               type = CommandType.UUID,
+               entityType = SrxFirewallResponse.class,
+               required = true,
+               description = "srx firewall device ID")
     private Long fwDeviceId;
 
     /////////////////////////////////////////////////////
@@ -67,7 +70,8 @@ public class DeleteSrxFirewallCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             boolean result = _srxElementService.deleteSrxFirewall(this);
             if (result) {

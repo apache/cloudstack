@@ -52,7 +52,7 @@ public class NetworkDomainDaoImpl extends GenericDaoBase<NetworkDomainVO, Long> 
     @Override
     public List<NetworkDomainVO> listDomainNetworkMapByDomain(Object... domainId) {
         SearchCriteria<NetworkDomainVO> sc = DomainsSearch.create();
-        sc.setParameters("domainId", (Object[])domainId);
+        sc.setParameters("domainId", domainId);
 
         return listBy(sc);
     }

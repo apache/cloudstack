@@ -27,6 +27,8 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.trilead.ssh2.SCPClient;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.HostVmStateReportEntry;
@@ -37,7 +39,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.vm.VirtualMachine.State;
-import com.trilead.ssh2.SCPClient;
 
 public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
     private static final Logger s_logger = Logger.getLogger(BaremetalKickStartPxeResource.class);
@@ -181,7 +182,9 @@ public class BaremetalKickStartPxeResource extends BaremetalPxeResourceBase {
 
             String kernelPath = String.format("%s/vmlinuz", cmd.getTemplateUuid());
             String initrdPath = String.format("%s/initrd.img", cmd.getTemplateUuid());
-            script = String.format("python /usr/bin/prepare_kickstart_bootfile.py %s %s %s %s %s %s", _tftpDir, cmd.getMac(), kernelPath, initrdPath, cmd.getKsFile(), cmd.getMac());
+            script =
+                String.format("python /usr/bin/prepare_kickstart_bootfile.py %s %s %s %s %s %s", _tftpDir, cmd.getMac(), kernelPath, initrdPath, cmd.getKsFile(),
+                    cmd.getMac());
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, script)) {
                 return new Answer(cmd, false, "prepare kickstart at pxe server " + _ip + " failed, command:" + script);
             }

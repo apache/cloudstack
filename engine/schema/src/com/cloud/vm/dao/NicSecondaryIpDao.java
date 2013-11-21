@@ -17,6 +17,7 @@
 package com.cloud.vm.dao;
 
 import java.util.List;
+
 import com.cloud.utils.db.GenericDao;
 
 public interface NicSecondaryIpDao extends GenericDao<NicSecondaryIpVO, Long> {

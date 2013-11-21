@@ -104,7 +104,7 @@ public class S3PolicyIPAddressCondition extends S3PolicyCondition {
                         return false;
                 }
                 logger.info("S3PolicyIPAddressCondition eval - SID: " + SID + ", " + condition + ", key: " + keyName + ", valuePassedIn: " + toCompareWith.toString() +
-                            ", valueInRule: " + valueList[i].toString() + ", result: " + keyResult);
+                    ", valueInRule: " + valueList[i].toString() + ", result: " + keyResult);
             }
 
             // -> if all key values are false, false then that key is false and then the entire condition is then false

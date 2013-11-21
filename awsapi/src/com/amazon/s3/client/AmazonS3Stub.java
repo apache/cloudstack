@@ -235,9 +235,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatusResponse getBucketLoggingStatus(
 
-        com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatus getBucketLoggingStatus0)
+    com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatus getBucketLoggingStatus0)
 
-        throws java.rmi.RemoteException
+    throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -254,8 +254,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             // create SOAP envelope with that payload
             org.apache.axiom.soap.SOAPEnvelope env = null;
 
-            env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getBucketLoggingStatus0, optimizeContent(new javax.xml.namespace.QName(
-                "http://s3.amazonaws.com/doc/2006-03-01/", "getBucketLoggingStatus")));
+            env =
+                toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getBucketLoggingStatus0, optimizeContent(new javax.xml.namespace.QName(
+                    "http://s3.amazonaws.com/doc/2006-03-01/", "getBucketLoggingStatus")));
 
             //adding SOAP soap_headers
             _serviceClient.addHeadersToEnvelope(env);
@@ -268,11 +269,12 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             //execute the operation client
             _operationClient.execute(true);
 
-            org.apache.axis2.context.MessageContext _returnMessageContext = _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+            org.apache.axis2.context.MessageContext _returnMessageContext =
+                _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
             org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
 
-            java.lang.Object object = fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatusResponse.class,
-                getEnvelopeNamespaces(_returnEnv));
+            java.lang.Object object =
+                fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatusResponse.class, getEnvelopeNamespaces(_returnEnv));
 
             return (com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatusResponse)object;
 
@@ -333,11 +335,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startgetBucketLoggingStatus(
 
-        com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatus getBucketLoggingStatus0,
+    com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatus getBucketLoggingStatus0,
 
-        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-        throws java.rmi.RemoteException {
+    throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[0].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/GetBucketLoggingStatusRequest");
@@ -351,8 +353,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         //Style is Doc.
 
-        env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getBucketLoggingStatus0, optimizeContent(new javax.xml.namespace.QName(
-            "http://s3.amazonaws.com/doc/2006-03-01/", "getBucketLoggingStatus")));
+        env =
+            toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getBucketLoggingStatus0, optimizeContent(new javax.xml.namespace.QName(
+                "http://s3.amazonaws.com/doc/2006-03-01/", "getBucketLoggingStatus")));
 
         // adding SOAP soap_headers
         _serviceClient.addHeadersToEnvelope(env);
@@ -367,8 +370,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
 
-                    java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatusResponse.class,
-                        getEnvelopeNamespaces(resultEnv));
+                    java.lang.Object object =
+                        fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatusResponse.class,
+                            getEnvelopeNamespaces(resultEnv));
                     callback.receiveResultgetBucketLoggingStatus((com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatusResponse)object);
 
                 } catch (org.apache.axis2.AxisFault e) {
@@ -463,9 +467,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.CopyObjectResponse copyObject(
 
-        com.amazon.s3.client.AmazonS3Stub.CopyObject copyObject2)
+    com.amazon.s3.client.AmazonS3Stub.CopyObject copyObject2)
 
-        throws java.rmi.RemoteException
+    throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -482,8 +486,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             // create SOAP envelope with that payload
             org.apache.axiom.soap.SOAPEnvelope env = null;
 
-            env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), copyObject2, optimizeContent(new javax.xml.namespace.QName(
-                "http://s3.amazonaws.com/doc/2006-03-01/", "copyObject")));
+            env =
+                toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), copyObject2, optimizeContent(new javax.xml.namespace.QName(
+                    "http://s3.amazonaws.com/doc/2006-03-01/", "copyObject")));
 
             //adding SOAP soap_headers
             _serviceClient.addHeadersToEnvelope(env);
@@ -496,10 +501,12 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             //execute the operation client
             _operationClient.execute(true);
 
-            org.apache.axis2.context.MessageContext _returnMessageContext = _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+            org.apache.axis2.context.MessageContext _returnMessageContext =
+                _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
             org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
 
-            java.lang.Object object = fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.CopyObjectResponse.class, getEnvelopeNamespaces(_returnEnv));
+            java.lang.Object object =
+                fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.CopyObjectResponse.class, getEnvelopeNamespaces(_returnEnv));
 
             return (com.amazon.s3.client.AmazonS3Stub.CopyObjectResponse)object;
 
@@ -560,11 +567,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startcopyObject(
 
-        com.amazon.s3.client.AmazonS3Stub.CopyObject copyObject2,
+    com.amazon.s3.client.AmazonS3Stub.CopyObject copyObject2,
 
-        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-        throws java.rmi.RemoteException {
+    throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[1].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/CopyObjectRequest");
@@ -578,8 +585,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         //Style is Doc.
 
-        env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), copyObject2, optimizeContent(new javax.xml.namespace.QName(
-            "http://s3.amazonaws.com/doc/2006-03-01/", "copyObject")));
+        env =
+            toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), copyObject2, optimizeContent(new javax.xml.namespace.QName(
+                "http://s3.amazonaws.com/doc/2006-03-01/", "copyObject")));
 
         // adding SOAP soap_headers
         _serviceClient.addHeadersToEnvelope(env);
@@ -594,8 +602,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
 
-                    java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.CopyObjectResponse.class,
-                        getEnvelopeNamespaces(resultEnv));
+                    java.lang.Object object =
+                        fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.CopyObjectResponse.class, getEnvelopeNamespaces(resultEnv));
                     callback.receiveResultcopyObject((com.amazon.s3.client.AmazonS3Stub.CopyObjectResponse)object);
 
                 } catch (org.apache.axis2.AxisFault e) {
@@ -690,9 +698,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicyResponse getBucketAccessControlPolicy(
 
-        com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicy getBucketAccessControlPolicy4)
+    com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicy getBucketAccessControlPolicy4)
 
-        throws java.rmi.RemoteException
+    throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -709,8 +717,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             // create SOAP envelope with that payload
             org.apache.axiom.soap.SOAPEnvelope env = null;
 
-            env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getBucketAccessControlPolicy4, optimizeContent(new javax.xml.namespace.QName(
-                "http://s3.amazonaws.com/doc/2006-03-01/", "getBucketAccessControlPolicy")));
+            env =
+                toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getBucketAccessControlPolicy4, optimizeContent(new javax.xml.namespace.QName(
+                    "http://s3.amazonaws.com/doc/2006-03-01/", "getBucketAccessControlPolicy")));
 
             //adding SOAP soap_headers
             _serviceClient.addHeadersToEnvelope(env);
@@ -723,11 +732,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             //execute the operation client
             _operationClient.execute(true);
 
-            org.apache.axis2.context.MessageContext _returnMessageContext = _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+            org.apache.axis2.context.MessageContext _returnMessageContext =
+                _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
             org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
 
-            java.lang.Object object = fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicyResponse.class,
-                getEnvelopeNamespaces(_returnEnv));
+            java.lang.Object object =
+                fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicyResponse.class,
+                    getEnvelopeNamespaces(_returnEnv));
 
             return (com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicyResponse)object;
 
@@ -788,11 +799,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startgetBucketAccessControlPolicy(
 
-        com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicy getBucketAccessControlPolicy4,
+    com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicy getBucketAccessControlPolicy4,
 
-        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-        throws java.rmi.RemoteException {
+    throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[2].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/GetBucketAccessControlPolicyRequest");
@@ -806,8 +817,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         //Style is Doc.
 
-        env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getBucketAccessControlPolicy4, optimizeContent(new javax.xml.namespace.QName(
-            "http://s3.amazonaws.com/doc/2006-03-01/", "getBucketAccessControlPolicy")));
+        env =
+            toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getBucketAccessControlPolicy4, optimizeContent(new javax.xml.namespace.QName(
+                "http://s3.amazonaws.com/doc/2006-03-01/", "getBucketAccessControlPolicy")));
 
         // adding SOAP soap_headers
         _serviceClient.addHeadersToEnvelope(env);
@@ -822,8 +834,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
 
-                    java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicyResponse.class,
-                        getEnvelopeNamespaces(resultEnv));
+                    java.lang.Object object =
+                        fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicyResponse.class,
+                            getEnvelopeNamespaces(resultEnv));
                     callback.receiveResultgetBucketAccessControlPolicy((com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicyResponse)object);
 
                 } catch (org.apache.axis2.AxisFault e) {
@@ -918,9 +931,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.ListBucketResponse listBucket(
 
-        com.amazon.s3.client.AmazonS3Stub.ListBucket listBucket6)
+    com.amazon.s3.client.AmazonS3Stub.ListBucket listBucket6)
 
-        throws java.rmi.RemoteException
+    throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -937,8 +950,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             // create SOAP envelope with that payload
             org.apache.axiom.soap.SOAPEnvelope env = null;
 
-            env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), listBucket6, optimizeContent(new javax.xml.namespace.QName(
-                "http://s3.amazonaws.com/doc/2006-03-01/", "listBucket")));
+            env =
+                toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), listBucket6, optimizeContent(new javax.xml.namespace.QName(
+                    "http://s3.amazonaws.com/doc/2006-03-01/", "listBucket")));
 
             //adding SOAP soap_headers
             _serviceClient.addHeadersToEnvelope(env);
@@ -951,10 +965,12 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             //execute the operation client
             _operationClient.execute(true);
 
-            org.apache.axis2.context.MessageContext _returnMessageContext = _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+            org.apache.axis2.context.MessageContext _returnMessageContext =
+                _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
             org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
 
-            java.lang.Object object = fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.ListBucketResponse.class, getEnvelopeNamespaces(_returnEnv));
+            java.lang.Object object =
+                fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.ListBucketResponse.class, getEnvelopeNamespaces(_returnEnv));
 
             return (com.amazon.s3.client.AmazonS3Stub.ListBucketResponse)object;
 
@@ -1015,11 +1031,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startlistBucket(
 
-        com.amazon.s3.client.AmazonS3Stub.ListBucket listBucket6,
+    com.amazon.s3.client.AmazonS3Stub.ListBucket listBucket6,
 
-        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-        throws java.rmi.RemoteException {
+    throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[3].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/ListBucketRequest");
@@ -1033,8 +1049,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         //Style is Doc.
 
-        env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), listBucket6, optimizeContent(new javax.xml.namespace.QName(
-            "http://s3.amazonaws.com/doc/2006-03-01/", "listBucket")));
+        env =
+            toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), listBucket6, optimizeContent(new javax.xml.namespace.QName(
+                "http://s3.amazonaws.com/doc/2006-03-01/", "listBucket")));
 
         // adding SOAP soap_headers
         _serviceClient.addHeadersToEnvelope(env);
@@ -1049,8 +1066,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
 
-                    java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.ListBucketResponse.class,
-                        getEnvelopeNamespaces(resultEnv));
+                    java.lang.Object object =
+                        fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.ListBucketResponse.class, getEnvelopeNamespaces(resultEnv));
                     callback.receiveResultlistBucket((com.amazon.s3.client.AmazonS3Stub.ListBucketResponse)object);
 
                 } catch (org.apache.axis2.AxisFault e) {
@@ -1145,9 +1162,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.PutObjectResponse putObject(
 
-        com.amazon.s3.client.AmazonS3Stub.PutObject putObject8)
+    com.amazon.s3.client.AmazonS3Stub.PutObject putObject8)
 
-        throws java.rmi.RemoteException
+    throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -1164,8 +1181,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             // create SOAP envelope with that payload
             org.apache.axiom.soap.SOAPEnvelope env = null;
 
-            env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), putObject8, optimizeContent(new javax.xml.namespace.QName(
-                "http://s3.amazonaws.com/doc/2006-03-01/", "putObject")));
+            env =
+                toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), putObject8, optimizeContent(new javax.xml.namespace.QName(
+                    "http://s3.amazonaws.com/doc/2006-03-01/", "putObject")));
 
             //adding SOAP soap_headers
             _serviceClient.addHeadersToEnvelope(env);
@@ -1178,10 +1196,12 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             //execute the operation client
             _operationClient.execute(true);
 
-            org.apache.axis2.context.MessageContext _returnMessageContext = _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+            org.apache.axis2.context.MessageContext _returnMessageContext =
+                _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
             org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
 
-            java.lang.Object object = fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.PutObjectResponse.class, getEnvelopeNamespaces(_returnEnv));
+            java.lang.Object object =
+                fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.PutObjectResponse.class, getEnvelopeNamespaces(_returnEnv));
 
             return (com.amazon.s3.client.AmazonS3Stub.PutObjectResponse)object;
 
@@ -1242,11 +1262,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startputObject(
 
-        com.amazon.s3.client.AmazonS3Stub.PutObject putObject8,
+    com.amazon.s3.client.AmazonS3Stub.PutObject putObject8,
 
-        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-        throws java.rmi.RemoteException {
+    throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[4].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/PutObjectRequest");
@@ -1260,8 +1280,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         //Style is Doc.
 
-        env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), putObject8, optimizeContent(new javax.xml.namespace.QName(
-            "http://s3.amazonaws.com/doc/2006-03-01/", "putObject")));
+        env =
+            toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), putObject8, optimizeContent(new javax.xml.namespace.QName(
+                "http://s3.amazonaws.com/doc/2006-03-01/", "putObject")));
 
         // adding SOAP soap_headers
         _serviceClient.addHeadersToEnvelope(env);
@@ -1276,8 +1297,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
 
-                    java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.PutObjectResponse.class,
-                        getEnvelopeNamespaces(resultEnv));
+                    java.lang.Object object =
+                        fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.PutObjectResponse.class, getEnvelopeNamespaces(resultEnv));
                     callback.receiveResultputObject((com.amazon.s3.client.AmazonS3Stub.PutObjectResponse)object);
 
                 } catch (org.apache.axis2.AxisFault e) {
@@ -1372,9 +1393,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.CreateBucketResponse createBucket(
 
-        com.amazon.s3.client.AmazonS3Stub.CreateBucket createBucket10)
+    com.amazon.s3.client.AmazonS3Stub.CreateBucket createBucket10)
 
-        throws java.rmi.RemoteException
+    throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -1391,8 +1412,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             // create SOAP envelope with that payload
             org.apache.axiom.soap.SOAPEnvelope env = null;
 
-            env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), createBucket10, optimizeContent(new javax.xml.namespace.QName(
-                "http://s3.amazonaws.com/doc/2006-03-01/", "createBucket")));
+            env =
+                toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), createBucket10, optimizeContent(new javax.xml.namespace.QName(
+                    "http://s3.amazonaws.com/doc/2006-03-01/", "createBucket")));
 
             //adding SOAP soap_headers
             _serviceClient.addHeadersToEnvelope(env);
@@ -1405,11 +1427,12 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             //execute the operation client
             _operationClient.execute(true);
 
-            org.apache.axis2.context.MessageContext _returnMessageContext = _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+            org.apache.axis2.context.MessageContext _returnMessageContext =
+                _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
             org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
 
-            java.lang.Object object = fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.CreateBucketResponse.class,
-                getEnvelopeNamespaces(_returnEnv));
+            java.lang.Object object =
+                fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.CreateBucketResponse.class, getEnvelopeNamespaces(_returnEnv));
 
             return (com.amazon.s3.client.AmazonS3Stub.CreateBucketResponse)object;
 
@@ -1470,11 +1493,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startcreateBucket(
 
-        com.amazon.s3.client.AmazonS3Stub.CreateBucket createBucket10,
+    com.amazon.s3.client.AmazonS3Stub.CreateBucket createBucket10,
 
-        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-        throws java.rmi.RemoteException {
+    throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[5].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/CreateBucketRequest");
@@ -1488,8 +1511,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         //Style is Doc.
 
-        env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), createBucket10, optimizeContent(new javax.xml.namespace.QName(
-            "http://s3.amazonaws.com/doc/2006-03-01/", "createBucket")));
+        env =
+            toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), createBucket10, optimizeContent(new javax.xml.namespace.QName(
+                "http://s3.amazonaws.com/doc/2006-03-01/", "createBucket")));
 
         // adding SOAP soap_headers
         _serviceClient.addHeadersToEnvelope(env);
@@ -1504,8 +1528,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
 
-                    java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.CreateBucketResponse.class,
-                        getEnvelopeNamespaces(resultEnv));
+                    java.lang.Object object =
+                        fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.CreateBucketResponse.class, getEnvelopeNamespaces(resultEnv));
                     callback.receiveResultcreateBucket((com.amazon.s3.client.AmazonS3Stub.CreateBucketResponse)object);
 
                 } catch (org.apache.axis2.AxisFault e) {
@@ -1600,9 +1624,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.ListAllMyBucketsResponse listAllMyBuckets(
 
-        com.amazon.s3.client.AmazonS3Stub.ListAllMyBuckets listAllMyBuckets12)
+    com.amazon.s3.client.AmazonS3Stub.ListAllMyBuckets listAllMyBuckets12)
 
-        throws java.rmi.RemoteException
+    throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -1619,8 +1643,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             // create SOAP envelope with that payload
             org.apache.axiom.soap.SOAPEnvelope env = null;
 
-            env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), listAllMyBuckets12, optimizeContent(new javax.xml.namespace.QName(
-                "http://s3.amazonaws.com/doc/2006-03-01/", "listAllMyBuckets")));
+            env =
+                toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), listAllMyBuckets12, optimizeContent(new javax.xml.namespace.QName(
+                    "http://s3.amazonaws.com/doc/2006-03-01/", "listAllMyBuckets")));
 
             //adding SOAP soap_headers
             _serviceClient.addHeadersToEnvelope(env);
@@ -1633,11 +1658,12 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             //execute the operation client
             _operationClient.execute(true);
 
-            org.apache.axis2.context.MessageContext _returnMessageContext = _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+            org.apache.axis2.context.MessageContext _returnMessageContext =
+                _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
             org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
 
-            java.lang.Object object = fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.ListAllMyBucketsResponse.class,
-                getEnvelopeNamespaces(_returnEnv));
+            java.lang.Object object =
+                fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.ListAllMyBucketsResponse.class, getEnvelopeNamespaces(_returnEnv));
 
             return (com.amazon.s3.client.AmazonS3Stub.ListAllMyBucketsResponse)object;
 
@@ -1698,11 +1724,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startlistAllMyBuckets(
 
-        com.amazon.s3.client.AmazonS3Stub.ListAllMyBuckets listAllMyBuckets12,
+    com.amazon.s3.client.AmazonS3Stub.ListAllMyBuckets listAllMyBuckets12,
 
-        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-        throws java.rmi.RemoteException {
+    throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[6].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/ListAllMyBucketsRequest");
@@ -1716,8 +1742,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         //Style is Doc.
 
-        env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), listAllMyBuckets12, optimizeContent(new javax.xml.namespace.QName(
-            "http://s3.amazonaws.com/doc/2006-03-01/", "listAllMyBuckets")));
+        env =
+            toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), listAllMyBuckets12, optimizeContent(new javax.xml.namespace.QName(
+                "http://s3.amazonaws.com/doc/2006-03-01/", "listAllMyBuckets")));
 
         // adding SOAP soap_headers
         _serviceClient.addHeadersToEnvelope(env);
@@ -1732,8 +1759,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
 
-                    java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.ListAllMyBucketsResponse.class,
-                        getEnvelopeNamespaces(resultEnv));
+                    java.lang.Object object =
+                        fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.ListAllMyBucketsResponse.class, getEnvelopeNamespaces(resultEnv));
                     callback.receiveResultlistAllMyBuckets((com.amazon.s3.client.AmazonS3Stub.ListAllMyBucketsResponse)object);
 
                 } catch (org.apache.axis2.AxisFault e) {
@@ -1828,9 +1855,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.GetObjectResponse getObject(
 
-        com.amazon.s3.client.AmazonS3Stub.GetObject getObject14)
+    com.amazon.s3.client.AmazonS3Stub.GetObject getObject14)
 
-        throws java.rmi.RemoteException
+    throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -1847,8 +1874,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             // create SOAP envelope with that payload
             org.apache.axiom.soap.SOAPEnvelope env = null;
 
-            env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getObject14, optimizeContent(new javax.xml.namespace.QName(
-                "http://s3.amazonaws.com/doc/2006-03-01/", "getObject")));
+            env =
+                toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getObject14, optimizeContent(new javax.xml.namespace.QName(
+                    "http://s3.amazonaws.com/doc/2006-03-01/", "getObject")));
 
             //adding SOAP soap_headers
             _serviceClient.addHeadersToEnvelope(env);
@@ -1861,10 +1889,12 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             //execute the operation client
             _operationClient.execute(true);
 
-            org.apache.axis2.context.MessageContext _returnMessageContext = _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+            org.apache.axis2.context.MessageContext _returnMessageContext =
+                _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
             org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
 
-            java.lang.Object object = fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetObjectResponse.class, getEnvelopeNamespaces(_returnEnv));
+            java.lang.Object object =
+                fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetObjectResponse.class, getEnvelopeNamespaces(_returnEnv));
 
             return (com.amazon.s3.client.AmazonS3Stub.GetObjectResponse)object;
 
@@ -1925,11 +1955,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startgetObject(
 
-        com.amazon.s3.client.AmazonS3Stub.GetObject getObject14,
+    com.amazon.s3.client.AmazonS3Stub.GetObject getObject14,
 
-        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-        throws java.rmi.RemoteException {
+    throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[7].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/GetObjectRequest");
@@ -1943,8 +1973,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         //Style is Doc.
 
-        env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getObject14, optimizeContent(new javax.xml.namespace.QName(
-            "http://s3.amazonaws.com/doc/2006-03-01/", "getObject")));
+        env =
+            toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getObject14, optimizeContent(new javax.xml.namespace.QName(
+                "http://s3.amazonaws.com/doc/2006-03-01/", "getObject")));
 
         // adding SOAP soap_headers
         _serviceClient.addHeadersToEnvelope(env);
@@ -1959,8 +1990,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
 
-                    java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetObjectResponse.class,
-                        getEnvelopeNamespaces(resultEnv));
+                    java.lang.Object object =
+                        fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetObjectResponse.class, getEnvelopeNamespaces(resultEnv));
                     callback.receiveResultgetObject((com.amazon.s3.client.AmazonS3Stub.GetObjectResponse)object);
 
                 } catch (org.apache.axis2.AxisFault e) {
@@ -2055,9 +2086,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.DeleteBucketResponse deleteBucket(
 
-        com.amazon.s3.client.AmazonS3Stub.DeleteBucket deleteBucket16)
+    com.amazon.s3.client.AmazonS3Stub.DeleteBucket deleteBucket16)
 
-        throws java.rmi.RemoteException
+    throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -2074,8 +2105,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             // create SOAP envelope with that payload
             org.apache.axiom.soap.SOAPEnvelope env = null;
 
-            env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), deleteBucket16, optimizeContent(new javax.xml.namespace.QName(
-                "http://s3.amazonaws.com/doc/2006-03-01/", "deleteBucket")));
+            env =
+                toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), deleteBucket16, optimizeContent(new javax.xml.namespace.QName(
+                    "http://s3.amazonaws.com/doc/2006-03-01/", "deleteBucket")));
 
             //adding SOAP soap_headers
             _serviceClient.addHeadersToEnvelope(env);
@@ -2088,11 +2120,12 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             //execute the operation client
             _operationClient.execute(true);
 
-            org.apache.axis2.context.MessageContext _returnMessageContext = _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+            org.apache.axis2.context.MessageContext _returnMessageContext =
+                _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
             org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
 
-            java.lang.Object object = fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.DeleteBucketResponse.class,
-                getEnvelopeNamespaces(_returnEnv));
+            java.lang.Object object =
+                fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.DeleteBucketResponse.class, getEnvelopeNamespaces(_returnEnv));
 
             return (com.amazon.s3.client.AmazonS3Stub.DeleteBucketResponse)object;
 
@@ -2153,11 +2186,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startdeleteBucket(
 
-        com.amazon.s3.client.AmazonS3Stub.DeleteBucket deleteBucket16,
+    com.amazon.s3.client.AmazonS3Stub.DeleteBucket deleteBucket16,
 
-        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-        throws java.rmi.RemoteException {
+    throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[8].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/DeleteBucketRequest");
@@ -2171,8 +2204,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         //Style is Doc.
 
-        env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), deleteBucket16, optimizeContent(new javax.xml.namespace.QName(
-            "http://s3.amazonaws.com/doc/2006-03-01/", "deleteBucket")));
+        env =
+            toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), deleteBucket16, optimizeContent(new javax.xml.namespace.QName(
+                "http://s3.amazonaws.com/doc/2006-03-01/", "deleteBucket")));
 
         // adding SOAP soap_headers
         _serviceClient.addHeadersToEnvelope(env);
@@ -2187,8 +2221,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
 
-                    java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.DeleteBucketResponse.class,
-                        getEnvelopeNamespaces(resultEnv));
+                    java.lang.Object object =
+                        fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.DeleteBucketResponse.class, getEnvelopeNamespaces(resultEnv));
                     callback.receiveResultdeleteBucket((com.amazon.s3.client.AmazonS3Stub.DeleteBucketResponse)object);
 
                 } catch (org.apache.axis2.AxisFault e) {
@@ -2283,9 +2317,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatusResponse setBucketLoggingStatus(
 
-        com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatus setBucketLoggingStatus18)
+    com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatus setBucketLoggingStatus18)
 
-        throws java.rmi.RemoteException
+    throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -2302,8 +2336,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             // create SOAP envelope with that payload
             org.apache.axiom.soap.SOAPEnvelope env = null;
 
-            env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), setBucketLoggingStatus18, optimizeContent(new javax.xml.namespace.QName(
-                "http://s3.amazonaws.com/doc/2006-03-01/", "setBucketLoggingStatus")));
+            env =
+                toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), setBucketLoggingStatus18, optimizeContent(new javax.xml.namespace.QName(
+                    "http://s3.amazonaws.com/doc/2006-03-01/", "setBucketLoggingStatus")));
 
             //adding SOAP soap_headers
             _serviceClient.addHeadersToEnvelope(env);
@@ -2316,11 +2351,12 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             //execute the operation client
             _operationClient.execute(true);
 
-            org.apache.axis2.context.MessageContext _returnMessageContext = _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+            org.apache.axis2.context.MessageContext _returnMessageContext =
+                _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
             org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
 
-            java.lang.Object object = fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatusResponse.class,
-                getEnvelopeNamespaces(_returnEnv));
+            java.lang.Object object =
+                fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatusResponse.class, getEnvelopeNamespaces(_returnEnv));
 
             return (com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatusResponse)object;
 
@@ -2381,11 +2417,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startsetBucketLoggingStatus(
 
-        com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatus setBucketLoggingStatus18,
+    com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatus setBucketLoggingStatus18,
 
-        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-        throws java.rmi.RemoteException {
+    throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[9].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/SetBucketLoggingStatusRequest");
@@ -2399,8 +2435,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         //Style is Doc.
 
-        env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), setBucketLoggingStatus18, optimizeContent(new javax.xml.namespace.QName(
-            "http://s3.amazonaws.com/doc/2006-03-01/", "setBucketLoggingStatus")));
+        env =
+            toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), setBucketLoggingStatus18, optimizeContent(new javax.xml.namespace.QName(
+                "http://s3.amazonaws.com/doc/2006-03-01/", "setBucketLoggingStatus")));
 
         // adding SOAP soap_headers
         _serviceClient.addHeadersToEnvelope(env);
@@ -2415,8 +2452,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
 
-                    java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatusResponse.class,
-                        getEnvelopeNamespaces(resultEnv));
+                    java.lang.Object object =
+                        fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatusResponse.class,
+                            getEnvelopeNamespaces(resultEnv));
                     callback.receiveResultsetBucketLoggingStatus((com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatusResponse)object);
 
                 } catch (org.apache.axis2.AxisFault e) {
@@ -2511,9 +2549,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicyResponse getObjectAccessControlPolicy(
 
-        com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicy getObjectAccessControlPolicy20)
+    com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicy getObjectAccessControlPolicy20)
 
-        throws java.rmi.RemoteException
+    throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -2530,8 +2568,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             // create SOAP envelope with that payload
             org.apache.axiom.soap.SOAPEnvelope env = null;
 
-            env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getObjectAccessControlPolicy20, optimizeContent(new javax.xml.namespace.QName(
-                "http://s3.amazonaws.com/doc/2006-03-01/", "getObjectAccessControlPolicy")));
+            env =
+                toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getObjectAccessControlPolicy20, optimizeContent(new javax.xml.namespace.QName(
+                    "http://s3.amazonaws.com/doc/2006-03-01/", "getObjectAccessControlPolicy")));
 
             //adding SOAP soap_headers
             _serviceClient.addHeadersToEnvelope(env);
@@ -2544,11 +2583,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             //execute the operation client
             _operationClient.execute(true);
 
-            org.apache.axis2.context.MessageContext _returnMessageContext = _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+            org.apache.axis2.context.MessageContext _returnMessageContext =
+                _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
             org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
 
-            java.lang.Object object = fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicyResponse.class,
-                getEnvelopeNamespaces(_returnEnv));
+            java.lang.Object object =
+                fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicyResponse.class,
+                    getEnvelopeNamespaces(_returnEnv));
 
             return (com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicyResponse)object;
 
@@ -2609,11 +2650,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startgetObjectAccessControlPolicy(
 
-        com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicy getObjectAccessControlPolicy20,
+    com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicy getObjectAccessControlPolicy20,
 
-        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-        throws java.rmi.RemoteException {
+    throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[10].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/GetObjectAccessControlPolicyRequest");
@@ -2627,8 +2668,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         //Style is Doc.
 
-        env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getObjectAccessControlPolicy20, optimizeContent(new javax.xml.namespace.QName(
-            "http://s3.amazonaws.com/doc/2006-03-01/", "getObjectAccessControlPolicy")));
+        env =
+            toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getObjectAccessControlPolicy20, optimizeContent(new javax.xml.namespace.QName(
+                "http://s3.amazonaws.com/doc/2006-03-01/", "getObjectAccessControlPolicy")));
 
         // adding SOAP soap_headers
         _serviceClient.addHeadersToEnvelope(env);
@@ -2643,8 +2685,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
 
-                    java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicyResponse.class,
-                        getEnvelopeNamespaces(resultEnv));
+                    java.lang.Object object =
+                        fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicyResponse.class,
+                            getEnvelopeNamespaces(resultEnv));
                     callback.receiveResultgetObjectAccessControlPolicy((com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicyResponse)object);
 
                 } catch (org.apache.axis2.AxisFault e) {
@@ -2739,9 +2782,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.DeleteObjectResponse deleteObject(
 
-        com.amazon.s3.client.AmazonS3Stub.DeleteObject deleteObject22)
+    com.amazon.s3.client.AmazonS3Stub.DeleteObject deleteObject22)
 
-        throws java.rmi.RemoteException
+    throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -2758,8 +2801,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             // create SOAP envelope with that payload
             org.apache.axiom.soap.SOAPEnvelope env = null;
 
-            env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), deleteObject22, optimizeContent(new javax.xml.namespace.QName(
-                "http://s3.amazonaws.com/doc/2006-03-01/", "deleteObject")));
+            env =
+                toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), deleteObject22, optimizeContent(new javax.xml.namespace.QName(
+                    "http://s3.amazonaws.com/doc/2006-03-01/", "deleteObject")));
 
             //adding SOAP soap_headers
             _serviceClient.addHeadersToEnvelope(env);
@@ -2772,11 +2816,12 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             //execute the operation client
             _operationClient.execute(true);
 
-            org.apache.axis2.context.MessageContext _returnMessageContext = _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+            org.apache.axis2.context.MessageContext _returnMessageContext =
+                _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
             org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
 
-            java.lang.Object object = fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.DeleteObjectResponse.class,
-                getEnvelopeNamespaces(_returnEnv));
+            java.lang.Object object =
+                fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.DeleteObjectResponse.class, getEnvelopeNamespaces(_returnEnv));
 
             return (com.amazon.s3.client.AmazonS3Stub.DeleteObjectResponse)object;
 
@@ -2837,11 +2882,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startdeleteObject(
 
-        com.amazon.s3.client.AmazonS3Stub.DeleteObject deleteObject22,
+    com.amazon.s3.client.AmazonS3Stub.DeleteObject deleteObject22,
 
-        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-        throws java.rmi.RemoteException {
+    throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[11].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/DeleteObjectRequest");
@@ -2855,8 +2900,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         //Style is Doc.
 
-        env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), deleteObject22, optimizeContent(new javax.xml.namespace.QName(
-            "http://s3.amazonaws.com/doc/2006-03-01/", "deleteObject")));
+        env =
+            toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), deleteObject22, optimizeContent(new javax.xml.namespace.QName(
+                "http://s3.amazonaws.com/doc/2006-03-01/", "deleteObject")));
 
         // adding SOAP soap_headers
         _serviceClient.addHeadersToEnvelope(env);
@@ -2871,8 +2917,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
 
-                    java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.DeleteObjectResponse.class,
-                        getEnvelopeNamespaces(resultEnv));
+                    java.lang.Object object =
+                        fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.DeleteObjectResponse.class, getEnvelopeNamespaces(resultEnv));
                     callback.receiveResultdeleteObject((com.amazon.s3.client.AmazonS3Stub.DeleteObjectResponse)object);
 
                 } catch (org.apache.axis2.AxisFault e) {
@@ -2967,9 +3013,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicyResponse setBucketAccessControlPolicy(
 
-        com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicy setBucketAccessControlPolicy24)
+    com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicy setBucketAccessControlPolicy24)
 
-        throws java.rmi.RemoteException
+    throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -2986,8 +3032,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             // create SOAP envelope with that payload
             org.apache.axiom.soap.SOAPEnvelope env = null;
 
-            env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), setBucketAccessControlPolicy24, optimizeContent(new javax.xml.namespace.QName(
-                "http://s3.amazonaws.com/doc/2006-03-01/", "setBucketAccessControlPolicy")));
+            env =
+                toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), setBucketAccessControlPolicy24, optimizeContent(new javax.xml.namespace.QName(
+                    "http://s3.amazonaws.com/doc/2006-03-01/", "setBucketAccessControlPolicy")));
 
             //adding SOAP soap_headers
             _serviceClient.addHeadersToEnvelope(env);
@@ -3000,11 +3047,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             //execute the operation client
             _operationClient.execute(true);
 
-            org.apache.axis2.context.MessageContext _returnMessageContext = _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+            org.apache.axis2.context.MessageContext _returnMessageContext =
+                _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
             org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
 
-            java.lang.Object object = fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicyResponse.class,
-                getEnvelopeNamespaces(_returnEnv));
+            java.lang.Object object =
+                fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicyResponse.class,
+                    getEnvelopeNamespaces(_returnEnv));
 
             return (com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicyResponse)object;
 
@@ -3065,11 +3114,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startsetBucketAccessControlPolicy(
 
-        com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicy setBucketAccessControlPolicy24,
+    com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicy setBucketAccessControlPolicy24,
 
-        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-        throws java.rmi.RemoteException {
+    throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[12].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/SetBucketAccessControlPolicyRequest");
@@ -3083,8 +3132,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         //Style is Doc.
 
-        env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), setBucketAccessControlPolicy24, optimizeContent(new javax.xml.namespace.QName(
-            "http://s3.amazonaws.com/doc/2006-03-01/", "setBucketAccessControlPolicy")));
+        env =
+            toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), setBucketAccessControlPolicy24, optimizeContent(new javax.xml.namespace.QName(
+                "http://s3.amazonaws.com/doc/2006-03-01/", "setBucketAccessControlPolicy")));
 
         // adding SOAP soap_headers
         _serviceClient.addHeadersToEnvelope(env);
@@ -3099,8 +3149,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
 
-                    java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicyResponse.class,
-                        getEnvelopeNamespaces(resultEnv));
+                    java.lang.Object object =
+                        fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicyResponse.class,
+                            getEnvelopeNamespaces(resultEnv));
                     callback.receiveResultsetBucketAccessControlPolicy((com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicyResponse)object);
 
                 } catch (org.apache.axis2.AxisFault e) {
@@ -3195,9 +3246,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicyResponse setObjectAccessControlPolicy(
 
-        com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicy setObjectAccessControlPolicy26)
+    com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicy setObjectAccessControlPolicy26)
 
-        throws java.rmi.RemoteException
+    throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -3214,8 +3265,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             // create SOAP envelope with that payload
             org.apache.axiom.soap.SOAPEnvelope env = null;
 
-            env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), setObjectAccessControlPolicy26, optimizeContent(new javax.xml.namespace.QName(
-                "http://s3.amazonaws.com/doc/2006-03-01/", "setObjectAccessControlPolicy")));
+            env =
+                toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), setObjectAccessControlPolicy26, optimizeContent(new javax.xml.namespace.QName(
+                    "http://s3.amazonaws.com/doc/2006-03-01/", "setObjectAccessControlPolicy")));
 
             //adding SOAP soap_headers
             _serviceClient.addHeadersToEnvelope(env);
@@ -3228,11 +3280,13 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             //execute the operation client
             _operationClient.execute(true);
 
-            org.apache.axis2.context.MessageContext _returnMessageContext = _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+            org.apache.axis2.context.MessageContext _returnMessageContext =
+                _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
             org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
 
-            java.lang.Object object = fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicyResponse.class,
-                getEnvelopeNamespaces(_returnEnv));
+            java.lang.Object object =
+                fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicyResponse.class,
+                    getEnvelopeNamespaces(_returnEnv));
 
             return (com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicyResponse)object;
 
@@ -3293,11 +3347,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startsetObjectAccessControlPolicy(
 
-        com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicy setObjectAccessControlPolicy26,
+    com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicy setObjectAccessControlPolicy26,
 
-        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-        throws java.rmi.RemoteException {
+    throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[13].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/SetObjectAccessControlPolicyRequest");
@@ -3311,8 +3365,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         //Style is Doc.
 
-        env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), setObjectAccessControlPolicy26, optimizeContent(new javax.xml.namespace.QName(
-            "http://s3.amazonaws.com/doc/2006-03-01/", "setObjectAccessControlPolicy")));
+        env =
+            toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), setObjectAccessControlPolicy26, optimizeContent(new javax.xml.namespace.QName(
+                "http://s3.amazonaws.com/doc/2006-03-01/", "setObjectAccessControlPolicy")));
 
         // adding SOAP soap_headers
         _serviceClient.addHeadersToEnvelope(env);
@@ -3327,8 +3382,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
 
-                    java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicyResponse.class,
-                        getEnvelopeNamespaces(resultEnv));
+                    java.lang.Object object =
+                        fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicyResponse.class,
+                            getEnvelopeNamespaces(resultEnv));
                     callback.receiveResultsetObjectAccessControlPolicy((com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicyResponse)object);
 
                 } catch (org.apache.axis2.AxisFault e) {
@@ -3423,9 +3479,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.PutObjectInlineResponse putObjectInline(
 
-        com.amazon.s3.client.AmazonS3Stub.PutObjectInline putObjectInline28)
+    com.amazon.s3.client.AmazonS3Stub.PutObjectInline putObjectInline28)
 
-        throws java.rmi.RemoteException
+    throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -3442,8 +3498,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             // create SOAP envelope with that payload
             org.apache.axiom.soap.SOAPEnvelope env = null;
 
-            env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), putObjectInline28, optimizeContent(new javax.xml.namespace.QName(
-                "http://s3.amazonaws.com/doc/2006-03-01/", "putObjectInline")));
+            env =
+                toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), putObjectInline28, optimizeContent(new javax.xml.namespace.QName(
+                    "http://s3.amazonaws.com/doc/2006-03-01/", "putObjectInline")));
 
             //adding SOAP soap_headers
             _serviceClient.addHeadersToEnvelope(env);
@@ -3456,11 +3513,12 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             //execute the operation client
             _operationClient.execute(true);
 
-            org.apache.axis2.context.MessageContext _returnMessageContext = _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+            org.apache.axis2.context.MessageContext _returnMessageContext =
+                _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
             org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
 
-            java.lang.Object object = fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.PutObjectInlineResponse.class,
-                getEnvelopeNamespaces(_returnEnv));
+            java.lang.Object object =
+                fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.PutObjectInlineResponse.class, getEnvelopeNamespaces(_returnEnv));
 
             return (com.amazon.s3.client.AmazonS3Stub.PutObjectInlineResponse)object;
 
@@ -3521,11 +3579,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startputObjectInline(
 
-        com.amazon.s3.client.AmazonS3Stub.PutObjectInline putObjectInline28,
+    com.amazon.s3.client.AmazonS3Stub.PutObjectInline putObjectInline28,
 
-        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-        throws java.rmi.RemoteException {
+    throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[14].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/PutObjectInlineRequest");
@@ -3539,8 +3597,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         //Style is Doc.
 
-        env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), putObjectInline28, optimizeContent(new javax.xml.namespace.QName(
-            "http://s3.amazonaws.com/doc/2006-03-01/", "putObjectInline")));
+        env =
+            toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), putObjectInline28, optimizeContent(new javax.xml.namespace.QName(
+                "http://s3.amazonaws.com/doc/2006-03-01/", "putObjectInline")));
 
         // adding SOAP soap_headers
         _serviceClient.addHeadersToEnvelope(env);
@@ -3555,8 +3614,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
 
-                    java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.PutObjectInlineResponse.class,
-                        getEnvelopeNamespaces(resultEnv));
+                    java.lang.Object object =
+                        fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.PutObjectInlineResponse.class, getEnvelopeNamespaces(resultEnv));
                     callback.receiveResultputObjectInline((com.amazon.s3.client.AmazonS3Stub.PutObjectInlineResponse)object);
 
                 } catch (org.apache.axis2.AxisFault e) {
@@ -3651,9 +3710,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.GetObjectExtendedResponse getObjectExtended(
 
-        com.amazon.s3.client.AmazonS3Stub.GetObjectExtended getObjectExtended30)
+    com.amazon.s3.client.AmazonS3Stub.GetObjectExtended getObjectExtended30)
 
-        throws java.rmi.RemoteException
+    throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -3670,8 +3729,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             // create SOAP envelope with that payload
             org.apache.axiom.soap.SOAPEnvelope env = null;
 
-            env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getObjectExtended30, optimizeContent(new javax.xml.namespace.QName(
-                "http://s3.amazonaws.com/doc/2006-03-01/", "getObjectExtended")));
+            env =
+                toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getObjectExtended30, optimizeContent(new javax.xml.namespace.QName(
+                    "http://s3.amazonaws.com/doc/2006-03-01/", "getObjectExtended")));
 
             //adding SOAP soap_headers
             _serviceClient.addHeadersToEnvelope(env);
@@ -3684,11 +3744,12 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             //execute the operation client
             _operationClient.execute(true);
 
-            org.apache.axis2.context.MessageContext _returnMessageContext = _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
+            org.apache.axis2.context.MessageContext _returnMessageContext =
+                _operationClient.getMessageContext(org.apache.axis2.wsdl.WSDLConstants.MESSAGE_LABEL_IN_VALUE);
             org.apache.axiom.soap.SOAPEnvelope _returnEnv = _returnMessageContext.getEnvelope();
 
-            java.lang.Object object = fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetObjectExtendedResponse.class,
-                getEnvelopeNamespaces(_returnEnv));
+            java.lang.Object object =
+                fromOM(_returnEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetObjectExtendedResponse.class, getEnvelopeNamespaces(_returnEnv));
 
             return (com.amazon.s3.client.AmazonS3Stub.GetObjectExtendedResponse)object;
 
@@ -3749,11 +3810,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startgetObjectExtended(
 
-        com.amazon.s3.client.AmazonS3Stub.GetObjectExtended getObjectExtended30,
+    com.amazon.s3.client.AmazonS3Stub.GetObjectExtended getObjectExtended30,
 
-        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-        throws java.rmi.RemoteException {
+    throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[15].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/GetObjectExtendedRequest");
@@ -3767,8 +3828,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
         //Style is Doc.
 
-        env = toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getObjectExtended30, optimizeContent(new javax.xml.namespace.QName(
-            "http://s3.amazonaws.com/doc/2006-03-01/", "getObjectExtended")));
+        env =
+            toEnvelope(getFactory(_operationClient.getOptions().getSoapVersionURI()), getObjectExtended30, optimizeContent(new javax.xml.namespace.QName(
+                "http://s3.amazonaws.com/doc/2006-03-01/", "getObjectExtended")));
 
         // adding SOAP soap_headers
         _serviceClient.addHeadersToEnvelope(env);
@@ -3783,8 +3845,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 try {
                     org.apache.axiom.soap.SOAPEnvelope resultEnv = resultContext.getEnvelope();
 
-                    java.lang.Object object = fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetObjectExtendedResponse.class,
-                        getEnvelopeNamespaces(resultEnv));
+                    java.lang.Object object =
+                        fromOM(resultEnv.getBody().getFirstElement(), com.amazon.s3.client.AmazonS3Stub.GetObjectExtendedResponse.class, getEnvelopeNamespaces(resultEnv));
                     callback.receiveResultgetObjectExtended((com.amazon.s3.client.AmazonS3Stub.GetObjectExtendedResponse)object);
 
                 } catch (org.apache.axis2.AxisFault e) {
@@ -4058,7 +4120,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -4233,8 +4296,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -4596,7 +4660,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -4737,8 +4802,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -5416,7 +5482,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -5714,7 +5781,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                 if (localCommonPrefixes != null) {
                     for (int i = 0; i < localCommonPrefixes.length; i++) {
                         if (localCommonPrefixes[i] != null) {
-                            localCommonPrefixes[i].serialize(new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "CommonPrefixes"), factory, xmlWriter);
+                            localCommonPrefixes[i].serialize(new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "CommonPrefixes"), factory,
+                                xmlWriter);
                         } else {
 
                             // we don't have to do any thing since minOccures is zero
@@ -5763,8 +5831,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -6560,7 +6629,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -6832,8 +6902,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -7289,7 +7360,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -7383,8 +7455,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -8074,7 +8147,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -8429,8 +8503,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -8784,7 +8859,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                         } else {
                             if (reader.getEventType() == javax.xml.stream.XMLStreamConstants.START_ELEMENT &&
                                 reader.getName().equals(
-                                    new javax.xml.namespace.QName(org.apache.axiom.om.impl.MTOMConstants.XOP_NAMESPACE_URI, org.apache.axiom.om.impl.MTOMConstants.XOP_INCLUDE))) {
+                                    new javax.xml.namespace.QName(org.apache.axiom.om.impl.MTOMConstants.XOP_NAMESPACE_URI,
+                                        org.apache.axiom.om.impl.MTOMConstants.XOP_INCLUDE))) {
                                 java.lang.String id = org.apache.axiom.om.util.ElementHelper.getContentID(reader, "UTF-8");
                                 object.setData(((org.apache.axiom.soap.impl.builder.MTOMStAXSOAPModelBuilder)((org.apache.axiom.om.impl.llom.OMStAXWrapper)reader).getBuilder()).getDataHandler(id));
                                 reader.next();
@@ -9017,7 +9093,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -9126,8 +9203,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -9436,7 +9514,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -9574,8 +9653,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -9879,7 +9959,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -9961,8 +10042,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -10140,7 +10222,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                     while (!reader.isStartElement() && !reader.isEndElement())
                         reader.next();
 
-                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "CreateBucketReturn").equals(reader.getName())) {
+                    if (reader.isStartElement() &&
+                        new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "CreateBucketReturn").equals(reader.getName())) {
 
                         object.setCreateBucketReturn(CreateBucketResult.Factory.parse(reader));
 
@@ -10820,7 +10903,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -11421,8 +11505,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -12085,7 +12170,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public static class ListAllMyBucketsResponse implements org.apache.axis2.databinding.ADBBean {
 
-        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "ListAllMyBucketsResponse", "ns1");
+        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "ListAllMyBucketsResponse",
+            "ns1");
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
             if (namespace.equals("http://s3.amazonaws.com/doc/2006-03-01/")) {
@@ -12153,7 +12239,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -12198,7 +12285,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             if (localListAllMyBucketsResponse == null) {
                 throw new org.apache.axis2.databinding.ADBException("ListAllMyBucketsResponse cannot be null!!");
             }
-            localListAllMyBucketsResponse.serialize(new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "ListAllMyBucketsResponse"), factory, xmlWriter);
+            localListAllMyBucketsResponse.serialize(new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "ListAllMyBucketsResponse"), factory,
+                xmlWriter);
 
             xmlWriter.writeEndElement();
 
@@ -12235,8 +12323,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -12414,7 +12503,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                     while (!reader.isStartElement() && !reader.isEndElement())
                         reader.next();
 
-                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "ListAllMyBucketsResponse").equals(reader.getName())) {
+                    if (reader.isStartElement() &&
+                        new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "ListAllMyBucketsResponse").equals(reader.getName())) {
 
                         object.setListAllMyBucketsResponse(ListAllMyBucketsResult.Factory.parse(reader));
 
@@ -12447,7 +12537,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public static class SetBucketAccessControlPolicy implements org.apache.axis2.databinding.ADBBean {
 
-        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "SetBucketAccessControlPolicy", "ns1");
+        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "SetBucketAccessControlPolicy",
+            "ns1");
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
             if (namespace.equals("http://s3.amazonaws.com/doc/2006-03-01/")) {
@@ -12705,7 +12796,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -12951,8 +13043,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -13293,8 +13386,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public static class GetObjectAccessControlPolicyResponse implements org.apache.axis2.databinding.ADBBean {
 
-        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "GetObjectAccessControlPolicyResponse",
-            "ns1");
+        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/",
+            "GetObjectAccessControlPolicyResponse", "ns1");
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
             if (namespace.equals("http://s3.amazonaws.com/doc/2006-03-01/")) {
@@ -13362,7 +13455,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -13407,8 +13501,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             if (localGetObjectAccessControlPolicyResponse == null) {
                 throw new org.apache.axis2.databinding.ADBException("GetObjectAccessControlPolicyResponse cannot be null!!");
             }
-            localGetObjectAccessControlPolicyResponse.serialize(new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "GetObjectAccessControlPolicyResponse"),
-                factory, xmlWriter);
+            localGetObjectAccessControlPolicyResponse.serialize(new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/",
+                "GetObjectAccessControlPolicyResponse"), factory, xmlWriter);
 
             xmlWriter.writeEndElement();
 
@@ -13445,8 +13539,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -13726,7 +13821,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -13808,8 +13904,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -13987,7 +14084,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                     while (!reader.isStartElement() && !reader.isEndElement())
                         reader.next();
 
-                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "DeleteObjectResponse").equals(reader.getName())) {
+                    if (reader.isStartElement() &&
+                        new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "DeleteObjectResponse").equals(reader.getName())) {
 
                         object.setDeleteObjectResponse(Status.Factory.parse(reader));
 
@@ -14020,7 +14118,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public static class GetBucketLoggingStatus implements org.apache.axis2.databinding.ADBBean {
 
-        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "GetBucketLoggingStatus", "ns1");
+        public static final javax.xml.namespace.QName MY_QNAME =
+            new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "GetBucketLoggingStatus", "ns1");
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
             if (namespace.equals("http://s3.amazonaws.com/doc/2006-03-01/")) {
@@ -14240,7 +14339,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -14480,8 +14580,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -14932,7 +15033,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -15078,8 +15180,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -15342,7 +15445,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public static class ExtensionMapper {
 
-        public static java.lang.Object getTypeObject(java.lang.String namespaceURI, java.lang.String typeName, javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception {
+        public static java.lang.Object getTypeObject(java.lang.String namespaceURI, java.lang.String typeName, javax.xml.stream.XMLStreamReader reader)
+            throws java.lang.Exception {
 
             if ("http://s3.amazonaws.com/doc/2006-03-01/".equals(namespaceURI) && "ListAllMyBucketsResult".equals(typeName)) {
 
@@ -15715,7 +15819,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -15955,8 +16060,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -16342,7 +16448,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -16424,8 +16531,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -16603,7 +16711,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                     while (!reader.isStartElement() && !reader.isEndElement())
                         reader.next();
 
-                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "DeleteBucketResponse").equals(reader.getName())) {
+                    if (reader.isStartElement() &&
+                        new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "DeleteBucketResponse").equals(reader.getName())) {
 
                         object.setDeleteBucketResponse(Status.Factory.parse(reader));
 
@@ -16731,7 +16840,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -16872,8 +16982,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -17318,7 +17429,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -17530,8 +17642,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -17966,7 +18079,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -18052,8 +18166,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -18165,8 +18280,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             //We can safely assume an element has only one type associated with it
             return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(MY_QNAME, new java.lang.Object[] {
-                    org.apache.axis2.databinding.utils.reader.ADBXMLStreamReader.ELEMENT_TEXT, org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localPermission)},
-                null);
+                org.apache.axis2.databinding.utils.reader.ADBXMLStreamReader.ELEMENT_TEXT,
+                org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localPermission)}, null);
 
         }
 
@@ -18178,7 +18293,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             public static Permission fromValue(java.lang.String value) throws java.lang.IllegalArgumentException {
                 Permission enumeration = (Permission)
 
-                        _table_.get(value);
+                _table_.get(value);
 
                 if (enumeration == null)
                     throw new java.lang.IllegalArgumentException();
@@ -18312,7 +18427,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -18389,8 +18505,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -18668,7 +18785,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -18755,8 +18873,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -19679,7 +19798,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -20203,8 +20323,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -20697,7 +20818,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                     while (!reader.isStartElement() && !reader.isEndElement())
                         reader.next();
 
-                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "CopySourceIfModifiedSince").equals(reader.getName())) {
+                    if (reader.isStartElement() &&
+                        new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "CopySourceIfModifiedSince").equals(reader.getName())) {
 
                         java.lang.String content = reader.getElementText();
 
@@ -20714,7 +20836,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                     while (!reader.isStartElement() && !reader.isEndElement())
                         reader.next();
 
-                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "CopySourceIfUnmodifiedSince").equals(reader.getName())) {
+                    if (reader.isStartElement() &&
+                        new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "CopySourceIfUnmodifiedSince").equals(reader.getName())) {
 
                         java.lang.String content = reader.getElementText();
 
@@ -20773,7 +20896,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                     while (!reader.isStartElement() && !reader.isEndElement())
                         reader.next();
 
-                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "CopySourceIfNoneMatch").equals(reader.getName())) {
+                    if (reader.isStartElement() &&
+                        new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "CopySourceIfNoneMatch").equals(reader.getName())) {
 
                         // Process the array and step past its final element's end.
                         list11.add(reader.getElementText());
@@ -21000,7 +21124,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -21082,8 +21207,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -21708,7 +21834,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -22038,8 +22165,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -22604,7 +22732,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -22690,8 +22819,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -22803,8 +22933,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
             //We can safely assume an element has only one type associated with it
             return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(MY_QNAME, new java.lang.Object[] {
-                    org.apache.axis2.databinding.utils.reader.ADBXMLStreamReader.ELEMENT_TEXT,
-                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localMetadataDirective)}, null);
+                org.apache.axis2.databinding.utils.reader.ADBXMLStreamReader.ELEMENT_TEXT,
+                org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localMetadataDirective)}, null);
 
         }
 
@@ -22816,7 +22946,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             public static MetadataDirective fromValue(java.lang.String value) throws java.lang.IllegalArgumentException {
                 MetadataDirective enumeration = (MetadataDirective)
 
-                        _table_.get(value);
+                _table_.get(value);
 
                 if (enumeration == null)
                     throw new java.lang.IllegalArgumentException();
@@ -23087,7 +23217,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -23271,8 +23402,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -23560,7 +23692,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                         } else {
                             if (reader.getEventType() == javax.xml.stream.XMLStreamConstants.START_ELEMENT &&
                                 reader.getName().equals(
-                                    new javax.xml.namespace.QName(org.apache.axiom.om.impl.MTOMConstants.XOP_NAMESPACE_URI, org.apache.axiom.om.impl.MTOMConstants.XOP_INCLUDE))) {
+                                    new javax.xml.namespace.QName(org.apache.axiom.om.impl.MTOMConstants.XOP_NAMESPACE_URI,
+                                        org.apache.axiom.om.impl.MTOMConstants.XOP_INCLUDE))) {
                                 java.lang.String id = org.apache.axiom.om.util.ElementHelper.getContentID(reader, "UTF-8");
                                 object.setData(((org.apache.axiom.soap.impl.builder.MTOMStAXSOAPModelBuilder)((org.apache.axiom.om.impl.llom.OMStAXWrapper)reader).getBuilder()).getDataHandler(id));
                                 reader.next();
@@ -23737,7 +23870,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -23824,8 +23958,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -24059,8 +24194,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public static class GetBucketAccessControlPolicyResponse implements org.apache.axis2.databinding.ADBBean {
 
-        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "GetBucketAccessControlPolicyResponse",
-            "ns1");
+        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/",
+            "GetBucketAccessControlPolicyResponse", "ns1");
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
             if (namespace.equals("http://s3.amazonaws.com/doc/2006-03-01/")) {
@@ -24128,7 +24263,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -24173,8 +24309,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             if (localGetBucketAccessControlPolicyResponse == null) {
                 throw new org.apache.axis2.databinding.ADBException("GetBucketAccessControlPolicyResponse cannot be null!!");
             }
-            localGetBucketAccessControlPolicyResponse.serialize(new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "GetBucketAccessControlPolicyResponse"),
-                factory, xmlWriter);
+            localGetBucketAccessControlPolicyResponse.serialize(new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/",
+                "GetBucketAccessControlPolicyResponse"), factory, xmlWriter);
 
             xmlWriter.writeEndElement();
 
@@ -24211,8 +24347,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -24424,8 +24561,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public static class SetObjectAccessControlPolicyResponse implements org.apache.axis2.databinding.ADBBean {
 
-        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "SetObjectAccessControlPolicyResponse",
-            "ns1");
+        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/",
+            "SetObjectAccessControlPolicyResponse", "ns1");
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
             if (namespace.equals("http://s3.amazonaws.com/doc/2006-03-01/")) {
@@ -24469,7 +24606,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -24546,8 +24684,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -24735,7 +24874,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public static class SetObjectAccessControlPolicy implements org.apache.axis2.databinding.ADBBean {
 
-        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "SetObjectAccessControlPolicy", "ns1");
+        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "SetObjectAccessControlPolicy",
+            "ns1");
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
             if (namespace.equals("http://s3.amazonaws.com/doc/2006-03-01/")) {
@@ -25003,7 +25143,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -25280,8 +25421,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -26021,7 +26163,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -26390,8 +26533,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -26906,7 +27050,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -27047,8 +27192,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -27288,7 +27434,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public static class GetBucketAccessControlPolicy implements org.apache.axis2.databinding.ADBBean {
 
-        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "GetBucketAccessControlPolicy", "ns1");
+        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "GetBucketAccessControlPolicy",
+            "ns1");
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
             if (namespace.equals("http://s3.amazonaws.com/doc/2006-03-01/")) {
@@ -27508,7 +27655,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -27748,8 +27896,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -28067,7 +28216,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public static class GetObjectExtendedResponse implements org.apache.axis2.databinding.ADBBean {
 
-        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "GetObjectExtendedResponse", "ns1");
+        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "GetObjectExtendedResponse",
+            "ns1");
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
             if (namespace.equals("http://s3.amazonaws.com/doc/2006-03-01/")) {
@@ -28135,7 +28285,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -28217,8 +28368,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -28519,7 +28671,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -28605,8 +28758,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -28717,9 +28871,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
             //We can safely assume an element has only one type associated with it
-            return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(MY_QNAME,
-                new java.lang.Object[] {org.apache.axis2.databinding.utils.reader.ADBXMLStreamReader.ELEMENT_TEXT,
-                        org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localStorageClass)}, null);
+            return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(MY_QNAME, new java.lang.Object[] {
+                org.apache.axis2.databinding.utils.reader.ADBXMLStreamReader.ELEMENT_TEXT,
+                org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localStorageClass)}, null);
 
         }
 
@@ -28731,7 +28885,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             public static StorageClass fromValue(java.lang.String value) throws java.lang.IllegalArgumentException {
                 StorageClass enumeration = (StorageClass)
 
-                        _table_.get(value);
+                _table_.get(value);
 
                 if (enumeration == null)
                     throw new java.lang.IllegalArgumentException();
@@ -28913,7 +29067,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -29054,8 +29209,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -29411,7 +29567,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -29505,8 +29662,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -29827,7 +29985,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -29909,8 +30068,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -30088,7 +30248,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                     while (!reader.isStartElement() && !reader.isEndElement())
                         reader.next();
 
-                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "ListBucketResponse").equals(reader.getName())) {
+                    if (reader.isStartElement() &&
+                        new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "ListBucketResponse").equals(reader.getName())) {
 
                         object.setListBucketResponse(ListBucketResult.Factory.parse(reader));
 
@@ -30216,7 +30377,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -30303,8 +30465,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -30609,7 +30772,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -30718,8 +30882,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -30933,7 +31098,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public static class GetObjectAccessControlPolicy implements org.apache.axis2.databinding.ADBBean {
 
-        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "GetObjectAccessControlPolicy", "ns1");
+        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "GetObjectAccessControlPolicy",
+            "ns1");
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
             if (namespace.equals("http://s3.amazonaws.com/doc/2006-03-01/")) {
@@ -31177,7 +31343,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -31449,8 +31616,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -32110,7 +32278,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -32469,8 +32638,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -32989,7 +33159,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -33126,8 +33297,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -33370,7 +33542,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public static class GetBucketLoggingStatusResponse implements org.apache.axis2.databinding.ADBBean {
 
-        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "GetBucketLoggingStatusResponse", "ns1");
+        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/",
+            "GetBucketLoggingStatusResponse", "ns1");
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
             if (namespace.equals("http://s3.amazonaws.com/doc/2006-03-01/")) {
@@ -33438,7 +33611,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -33483,8 +33657,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             if (localGetBucketLoggingStatusResponse == null) {
                 throw new org.apache.axis2.databinding.ADBException("GetBucketLoggingStatusResponse cannot be null!!");
             }
-            localGetBucketLoggingStatusResponse.serialize(new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "GetBucketLoggingStatusResponse"), factory,
-                xmlWriter);
+            localGetBucketLoggingStatusResponse.serialize(new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "GetBucketLoggingStatusResponse"),
+                factory, xmlWriter);
 
             xmlWriter.writeEndElement();
 
@@ -33521,8 +33695,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -33805,7 +33980,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -33887,8 +34063,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -34167,7 +34344,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -34249,8 +34427,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -34529,7 +34708,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -34611,8 +34791,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -34823,7 +35004,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public static class PutObjectInlineResponse implements org.apache.axis2.databinding.ADBBean {
 
-        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "PutObjectInlineResponse", "ns1");
+        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "PutObjectInlineResponse",
+            "ns1");
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
             if (namespace.equals("http://s3.amazonaws.com/doc/2006-03-01/")) {
@@ -34891,7 +35073,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -34936,7 +35119,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             if (localPutObjectInlineResponse == null) {
                 throw new org.apache.axis2.databinding.ADBException("PutObjectInlineResponse cannot be null!!");
             }
-            localPutObjectInlineResponse.serialize(new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "PutObjectInlineResponse"), factory, xmlWriter);
+            localPutObjectInlineResponse.serialize(new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "PutObjectInlineResponse"), factory,
+                xmlWriter);
 
             xmlWriter.writeEndElement();
 
@@ -34973,8 +35157,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -35152,7 +35337,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                     while (!reader.isStartElement() && !reader.isEndElement())
                         reader.next();
 
-                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "PutObjectInlineResponse").equals(reader.getName())) {
+                    if (reader.isStartElement() &&
+                        new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "PutObjectInlineResponse").equals(reader.getName())) {
 
                         object.setPutObjectInlineResponse(PutObjectResult.Factory.parse(reader));
 
@@ -35405,7 +35591,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -35618,8 +35805,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -36002,7 +36190,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -36084,8 +36273,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -36436,7 +36626,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -36641,8 +36832,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -36934,8 +37126,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public static class SetBucketAccessControlPolicyResponse implements org.apache.axis2.databinding.ADBBean {
 
-        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "SetBucketAccessControlPolicyResponse",
-            "ns1");
+        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/",
+            "SetBucketAccessControlPolicyResponse", "ns1");
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
             if (namespace.equals("http://s3.amazonaws.com/doc/2006-03-01/")) {
@@ -36979,7 +37171,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -37056,8 +37249,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -37245,7 +37439,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public static class SetBucketLoggingStatusResponse implements org.apache.axis2.databinding.ADBBean {
 
-        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "SetBucketLoggingStatusResponse", "ns1");
+        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/",
+            "SetBucketLoggingStatusResponse", "ns1");
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
             if (namespace.equals("http://s3.amazonaws.com/doc/2006-03-01/")) {
@@ -37289,7 +37484,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -37366,8 +37562,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -37602,7 +37799,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -37675,8 +37873,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -37862,7 +38061,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public static class SetBucketLoggingStatus implements org.apache.axis2.databinding.ADBBean {
 
-        public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "SetBucketLoggingStatus", "ns1");
+        public static final javax.xml.namespace.QName MY_QNAME =
+            new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "SetBucketLoggingStatus", "ns1");
 
         private static java.lang.String generatePrefix(java.lang.String namespace) {
             if (namespace.equals("http://s3.amazonaws.com/doc/2006-03-01/")) {
@@ -38106,7 +38306,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         }
 
         public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+            org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+            org.apache.axis2.databinding.ADBException {
             serialize(parentQName, factory, xmlWriter, false);
         }
 
@@ -38351,8 +38552,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         /**
           * Util method to write an attribute without the ns prefix
           */
-        private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+        private void
+            writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+                throws javax.xml.stream.XMLStreamException {
 
             java.lang.String attributeNamespace = qname.getNamespaceURI();
             java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
@@ -38659,7 +38861,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
                     while (!reader.isStartElement() && !reader.isEndElement())
                         reader.next();
 
-                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "BucketLoggingStatus").equals(reader.getName())) {
+                    if (reader.isStartElement() &&
+                        new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "BucketLoggingStatus").equals(reader.getName())) {
 
                         object.setBucketLoggingStatus(BucketLoggingStatus.Factory.parse(reader));
 
@@ -38700,7 +38903,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     }
 
-    private org.apache.axiom.om.OMElement toOM(com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatusResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.om.OMElement toOM(com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatusResponse param, boolean optimizeContent)
+        throws org.apache.axis2.AxisFault {
 
         try {
             return param.getOMElement(com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatusResponse.MY_QNAME, org.apache.axiom.om.OMAbstractFactory.getOMFactory());
@@ -38730,7 +38934,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     }
 
-    private org.apache.axiom.om.OMElement toOM(com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicy param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.om.OMElement toOM(com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicy param, boolean optimizeContent)
+        throws org.apache.axis2.AxisFault {
 
         try {
             return param.getOMElement(com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicy.MY_QNAME, org.apache.axiom.om.OMAbstractFactory.getOMFactory());
@@ -38744,7 +38949,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         throws org.apache.axis2.AxisFault {
 
         try {
-            return param.getOMElement(com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicyResponse.MY_QNAME, org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+            return param.getOMElement(com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicyResponse.MY_QNAME,
+                org.apache.axiom.om.OMAbstractFactory.getOMFactory());
         } catch (org.apache.axis2.databinding.ADBException e) {
             throw org.apache.axis2.AxisFault.makeFault(e);
         }
@@ -38821,7 +39027,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     }
 
-    private org.apache.axiom.om.OMElement toOM(com.amazon.s3.client.AmazonS3Stub.ListAllMyBucketsResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.om.OMElement toOM(com.amazon.s3.client.AmazonS3Stub.ListAllMyBucketsResponse param, boolean optimizeContent)
+        throws org.apache.axis2.AxisFault {
 
         try {
             return param.getOMElement(com.amazon.s3.client.AmazonS3Stub.ListAllMyBucketsResponse.MY_QNAME, org.apache.axiom.om.OMAbstractFactory.getOMFactory());
@@ -38881,7 +39088,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     }
 
-    private org.apache.axiom.om.OMElement toOM(com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatusResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.om.OMElement toOM(com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatusResponse param, boolean optimizeContent)
+        throws org.apache.axis2.AxisFault {
 
         try {
             return param.getOMElement(com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatusResponse.MY_QNAME, org.apache.axiom.om.OMAbstractFactory.getOMFactory());
@@ -38891,7 +39099,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     }
 
-    private org.apache.axiom.om.OMElement toOM(com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicy param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.om.OMElement toOM(com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicy param, boolean optimizeContent)
+        throws org.apache.axis2.AxisFault {
 
         try {
             return param.getOMElement(com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicy.MY_QNAME, org.apache.axiom.om.OMAbstractFactory.getOMFactory());
@@ -38905,7 +39114,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         throws org.apache.axis2.AxisFault {
 
         try {
-            return param.getOMElement(com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicyResponse.MY_QNAME, org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+            return param.getOMElement(com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicyResponse.MY_QNAME,
+                org.apache.axiom.om.OMAbstractFactory.getOMFactory());
         } catch (org.apache.axis2.databinding.ADBException e) {
             throw org.apache.axis2.AxisFault.makeFault(e);
         }
@@ -38932,7 +39142,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     }
 
-    private org.apache.axiom.om.OMElement toOM(com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicy param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.om.OMElement toOM(com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicy param, boolean optimizeContent)
+        throws org.apache.axis2.AxisFault {
 
         try {
             return param.getOMElement(com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicy.MY_QNAME, org.apache.axiom.om.OMAbstractFactory.getOMFactory());
@@ -38946,14 +39157,16 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         throws org.apache.axis2.AxisFault {
 
         try {
-            return param.getOMElement(com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicyResponse.MY_QNAME, org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+            return param.getOMElement(com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicyResponse.MY_QNAME,
+                org.apache.axiom.om.OMAbstractFactory.getOMFactory());
         } catch (org.apache.axis2.databinding.ADBException e) {
             throw org.apache.axis2.AxisFault.makeFault(e);
         }
 
     }
 
-    private org.apache.axiom.om.OMElement toOM(com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicy param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.om.OMElement toOM(com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicy param, boolean optimizeContent)
+        throws org.apache.axis2.AxisFault {
 
         try {
             return param.getOMElement(com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicy.MY_QNAME, org.apache.axiom.om.OMAbstractFactory.getOMFactory());
@@ -38967,7 +39180,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
         throws org.apache.axis2.AxisFault {
 
         try {
-            return param.getOMElement(com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicyResponse.MY_QNAME, org.apache.axiom.om.OMAbstractFactory.getOMFactory());
+            return param.getOMElement(com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicyResponse.MY_QNAME,
+                org.apache.axiom.om.OMAbstractFactory.getOMFactory());
         } catch (org.apache.axis2.databinding.ADBException e) {
             throw org.apache.axis2.AxisFault.makeFault(e);
         }
@@ -38984,7 +39198,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     }
 
-    private org.apache.axiom.om.OMElement toOM(com.amazon.s3.client.AmazonS3Stub.PutObjectInlineResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.om.OMElement toOM(com.amazon.s3.client.AmazonS3Stub.PutObjectInlineResponse param, boolean optimizeContent)
+        throws org.apache.axis2.AxisFault {
 
         try {
             return param.getOMElement(com.amazon.s3.client.AmazonS3Stub.PutObjectInlineResponse.MY_QNAME, org.apache.axiom.om.OMAbstractFactory.getOMFactory());
@@ -39004,7 +39219,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     }
 
-    private org.apache.axiom.om.OMElement toOM(com.amazon.s3.client.AmazonS3Stub.GetObjectExtendedResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.om.OMElement toOM(com.amazon.s3.client.AmazonS3Stub.GetObjectExtendedResponse param, boolean optimizeContent)
+        throws org.apache.axis2.AxisFault {
 
         try {
             return param.getOMElement(com.amazon.s3.client.AmazonS3Stub.GetObjectExtendedResponse.MY_QNAME, org.apache.axiom.om.OMAbstractFactory.getOMFactory());
@@ -39030,8 +39246,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /* methods to provide back word compatibility */
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.client.AmazonS3Stub.CopyObject param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.client.AmazonS3Stub.CopyObject param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
 
         try {
 
@@ -39046,8 +39262,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /* methods to provide back word compatibility */
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicy param,
-        boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory,
+        com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicy param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
 
         try {
 
@@ -39062,8 +39278,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /* methods to provide back word compatibility */
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.client.AmazonS3Stub.ListBucket param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.client.AmazonS3Stub.ListBucket param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
 
         try {
 
@@ -39078,8 +39294,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /* methods to provide back word compatibility */
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.client.AmazonS3Stub.PutObject param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.client.AmazonS3Stub.PutObject param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
 
         try {
 
@@ -39094,8 +39310,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /* methods to provide back word compatibility */
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.client.AmazonS3Stub.CreateBucket param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.client.AmazonS3Stub.CreateBucket param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
 
         try {
 
@@ -39126,8 +39342,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /* methods to provide back word compatibility */
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.client.AmazonS3Stub.GetObject param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.client.AmazonS3Stub.GetObject param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
 
         try {
 
@@ -39142,8 +39358,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /* methods to provide back word compatibility */
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.client.AmazonS3Stub.DeleteBucket param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.client.AmazonS3Stub.DeleteBucket param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
 
         try {
 
@@ -39174,8 +39390,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /* methods to provide back word compatibility */
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicy param,
-        boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory,
+        com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicy param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
 
         try {
 
@@ -39190,8 +39406,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /* methods to provide back word compatibility */
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.client.AmazonS3Stub.DeleteObject param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.client.AmazonS3Stub.DeleteObject param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
 
         try {
 
@@ -39206,8 +39422,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /* methods to provide back word compatibility */
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicy param,
-        boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory,
+        com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicy param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
 
         try {
 
@@ -39222,8 +39438,8 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /* methods to provide back word compatibility */
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicy param,
-        boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory,
+        com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicy param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
 
         try {
 

@@ -16,17 +16,19 @@
 // under the License.
 package org.apache.cloudstack.ratelimit.integration;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.HashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.apache.cloudstack.api.response.ApiLimitResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
 import org.junit.Before;
 import org.junit.Test;
+
+import org.apache.cloudstack.api.response.ApiLimitResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 

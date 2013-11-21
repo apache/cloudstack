@@ -19,15 +19,19 @@ package org.apache.cloudstack.api.command.user.network;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.network.vpc.NetworkACLItem;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.*;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.api.response.FirewallRuleResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.NetworkACLItemResponse;
+import org.apache.cloudstack.api.response.NetworkACLResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 
-import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.utils.Pair;
 
 @APICommand(name = "listNetworkACLs", description = "Lists all network ACL items", responseObject = NetworkACLItemResponse.class)

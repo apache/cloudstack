@@ -20,20 +20,20 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientCapacityException;
@@ -44,7 +44,7 @@ import com.cloud.uservm.UserVm;
 
 @APICommand(name = "updateVMAffinityGroup",
             description = "Updates the affinity/anti-affinity group associations of a virtual machine. The VM has to be stopped and restarted for the "
-                          + "new properties to take effect.",
+                + "new properties to take effect.",
             responseObject = UserVmResponse.class)
 public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVMAffinityGroupCmd.class.getName());
@@ -64,7 +64,7 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
                collectionType = CommandType.UUID,
                entityType = AffinityGroupResponse.class,
                description = "comma separated list of affinity groups id that are going to be applied to the virtual machine. "
-                             + "Should be passed only when vm is created from a zone with Basic Network support." + " Mutually exclusive with securitygroupnames parameter")
+                   + "Should be passed only when vm is created from a zone with Basic Network support." + " Mutually exclusive with securitygroupnames parameter")
     private List<Long> affinityGroupIdList;
 
     @ACL
@@ -73,7 +73,7 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
                collectionType = CommandType.STRING,
                entityType = AffinityGroupResponse.class,
                description = "comma separated list of affinity groups names that are going to be applied to the virtual machine."
-                             + " Should be passed only when vm is created from a zone with Basic Network support. " + "Mutually exclusive with securitygroupids parameter")
+                   + " Should be passed only when vm is created from a zone with Basic Network support. " + "Mutually exclusive with securitygroupids parameter")
     private List<String> affinityGroupNameList;
 
     /////////////////////////////////////////////////////

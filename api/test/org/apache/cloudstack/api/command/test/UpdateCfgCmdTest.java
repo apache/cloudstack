@@ -16,12 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.command.test;
 
-import com.cloud.configuration.ConfigurationService;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.resource.ResourceService;
-
 import junit.framework.Assert;
 import junit.framework.TestCase;
+
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.mockito.Mockito;
 
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
@@ -29,11 +31,8 @@ import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
 import org.apache.cloudstack.config.Configuration;
 
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.mockito.Mockito;
+import com.cloud.configuration.ConfigurationService;
+import com.cloud.exception.InvalidParameterValueException;
 
 public class UpdateCfgCmdTest extends TestCase {
 
@@ -44,6 +43,7 @@ public class UpdateCfgCmdTest extends TestCase {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    @Override
     @Before
     public void setUp() {
         responseGenerator = Mockito.mock(ResponseGenerator.class);

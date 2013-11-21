@@ -16,13 +16,6 @@
 // under the License.
 package com.cloud.bridge.model;
 
-import java.io.Serializable;
-import java.util.Date;
-
-import com.cloud.bridge.service.exception.UnsupportedException;
-import com.cloud.bridge.util.OrderedPair;
-import com.cloud.bridge.util.Triple;
-
 /**
  * A model of stored ACLs to remember the ACL permissions per canonicalUserID per grantee
  * Hold the AWS S3 grantee and permission constants.

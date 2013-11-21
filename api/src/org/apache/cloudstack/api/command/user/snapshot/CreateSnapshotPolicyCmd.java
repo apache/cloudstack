@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.snapshot;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -24,7 +26,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -50,8 +51,7 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     private Integer maxSnaps;
 
     @Parameter(name = ApiConstants.SCHEDULE, type = CommandType.STRING, required = true, description = "time the snapshot is scheduled to be taken. " + "Format is:"
-                                                                                                       + "* if HOURLY, MM" + "* if DAILY, MM:HH" + "* if WEEKLY, MM:HH:DD (1-7)"
-                                                                                                       + "* if MONTHLY, MM:HH:DD (1-28)")
+        + "* if HOURLY, MM" + "* if DAILY, MM:HH" + "* if WEEKLY, MM:HH:DD (1-7)" + "* if MONTHLY, MM:HH:DD (1-28)")
     private String schedule;
 
     @Parameter(name = ApiConstants.TIMEZONE,
@@ -108,8 +108,8 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             Project project = _projectService.findByProjectAccountId(volume.getAccountId());
             if (project.getState() != Project.State.Active) {
-                PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the specified project id in state=" + project.getState() +
-                                                                             " as it's no longer active");
+                PermissionDeniedException ex =
+                    new PermissionDeniedException("Can't add resources to the specified project id in state=" + project.getState() + " as it's no longer active");
                 ex.addProxyObject(project.getUuid(), "projectId");
                 throw ex;
             }

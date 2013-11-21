@@ -75,8 +75,8 @@ public class NetworkStateListener implements StateListener<State, Event, Network
         }
 
         String resourceName = getEntityFromClassName(Network.class.getName());
-        org.apache.cloudstack.framework.events.Event eventMsg = new org.apache.cloudstack.framework.events.Event("management-server",
-            EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(), event, resourceName, vo.getUuid());
+        org.apache.cloudstack.framework.events.Event eventMsg =
+            new org.apache.cloudstack.framework.events.Event("management-server", EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(), event, resourceName, vo.getUuid());
         Map<String, String> eventDescription = new HashMap<String, String>();
         eventDescription.put("resource", resourceName);
         eventDescription.put("id", vo.getUuid());

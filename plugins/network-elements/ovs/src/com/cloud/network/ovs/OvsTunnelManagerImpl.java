@@ -159,8 +159,9 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 
     private void handleCreateTunnelAnswer(Answer[] answers) {
         OvsCreateTunnelAnswer r = (OvsCreateTunnelAnswer)answers[0];
-        String s = String.format("(hostIP:%1$s, remoteIP:%2$s, bridge:%3$s," + "greKey:%4$s, portName:%5$s)", r.getFromIp(), r.getToIp(), r.getBridge(), r.getKey(),
-            r.getInPortName());
+        String s =
+            String.format("(hostIP:%1$s, remoteIP:%2$s, bridge:%3$s," + "greKey:%4$s, portName:%5$s)", r.getFromIp(), r.getToIp(), r.getBridge(), r.getKey(),
+                r.getInPortName());
         Long from = r.getFrom();
         Long to = r.getTo();
         long networkId = r.getNetworkId();
@@ -345,7 +346,8 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         if (ans.getResult()) {
             OvsTunnelNetworkVO lock = _tunnelNetworkDao.acquireInLockTable(Long.valueOf(1));
             if (lock == null) {
-                s_logger.warn(String.format("failed to lock" + "ovs_tunnel_account, remove record of " + "tunnel(from=%1$s, to=%2$s account=%3$s) failed", from, to, network_id));
+                s_logger.warn(String.format("failed to lock" + "ovs_tunnel_account, remove record of " + "tunnel(from=%1$s, to=%2$s account=%3$s) failed", from, to,
+                    network_id));
                 return;
             }
 

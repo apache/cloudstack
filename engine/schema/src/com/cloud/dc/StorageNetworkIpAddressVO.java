@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.dc;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -31,6 +29,8 @@ import javax.persistence.SecondaryTables;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "op_dc_storage_network_ip_address")
@@ -66,6 +66,7 @@ public class StorageNetworkIpAddressVO implements InternalIdentity {
     protected StorageNetworkIpAddressVO() {
     }
 
+    @Override
     public long getId() {
         return id;
     }

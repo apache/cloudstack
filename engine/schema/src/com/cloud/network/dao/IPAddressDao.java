@@ -16,13 +16,11 @@
 // under the License.
 package com.cloud.network.dao;
 
+import java.util.List;
+
 import com.cloud.dc.Vlan.VlanType;
-import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.Ip;
-
-import java.sql.SQLException;
-import java.util.List;
 
 public interface IPAddressDao extends GenericDao<IPAddressVO, Long> {
 

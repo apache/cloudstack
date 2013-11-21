@@ -18,43 +18,43 @@ package streamer;
 
 public interface DataSource {
 
-  /**
-   * Get data from source.
-   *
-   * @param block
-   *          if false, then return immediately when no data is available,
-   *          otherwise wait for data
-   * @return new data or null, when no data is available
-   */
-  ByteBuffer pull(boolean block);
+    /**
+     * Get data from source.
+     *
+     * @param block
+     *          if false, then return immediately when no data is available,
+     *          otherwise wait for data
+     * @return new data or null, when no data is available
+     */
+    ByteBuffer pull(boolean block);
 
-  /**
-   * Hold data temporary to use at next pull or push.
-   *
-   * @param buf
-   *          a data
-   */
-  void pushBack(ByteBuffer buf);
+    /**
+     * Hold data temporary to use at next pull or push.
+     *
+     * @param buf
+     *          a data
+     */
+    void pushBack(ByteBuffer buf);
 
-  /**
-   * Hold data temporary to use at next pull. Don't return abything untill given
-   * amount of data will be read from source, because data will be pushed back
-   * anyway.
-   *
-   * @param buf
-   *          a data
-   * @param lengthOfFullPacket
-   *          length of full block of data to read from source
-   */
-  void pushBack(ByteBuffer buf, int lengthOfFullPacket);
+    /**
+     * Hold data temporary to use at next pull. Don't return abything untill given
+     * amount of data will be read from source, because data will be pushed back
+     * anyway.
+     *
+     * @param buf
+     *          a data
+     * @param lengthOfFullPacket
+     *          length of full block of data to read from source
+     */
+    void pushBack(ByteBuffer buf, int lengthOfFullPacket);
 
-  /**
-   * Send event to pads.
-   *
-   * @param event
-   *          a event
-   * @param direction
-   *          pad direction
-   */
-  void sendEvent(Event event, Direction direction);
+    /**
+     * Send event to pads.
+     *
+     * @param event
+     *          a event
+     * @param direction
+     *          pad direction
+     */
+    void sendEvent(Event event, Direction direction);
 }

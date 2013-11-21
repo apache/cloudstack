@@ -41,18 +41,18 @@ public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> impl
     protected static final String REMOVE_BY_USERID_VOLID = "DELETE FROM usage_volume WHERE account_id = ? AND id = ?";
     protected static final String UPDATE_DELETED = "UPDATE usage_volume SET deleted = ? WHERE account_id = ? AND id = ? and deleted IS NULL";
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, disk_offering_id, template_id, size, created, deleted "
-                                                                 + "FROM usage_volume " + "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
-                                                                 + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
+        + "FROM usage_volume " + "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
+        + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
     protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT id, zone_id, account_id, domain_id, disk_offering_id, template_id, size, created, deleted "
-                                                                + "FROM usage_volume " + "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
-                                                                + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
+        + "FROM usage_volume " + "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
+        + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
     protected static final String GET_ALL_USAGE_RECORDS = "SELECT id, zone_id, account_id, domain_id, disk_offering_id, template_id, size, created, deleted "
-                                                          + "FROM usage_volume " + "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
-                                                          + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
+        + "FROM usage_volume " + "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
 
     public UsageVolumeDaoImpl() {
     }
 
+    @Override
     public void removeBy(long accountId, long volId) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
@@ -72,6 +72,7 @@ public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> impl
         }
     }
 
+    @Override
     public void update(UsageVolumeVO usage) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;

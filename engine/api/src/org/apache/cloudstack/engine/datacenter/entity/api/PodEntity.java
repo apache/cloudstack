@@ -20,7 +20,6 @@ package org.apache.cloudstack.engine.datacenter.entity.api;
 
 import java.util.List;
 
-import com.cloud.dc.Pod;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping.AllocationState;
 

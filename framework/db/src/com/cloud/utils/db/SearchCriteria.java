@@ -103,7 +103,8 @@ public class SearchCriteria<K> {
             _joins = new HashMap<String, JoinBuilder<SearchCriteria<?>>>(sb._joins.size());
             for (Map.Entry<String, JoinBuilder<SearchBase<?, ?, ?>>> entry : sb._joins.entrySet()) {
                 JoinBuilder<SearchBase<?, ?, ?>> value = entry.getValue();
-                _joins.put(entry.getKey(), new JoinBuilder<SearchCriteria<?>>(value.getT().create(), value.getFirstAttribute(), value.getSecondAttribute(), value.getType()));
+                _joins.put(entry.getKey(),
+                    new JoinBuilder<SearchCriteria<?>>(value.getT().create(), value.getFirstAttribute(), value.getSecondAttribute(), value.getType()));
             }
         }
         _selects = sb._selects;

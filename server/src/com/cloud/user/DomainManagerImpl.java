@@ -26,6 +26,7 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
@@ -149,7 +150,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         Account caller = CallContext.current().getCallingAccount();
 
         if (parentId == null) {
-            parentId = Long.valueOf(DomainVO.ROOT_DOMAIN);
+            parentId = Long.valueOf(Domain.ROOT_DOMAIN);
         }
 
         DomainVO parentDomain = _domainDao.findById(parentId);
@@ -175,7 +176,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
                     "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                            + "and the hyphen ('-'); can't start or end with \"-\"");
+                        + "and the hyphen ('-'); can't start or end with \"-\"");
             }
         }
 
@@ -235,7 +236,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
         if (domain == null) {
             throw new InvalidParameterValueException("Failed to delete domain " + domainId + ", domain not found");
-        } else if (domainId == DomainVO.ROOT_DOMAIN) {
+        } else if (domainId == Domain.ROOT_DOMAIN) {
             throw new PermissionDeniedException("Can't delete ROOT domain");
         }
 
@@ -258,8 +259,9 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             if ((cleanup != null) && cleanup.booleanValue()) {
                 if (!cleanupDomain(domain.getId(), ownerId)) {
                     rollBackState = true;
-                    CloudRuntimeException e = new CloudRuntimeException("Failed to clean up domain resources and sub domains, delete failed on domain " + domain.getName() +
-                                                                        " (id: " + domain.getId() + ").");
+                    CloudRuntimeException e =
+                        new CloudRuntimeException("Failed to clean up domain resources and sub domains, delete failed on domain " + domain.getName() + " (id: " +
+                            domain.getId() + ").");
                     e.addProxyObject(domain.getUuid(), "domainId");
                     throw e;
                 }
@@ -275,8 +277,9 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                 if (accountsForCleanup.isEmpty() && networkIds.isEmpty() && !hasDedicatedResources) {
                     if (!_domainDao.remove(domain.getId())) {
                         rollBackState = true;
-                        CloudRuntimeException e = new CloudRuntimeException("Delete failed on domain " + domain.getName() + " (id: " + domain.getId() +
-                                                                            "); Please make sure all users and sub domains have been removed from the domain before deleting");
+                        CloudRuntimeException e =
+                            new CloudRuntimeException("Delete failed on domain " + domain.getName() + " (id: " + domain.getId() +
+                                "); Please make sure all users and sub domains have been removed from the domain before deleting");
                         e.addProxyObject(domain.getUuid(), "domainId");
                         throw e;
                     }
@@ -309,7 +312,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         } finally {
             //when success is false
             if (rollBackState) {
-                s_logger.debug("Changing domain id=" + domain.getId() + " state back to " + Domain.State.Active + " because it can't be removed due to resources referencing to it");
+                s_logger.debug("Changing domain id=" + domain.getId() + " state back to " + Domain.State.Active +
+                    " because it can't be removed due to resources referencing to it");
                 domain.setState(Domain.State.Active);
                 _domainDao.update(domain.getId(), domain);
             }
@@ -528,7 +532,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
         return new Pair<List<? extends Domain>, Integer>(result.first(), result.second());
     }
 
-    private Pair<List<DomainVO>, Integer> searchForDomainChildren(Filter searchFilter, Long domainId, String domainName, Object keyword, String path, boolean listActiveOnly) {
+    private Pair<List<DomainVO>, Integer> searchForDomainChildren(Filter searchFilter, Long domainId, String domainName, Object keyword, String path,
+        boolean listActiveOnly) {
         SearchCriteria<DomainVO> sc = _domainDao.createSearchCriteria();
 
         if (keyword != null) {
@@ -590,8 +595,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             boolean sameDomain = (domains.size() == 1 && domains.get(0).getId() == domainId);
 
             if (!domains.isEmpty() && !sameDomain) {
-                InvalidParameterValueException ex = new InvalidParameterValueException("Failed to update specified domain id with name '" + domainName +
-                                                                                       "' since it already exists in the system");
+                InvalidParameterValueException ex =
+                    new InvalidParameterValueException("Failed to update specified domain id with name '" + domainName + "' since it already exists in the system");
                 ex.addProxyObject(domain.getUuid(), "domainId");
                 throw ex;
             }
@@ -602,7 +607,7 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
                     "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                            + "and the hyphen ('-'); can't start or end with \"-\"");
+                        + "and the hyphen ('-'); can't start or end with \"-\"");
             }
         }
 

@@ -28,9 +28,9 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.LaunchPermissionVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -44,10 +44,12 @@ public class LaunchPermissionDaoImpl extends GenericDaoBase<LaunchPermissionVO, 
     private static final Logger s_logger = Logger.getLogger(LaunchPermissionDaoImpl.class);
     private static final String REMOVE_LAUNCH_PERMISSION = "DELETE FROM `cloud`.`launch_permission`" + "  WHERE template_id = ? AND account_id = ?";
 
-    private static final String LIST_PERMITTED_TEMPLATES = "SELECT t.id, t.unique_name, t.name, t.public, t.format, t.type, t.hvm, t.bits, t.url, t.created, t.account_id, t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.featured"
-                                                           + "  FROM `cloud`.`vm_template` t INNER JOIN (SELECT lp.template_id as lptid"
-                                                           + " FROM `cloud`.`launch_permission` lp"
-                                                           + " WHERE lp.account_id = ?) joinlp" + "  WHERE t.id = joinlp.lptid" + "  ORDER BY t.created DESC";
+    private static final String LIST_PERMITTED_TEMPLATES =
+        "SELECT t.id, t.unique_name, t.name, t.public, t.format, t.type, t.hvm, t.bits, t.url, t.created, t.account_id, t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.featured"
+            + "  FROM `cloud`.`vm_template` t INNER JOIN (SELECT lp.template_id as lptid"
+            + " FROM `cloud`.`launch_permission` lp"
+            + " WHERE lp.account_id = ?) joinlp"
+            + "  WHERE t.id = joinlp.lptid" + "  ORDER BY t.created DESC";
 
     private final SearchBuilder<LaunchPermissionVO> TemplateAndAccountSearch;
     private final SearchBuilder<LaunchPermissionVO> TemplateIdSearch;
@@ -139,8 +141,9 @@ public class LaunchPermissionDaoImpl extends GenericDaoBase<LaunchPermissionVO, 
                               // permitted templates as this for private
                               // templates only
                 }
-                VMTemplateVO template = new VMTemplateVO(id, uniqueName, name, format, isPublic, featured, TemplateType.valueOf(tmpltType), url, createdDate, requiresHVM, bits,
-                    templateAccountId, checksum, displayText, enablePassword, guestOSId, true, null);
+                VMTemplateVO template =
+                    new VMTemplateVO(id, uniqueName, name, format, isPublic, featured, TemplateType.valueOf(tmpltType), url, createdDate, requiresHVM, bits,
+                        templateAccountId, checksum, displayText, enablePassword, guestOSId, true, null);
                 permittedTemplates.add(template);
             }
         } catch (Exception e) {

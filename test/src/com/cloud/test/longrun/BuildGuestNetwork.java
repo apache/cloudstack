@@ -71,6 +71,7 @@ public class BuildGuestNetwork {
 
         for (int i = 0; i < numThreads; i++) {
             new Thread(new Runnable() {
+                @Override
                 public void run() {
                     try {
 
@@ -100,8 +101,7 @@ public class BuildGuestNetwork {
 
                                 if (singlePrivateIp != null) {
                                     s_logger.info("VM with private Ip " + singlePrivateIp + " was successfully created");
-                                }
-                                else {
+                                } else {
                                     s_logger.info("Problems with VM creation for a user" + myUser.getUserName());
                                     s_logger.info("Deployment failed");
                                     break;

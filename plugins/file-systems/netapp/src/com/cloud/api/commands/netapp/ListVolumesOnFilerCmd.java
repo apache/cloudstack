@@ -21,11 +21,16 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -33,7 +38,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
 import com.cloud.netapp.NetappVolumeVO;
-import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.ListVolumesOnFilerCmdResponse;
 
 @APICommand(name = "listVolumesOnFiler", description = "List Volumes", responseObject = ListVolumesOnFilerCmdResponse.class)
@@ -48,7 +52,8 @@ public class ListVolumesOnFilerCmd extends BaseCmd {
     NetappManager netappMgr;
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             List<NetappVolumeVO> volumes = netappMgr.listVolumesOnFiler(poolName);
             ListResponse<ListVolumesOnFilerCmdResponse> listResponse = new ListResponse<ListVolumesOnFilerCmdResponse>();

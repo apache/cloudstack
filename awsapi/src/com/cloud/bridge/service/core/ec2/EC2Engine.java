@@ -363,11 +363,13 @@ public class EC2Engine extends ManagerBase {
                 }
                 CloudStackSecurityGroup resp = null;
                 if (ipPerm.getProtocol().equalsIgnoreCase("icmp")) {
-                    resp = getApi().authorizeSecurityGroupIngress(null, constructList(ipPerm.getIpRangeSet()), null, null, ipPerm.getIcmpCode(), ipPerm.getIcmpType(),
-                        ipPerm.getProtocol(), null, request.getName(), null, secGroupList);
+                    resp =
+                        getApi().authorizeSecurityGroupIngress(null, constructList(ipPerm.getIpRangeSet()), null, null, ipPerm.getIcmpCode(), ipPerm.getIcmpType(),
+                            ipPerm.getProtocol(), null, request.getName(), null, secGroupList);
                 } else {
-                    resp = getApi().authorizeSecurityGroupIngress(null, constructList(ipPerm.getIpRangeSet()), null, ipPerm.getToPort().longValue(), null, null,
-                        ipPerm.getProtocol(), null, request.getName(), ipPerm.getFromPort().longValue(), secGroupList);
+                    resp =
+                        getApi().authorizeSecurityGroupIngress(null, constructList(ipPerm.getIpRangeSet()), null, ipPerm.getToPort().longValue(), null, null,
+                            ipPerm.getProtocol(), null, request.getName(), ipPerm.getFromPort().longValue(), secGroupList);
                 }
                 if (resp != null) {
                     List<CloudStackIngressRule> ingressRules = resp.getIngressRules();
@@ -805,8 +807,8 @@ public class EC2Engine extends ManagerBase {
                 throw new Exception("Specified ipAddress doesn't exist");
             CloudStackIpAddress cloudIp = cloudIps.get(0);
 
-            List<CloudStackUserVm> vmList = getApi().listVirtualMachines(null, null, true, null, null, null, null, request.getInstanceId(), null, null, null, null, null, null,
-                null, null, null);
+            List<CloudStackUserVm> vmList =
+                getApi().listVirtualMachines(null, null, true, null, null, null, null, request.getInstanceId(), null, null, null, null, null, null, null, null, null);
             if (vmList == null || vmList.size() == 0) {
                 throw new Exception("Instance not found");
             }
@@ -962,8 +964,9 @@ public class EC2Engine extends ManagerBase {
             EC2Image[] imageSet = images.getImageSet();
             String osTypeId = imageSet[0].getOsTypeId();
 
-            CloudStackTemplate resp = getApi().createTemplate((request.getDescription() == null ? "" : request.getDescription()), request.getName(), osTypeId, null, null, null,
-                null, null, null, volumeId);
+            CloudStackTemplate resp =
+                getApi().createTemplate((request.getDescription() == null ? "" : request.getDescription()), request.getName(), osTypeId, null, null, null, null, null,
+                    null, volumeId);
             if (resp == null || resp.getId() == null) {
                 throw new Exception("Image couldn't be created");
             }
@@ -992,9 +995,10 @@ public class EC2Engine extends ManagerBase {
     public EC2CreateImageResponse registerImage(EC2RegisterImage request) {
         EC2CreateImageResponse image = new EC2CreateImageResponse();
         try {
-            List<CloudStackTemplate> templates = getApi().registerTemplate((request.getDescription() == null ? request.getName() : request.getDescription()), request.getFormat(),
-                request.getHypervisor(), request.getName(), toOSTypeId(request.getOsTypeName()), request.getLocation(), toZoneId(request.getZoneName(), null), null, null, null,
-                null, null, null, null, null, null);
+            List<CloudStackTemplate> templates =
+                getApi().registerTemplate((request.getDescription() == null ? request.getName() : request.getDescription()), request.getFormat(),
+                    request.getHypervisor(), request.getName(), toOSTypeId(request.getOsTypeName()), request.getLocation(), toZoneId(request.getZoneName(), null), null,
+                    null, null, null, null, null, null, null, null);
             if (templates != null) {
                 // technically we will only ever register a single template...
                 for (CloudStackTemplate template : templates) {
@@ -1214,7 +1218,8 @@ public class EC2Engine extends ManagerBase {
             }
 
 //            // -> no volume name is given in the Amazon request but is required in the cloud API
-            CloudStackVolume vol = getApi().createVolume(UUID.randomUUID().toString(), null, diskOfferingId, null, size, snapshotId, toZoneId(request.getZoneName(), null));
+            CloudStackVolume vol =
+                getApi().createVolume(UUID.randomUUID().toString(), null, diskOfferingId, null, size, snapshotId, toZoneId(request.getZoneName(), null));
             if (vol != null) {
                 resp.setAttached(vol.getAttached());
                 resp.setCreated(vol.getCreated());
@@ -1436,8 +1441,9 @@ public class EC2Engine extends ManagerBase {
             // now actually deploy the vms
             for (int i = 0; i < createInstances; i++) {
                 try {
-                    CloudStackUserVm resp = getApi().deployVirtualMachine(svcOffering.getId(), request.getTemplateId(), zoneId, null, null, null, null, null, null, null,
-                        request.getKeyName(), null, null, groupIds, groupNames, request.getSize().longValue(), request.getUserData());
+                    CloudStackUserVm resp =
+                        getApi().deployVirtualMachine(svcOffering.getId(), request.getTemplateId(), zoneId, null, null, null, null, null, null, null,
+                            request.getKeyName(), null, null, groupIds, groupNames, request.getSize().longValue(), request.getUserData());
                     EC2Instance vm = new EC2Instance();
                     vm.setId(resp.getId().toString());
                     vm.setName(resp.getName());
@@ -1659,7 +1665,8 @@ public class EC2Engine extends ManagerBase {
      * @param virtualMachineIds - an array of instances we are interested in getting information on
      * @param ifs - filter out unwanted instances
      */
-    private EC2DescribeInstancesResponse listVirtualMachines(String[] virtualMachineIds, EC2InstanceFilterSet ifs, List<CloudStackKeyValue> resourceTags) throws Exception {
+    private EC2DescribeInstancesResponse listVirtualMachines(String[] virtualMachineIds, EC2InstanceFilterSet ifs, List<CloudStackKeyValue> resourceTags)
+        throws Exception {
         EC2DescribeInstancesResponse instances = new EC2DescribeInstancesResponse();
 
         if (null == virtualMachineIds || 0 == virtualMachineIds.length) {
@@ -1873,10 +1880,12 @@ public class EC2Engine extends ManagerBase {
      * @return the same object passed in as the "instances" parameter modified with one or more
      *         EC2Instance objects loaded.
      */
-    private EC2DescribeInstancesResponse lookupInstances(String instanceId, EC2DescribeInstancesResponse instances, List<CloudStackKeyValue> resourceTagSet) throws Exception {
+    private EC2DescribeInstancesResponse lookupInstances(String instanceId, EC2DescribeInstancesResponse instances, List<CloudStackKeyValue> resourceTagSet)
+        throws Exception {
 
         String instId = instanceId != null ? instanceId : null;
-        List<CloudStackUserVm> vms = getApi().listVirtualMachines(null, null, true, null, null, null, null, instId, null, null, null, null, null, null, null, null, resourceTagSet);
+        List<CloudStackUserVm> vms =
+            getApi().listVirtualMachines(null, null, true, null, null, null, null, instId, null, null, null, null, null, null, null, null, resourceTagSet);
 
         if (vms != null && vms.size() > 0) {
             for (CloudStackUserVm cloudVm : vms) {
@@ -2291,8 +2300,8 @@ public class EC2Engine extends ManagerBase {
      * @throws Exception
      */
     private CloudStackNetwork createDefaultGuestNetwork(String zoneId, CloudStackNetworkOffering offering, CloudStackAccount owner) throws Exception {
-        return getApi().createNetwork(owner.getName() + "-network", owner.getName() + "-network", offering.getId(), zoneId, owner.getName(), owner.getDomainId(), true, null, null,
-            null, null, null, null, null, null);
+        return getApi().createNetwork(owner.getName() + "-network", owner.getName() + "-network", offering.getId(), zoneId, owner.getName(), owner.getDomainId(), true,
+            null, null, null, null, null, null, null, null);
     }
 
     /**
@@ -2679,8 +2688,8 @@ public class EC2Engine extends ManagerBase {
                 if (errorMessage.contains("Object vm_instance(uuid:") && errorMessage.contains(") does not exist")) {
                     throw new EC2ServiceException(ClientError.InvalidInstanceID_NotFound, "Specified Instance ID does not exist");
                 } else if (errorMessage.contains("Unable to find security group by name") || errorMessage.contains("Unable to find security group") ||
-                           (errorMessage.contains("Object security_group(uuid:") && errorMessage.contains(") does not exist")) ||
-                           errorMessage.contains("Unable to find group by name ")) {
+                    (errorMessage.contains("Object security_group(uuid:") && errorMessage.contains(") does not exist")) ||
+                    errorMessage.contains("Unable to find group by name ")) {
                     throw new EC2ServiceException(ClientError.InvalidGroup_NotFound, "Specified Security Group does not exist");
                 } else if (errorMessage.contains("Invalid port numbers")) {
                     throw new EC2ServiceException(ClientError.InvalidPermission_Malformed, "Specified Port value is invalid");
@@ -2699,7 +2708,7 @@ public class EC2Engine extends ManagerBase {
                 } else if (errorMessage.contains("Object snapshots(uuid:") && errorMessage.contains(") does not exist")) {
                     throw new EC2ServiceException(ClientError.InvalidSnapshot_NotFound, "Specified Snapshot ID doesn't exist");
                 } else if ((errorMessage.contains("A key pair with name '") && errorMessage.contains("' does not exist")) ||
-                           (errorMessage.contains("A key pair with name '") && errorMessage.contains("' was not found"))) {
+                    (errorMessage.contains("A key pair with name '") && errorMessage.contains("' was not found"))) {
                     throw new EC2ServiceException(ClientError.InvalidKeyPair_NotFound, "Specified Key pair name is invalid");
                 } else if (errorMessage.contains("A key pair with name '") && errorMessage.contains("' already exists")) {
                     throw new EC2ServiceException(ClientError.InvalidKeyPair_Duplicate, "Specified Key pair already exists");
@@ -2726,7 +2735,7 @@ public class EC2Engine extends ManagerBase {
                 } else if (errorMessage.contains("Unable to find tags by parameters specified")) {
                     throw new EC2ServiceException(ClientError.InvalidParameterValue, "Specified resourceTag for the specified resourceId doesn't exist");
                 } else if (errorMessage.contains("Failed to enable static nat for the ip address with specified ipId "
-                                                 + "as vm with specified vmId is already associated with specified currentIp")) {
+                    + "as vm with specified vmId is already associated with specified currentIp")) {
                     throw new EC2ServiceException(ClientError.InvalidParameterValue, "Specified publicIp is already associated to the specified VM");
                 } else if (errorMessage.contains("Specified IP address id is not associated with any vm Id")) {
                     throw new EC2ServiceException(ClientError.InvalidParameterValue, "Specified publicIp is not associated to any VM");
@@ -2773,7 +2782,8 @@ public class EC2Engine extends ManagerBase {
                 } else if (errorMessage.contains("Template") && errorMessage.contains("has not been completely downloaded")) {
                     throw new EC2ServiceException(ClientError.InvalidAMIID_NotFound, "Specified ImageId is unavailable");
                 } else if (errorMessage.contains("cannot stop VM") && errorMessage.contains("when it is in state Starting")) {
-                    throw new EC2ServiceException(ClientError.IncorrectInstanceState, "Unable to stop. One or more of the specified instances is in an incorrect state 'pending'");
+                    throw new EC2ServiceException(ClientError.IncorrectInstanceState,
+                        "Unable to stop. One or more of the specified instances is in an incorrect state 'pending'");
                 } else if (errorMessage.contains("Failed to authorize security group ingress rule(s)")) {
                     throw new EC2ServiceException(ClientError.InvalidParameterValue, "Specified Ip-permission is invalid" + " or the Ip-permission already exists");
                 } else if (errorMessage.contains("Failed to reboot vm instance")) {
@@ -2787,7 +2797,8 @@ public class EC2Engine extends ManagerBase {
                 if (errorMessage.contains("Maximum number of resources of type 'volume' for account") && errorMessage.contains("has been exceeded")) {
                     throw new EC2ServiceException(ClientError.VolumeLimitExceeded, "You have reached the limit on the number of volumes that can be created");
                 } else if (errorMessage.contains("Maximum number of resources of type 'public_ip' for account") && errorMessage.contains("has been exceeded")) {
-                    throw new EC2ServiceException(ClientError.AddressLimitExceeded, "You have reached the limit on the number of elastic ip addresses your account can have");
+                    throw new EC2ServiceException(ClientError.AddressLimitExceeded,
+                        "You have reached the limit on the number of elastic ip addresses your account can have");
                 } else if (errorMessage.contains("Unable to apply save userdata entry on router")) {
                     throw new EC2ServiceException(ClientError.InvalidParameterValue, "The value supplied for parameter UserData is invalid");
                 } else {
@@ -2834,7 +2845,8 @@ public class EC2Engine extends ManagerBase {
             } else if (errorMessage.contains("Failed to start the stopped instance")) {
                 throw new EC2ServiceException(ServerError.InternalError, "Unable to start the instance that was stopped during image creation");
             } else if (errorMessage.contains("One or more of instanceIds specified is in stopped state")) {
-                throw new EC2ServiceException(ClientError.IncorrectInstanceState, "Unable to reboot. One or more of the specified instances is in an incorrect state 'stopped'");
+                throw new EC2ServiceException(ClientError.IncorrectInstanceState,
+                    "Unable to reboot. One or more of the specified instances is in an incorrect state 'stopped'");
             } else if (errorMessage.contains("Specified ipAddress doesn't exist")) {
                 throw new EC2ServiceException(ClientError.InvalidParameterValue, "Specified publicIp doesn't exist");
             } else if (errorMessage.contains("Min Count is greater than the number of instances left to allocate")) {
@@ -2852,7 +2864,8 @@ public class EC2Engine extends ManagerBase {
             } else if (errorMessage.contains("Instance not found")) {
                 throw new EC2ServiceException(ClientError.InvalidInstanceID_NotFound, "One or more of the specified instanceId not found");
             } else if (errorMessage.contains("Cannot modify, instance should be in stopped state")) {
-                throw new EC2ServiceException(ClientError.IncorrectInstanceState, "Unable to modify instance attribute. Specified instance is not in the correct state 'stopped'");
+                throw new EC2ServiceException(ClientError.IncorrectInstanceState,
+                    "Unable to modify instance attribute. Specified instance is not in the correct state 'stopped'");
             } else {
                 throw new EC2ServiceException(ServerError.InternalError, "An unexpected error occured");
             }

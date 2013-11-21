@@ -25,9 +25,10 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "router_network_ref")
@@ -67,6 +68,7 @@ public class RouterNetworkVO implements InternalIdentity {
         return guestType;
     }
 
+    @Override
     public long getId() {
         return id;
     }

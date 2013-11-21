@@ -40,18 +40,16 @@ public class UsageVPNUserDaoImpl extends GenericDaoBase<UsageVPNUserVO, Long> im
 
     protected static final String UPDATE_DELETED = "UPDATE usage_vpn_user SET deleted = ? WHERE account_id = ? AND user_id = ? and deleted IS NULL";
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT zone_id, account_id, domain_id, user_id, user_name, created, deleted " + "FROM usage_vpn_user "
-                                                                 + "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
-                                                                 + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
+        + "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
     protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT zone_id, account_id, domain_id, user_id, user_name, created, deleted " + "FROM usage_vpn_user "
-                                                                + "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
-                                                                + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
+        + "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
     protected static final String GET_ALL_USAGE_RECORDS = "SELECT zone_id, account_id, domain_id, user_id, user_name, created, deleted " + "FROM usage_vpn_user "
-                                                          + "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
-                                                          + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
+        + "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
 
     public UsageVPNUserDaoImpl() {
     }
 
+    @Override
     public void update(UsageVPNUserVO usage) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;

@@ -29,7 +29,6 @@ import javax.persistence.Table;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("s2s_customer_gateway"))
@@ -82,8 +81,8 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     public Site2SiteCustomerGatewayVO() {
     }
 
-    public Site2SiteCustomerGatewayVO(String name, long accountId, long domainId, String gatewayIp, String guestCidrList, String ipsecPsk, String ikePolicy, String espPolicy,
-            long ikeLifetime, long espLifetime, boolean dpd) {
+    public Site2SiteCustomerGatewayVO(String name, long accountId, long domainId, String gatewayIp, String guestCidrList, String ipsecPsk, String ikePolicy,
+            String espPolicy, long ikeLifetime, long espLifetime, boolean dpd) {
         this.name = name;
         this.gatewayIp = gatewayIp;
         this.guestCidrList = guestCidrList;
@@ -193,6 +192,7 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
         this.dpd = dpd;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }

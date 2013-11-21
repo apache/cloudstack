@@ -26,8 +26,6 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.configuration.Resource;
-import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 

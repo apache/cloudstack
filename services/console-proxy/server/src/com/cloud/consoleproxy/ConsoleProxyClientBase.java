@@ -69,8 +69,10 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
         return clientId;
     }
 
+    @Override
     public abstract boolean isHostConnected();
 
+    @Override
     public abstract boolean isFrontEndAlive();
 
     @Override
@@ -83,6 +85,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
         return ajaxImageCache;
     }
 
+    @Override
     public Image getClientScaledImage(int width, int height) {
         FrameBufferCanvas canvas = getFrameBufferCavas();
         if (canvas != null)
@@ -91,8 +94,10 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
         return null;
     }
 
+    @Override
     public abstract void sendClientRawKeyboardEvent(InputEventType event, int code, int modifiers);
 
+    @Override
     public abstract void sendClientMouseEvent(InputEventType event, int x, int y, int code, int modifiers);
 
     @Override
@@ -231,8 +236,8 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
     }
 
     private String onAjaxClientConnectFailed() {
-        return "<html><head></head><body><div id=\"main_panel\" tabindex=\"1\"><p>" + "Unable to start console session as connection is refused by the machine you are accessing"
-               + "</p></div></body></html>";
+        return "<html><head></head><body><div id=\"main_panel\" tabindex=\"1\"><p>"
+            + "Unable to start console session as connection is refused by the machine you are accessing" + "</p></div></body></html>";
     }
 
     @Override
@@ -298,7 +303,8 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
             }
         }
 
-        String[] content = new String[] {"<html>", "<head>", "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/jquery.js\"></script>",
+        String[] content =
+            new String[] {"<html>", "<head>", "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/jquery.js\"></script>",
                 "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/cloud.logger.js\"></script>",
                 "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/ajaxkeys.js\"></script>",
                 "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/ajaxviewer.js\"></script>",
@@ -312,10 +318,11 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
 
                 "<li class=\"pulldown\">", "<a href=\"#\">",
                 "<span><img align=\"left\" src=\"/resource/images/winlog.png\" alt=\"Keyboard\" style=\"width:16px;height:16px\"/>Keyboard</span>", "</a>", "<ul>",
-                "<li><a href=\"#\" cmd=\"keyboard_us\"><span>Standard (US) keyboard</span></a></li>", "<li><a href=\"#\" cmd=\"keyboard_uk\"><span>UK keyboard</span></a></li>",
+                "<li><a href=\"#\" cmd=\"keyboard_us\"><span>Standard (US) keyboard</span></a></li>",
+                "<li><a href=\"#\" cmd=\"keyboard_uk\"><span>UK keyboard</span></a></li>",
                 "<li><a href=\"#\" cmd=\"keyboard_jp\"><span>Japanese keyboard</span></a></li>", "</ul>", "</li>", "</ul>",
-                "<span id=\"light\" class=\"dark\" cmd=\"toggle_logwin\"></span>", "</div>", "<div id=\"main_panel\" tabindex=\"1\"></div>", "<script language=\"javascript\">",
-                "var acceptLanguages = '" + sbLanguages.toString() + "';", "var tileMap = [ " + tileSequence + " ];",
+                "<span id=\"light\" class=\"dark\" cmd=\"toggle_logwin\"></span>", "</div>", "<div id=\"main_panel\" tabindex=\"1\"></div>",
+                "<script language=\"javascript\">", "var acceptLanguages = '" + sbLanguages.toString() + "';", "var tileMap = [ " + tileSequence + " ];",
                 "var ajaxViewer = new AjaxViewer('main_panel', '" + imgUrl + "', '" + updateUrl + "', tileMap, ",
                 String.valueOf(width) + ", " + String.valueOf(height) + ", " + String.valueOf(tileWidth) + ", " + String.valueOf(tileHeight) + ");",
 
@@ -382,7 +389,8 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
 
     private String getAjaxViewerUpdatePageContent(String tileSequence, String imgUrl, boolean resized, int width, int height, int tileWidth, int tileHeight) {
 
-        String[] content = new String[] {"tileMap = [ " + tileSequence + " ];",
+        String[] content =
+            new String[] {"tileMap = [ " + tileSequence + " ];",
                 resized ? "ajaxViewer.resize('main_panel', " + width + ", " + height + " , " + tileWidth + ", " + tileHeight + ");" : "",
                 "ajaxViewer.refresh('" + imgUrl + "', tileMap, false);"};
 

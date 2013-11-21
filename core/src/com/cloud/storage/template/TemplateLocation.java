@@ -24,8 +24,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Properties;
 
-import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;

@@ -19,18 +19,18 @@ package com.cloud.acl;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
-import org.springframework.stereotype.Component;
 
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.DomainManager;
 
 @Component
 @Local(value = SecurityChecker.class)

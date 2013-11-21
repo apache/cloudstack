@@ -40,7 +40,11 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, required = true, description = "public ip address id of the vpn gateway")
+    @Parameter(name = ApiConstants.VPC_ID,
+               type = CommandType.UUID,
+               entityType = VpcResponse.class,
+               required = true,
+               description = "public ip address id of the vpn gateway")
     private Long vpcId;
 
     /////////////////////////////////////////////////////

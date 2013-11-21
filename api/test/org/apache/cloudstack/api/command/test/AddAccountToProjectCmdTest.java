@@ -19,12 +19,14 @@ package org.apache.cloudstack.api.command.test;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
-import org.apache.cloudstack.api.command.user.account.AddAccountToProjectCmd;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
+
+import org.apache.cloudstack.api.command.user.account.AddAccountToProjectCmd;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
@@ -38,6 +40,7 @@ public class AddAccountToProjectCmdTest extends TestCase {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    @Override
     @Before
     public void setUp() {
         addAccountToProjectCmd = new AddAccountToProjectCmd() {
@@ -98,9 +101,9 @@ public class AddAccountToProjectCmdTest extends TestCase {
         Account account = Mockito.mock(Account.class);
 
         Mockito.when(account.getId()).thenReturn(2L);
-        Mockito.when(projectService.getProject(Mockito.anyLong())).thenReturn(project);
+        Mockito.when(projectService.getProject(Matchers.anyLong())).thenReturn(project);
 
-        Mockito.when(projectService.getProjectOwner(Mockito.anyLong())).thenReturn(account);
+        Mockito.when(projectService.getProjectOwner(Matchers.anyLong())).thenReturn(account);
         addAccountToProjectCmd._projectService = projectService;
 
         Assert.assertEquals(2L, addAccountToProjectCmd.getEntityOwnerId());

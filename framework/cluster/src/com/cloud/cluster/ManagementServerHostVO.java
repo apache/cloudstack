@@ -135,6 +135,7 @@ public class ManagementServerHostVO implements ManagementServerHost {
         this.version = version;
     }
 
+    @Override
     public String getServiceIP() {
         return serviceIP;
     }

@@ -29,9 +29,18 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
+import org.apache.log4j.Logger;
+
+import com.vmware.vim25.FileInfo;
+import com.vmware.vim25.FileQueryFlags;
+import com.vmware.vim25.HostDatastoreBrowserSearchResults;
+import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
+import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.TaskInfo;
+import com.vmware.vim25.VirtualDisk;
+
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotAnswer;
@@ -80,13 +89,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
-import com.vmware.vim25.FileInfo;
-import com.vmware.vim25.FileQueryFlags;
-import com.vmware.vim25.HostDatastoreBrowserSearchResults;
-import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
-import com.vmware.vim25.ManagedObjectReference;
-import com.vmware.vim25.TaskInfo;
-import com.vmware.vim25.VirtualDisk;
 
 public class VmwareStorageManagerImpl implements VmwareStorageManager {
     @Override
@@ -347,8 +349,9 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                     throw new Exception("Failed to take snapshot " + cmd.getSnapshotName() + " on vm: " + cmd.getVmName());
                 }
 
-                snapshotBackupUuid = backupSnapshotToSecondaryStorage(vmMo, accountId, volumeId, cmd.getVolumePath(), snapshotUuid, secondaryStorageUrl, prevSnapshotUuid,
-                    prevBackupUuid, hostService.getWorkerName(context, cmd, 1));
+                snapshotBackupUuid =
+                    backupSnapshotToSecondaryStorage(vmMo, accountId, volumeId, cmd.getVolumePath(), snapshotUuid, secondaryStorageUrl, prevSnapshotUuid, prevBackupUuid,
+                        hostService.getWorkerName(context, cmd, 1));
 
                 success = (snapshotBackupUuid != null);
                 if (success) {
@@ -402,7 +405,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
             if (vmMo == null) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to find the owner VM for CreatePrivateTemplateFromVolumeCommand on host " + hyperHost.getHyperHostName() + ", try within datacenter");
+                    s_logger.debug("Unable to find the owner VM for CreatePrivateTemplateFromVolumeCommand on host " + hyperHost.getHyperHostName() +
+                        ", try within datacenter");
                 }
                 vmMo = hyperHost.findVmOnPeerHyperHost(cmd.getVmName());
 
@@ -413,8 +417,9 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 }
             }
 
-            Ternary<String, Long, Long> result = createTemplateFromVolume(vmMo, accountId, templateId, cmd.getUniqueName(), secondaryStoragePoolURL, volumePath,
-                hostService.getWorkerName(context, cmd, 0));
+            Ternary<String, Long, Long> result =
+                createTemplateFromVolume(vmMo, accountId, templateId, cmd.getUniqueName(), secondaryStoragePoolURL, volumePath,
+                    hostService.getWorkerName(context, cmd, 0));
 
             return new CreatePrivateTemplateAnswer(cmd, true, null, result.first(), result.third(), result.second(), cmd.getUniqueName(), ImageFormat.OVA);
 
@@ -470,8 +475,9 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             Pair<String, String> result;
             if (cmd.toSecondaryStorage()) {
-                result = copyVolumeToSecStorage(hostService, hyperHost, cmd, vmName, volumeId, cmd.getPool().getUuid(), volumePath, secondaryStorageURL,
-                    hostService.getWorkerName(context, cmd, 0));
+                result =
+                    copyVolumeToSecStorage(hostService, hyperHost, cmd, vmName, volumeId, cmd.getPool().getUuid(), volumePath, secondaryStorageURL,
+                        hostService.getWorkerName(context, cmd, 0));
             } else {
                 StorageFilerTO poolTO = cmd.getPool();
 
@@ -541,11 +547,11 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
     // templateName: name in secondary storage
     // templateUuid: will be used at hypervisor layer
-    private void copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl, String templatePathAtSecondaryStorage,
-        String templateName, String templateUuid) throws Exception {
+    private void copyTemplateFromSecondaryToPrimary(VmwareHypervisorHost hyperHost, DatastoreMO datastoreMo, String secondaryStorageUrl,
+        String templatePathAtSecondaryStorage, String templateName, String templateUuid) throws Exception {
 
         s_logger.info("Executing copyTemplateFromSecondaryToPrimary. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " +
-                      templatePathAtSecondaryStorage + ", templateName: " + templateName);
+            templatePathAtSecondaryStorage + ", templateName: " + templateName);
 
         String secondaryMountPoint = _mountService.getMountPoint(secondaryStorageUrl);
         s_logger.info("Secondary storage mount point: " + secondaryMountPoint);
@@ -579,8 +585,9 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
         VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
         if (vmMo == null) {
-            String msg = "Failed to import OVA template. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " + templatePathAtSecondaryStorage +
-                         ", templateName: " + templateName + ", templateUuid: " + templateUuid;
+            String msg =
+                "Failed to import OVA template. secondaryStorage: " + secondaryStorageUrl + ", templatePathAtSecondaryStorage: " + templatePathAtSecondaryStorage +
+                    ", templateName: " + templateName + ", templateUuid: " + templateUuid;
             s_logger.error(msg);
             throw new Exception(msg);
         }
@@ -845,8 +852,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         }
     }
 
-    private String createVolumeFromSnapshot(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName, long accountId, long volumeId, String secStorageUrl,
-        String snapshotBackupUuid) throws Exception {
+    private String createVolumeFromSnapshot(VmwareHypervisorHost hyperHost, DatastoreMO primaryDsMo, String newVolumeName, long accountId, long volumeId,
+        String secStorageUrl, String snapshotBackupUuid) throws Exception {
 
         restoreVolumeFromSecStorage(hyperHost, primaryDsMo, newVolumeName, secStorageUrl, getSnapshotRelativeDirInSecStorage(accountId, volumeId), snapshotBackupUuid);
         return null;
@@ -920,8 +927,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return backupUuid + "/" + backupUuid;
     }
 
-    private void exportVolumeToSecondaryStroage(VirtualMachineMO vmMo, String volumePath, String secStorageUrl, String secStorageDir, String exportName, String workerVmName)
-        throws Exception {
+    private void exportVolumeToSecondaryStroage(VirtualMachineMO vmMo, String volumePath, String secStorageUrl, String secStorageDir, String exportName,
+        String workerVmName) throws Exception {
 
         String secondaryMountPoint = _mountService.getMountPoint(secStorageUrl);
         String exportPath = secondaryMountPoint + "/" + secStorageDir + "/" + exportName;
@@ -997,8 +1004,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return "Failed to delete snapshot backup file, backupUuid: " + backupUuid;
     }
 
-    private Pair<String, String> copyVolumeToSecStorage(VmwareHostService hostService, VmwareHypervisorHost hyperHost, CopyVolumeCommand cmd, String vmName, long volumeId,
-        String poolId, String volumePath, String secStorageUrl, String workerVmName) throws Exception {
+    private Pair<String, String> copyVolumeToSecStorage(VmwareHostService hostService, VmwareHypervisorHost hyperHost, CopyVolumeCommand cmd, String vmName,
+        long volumeId, String poolId, String volumePath, String secStorageUrl, String workerVmName) throws Exception {
 
         String volumeFolder = String.valueOf(volumeId) + "/";
         VirtualMachineMO workerVm = null;
@@ -1034,7 +1041,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             vmMo.createSnapshot(exportName, "Temporary snapshot for copy-volume command", false, false);
 
-            exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, "volumes/" + volumeFolder, exportName, hostService.getWorkerName(hyperHost.getContext(), cmd, 1));
+            exportVolumeToSecondaryStroage(vmMo, volumePath, secStorageUrl, "volumes/" + volumeFolder, exportName,
+                hostService.getWorkerName(hyperHost.getContext(), cmd, 1));
             return new Pair<String, String>(volumeFolder, exportName);
 
         } finally {

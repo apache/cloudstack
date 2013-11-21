@@ -30,7 +30,8 @@ package com.amazon.s3;
 
 public class GetObjectAccessControlPolicy implements org.apache.axis2.databinding.ADBBean {
 
-    public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "GetObjectAccessControlPolicy", "ns1");
+    public static final javax.xml.namespace.QName MY_QNAME = new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "GetObjectAccessControlPolicy",
+        "ns1");
 
     private static java.lang.String generatePrefix(java.lang.String namespace) {
         if (namespace.equals("http://s3.amazonaws.com/doc/2006-03-01/")) {
@@ -274,7 +275,8 @@ public class GetObjectAccessControlPolicy implements org.apache.axis2.databindin
     }
 
     public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+        org.apache.axis2.databinding.ADBException {
         serialize(parentQName, factory, xmlWriter, false);
     }
 
@@ -518,9 +520,8 @@ public class GetObjectAccessControlPolicy implements org.apache.axis2.databindin
     /**
      * Util method to write an attribute with the ns prefix
      */
-    private void
-        writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+    private void writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue,
+        javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
         if (xmlWriter.getPrefix(namespace) == null) {
             xmlWriter.writeNamespace(prefix, namespace);
             xmlWriter.setPrefix(prefix, namespace);

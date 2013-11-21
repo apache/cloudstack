@@ -68,7 +68,8 @@ public class Upgrade222to224 implements DbUpgrade {
         }
         pstmt.close();
 
-        pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__related` FOREIGN KEY(`related`) REFERENCES `networks`(`id`) ON DELETE CASCADE");
+        pstmt =
+            conn.prepareStatement("ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__related` FOREIGN KEY(`related`) REFERENCES `networks`(`id`) ON DELETE CASCADE");
         pstmt.executeUpdate();
         pstmt.close();
     }
@@ -159,7 +160,8 @@ public class Upgrade222to224 implements DbUpgrade {
 
     // fixes bug 9597
     private void fixRecreatableVolumesProblem(Connection conn) throws SQLException {
-        PreparedStatement pstmt = conn.prepareStatement("UPDATE volumes as v SET recreatable=(SELECT recreatable FROM disk_offering d WHERE d.id = v.disk_offering_id) WHERE disk_offering_id != 0");
+        PreparedStatement pstmt =
+            conn.prepareStatement("UPDATE volumes as v SET recreatable=(SELECT recreatable FROM disk_offering d WHERE d.id = v.disk_offering_id) WHERE disk_offering_id != 0");
         pstmt.execute();
         pstmt.close();
 
@@ -254,7 +256,8 @@ public class Upgrade222to224 implements DbUpgrade {
 
     private void updateUserStatsWithNetwork(Connection conn) {
         try {
-            PreparedStatement pstmt = conn.prepareStatement("SELECT id, device_id FROM user_statistics WHERE network_id=0 or network_id is NULL and public_ip_address is NULL");
+            PreparedStatement pstmt =
+                conn.prepareStatement("SELECT id, device_id FROM user_statistics WHERE network_id=0 or network_id is NULL and public_ip_address is NULL");
             ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {
@@ -297,8 +300,9 @@ public class Upgrade222to224 implements DbUpgrade {
             s_logger.debug("Upgraded user_statistics with networkId for DomainRouter device type");
 
             // update network_id information for ExternalFirewall and ExternalLoadBalancer device types
-            PreparedStatement pstmt1 = conn.prepareStatement("update user_statistics us, user_ip_address uip set us.network_id = uip.network_id where us.public_ip_address = uip.public_ip_address "
-                                                             + "and us.device_type in ('ExternalFirewall' , 'ExternalLoadBalancer')");
+            PreparedStatement pstmt1 =
+                conn.prepareStatement("update user_statistics us, user_ip_address uip set us.network_id = uip.network_id where us.public_ip_address = uip.public_ip_address "
+                    + "and us.device_type in ('ExternalFirewall' , 'ExternalLoadBalancer')");
             pstmt1.executeUpdate();
             pstmt1.close();
 

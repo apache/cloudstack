@@ -16,56 +16,57 @@
 // under the License.
 package vncclient;
 
+import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
-
-import common.MouseOrder;
 
 import streamer.BaseElement;
 import streamer.ByteBuffer;
 import streamer.Link;
+import common.MouseOrder;
 
 public class AwtMouseEventToVncAdapter extends BaseElement {
 
-  public AwtMouseEventToVncAdapter(String id) {
-    super(id);
-  }
+    public AwtMouseEventToVncAdapter(String id) {
+        super(id);
+    }
 
-  @Override
-  public void handleData(ByteBuffer buf, Link link) {
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
+    @Override
+    public void handleData(ByteBuffer buf, Link link) {
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
 
-    // Get mouse event
-    MouseOrder order = (MouseOrder)buf.getOrder();
+        // Get mouse event
+        MouseOrder order = (MouseOrder)buf.getOrder();
 
-    ByteBuffer outBuf = new ByteBuffer(6);
+        ByteBuffer outBuf = new ByteBuffer(6);
 
-    outBuf.writeByte(RfbConstants.CLIENT_POINTER_EVENT);
+        outBuf.writeByte(RfbConstants.CLIENT_POINTER_EVENT);
 
-    int buttonMask = mapAwtModifiersToVncButtonMask(order.event.getModifiersEx());
-    outBuf.writeByte(buttonMask);
-    outBuf.writeShort(order.event.getX());
-    outBuf.writeShort(order.event.getY());
+        int buttonMask = mapAwtModifiersToVncButtonMask(order.event.getModifiersEx());
+        outBuf.writeByte(buttonMask);
+        outBuf.writeShort(order.event.getX());
+        outBuf.writeShort(order.event.getY());
 
-    pushDataToAllOuts(outBuf);
-  }
+        pushDataToAllOuts(outBuf);
+    }
 
-  /**
-   * Current state of buttons 1 to 8 are represented by bits 0 to 7 of
-   * button-mask respectively, 0 meaning up, 1 meaning down (pressed). On a
-   * conventional mouse, buttons 1, 2 and 3 correspond to the left, middle and
-   * right buttons on the mouse. On a wheel mouse, each step of the wheel
-   * upwards is represented by a press and release of button 4, and each step
-   * downwards is represented by a press and release of button 5.
-   *
-   * @param modifiers
-   *          extended modifiers from AWT mouse event
-   * @return VNC mouse button mask
-   */
-  public static int mapAwtModifiersToVncButtonMask(int modifiers) {
-    int mask = (((modifiers & MouseEvent.BUTTON1_DOWN_MASK) != 0) ? 0x1 : 0) | (((modifiers & MouseEvent.BUTTON2_DOWN_MASK) != 0) ? 0x2 : 0)
-        | (((modifiers & MouseEvent.BUTTON3_DOWN_MASK) != 0) ? 0x4 : 0);
-    return mask;
-  }
+    /**
+     * Current state of buttons 1 to 8 are represented by bits 0 to 7 of
+     * button-mask respectively, 0 meaning up, 1 meaning down (pressed). On a
+     * conventional mouse, buttons 1, 2 and 3 correspond to the left, middle and
+     * right buttons on the mouse. On a wheel mouse, each step of the wheel
+     * upwards is represented by a press and release of button 4, and each step
+     * downwards is represented by a press and release of button 5.
+     *
+     * @param modifiers
+     *          extended modifiers from AWT mouse event
+     * @return VNC mouse button mask
+     */
+    public static int mapAwtModifiersToVncButtonMask(int modifiers) {
+        int mask =
+            (((modifiers & InputEvent.BUTTON1_DOWN_MASK) != 0) ? 0x1 : 0) | (((modifiers & InputEvent.BUTTON2_DOWN_MASK) != 0) ? 0x2 : 0) |
+                (((modifiers & InputEvent.BUTTON3_DOWN_MASK) != 0) ? 0x4 : 0);
+        return mask;
+    }
 
 }

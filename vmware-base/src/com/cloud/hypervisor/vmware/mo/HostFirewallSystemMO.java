@@ -18,10 +18,11 @@ package com.cloud.hypervisor.vmware.mo;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.HostFirewallDefaultPolicy;
 import com.vmware.vim25.HostFirewallInfo;
 import com.vmware.vim25.ManagedObjectReference;
+
+import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class HostFirewallSystemMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(HostFirewallSystemMO.class);

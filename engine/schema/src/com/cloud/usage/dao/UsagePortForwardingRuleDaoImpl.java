@@ -41,18 +41,16 @@ public class UsagePortForwardingRuleDaoImpl extends GenericDaoBase<UsagePortForw
     protected static final String REMOVE_BY_USERID_PFID = "DELETE FROM usage_port_forwarding WHERE account_id = ? AND id = ?";
     protected static final String UPDATE_DELETED = "UPDATE usage_port_forwarding SET deleted = ? WHERE account_id = ? AND id = ? and deleted IS NULL";
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, created, deleted " + "FROM usage_port_forwarding "
-                                                                 + "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
-                                                                 + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
+        + "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
     protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT id, zone_id, account_id, domain_id, created, deleted " + "FROM usage_port_forwarding "
-                                                                + "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
-                                                                + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
+        + "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
     protected static final String GET_ALL_USAGE_RECORDS = "SELECT id, zone_id, account_id, domain_id, created, deleted " + "FROM usage_port_forwarding "
-                                                          + "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
-                                                          + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
+        + "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
 
     public UsagePortForwardingRuleDaoImpl() {
     }
 
+    @Override
     public void removeBy(long accountId, long pfId) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
@@ -72,6 +70,7 @@ public class UsagePortForwardingRuleDaoImpl extends GenericDaoBase<UsagePortForw
         }
     }
 
+    @Override
     public void update(UsagePortForwardingRuleVO usage) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;

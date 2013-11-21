@@ -20,7 +20,6 @@ import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -48,8 +47,7 @@ public class SubmitCert {
     public static String fileName = "tool.properties";
     public static String certFileName;
     public static String cert;
-    public static final Logger s_logger = Logger
-        .getLogger(SubmitCert.class.getName());
+    public static final Logger s_logger = Logger.getLogger(SubmitCert.class.getName());
 
     public static void main(String[] args) {
         // Parameters
@@ -168,8 +166,7 @@ public class SubmitCert {
     public static String readCert(String filePath) {
         try {
             StringBuffer fileData = new StringBuffer(1000);
-            BufferedReader reader = new BufferedReader(
-                new FileReader(filePath));
+            BufferedReader reader = new BufferedReader(new FileReader(filePath));
             char[] buf = new char[1024];
             int numRead = 0;
             while ((numRead = reader.read(buf)) != -1) {

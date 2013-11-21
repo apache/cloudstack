@@ -143,7 +143,7 @@ public class OvsVifDriver extends VifDriverBase {
         }
         if (!foundLinkLocalBr) {
             Script.runSimpleBashScript("ifconfig " + linkLocalBr + " 169.254.0.1;" + "ip route add " + NetUtils.getLinkLocalCIDR() + " dev " + linkLocalBr + " src " +
-                                       NetUtils.getLinkLocalGateway());
+                NetUtils.getLinkLocalGateway());
         }
     }
 

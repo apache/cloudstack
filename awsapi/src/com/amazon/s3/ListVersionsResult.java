@@ -426,7 +426,8 @@ public class ListVersionsResult implements org.apache.axis2.databinding.ADBBean 
 
         java.util.List list = org.apache.axis2.databinding.utils.ConverterUtil.toList(localListVersionsResultChoice_type0);
         list.add(param);
-        this.localListVersionsResultChoice_type0 = (com.amazon.s3.ListVersionsResultChoice_type0[])list.toArray(new com.amazon.s3.ListVersionsResultChoice_type0[list.size()]);
+        this.localListVersionsResultChoice_type0 =
+            (com.amazon.s3.ListVersionsResultChoice_type0[])list.toArray(new com.amazon.s3.ListVersionsResultChoice_type0[list.size()]);
 
     }
 
@@ -530,7 +531,8 @@ public class ListVersionsResult implements org.apache.axis2.databinding.ADBBean 
     }
 
     public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+        org.apache.axis2.databinding.ADBException {
         serialize(parentQName, factory, xmlWriter, false);
     }
 
@@ -913,9 +915,8 @@ public class ListVersionsResult implements org.apache.axis2.databinding.ADBBean 
     /**
      * Util method to write an attribute with the ns prefix
      */
-    private void
-        writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+    private void writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue,
+        javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
         if (xmlWriter.getPrefix(namespace) == null) {
             xmlWriter.writeNamespace(prefix, namespace);
             xmlWriter.setPrefix(prefix, namespace);
@@ -1278,7 +1279,8 @@ public class ListVersionsResult implements org.apache.axis2.databinding.ADBBean 
                     }
                     // call the converter utility  to convert and set the array
 
-                    object.setMetadata((com.amazon.s3.MetadataEntry[])org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(com.amazon.s3.MetadataEntry.class, list1));
+                    object.setMetadata((com.amazon.s3.MetadataEntry[])org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(com.amazon.s3.MetadataEntry.class,
+                        list1));
 
                 }  // End of if for expected property start element
 
@@ -1514,7 +1516,8 @@ public class ListVersionsResult implements org.apache.axis2.databinding.ADBBean 
                     }
                     // call the converter utility  to convert and set the array
 
-                    object.setCommonPrefixes((com.amazon.s3.PrefixEntry[])org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(com.amazon.s3.PrefixEntry.class, list12));
+                    object.setCommonPrefixes((com.amazon.s3.PrefixEntry[])org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(
+                        com.amazon.s3.PrefixEntry.class, list12));
 
                 }  // End of if for expected property start element
 

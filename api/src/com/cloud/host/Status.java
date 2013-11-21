@@ -23,10 +23,15 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 
 public enum Status {
-    Creating(true, false, false), Connecting(true, false, false), Up(true, false, false), Down(true, true, true), Disconnected(true, true, true), Alert(true, true, true), Removed(
-            true,
-            false,
-            true), Error(true, false, true), Rebalancing(true, false, true);
+    Creating(true, false, false),
+    Connecting(true, false, false),
+    Up(true, false, false),
+    Down(true, true, true),
+    Disconnected(true, true, true),
+    Alert(true, true, true),
+    Removed(true, false, true),
+    Error(true, false, true),
+    Rebalancing(true, false, true);
 
     private final boolean updateManagementServer;
     private final boolean checkManagementServer;

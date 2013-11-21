@@ -18,10 +18,7 @@ package com.cloud.bridge.service.core.s3;
 
 import java.util.List;
 
-import com.cloud.bridge.model.SAcl;
 import com.cloud.bridge.model.SAclVO;
-import com.cloud.bridge.model.SBucket;
-import com.cloud.bridge.service.exception.UnsupportedException;
 
 /**
  * Each relation holds

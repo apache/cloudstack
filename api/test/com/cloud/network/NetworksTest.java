@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.junit.Assert;

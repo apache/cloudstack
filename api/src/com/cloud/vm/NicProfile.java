@@ -162,6 +162,7 @@ public class NicProfile implements InternalIdentity {
         return vmId;
     }
 
+    @Override
     public long getId() {
         return id;
     }

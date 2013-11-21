@@ -49,43 +49,42 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
     //         proxy vm id, count of assignment
     //
     private static final String PROXY_ASSIGNMENT_MATRIX = "SELECT c.id, count(runningVm.id) AS count "
-                                                          + " FROM console_proxy AS c LEFT JOIN vm_instance AS i ON c.id=i.id LEFT JOIN"
-                                                          + " (SELECT v.id AS id, v.proxy_id AS proxy_id FROM vm_instance AS v WHERE "
-                                                          + "  (v.state='Running' OR v.state='Creating' OR v.state='Starting' OR v.state='Migrating')) "
-                                                          + " AS runningVm ON c.id = runningVm.proxy_id WHERE i.state='Running' " + " GROUP BY c.id";
+        + " FROM console_proxy AS c LEFT JOIN vm_instance AS i ON c.id=i.id LEFT JOIN" + " (SELECT v.id AS id, v.proxy_id AS proxy_id FROM vm_instance AS v WHERE "
+        + "  (v.state='Running' OR v.state='Creating' OR v.state='Starting' OR v.state='Migrating')) "
+        + " AS runningVm ON c.id = runningVm.proxy_id WHERE i.state='Running' " + " GROUP BY c.id";
 
     //
     // query SQL for returnning running VM count at data center basis
     //
-    private static final String DATACENTER_VM_MATRIX = "SELECT d.id, d.name, count(v.id) AS count" + " FROM data_center AS d LEFT JOIN vm_instance AS v ON v.data_center_id=d.id "
-                                                       + " WHERE (v.state='Creating' OR v.state='Starting' OR v.state='Running' OR v.state='Migrating')" + " GROUP BY d.id, d.name";
+    private static final String DATACENTER_VM_MATRIX = "SELECT d.id, d.name, count(v.id) AS count"
+        + " FROM data_center AS d LEFT JOIN vm_instance AS v ON v.data_center_id=d.id "
+        + " WHERE (v.state='Creating' OR v.state='Starting' OR v.state='Running' OR v.state='Migrating')" + " GROUP BY d.id, d.name";
 
     private static final String DATACENTER_ACTIVE_SESSION_MATRIX = "SELECT d.id, d.name, sum(c.active_session) AS count"
-                                                                   + " FROM data_center AS d LEFT JOIN vm_instance AS v ON v.data_center_id=d.id "
-                                                                   + " LEFT JOIN console_proxy AS c ON v.id=c.id "
-                                                                   + " WHERE v.type='ConsoleProxy' AND (v.state='Creating' OR v.state='Starting' OR v.state='Running' OR v.state='Migrating')"
-                                                                   + " GROUP BY d.id, d.name";
+        + " FROM data_center AS d LEFT JOIN vm_instance AS v ON v.data_center_id=d.id " + " LEFT JOIN console_proxy AS c ON v.id=c.id "
+        + " WHERE v.type='ConsoleProxy' AND (v.state='Creating' OR v.state='Starting' OR v.state='Running' OR v.state='Migrating')" + " GROUP BY d.id, d.name";
 
     //
     // query SQL for returnning running console proxy count at data center basis
     //
-    private static final String DATACENTER_PROXY_MATRIX = "SELECT d.id, d.name, count(dcid) as count"
-                                                          + " FROM data_center as d"
-                                                          + " LEFT JOIN ("
-                                                          + " SELECT v.data_center_id as dcid, c.active_session as active_session from vm_instance as v"
-                                                          + " INNER JOIN console_proxy as c ON v.id=c.id AND v.type='ConsoleProxy' AND (v.state='Creating' OR v.state='Starting' OR v.state='Running' OR v.state='Migrating')"
-                                                          + " ) as t ON d.id = t.dcid" + " GROUP BY d.id, d.name";
+    private static final String DATACENTER_PROXY_MATRIX =
+        "SELECT d.id, d.name, count(dcid) as count"
+            + " FROM data_center as d"
+            + " LEFT JOIN ("
+            + " SELECT v.data_center_id as dcid, c.active_session as active_session from vm_instance as v"
+            + " INNER JOIN console_proxy as c ON v.id=c.id AND v.type='ConsoleProxy' AND (v.state='Creating' OR v.state='Starting' OR v.state='Running' OR v.state='Migrating')"
+            + " ) as t ON d.id = t.dcid" + " GROUP BY d.id, d.name";
 
     private static final String GET_PROXY_LOAD = "SELECT count(*) AS count" + " FROM vm_instance AS v "
-                                                 + " WHERE v.proxy_id=? AND (v.state='Running' OR v.state='Starting' OR v.state='Creating' OR v.state='Migrating')";
+        + " WHERE v.proxy_id=? AND (v.state='Running' OR v.state='Starting' OR v.state='Creating' OR v.state='Migrating')";
 
     private static final String GET_PROXY_ACTIVE_LOAD = "SELECT active_session AS count" + " FROM console_proxy" + " WHERE id=?";
 
     private static final String STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) " + " FROM storage_pool p, storage_pool_host_ref ph "
-                                                         + " WHERE p.id = ph.pool_id AND p.data_center_id = ? " + " GROUP by p.data_center_id";
+        + " WHERE p.id = ph.pool_id AND p.data_center_id = ? " + " GROUP by p.data_center_id";
 
     private static final String SHARED_STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) " + " FROM storage_pool p, storage_pool_host_ref ph "
-                                                                + " WHERE p.pool_type <> 'LVM' AND p.id = ph.pool_id AND p.data_center_id = ? " + " GROUP by p.data_center_id";
+        + " WHERE p.pool_type <> 'LVM' AND p.id = ph.pool_id AND p.data_center_id = ? " + " GROUP by p.data_center_id";
 
     protected SearchBuilder<ConsoleProxyVO> DataCenterStatusSearch;
     protected SearchBuilder<ConsoleProxyVO> StateSearch;
@@ -314,8 +313,9 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
         ;
         PreparedStatement pstmt = null;
         try {
-            pstmt = txn.prepareAutoCloseStatement("SELECT c.id FROM console_proxy c, vm_instance v, host h "
-                                                  + "WHERE c.id=v.id AND v.state='Running' AND v.host_id=h.id AND h.mgmt_server_id=?");
+            pstmt =
+                txn.prepareAutoCloseStatement("SELECT c.id FROM console_proxy c, vm_instance v, host h "
+                    + "WHERE c.id=v.id AND v.state='Running' AND v.host_id=h.id AND h.mgmt_server_id=?");
 
             pstmt.setLong(1, msid);
             ResultSet rs = pstmt.executeQuery();

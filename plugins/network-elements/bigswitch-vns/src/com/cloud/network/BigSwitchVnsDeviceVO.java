@@ -64,6 +64,7 @@ public class BigSwitchVnsDeviceVO implements InternalIdentity {
         this.uuid = UUID.randomUUID().toString();
     }
 
+    @Override
     public long getId() {
         return id;
     }

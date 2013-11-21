@@ -32,7 +32,6 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.GuestVlan;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
@@ -51,12 +50,13 @@ public interface NetworkService {
 
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
 
-    IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException;
+    IpAddress allocateIP(Account ipOwner, long zoneId, Long networkId) throws ResourceAllocationException, InsufficientAddressCapacityException,
+        ConcurrentOperationException;
 
     boolean releaseIpAddress(long ipAddressId) throws InsufficientAddressCapacityException;
 
-    IpAddress allocatePortableIP(Account ipOwner, int regionId, Long zoneId, Long networkId, Long vpcId) throws ResourceAllocationException, InsufficientAddressCapacityException,
-        ConcurrentOperationException;
+    IpAddress allocatePortableIP(Account ipOwner, int regionId, Long zoneId, Long networkId, Long vpcId) throws ResourceAllocationException,
+        InsufficientAddressCapacityException, ConcurrentOperationException;
 
     boolean releasePortableIpAddress(long ipAddressId);
 
@@ -90,9 +90,11 @@ public interface NetworkService {
 
     List<? extends Service> listNetworkServices(String providerName);
 
-    PhysicalNetworkServiceProvider addProviderToPhysicalNetwork(Long physicalNetworkId, String providerName, Long destinationPhysicalNetworkId, List<String> enabledServices);
+    PhysicalNetworkServiceProvider addProviderToPhysicalNetwork(Long physicalNetworkId, String providerName, Long destinationPhysicalNetworkId,
+        List<String> enabledServices);
 
-    Pair<List<? extends PhysicalNetworkServiceProvider>, Integer> listNetworkServiceProviders(Long physicalNetworkId, String name, String state, Long startIndex, Long pageSize);
+    Pair<List<? extends PhysicalNetworkServiceProvider>, Integer> listNetworkServiceProviders(Long physicalNetworkId, String name, String state, Long startIndex,
+        Long pageSize);
 
     PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String state, List<String> enabledServices);
 
@@ -161,8 +163,9 @@ public interface NetworkService {
      * @throws ConcurrentOperationException
      * @throws ResourceAllocationException
      */
-    Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String broadcastUri, String startIp, String endIP, String gateway, String netmask,
-        long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId) throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
+    Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String broadcastUri, String startIp, String endIP, String gateway,
+        String netmask, long networkOwnerId, Long vpcId, Boolean sourceNat, Long networkOfferingId) throws ResourceAllocationException, ConcurrentOperationException,
+        InsufficientCapacityException;
 
     /* Requests an IP address for the guest nic */
     NicSecondaryIp allocateSecondaryGuestIP(Account account, long zoneId, Long nicId, Long networkId, String ipaddress) throws InsufficientAddressCapacityException;

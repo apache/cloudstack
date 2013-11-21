@@ -29,11 +29,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -67,15 +68,15 @@ public class VMTemplateHostDaoImpl extends GenericDaoBase<VMTemplateHostVO, Long
     protected SearchBuilder<VMTemplateHostVO> LOCAL_SECONDARY_STORAGE_SEARCH;
 
     protected static final String UPDATE_TEMPLATE_HOST_REF = "UPDATE template_host_ref SET download_state = ?, download_pct= ?, last_updated = ? "
-                                                             + ", error_str = ?, local_path = ?, job_id = ? " + "WHERE host_id = ? and type_id = ?";
+        + ", error_str = ?, local_path = ?, job_id = ? " + "WHERE host_id = ? and type_id = ?";
 
     protected static final String DOWNLOADS_STATE_DC = "SELECT t.id, t.host_id, t.template_id, t.created, t.last_updated, t.job_id, "
-                                                       + "t.download_pct, t.size, t.physical_size, t.download_state, t.error_str, t.local_path, "
-                                                       + "t.install_path, t.url, t.destroyed, t.is_copy FROM template_host_ref t, host h "
-                                                       + "where t.host_id = h.id and h.data_center_id=? " + " and t.template_id=? and t.download_state = ?";
+        + "t.download_pct, t.size, t.physical_size, t.download_state, t.error_str, t.local_path, "
+        + "t.install_path, t.url, t.destroyed, t.is_copy FROM template_host_ref t, host h " + "where t.host_id = h.id and h.data_center_id=? "
+        + " and t.template_id=? and t.download_state = ?";
 
     protected static final String DOWNLOADS_STATE_DC_POD = "SELECT * FROM template_host_ref t, host h where t.host_id = h.id and h.data_center_id=? and h.pod_id=? "
-                                                           + " and t.template_id=? and t.download_state=?";
+        + " and t.template_id=? and t.download_state=?";
 
     protected static final String DOWNLOADS_STATE = "SELECT * FROM template_host_ref t " + " where t.template_id=? and t.download_state=?";
 

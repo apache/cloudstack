@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.zone;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -25,8 +27,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.user.Account;
@@ -68,7 +68,10 @@ public class CreateZoneCmd extends BaseCmd {
     @Parameter(name = ApiConstants.DOMAIN, type = CommandType.STRING, description = "Network domain name for the networks in the zone")
     private String domain;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the ID of the containing domain, null for public zones")
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               entityType = DomainResponse.class,
+               description = "the ID of the containing domain, null for public zones")
     private Long domainId;
 
     @Parameter(name = ApiConstants.NETWORK_TYPE, type = CommandType.STRING, required = true, description = "network type of the zone, can be Basic or Advanced")

@@ -18,108 +18,108 @@ package streamer;
 
 public class FakeSource extends BaseElement {
 
-  /**
-   * Delay for null packets in poll method when blocking is requested, in
-   * milliseconds.
-   */
-  protected long delay = SyncLink.STANDARD_DELAY_FOR_EMPTY_PACKET;
+    /**
+     * Delay for null packets in poll method when blocking is requested, in
+     * milliseconds.
+     */
+    protected long delay = SyncLink.STANDARD_DELAY_FOR_EMPTY_PACKET;
 
-  public FakeSource(String id) {
-    super(id);
-  }
-
-  @Override
-  public void poll(boolean block) {
-    if (numBuffers > 0 && packetNumber >= numBuffers) {
-      // Close stream when limit of packets is reached
-      sendEventToAllPads(Event.STREAM_CLOSE, Direction.OUT);
-      return;
+    public FakeSource(String id) {
+        super(id);
     }
 
-    // Prepare new packet
-    ByteBuffer buf = initializeData();
+    @Override
+    public void poll(boolean block) {
+        if (numBuffers > 0 && packetNumber >= numBuffers) {
+            // Close stream when limit of packets is reached
+            sendEventToAllPads(Event.STREAM_CLOSE, Direction.OUT);
+            return;
+        }
 
-    // Push it to output(s)
-    pushDataToAllOuts(buf);
+        // Prepare new packet
+        ByteBuffer buf = initializeData();
 
-    // Make slight delay when blocking input was requested (to avoid
-    // consuming of 100% in parent loop)
-    if (block)
-      delay();
+        // Push it to output(s)
+        pushDataToAllOuts(buf);
 
-  }
+        // Make slight delay when blocking input was requested (to avoid
+        // consuming of 100% in parent loop)
+        if (block)
+            delay();
 
-  /**
-   * Make slight delay. Should be used when blocking input is requested in pull
-   * mode, but null packed was returned by input.
-   */
-  protected void delay() {
-    try {
-      Thread.sleep(delay);
-    } catch (InterruptedException e) {
     }
-  }
 
-  /**
-   * Initialize data.
-   */
-  public ByteBuffer initializeData() {
-    ByteBuffer buf = new ByteBuffer(incommingBufLength);
+    /**
+     * Make slight delay. Should be used when blocking input is requested in pull
+     * mode, but null packed was returned by input.
+     */
+    protected void delay() {
+        try {
+            Thread.sleep(delay);
+        } catch (InterruptedException e) {
+        }
+    }
 
-    // Set first byte of package to it sequance number
-    buf.data[buf.offset] = (byte) (packetNumber % 128);
+    /**
+     * Initialize data.
+     */
+    public ByteBuffer initializeData() {
+        ByteBuffer buf = new ByteBuffer(incommingBufLength);
 
-    // Initialize rest of bytes with sequential values, which are
-    // corresponding with their position in byte buffer
-    for (int i = buf.offset + 1; i < buf.length; i++)
-      buf.data[i] = (byte) (i % 128);
+        // Set first byte of package to it sequance number
+        buf.data[buf.offset] = (byte)(packetNumber % 128);
 
-    buf.putMetadata(ByteBuffer.SEQUENCE_NUMBER, packetNumber);
-    buf.putMetadata("src", id);
+        // Initialize rest of bytes with sequential values, which are
+        // corresponding with their position in byte buffer
+        for (int i = buf.offset + 1; i < buf.length; i++)
+            buf.data[i] = (byte)(i % 128);
 
-    return buf;
-  }
+        buf.putMetadata(ByteBuffer.SEQUENCE_NUMBER, packetNumber);
+        buf.putMetadata("src", id);
 
-  @Override
-  public String toString() {
-    return "FakeSource(" + id + ")";
-  }
+        return buf;
+    }
 
-  public static void main(String args[]) {
+    @Override
+    public String toString() {
+        return "FakeSource(" + id + ")";
+    }
 
-    Element fakeSource = new FakeSource("source 3/10/100") {
-      {
-        verbose = true;
-        this.incommingBufLength = 3;
-        this.numBuffers = 10;
-        this.delay = 100;
-      }
-    };
+    public static void main(String args[]) {
 
-    Element fakeSink = new FakeSink("sink") {
-      {
-        this.verbose = true;
-      }
-    };
+        Element fakeSource = new FakeSource("source 3/10/100") {
+            {
+                verbose = true;
+                this.incommingBufLength = 3;
+                this.numBuffers = 10;
+                this.delay = 100;
+            }
+        };
 
-    Element fakeSink2 = new FakeSink("sink2") {
-      {
-        this.verbose = true;
-      }
-    };
+        Element fakeSink = new FakeSink("sink") {
+            {
+                this.verbose = true;
+            }
+        };
 
-    Link link = new SyncLink();
+        Element fakeSink2 = new FakeSink("sink2") {
+            {
+                this.verbose = true;
+            }
+        };
 
-    fakeSource.setLink(STDOUT, link, Direction.OUT);
-    fakeSink.setLink(STDIN, link, Direction.IN);
+        Link link = new SyncLink();
 
-    Link link2 = new SyncLink();
+        fakeSource.setLink(STDOUT, link, Direction.OUT);
+        fakeSink.setLink(STDIN, link, Direction.IN);
 
-    fakeSource.setLink("out2", link2, Direction.OUT);
-    fakeSink2.setLink(STDIN, link2, Direction.IN);
+        Link link2 = new SyncLink();
 
-    link.run();
+        fakeSource.setLink("out2", link2, Direction.OUT);
+        fakeSink2.setLink(STDIN, link2, Direction.IN);
 
-  }
+        link.run();
+
+    }
 
 }

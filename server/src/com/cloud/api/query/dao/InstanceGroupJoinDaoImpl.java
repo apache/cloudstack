@@ -21,13 +21,12 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.response.InstanceGroupResponse;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
-
-import org.apache.cloudstack.api.response.InstanceGroupResponse;
-import org.springframework.stereotype.Component;
-
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;

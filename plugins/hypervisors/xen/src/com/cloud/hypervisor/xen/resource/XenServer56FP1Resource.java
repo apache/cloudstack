@@ -26,26 +26,21 @@ import java.util.Set;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
-import com.cloud.agent.api.FenceAnswer;
-import com.cloud.agent.api.FenceCommand;
-import com.cloud.agent.api.to.DiskTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.resource.ServerResource;
-import com.cloud.storage.Volume;
-import com.cloud.template.VirtualMachineTemplate.BootloaderType;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
-import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
+
+import com.cloud.agent.api.FenceAnswer;
+import com.cloud.agent.api.FenceCommand;
+import com.cloud.resource.ServerResource;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 
 @Local(value = ServerResource.class)
 public class XenServer56FP1Resource extends XenServer56Resource {
@@ -120,6 +115,7 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         }
     }
 
+    @Override
     public long getStaticMax(String os, boolean b, long dynamicMinRam, long dynamicMaxRam) {
         long recommendedValue = CitrixHelper.getXenServer56FP1StaticMax(os, b);
         if (recommendedValue == 0) {
@@ -130,12 +126,13 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         long staticMax = Math.min(recommendedValue, 4l * dynamicMinRam);  // XS constraint for stability
         if (dynamicMaxRam > staticMax) { // XS contraint that dynamic max <= static max
             s_logger.warn("dynamixMax " + dynamicMaxRam + " cant be greater than static max " + staticMax +
-                          ", can lead to stability issues. Setting static max as much as dynamic max ");
+                ", can lead to stability issues. Setting static max as much as dynamic max ");
             return dynamicMaxRam;
         }
         return staticMax;
     }
 
+    @Override
     public long getStaticMin(String os, boolean b, long dynamicMinRam, long dynamicMaxRam) {
         long recommendedValue = CitrixHelper.getXenServer56FP1StaticMin(os, b);
         if (recommendedValue == 0) {

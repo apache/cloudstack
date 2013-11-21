@@ -27,9 +27,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
 @Entity
 @Table(name = "vlan")
 public class VlanVO implements Vlan {
@@ -167,23 +164,24 @@ public class VlanVO implements Vlan {
     @Override
     public String toString() {
         if (toString == null) {
-            toString = new StringBuilder("Vlan[").append(vlanTag)
-                .append("|")
-                .append(vlanGateway)
-                .append("|")
-                .append(vlanNetmask)
-                .append("|")
-                .append(ip6Gateway)
-                .append("|")
-                .append(ip6Cidr)
-                .append("|")
-                .append(ipRange)
-                .append("|")
-                .append("|")
-                .append(ip6Range)
-                .append(networkId)
-                .append("]")
-                .toString();
+            toString =
+                new StringBuilder("Vlan[").append(vlanTag)
+                    .append("|")
+                    .append(vlanGateway)
+                    .append("|")
+                    .append(vlanNetmask)
+                    .append("|")
+                    .append(ip6Gateway)
+                    .append("|")
+                    .append(ip6Cidr)
+                    .append("|")
+                    .append(ipRange)
+                    .append("|")
+                    .append("|")
+                    .append(ip6Range)
+                    .append(networkId)
+                    .append("]")
+                    .toString();
         }
         return toString;
     }

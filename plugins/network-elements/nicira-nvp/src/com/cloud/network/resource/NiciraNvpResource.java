@@ -376,7 +376,7 @@ public class NiciraNvpResource implements ServerResource {
         String internalNetworkAddress = cmd.getInternalIpCidr();
 
         s_logger.debug("Creating a logical router with external ip " + publicNetworkIpAddress + " and internal ip " + internalNetworkAddress + "on gateway service " +
-                       gatewayServiceUuid);
+            gatewayServiceUuid);
 
         try {
             // Create the Router
@@ -484,7 +484,7 @@ public class NiciraNvpResource implements ServerResource {
             niciraNvpApi.modifyLogicalRouterPort(cmd.getLogicalRouterUuid(), lrp);
 
             return new ConfigurePublicIpsOnLogicalRouterAnswer(cmd, true, "Configured " + cmd.getPublicCidrs().size() + " ip addresses on logical router uuid " +
-                                                                          cmd.getLogicalRouterUuid());
+                cmd.getLogicalRouterUuid());
         } catch (NiciraNvpApiException e) {
             if (numRetries > 0) {
                 return retry(cmd, --numRetries);
@@ -724,7 +724,8 @@ public class NiciraNvpResource implements ServerResource {
 
     }
 
-    protected NatRule[] generatePortForwardingRulePair(final String insideIp, final int[] insidePorts, final String outsideIp, final int[] outsidePorts, final String protocol) {
+    protected NatRule[] generatePortForwardingRulePair(final String insideIp, final int[] insidePorts, final String outsideIp, final int[] outsidePorts,
+        final String protocol) {
         // Start with a basic static nat rule, then add port and protocol details
         NatRule[] rulepair = generateStaticNatRulePair(insideIp, outsideIp);
 

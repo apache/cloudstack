@@ -26,10 +26,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -113,10 +111,10 @@ public class DomainVO implements Domain {
     @Override
     public void setParent(Long parent) {
         if (parent == null) {
-            this.parent = DomainVO.ROOT_DOMAIN;
+            this.parent = Domain.ROOT_DOMAIN;
         } else {
-            if (parent.longValue() <= DomainVO.ROOT_DOMAIN)
-                this.parent = DomainVO.ROOT_DOMAIN;
+            if (parent.longValue() <= Domain.ROOT_DOMAIN)
+                this.parent = Domain.ROOT_DOMAIN;
             else
                 this.parent = parent;
         }

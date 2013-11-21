@@ -25,9 +25,11 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.response.ExternalFirewallResponse;
-import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.response.ExternalFirewallResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.commands.AddExternalFirewallCmd;
@@ -41,7 +43,6 @@ import com.cloud.api.commands.ListPaloAltoFirewallsCmd;
 import com.cloud.api.response.PaloAltoFirewallResponse;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -67,6 +68,7 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.ExternalFirewallDeviceDao;
 import com.cloud.network.dao.ExternalFirewallDeviceVO;
+import com.cloud.network.dao.ExternalFirewallDeviceVO.FirewallDeviceState;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkExternalFirewallDao;
 import com.cloud.network.dao.NetworkExternalFirewallVO;
@@ -74,7 +76,6 @@ import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.network.dao.ExternalFirewallDeviceVO.FirewallDeviceState;
 import com.cloud.network.resource.PaloAltoResource;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
@@ -86,14 +87,11 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value = {NetworkElement.class, FirewallServiceProvider.class,
-        PortForwardingServiceProvider.class, IpDeployer.class,
-        SourceNatServiceProvider.class})
+@Local(value = {NetworkElement.class, FirewallServiceProvider.class, PortForwardingServiceProvider.class, IpDeployer.class, SourceNatServiceProvider.class})
 public class PaloAltoExternalFirewallElement extends ExternalFirewallDeviceManagerImpl implements SourceNatServiceProvider, FirewallServiceProvider,
-PortForwardingServiceProvider, IpDeployer, PaloAltoFirewallElementService, StaticNatServiceProvider {
+        PortForwardingServiceProvider, IpDeployer, PaloAltoFirewallElementService, StaticNatServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(PaloAltoExternalFirewallElement.class);
 
@@ -151,8 +149,8 @@ PortForwardingServiceProvider, IpDeployer, PaloAltoFirewallElementService, Stati
     }
 
     @Override
-    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException,
-    InsufficientNetworkCapacityException {
+    public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException,
+        ConcurrentOperationException, InsufficientNetworkCapacityException {
         DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
 
         // don't have to implement network is Basic zone
@@ -176,8 +174,8 @@ PortForwardingServiceProvider, IpDeployer, PaloAltoFirewallElementService, Stati
     }
 
     @Override
-    public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-    InsufficientNetworkCapacityException, ResourceUnavailableException {
+    public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
         return true;
     }
 
@@ -285,7 +283,7 @@ PortForwardingServiceProvider, IpDeployer, PaloAltoFirewallElementService, Stati
 
     @Override
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
-    ResourceUnavailableException {
+        ResourceUnavailableException {
         // TODO Auto-generated method stub
         return true;
     }
@@ -298,7 +296,8 @@ PortForwardingServiceProvider, IpDeployer, PaloAltoFirewallElementService, Stati
     @Override
     @Deprecated
     // should use more generic addNetworkDevice command to add firewall
-    public Host addExternalFirewall(AddExternalFirewallCmd cmd) {
+        public
+        Host addExternalFirewall(AddExternalFirewallCmd cmd) {
         Long zoneId = cmd.getZoneId();
         DataCenterVO zone = null;
         PhysicalNetworkVO pNetwork = null;
@@ -311,13 +310,14 @@ PortForwardingServiceProvider, IpDeployer, PaloAltoFirewallElementService, Stati
 
         List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZone(zoneId);
         if ((physicalNetworks == null) || (physicalNetworks.size() > 1)) {
-            throw new InvalidParameterValueException("There are no physical networks or multiple physical networks configured in zone with ID: "
-                    + zoneId + " to add this device.");
+            throw new InvalidParameterValueException("There are no physical networks or multiple physical networks configured in zone with ID: " + zoneId +
+                " to add this device.");
         }
         pNetwork = physicalNetworks.get(0);
 
         String deviceType = NetworkDevice.PaloAltoFirewall.getName();
-        ExternalFirewallDeviceVO fwDeviceVO = addExternalFirewall(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceType, new PaloAltoResource());
+        ExternalFirewallDeviceVO fwDeviceVO =
+            addExternalFirewall(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceType, new PaloAltoResource());
         if (fwDeviceVO != null) {
             fwHost = _hostDao.findById(fwDeviceVO.getHostId());
         }
@@ -333,7 +333,8 @@ PortForwardingServiceProvider, IpDeployer, PaloAltoFirewallElementService, Stati
     @Override
     @Deprecated
     // should use more generic listNetworkDevice command
-    public List<Host> listExternalFirewalls(ListExternalFirewallsCmd cmd) {
+        public
+        List<Host> listExternalFirewalls(ListExternalFirewallsCmd cmd) {
         List<Host> firewallHosts = new ArrayList<Host>();
         Long zoneId = cmd.getZoneId();
         DataCenterVO zone = null;
@@ -347,8 +348,8 @@ PortForwardingServiceProvider, IpDeployer, PaloAltoFirewallElementService, Stati
 
             List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZone(zoneId);
             if ((physicalNetworks == null) || (physicalNetworks.size() > 1)) {
-                throw new InvalidParameterValueException("There are no physical networks or multiple physical networks configured in zone with ID: "
-                        + zoneId + " to add this device.");
+                throw new InvalidParameterValueException("There are no physical networks or multiple physical networks configured in zone with ID: " + zoneId +
+                    " to add this device.");
             }
             pNetwork = physicalNetworks.get(0);
         }
@@ -382,8 +383,7 @@ PortForwardingServiceProvider, IpDeployer, PaloAltoFirewallElementService, Stati
         if (!deviceName.equalsIgnoreCase(NetworkDevice.PaloAltoFirewall.getName())) {
             throw new InvalidParameterValueException("Invalid Palo Alto firewall device type");
         }
-        return addExternalFirewall(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceName,
-            new PaloAltoResource());
+        return addExternalFirewall(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceName, new PaloAltoResource());
     }
 
     @Override

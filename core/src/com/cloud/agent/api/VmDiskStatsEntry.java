@@ -59,6 +59,7 @@ public class VmDiskStatsEntry implements VmDiskStats {
         this.bytesRead = bytesRead;
     }
 
+    @Override
     public long getBytesRead() {
         return bytesRead;
     }
@@ -67,6 +68,7 @@ public class VmDiskStatsEntry implements VmDiskStats {
         this.bytesWrite = bytesWrite;
     }
 
+    @Override
     public long getBytesWrite() {
         return bytesWrite;
     }
@@ -75,6 +77,7 @@ public class VmDiskStatsEntry implements VmDiskStats {
         this.ioRead = ioRead;
     }
 
+    @Override
     public long getIORead() {
         return ioRead;
     }
@@ -83,6 +86,7 @@ public class VmDiskStatsEntry implements VmDiskStats {
         this.ioWrite = ioWrite;
     }
 
+    @Override
     public long getIOWrite() {
         return ioWrite;
     }

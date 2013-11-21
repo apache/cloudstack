@@ -16,15 +16,26 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
-import com.cloud.event.EventTypes;
-import com.cloud.exception.*;
-import com.cloud.network.rules.LoadBalancer;
-import com.cloud.user.Account;
-import org.apache.cloudstack.api.*;
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.SslCertResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
+
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.rules.LoadBalancer;
+import com.cloud.user.Account;
 
 @APICommand(name = "assignCertToLoadBalancer", description = "Assigns a certificate to a Load Balancer Rule", responseObject = SuccessResponse.class)
 public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
@@ -33,15 +44,23 @@ public class AssignCertToLoadBalancerCmd extends BaseAsyncCmd {
 
     private static final String s_name = "assignCertToLoadBalancer";
 
-    @Parameter(name = ApiConstants.LBID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the load balancer rule")
+    @Parameter(name = ApiConstants.LBID,
+               type = CommandType.UUID,
+               entityType = FirewallRuleResponse.class,
+               required = true,
+               description = "the ID of the load balancer rule")
     Long lbRuleId;
 
-    @Parameter(name = ApiConstants.CERTIFICATE_ID, type = CommandType.UUID, entityType = SslCertResponse.class, required = true, description = "the ID of the certificate")
+    @Parameter(name = ApiConstants.CERTIFICATE_ID,
+               type = CommandType.UUID,
+               entityType = SslCertResponse.class,
+               required = true,
+               description = "the ID of the certificate")
     Long certId;
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
-        NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException, NetworkRuleConflictException {
         //To change body of implemented methods use File | Settings | File Templates.
         if (_lbService.assignCertToLoadBalancer(getLbRuleId(), getCertId())) {
             SuccessResponse response = new SuccessResponse(getCommandName());

@@ -59,6 +59,7 @@ public class MD5UserAuthenticator extends DefaultUserAuthenticator {
         return true;
     }
 
+    @Override
     public String encode(String password) {
         MessageDigest md5 = null;
         try {

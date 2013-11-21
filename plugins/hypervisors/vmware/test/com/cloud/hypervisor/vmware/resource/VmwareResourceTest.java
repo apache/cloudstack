@@ -16,6 +16,18 @@
 // under the License.
 package com.cloud.hypervisor.vmware.resource;
 
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
+
+import com.vmware.vim25.VirtualMachineConfigSpec;
+
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ScaleVmAnswer;
 import com.cloud.agent.api.ScaleVmCommand;
@@ -23,15 +35,6 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.hypervisor.vmware.util.VmwareHelper;
-import com.vmware.vim25.VirtualMachineConfigSpec;
-import org.junit.Test;
-import org.junit.Before;
-
-import org.mockito.Mock;
-import org.mockito.Spy;
-import org.mockito.MockitoAnnotations;
-import static org.mockito.Mockito.*;
 
 public class VmwareResourceTest {
 

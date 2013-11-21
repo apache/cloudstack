@@ -23,11 +23,9 @@ import javax.ejb.Local;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.ExternalPublicIpStatisticsVO;
-import com.cloud.user.UserStatisticsVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.vm.dao.DomainRouterDao;
 
 @Component
 @Local(value = {ExternalPublicIpStatisticsDao.class})
@@ -49,11 +47,13 @@ public class ExternalPublicIpStatisticsDaoImpl extends GenericDaoBase<ExternalPu
         SingleRowSearch.done();
     }
 
+    @Override
     public ExternalPublicIpStatisticsVO lock(long accountId, long zoneId, String publicIpAddress) {
         SearchCriteria<ExternalPublicIpStatisticsVO> sc = getSingleRowSc(accountId, zoneId, publicIpAddress);
         return lockOneRandomRow(sc, true);
     }
 
+    @Override
     public ExternalPublicIpStatisticsVO findBy(long accountId, long zoneId, String publicIpAddress) {
         SearchCriteria<ExternalPublicIpStatisticsVO> sc = getSingleRowSc(accountId, zoneId, publicIpAddress);
         return findOneBy(sc);
@@ -67,6 +67,7 @@ public class ExternalPublicIpStatisticsDaoImpl extends GenericDaoBase<ExternalPu
         return sc;
     }
 
+    @Override
     public List<ExternalPublicIpStatisticsVO> listBy(long accountId, long zoneId) {
         SearchCriteria<ExternalPublicIpStatisticsVO> sc = AccountZoneSearch.create();
         sc.setParameters("accountId", accountId);

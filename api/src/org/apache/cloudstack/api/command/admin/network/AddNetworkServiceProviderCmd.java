@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.admin.network;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,14 +31,15 @@ import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.ProviderResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.user.Account;
 
-@APICommand(name = "addNetworkServiceProvider", description = "Adds a network serviceProvider to a physical network", responseObject = ProviderResponse.class, since = "3.0.0")
+@APICommand(name = "addNetworkServiceProvider",
+            description = "Adds a network serviceProvider to a physical network",
+            responseObject = ProviderResponse.class,
+            since = "3.0.0")
 public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AddNetworkServiceProviderCmd.class.getName());
 
@@ -117,8 +120,8 @@ public class AddNetworkServiceProviderCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        PhysicalNetworkServiceProvider result = _networkService.addProviderToPhysicalNetwork(getPhysicalNetworkId(), getProviderName(), getDestinationPhysicalNetworkId(),
-            getEnabledServices());
+        PhysicalNetworkServiceProvider result =
+            _networkService.addProviderToPhysicalNetwork(getPhysicalNetworkId(), getProviderName(), getDestinationPhysicalNetworkId(), getEnabledServices());
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());

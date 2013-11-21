@@ -400,12 +400,12 @@ public class VolumeServiceImpl implements VolumeService {
         } else {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Found template " + template.getUniqueName() + " in storage pool " + dataStore.getId() + " with VMTemplateStoragePool id: " +
-                               templatePoolRef.getId());
+                    templatePoolRef.getId());
             }
         }
         long templatePoolRefId = templatePoolRef.getId();
-        CreateBaseImageContext<CreateCmdResult> context = new CreateBaseImageContext<CreateCmdResult>(null, volume, dataStore, template, future, templateOnPrimaryStoreObj,
-            templatePoolRefId);
+        CreateBaseImageContext<CreateCmdResult> context =
+            new CreateBaseImageContext<CreateCmdResult>(null, volume, dataStore, template, future, templateOnPrimaryStoreObj, templatePoolRefId);
         AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().copyBaseImageCallback(null, null)).setContext(context);
 
@@ -422,7 +422,7 @@ public class VolumeServiceImpl implements VolumeService {
             templatePoolRef = _tmpltPoolDao.findByPoolTemplate(dataStore.getId(), template.getId());
             if (templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready) {
                 s_logger.info("Unable to acquire lock on VMTemplateStoragePool " + templatePoolRefId + ", But Template " + template.getUniqueName() +
-                              " is already copied to primary storage, skip copying");
+                    " is already copied to primary storage, skip copying");
                 createVolumeFromBaseImageAsync(volume, templateOnPrimaryStoreObj, dataStore, future);
                 return;
             }
@@ -502,8 +502,8 @@ public class VolumeServiceImpl implements VolumeService {
         DataObject volumeOnPrimaryStorage = pd.create(volume);
         volumeOnPrimaryStorage.processEvent(Event.CreateOnlyRequested);
 
-        CreateVolumeFromBaseImageContext<VolumeApiResult> context = new CreateVolumeFromBaseImageContext<VolumeApiResult>(null, volumeOnPrimaryStorage, pd, templateOnPrimaryStore,
-            future, null);
+        CreateVolumeFromBaseImageContext<VolumeApiResult> context =
+            new CreateVolumeFromBaseImageContext<VolumeApiResult>(null, volumeOnPrimaryStorage, pd, templateOnPrimaryStore, future, null);
         AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().createVolumeFromBaseImageCallBack(null, null));
         caller.setContext(context);
@@ -594,7 +594,8 @@ public class VolumeServiceImpl implements VolumeService {
             DataObject volumeOnStore = store.create(volume);
             volumeOnStore.processEvent(Event.CreateOnlyRequested);
             snapshot.processEvent(Event.CopyingRequested);
-            CreateVolumeFromBaseImageContext<VolumeApiResult> context = new CreateVolumeFromBaseImageContext<VolumeApiResult>(null, volume, store, volumeOnStore, future, snapshot);
+            CreateVolumeFromBaseImageContext<VolumeApiResult> context =
+                new CreateVolumeFromBaseImageContext<VolumeApiResult>(null, volume, store, volumeOnStore, future, snapshot);
             AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
             caller.setCallback(caller.getTarget().createVolumeFromSnapshotCallback(null, null)).setContext(context);
             motionSrv.copyAsync(snapshot, volumeOnStore, caller);
@@ -656,7 +657,8 @@ public class VolumeServiceImpl implements VolumeService {
         final VolumeInfo destVolume;
         final AsyncCallFuture<VolumeApiResult> future;
 
-        public CopyVolumeContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<VolumeApiResult> future, VolumeInfo srcVolume, VolumeInfo destVolume, DataStore destStore) {
+        public CopyVolumeContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<VolumeApiResult> future, VolumeInfo srcVolume, VolumeInfo destVolume,
+                DataStore destStore) {
             super(callback);
             this.srcVolume = srcVolume;
             this.destVolume = destVolume;
@@ -693,7 +695,8 @@ public class VolumeServiceImpl implements VolumeService {
         }
     }
 
-    protected Void copyVolumeFromImageToPrimaryCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CopyVolumeContext<VolumeApiResult> context) {
+    protected Void
+        copyVolumeFromImageToPrimaryCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CopyVolumeContext<VolumeApiResult> context) {
         VolumeInfo srcVolume = context.srcVolume;
         VolumeInfo destVolume = context.destVolume;
         CopyCommandResult result = callback.getResult();
@@ -746,7 +749,8 @@ public class VolumeServiceImpl implements VolumeService {
         }
     }
 
-    protected Void copyVolumeFromPrimaryToImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CopyVolumeContext<VolumeApiResult> context) {
+    protected Void
+        copyVolumeFromPrimaryToImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, CopyVolumeContext<VolumeApiResult> context) {
         VolumeInfo srcVolume = context.srcVolume;
         VolumeInfo destVolume = context.destVolume;
         CopyCommandResult result = callback.getResult();
@@ -852,7 +856,8 @@ public class VolumeServiceImpl implements VolumeService {
         /**
          * @param callback
          */
-        public MigrateVolumeContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<VolumeApiResult> future, VolumeInfo srcVolume, VolumeInfo destVolume, DataStore destStore) {
+        public MigrateVolumeContext(AsyncCompletionCallback<T> callback, AsyncCallFuture<VolumeApiResult> future, VolumeInfo srcVolume, VolumeInfo destVolume,
+                DataStore destStore) {
             super(callback);
             this.srcVolume = srcVolume;
             this.destVolume = destVolume;
@@ -962,7 +967,8 @@ public class VolumeServiceImpl implements VolumeService {
         return future;
     }
 
-    protected Void migrateVmWithVolumesCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, MigrateVmWithVolumesContext<CommandResult> context) {
+    protected Void
+        migrateVmWithVolumesCallBack(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, MigrateVmWithVolumesContext<CommandResult> context) {
         Map<VolumeInfo, DataStore> volumeToPool = context.volumeToPool;
         CopyCommandResult result = callback.getResult();
         AsyncCallFuture<CommandResult> future = context.future;
@@ -1038,20 +1044,21 @@ public class VolumeServiceImpl implements VolumeService {
                     if (volStore != null) {
                         physicalSize = volStore.getPhysicalSize();
                     } else {
-                        s_logger.warn("No entry found in volume_store_ref for volume id: " + vo.getId() + " and image store id: " + ds.getId() + " at the end of uploading volume!");
+                        s_logger.warn("No entry found in volume_store_ref for volume id: " + vo.getId() + " and image store id: " + ds.getId() +
+                            " at the end of uploading volume!");
                     }
                     Scope dsScope = ds.getScope();
                     if (dsScope.getScopeType() == ScopeType.ZONE) {
                         if (dsScope.getScopeId() != null) {
-                            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_UPLOAD, vo.getAccountId(), dsScope.getScopeId(), vo.getId(), vo.getName(), null, null,
-                                physicalSize, vo.getSize(), Volume.class.getName(), vo.getUuid());
+                            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_UPLOAD, vo.getAccountId(), dsScope.getScopeId(), vo.getId(), vo.getName(), null,
+                                null, physicalSize, vo.getSize(), Volume.class.getName(), vo.getUuid());
                         } else {
                             s_logger.warn("Zone scope image store " + ds.getId() + " has a null scope id");
                         }
                     } else if (dsScope.getScopeType() == ScopeType.REGION) {
                         // publish usage event for region-wide image store using a -1 zoneId for 4.2, need to revisit post-4.2
-                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_UPLOAD, vo.getAccountId(), -1, vo.getId(), vo.getName(), null, null, physicalSize, vo.getSize(),
-                            Volume.class.getName(), vo.getUuid());
+                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_UPLOAD, vo.getAccountId(), -1, vo.getId(), vo.getName(), null, null, physicalSize,
+                            vo.getSize(), Volume.class.getName(), vo.getUuid());
 
                         _resourceLimitMgr.incrementResourceCount(vo.getAccountId(), ResourceType.secondary_storage, vo.getSize());
                     }
@@ -1146,7 +1153,7 @@ public class VolumeServiceImpl implements VolumeService {
                         VolumeVO volume = _volumeDao.findById(volumeStore.getVolumeId());
                         if (volume == null) {
                             s_logger.warn("Volume_store_ref shows that volume " + volumeStore.getVolumeId() + " is on image store " + storeId +
-                                          ", but the volume is not found in volumes table, potentially some bugs in deleteVolume, so we just treat this volume to be deleted and mark it as destroyed");
+                                ", but the volume is not found in volumes table, potentially some bugs in deleteVolume, so we just treat this volume to be deleted and mark it as destroyed");
                             volumeStore.setDestroyed(true);
                             _volumeStoreDao.update(volumeStore.getId(), volumeStore);
                             continue;
@@ -1165,8 +1172,9 @@ public class VolumeServiceImpl implements VolumeService {
                                 volumeStore.setErrorString(msg);
                                 s_logger.info("msg");
                                 if (volumeStore.getDownloadUrl() == null) {
-                                    msg = "Volume (" + volume.getUuid() + ") with install path " + volInfo.getInstallPath() + "is corrupted, please check in image store: " +
-                                          volumeStore.getDataStoreId();
+                                    msg =
+                                        "Volume (" + volume.getUuid() + ") with install path " + volInfo.getInstallPath() +
+                                            "is corrupted, please check in image store: " + volumeStore.getDataStoreId();
                                     s_logger.warn(msg);
                                 } else {
                                     s_logger.info("Removing volume_store_ref entry for corrupted volume " + volume.getName());
@@ -1208,7 +1216,8 @@ public class VolumeServiceImpl implements VolumeService {
                         }
                         // Volume is not on secondary but we should download.
                         if (volumeStore.getDownloadState() != Status.DOWNLOADED) {
-                            s_logger.info("Volume Sync did not find " + volume.getName() + " ready on image store " + storeId + ", will request download to start/resume shortly");
+                            s_logger.info("Volume Sync did not find " + volume.getName() + " ready on image store " + storeId +
+                                ", will request download to start/resume shortly");
                             toBeDownloaded.add(volumeStore);
                         }
                     }

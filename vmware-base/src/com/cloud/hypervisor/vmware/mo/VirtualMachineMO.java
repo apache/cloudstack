@@ -26,6 +26,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -107,8 +108,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.script.Script;
-
-import java.util.Arrays;
 
 public class VirtualMachineMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineMO.class);
@@ -489,8 +488,9 @@ public class VirtualMachineMO extends BaseMO {
         return true;
     }
 
-    public String getSnapshotDiskFileDatastorePath(VirtualMachineFileInfo vmFileInfo, List<Pair<ManagedObjectReference, String>> datastoreMounts, String snapshotDiskFile)
-        throws Exception {
+    public String
+        getSnapshotDiskFileDatastorePath(VirtualMachineFileInfo vmFileInfo, List<Pair<ManagedObjectReference, String>> datastoreMounts, String snapshotDiskFile)
+            throws Exception {
 
         // if file path start with "/", need to search all datastore mounts on the host in order
         // to form fully qualified datastore path
@@ -596,7 +596,8 @@ public class VirtualMachineMO extends BaseMO {
         return false;
     }
 
-    public boolean createFullClone(String cloneName, ManagedObjectReference morFolder, ManagedObjectReference morResourcePool, ManagedObjectReference morDs) throws Exception {
+    public boolean createFullClone(String cloneName, ManagedObjectReference morFolder, ManagedObjectReference morResourcePool, ManagedObjectReference morDs)
+        throws Exception {
 
         VirtualMachineCloneSpec cloneSpec = new VirtualMachineCloneSpec();
         VirtualMachineRelocateSpec relocSpec = new VirtualMachineRelocateSpec();
@@ -770,8 +771,9 @@ public class VirtualMachineMO extends BaseMO {
                     }
                 }
 
-                NetworkDetails details = new NetworkDetails(name, oc.getObj(), (morVms != null ? morVms.getManagedObjectReference().toArray(
-                    new ManagedObjectReference[morVms.getManagedObjectReference().size()]) : null), gcTagValue);
+                NetworkDetails details =
+                    new NetworkDetails(name, oc.getObj(), (morVms != null ? morVms.getManagedObjectReference().toArray(
+                        new ManagedObjectReference[morVms.getManagedObjectReference().size()]) : null), gcTagValue);
 
                 networks.add(details);
             }
@@ -903,13 +905,13 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     // vmdkDatastorePath: [datastore name] vmdkFilePath
-    public void createDisk(String vmdkDatastorePath, VirtualDiskType diskType, VirtualDiskMode diskMode, String rdmDeviceName, int sizeInMb, ManagedObjectReference morDs,
-        int controllerKey) throws Exception {
+    public void createDisk(String vmdkDatastorePath, VirtualDiskType diskType, VirtualDiskMode diskMode, String rdmDeviceName, int sizeInMb,
+        ManagedObjectReference morDs, int controllerKey) throws Exception {
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - createDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: " + vmdkDatastorePath + ", sizeInMb: " + sizeInMb +
-                           ", diskType: " + diskType + ", diskMode: " + diskMode + ", rdmDeviceName: " + rdmDeviceName + ", datastore: " + morDs.getValue() + ", controllerKey: " +
-                           controllerKey);
+                ", diskType: " + diskType + ", diskMode: " + diskMode + ", rdmDeviceName: " + rdmDeviceName + ", datastore: " + morDs.getValue() + ", controllerKey: " +
+                controllerKey);
 
         assert (vmdkDatastorePath != null);
         assert (morDs != null);
@@ -923,7 +925,7 @@ public class VirtualMachineMO extends BaseMO {
         if (diskType == VirtualDiskType.THIN || diskType == VirtualDiskType.PREALLOCATED || diskType == VirtualDiskType.EAGER_ZEROED_THICK) {
 
             VirtualDiskFlatVer2BackingInfo backingInfo = new VirtualDiskFlatVer2BackingInfo();
-            backingInfo.setDiskMode(diskMode.PERSISTENT.value());
+            backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
             if (diskType == VirtualDiskType.THIN) {
                 backingInfo.setThinProvisioned(true);
             } else {
@@ -948,7 +950,7 @@ public class VirtualMachineMO extends BaseMO {
             }
             backingInfo.setDeviceName(rdmDeviceName);
             if (diskType == VirtualDiskType.RDM) {
-                backingInfo.setDiskMode(diskMode.PERSISTENT.value());
+                backingInfo.setDiskMode(VirtualDiskMode.PERSISTENT.value());
             }
 
             backingInfo.setDatastore(morDs);
@@ -993,7 +995,7 @@ public class VirtualMachineMO extends BaseMO {
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: " + new Gson().toJson(vmdkDatastorePathChain) +
-                           ", datastore: " + morDs.getValue());
+                ", datastore: " + morDs.getValue());
 
         VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, null, getScsiDeviceControllerKey(), vmdkDatastorePathChain, morDs, -1, 1);
         VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();
@@ -1053,7 +1055,7 @@ public class VirtualMachineMO extends BaseMO {
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - detachDisk(). target MOR: " + _mor.getValue() + ", vmdkDatastorePath: " + vmdkDatastorePath + ", deleteBacking: " +
-                           deleteBackingFile);
+                deleteBackingFile);
 
         // Note: if VM has been taken snapshot, original backing file will be renamed, therefore, when we try to find the matching
         // VirtualDisk, we only perform prefix matching
@@ -1149,8 +1151,8 @@ public class VirtualMachineMO extends BaseMO {
     public void attachIso(String isoDatastorePath, ManagedObjectReference morDs, boolean connect, boolean connectAtBoot) throws Exception {
 
         if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - attachIso(). target MOR: " + _mor.getValue() + ", isoDatastorePath: " + isoDatastorePath + ", datastore: " + morDs.getValue() +
-                           ", connect: " + connect + ", connectAtBoot: " + connectAtBoot);
+            s_logger.trace("vCenter API trace - attachIso(). target MOR: " + _mor.getValue() + ", isoDatastorePath: " + isoDatastorePath + ", datastore: " +
+                morDs.getValue() + ", connect: " + connect + ", connectAtBoot: " + connectAtBoot);
 
         assert (isoDatastorePath != null);
         assert (morDs != null);
@@ -1258,7 +1260,7 @@ public class VirtualMachineMO extends BaseMO {
                                     }
                                     if ("msg.cdromdisconnect.locked".equalsIgnoreCase(msg.getId())) {
                                         s_logger.info("Found that VM has a pending question that we need to answer programmatically, question id: " + msg.getId() +
-                                                      ", for safe operation we will automatically decline it");
+                                            ", for safe operation we will automatically decline it");
                                         vmMo.answerVM(question.getId(), "1");
                                         break;
                                     }
@@ -1275,7 +1277,7 @@ public class VirtualMachineMO extends BaseMO {
                                 msgText = tokens[1];
                                 if ("msg.cdromdisconnect.locked".equalsIgnoreCase(msgId)) {
                                     s_logger.info("Found that VM has a pending question that we need to answer programmatically, question id: " + question.getId() +
-                                                  ". Message id : " + msgId + ". Message text : " + msgText + ", for safe operation we will automatically decline it.");
+                                        ". Message id : " + msgId + ". Message text : " + msgText + ", for safe operation we will automatically decline it.");
                                     vmMo.answerVM(question.getId(), "1");
                                 }
                             }
@@ -2355,7 +2357,7 @@ public class VirtualMachineMO extends BaseMO {
                                     }
                                     if ("msg.cdromdisconnect.locked".equalsIgnoreCase(msg.getId())) {
                                         s_logger.info("Found that VM has a pending question that we need to answer programmatically, question id: " + msg.getId() +
-                                                      ", for safe operation we will automatically decline it");
+                                            ", for safe operation we will automatically decline it");
                                         vmMo.answerVM(question.getId(), "1");
                                         break;
                                     }
@@ -2372,7 +2374,7 @@ public class VirtualMachineMO extends BaseMO {
                                 msgText = tokens[1];
                                 if ("msg.cdromdisconnect.locked".equalsIgnoreCase(msgId)) {
                                     s_logger.info("Found that VM has a pending question that we need to answer programmatically, question id: " + question.getId() +
-                                                  ". Message id : " + msgId + ". Message text : " + msgText + ", for safe operation we will automatically decline it.");
+                                        ". Message id : " + msgId + ". Message text : " + msgText + ", for safe operation we will automatically decline it.");
                                     vmMo.answerVM(question.getId(), "1");
                                 }
                             }

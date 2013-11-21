@@ -27,10 +27,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.NumbersUtil;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "hypervisor_capabilities")
@@ -72,7 +70,8 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public HypervisorCapabilitiesVO(HypervisorType hypervisorType, String hypervisorVersion, Long maxGuestsLimit, boolean securityGroupEnabled, boolean storageMotionSupported) {
+    public HypervisorCapabilitiesVO(HypervisorType hypervisorType, String hypervisorVersion, Long maxGuestsLimit, boolean securityGroupEnabled,
+            boolean storageMotionSupported) {
         this.hypervisorType = hypervisorType;
         this.hypervisorVersion = hypervisorVersion;
         this.maxGuestsLimit = maxGuestsLimit;
@@ -153,6 +152,7 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities {
         return storageMotionSupported;
     }
 
+    @Override
     public long getId() {
         return id;
     }

@@ -24,6 +24,9 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -34,8 +37,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -151,7 +152,8 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost + ". " + receiveAnswer.getDetails());
             }
 
-            MigrateWithStorageSendCommand sendCmd = new MigrateWithStorageSendCommand(to, receiveAnswer.getVolumeToSr(), receiveAnswer.getNicToNetwork(), receiveAnswer.getToken());
+            MigrateWithStorageSendCommand sendCmd =
+                new MigrateWithStorageSendCommand(to, receiveAnswer.getVolumeToSr(), receiveAnswer.getNicToNetwork(), receiveAnswer.getToken());
             MigrateWithStorageSendAnswer sendAnswer = (MigrateWithStorageSendAnswer)agentMgr.send(srcHost.getId(), sendCmd);
             if (sendAnswer == null) {
                 s_logger.error("Migration with storage of vm " + vm + " to host " + destHost + " failed.");

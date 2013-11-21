@@ -26,10 +26,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.consoleproxy.util.Logger;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+
+import com.cloud.consoleproxy.util.Logger;
 
 public class ConsoleProxyAjaxHandler implements HttpHandler {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyAjaxHandler.class);
@@ -37,6 +38,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
     public ConsoleProxyAjaxHandler() {
     }
 
+    @Override
     public void handle(HttpExchange t) throws IOException {
         try {
             if (s_logger.isTraceEnabled())
@@ -130,7 +132,8 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 
             s_logger.warn("Failed to create viewer due to " + e.getMessage(), e);
 
-            String[] content = new String[] {"<html><head></head><body>", "<div id=\"main_panel\" tabindex=\"1\">",
+            String[] content =
+                new String[] {"<html><head></head><body>", "<div id=\"main_panel\" tabindex=\"1\">",
                     "<p>Access is denied for the console session. Please close the window and retry again</p>", "</div></body></html>"};
 
             StringBuffer sb = new StringBuffer();

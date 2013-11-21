@@ -17,14 +17,14 @@
 
 package org.apache.cloudstack.region.gslb;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("global_load_balancer_lb_rule_map"))
@@ -57,6 +57,7 @@ public class GlobalLoadBalancerLbRuleMapVO implements InternalIdentity {
         this.weight = weight;
     }
 
+    @Override
     public long getId() {
         return id;
     }

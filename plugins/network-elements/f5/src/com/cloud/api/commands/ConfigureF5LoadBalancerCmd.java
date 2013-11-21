@@ -19,11 +19,14 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.*;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.api.response.F5LoadBalancerResponse;
@@ -79,7 +82,8 @@ public class ConfigureF5LoadBalancerCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             ExternalLoadBalancerDeviceVO lbDeviceVO = _f5DeviceManagerService.configureF5LoadBalancer(this);
             if (lbDeviceVO != null) {

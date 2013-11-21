@@ -69,8 +69,8 @@ public class UserVmVO extends VMInstanceVO implements UserVm {
         return serviceOfferingId;
     }
 
-    public UserVmVO(long id, String instanceName, String displayName, long templateId, HypervisorType hypervisorType, long guestOsId, boolean haEnabled, boolean limitCpuUse,
-            long domainId, long accountId, long serviceOfferingId, String userData, String name, Long diskOfferingId) {
+    public UserVmVO(long id, String instanceName, String displayName, long templateId, HypervisorType hypervisorType, long guestOsId, boolean haEnabled,
+            boolean limitCpuUse, long domainId, long accountId, long serviceOfferingId, String userData, String name, Long diskOfferingId) {
         super(id, serviceOfferingId, name, instanceName, Type.User, templateId, hypervisorType, guestOsId, domainId, accountId, haEnabled, limitCpuUse, diskOfferingId);
         this.userData = userData;
         this.displayName = displayName;

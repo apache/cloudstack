@@ -21,7 +21,6 @@ import java.io.InputStream;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 
-import javax.inject.Inject;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 

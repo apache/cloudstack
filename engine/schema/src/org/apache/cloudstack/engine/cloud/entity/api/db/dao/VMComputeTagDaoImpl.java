@@ -22,9 +22,9 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 
-import org.apache.cloudstack.engine.cloud.entity.api.db.VMComputeTagVO;
-
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.engine.cloud.entity.api.db.VMComputeTagVO;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;

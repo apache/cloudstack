@@ -17,7 +17,6 @@
 package com.cloud.utils.exception;
 
 import com.cloud.utils.SerialVersionUID;
-import com.cloud.utils.exception.CSExceptionErrorCode;
 
 /**
  * a public method.

@@ -16,10 +16,12 @@
 // under the License.
 package com.cloud.server.api.response.netapp;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
+
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 public class ListVolumePoolsCmdResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)

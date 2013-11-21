@@ -18,22 +18,17 @@
  */
 package org.apache.cloudstack.storage.test;
 
-import com.cloud.storage.snapshot.SnapshotScheduler;
-import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
-import com.cloud.user.DomainManager;
-import com.cloud.utils.component.ComponentContext;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.storage.datastore.provider.CloudStackPrimaryDataStoreProviderImpl;
-import org.apache.cloudstack.storage.datastore.type.DataStoreType;
-import org.apache.cloudstack.storage.endpoint.DefaultEndPointSelector;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 
-import java.util.HashSet;
-import java.util.Set;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.storage.datastore.provider.CloudStackPrimaryDataStoreProviderImpl;
+import org.apache.cloudstack.storage.endpoint.DefaultEndPointSelector;
+
+import com.cloud.storage.snapshot.SnapshotScheduler;
+import com.cloud.user.DomainManager;
+import com.cloud.utils.component.ComponentContext;
 
 public class FakeDriverTestConfiguration extends ChildTestConfiguration {
     @Bean

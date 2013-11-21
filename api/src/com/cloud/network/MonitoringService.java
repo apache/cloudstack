@@ -32,6 +32,7 @@ public interface MonitoringService extends ControlledEntity, Identity, InternalI
         Dhcp, LoadBalancing, Ssh, Webserver,
     }
 
+    @Override
     long getId();
 
     String getService();

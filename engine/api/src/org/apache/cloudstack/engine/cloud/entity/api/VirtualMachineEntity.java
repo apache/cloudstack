@@ -90,7 +90,8 @@ public interface VirtualMachineEntity extends CloudStackEntity {
      * @param exclude list of areas to exclude
      * @return a reservation id
      */
-    String reserve(String plannerToUse, @BeanParam DeploymentPlan plan, ExcludeList exclude, String caller) throws InsufficientCapacityException, ResourceUnavailableException;
+    String reserve(String plannerToUse, @BeanParam DeploymentPlan plan, ExcludeList exclude, String caller) throws InsufficientCapacityException,
+        ResourceUnavailableException;
 
     /**
      * Migrate this VM to a certain destination.

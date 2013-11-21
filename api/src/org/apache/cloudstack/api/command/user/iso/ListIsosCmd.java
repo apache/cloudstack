@@ -16,9 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -30,11 +28,8 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
 @APICommand(name = "listIsos", description = "Lists all available ISO files.", responseObject = TemplateResponse.class)
 public class ListIsosCmd extends BaseListTaggedResourcesCmd {
@@ -64,12 +59,12 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.ISO_FILTER,
                type = CommandType.STRING,
                description = "possible values are \"featured\", \"self\", \"selfexecutable\",\"sharedexecutable\",\"executable\", and \"community\". "
-                             + "* featured : templates that have been marked as featured and public. "
-                             + "* self : templates that have been registered or created by the calling user. "
-                             + "* selfexecutable : same as self, but only returns templates that can be used to deploy a new VM. "
-                             + "* sharedexecutable : templates ready to be deployed that have been granted to the calling user by another user. "
-                             + "* executable : templates that are owned by the calling user, or public templates, that can be used to deploy a VM. "
-                             + "* community : templates that have been marked as public but not featured. " + "* all : all templates (only usable by admins).")
+                   + "* featured : templates that have been marked as featured and public. "
+                   + "* self : templates that have been registered or created by the calling user. "
+                   + "* selfexecutable : same as self, but only returns templates that can be used to deploy a new VM. "
+                   + "* sharedexecutable : templates ready to be deployed that have been granted to the calling user by another user. "
+                   + "* executable : templates that are owned by the calling user, or public templates, that can be used to deploy a VM. "
+                   + "* community : templates that have been marked as public but not featured. " + "* all : all templates (only usable by admins).")
     private String isoFilter = TemplateFilter.selfexecutable.toString();
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list all isos by name")
@@ -120,9 +115,9 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
         boolean isAccountSpecific = (account == null || isAdmin(account.getType())) && (getAccountName() != null) && (getDomainId() != null);
         // Show only those that are downloaded.
         TemplateFilter templateFilter = TemplateFilter.valueOf(getIsoFilter());
-        boolean onlyReady = (templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.selfexecutable) ||
-                            (templateFilter == TemplateFilter.sharedexecutable) || (templateFilter == TemplateFilter.executable && isAccountSpecific) ||
-                            (templateFilter == TemplateFilter.community);
+        boolean onlyReady =
+            (templateFilter == TemplateFilter.featured) || (templateFilter == TemplateFilter.selfexecutable) || (templateFilter == TemplateFilter.sharedexecutable) ||
+                (templateFilter == TemplateFilter.executable && isAccountSpecific) || (templateFilter == TemplateFilter.community);
 
         if (!onlyReady) {
             if (isReady() != null && isReady().booleanValue() != onlyReady) {
@@ -142,6 +137,7 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd {
         return s_name;
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.Iso;
     }

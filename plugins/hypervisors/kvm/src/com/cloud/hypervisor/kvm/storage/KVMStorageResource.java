@@ -58,31 +58,31 @@ public class KVMStorageResource {
     }
 
     protected Answer execute(CopyCommand cmd) {
-        return new Answer((Command)cmd, false, "not implemented yet");
+        return new Answer(cmd, false, "not implemented yet");
     }
 
     protected Answer execute(AttachPrimaryDataStoreCmd cmd) {
-        return new Answer((Command)cmd, false, "not implemented yet");
+        return new Answer(cmd, false, "not implemented yet");
     }
 
     protected Answer execute(CreatePrimaryDataStoreCmd cmd) {
-        return new Answer((Command)cmd, false, "not implemented yet");
+        return new Answer(cmd, false, "not implemented yet");
     }
 
     protected Answer execute(CreateObjectCommand cmd) {
-        return new Answer((Command)cmd, false, "not implemented yet");
+        return new Answer(cmd, false, "not implemented yet");
     }
 
     protected Answer execute(DeleteCommand cmd) {
-        return new Answer((Command)cmd, false, "not implemented yet");
+        return new Answer(cmd, false, "not implemented yet");
     }
 
     protected Answer execute(AttachCommand cmd) {
-        return new Answer((Command)cmd, false, "not implemented yet");
+        return new Answer(cmd, false, "not implemented yet");
     }
 
     protected Answer execute(DettachCommand cmd) {
-        return new Answer((Command)cmd, false, "not implemented yet");
+        return new Answer(cmd, false, "not implemented yet");
     }
 
 }

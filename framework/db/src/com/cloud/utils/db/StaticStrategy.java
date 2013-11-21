@@ -34,16 +34,19 @@ public class StaticStrategy implements BalanceStrategy {
     public StaticStrategy() {
     }
 
+    @Override
     public void destroy() {
         // we don't have anything to clean up
     }
 
+    @Override
     public void init(Connection conn, Properties props) throws SQLException {
         // we don't have anything to initialize
     }
 
-    public ConnectionImpl pickConnection(LoadBalancingConnectionProxy proxy, List<String> configuredHosts, Map<String, ConnectionImpl> liveConnections, long[] responseTimes,
-        int numRetries) throws SQLException {
+    @Override
+    public ConnectionImpl pickConnection(LoadBalancingConnectionProxy proxy, List<String> configuredHosts, Map<String, ConnectionImpl> liveConnections,
+        long[] responseTimes, int numRetries) throws SQLException {
         int numHosts = configuredHosts.size();
 
         SQLException ex = null;

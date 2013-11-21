@@ -39,8 +39,8 @@ public class LoadBalancingRule {
     private LbSslCert sslCert;
     private String lbProtocol;
 
-    public LoadBalancingRule(LoadBalancer lb, List<LbDestination> destinations, List<LbStickinessPolicy> stickinessPolicies, List<LbHealthCheckPolicy> healthCheckPolicies,
-            Ip sourceIp) {
+    public LoadBalancingRule(LoadBalancer lb, List<LbDestination> destinations, List<LbStickinessPolicy> stickinessPolicies,
+            List<LbHealthCheckPolicy> healthCheckPolicies, Ip sourceIp) {
         this.lb = lb;
         this.destinations = destinations;
         this.stickinessPolicies = stickinessPolicies;
@@ -48,8 +48,8 @@ public class LoadBalancingRule {
         this.sourceIp = sourceIp;
     }
 
-    public LoadBalancingRule(LoadBalancer lb, List<LbDestination> destinations, List<LbStickinessPolicy> stickinessPolicies, List<LbHealthCheckPolicy> healthCheckPolicies,
-            Ip sourceIp, LbSslCert sslCert, String lbProtocol) {
+    public LoadBalancingRule(LoadBalancer lb, List<LbDestination> destinations, List<LbStickinessPolicy> stickinessPolicies,
+            List<LbHealthCheckPolicy> healthCheckPolicies, Ip sourceIp, LbSslCert sslCert, String lbProtocol) {
         this.lb = lb;
         this.destinations = destinations;
         this.stickinessPolicies = stickinessPolicies;
@@ -196,7 +196,8 @@ public class LoadBalancingRule {
             this(pingpath, description, responseTime, healthcheckInterval, healthcheckThresshold, unhealthThresshold, false);
         }
 
-        public LbHealthCheckPolicy(String pingpath, String description, int responseTime, int healthcheckInterval, int healthcheckThresshold, int unhealthThresshold, boolean revoke) {
+        public LbHealthCheckPolicy(String pingpath, String description, int responseTime, int healthcheckInterval, int healthcheckThresshold, int unhealthThresshold,
+                boolean revoke) {
             this.pingpath = pingpath;
             this.description = description;
             this.responseTime = responseTime;

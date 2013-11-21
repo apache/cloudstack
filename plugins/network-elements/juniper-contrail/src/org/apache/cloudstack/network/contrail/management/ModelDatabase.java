@@ -48,7 +48,7 @@ public class ModelDatabase {
     public ServiceInstanceModel lookupServiceInstance(String uuid) {
         ServiceInstanceModel siKey = new ServiceInstanceModel(uuid);
         ServiceInstanceModel current = _serviceInstanceTable.ceiling(siKey);
-        if  (current != null && current.getUuid().equals(uuid)) {
+        if (current != null && current.getUuid().equals(uuid)) {
             return current;
         }
         return null;
@@ -75,8 +75,7 @@ public class ModelDatabase {
         VirtualNetworkModel vnKey = new VirtualNetworkModel(null, uuid, name, ttype);
         VirtualNetworkModel current = _vnTable.ceiling(vnKey);
         if (current != null) {
-            if (ttype == TrafficType.Management || ttype == TrafficType.Storage
-                    || ttype == TrafficType.Control) {
+            if (ttype == TrafficType.Management || ttype == TrafficType.Storage || ttype == TrafficType.Control) {
                 if (current.getName().equals(name)) {
                     return current;
                 }

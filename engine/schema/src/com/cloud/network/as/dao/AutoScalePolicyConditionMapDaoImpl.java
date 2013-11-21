@@ -47,6 +47,7 @@ public class AutoScalePolicyConditionMapDaoImpl extends GenericDaoBase<AutoScale
         return listBy(getSearchCriteria(policyId, conditionId));
     }
 
+    @Override
     public boolean isConditionInUse(Long conditionId) {
         return findOneBy(getSearchCriteria(null, conditionId)) != null;
     }

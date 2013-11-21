@@ -17,13 +17,21 @@
 package org.apache.cloudstack.storage.datastore.driver;
 
 import java.text.NumberFormat;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.*;
+import org.apache.commons.lang.StringUtils;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -31,7 +39,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
-import org.apache.commons.lang.StringUtils;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -288,8 +295,9 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             volumeSize += volumeSize * (hypervisorSnapshotReserve / 100f);
         }
 
-        long sfVolumeId = SolidFireUtil.createSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword, getSolidFireVolumeName(volumeInfo.getName()), sfAccountId,
-            volumeSize, true, NumberFormat.getNumberInstance().format(volumeInfo.getSize().toString()), iops.getMinIops(), iops.getMaxIops(), iops.getBurstIops());
+        long sfVolumeId =
+            SolidFireUtil.createSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword, getSolidFireVolumeName(volumeInfo.getName()), sfAccountId,
+                volumeSize, true, NumberFormat.getNumberInstance().format(volumeInfo.getSize().toString()), iops.getMinIops(), iops.getMaxIops(), iops.getBurstIops());
 
         return SolidFireUtil.getSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfVolumeId);
     }
@@ -465,7 +473,8 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         String clusterAdminUsername = sfConnection.getClusterAdminUsername();
         String clusterAdminPassword = sfConnection.getClusterAdminPassword();
 
-        List<SolidFireUtil.SolidFireVolume> sfVolumes = SolidFireUtil.getSolidFireVolumesForAccountId(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfAccountId);
+        List<SolidFireUtil.SolidFireVolume> sfVolumes =
+            SolidFireUtil.getSolidFireVolumesForAccountId(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfAccountId);
 
         if (sfVolumes != null) {
             for (SolidFireUtil.SolidFireVolume sfVolume : sfVolumes) {

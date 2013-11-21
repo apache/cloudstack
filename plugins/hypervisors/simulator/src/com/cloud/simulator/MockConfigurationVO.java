@@ -54,6 +54,7 @@ public class MockConfigurationVO implements InternalIdentity {
     @Column(name = "values")
     private String values;
 
+    @Override
     public long getId() {
         return this.id;
     }

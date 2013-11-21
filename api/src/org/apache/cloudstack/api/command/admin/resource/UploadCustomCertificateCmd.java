@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.resource;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -23,7 +25,6 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.CustomCertificateResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
@@ -48,7 +49,11 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "A name / alias for the certificate.")
     private String alias;
 
-    @Parameter(name = ApiConstants.PRIVATE_KEY, type = CommandType.STRING, required = false, description = "The private key for the attached certificate.", length = 65535)
+    @Parameter(name = ApiConstants.PRIVATE_KEY,
+               type = CommandType.STRING,
+               required = false,
+               description = "The private key for the attached certificate.",
+               length = 65535)
     private String privateKey;
 
     @Parameter(name = ApiConstants.DOMAIN_SUFFIX, type = CommandType.STRING, required = true, description = "DNS domain suffix that the certificate is granted for.")

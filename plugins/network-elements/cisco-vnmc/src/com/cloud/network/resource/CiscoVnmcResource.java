@@ -83,6 +83,7 @@ public class CiscoVnmcResource implements ServerResource {
 
     private final Logger s_logger = Logger.getLogger(CiscoVnmcResource.class);
 
+    @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof ReadyCommand) {
             return execute((ReadyCommand)cmd);
@@ -113,6 +114,7 @@ public class CiscoVnmcResource implements ServerResource {
         }
     }
 
+    @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         try {
             _name = (String)params.get("name");
@@ -167,6 +169,7 @@ public class CiscoVnmcResource implements ServerResource {
 
     }
 
+    @Override
     public StartupCommand[] initialize() {
         StartupExternalFirewallCommand cmd = new StartupExternalFirewallCommand();
         cmd.setName(_name);
@@ -179,6 +182,7 @@ public class CiscoVnmcResource implements ServerResource {
         return new StartupCommand[] {cmd};
     }
 
+    @Override
     public Host.Type getType() {
         return Host.Type.ExternalFirewall;
     }
@@ -210,10 +214,12 @@ public class CiscoVnmcResource implements ServerResource {
     public void disconnected() {
     }
 
+    @Override
     public IAgentControl getAgentControl() {
         return null;
     }
 
+    @Override
     public void setAgentControl(IAgentControl agentControl) {
         return;
     }
@@ -366,25 +372,25 @@ public class CiscoVnmcResource implements ServerResource {
                         String[] externalIpRange = getIpRangeFromCidr(rule.getSourceCidrList().get(0));
                         if (rule.getTrafficType() == TrafficType.Ingress) {
                             if (!rule.getProtocol().equalsIgnoreCase("icmp") && rule.getSrcPortRange() != null) {
-                                if (!_connection.createTenantVDCIngressAclRule(tenant, rule.getId(), policyIdentifier, rule.getProtocol().toUpperCase(), externalIpRange[0],
-                                    externalIpRange[1], Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]))) {
+                                if (!_connection.createTenantVDCIngressAclRule(tenant, rule.getId(), policyIdentifier, rule.getProtocol().toUpperCase(),
+                                    externalIpRange[0], externalIpRange[1], Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]))) {
                                     throw new ExecutionException("Failed to create ACL ingress rule in VNMC for guest network with vlan " + vlanId);
                                 }
                             } else {
-                                if (!_connection.createTenantVDCIngressAclRule(tenant, rule.getId(), policyIdentifier, rule.getProtocol().toUpperCase(), externalIpRange[0],
-                                    externalIpRange[1])) {
+                                if (!_connection.createTenantVDCIngressAclRule(tenant, rule.getId(), policyIdentifier, rule.getProtocol().toUpperCase(),
+                                    externalIpRange[0], externalIpRange[1])) {
                                     throw new ExecutionException("Failed to create ACL ingress rule in VNMC for guest network with vlan " + vlanId);
                                 }
                             }
                         } else {
                             if ((rule.getProtocol().equalsIgnoreCase("tcp") || rule.getProtocol().equalsIgnoreCase("udp")) && rule.getSrcPortRange() != null) {
-                                if (!_connection.createTenantVDCEgressAclRule(tenant, rule.getId(), policyIdentifier, rule.getProtocol().toUpperCase(), externalIpRange[0],
-                                    externalIpRange[1], Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]))) {
+                                if (!_connection.createTenantVDCEgressAclRule(tenant, rule.getId(), policyIdentifier, rule.getProtocol().toUpperCase(),
+                                    externalIpRange[0], externalIpRange[1], Integer.toString(rule.getSrcPortRange()[0]), Integer.toString(rule.getSrcPortRange()[1]))) {
                                     throw new ExecutionException("Failed to create ACL egress rule in VNMC for guest network with vlan " + vlanId);
                                 }
                             } else {
-                                if (!_connection.createTenantVDCEgressAclRule(tenant, rule.getId(), policyIdentifier, rule.getProtocol().toUpperCase(), externalIpRange[0],
-                                    externalIpRange[1])) {
+                                if (!_connection.createTenantVDCEgressAclRule(tenant, rule.getId(), policyIdentifier, rule.getProtocol().toUpperCase(),
+                                    externalIpRange[0], externalIpRange[1])) {
                                     throw new ExecutionException("Failed to create ACL egress rule in VNMC for guest network with vlan " + vlanId);
                                 }
                             }

@@ -29,7 +29,6 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.usage.dao.UsageJobDao;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Local(value = {HighAvailabilityManager.class})

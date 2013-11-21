@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import com.cloud.vm.NicSecondaryIp;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -44,6 +42,7 @@ import com.cloud.network.Network;
 import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
+import com.cloud.vm.NicSecondaryIp;
 
 @APICommand(name = "addIpToNic", description = "Assigns secondary IP to NIC", responseObject = NicSecondaryIpResponse.class)
 public class AddIpToVmNicCmd extends BaseAsyncCmd {
@@ -167,7 +166,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
             if (getNetworkType() == NetworkType.Basic) {
                 // add security group rules for the secondary ip addresses
                 boolean success = false;
-                success = _securityGroupService.securityGroupRulesForVmSecIp(getNicId(), getNetworkId(), secondaryIp, (boolean)true);
+                success = _securityGroupService.securityGroupRulesForVmSecIp(getNicId(), getNetworkId(), secondaryIp, true);
                 if (success == false) {
                     throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to set security group rules for the secondary ip");
                 }

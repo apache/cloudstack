@@ -66,8 +66,6 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
-import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.VpnUser;
 import com.cloud.network.dao.ExternalFirewallDeviceDao;
 import com.cloud.network.dao.ExternalFirewallDeviceVO;
 import com.cloud.network.dao.ExternalFirewallDeviceVO.FirewallDeviceState;
@@ -92,7 +90,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = {NetworkElement.class, FirewallServiceProvider.class, PortForwardingServiceProvider.class, IpDeployer.class, SourceNatServiceProvider.class,
-        RemoteAccessVPNServiceProvider.class})
+    RemoteAccessVPNServiceProvider.class})
 public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceManagerImpl implements SourceNatServiceProvider, FirewallServiceProvider,
         PortForwardingServiceProvider, IpDeployer, JuniperSRXFirewallElementService, StaticNatServiceProvider {
 
@@ -178,8 +176,8 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     }
 
     @Override
-    public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-        InsufficientNetworkCapacityException, ResourceUnavailableException {
+    public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, InsufficientNetworkCapacityException, ResourceUnavailableException {
         return true;
     }
 
@@ -293,7 +291,8 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     }
 
     @Override
-    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         // TODO Auto-generated method stub
         return true;
     }
@@ -320,12 +319,14 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
         List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZone(zoneId);
         if ((physicalNetworks == null) || (physicalNetworks.size() > 1)) {
-            throw new InvalidParameterValueException("There are no physical networks or multiple physical networks configured in zone with ID: " + zoneId + " to add this device.");
+            throw new InvalidParameterValueException("There are no physical networks or multiple physical networks configured in zone with ID: " + zoneId +
+                " to add this device.");
         }
         pNetwork = physicalNetworks.get(0);
 
         String deviceType = NetworkDevice.JuniperSRXFirewall.getName();
-        ExternalFirewallDeviceVO fwDeviceVO = addExternalFirewall(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceType, new JuniperSrxResource());
+        ExternalFirewallDeviceVO fwDeviceVO =
+            addExternalFirewall(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceType, new JuniperSrxResource());
         if (fwDeviceVO != null) {
             fwHost = _hostDao.findById(fwDeviceVO.getHostId());
         }
@@ -357,7 +358,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
             List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZone(zoneId);
             if ((physicalNetworks == null) || (physicalNetworks.size() > 1)) {
                 throw new InvalidParameterValueException("There are no physical networks or multiple physical networks configured in zone with ID: " + zoneId +
-                                                         " to add this device.");
+                    " to add this device.");
             }
             pNetwork = physicalNetworks.get(0);
         }

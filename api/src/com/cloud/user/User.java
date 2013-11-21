@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 public interface User extends OwnedBy, InternalIdentity {
     public static final long UID_SYSTEM = 1;
 
+    @Override
     public long getId();
 
     public String getUuid();

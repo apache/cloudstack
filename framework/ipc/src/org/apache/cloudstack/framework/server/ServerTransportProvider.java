@@ -24,6 +24,8 @@ import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.framework.serializer.MessageSerializer;
 import org.apache.cloudstack.framework.transport.TransportAddress;
 import org.apache.cloudstack.framework.transport.TransportDataPdu;
@@ -32,7 +34,6 @@ import org.apache.cloudstack.framework.transport.TransportEndpointSite;
 import org.apache.cloudstack.framework.transport.TransportPdu;
 import org.apache.cloudstack.framework.transport.TransportProvider;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.concurrency.NamedThreadFactory;
 

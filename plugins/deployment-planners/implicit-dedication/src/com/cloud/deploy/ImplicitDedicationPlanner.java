@@ -29,8 +29,6 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
-import com.cloud.deploy.DeploymentPlanner.PlannerResourceUsage;
-import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.host.HostVO;
 import com.cloud.resource.ResourceManager;
@@ -40,9 +38,7 @@ import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.user.Account;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = DeploymentPlanner.class)
@@ -169,7 +165,7 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
             } else {
                 if (!isImplicitPlannerUsedByOffering(vm.getServiceOfferingId())) {
                     s_logger.info("Host " + vm.getHostId() + " found to be unsuitable for implicit dedication as it " +
-                                  "is running instances of this account which haven't been created using implicit dedication.");
+                        "is running instances of this account which haven't been created using implicit dedication.");
                     suitable = false;
                     break;
                 }

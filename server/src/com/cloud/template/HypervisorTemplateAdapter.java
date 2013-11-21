@@ -106,7 +106,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
 
-        if ((!url.toLowerCase().endsWith("iso")) && (!url.toLowerCase().endsWith("iso.zip")) && (!url.toLowerCase().endsWith("iso.bz2")) && (!url.toLowerCase().endsWith("iso.gz"))) {
+        if ((!url.toLowerCase().endsWith("iso")) && (!url.toLowerCase().endsWith("iso.zip")) && (!url.toLowerCase().endsWith("iso.bz2")) &&
+            (!url.toLowerCase().endsWith("iso.gz"))) {
             throw new InvalidParameterValueException("Please specify a valid iso");
         }
 
@@ -154,8 +155,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
         if ((format.equalsIgnoreCase("vhd") && (!url.toLowerCase().endsWith("vhd") && !url.toLowerCase().endsWith("vhd.zip") && !url.toLowerCase().endsWith("vhd.bz2") && !url.toLowerCase()
             .endsWith("vhd.gz"))) ||
-            (format.equalsIgnoreCase("qcow2") && (!url.toLowerCase().endsWith("qcow2") && !url.toLowerCase().endsWith("qcow2.zip") && !url.toLowerCase().endsWith("qcow2.bz2") && !url.toLowerCase()
-                .endsWith("qcow2.gz"))) ||
+            (format.equalsIgnoreCase("qcow2") && (!url.toLowerCase().endsWith("qcow2") && !url.toLowerCase().endsWith("qcow2.zip") &&
+                !url.toLowerCase().endsWith("qcow2.bz2") && !url.toLowerCase().endsWith("qcow2.gz"))) ||
             (format.equalsIgnoreCase("ova") && (!url.toLowerCase().endsWith("ova") && !url.toLowerCase().endsWith("ova.zip") && !url.toLowerCase().endsWith("ova.bz2") && !url.toLowerCase()
                 .endsWith("ova.gz"))) ||
             (format.equalsIgnoreCase("tar") && (!url.toLowerCase().endsWith("tar") && !url.toLowerCase().endsWith("tar.zip") && !url.toLowerCase().endsWith("tar.bz2") && !url.toLowerCase()
@@ -222,7 +223,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         }
     }
 
-    protected Void createTemplateAsyncCallBack(AsyncCallbackDispatcher<HypervisorTemplateAdapter, TemplateApiResult> callback, CreateTemplateContext<TemplateApiResult> context) {
+    protected Void createTemplateAsyncCallBack(AsyncCallbackDispatcher<HypervisorTemplateAdapter, TemplateApiResult> callback,
+        CreateTemplateContext<TemplateApiResult> context) {
         TemplateApiResult result = callback.getResult();
         TemplateInfo template = context.template;
         if (result.isSuccess()) {
@@ -242,20 +244,20 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     physicalSize = tmpltStore.getPhysicalSize();
                 } else {
                     s_logger.warn("No entry found in template_store_ref for template id: " + template.getId() + " and image store id: " + ds.getId() +
-                                  " at the end of registering template!");
+                        " at the end of registering template!");
                 }
                 Scope dsScope = ds.getScope();
                 if (dsScope.getScopeType() == ScopeType.ZONE) {
                     if (dsScope.getScopeId() != null) {
-                        UsageEventUtils.publishUsageEvent(etype, template.getAccountId(), dsScope.getScopeId(), template.getId(), template.getName(), null, null, physicalSize,
-                            template.getSize(), VirtualMachineTemplate.class.getName(), template.getUuid());
+                        UsageEventUtils.publishUsageEvent(etype, template.getAccountId(), dsScope.getScopeId(), template.getId(), template.getName(), null, null,
+                            physicalSize, template.getSize(), VirtualMachineTemplate.class.getName(), template.getUuid());
                     } else {
                         s_logger.warn("Zone scope image store " + ds.getId() + " has a null scope id");
                     }
                 } else if (dsScope.getScopeType() == ScopeType.REGION) {
                     // publish usage event for region-wide image store using a -1 zoneId for 4.2, need to revisit post-4.2
-                    UsageEventUtils.publishUsageEvent(etype, template.getAccountId(), -1, template.getId(), template.getName(), null, null, physicalSize, template.getSize(),
-                        VirtualMachineTemplate.class.getName(), template.getUuid());
+                    UsageEventUtils.publishUsageEvent(etype, template.getAccountId(), -1, template.getId(), template.getName(), null, null, physicalSize,
+                        template.getSize(), VirtualMachineTemplate.class.getName(), template.getUuid());
                 }
                 _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.secondary_storage, template.getSize());
             }
@@ -284,7 +286,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 for (TemplateDataStoreVO templateStore : templateStores) {
                     if (templateStore.getDownloadState() == Status.DOWNLOAD_IN_PROGRESS) {
                         String errorMsg = "Please specify a template that is not currently being downloaded.";
-                        s_logger.debug("Template: " + template.getName() + " is currently being downloaded to secondary storage host: " + store.getName() + "; cant' delete it.");
+                        s_logger.debug("Template: " + template.getName() + " is currently being downloaded to secondary storage host: " + store.getName() +
+                            "; cant' delete it.");
                         throw new CloudRuntimeException(errorMsg);
                     }
                 }

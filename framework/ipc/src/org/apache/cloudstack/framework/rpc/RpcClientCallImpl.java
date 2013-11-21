@@ -19,9 +19,7 @@
 package org.apache.cloudstack.framework.rpc;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class RpcClientCallImpl implements RpcClientCall {
 

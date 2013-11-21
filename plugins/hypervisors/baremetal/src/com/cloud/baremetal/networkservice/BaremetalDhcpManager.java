@@ -30,15 +30,12 @@ import org.apache.cloudstack.api.ListBaremetalDhcpCmd;
 import com.cloud.baremetal.database.BaremetalDhcpVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.host.Host;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface BaremetalDhcpManager extends Manager, PluggableService {

@@ -29,7 +29,8 @@ package com.amazon.ec2;
 
 public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.AbstractInOutMessageReceiver {
 
-    public void invokeBusinessLogic(org.apache.axis2.context.MessageContext msgContext, org.apache.axis2.context.MessageContext newMsgContext) throws org.apache.axis2.AxisFault {
+    public void invokeBusinessLogic(org.apache.axis2.context.MessageContext msgContext, org.apache.axis2.context.MessageContext newMsgContext)
+        throws org.apache.axis2.AxisFault {
 
         try {
 
@@ -52,12 +53,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describePlacementGroups".equals(methodName)) {
 
                     com.amazon.ec2.DescribePlacementGroupsResponse describePlacementGroupsResponse289 = null;
-                    com.amazon.ec2.DescribePlacementGroups wrappedParam = (com.amazon.ec2.DescribePlacementGroups)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribePlacementGroups.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribePlacementGroups wrappedParam =
+                        (com.amazon.ec2.DescribePlacementGroups)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DescribePlacementGroups.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describePlacementGroupsResponse289 =
 
-                            skel.describePlacementGroups(wrappedParam);
+                    skel.describePlacementGroups(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describePlacementGroupsResponse289, false);
                 } else
@@ -65,12 +67,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createSecurityGroup".equals(methodName)) {
 
                     com.amazon.ec2.CreateSecurityGroupResponse createSecurityGroupResponse291 = null;
-                    com.amazon.ec2.CreateSecurityGroup wrappedParam = (com.amazon.ec2.CreateSecurityGroup)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateSecurityGroup.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateSecurityGroup wrappedParam =
+                        (com.amazon.ec2.CreateSecurityGroup)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateSecurityGroup.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createSecurityGroupResponse291 =
 
-                            skel.createSecurityGroup(wrappedParam);
+                    skel.createSecurityGroup(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createSecurityGroupResponse291, false);
                 } else
@@ -78,13 +81,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("resetNetworkInterfaceAttribute".equals(methodName)) {
 
                     com.amazon.ec2.ResetNetworkInterfaceAttributeResponse resetNetworkInterfaceAttributeResponse293 = null;
-                    com.amazon.ec2.ResetNetworkInterfaceAttribute wrappedParam = (com.amazon.ec2.ResetNetworkInterfaceAttribute)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.ec2.ResetNetworkInterfaceAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ResetNetworkInterfaceAttribute wrappedParam =
+                        (com.amazon.ec2.ResetNetworkInterfaceAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.ResetNetworkInterfaceAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     resetNetworkInterfaceAttributeResponse293 =
 
-                            skel.resetNetworkInterfaceAttribute(wrappedParam);
+                    skel.resetNetworkInterfaceAttribute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), resetNetworkInterfaceAttributeResponse293, false);
                 } else
@@ -92,12 +95,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createDhcpOptions".equals(methodName)) {
 
                     com.amazon.ec2.CreateDhcpOptionsResponse createDhcpOptionsResponse295 = null;
-                    com.amazon.ec2.CreateDhcpOptions wrappedParam = (com.amazon.ec2.CreateDhcpOptions)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateDhcpOptions.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateDhcpOptions wrappedParam =
+                        (com.amazon.ec2.CreateDhcpOptions)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateDhcpOptions.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createDhcpOptionsResponse295 =
 
-                            skel.createDhcpOptions(wrappedParam);
+                    skel.createDhcpOptions(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createDhcpOptionsResponse295, false);
                 } else
@@ -105,12 +109,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createRouteTable".equals(methodName)) {
 
                     com.amazon.ec2.CreateRouteTableResponse createRouteTableResponse297 = null;
-                    com.amazon.ec2.CreateRouteTable wrappedParam = (com.amazon.ec2.CreateRouteTable)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateRouteTable.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateRouteTable wrappedParam =
+                        (com.amazon.ec2.CreateRouteTable)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateRouteTable.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createRouteTableResponse297 =
 
-                            skel.createRouteTable(wrappedParam);
+                    skel.createRouteTable(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createRouteTableResponse297, false);
                 } else
@@ -118,12 +123,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeSubnets".equals(methodName)) {
 
                     com.amazon.ec2.DescribeSubnetsResponse describeSubnetsResponse299 = null;
-                    com.amazon.ec2.DescribeSubnets wrappedParam = (com.amazon.ec2.DescribeSubnets)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeSubnets.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeSubnets wrappedParam =
+                        (com.amazon.ec2.DescribeSubnets)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeSubnets.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeSubnetsResponse299 =
 
-                            skel.describeSubnets(wrappedParam);
+                    skel.describeSubnets(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeSubnetsResponse299, false);
                 } else
@@ -131,12 +137,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deactivateLicense".equals(methodName)) {
 
                     com.amazon.ec2.DeactivateLicenseResponse deactivateLicenseResponse301 = null;
-                    com.amazon.ec2.DeactivateLicense wrappedParam = (com.amazon.ec2.DeactivateLicense)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeactivateLicense.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeactivateLicense wrappedParam =
+                        (com.amazon.ec2.DeactivateLicense)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeactivateLicense.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deactivateLicenseResponse301 =
 
-                            skel.deactivateLicense(wrappedParam);
+                    skel.deactivateLicense(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deactivateLicenseResponse301, false);
                 } else
@@ -144,12 +151,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteVpc".equals(methodName)) {
 
                     com.amazon.ec2.DeleteVpcResponse deleteVpcResponse303 = null;
-                    com.amazon.ec2.DeleteVpc wrappedParam = (com.amazon.ec2.DeleteVpc)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeleteVpc.class,
-                        getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteVpc wrappedParam =
+                        (com.amazon.ec2.DeleteVpc)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeleteVpc.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteVpcResponse303 =
 
-                            skel.deleteVpc(wrappedParam);
+                    skel.deleteVpc(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteVpcResponse303, false);
                 } else
@@ -157,12 +165,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("cancelSpotInstanceRequests".equals(methodName)) {
 
                     com.amazon.ec2.CancelSpotInstanceRequestsResponse cancelSpotInstanceRequestsResponse305 = null;
-                    com.amazon.ec2.CancelSpotInstanceRequests wrappedParam = (com.amazon.ec2.CancelSpotInstanceRequests)fromOM(
-                        msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CancelSpotInstanceRequests.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CancelSpotInstanceRequests wrappedParam =
+                        (com.amazon.ec2.CancelSpotInstanceRequests)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.CancelSpotInstanceRequests.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     cancelSpotInstanceRequestsResponse305 =
 
-                            skel.cancelSpotInstanceRequests(wrappedParam);
+                    skel.cancelSpotInstanceRequests(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), cancelSpotInstanceRequestsResponse305, false);
                 } else
@@ -170,12 +179,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createSubnet".equals(methodName)) {
 
                     com.amazon.ec2.CreateSubnetResponse createSubnetResponse307 = null;
-                    com.amazon.ec2.CreateSubnet wrappedParam = (com.amazon.ec2.CreateSubnet)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateSubnet.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateSubnet wrappedParam =
+                        (com.amazon.ec2.CreateSubnet)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateSubnet.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createSubnetResponse307 =
 
-                            skel.createSubnet(wrappedParam);
+                    skel.createSubnet(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createSubnetResponse307, false);
                 } else
@@ -183,12 +193,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteVpnGateway".equals(methodName)) {
 
                     com.amazon.ec2.DeleteVpnGatewayResponse deleteVpnGatewayResponse309 = null;
-                    com.amazon.ec2.DeleteVpnGateway wrappedParam = (com.amazon.ec2.DeleteVpnGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeleteVpnGateway.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteVpnGateway wrappedParam =
+                        (com.amazon.ec2.DeleteVpnGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeleteVpnGateway.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteVpnGatewayResponse309 =
 
-                            skel.deleteVpnGateway(wrappedParam);
+                    skel.deleteVpnGateway(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteVpnGatewayResponse309, false);
                 } else
@@ -196,12 +207,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createNetworkAclEntry".equals(methodName)) {
 
                     com.amazon.ec2.CreateNetworkAclEntryResponse createNetworkAclEntryResponse311 = null;
-                    com.amazon.ec2.CreateNetworkAclEntry wrappedParam = (com.amazon.ec2.CreateNetworkAclEntry)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateNetworkAclEntry.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateNetworkAclEntry wrappedParam =
+                        (com.amazon.ec2.CreateNetworkAclEntry)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateNetworkAclEntry.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createNetworkAclEntryResponse311 =
 
-                            skel.createNetworkAclEntry(wrappedParam);
+                    skel.createNetworkAclEntry(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createNetworkAclEntryResponse311, false);
                 } else
@@ -209,12 +221,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("requestSpotInstances".equals(methodName)) {
 
                     com.amazon.ec2.RequestSpotInstancesResponse requestSpotInstancesResponse313 = null;
-                    com.amazon.ec2.RequestSpotInstances wrappedParam = (com.amazon.ec2.RequestSpotInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.RequestSpotInstances.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.RequestSpotInstances wrappedParam =
+                        (com.amazon.ec2.RequestSpotInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.RequestSpotInstances.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     requestSpotInstancesResponse313 =
 
-                            skel.requestSpotInstances(wrappedParam);
+                    skel.requestSpotInstances(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), requestSpotInstancesResponse313, false);
                 } else
@@ -222,12 +235,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeVolumeAttribute".equals(methodName)) {
 
                     com.amazon.ec2.DescribeVolumeAttributeResponse describeVolumeAttributeResponse315 = null;
-                    com.amazon.ec2.DescribeVolumeAttribute wrappedParam = (com.amazon.ec2.DescribeVolumeAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeVolumeAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeVolumeAttribute wrappedParam =
+                        (com.amazon.ec2.DescribeVolumeAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DescribeVolumeAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeVolumeAttributeResponse315 =
 
-                            skel.describeVolumeAttribute(wrappedParam);
+                    skel.describeVolumeAttribute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeVolumeAttributeResponse315, false);
                 } else
@@ -235,12 +249,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("associateDhcpOptions".equals(methodName)) {
 
                     com.amazon.ec2.AssociateDhcpOptionsResponse associateDhcpOptionsResponse317 = null;
-                    com.amazon.ec2.AssociateDhcpOptions wrappedParam = (com.amazon.ec2.AssociateDhcpOptions)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.AssociateDhcpOptions.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.AssociateDhcpOptions wrappedParam =
+                        (com.amazon.ec2.AssociateDhcpOptions)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.AssociateDhcpOptions.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     associateDhcpOptionsResponse317 =
 
-                            skel.associateDhcpOptions(wrappedParam);
+                    skel.associateDhcpOptions(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), associateDhcpOptionsResponse317, false);
                 } else
@@ -248,12 +263,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeTags".equals(methodName)) {
 
                     com.amazon.ec2.DescribeTagsResponse describeTagsResponse319 = null;
-                    com.amazon.ec2.DescribeTags wrappedParam = (com.amazon.ec2.DescribeTags)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeTags.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeTags wrappedParam =
+                        (com.amazon.ec2.DescribeTags)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeTags.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeTagsResponse319 =
 
-                            skel.describeTags(wrappedParam);
+                    skel.describeTags(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeTagsResponse319, false);
                 } else
@@ -261,12 +277,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("importKeyPair".equals(methodName)) {
 
                     com.amazon.ec2.ImportKeyPairResponse importKeyPairResponse321 = null;
-                    com.amazon.ec2.ImportKeyPair wrappedParam = (com.amazon.ec2.ImportKeyPair)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.ImportKeyPair.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ImportKeyPair wrappedParam =
+                        (com.amazon.ec2.ImportKeyPair)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.ImportKeyPair.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     importKeyPairResponse321 =
 
-                            skel.importKeyPair(wrappedParam);
+                    skel.importKeyPair(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), importKeyPairResponse321, false);
                 } else
@@ -274,12 +291,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteNetworkInterface".equals(methodName)) {
 
                     com.amazon.ec2.DeleteNetworkInterfaceResponse deleteNetworkInterfaceResponse323 = null;
-                    com.amazon.ec2.DeleteNetworkInterface wrappedParam = (com.amazon.ec2.DeleteNetworkInterface)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeleteNetworkInterface.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteNetworkInterface wrappedParam =
+                        (com.amazon.ec2.DeleteNetworkInterface)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeleteNetworkInterface.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteNetworkInterfaceResponse323 =
 
-                            skel.deleteNetworkInterface(wrappedParam);
+                    skel.deleteNetworkInterface(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteNetworkInterfaceResponse323, false);
                 } else
@@ -287,12 +305,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeVpcs".equals(methodName)) {
 
                     com.amazon.ec2.DescribeVpcsResponse describeVpcsResponse325 = null;
-                    com.amazon.ec2.DescribeVpcs wrappedParam = (com.amazon.ec2.DescribeVpcs)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeVpcs.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeVpcs wrappedParam =
+                        (com.amazon.ec2.DescribeVpcs)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeVpcs.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeVpcsResponse325 =
 
-                            skel.describeVpcs(wrappedParam);
+                    skel.describeVpcs(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeVpcsResponse325, false);
                 } else
@@ -300,12 +319,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeLicenses".equals(methodName)) {
 
                     com.amazon.ec2.DescribeLicensesResponse describeLicensesResponse327 = null;
-                    com.amazon.ec2.DescribeLicenses wrappedParam = (com.amazon.ec2.DescribeLicenses)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeLicenses.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeLicenses wrappedParam =
+                        (com.amazon.ec2.DescribeLicenses)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeLicenses.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeLicensesResponse327 =
 
-                            skel.describeLicenses(wrappedParam);
+                    skel.describeLicenses(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeLicensesResponse327, false);
                 } else
@@ -313,12 +333,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("bundleInstance".equals(methodName)) {
 
                     com.amazon.ec2.BundleInstanceResponse bundleInstanceResponse329 = null;
-                    com.amazon.ec2.BundleInstance wrappedParam = (com.amazon.ec2.BundleInstance)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.BundleInstance.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.BundleInstance wrappedParam =
+                        (com.amazon.ec2.BundleInstance)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.BundleInstance.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     bundleInstanceResponse329 =
 
-                            skel.bundleInstance(wrappedParam);
+                    skel.bundleInstance(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), bundleInstanceResponse329, false);
                 } else
@@ -326,12 +347,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeVpnConnections".equals(methodName)) {
 
                     com.amazon.ec2.DescribeVpnConnectionsResponse describeVpnConnectionsResponse331 = null;
-                    com.amazon.ec2.DescribeVpnConnections wrappedParam = (com.amazon.ec2.DescribeVpnConnections)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeVpnConnections.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeVpnConnections wrappedParam =
+                        (com.amazon.ec2.DescribeVpnConnections)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeVpnConnections.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeVpnConnectionsResponse331 =
 
-                            skel.describeVpnConnections(wrappedParam);
+                    skel.describeVpnConnections(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeVpnConnectionsResponse331, false);
                 } else
@@ -339,12 +361,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeImages".equals(methodName)) {
 
                     com.amazon.ec2.DescribeImagesResponse describeImagesResponse333 = null;
-                    com.amazon.ec2.DescribeImages wrappedParam = (com.amazon.ec2.DescribeImages)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeImages.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeImages wrappedParam =
+                        (com.amazon.ec2.DescribeImages)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeImages.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeImagesResponse333 =
 
-                            skel.describeImages(wrappedParam);
+                    skel.describeImages(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeImagesResponse333, false);
                 } else
@@ -352,12 +375,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createInternetGateway".equals(methodName)) {
 
                     com.amazon.ec2.CreateInternetGatewayResponse createInternetGatewayResponse335 = null;
-                    com.amazon.ec2.CreateInternetGateway wrappedParam = (com.amazon.ec2.CreateInternetGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateInternetGateway.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateInternetGateway wrappedParam =
+                        (com.amazon.ec2.CreateInternetGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateInternetGateway.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createInternetGatewayResponse335 =
 
-                            skel.createInternetGateway(wrappedParam);
+                    skel.createInternetGateway(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createInternetGatewayResponse335, false);
                 } else
@@ -365,12 +389,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("disassociateRouteTable".equals(methodName)) {
 
                     com.amazon.ec2.DisassociateRouteTableResponse disassociateRouteTableResponse337 = null;
-                    com.amazon.ec2.DisassociateRouteTable wrappedParam = (com.amazon.ec2.DisassociateRouteTable)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DisassociateRouteTable.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DisassociateRouteTable wrappedParam =
+                        (com.amazon.ec2.DisassociateRouteTable)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DisassociateRouteTable.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     disassociateRouteTableResponse337 =
 
-                            skel.disassociateRouteTable(wrappedParam);
+                    skel.disassociateRouteTable(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), disassociateRouteTableResponse337, false);
                 } else
@@ -378,12 +403,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("replaceNetworkAclEntry".equals(methodName)) {
 
                     com.amazon.ec2.ReplaceNetworkAclEntryResponse replaceNetworkAclEntryResponse339 = null;
-                    com.amazon.ec2.ReplaceNetworkAclEntry wrappedParam = (com.amazon.ec2.ReplaceNetworkAclEntry)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.ReplaceNetworkAclEntry.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ReplaceNetworkAclEntry wrappedParam =
+                        (com.amazon.ec2.ReplaceNetworkAclEntry)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.ReplaceNetworkAclEntry.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     replaceNetworkAclEntryResponse339 =
 
-                            skel.replaceNetworkAclEntry(wrappedParam);
+                    skel.replaceNetworkAclEntry(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), replaceNetworkAclEntryResponse339, false);
                 } else
@@ -391,13 +417,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("authorizeSecurityGroupIngress".equals(methodName)) {
 
                     com.amazon.ec2.AuthorizeSecurityGroupIngressResponse authorizeSecurityGroupIngressResponse341 = null;
-                    com.amazon.ec2.AuthorizeSecurityGroupIngress wrappedParam = (com.amazon.ec2.AuthorizeSecurityGroupIngress)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.ec2.AuthorizeSecurityGroupIngress.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.AuthorizeSecurityGroupIngress wrappedParam =
+                        (com.amazon.ec2.AuthorizeSecurityGroupIngress)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.AuthorizeSecurityGroupIngress.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     authorizeSecurityGroupIngressResponse341 =
 
-                            skel.authorizeSecurityGroupIngress(wrappedParam);
+                    skel.authorizeSecurityGroupIngress(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), authorizeSecurityGroupIngressResponse341, false);
                 } else
@@ -405,12 +431,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeSnapshotAttribute".equals(methodName)) {
 
                     com.amazon.ec2.DescribeSnapshotAttributeResponse describeSnapshotAttributeResponse343 = null;
-                    com.amazon.ec2.DescribeSnapshotAttribute wrappedParam = (com.amazon.ec2.DescribeSnapshotAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeSnapshotAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeSnapshotAttribute wrappedParam =
+                        (com.amazon.ec2.DescribeSnapshotAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DescribeSnapshotAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeSnapshotAttributeResponse343 =
 
-                            skel.describeSnapshotAttribute(wrappedParam);
+                    skel.describeSnapshotAttribute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeSnapshotAttributeResponse343, false);
                 } else
@@ -418,12 +445,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createVpnGateway".equals(methodName)) {
 
                     com.amazon.ec2.CreateVpnGatewayResponse createVpnGatewayResponse345 = null;
-                    com.amazon.ec2.CreateVpnGateway wrappedParam = (com.amazon.ec2.CreateVpnGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateVpnGateway.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateVpnGateway wrappedParam =
+                        (com.amazon.ec2.CreateVpnGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateVpnGateway.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createVpnGatewayResponse345 =
 
-                            skel.createVpnGateway(wrappedParam);
+                    skel.createVpnGateway(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createVpnGatewayResponse345, false);
                 } else
@@ -431,12 +459,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("resetInstanceAttribute".equals(methodName)) {
 
                     com.amazon.ec2.ResetInstanceAttributeResponse resetInstanceAttributeResponse347 = null;
-                    com.amazon.ec2.ResetInstanceAttribute wrappedParam = (com.amazon.ec2.ResetInstanceAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.ResetInstanceAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ResetInstanceAttribute wrappedParam =
+                        (com.amazon.ec2.ResetInstanceAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.ResetInstanceAttribute.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     resetInstanceAttributeResponse347 =
 
-                            skel.resetInstanceAttribute(wrappedParam);
+                    skel.resetInstanceAttribute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), resetInstanceAttributeResponse347, false);
                 } else
@@ -444,12 +473,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createTags".equals(methodName)) {
 
                     com.amazon.ec2.CreateTagsResponse createTagsResponse349 = null;
-                    com.amazon.ec2.CreateTags wrappedParam = (com.amazon.ec2.CreateTags)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateTags.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateTags wrappedParam =
+                        (com.amazon.ec2.CreateTags)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateTags.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createTagsResponse349 =
 
-                            skel.createTags(wrappedParam);
+                    skel.createTags(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createTagsResponse349, false);
                 } else
@@ -457,13 +487,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("authorizeSecurityGroupEgress".equals(methodName)) {
 
                     com.amazon.ec2.AuthorizeSecurityGroupEgressResponse authorizeSecurityGroupEgressResponse351 = null;
-                    com.amazon.ec2.AuthorizeSecurityGroupEgress wrappedParam = (com.amazon.ec2.AuthorizeSecurityGroupEgress)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.ec2.AuthorizeSecurityGroupEgress.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.AuthorizeSecurityGroupEgress wrappedParam =
+                        (com.amazon.ec2.AuthorizeSecurityGroupEgress)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.AuthorizeSecurityGroupEgress.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     authorizeSecurityGroupEgressResponse351 =
 
-                            skel.authorizeSecurityGroupEgress(wrappedParam);
+                    skel.authorizeSecurityGroupEgress(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), authorizeSecurityGroupEgressResponse351, false);
                 } else
@@ -471,12 +501,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("associateAddress".equals(methodName)) {
 
                     com.amazon.ec2.AssociateAddressResponse associateAddressResponse353 = null;
-                    com.amazon.ec2.AssociateAddress wrappedParam = (com.amazon.ec2.AssociateAddress)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.AssociateAddress.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.AssociateAddress wrappedParam =
+                        (com.amazon.ec2.AssociateAddress)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.AssociateAddress.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     associateAddressResponse353 =
 
-                            skel.associateAddress(wrappedParam);
+                    skel.associateAddress(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), associateAddressResponse353, false);
                 } else
@@ -484,12 +515,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeImageAttribute".equals(methodName)) {
 
                     com.amazon.ec2.DescribeImageAttributeResponse describeImageAttributeResponse355 = null;
-                    com.amazon.ec2.DescribeImageAttribute wrappedParam = (com.amazon.ec2.DescribeImageAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeImageAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeImageAttribute wrappedParam =
+                        (com.amazon.ec2.DescribeImageAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeImageAttribute.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeImageAttributeResponse355 =
 
-                            skel.describeImageAttribute(wrappedParam);
+                    skel.describeImageAttribute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeImageAttributeResponse355, false);
                 } else
@@ -497,12 +529,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeSpotPriceHistory".equals(methodName)) {
 
                     com.amazon.ec2.DescribeSpotPriceHistoryResponse describeSpotPriceHistoryResponse357 = null;
-                    com.amazon.ec2.DescribeSpotPriceHistory wrappedParam = (com.amazon.ec2.DescribeSpotPriceHistory)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeSpotPriceHistory.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeSpotPriceHistory wrappedParam =
+                        (com.amazon.ec2.DescribeSpotPriceHistory)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DescribeSpotPriceHistory.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeSpotPriceHistoryResponse357 =
 
-                            skel.describeSpotPriceHistory(wrappedParam);
+                    skel.describeSpotPriceHistory(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeSpotPriceHistoryResponse357, false);
                 } else
@@ -510,12 +543,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("modifySnapshotAttribute".equals(methodName)) {
 
                     com.amazon.ec2.ModifySnapshotAttributeResponse modifySnapshotAttributeResponse359 = null;
-                    com.amazon.ec2.ModifySnapshotAttribute wrappedParam = (com.amazon.ec2.ModifySnapshotAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.ModifySnapshotAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ModifySnapshotAttribute wrappedParam =
+                        (com.amazon.ec2.ModifySnapshotAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.ModifySnapshotAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     modifySnapshotAttributeResponse359 =
 
-                            skel.modifySnapshotAttribute(wrappedParam);
+                    skel.modifySnapshotAttribute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), modifySnapshotAttributeResponse359, false);
                 } else
@@ -523,13 +557,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeSpotInstanceRequests".equals(methodName)) {
 
                     com.amazon.ec2.DescribeSpotInstanceRequestsResponse describeSpotInstanceRequestsResponse361 = null;
-                    com.amazon.ec2.DescribeSpotInstanceRequests wrappedParam = (com.amazon.ec2.DescribeSpotInstanceRequests)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.ec2.DescribeSpotInstanceRequests.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeSpotInstanceRequests wrappedParam =
+                        (com.amazon.ec2.DescribeSpotInstanceRequests)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DescribeSpotInstanceRequests.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeSpotInstanceRequestsResponse361 =
 
-                            skel.describeSpotInstanceRequests(wrappedParam);
+                    skel.describeSpotInstanceRequests(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeSpotInstanceRequestsResponse361, false);
                 } else
@@ -537,12 +571,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("importInstance".equals(methodName)) {
 
                     com.amazon.ec2.ImportInstanceResponse importInstanceResponse363 = null;
-                    com.amazon.ec2.ImportInstance wrappedParam = (com.amazon.ec2.ImportInstance)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.ImportInstance.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ImportInstance wrappedParam =
+                        (com.amazon.ec2.ImportInstance)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.ImportInstance.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     importInstanceResponse363 =
 
-                            skel.importInstance(wrappedParam);
+                    skel.importInstance(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), importInstanceResponse363, false);
                 } else
@@ -550,12 +585,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeKeyPairs".equals(methodName)) {
 
                     com.amazon.ec2.DescribeKeyPairsResponse describeKeyPairsResponse365 = null;
-                    com.amazon.ec2.DescribeKeyPairs wrappedParam = (com.amazon.ec2.DescribeKeyPairs)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeKeyPairs.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeKeyPairs wrappedParam =
+                        (com.amazon.ec2.DescribeKeyPairs)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeKeyPairs.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeKeyPairsResponse365 =
 
-                            skel.describeKeyPairs(wrappedParam);
+                    skel.describeKeyPairs(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeKeyPairsResponse365, false);
                 } else
@@ -563,12 +599,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("revokeSecurityGroupIngress".equals(methodName)) {
 
                     com.amazon.ec2.RevokeSecurityGroupIngressResponse revokeSecurityGroupIngressResponse367 = null;
-                    com.amazon.ec2.RevokeSecurityGroupIngress wrappedParam = (com.amazon.ec2.RevokeSecurityGroupIngress)fromOM(
-                        msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.RevokeSecurityGroupIngress.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.RevokeSecurityGroupIngress wrappedParam =
+                        (com.amazon.ec2.RevokeSecurityGroupIngress)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.RevokeSecurityGroupIngress.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     revokeSecurityGroupIngressResponse367 =
 
-                            skel.revokeSecurityGroupIngress(wrappedParam);
+                    skel.revokeSecurityGroupIngress(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), revokeSecurityGroupIngressResponse367, false);
                 } else
@@ -576,12 +613,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createPlacementGroup".equals(methodName)) {
 
                     com.amazon.ec2.CreatePlacementGroupResponse createPlacementGroupResponse369 = null;
-                    com.amazon.ec2.CreatePlacementGroup wrappedParam = (com.amazon.ec2.CreatePlacementGroup)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreatePlacementGroup.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreatePlacementGroup wrappedParam =
+                        (com.amazon.ec2.CreatePlacementGroup)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreatePlacementGroup.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createPlacementGroupResponse369 =
 
-                            skel.createPlacementGroup(wrappedParam);
+                    skel.createPlacementGroup(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createPlacementGroupResponse369, false);
                 } else
@@ -589,12 +627,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteNetworkAclEntry".equals(methodName)) {
 
                     com.amazon.ec2.DeleteNetworkAclEntryResponse deleteNetworkAclEntryResponse371 = null;
-                    com.amazon.ec2.DeleteNetworkAclEntry wrappedParam = (com.amazon.ec2.DeleteNetworkAclEntry)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeleteNetworkAclEntry.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteNetworkAclEntry wrappedParam =
+                        (com.amazon.ec2.DeleteNetworkAclEntry)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeleteNetworkAclEntry.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteNetworkAclEntryResponse371 =
 
-                            skel.deleteNetworkAclEntry(wrappedParam);
+                    skel.deleteNetworkAclEntry(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteNetworkAclEntryResponse371, false);
                 } else
@@ -602,12 +641,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("activateLicense".equals(methodName)) {
 
                     com.amazon.ec2.ActivateLicenseResponse activateLicenseResponse373 = null;
-                    com.amazon.ec2.ActivateLicense wrappedParam = (com.amazon.ec2.ActivateLicense)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.ActivateLicense.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ActivateLicense wrappedParam =
+                        (com.amazon.ec2.ActivateLicense)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.ActivateLicense.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     activateLicenseResponse373 =
 
-                            skel.activateLicense(wrappedParam);
+                    skel.activateLicense(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), activateLicenseResponse373, false);
                 } else
@@ -615,12 +655,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteRouteTable".equals(methodName)) {
 
                     com.amazon.ec2.DeleteRouteTableResponse deleteRouteTableResponse375 = null;
-                    com.amazon.ec2.DeleteRouteTable wrappedParam = (com.amazon.ec2.DeleteRouteTable)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeleteRouteTable.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteRouteTable wrappedParam =
+                        (com.amazon.ec2.DeleteRouteTable)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeleteRouteTable.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteRouteTableResponse375 =
 
-                            skel.deleteRouteTable(wrappedParam);
+                    skel.deleteRouteTable(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteRouteTableResponse375, false);
                 } else
@@ -628,12 +669,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("unmonitorInstances".equals(methodName)) {
 
                     com.amazon.ec2.UnmonitorInstancesResponse unmonitorInstancesResponse377 = null;
-                    com.amazon.ec2.UnmonitorInstances wrappedParam = (com.amazon.ec2.UnmonitorInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.UnmonitorInstances.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.UnmonitorInstances wrappedParam =
+                        (com.amazon.ec2.UnmonitorInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.UnmonitorInstances.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     unmonitorInstancesResponse377 =
 
-                            skel.unmonitorInstances(wrappedParam);
+                    skel.unmonitorInstances(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), unmonitorInstancesResponse377, false);
                 } else
@@ -641,12 +683,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("startInstances".equals(methodName)) {
 
                     com.amazon.ec2.StartInstancesResponse startInstancesResponse379 = null;
-                    com.amazon.ec2.StartInstances wrappedParam = (com.amazon.ec2.StartInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.StartInstances.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.StartInstances wrappedParam =
+                        (com.amazon.ec2.StartInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.StartInstances.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     startInstancesResponse379 =
 
-                            skel.startInstances(wrappedParam);
+                    skel.startInstances(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), startInstancesResponse379, false);
                 } else
@@ -654,12 +697,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("confirmProductInstance".equals(methodName)) {
 
                     com.amazon.ec2.ConfirmProductInstanceResponse confirmProductInstanceResponse381 = null;
-                    com.amazon.ec2.ConfirmProductInstance wrappedParam = (com.amazon.ec2.ConfirmProductInstance)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.ConfirmProductInstance.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ConfirmProductInstance wrappedParam =
+                        (com.amazon.ec2.ConfirmProductInstance)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.ConfirmProductInstance.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     confirmProductInstanceResponse381 =
 
-                            skel.confirmProductInstance(wrappedParam);
+                    skel.confirmProductInstance(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), confirmProductInstanceResponse381, false);
                 } else
@@ -667,13 +711,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeNetworkInterfaceAttribute".equals(methodName)) {
 
                     com.amazon.ec2.DescribeNetworkInterfaceAttributeResponse describeNetworkInterfaceAttributeResponse383 = null;
-                    com.amazon.ec2.DescribeNetworkInterfaceAttribute wrappedParam = (com.amazon.ec2.DescribeNetworkInterfaceAttribute)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.ec2.DescribeNetworkInterfaceAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeNetworkInterfaceAttribute wrappedParam =
+                        (com.amazon.ec2.DescribeNetworkInterfaceAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DescribeNetworkInterfaceAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeNetworkInterfaceAttributeResponse383 =
 
-                            skel.describeNetworkInterfaceAttribute(wrappedParam);
+                    skel.describeNetworkInterfaceAttribute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeNetworkInterfaceAttributeResponse383, false);
                 } else
@@ -681,12 +725,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("runInstances".equals(methodName)) {
 
                     com.amazon.ec2.RunInstancesResponse runInstancesResponse385 = null;
-                    com.amazon.ec2.RunInstances wrappedParam = (com.amazon.ec2.RunInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.RunInstances.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.RunInstances wrappedParam =
+                        (com.amazon.ec2.RunInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.RunInstances.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     runInstancesResponse385 =
 
-                            skel.runInstances(wrappedParam);
+                    skel.runInstances(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), runInstancesResponse385, false);
                 } else
@@ -694,13 +739,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createReservedInstancesListing".equals(methodName)) {
 
                     com.amazon.ec2.CreateReservedInstancesListingResponse createReservedInstancesListingResponse387 = null;
-                    com.amazon.ec2.CreateReservedInstancesListing wrappedParam = (com.amazon.ec2.CreateReservedInstancesListing)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.ec2.CreateReservedInstancesListing.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateReservedInstancesListing wrappedParam =
+                        (com.amazon.ec2.CreateReservedInstancesListing)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.CreateReservedInstancesListing.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createReservedInstancesListingResponse387 =
 
-                            skel.createReservedInstancesListing(wrappedParam);
+                    skel.createReservedInstancesListing(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createReservedInstancesListingResponse387, false);
                 } else
@@ -708,12 +753,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createCustomerGateway".equals(methodName)) {
 
                     com.amazon.ec2.CreateCustomerGatewayResponse createCustomerGatewayResponse389 = null;
-                    com.amazon.ec2.CreateCustomerGateway wrappedParam = (com.amazon.ec2.CreateCustomerGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateCustomerGateway.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateCustomerGateway wrappedParam =
+                        (com.amazon.ec2.CreateCustomerGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateCustomerGateway.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createCustomerGatewayResponse389 =
 
-                            skel.createCustomerGateway(wrappedParam);
+                    skel.createCustomerGateway(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createCustomerGatewayResponse389, false);
                 } else
@@ -721,12 +767,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createNetworkAcl".equals(methodName)) {
 
                     com.amazon.ec2.CreateNetworkAclResponse createNetworkAclResponse391 = null;
-                    com.amazon.ec2.CreateNetworkAcl wrappedParam = (com.amazon.ec2.CreateNetworkAcl)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateNetworkAcl.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateNetworkAcl wrappedParam =
+                        (com.amazon.ec2.CreateNetworkAcl)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateNetworkAcl.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createNetworkAclResponse391 =
 
-                            skel.createNetworkAcl(wrappedParam);
+                    skel.createNetworkAcl(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createNetworkAclResponse391, false);
                 } else
@@ -734,12 +781,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("resetImageAttribute".equals(methodName)) {
 
                     com.amazon.ec2.ResetImageAttributeResponse resetImageAttributeResponse393 = null;
-                    com.amazon.ec2.ResetImageAttribute wrappedParam = (com.amazon.ec2.ResetImageAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.ResetImageAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ResetImageAttribute wrappedParam =
+                        (com.amazon.ec2.ResetImageAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.ResetImageAttribute.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     resetImageAttributeResponse393 =
 
-                            skel.resetImageAttribute(wrappedParam);
+                    skel.resetImageAttribute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), resetImageAttributeResponse393, false);
                 } else
@@ -747,12 +795,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("modifyVolumeAttribute".equals(methodName)) {
 
                     com.amazon.ec2.ModifyVolumeAttributeResponse modifyVolumeAttributeResponse395 = null;
-                    com.amazon.ec2.ModifyVolumeAttribute wrappedParam = (com.amazon.ec2.ModifyVolumeAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.ModifyVolumeAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ModifyVolumeAttribute wrappedParam =
+                        (com.amazon.ec2.ModifyVolumeAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.ModifyVolumeAttribute.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     modifyVolumeAttributeResponse395 =
 
-                            skel.modifyVolumeAttribute(wrappedParam);
+                    skel.modifyVolumeAttribute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), modifyVolumeAttributeResponse395, false);
                 } else
@@ -760,12 +809,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeReservedInstances".equals(methodName)) {
 
                     com.amazon.ec2.DescribeReservedInstancesResponse describeReservedInstancesResponse397 = null;
-                    com.amazon.ec2.DescribeReservedInstances wrappedParam = (com.amazon.ec2.DescribeReservedInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeReservedInstances.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeReservedInstances wrappedParam =
+                        (com.amazon.ec2.DescribeReservedInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DescribeReservedInstances.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeReservedInstancesResponse397 =
 
-                            skel.describeReservedInstances(wrappedParam);
+                    skel.describeReservedInstances(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeReservedInstancesResponse397, false);
                 } else
@@ -773,12 +823,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("resetSnapshotAttribute".equals(methodName)) {
 
                     com.amazon.ec2.ResetSnapshotAttributeResponse resetSnapshotAttributeResponse399 = null;
-                    com.amazon.ec2.ResetSnapshotAttribute wrappedParam = (com.amazon.ec2.ResetSnapshotAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.ResetSnapshotAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ResetSnapshotAttribute wrappedParam =
+                        (com.amazon.ec2.ResetSnapshotAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.ResetSnapshotAttribute.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     resetSnapshotAttributeResponse399 =
 
-                            skel.resetSnapshotAttribute(wrappedParam);
+                    skel.resetSnapshotAttribute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), resetSnapshotAttributeResponse399, false);
                 } else
@@ -786,12 +837,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteVolume".equals(methodName)) {
 
                     com.amazon.ec2.DeleteVolumeResponse deleteVolumeResponse401 = null;
-                    com.amazon.ec2.DeleteVolume wrappedParam = (com.amazon.ec2.DeleteVolume)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeleteVolume.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteVolume wrappedParam =
+                        (com.amazon.ec2.DeleteVolume)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeleteVolume.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteVolumeResponse401 =
 
-                            skel.deleteVolume(wrappedParam);
+                    skel.deleteVolume(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteVolumeResponse401, false);
                 } else
@@ -799,12 +851,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeAvailabilityZones".equals(methodName)) {
 
                     com.amazon.ec2.DescribeAvailabilityZonesResponse describeAvailabilityZonesResponse403 = null;
-                    com.amazon.ec2.DescribeAvailabilityZones wrappedParam = (com.amazon.ec2.DescribeAvailabilityZones)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeAvailabilityZones.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeAvailabilityZones wrappedParam =
+                        (com.amazon.ec2.DescribeAvailabilityZones)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DescribeAvailabilityZones.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeAvailabilityZonesResponse403 =
 
-                            skel.describeAvailabilityZones(wrappedParam);
+                    skel.describeAvailabilityZones(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeAvailabilityZonesResponse403, false);
                 } else
@@ -812,12 +865,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createVpnConnection".equals(methodName)) {
 
                     com.amazon.ec2.CreateVpnConnectionResponse createVpnConnectionResponse405 = null;
-                    com.amazon.ec2.CreateVpnConnection wrappedParam = (com.amazon.ec2.CreateVpnConnection)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateVpnConnection.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateVpnConnection wrappedParam =
+                        (com.amazon.ec2.CreateVpnConnection)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateVpnConnection.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createVpnConnectionResponse405 =
 
-                            skel.createVpnConnection(wrappedParam);
+                    skel.createVpnConnection(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createVpnConnectionResponse405, false);
                 } else
@@ -825,12 +879,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("cancelBundleTask".equals(methodName)) {
 
                     com.amazon.ec2.CancelBundleTaskResponse cancelBundleTaskResponse407 = null;
-                    com.amazon.ec2.CancelBundleTask wrappedParam = (com.amazon.ec2.CancelBundleTask)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CancelBundleTask.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CancelBundleTask wrappedParam =
+                        (com.amazon.ec2.CancelBundleTask)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CancelBundleTask.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     cancelBundleTaskResponse407 =
 
-                            skel.cancelBundleTask(wrappedParam);
+                    skel.cancelBundleTask(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), cancelBundleTaskResponse407, false);
                 } else
@@ -838,13 +893,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("replaceNetworkAclAssociation".equals(methodName)) {
 
                     com.amazon.ec2.ReplaceNetworkAclAssociationResponse replaceNetworkAclAssociationResponse409 = null;
-                    com.amazon.ec2.ReplaceNetworkAclAssociation wrappedParam = (com.amazon.ec2.ReplaceNetworkAclAssociation)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.ec2.ReplaceNetworkAclAssociation.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ReplaceNetworkAclAssociation wrappedParam =
+                        (com.amazon.ec2.ReplaceNetworkAclAssociation)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.ReplaceNetworkAclAssociation.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     replaceNetworkAclAssociationResponse409 =
 
-                            skel.replaceNetworkAclAssociation(wrappedParam);
+                    skel.replaceNetworkAclAssociation(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), replaceNetworkAclAssociationResponse409, false);
                 } else
@@ -852,12 +907,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("detachVpnGateway".equals(methodName)) {
 
                     com.amazon.ec2.DetachVpnGatewayResponse detachVpnGatewayResponse411 = null;
-                    com.amazon.ec2.DetachVpnGateway wrappedParam = (com.amazon.ec2.DetachVpnGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DetachVpnGateway.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DetachVpnGateway wrappedParam =
+                        (com.amazon.ec2.DetachVpnGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DetachVpnGateway.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     detachVpnGatewayResponse411 =
 
-                            skel.detachVpnGateway(wrappedParam);
+                    skel.detachVpnGateway(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), detachVpnGatewayResponse411, false);
                 } else
@@ -865,12 +921,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeSnapshots".equals(methodName)) {
 
                     com.amazon.ec2.DescribeSnapshotsResponse describeSnapshotsResponse413 = null;
-                    com.amazon.ec2.DescribeSnapshots wrappedParam = (com.amazon.ec2.DescribeSnapshots)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeSnapshots.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeSnapshots wrappedParam =
+                        (com.amazon.ec2.DescribeSnapshots)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeSnapshots.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeSnapshotsResponse413 =
 
-                            skel.describeSnapshots(wrappedParam);
+                    skel.describeSnapshots(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeSnapshotsResponse413, false);
                 } else
@@ -878,12 +935,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteSubnet".equals(methodName)) {
 
                     com.amazon.ec2.DeleteSubnetResponse deleteSubnetResponse415 = null;
-                    com.amazon.ec2.DeleteSubnet wrappedParam = (com.amazon.ec2.DeleteSubnet)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeleteSubnet.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteSubnet wrappedParam =
+                        (com.amazon.ec2.DeleteSubnet)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeleteSubnet.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteSubnetResponse415 =
 
-                            skel.deleteSubnet(wrappedParam);
+                    skel.deleteSubnet(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteSubnetResponse415, false);
                 } else
@@ -891,12 +949,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeBundleTasks".equals(methodName)) {
 
                     com.amazon.ec2.DescribeBundleTasksResponse describeBundleTasksResponse417 = null;
-                    com.amazon.ec2.DescribeBundleTasks wrappedParam = (com.amazon.ec2.DescribeBundleTasks)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeBundleTasks.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeBundleTasks wrappedParam =
+                        (com.amazon.ec2.DescribeBundleTasks)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeBundleTasks.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeBundleTasksResponse417 =
 
-                            skel.describeBundleTasks(wrappedParam);
+                    skel.describeBundleTasks(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeBundleTasksResponse417, false);
                 } else
@@ -904,12 +963,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createKeyPair".equals(methodName)) {
 
                     com.amazon.ec2.CreateKeyPairResponse createKeyPairResponse419 = null;
-                    com.amazon.ec2.CreateKeyPair wrappedParam = (com.amazon.ec2.CreateKeyPair)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateKeyPair.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateKeyPair wrappedParam =
+                        (com.amazon.ec2.CreateKeyPair)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateKeyPair.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createKeyPairResponse419 =
 
-                            skel.createKeyPair(wrappedParam);
+                    skel.createKeyPair(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createKeyPairResponse419, false);
                 } else
@@ -917,12 +977,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createImage".equals(methodName)) {
 
                     com.amazon.ec2.CreateImageResponse createImageResponse421 = null;
-                    com.amazon.ec2.CreateImage wrappedParam = (com.amazon.ec2.CreateImage)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateImage.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateImage wrappedParam =
+                        (com.amazon.ec2.CreateImage)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateImage.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createImageResponse421 =
 
-                            skel.createImage(wrappedParam);
+                    skel.createImage(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createImageResponse421, false);
                 } else
@@ -930,12 +991,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("enableVgwRoutePropagation".equals(methodName)) {
 
                     com.amazon.ec2.EnableVgwRoutePropagationResponse enableVgwRoutePropagationResponse423 = null;
-                    com.amazon.ec2.EnableVgwRoutePropagation wrappedParam = (com.amazon.ec2.EnableVgwRoutePropagation)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.EnableVgwRoutePropagation.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.EnableVgwRoutePropagation wrappedParam =
+                        (com.amazon.ec2.EnableVgwRoutePropagation)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.EnableVgwRoutePropagation.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     enableVgwRoutePropagationResponse423 =
 
-                            skel.enableVgwRoutePropagation(wrappedParam);
+                    skel.enableVgwRoutePropagation(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), enableVgwRoutePropagationResponse423, false);
                 } else
@@ -943,12 +1005,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("unassignPrivateIpAddresses".equals(methodName)) {
 
                     com.amazon.ec2.UnassignPrivateIpAddressesResponse unassignPrivateIpAddressesResponse425 = null;
-                    com.amazon.ec2.UnassignPrivateIpAddresses wrappedParam = (com.amazon.ec2.UnassignPrivateIpAddresses)fromOM(
-                        msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.UnassignPrivateIpAddresses.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.UnassignPrivateIpAddresses wrappedParam =
+                        (com.amazon.ec2.UnassignPrivateIpAddresses)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.UnassignPrivateIpAddresses.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     unassignPrivateIpAddressesResponse425 =
 
-                            skel.unassignPrivateIpAddresses(wrappedParam);
+                    skel.unassignPrivateIpAddresses(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), unassignPrivateIpAddressesResponse425, false);
                 } else
@@ -956,12 +1019,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deregisterImage".equals(methodName)) {
 
                     com.amazon.ec2.DeregisterImageResponse deregisterImageResponse427 = null;
-                    com.amazon.ec2.DeregisterImage wrappedParam = (com.amazon.ec2.DeregisterImage)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeregisterImage.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeregisterImage wrappedParam =
+                        (com.amazon.ec2.DeregisterImage)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeregisterImage.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deregisterImageResponse427 =
 
-                            skel.deregisterImage(wrappedParam);
+                    skel.deregisterImage(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deregisterImageResponse427, false);
                 } else
@@ -969,12 +1033,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteVpnConnectionRoute".equals(methodName)) {
 
                     com.amazon.ec2.DeleteVpnConnectionRouteResponse deleteVpnConnectionRouteResponse429 = null;
-                    com.amazon.ec2.DeleteVpnConnectionRoute wrappedParam = (com.amazon.ec2.DeleteVpnConnectionRoute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeleteVpnConnectionRoute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteVpnConnectionRoute wrappedParam =
+                        (com.amazon.ec2.DeleteVpnConnectionRoute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DeleteVpnConnectionRoute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteVpnConnectionRouteResponse429 =
 
-                            skel.deleteVpnConnectionRoute(wrappedParam);
+                    skel.deleteVpnConnectionRoute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteVpnConnectionRouteResponse429, false);
                 } else
@@ -982,12 +1047,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("modifyImageAttribute".equals(methodName)) {
 
                     com.amazon.ec2.ModifyImageAttributeResponse modifyImageAttributeResponse431 = null;
-                    com.amazon.ec2.ModifyImageAttribute wrappedParam = (com.amazon.ec2.ModifyImageAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.ModifyImageAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ModifyImageAttribute wrappedParam =
+                        (com.amazon.ec2.ModifyImageAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.ModifyImageAttribute.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     modifyImageAttributeResponse431 =
 
-                            skel.modifyImageAttribute(wrappedParam);
+                    skel.modifyImageAttribute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), modifyImageAttributeResponse431, false);
                 } else
@@ -995,12 +1061,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("cancelConversionTask".equals(methodName)) {
 
                     com.amazon.ec2.CancelConversionTaskResponse cancelConversionTaskResponse433 = null;
-                    com.amazon.ec2.CancelConversionTask wrappedParam = (com.amazon.ec2.CancelConversionTask)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CancelConversionTask.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CancelConversionTask wrappedParam =
+                        (com.amazon.ec2.CancelConversionTask)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CancelConversionTask.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     cancelConversionTaskResponse433 =
 
-                            skel.cancelConversionTask(wrappedParam);
+                    skel.cancelConversionTask(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), cancelConversionTaskResponse433, false);
                 } else
@@ -1008,12 +1075,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeVolumes".equals(methodName)) {
 
                     com.amazon.ec2.DescribeVolumesResponse describeVolumesResponse435 = null;
-                    com.amazon.ec2.DescribeVolumes wrappedParam = (com.amazon.ec2.DescribeVolumes)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeVolumes.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeVolumes wrappedParam =
+                        (com.amazon.ec2.DescribeVolumes)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeVolumes.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeVolumesResponse435 =
 
-                            skel.describeVolumes(wrappedParam);
+                    skel.describeVolumes(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeVolumesResponse435, false);
                 } else
@@ -1021,13 +1089,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("cancelReservedInstancesListing".equals(methodName)) {
 
                     com.amazon.ec2.CancelReservedInstancesListingResponse cancelReservedInstancesListingResponse437 = null;
-                    com.amazon.ec2.CancelReservedInstancesListing wrappedParam = (com.amazon.ec2.CancelReservedInstancesListing)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.ec2.CancelReservedInstancesListing.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CancelReservedInstancesListing wrappedParam =
+                        (com.amazon.ec2.CancelReservedInstancesListing)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.CancelReservedInstancesListing.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     cancelReservedInstancesListingResponse437 =
 
-                            skel.cancelReservedInstancesListing(wrappedParam);
+                    skel.cancelReservedInstancesListing(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), cancelReservedInstancesListingResponse437, false);
                 } else
@@ -1035,12 +1103,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("getPasswordData".equals(methodName)) {
 
                     com.amazon.ec2.GetPasswordDataResponse getPasswordDataResponse439 = null;
-                    com.amazon.ec2.GetPasswordData wrappedParam = (com.amazon.ec2.GetPasswordData)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.GetPasswordData.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.GetPasswordData wrappedParam =
+                        (com.amazon.ec2.GetPasswordData)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.GetPasswordData.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     getPasswordDataResponse439 =
 
-                            skel.getPasswordData(wrappedParam);
+                    skel.getPasswordData(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), getPasswordDataResponse439, false);
                 } else
@@ -1048,12 +1117,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("allocateAddress".equals(methodName)) {
 
                     com.amazon.ec2.AllocateAddressResponse allocateAddressResponse441 = null;
-                    com.amazon.ec2.AllocateAddress wrappedParam = (com.amazon.ec2.AllocateAddress)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.AllocateAddress.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.AllocateAddress wrappedParam =
+                        (com.amazon.ec2.AllocateAddress)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.AllocateAddress.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     allocateAddressResponse441 =
 
-                            skel.allocateAddress(wrappedParam);
+                    skel.allocateAddress(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), allocateAddressResponse441, false);
                 } else
@@ -1061,12 +1131,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteSecurityGroup".equals(methodName)) {
 
                     com.amazon.ec2.DeleteSecurityGroupResponse deleteSecurityGroupResponse443 = null;
-                    com.amazon.ec2.DeleteSecurityGroup wrappedParam = (com.amazon.ec2.DeleteSecurityGroup)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeleteSecurityGroup.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteSecurityGroup wrappedParam =
+                        (com.amazon.ec2.DeleteSecurityGroup)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeleteSecurityGroup.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteSecurityGroupResponse443 =
 
-                            skel.deleteSecurityGroup(wrappedParam);
+                    skel.deleteSecurityGroup(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteSecurityGroupResponse443, false);
                 } else
@@ -1074,12 +1145,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deletePlacementGroup".equals(methodName)) {
 
                     com.amazon.ec2.DeletePlacementGroupResponse deletePlacementGroupResponse445 = null;
-                    com.amazon.ec2.DeletePlacementGroup wrappedParam = (com.amazon.ec2.DeletePlacementGroup)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeletePlacementGroup.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeletePlacementGroup wrappedParam =
+                        (com.amazon.ec2.DeletePlacementGroup)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeletePlacementGroup.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deletePlacementGroupResponse445 =
 
-                            skel.deletePlacementGroup(wrappedParam);
+                    skel.deletePlacementGroup(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deletePlacementGroupResponse445, false);
                 } else
@@ -1087,12 +1159,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("disassociateAddress".equals(methodName)) {
 
                     com.amazon.ec2.DisassociateAddressResponse disassociateAddressResponse447 = null;
-                    com.amazon.ec2.DisassociateAddress wrappedParam = (com.amazon.ec2.DisassociateAddress)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DisassociateAddress.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DisassociateAddress wrappedParam =
+                        (com.amazon.ec2.DisassociateAddress)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DisassociateAddress.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     disassociateAddressResponse447 =
 
-                            skel.disassociateAddress(wrappedParam);
+                    skel.disassociateAddress(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), disassociateAddressResponse447, false);
                 } else
@@ -1100,12 +1173,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteDhcpOptions".equals(methodName)) {
 
                     com.amazon.ec2.DeleteDhcpOptionsResponse deleteDhcpOptionsResponse449 = null;
-                    com.amazon.ec2.DeleteDhcpOptions wrappedParam = (com.amazon.ec2.DeleteDhcpOptions)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeleteDhcpOptions.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteDhcpOptions wrappedParam =
+                        (com.amazon.ec2.DeleteDhcpOptions)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeleteDhcpOptions.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteDhcpOptionsResponse449 =
 
-                            skel.deleteDhcpOptions(wrappedParam);
+                    skel.deleteDhcpOptions(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteDhcpOptionsResponse449, false);
                 } else
@@ -1113,13 +1187,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeSpotDatafeedSubscription".equals(methodName)) {
 
                     com.amazon.ec2.DescribeSpotDatafeedSubscriptionResponse describeSpotDatafeedSubscriptionResponse451 = null;
-                    com.amazon.ec2.DescribeSpotDatafeedSubscription wrappedParam = (com.amazon.ec2.DescribeSpotDatafeedSubscription)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.ec2.DescribeSpotDatafeedSubscription.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeSpotDatafeedSubscription wrappedParam =
+                        (com.amazon.ec2.DescribeSpotDatafeedSubscription)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DescribeSpotDatafeedSubscription.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeSpotDatafeedSubscriptionResponse451 =
 
-                            skel.describeSpotDatafeedSubscription(wrappedParam);
+                    skel.describeSpotDatafeedSubscription(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeSpotDatafeedSubscriptionResponse451, false);
                 } else
@@ -1127,12 +1201,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeNetworkAcls".equals(methodName)) {
 
                     com.amazon.ec2.DescribeNetworkAclsResponse describeNetworkAclsResponse453 = null;
-                    com.amazon.ec2.DescribeNetworkAcls wrappedParam = (com.amazon.ec2.DescribeNetworkAcls)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeNetworkAcls.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeNetworkAcls wrappedParam =
+                        (com.amazon.ec2.DescribeNetworkAcls)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeNetworkAcls.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeNetworkAclsResponse453 =
 
-                            skel.describeNetworkAcls(wrappedParam);
+                    skel.describeNetworkAcls(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeNetworkAclsResponse453, false);
                 } else
@@ -1140,12 +1215,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("enableVolumeIO".equals(methodName)) {
 
                     com.amazon.ec2.EnableVolumeIOResponse enableVolumeIOResponse455 = null;
-                    com.amazon.ec2.EnableVolumeIO wrappedParam = (com.amazon.ec2.EnableVolumeIO)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.EnableVolumeIO.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.EnableVolumeIO wrappedParam =
+                        (com.amazon.ec2.EnableVolumeIO)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.EnableVolumeIO.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     enableVolumeIOResponse455 =
 
-                            skel.enableVolumeIO(wrappedParam);
+                    skel.enableVolumeIO(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), enableVolumeIOResponse455, false);
                 } else
@@ -1153,12 +1229,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("attachVpnGateway".equals(methodName)) {
 
                     com.amazon.ec2.AttachVpnGatewayResponse attachVpnGatewayResponse457 = null;
-                    com.amazon.ec2.AttachVpnGateway wrappedParam = (com.amazon.ec2.AttachVpnGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.AttachVpnGateway.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.AttachVpnGateway wrappedParam =
+                        (com.amazon.ec2.AttachVpnGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.AttachVpnGateway.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     attachVpnGatewayResponse457 =
 
-                            skel.attachVpnGateway(wrappedParam);
+                    skel.attachVpnGateway(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), attachVpnGatewayResponse457, false);
                 } else
@@ -1166,12 +1243,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeInternetGateways".equals(methodName)) {
 
                     com.amazon.ec2.DescribeInternetGatewaysResponse describeInternetGatewaysResponse459 = null;
-                    com.amazon.ec2.DescribeInternetGateways wrappedParam = (com.amazon.ec2.DescribeInternetGateways)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeInternetGateways.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeInternetGateways wrappedParam =
+                        (com.amazon.ec2.DescribeInternetGateways)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DescribeInternetGateways.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeInternetGatewaysResponse459 =
 
-                            skel.describeInternetGateways(wrappedParam);
+                    skel.describeInternetGateways(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeInternetGatewaysResponse459, false);
                 } else
@@ -1179,12 +1257,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeDhcpOptions".equals(methodName)) {
 
                     com.amazon.ec2.DescribeDhcpOptionsResponse describeDhcpOptionsResponse461 = null;
-                    com.amazon.ec2.DescribeDhcpOptions wrappedParam = (com.amazon.ec2.DescribeDhcpOptions)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeDhcpOptions.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeDhcpOptions wrappedParam =
+                        (com.amazon.ec2.DescribeDhcpOptions)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeDhcpOptions.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeDhcpOptionsResponse461 =
 
-                            skel.describeDhcpOptions(wrappedParam);
+                    skel.describeDhcpOptions(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeDhcpOptionsResponse461, false);
                 } else
@@ -1192,13 +1271,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createSpotDatafeedSubscription".equals(methodName)) {
 
                     com.amazon.ec2.CreateSpotDatafeedSubscriptionResponse createSpotDatafeedSubscriptionResponse463 = null;
-                    com.amazon.ec2.CreateSpotDatafeedSubscription wrappedParam = (com.amazon.ec2.CreateSpotDatafeedSubscription)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.ec2.CreateSpotDatafeedSubscription.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateSpotDatafeedSubscription wrappedParam =
+                        (com.amazon.ec2.CreateSpotDatafeedSubscription)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.CreateSpotDatafeedSubscription.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createSpotDatafeedSubscriptionResponse463 =
 
-                            skel.createSpotDatafeedSubscription(wrappedParam);
+                    skel.createSpotDatafeedSubscription(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createSpotDatafeedSubscriptionResponse463, false);
                 } else
@@ -1206,13 +1285,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeReservedInstancesListings".equals(methodName)) {
 
                     com.amazon.ec2.DescribeReservedInstancesListingsResponse describeReservedInstancesListingsResponse465 = null;
-                    com.amazon.ec2.DescribeReservedInstancesListings wrappedParam = (com.amazon.ec2.DescribeReservedInstancesListings)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.ec2.DescribeReservedInstancesListings.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeReservedInstancesListings wrappedParam =
+                        (com.amazon.ec2.DescribeReservedInstancesListings)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DescribeReservedInstancesListings.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeReservedInstancesListingsResponse465 =
 
-                            skel.describeReservedInstancesListings(wrappedParam);
+                    skel.describeReservedInstancesListings(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeReservedInstancesListingsResponse465, false);
                 } else
@@ -1220,12 +1299,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeInstanceStatus".equals(methodName)) {
 
                     com.amazon.ec2.DescribeInstanceStatusResponse describeInstanceStatusResponse467 = null;
-                    com.amazon.ec2.DescribeInstanceStatus wrappedParam = (com.amazon.ec2.DescribeInstanceStatus)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeInstanceStatus.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeInstanceStatus wrappedParam =
+                        (com.amazon.ec2.DescribeInstanceStatus)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeInstanceStatus.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeInstanceStatusResponse467 =
 
-                            skel.describeInstanceStatus(wrappedParam);
+                    skel.describeInstanceStatus(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeInstanceStatusResponse467, false);
                 } else
@@ -1233,13 +1313,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("modifyNetworkInterfaceAttribute".equals(methodName)) {
 
                     com.amazon.ec2.ModifyNetworkInterfaceAttributeResponse modifyNetworkInterfaceAttributeResponse469 = null;
-                    com.amazon.ec2.ModifyNetworkInterfaceAttribute wrappedParam = (com.amazon.ec2.ModifyNetworkInterfaceAttribute)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.ec2.ModifyNetworkInterfaceAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ModifyNetworkInterfaceAttribute wrappedParam =
+                        (com.amazon.ec2.ModifyNetworkInterfaceAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.ModifyNetworkInterfaceAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     modifyNetworkInterfaceAttributeResponse469 =
 
-                            skel.modifyNetworkInterfaceAttribute(wrappedParam);
+                    skel.modifyNetworkInterfaceAttribute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), modifyNetworkInterfaceAttributeResponse469, false);
                 } else
@@ -1247,12 +1327,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("disableVgwRoutePropagation".equals(methodName)) {
 
                     com.amazon.ec2.DisableVgwRoutePropagationResponse disableVgwRoutePropagationResponse471 = null;
-                    com.amazon.ec2.DisableVgwRoutePropagation wrappedParam = (com.amazon.ec2.DisableVgwRoutePropagation)fromOM(
-                        msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DisableVgwRoutePropagation.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DisableVgwRoutePropagation wrappedParam =
+                        (com.amazon.ec2.DisableVgwRoutePropagation)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DisableVgwRoutePropagation.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     disableVgwRoutePropagationResponse471 =
 
-                            skel.disableVgwRoutePropagation(wrappedParam);
+                    skel.disableVgwRoutePropagation(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), disableVgwRoutePropagationResponse471, false);
                 } else
@@ -1260,12 +1341,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeVolumeStatus".equals(methodName)) {
 
                     com.amazon.ec2.DescribeVolumeStatusResponse describeVolumeStatusResponse473 = null;
-                    com.amazon.ec2.DescribeVolumeStatus wrappedParam = (com.amazon.ec2.DescribeVolumeStatus)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeVolumeStatus.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeVolumeStatus wrappedParam =
+                        (com.amazon.ec2.DescribeVolumeStatus)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeVolumeStatus.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeVolumeStatusResponse473 =
 
-                            skel.describeVolumeStatus(wrappedParam);
+                    skel.describeVolumeStatus(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeVolumeStatusResponse473, false);
                 } else
@@ -1273,12 +1355,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("detachNetworkInterface".equals(methodName)) {
 
                     com.amazon.ec2.DetachNetworkInterfaceResponse detachNetworkInterfaceResponse475 = null;
-                    com.amazon.ec2.DetachNetworkInterface wrappedParam = (com.amazon.ec2.DetachNetworkInterface)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DetachNetworkInterface.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DetachNetworkInterface wrappedParam =
+                        (com.amazon.ec2.DetachNetworkInterface)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DetachNetworkInterface.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     detachNetworkInterfaceResponse475 =
 
-                            skel.detachNetworkInterface(wrappedParam);
+                    skel.detachNetworkInterface(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), detachNetworkInterfaceResponse475, false);
                 } else
@@ -1286,12 +1369,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeSecurityGroups".equals(methodName)) {
 
                     com.amazon.ec2.DescribeSecurityGroupsResponse describeSecurityGroupsResponse477 = null;
-                    com.amazon.ec2.DescribeSecurityGroups wrappedParam = (com.amazon.ec2.DescribeSecurityGroups)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeSecurityGroups.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeSecurityGroups wrappedParam =
+                        (com.amazon.ec2.DescribeSecurityGroups)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeSecurityGroups.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeSecurityGroupsResponse477 =
 
-                            skel.describeSecurityGroups(wrappedParam);
+                    skel.describeSecurityGroups(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeSecurityGroupsResponse477, false);
                 } else
@@ -1299,12 +1383,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeInstances".equals(methodName)) {
 
                     com.amazon.ec2.DescribeInstancesResponse describeInstancesResponse479 = null;
-                    com.amazon.ec2.DescribeInstances wrappedParam = (com.amazon.ec2.DescribeInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeInstances.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeInstances wrappedParam =
+                        (com.amazon.ec2.DescribeInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeInstances.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeInstancesResponse479 =
 
-                            skel.describeInstances(wrappedParam);
+                    skel.describeInstances(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeInstancesResponse479, false);
                 } else
@@ -1312,12 +1397,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeNetworkInterfaces".equals(methodName)) {
 
                     com.amazon.ec2.DescribeNetworkInterfacesResponse describeNetworkInterfacesResponse481 = null;
-                    com.amazon.ec2.DescribeNetworkInterfaces wrappedParam = (com.amazon.ec2.DescribeNetworkInterfaces)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeNetworkInterfaces.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeNetworkInterfaces wrappedParam =
+                        (com.amazon.ec2.DescribeNetworkInterfaces)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DescribeNetworkInterfaces.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeNetworkInterfacesResponse481 =
 
-                            skel.describeNetworkInterfaces(wrappedParam);
+                    skel.describeNetworkInterfaces(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeNetworkInterfacesResponse481, false);
                 } else
@@ -1325,12 +1411,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteKeyPair".equals(methodName)) {
 
                     com.amazon.ec2.DeleteKeyPairResponse deleteKeyPairResponse483 = null;
-                    com.amazon.ec2.DeleteKeyPair wrappedParam = (com.amazon.ec2.DeleteKeyPair)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeleteKeyPair.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteKeyPair wrappedParam =
+                        (com.amazon.ec2.DeleteKeyPair)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeleteKeyPair.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteKeyPairResponse483 =
 
-                            skel.deleteKeyPair(wrappedParam);
+                    skel.deleteKeyPair(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteKeyPairResponse483, false);
                 } else
@@ -1338,12 +1425,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createSnapshot".equals(methodName)) {
 
                     com.amazon.ec2.CreateSnapshotResponse createSnapshotResponse485 = null;
-                    com.amazon.ec2.CreateSnapshot wrappedParam = (com.amazon.ec2.CreateSnapshot)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateSnapshot.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateSnapshot wrappedParam =
+                        (com.amazon.ec2.CreateSnapshot)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateSnapshot.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createSnapshotResponse485 =
 
-                            skel.createSnapshot(wrappedParam);
+                    skel.createSnapshot(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createSnapshotResponse485, false);
                 } else
@@ -1351,12 +1439,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeVpnGateways".equals(methodName)) {
 
                     com.amazon.ec2.DescribeVpnGatewaysResponse describeVpnGatewaysResponse487 = null;
-                    com.amazon.ec2.DescribeVpnGateways wrappedParam = (com.amazon.ec2.DescribeVpnGateways)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeVpnGateways.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeVpnGateways wrappedParam =
+                        (com.amazon.ec2.DescribeVpnGateways)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeVpnGateways.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeVpnGatewaysResponse487 =
 
-                            skel.describeVpnGateways(wrappedParam);
+                    skel.describeVpnGateways(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeVpnGatewaysResponse487, false);
                 } else
@@ -1364,12 +1453,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteTags".equals(methodName)) {
 
                     com.amazon.ec2.DeleteTagsResponse deleteTagsResponse489 = null;
-                    com.amazon.ec2.DeleteTags wrappedParam = (com.amazon.ec2.DeleteTags)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeleteTags.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteTags wrappedParam =
+                        (com.amazon.ec2.DeleteTags)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeleteTags.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteTagsResponse489 =
 
-                            skel.deleteTags(wrappedParam);
+                    skel.deleteTags(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteTagsResponse489, false);
                 } else
@@ -1377,12 +1467,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteSnapshot".equals(methodName)) {
 
                     com.amazon.ec2.DeleteSnapshotResponse deleteSnapshotResponse491 = null;
-                    com.amazon.ec2.DeleteSnapshot wrappedParam = (com.amazon.ec2.DeleteSnapshot)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeleteSnapshot.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteSnapshot wrappedParam =
+                        (com.amazon.ec2.DeleteSnapshot)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeleteSnapshot.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteSnapshotResponse491 =
 
-                            skel.deleteSnapshot(wrappedParam);
+                    skel.deleteSnapshot(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteSnapshotResponse491, false);
                 } else
@@ -1390,12 +1481,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteCustomerGateway".equals(methodName)) {
 
                     com.amazon.ec2.DeleteCustomerGatewayResponse deleteCustomerGatewayResponse493 = null;
-                    com.amazon.ec2.DeleteCustomerGateway wrappedParam = (com.amazon.ec2.DeleteCustomerGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeleteCustomerGateway.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteCustomerGateway wrappedParam =
+                        (com.amazon.ec2.DeleteCustomerGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeleteCustomerGateway.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteCustomerGatewayResponse493 =
 
-                            skel.deleteCustomerGateway(wrappedParam);
+                    skel.deleteCustomerGateway(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteCustomerGatewayResponse493, false);
                 } else
@@ -1403,12 +1495,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createVolume".equals(methodName)) {
 
                     com.amazon.ec2.CreateVolumeResponse createVolumeResponse495 = null;
-                    com.amazon.ec2.CreateVolume wrappedParam = (com.amazon.ec2.CreateVolume)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateVolume.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateVolume wrappedParam =
+                        (com.amazon.ec2.CreateVolume)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateVolume.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createVolumeResponse495 =
 
-                            skel.createVolume(wrappedParam);
+                    skel.createVolume(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createVolumeResponse495, false);
                 } else
@@ -1416,12 +1509,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("cancelExportTask".equals(methodName)) {
 
                     com.amazon.ec2.CancelExportTaskResponse cancelExportTaskResponse497 = null;
-                    com.amazon.ec2.CancelExportTask wrappedParam = (com.amazon.ec2.CancelExportTask)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CancelExportTask.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CancelExportTask wrappedParam =
+                        (com.amazon.ec2.CancelExportTask)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CancelExportTask.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     cancelExportTaskResponse497 =
 
-                            skel.cancelExportTask(wrappedParam);
+                    skel.cancelExportTask(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), cancelExportTaskResponse497, false);
                 } else
@@ -1429,12 +1523,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("registerImage".equals(methodName)) {
 
                     com.amazon.ec2.RegisterImageResponse registerImageResponse499 = null;
-                    com.amazon.ec2.RegisterImage wrappedParam = (com.amazon.ec2.RegisterImage)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.RegisterImage.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.RegisterImage wrappedParam =
+                        (com.amazon.ec2.RegisterImage)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.RegisterImage.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     registerImageResponse499 =
 
-                            skel.registerImage(wrappedParam);
+                    skel.registerImage(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), registerImageResponse499, false);
                 } else
@@ -1442,12 +1537,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("detachVolume".equals(methodName)) {
 
                     com.amazon.ec2.DetachVolumeResponse detachVolumeResponse501 = null;
-                    com.amazon.ec2.DetachVolume wrappedParam = (com.amazon.ec2.DetachVolume)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DetachVolume.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DetachVolume wrappedParam =
+                        (com.amazon.ec2.DetachVolume)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DetachVolume.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     detachVolumeResponse501 =
 
-                            skel.detachVolume(wrappedParam);
+                    skel.detachVolume(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), detachVolumeResponse501, false);
                 } else
@@ -1455,12 +1551,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("stopInstances".equals(methodName)) {
 
                     com.amazon.ec2.StopInstancesResponse stopInstancesResponse503 = null;
-                    com.amazon.ec2.StopInstances wrappedParam = (com.amazon.ec2.StopInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.StopInstances.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.StopInstances wrappedParam =
+                        (com.amazon.ec2.StopInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.StopInstances.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     stopInstancesResponse503 =
 
-                            skel.stopInstances(wrappedParam);
+                    skel.stopInstances(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), stopInstancesResponse503, false);
                 } else
@@ -1468,12 +1565,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createRoute".equals(methodName)) {
 
                     com.amazon.ec2.CreateRouteResponse createRouteResponse505 = null;
-                    com.amazon.ec2.CreateRoute wrappedParam = (com.amazon.ec2.CreateRoute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateRoute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateRoute wrappedParam =
+                        (com.amazon.ec2.CreateRoute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateRoute.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createRouteResponse505 =
 
-                            skel.createRoute(wrappedParam);
+                    skel.createRoute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createRouteResponse505, false);
                 } else
@@ -1481,12 +1579,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("releaseAddress".equals(methodName)) {
 
                     com.amazon.ec2.ReleaseAddressResponse releaseAddressResponse507 = null;
-                    com.amazon.ec2.ReleaseAddress wrappedParam = (com.amazon.ec2.ReleaseAddress)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.ReleaseAddress.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ReleaseAddress wrappedParam =
+                        (com.amazon.ec2.ReleaseAddress)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.ReleaseAddress.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     releaseAddressResponse507 =
 
-                            skel.releaseAddress(wrappedParam);
+                    skel.releaseAddress(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), releaseAddressResponse507, false);
                 } else
@@ -1494,12 +1593,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeRouteTables".equals(methodName)) {
 
                     com.amazon.ec2.DescribeRouteTablesResponse describeRouteTablesResponse509 = null;
-                    com.amazon.ec2.DescribeRouteTables wrappedParam = (com.amazon.ec2.DescribeRouteTables)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeRouteTables.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeRouteTables wrappedParam =
+                        (com.amazon.ec2.DescribeRouteTables)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeRouteTables.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeRouteTablesResponse509 =
 
-                            skel.describeRouteTables(wrappedParam);
+                    skel.describeRouteTables(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeRouteTablesResponse509, false);
                 } else
@@ -1507,12 +1607,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeCustomerGateways".equals(methodName)) {
 
                     com.amazon.ec2.DescribeCustomerGatewaysResponse describeCustomerGatewaysResponse511 = null;
-                    com.amazon.ec2.DescribeCustomerGateways wrappedParam = (com.amazon.ec2.DescribeCustomerGateways)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeCustomerGateways.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeCustomerGateways wrappedParam =
+                        (com.amazon.ec2.DescribeCustomerGateways)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DescribeCustomerGateways.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeCustomerGatewaysResponse511 =
 
-                            skel.describeCustomerGateways(wrappedParam);
+                    skel.describeCustomerGateways(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeCustomerGatewaysResponse511, false);
                 } else
@@ -1520,12 +1621,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteNetworkAcl".equals(methodName)) {
 
                     com.amazon.ec2.DeleteNetworkAclResponse deleteNetworkAclResponse513 = null;
-                    com.amazon.ec2.DeleteNetworkAcl wrappedParam = (com.amazon.ec2.DeleteNetworkAcl)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeleteNetworkAcl.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteNetworkAcl wrappedParam =
+                        (com.amazon.ec2.DeleteNetworkAcl)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeleteNetworkAcl.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteNetworkAclResponse513 =
 
-                            skel.deleteNetworkAcl(wrappedParam);
+                    skel.deleteNetworkAcl(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteNetworkAclResponse513, false);
                 } else
@@ -1533,12 +1635,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteRoute".equals(methodName)) {
 
                     com.amazon.ec2.DeleteRouteResponse deleteRouteResponse515 = null;
-                    com.amazon.ec2.DeleteRoute wrappedParam = (com.amazon.ec2.DeleteRoute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeleteRoute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteRoute wrappedParam =
+                        (com.amazon.ec2.DeleteRoute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeleteRoute.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteRouteResponse515 =
 
-                            skel.deleteRoute(wrappedParam);
+                    skel.deleteRoute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteRouteResponse515, false);
                 } else
@@ -1546,12 +1649,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("rebootInstances".equals(methodName)) {
 
                     com.amazon.ec2.RebootInstancesResponse rebootInstancesResponse517 = null;
-                    com.amazon.ec2.RebootInstances wrappedParam = (com.amazon.ec2.RebootInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.RebootInstances.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.RebootInstances wrappedParam =
+                        (com.amazon.ec2.RebootInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.RebootInstances.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     rebootInstancesResponse517 =
 
-                            skel.rebootInstances(wrappedParam);
+                    skel.rebootInstances(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), rebootInstancesResponse517, false);
                 } else
@@ -1559,12 +1663,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("modifyInstanceAttribute".equals(methodName)) {
 
                     com.amazon.ec2.ModifyInstanceAttributeResponse modifyInstanceAttributeResponse519 = null;
-                    com.amazon.ec2.ModifyInstanceAttribute wrappedParam = (com.amazon.ec2.ModifyInstanceAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.ModifyInstanceAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ModifyInstanceAttribute wrappedParam =
+                        (com.amazon.ec2.ModifyInstanceAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.ModifyInstanceAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     modifyInstanceAttributeResponse519 =
 
-                            skel.modifyInstanceAttribute(wrappedParam);
+                    skel.modifyInstanceAttribute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), modifyInstanceAttributeResponse519, false);
                 } else
@@ -1572,12 +1677,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("terminateInstances".equals(methodName)) {
 
                     com.amazon.ec2.TerminateInstancesResponse terminateInstancesResponse521 = null;
-                    com.amazon.ec2.TerminateInstances wrappedParam = (com.amazon.ec2.TerminateInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.TerminateInstances.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.TerminateInstances wrappedParam =
+                        (com.amazon.ec2.TerminateInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.TerminateInstances.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     terminateInstancesResponse521 =
 
-                            skel.terminateInstances(wrappedParam);
+                    skel.terminateInstances(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), terminateInstancesResponse521, false);
                 } else
@@ -1585,12 +1691,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createVpnConnectionRoute".equals(methodName)) {
 
                     com.amazon.ec2.CreateVpnConnectionRouteResponse createVpnConnectionRouteResponse523 = null;
-                    com.amazon.ec2.CreateVpnConnectionRoute wrappedParam = (com.amazon.ec2.CreateVpnConnectionRoute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateVpnConnectionRoute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateVpnConnectionRoute wrappedParam =
+                        (com.amazon.ec2.CreateVpnConnectionRoute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.CreateVpnConnectionRoute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createVpnConnectionRouteResponse523 =
 
-                            skel.createVpnConnectionRoute(wrappedParam);
+                    skel.createVpnConnectionRoute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createVpnConnectionRouteResponse523, false);
                 } else
@@ -1598,12 +1705,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeConversionTasks".equals(methodName)) {
 
                     com.amazon.ec2.DescribeConversionTasksResponse describeConversionTasksResponse525 = null;
-                    com.amazon.ec2.DescribeConversionTasks wrappedParam = (com.amazon.ec2.DescribeConversionTasks)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeConversionTasks.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeConversionTasks wrappedParam =
+                        (com.amazon.ec2.DescribeConversionTasks)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DescribeConversionTasks.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeConversionTasksResponse525 =
 
-                            skel.describeConversionTasks(wrappedParam);
+                    skel.describeConversionTasks(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeConversionTasksResponse525, false);
                 } else
@@ -1611,12 +1719,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeAddresses".equals(methodName)) {
 
                     com.amazon.ec2.DescribeAddressesResponse describeAddressesResponse527 = null;
-                    com.amazon.ec2.DescribeAddresses wrappedParam = (com.amazon.ec2.DescribeAddresses)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeAddresses.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeAddresses wrappedParam =
+                        (com.amazon.ec2.DescribeAddresses)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeAddresses.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeAddressesResponse527 =
 
-                            skel.describeAddresses(wrappedParam);
+                    skel.describeAddresses(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeAddressesResponse527, false);
                 } else
@@ -1624,12 +1733,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeInstanceAttribute".equals(methodName)) {
 
                     com.amazon.ec2.DescribeInstanceAttributeResponse describeInstanceAttributeResponse529 = null;
-                    com.amazon.ec2.DescribeInstanceAttribute wrappedParam = (com.amazon.ec2.DescribeInstanceAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeInstanceAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeInstanceAttribute wrappedParam =
+                        (com.amazon.ec2.DescribeInstanceAttribute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DescribeInstanceAttribute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeInstanceAttributeResponse529 =
 
-                            skel.describeInstanceAttribute(wrappedParam);
+                    skel.describeInstanceAttribute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeInstanceAttributeResponse529, false);
                 } else
@@ -1637,12 +1747,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("attachInternetGateway".equals(methodName)) {
 
                     com.amazon.ec2.AttachInternetGatewayResponse attachInternetGatewayResponse531 = null;
-                    com.amazon.ec2.AttachInternetGateway wrappedParam = (com.amazon.ec2.AttachInternetGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.AttachInternetGateway.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.AttachInternetGateway wrappedParam =
+                        (com.amazon.ec2.AttachInternetGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.AttachInternetGateway.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     attachInternetGatewayResponse531 =
 
-                            skel.attachInternetGateway(wrappedParam);
+                    skel.attachInternetGateway(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), attachInternetGatewayResponse531, false);
                 } else
@@ -1650,12 +1761,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createVpc".equals(methodName)) {
 
                     com.amazon.ec2.CreateVpcResponse createVpcResponse533 = null;
-                    com.amazon.ec2.CreateVpc wrappedParam = (com.amazon.ec2.CreateVpc)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateVpc.class,
-                        getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateVpc wrappedParam =
+                        (com.amazon.ec2.CreateVpc)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateVpc.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createVpcResponse533 =
 
-                            skel.createVpc(wrappedParam);
+                    skel.createVpc(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createVpcResponse533, false);
                 } else
@@ -1663,13 +1775,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("replaceRouteTableAssociation".equals(methodName)) {
 
                     com.amazon.ec2.ReplaceRouteTableAssociationResponse replaceRouteTableAssociationResponse535 = null;
-                    com.amazon.ec2.ReplaceRouteTableAssociation wrappedParam = (com.amazon.ec2.ReplaceRouteTableAssociation)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.ec2.ReplaceRouteTableAssociation.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ReplaceRouteTableAssociation wrappedParam =
+                        (com.amazon.ec2.ReplaceRouteTableAssociation)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.ReplaceRouteTableAssociation.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     replaceRouteTableAssociationResponse535 =
 
-                            skel.replaceRouteTableAssociation(wrappedParam);
+                    skel.replaceRouteTableAssociation(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), replaceRouteTableAssociationResponse535, false);
                 } else
@@ -1677,12 +1789,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("associateRouteTable".equals(methodName)) {
 
                     com.amazon.ec2.AssociateRouteTableResponse associateRouteTableResponse537 = null;
-                    com.amazon.ec2.AssociateRouteTable wrappedParam = (com.amazon.ec2.AssociateRouteTable)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.AssociateRouteTable.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.AssociateRouteTable wrappedParam =
+                        (com.amazon.ec2.AssociateRouteTable)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.AssociateRouteTable.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     associateRouteTableResponse537 =
 
-                            skel.associateRouteTable(wrappedParam);
+                    skel.associateRouteTable(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), associateRouteTableResponse537, false);
                 } else
@@ -1690,12 +1803,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("detachInternetGateway".equals(methodName)) {
 
                     com.amazon.ec2.DetachInternetGatewayResponse detachInternetGatewayResponse539 = null;
-                    com.amazon.ec2.DetachInternetGateway wrappedParam = (com.amazon.ec2.DetachInternetGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DetachInternetGateway.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DetachInternetGateway wrappedParam =
+                        (com.amazon.ec2.DetachInternetGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DetachInternetGateway.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     detachInternetGatewayResponse539 =
 
-                            skel.detachInternetGateway(wrappedParam);
+                    skel.detachInternetGateway(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), detachInternetGatewayResponse539, false);
                 } else
@@ -1703,13 +1817,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("purchaseReservedInstancesOffering".equals(methodName)) {
 
                     com.amazon.ec2.PurchaseReservedInstancesOfferingResponse purchaseReservedInstancesOfferingResponse541 = null;
-                    com.amazon.ec2.PurchaseReservedInstancesOffering wrappedParam = (com.amazon.ec2.PurchaseReservedInstancesOffering)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.ec2.PurchaseReservedInstancesOffering.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.PurchaseReservedInstancesOffering wrappedParam =
+                        (com.amazon.ec2.PurchaseReservedInstancesOffering)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.PurchaseReservedInstancesOffering.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     purchaseReservedInstancesOfferingResponse541 =
 
-                            skel.purchaseReservedInstancesOffering(wrappedParam);
+                    skel.purchaseReservedInstancesOffering(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), purchaseReservedInstancesOfferingResponse541, false);
                 } else
@@ -1717,12 +1831,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("importVolume".equals(methodName)) {
 
                     com.amazon.ec2.ImportVolumeResponse importVolumeResponse543 = null;
-                    com.amazon.ec2.ImportVolume wrappedParam = (com.amazon.ec2.ImportVolume)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.ImportVolume.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ImportVolume wrappedParam =
+                        (com.amazon.ec2.ImportVolume)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.ImportVolume.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     importVolumeResponse543 =
 
-                            skel.importVolume(wrappedParam);
+                    skel.importVolume(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), importVolumeResponse543, false);
                 } else
@@ -1730,12 +1845,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeExportTasks".equals(methodName)) {
 
                     com.amazon.ec2.DescribeExportTasksResponse describeExportTasksResponse545 = null;
-                    com.amazon.ec2.DescribeExportTasks wrappedParam = (com.amazon.ec2.DescribeExportTasks)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeExportTasks.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeExportTasks wrappedParam =
+                        (com.amazon.ec2.DescribeExportTasks)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeExportTasks.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeExportTasksResponse545 =
 
-                            skel.describeExportTasks(wrappedParam);
+                    skel.describeExportTasks(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeExportTasksResponse545, false);
                 } else
@@ -1743,12 +1859,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createInstanceExportTask".equals(methodName)) {
 
                     com.amazon.ec2.CreateInstanceExportTaskResponse createInstanceExportTaskResponse547 = null;
-                    com.amazon.ec2.CreateInstanceExportTask wrappedParam = (com.amazon.ec2.CreateInstanceExportTask)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateInstanceExportTask.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateInstanceExportTask wrappedParam =
+                        (com.amazon.ec2.CreateInstanceExportTask)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.CreateInstanceExportTask.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createInstanceExportTaskResponse547 =
 
-                            skel.createInstanceExportTask(wrappedParam);
+                    skel.createInstanceExportTask(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createInstanceExportTaskResponse547, false);
                 } else
@@ -1756,12 +1873,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("assignPrivateIpAddresses".equals(methodName)) {
 
                     com.amazon.ec2.AssignPrivateIpAddressesResponse assignPrivateIpAddressesResponse549 = null;
-                    com.amazon.ec2.AssignPrivateIpAddresses wrappedParam = (com.amazon.ec2.AssignPrivateIpAddresses)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.AssignPrivateIpAddresses.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.AssignPrivateIpAddresses wrappedParam =
+                        (com.amazon.ec2.AssignPrivateIpAddresses)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.AssignPrivateIpAddresses.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     assignPrivateIpAddressesResponse549 =
 
-                            skel.assignPrivateIpAddresses(wrappedParam);
+                    skel.assignPrivateIpAddresses(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), assignPrivateIpAddressesResponse549, false);
                 } else
@@ -1769,12 +1887,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("reportInstanceStatus".equals(methodName)) {
 
                     com.amazon.ec2.ReportInstanceStatusResponse reportInstanceStatusResponse551 = null;
-                    com.amazon.ec2.ReportInstanceStatus wrappedParam = (com.amazon.ec2.ReportInstanceStatus)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.ReportInstanceStatus.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ReportInstanceStatus wrappedParam =
+                        (com.amazon.ec2.ReportInstanceStatus)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.ReportInstanceStatus.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     reportInstanceStatusResponse551 =
 
-                            skel.reportInstanceStatus(wrappedParam);
+                    skel.reportInstanceStatus(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), reportInstanceStatusResponse551, false);
                 } else
@@ -1782,13 +1901,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeReservedInstancesOfferings".equals(methodName)) {
 
                     com.amazon.ec2.DescribeReservedInstancesOfferingsResponse describeReservedInstancesOfferingsResponse553 = null;
-                    com.amazon.ec2.DescribeReservedInstancesOfferings wrappedParam = (com.amazon.ec2.DescribeReservedInstancesOfferings)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.ec2.DescribeReservedInstancesOfferings.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeReservedInstancesOfferings wrappedParam =
+                        (com.amazon.ec2.DescribeReservedInstancesOfferings)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DescribeReservedInstancesOfferings.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeReservedInstancesOfferingsResponse553 =
 
-                            skel.describeReservedInstancesOfferings(wrappedParam);
+                    skel.describeReservedInstancesOfferings(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeReservedInstancesOfferingsResponse553, false);
                 } else
@@ -1796,12 +1915,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteVpnConnection".equals(methodName)) {
 
                     com.amazon.ec2.DeleteVpnConnectionResponse deleteVpnConnectionResponse555 = null;
-                    com.amazon.ec2.DeleteVpnConnection wrappedParam = (com.amazon.ec2.DeleteVpnConnection)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeleteVpnConnection.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteVpnConnection wrappedParam =
+                        (com.amazon.ec2.DeleteVpnConnection)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeleteVpnConnection.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteVpnConnectionResponse555 =
 
-                            skel.deleteVpnConnection(wrappedParam);
+                    skel.deleteVpnConnection(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteVpnConnectionResponse555, false);
                 } else
@@ -1809,12 +1929,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteInternetGateway".equals(methodName)) {
 
                     com.amazon.ec2.DeleteInternetGatewayResponse deleteInternetGatewayResponse557 = null;
-                    com.amazon.ec2.DeleteInternetGateway wrappedParam = (com.amazon.ec2.DeleteInternetGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DeleteInternetGateway.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteInternetGateway wrappedParam =
+                        (com.amazon.ec2.DeleteInternetGateway)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DeleteInternetGateway.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteInternetGatewayResponse557 =
 
-                            skel.deleteInternetGateway(wrappedParam);
+                    skel.deleteInternetGateway(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteInternetGatewayResponse557, false);
                 } else
@@ -1822,13 +1943,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("deleteSpotDatafeedSubscription".equals(methodName)) {
 
                     com.amazon.ec2.DeleteSpotDatafeedSubscriptionResponse deleteSpotDatafeedSubscriptionResponse559 = null;
-                    com.amazon.ec2.DeleteSpotDatafeedSubscription wrappedParam = (com.amazon.ec2.DeleteSpotDatafeedSubscription)fromOM(msgContext.getEnvelope()
-                        .getBody()
-                        .getFirstElement(), com.amazon.ec2.DeleteSpotDatafeedSubscription.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DeleteSpotDatafeedSubscription wrappedParam =
+                        (com.amazon.ec2.DeleteSpotDatafeedSubscription)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.DeleteSpotDatafeedSubscription.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     deleteSpotDatafeedSubscriptionResponse559 =
 
-                            skel.deleteSpotDatafeedSubscription(wrappedParam);
+                    skel.deleteSpotDatafeedSubscription(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteSpotDatafeedSubscriptionResponse559, false);
                 } else
@@ -1836,12 +1957,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("attachNetworkInterface".equals(methodName)) {
 
                     com.amazon.ec2.AttachNetworkInterfaceResponse attachNetworkInterfaceResponse561 = null;
-                    com.amazon.ec2.AttachNetworkInterface wrappedParam = (com.amazon.ec2.AttachNetworkInterface)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.AttachNetworkInterface.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.AttachNetworkInterface wrappedParam =
+                        (com.amazon.ec2.AttachNetworkInterface)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.AttachNetworkInterface.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     attachNetworkInterfaceResponse561 =
 
-                            skel.attachNetworkInterface(wrappedParam);
+                    skel.attachNetworkInterface(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), attachNetworkInterfaceResponse561, false);
                 } else
@@ -1849,12 +1971,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("createNetworkInterface".equals(methodName)) {
 
                     com.amazon.ec2.CreateNetworkInterfaceResponse createNetworkInterfaceResponse563 = null;
-                    com.amazon.ec2.CreateNetworkInterface wrappedParam = (com.amazon.ec2.CreateNetworkInterface)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.CreateNetworkInterface.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.CreateNetworkInterface wrappedParam =
+                        (com.amazon.ec2.CreateNetworkInterface)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.CreateNetworkInterface.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     createNetworkInterfaceResponse563 =
 
-                            skel.createNetworkInterface(wrappedParam);
+                    skel.createNetworkInterface(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createNetworkInterfaceResponse563, false);
                 } else
@@ -1862,12 +1985,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("revokeSecurityGroupEgress".equals(methodName)) {
 
                     com.amazon.ec2.RevokeSecurityGroupEgressResponse revokeSecurityGroupEgressResponse565 = null;
-                    com.amazon.ec2.RevokeSecurityGroupEgress wrappedParam = (com.amazon.ec2.RevokeSecurityGroupEgress)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.RevokeSecurityGroupEgress.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.RevokeSecurityGroupEgress wrappedParam =
+                        (com.amazon.ec2.RevokeSecurityGroupEgress)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
+                            com.amazon.ec2.RevokeSecurityGroupEgress.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     revokeSecurityGroupEgressResponse565 =
 
-                            skel.revokeSecurityGroupEgress(wrappedParam);
+                    skel.revokeSecurityGroupEgress(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), revokeSecurityGroupEgressResponse565, false);
                 } else
@@ -1875,12 +1999,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("monitorInstances".equals(methodName)) {
 
                     com.amazon.ec2.MonitorInstancesResponse monitorInstancesResponse567 = null;
-                    com.amazon.ec2.MonitorInstances wrappedParam = (com.amazon.ec2.MonitorInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.MonitorInstances.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.MonitorInstances wrappedParam =
+                        (com.amazon.ec2.MonitorInstances)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.MonitorInstances.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     monitorInstancesResponse567 =
 
-                            skel.monitorInstances(wrappedParam);
+                    skel.monitorInstances(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), monitorInstancesResponse567, false);
                 } else
@@ -1888,12 +2013,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("replaceRoute".equals(methodName)) {
 
                     com.amazon.ec2.ReplaceRouteResponse replaceRouteResponse569 = null;
-                    com.amazon.ec2.ReplaceRoute wrappedParam = (com.amazon.ec2.ReplaceRoute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.ReplaceRoute.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.ReplaceRoute wrappedParam =
+                        (com.amazon.ec2.ReplaceRoute)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.ReplaceRoute.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     replaceRouteResponse569 =
 
-                            skel.replaceRoute(wrappedParam);
+                    skel.replaceRoute(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), replaceRouteResponse569, false);
                 } else
@@ -1901,12 +2027,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("attachVolume".equals(methodName)) {
 
                     com.amazon.ec2.AttachVolumeResponse attachVolumeResponse571 = null;
-                    com.amazon.ec2.AttachVolume wrappedParam = (com.amazon.ec2.AttachVolume)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.AttachVolume.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.AttachVolume wrappedParam =
+                        (com.amazon.ec2.AttachVolume)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.AttachVolume.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     attachVolumeResponse571 =
 
-                            skel.attachVolume(wrappedParam);
+                    skel.attachVolume(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), attachVolumeResponse571, false);
                 } else
@@ -1914,12 +2041,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("getConsoleOutput".equals(methodName)) {
 
                     com.amazon.ec2.GetConsoleOutputResponse getConsoleOutputResponse573 = null;
-                    com.amazon.ec2.GetConsoleOutput wrappedParam = (com.amazon.ec2.GetConsoleOutput)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.GetConsoleOutput.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.GetConsoleOutput wrappedParam =
+                        (com.amazon.ec2.GetConsoleOutput)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.GetConsoleOutput.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     getConsoleOutputResponse573 =
 
-                            skel.getConsoleOutput(wrappedParam);
+                    skel.getConsoleOutput(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), getConsoleOutputResponse573, false);
                 } else
@@ -1927,12 +2055,13 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
                 if ("describeRegions".equals(methodName)) {
 
                     com.amazon.ec2.DescribeRegionsResponse describeRegionsResponse575 = null;
-                    com.amazon.ec2.DescribeRegions wrappedParam = (com.amazon.ec2.DescribeRegions)fromOM(msgContext.getEnvelope().getBody().getFirstElement(),
-                        com.amazon.ec2.DescribeRegions.class, getEnvelopeNamespaces(msgContext.getEnvelope()));
+                    com.amazon.ec2.DescribeRegions wrappedParam =
+                        (com.amazon.ec2.DescribeRegions)fromOM(msgContext.getEnvelope().getBody().getFirstElement(), com.amazon.ec2.DescribeRegions.class,
+                            getEnvelopeNamespaces(msgContext.getEnvelope()));
 
                     describeRegionsResponse575 =
 
-                            skel.describeRegions(wrappedParam);
+                    skel.describeRegions(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), describeRegionsResponse575, false);
 
@@ -4598,7 +4727,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
 
     }
 
-    private org.apache.axiom.om.OMElement toOM(com.amazon.ec2.DescribeReservedInstancesOfferingsResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.om.OMElement toOM(com.amazon.ec2.DescribeReservedInstancesOfferingsResponse param, boolean optimizeContent)
+        throws org.apache.axis2.AxisFault {
 
         try {
             return param.getOMElement(com.amazon.ec2.DescribeReservedInstancesOfferingsResponse.MY_QNAME, org.apache.axiom.om.OMAbstractFactory.getOMFactory());
@@ -4828,8 +4958,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
 
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribePlacementGroupsResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribePlacementGroupsResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -4846,8 +4976,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateSecurityGroupResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateSecurityGroupResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -4882,8 +5012,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateDhcpOptionsResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateDhcpOptionsResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -4900,8 +5030,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateRouteTableResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateRouteTableResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -4918,8 +5048,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeSubnetsResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope
+        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeSubnetsResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -4936,8 +5066,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeactivateLicenseResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeactivateLicenseResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5008,8 +5138,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteVpnGatewayResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteVpnGatewayResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5026,8 +5156,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateNetworkAclEntryResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateNetworkAclEntryResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5044,8 +5174,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.RequestSpotInstancesResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.RequestSpotInstancesResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5062,8 +5192,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeVolumeAttributeResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeVolumeAttributeResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5080,8 +5210,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.AssociateDhcpOptionsResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.AssociateDhcpOptionsResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5134,8 +5264,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteNetworkInterfaceResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteNetworkInterfaceResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5170,8 +5300,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeLicensesResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeLicensesResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5188,8 +5318,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.BundleInstanceResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope
+        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.BundleInstanceResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5206,8 +5336,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeVpnConnectionsResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeVpnConnectionsResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5224,8 +5354,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeImagesResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope
+        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeImagesResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5242,8 +5372,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateInternetGatewayResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateInternetGatewayResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5260,8 +5390,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DisassociateRouteTableResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DisassociateRouteTableResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5278,8 +5408,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ReplaceNetworkAclEntryResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ReplaceNetworkAclEntryResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5314,8 +5444,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope
-        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeSnapshotAttributeResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeSnapshotAttributeResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5332,8 +5462,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateVpnGatewayResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateVpnGatewayResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5350,8 +5480,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ResetInstanceAttributeResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ResetInstanceAttributeResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5404,8 +5534,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.AssociateAddressResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.AssociateAddressResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5422,8 +5552,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeImageAttributeResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeImageAttributeResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5440,8 +5570,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope
-        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeSpotPriceHistoryResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeSpotPriceHistoryResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5458,8 +5588,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ModifySnapshotAttributeResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ModifySnapshotAttributeResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5494,8 +5624,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ImportInstanceResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope
+        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ImportInstanceResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5512,8 +5642,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeKeyPairsResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeKeyPairsResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5548,8 +5678,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreatePlacementGroupResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreatePlacementGroupResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5566,8 +5696,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteNetworkAclEntryResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteNetworkAclEntryResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5584,8 +5714,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ActivateLicenseResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope
+        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ActivateLicenseResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5602,8 +5732,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteRouteTableResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteRouteTableResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5620,8 +5750,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.UnmonitorInstancesResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.UnmonitorInstancesResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5638,8 +5768,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.StartInstancesResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope
+        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.StartInstancesResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5656,8 +5786,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ConfirmProductInstanceResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ConfirmProductInstanceResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5728,8 +5858,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateCustomerGatewayResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateCustomerGatewayResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5746,8 +5876,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateNetworkAclResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateNetworkAclResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5764,8 +5894,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ResetImageAttributeResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ResetImageAttributeResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5782,8 +5912,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ModifyVolumeAttributeResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ModifyVolumeAttributeResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5800,8 +5930,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope
-        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeReservedInstancesResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeReservedInstancesResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5818,8 +5948,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ResetSnapshotAttributeResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ResetSnapshotAttributeResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5854,8 +5984,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope
-        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeAvailabilityZonesResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeAvailabilityZonesResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5872,8 +6002,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateVpnConnectionResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateVpnConnectionResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5890,8 +6020,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CancelBundleTaskResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CancelBundleTaskResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5926,8 +6056,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DetachVpnGatewayResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DetachVpnGatewayResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5944,8 +6074,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeSnapshotsResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeSnapshotsResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -5980,8 +6110,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeBundleTasksResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeBundleTasksResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6034,8 +6164,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope
-        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.EnableVgwRoutePropagationResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.EnableVgwRoutePropagationResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6070,8 +6200,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeregisterImageResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope
+        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeregisterImageResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6088,8 +6218,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope
-        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteVpnConnectionRouteResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteVpnConnectionRouteResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6106,8 +6236,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ModifyImageAttributeResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ModifyImageAttributeResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6124,8 +6254,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CancelConversionTaskResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CancelConversionTaskResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6142,8 +6272,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeVolumesResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope
+        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeVolumesResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6178,8 +6308,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.GetPasswordDataResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope
+        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.GetPasswordDataResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6196,8 +6326,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.AllocateAddressResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope
+        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.AllocateAddressResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6214,8 +6344,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteSecurityGroupResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteSecurityGroupResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6232,8 +6362,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeletePlacementGroupResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeletePlacementGroupResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6250,8 +6380,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DisassociateAddressResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DisassociateAddressResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6268,8 +6398,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteDhcpOptionsResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteDhcpOptionsResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6304,8 +6434,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeNetworkAclsResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeNetworkAclsResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6322,8 +6452,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.EnableVolumeIOResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope
+        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.EnableVolumeIOResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6340,8 +6470,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.AttachVpnGatewayResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.AttachVpnGatewayResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6358,8 +6488,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope
-        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeInternetGatewaysResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeInternetGatewaysResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6376,8 +6506,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeDhcpOptionsResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeDhcpOptionsResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6430,8 +6560,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeInstanceStatusResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeInstanceStatusResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6484,8 +6614,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeVolumeStatusResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeVolumeStatusResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6502,8 +6632,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DetachNetworkInterfaceResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DetachNetworkInterfaceResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6520,8 +6650,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeSecurityGroupsResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeSecurityGroupsResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6538,8 +6668,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeInstancesResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeInstancesResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6556,8 +6686,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope
-        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeNetworkInterfacesResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeNetworkInterfacesResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6592,8 +6722,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateSnapshotResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope
+        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateSnapshotResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6610,8 +6740,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeVpnGatewaysResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeVpnGatewaysResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6646,8 +6776,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteSnapshotResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope
+        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteSnapshotResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6664,8 +6794,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteCustomerGatewayResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteCustomerGatewayResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6700,8 +6830,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CancelExportTaskResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CancelExportTaskResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6790,8 +6920,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ReleaseAddressResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope
+        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ReleaseAddressResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6808,8 +6938,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeRouteTablesResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeRouteTablesResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6826,8 +6956,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope
-        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeCustomerGatewaysResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeCustomerGatewaysResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6844,8 +6974,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteNetworkAclResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteNetworkAclResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6880,8 +7010,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.RebootInstancesResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope
+        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.RebootInstancesResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6898,8 +7028,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ModifyInstanceAttributeResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ModifyInstanceAttributeResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6916,8 +7046,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.TerminateInstancesResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.TerminateInstancesResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6934,8 +7064,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope
-        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateVpnConnectionRouteResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateVpnConnectionRouteResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6952,8 +7082,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeConversionTasksResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeConversionTasksResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6970,8 +7100,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeAddressesResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeAddressesResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -6988,8 +7118,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope
-        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeInstanceAttributeResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeInstanceAttributeResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -7006,8 +7136,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.AttachInternetGatewayResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.AttachInternetGatewayResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -7060,8 +7190,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.AssociateRouteTableResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.AssociateRouteTableResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -7078,8 +7208,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DetachInternetGatewayResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DetachInternetGatewayResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -7132,8 +7262,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeExportTasksResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeExportTasksResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -7150,8 +7280,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope
-        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateInstanceExportTaskResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateInstanceExportTaskResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -7168,8 +7298,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope
-        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.AssignPrivateIpAddressesResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.AssignPrivateIpAddressesResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -7186,8 +7316,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ReportInstanceStatusResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.ReportInstanceStatusResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -7222,8 +7352,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteVpnConnectionResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteVpnConnectionResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -7240,8 +7370,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteInternetGatewayResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DeleteInternetGatewayResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -7276,8 +7406,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.AttachNetworkInterfaceResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.AttachNetworkInterfaceResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -7294,8 +7424,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateNetworkInterfaceResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.CreateNetworkInterfaceResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -7312,8 +7442,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope
-        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.RevokeSecurityGroupEgressResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.RevokeSecurityGroupEgressResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -7330,8 +7460,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.MonitorInstancesResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.MonitorInstancesResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -7384,8 +7514,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.GetConsoleOutputResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.GetConsoleOutputResponse param,
+        boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 
@@ -7402,8 +7532,8 @@ public class AmazonEC2MessageReceiverInOut extends org.apache.axis2.receivers.Ab
         return wrappedElement;
     }
 
-    private org.apache.axiom.soap.SOAPEnvelope toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeRegionsResponse param, boolean optimizeContent)
-        throws org.apache.axis2.AxisFault {
+    private org.apache.axiom.soap.SOAPEnvelope
+        toEnvelope(org.apache.axiom.soap.SOAPFactory factory, com.amazon.ec2.DescribeRegionsResponse param, boolean optimizeContent) throws org.apache.axis2.AxisFault {
         try {
             org.apache.axiom.soap.SOAPEnvelope emptyEnvelope = factory.getDefaultEnvelope();
 

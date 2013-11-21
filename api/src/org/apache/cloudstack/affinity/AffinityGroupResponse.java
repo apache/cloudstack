@@ -17,21 +17,16 @@
 package org.apache.cloudstack.affinity;
 
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
+
+import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
-import org.apache.cloudstack.api.response.ControlledEntityResponse;
 import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
 
-import com.cloud.network.security.SecurityGroup;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = AffinityGroup.class)
@@ -93,6 +88,7 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
         this.description = description;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
@@ -106,6 +102,7 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
         this.domainId = domainId;
     }
 
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }

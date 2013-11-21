@@ -537,7 +537,7 @@ public class F5BigIpResource implements ServerResource {
 
         for (String virtualServerName : virtualServersToDelete) {
             s_logger.debug("Found a virtual server (" + virtualServerName + ") for guest network with self IP " + vlanSelfIp +
-                           " that is active when the guest network is being destroyed.");
+                " that is active when the guest network is being destroyed.");
             deleteVirtualServerAndDefaultPool(virtualServerName);
         }
     }
@@ -619,7 +619,8 @@ public class F5BigIpResource implements ServerResource {
 
     // Virtual server methods
 
-    private void addVirtualServer(String virtualServerName, LbProtocol protocol, String srcIp, int srcPort, StickinessPolicyTO[] stickyPolicies) throws ExecutionException {
+    private void addVirtualServer(String virtualServerName, LbProtocol protocol, String srcIp, int srcPort, StickinessPolicyTO[] stickyPolicies)
+        throws ExecutionException {
         try {
             if (!virtualServerExists(virtualServerName)) {
                 s_logger.debug("Adding virtual server " + virtualServerName);
@@ -1007,7 +1008,7 @@ public class F5BigIpResource implements ServerResource {
 
     private long getFullUsage(long high, long low) {
         Double full;
-        Double rollOver = new Double((double)0x7fffffff);
+        Double rollOver = new Double(0x7fffffff);
         rollOver = new Double(rollOver.doubleValue() + 1.0);
 
         if (high >= 0) {
@@ -1020,10 +1021,10 @@ public class F5BigIpResource implements ServerResource {
 
         if (low >= 0) {
             // add low to full and we're good
-            full = new Double(full.doubleValue() + (double)low);
+            full = new Double(full.doubleValue() + low);
         } else {
             // add full to low after masking off sign bits and adding 1 to the masked off low order value
-            full = new Double(full.doubleValue() + (double)((low & 0x7fffffff)) + rollOver.doubleValue());
+            full = new Double(full.doubleValue() + ((low & 0x7fffffff)) + rollOver.doubleValue());
         }
 
         return full.longValue();

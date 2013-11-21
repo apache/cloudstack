@@ -23,6 +23,7 @@ public class RecurringNetworkUsageCommand extends Command implements CronCommand
         this.interval = interval;
     }
 
+    @Override
     public int getInterval() {
         return interval;
     }

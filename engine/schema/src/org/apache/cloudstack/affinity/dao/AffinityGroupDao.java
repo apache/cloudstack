@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
+
 import com.cloud.utils.db.GenericDao;
 
 public interface AffinityGroupDao extends GenericDao<AffinityGroupVO, Long> {

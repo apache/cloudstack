@@ -153,8 +153,9 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
             physicalNetworkId = networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
         }
 
-        NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
-            network.getDataCenterId(), physicalNetworkId);
+        NetworkVO implemented =
+            new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
+                network.getDataCenterId(), physicalNetworkId);
 
         if (network.getGateway() != null) {
             implemented.setGateway(network.getGateway());
@@ -184,8 +185,8 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
         String transportzoneuuid = niciraNvpHost.getDetail("transportzoneuuid");
         String transportzoneisotype = niciraNvpHost.getDetail("transportzoneisotype");
 
-        CreateLogicalSwitchCommand cmd = new CreateLogicalSwitchCommand(transportzoneuuid, transportzoneisotype, name, context.getDomain().getName() + "-" +
-                                                                                                                       context.getAccount().getAccountName());
+        CreateLogicalSwitchCommand cmd =
+            new CreateLogicalSwitchCommand(transportzoneuuid, transportzoneisotype, name, context.getDomain().getName() + "-" + context.getAccount().getAccountName());
         CreateLogicalSwitchAnswer answer = (CreateLogicalSwitchAnswer)agentMgr.easySend(niciraNvpHost.getId(), cmd);
 
         if (answer == null || !answer.getResult()) {

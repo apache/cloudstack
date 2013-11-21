@@ -16,37 +16,16 @@
 // under the License.
 package org.apache.cloudstack.privategw;
 
-import com.cloud.configuration.ConfigurationManager;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.VlanDao;
-import com.cloud.exception.*;
-import com.cloud.network.NetworkModel;
-import com.cloud.network.NetworkService;
-import com.cloud.network.dao.*;
-import com.cloud.network.vpc.VpcManagerImpl;
-import com.cloud.network.vpc.VpcService;
-import com.cloud.network.vpc.dao.*;
-import com.cloud.network.vpn.Site2SiteVpnManager;
-import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
-import com.cloud.server.ConfigurationServer;
-import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.user.AccountManager;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.dao.DomainRouterDao;
+import java.io.IOException;
+
+import javax.naming.ConfigurationException;
 
 import junit.framework.Assert;
 
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.vpc.CreatePrivateGatewayCmd;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.test.utils.SpringUtils;
-
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -59,9 +38,43 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import javax.naming.ConfigurationException;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.vpc.CreatePrivateGatewayCmd;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.test.utils.SpringUtils;
 
-import java.io.IOException;
+import com.cloud.configuration.ConfigurationManager;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.VlanDao;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.NetworkService;
+import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayDao;
+import com.cloud.network.vpc.VpcManagerImpl;
+import com.cloud.network.vpc.VpcService;
+import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.network.vpc.dao.PrivateIpDao;
+import com.cloud.network.vpc.dao.StaticRouteDao;
+import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
+import com.cloud.network.vpc.dao.VpcServiceMapDao;
+import com.cloud.network.vpn.Site2SiteVpnManager;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import com.cloud.server.ConfigurationServer;
+import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.user.AccountManager;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.vm.dao.DomainRouterDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -87,7 +100,7 @@ public class AclOnPrivateGwTest {
         VpcService _vpcService = Mockito.mock(VpcService.class);
 
         try {
-            _vpcService.applyVpcPrivateGateway(Mockito.anyLong(), Mockito.anyBoolean());
+            _vpcService.applyVpcPrivateGateway(Matchers.anyLong(), Matchers.anyBoolean());
         } catch (ResourceUnavailableException e) {
             e.printStackTrace();
         } catch (ConcurrentOperationException e) {
@@ -102,7 +115,7 @@ public class AclOnPrivateGwTest {
         createPrivateGwCmd._vpcService = vpcService;
 
         try {
-            Mockito.when(vpcService.applyVpcPrivateGateway(Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(null);
+            Mockito.when(vpcService.applyVpcPrivateGateway(Matchers.anyLong(), Matchers.anyBoolean())).thenReturn(null);
         } catch (ResourceUnavailableException e) {
             e.printStackTrace();
         } catch (ConcurrentOperationException e) {

@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.user.loadbalancer;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,8 +34,6 @@ import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -93,14 +93,14 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
                description = "the public port from where the network traffic will be load balanced from")
     private Integer publicPort;
 
-    @Parameter(name = ApiConstants.OPEN_FIREWALL,
-               type = CommandType.BOOLEAN,
-               description = "if true, firewall rule for"
-                             + " source/end pubic port is automatically created; if false - firewall rule has to be created explicitely. If not specified 1) defaulted to false when LB"
-                             + " rule is being created for VPC guest network 2) in all other cases defaulted to true")
+    @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for"
+        + " source/end pubic port is automatically created; if false - firewall rule has to be created explicitely. If not specified 1) defaulted to false when LB"
+        + " rule is being created for VPC guest network 2) in all other cases defaulted to true")
     private Boolean openFirewall;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account associated with the load balancer. Must be used with the domainId parameter.")
+    @Parameter(name = ApiConstants.ACCOUNT,
+               type = CommandType.STRING,
+               description = "the account associated with the load balancer. Must be used with the domainId parameter.")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the domain ID associated with the load balancer")
@@ -109,10 +109,8 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
     @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from")
     private List<String> cidrlist;
 
-    @Parameter(name = ApiConstants.NETWORK_ID,
-               type = CommandType.UUID,
-               entityType = NetworkResponse.class,
-               description = "The guest network this " + "rule will be created for. Required when public Ip address is not associated with any Guest network yet (VPC case)")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "The guest network this "
+        + "rule will be created for. Required when public Ip address is not associated with any Guest network yet (VPC case)")
     private Long networkId;
 
     @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, description = "The protocol for the LB")
@@ -183,7 +181,8 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
                 List<? extends Network> networks = _networkService.getIsolatedNetworksOwnedByAccountInZone(getZoneId(), _accountService.getAccount(getEntityOwnerId()));
                 if (networks.size() == 0) {
                     String domain = _domainService.getDomain(getDomainId()).getName();
-                    throw new InvalidParameterValueException("Account name=" + getAccountName() + " domain=" + domain + " doesn't have virtual networks in zone=" + zone.getName());
+                    throw new InvalidParameterValueException("Account name=" + getAccountName() + " domain=" + domain + " doesn't have virtual networks in zone=" +
+                        zone.getName());
                 }
 
                 if (networks.size() < 1) {
@@ -300,8 +299,9 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd /*implements L
                 "Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
         }
         try {
-            LoadBalancer result = _lbService.createPublicLoadBalancerRule(getXid(), getName(), getDescription(), getSourcePortStart(), getSourcePortEnd(), getDefaultPortStart(),
-                getDefaultPortEnd(), getSourceIpAddressId(), getProtocol(), getAlgorithm(), getNetworkId(), getEntityOwnerId(), getOpenFirewall(), getLbProtocol());
+            LoadBalancer result =
+                _lbService.createPublicLoadBalancerRule(getXid(), getName(), getDescription(), getSourcePortStart(), getSourcePortEnd(), getDefaultPortStart(),
+                    getDefaultPortEnd(), getSourceIpAddressId(), getProtocol(), getAlgorithm(), getNetworkId(), getEntityOwnerId(), getOpenFirewall(), getLbProtocol());
             this.setEntityId(result.getId());
             this.setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException e) {

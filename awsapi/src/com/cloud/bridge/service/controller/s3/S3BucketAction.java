@@ -45,6 +45,7 @@ import org.w3c.dom.NodeList;
 import com.amazon.s3.GetBucketAccessControlPolicyResponse;
 import com.amazon.s3.ListAllMyBucketsResponse;
 import com.amazon.s3.ListBucketResponse;
+
 import com.cloud.bridge.io.MTOMAwareResultStreamWriter;
 import com.cloud.bridge.model.BucketPolicyVO;
 import com.cloud.bridge.model.SAcl;
@@ -93,7 +94,6 @@ import com.cloud.bridge.util.StringHelper;
 import com.cloud.bridge.util.XSerializer;
 import com.cloud.bridge.util.XSerializerXmlAdapter;
 import com.cloud.bridge.util.XmlHelper;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 public class S3BucketAction implements ServletAction {
@@ -772,7 +772,8 @@ public class S3BucketAction implements ServletAction {
             response.flushBuffer();
         } catch (ObjectAlreadyExistsException oaee) {
             response.setStatus(409);
-            String xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <Error><Code>OperationAborted</Code><Message>A conflicting conditional operation is currently in progress against this resource. Please try again..</Message>";
+            String xml =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\"?> <Error><Code>OperationAborted</Code><Message>A conflicting conditional operation is currently in progress against this resource. Please try again..</Message>";
             response.setContentType("text/xml; charset=UTF-8");
             S3RestServlet.endResponse(response, xml.toString());
         }

@@ -92,10 +92,10 @@ public class LibvirtSecretDef {
             secretBuilder.append("<description>" + _description + "</description>\n");
         }
         secretBuilder.append("<usage type='" + _usage + "'>\n");
-        if (_usage == _usage.VOLUME) {
+        if (_usage == usage.VOLUME) {
             secretBuilder.append("<volume>" + _volumeVolume + "</volume>\n");
         }
-        if (_usage == _usage.CEPH) {
+        if (_usage == usage.CEPH) {
             secretBuilder.append("<name>" + _cephName + "</name>\n");
         }
         secretBuilder.append("</usage>\n");

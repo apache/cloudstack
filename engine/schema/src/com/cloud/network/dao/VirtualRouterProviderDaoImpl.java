@@ -22,8 +22,8 @@ import javax.ejb.Local;
 
 import org.springframework.stereotype.Component;
 
-import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.VirtualRouterProvider.Type;
+import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;

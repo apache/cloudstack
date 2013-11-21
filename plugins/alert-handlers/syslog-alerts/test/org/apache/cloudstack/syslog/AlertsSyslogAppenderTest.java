@@ -17,14 +17,14 @@
 
 package org.apache.cloudstack.syslog;
 
-import org.apache.log4j.PatternLayout;
-import org.junit.Before;
-import org.junit.Test;
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 import javax.naming.ConfigurationException;
 
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertTrue;
+import org.apache.log4j.PatternLayout;
+import org.junit.Before;
+import org.junit.Test;
 
 public class AlertsSyslogAppenderTest {
     AlertsSyslogAppender _appender = new AlertsSyslogAppender();

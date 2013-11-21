@@ -30,26 +30,26 @@ import streamer.PipelineImpl;
  */
 public class ClientSynchronizePDU extends OneTimeSwitch {
 
-  public ClientSynchronizePDU(String id) {
-    super(id);
-  }
+    public ClientSynchronizePDU(String id) {
+        super(id);
+    }
 
-  @Override
-  protected void handleOneTimeData(ByteBuffer buf, Link link) {
-    if (buf == null)
-      return;
+    @Override
+    protected void handleOneTimeData(ByteBuffer buf, Link link) {
+        if (buf == null)
+            return;
 
-    throw new RuntimeException("Unexpected packet: " + buf + ".");
-  }
+        throw new RuntimeException("Unexpected packet: " + buf + ".");
+    }
 
-  @Override
-  protected void onStart() {
-    super.onStart();
+    @Override
+    protected void onStart() {
+        super.onStart();
 
-    int length = 1024; // Large enough
-    ByteBuffer buf = new ByteBuffer(length, true);
+        int length = 1024; // Large enough
+        ByteBuffer buf = new ByteBuffer(length, true);
 
-    /* @formatter:off */
+        /* @formatter:off */
     buf.writeBytes(new byte[] {
         // MCS send data request
         (byte)0x64,
@@ -91,25 +91,25 @@ public class ClientSynchronizePDU extends OneTimeSwitch {
     });
     /* @formatter:on */
 
-    // Trim buffer to actual length of data written
-    buf.trimAtCursor();
+        // Trim buffer to actual length of data written
+        buf.trimAtCursor();
 
-    pushDataToOTOut(buf);
+        pushDataToOTOut(buf);
 
-    switchOff();
-  }
+        switchOff();
+    }
 
-  /**
-   * Example.
-   *
-   * @see http://msdn.microsoft.com/en-us/library/cc240841.aspx
-   */
-  public static void main(String args[]) {
-    // System.setProperty("streamer.Link.debug", "true");
-    System.setProperty("streamer.Element.debug", "true");
-    // System.setProperty("streamer.Pipeline.debug", "true");
+    /**
+     * Example.
+     *
+     * @see http://msdn.microsoft.com/en-us/library/cc240841.aspx
+     */
+    public static void main(String args[]) {
+        // System.setProperty("streamer.Link.debug", "true");
+        System.setProperty("streamer.Element.debug", "true");
+        // System.setProperty("streamer.Pipeline.debug", "true");
 
-    /* @formatter:off */
+        /* @formatter:off */
     byte[] packet = new byte[] {
         // TPKT
         (byte)0x03, (byte)0x00,
@@ -157,19 +157,19 @@ public class ClientSynchronizePDU extends OneTimeSwitch {
     };
     /* @formatter:on */
 
-    MockSource source = new MockSource("source", ByteBuffer.convertByteArraysToByteBuffers(new byte[] { 1, 2, 3 }));
-    Element todo = new ClientSynchronizePDU("TODO");
-    Element x224 = new ClientX224DataPdu("x224");
-    Element tpkt = new ClientTpkt("tpkt");
-    Element sink = new MockSink("sink", ByteBuffer.convertByteArraysToByteBuffers(packet));
-    Element mainSink = new MockSink("mainSink", ByteBuffer.convertByteArraysToByteBuffers(new byte[] { 1, 2, 3 }));
+        MockSource source = new MockSource("source", ByteBuffer.convertByteArraysToByteBuffers(new byte[] {1, 2, 3}));
+        Element todo = new ClientSynchronizePDU("TODO");
+        Element x224 = new ClientX224DataPdu("x224");
+        Element tpkt = new ClientTpkt("tpkt");
+        Element sink = new MockSink("sink", ByteBuffer.convertByteArraysToByteBuffers(packet));
+        Element mainSink = new MockSink("mainSink", ByteBuffer.convertByteArraysToByteBuffers(new byte[] {1, 2, 3}));
 
-    Pipeline pipeline = new PipelineImpl("test");
-    pipeline.add(source, todo, x224, tpkt, sink, mainSink);
-    pipeline.link("source", "TODO", "mainSink");
-    pipeline.link("TODO >" + OTOUT, "x224", "tpkt", "sink");
-    pipeline.runMainLoop("source", STDOUT, false, false);
-  }
+        Pipeline pipeline = new PipelineImpl("test");
+        pipeline.add(source, todo, x224, tpkt, sink, mainSink);
+        pipeline.link("source", "TODO", "mainSink");
+        pipeline.link("TODO >" + OTOUT, "x224", "tpkt", "sink");
+        pipeline.runMainLoop("source", STDOUT, false, false);
+    }
 
 }
 

@@ -68,8 +68,8 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = {NetworkElement.class, FirewallServiceProvider.class, DhcpServiceProvider.class, UserDataServiceProvider.class, StaticNatServiceProvider.class,
-        LoadBalancingServiceProvider.class, PortForwardingServiceProvider.class, IpDeployer.class, VpcProvider.class, Site2SiteVpnServiceProvider.class,
-        NetworkACLServiceProvider.class})
+    LoadBalancingServiceProvider.class, PortForwardingServiceProvider.class, IpDeployer.class, VpcProvider.class, Site2SiteVpnServiceProvider.class,
+    NetworkACLServiceProvider.class})
 public class VpcVirtualRouterElement extends VirtualRouterElement implements VpcProvider, Site2SiteVpnServiceProvider, NetworkACLServiceProvider {
     private static final Logger s_logger = Logger.getLogger(VpcVirtualRouterElement.class);
     @Inject
@@ -190,8 +190,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-        InsufficientCapacityException, ResourceUnavailableException {
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
         Long vpcId = network.getVpcId();
         if (vpcId == null) {
@@ -331,7 +331,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(gateway.getVpcId());
         if (routers == null || routers.isEmpty()) {
-            s_logger.debug(getName() + " element doesn't need to create Private gateway on the backend; VPC virtual " + "router doesn't exist in the vpc id=" + gateway.getVpcId());
+            s_logger.debug(getName() + " element doesn't need to create Private gateway on the backend; VPC virtual " + "router doesn't exist in the vpc id=" +
+                gateway.getVpcId());
             return true;
         }
 
@@ -365,7 +366,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(gateway.getVpcId());
         if (routers == null || routers.isEmpty()) {
-            s_logger.debug(getName() + " element doesn't need to delete Private gateway on the backend; VPC virtual " + "router doesn't exist in the vpc id=" + gateway.getVpcId());
+            s_logger.debug(getName() + " element doesn't need to delete Private gateway on the backend; VPC virtual " + "router doesn't exist in the vpc id=" +
+                gateway.getVpcId());
             return true;
         }
 
@@ -391,7 +393,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug(getName() + " element doesn't need to associate ip addresses on the backend; VPC virtual " + "router doesn't exist in the network " +
-                               network.getId());
+                    network.getId());
                 return true;
             }
 
@@ -406,7 +408,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         if (canHandle(config, Service.NetworkACL)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " + "router doesn't exist in the network " + config.getId());
+                s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " + "router doesn't exist in the network " +
+                    config.getId());
                 return true;
             }
 
@@ -448,7 +451,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(gateway.getVpcId());
         if (routers == null || routers.isEmpty()) {
-            s_logger.debug("Virtual router element doesn't need to apply network acl rules on the backend; virtual " + "router doesn't exist in the network " + config.getId());
+            s_logger.debug("Virtual router element doesn't need to apply network acl rules on the backend; virtual " + "router doesn't exist in the network " +
+                config.getId());
             return true;
         }
 
@@ -479,8 +483,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(ip.getVpcId());
         if (routers == null || routers.size() != 1) {
-            throw new ResourceUnavailableException("Cannot enable site-to-site VPN on the backend; virtual router doesn't exist in the vpc " + ip.getVpcId(), DataCenter.class,
-                vpc.getZoneId());
+            throw new ResourceUnavailableException("Cannot enable site-to-site VPN on the backend; virtual router doesn't exist in the vpc " + ip.getVpcId(),
+                DataCenter.class, vpc.getZoneId());
         }
 
         return _vpcRouterMgr.startSite2SiteVpn(conn, routers.get(0));
@@ -506,8 +510,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         List<DomainRouterVO> routers = _vpcRouterMgr.getVpcRouters(ip.getVpcId());
         if (routers == null || routers.size() != 1) {
-            throw new ResourceUnavailableException("Cannot enable site-to-site VPN on the backend; virtual router doesn't exist in the vpc " + ip.getVpcId(), DataCenter.class,
-                vpc.getZoneId());
+            throw new ResourceUnavailableException("Cannot enable site-to-site VPN on the backend; virtual router doesn't exist in the vpc " + ip.getVpcId(),
+                DataCenter.class, vpc.getZoneId());
         }
 
         return _vpcRouterMgr.stopSite2SiteVpn(conn, routers.get(0));

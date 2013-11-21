@@ -20,8 +20,8 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.dao.DiskOfferingDao;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -32,7 +32,6 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DownloadAnswer;
@@ -40,9 +39,11 @@ import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -237,7 +238,7 @@ public class VolumeObject implements VolumeInfo {
         DataObjectInStore obj = objectInStoreMgr.findObject(this.volumeVO.getId(), DataObjectType.VOLUME, this.dataStore.getId(), this.dataStore.getRole());
         if (obj.getState() != ObjectInDataStoreStateMachine.State.Ready) {
             return this.dataStore.getUri() + "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME + "&" + EncodingType.SIZE + "=" + this.volumeVO.getSize() + "&" +
-                   EncodingType.NAME + "=" + this.volumeVO.getName();
+                EncodingType.NAME + "=" + this.volumeVO.getName();
         } else {
             return this.dataStore.getUri() + "&" + EncodingType.OBJTYPE + "=" + DataObjectType.VOLUME + "&" + EncodingType.PATH + "=" + obj.getInstallPath();
         }
@@ -261,8 +262,8 @@ public class VolumeObject implements VolumeInfo {
             }
             if (this.dataStore.getRole() == DataStoreRole.Image) {
                 objectInStoreMgr.update(this, event);
-                if (this.volumeVO.getState() == Volume.State.Migrating || this.volumeVO.getState() == Volume.State.Copying || this.volumeVO.getState() == Volume.State.Uploaded ||
-                    this.volumeVO.getState() == Volume.State.Expunged) {
+                if (this.volumeVO.getState() == Volume.State.Migrating || this.volumeVO.getState() == Volume.State.Copying ||
+                    this.volumeVO.getState() == Volume.State.Uploaded || this.volumeVO.getState() == Volume.State.Expunged) {
                     return;
                 }
                 if (event == ObjectInDataStoreStateMachine.Event.CreateOnlyRequested) {

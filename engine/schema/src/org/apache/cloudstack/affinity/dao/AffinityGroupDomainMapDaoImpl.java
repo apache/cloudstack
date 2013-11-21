@@ -19,6 +19,7 @@ package org.apache.cloudstack.affinity.dao;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
+
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -56,7 +57,7 @@ public class AffinityGroupDomainMapDaoImpl extends GenericDaoBase<AffinityGroupD
     @Override
     public List<AffinityGroupDomainMapVO> listByDomain(Object... domainId) {
         SearchCriteria<AffinityGroupDomainMapVO> sc = DomainsSearch.create();
-        sc.setParameters("domainId", (Object[])domainId);
+        sc.setParameters("domainId", domainId);
 
         return listBy(sc);
     }

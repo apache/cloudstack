@@ -41,6 +41,7 @@ import com.cloud.exception.InternalErrorException;
 public interface ModelObject {
     public static class ModelReference implements Comparable<ModelReference>, Serializable {
         WeakReference<ModelObject> reference;
+
         ModelReference(ModelObject obj) {
             reference = new WeakReference<ModelObject>(obj);
         }
@@ -63,8 +64,7 @@ public interface ModelObject {
         public int hashCode() {
             final int prime = 31;
             int result = 1;
-            result = prime * result
-                    + ((reference == null) ? 0 : reference.hashCode());
+            result = prime * result + ((reference == null) ? 0 : reference.hashCode());
             return result;
         }
 
@@ -75,23 +75,25 @@ public interface ModelObject {
             if (other == null)
                 return false;
             try {
-                ModelReference rhs = (ModelReference) other;
+                ModelReference rhs = (ModelReference)other;
                 return compareTo(rhs) == 0;
             } catch (ClassCastException ex) {
             }
             return false;
         }
+
         public ModelObject get() {
             return reference.get();
         }
-
 
     };
 
     public void addSuccessor(ModelObject child);
 
     public TreeSet<ModelReference> ancestors();
+
     public void clearSuccessors();
+
     public int compareTo(ModelObject o);
 
     /**

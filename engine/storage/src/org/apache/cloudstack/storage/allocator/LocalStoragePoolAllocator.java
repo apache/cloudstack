@@ -25,12 +25,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.deploy.DeploymentPlan;
@@ -42,7 +42,6 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -99,7 +98,8 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 // zone wide primary storage deployment
                 return null;
             }
-            List<StoragePoolVO> availablePools = _storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), dskCh.getTags());
+            List<StoragePoolVO> availablePools =
+                _storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), dskCh.getTags());
             for (StoragePoolVO pool : availablePools) {
                 if (suitablePools.size() == returnUpTo) {
                     break;

@@ -169,8 +169,8 @@ public class VmwareHelper {
     }
 
     // vmdkDatastorePath: [datastore name] vmdkFilePath
-    public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, String vmdkDatastorePath, int sizeInMb, ManagedObjectReference morDs, int deviceNumber,
-        int contextNumber) throws Exception {
+    public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, String vmdkDatastorePath, int sizeInMb, ManagedObjectReference morDs,
+        int deviceNumber, int contextNumber) throws Exception {
 
         VirtualDisk disk = new VirtualDisk();
 
@@ -276,8 +276,8 @@ public class VmwareHelper {
     }
 
     // vmdkDatastorePath: [datastore name] vmdkFilePath
-    public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, VirtualDisk device, int controllerKey, String vmdkDatastorePathChain[], ManagedObjectReference morDs,
-        int deviceNumber, int contextNumber) throws Exception {
+    public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, VirtualDisk device, int controllerKey, String vmdkDatastorePathChain[],
+        ManagedObjectReference morDs, int deviceNumber, int contextNumber) throws Exception {
 
         assert (vmdkDatastorePathChain != null);
         assert (vmdkDatastorePathChain.length >= 1);
@@ -325,8 +325,8 @@ public class VmwareHelper {
         return disk;
     }
 
-    public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, Pair<String, ManagedObjectReference>[] vmdkDatastorePathChain, int deviceNumber,
-        int contextNumber) throws Exception {
+    public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, Pair<String, ManagedObjectReference>[] vmdkDatastorePathChain,
+        int deviceNumber, int contextNumber) throws Exception {
 
         assert (vmdkDatastorePathChain != null);
         assert (vmdkDatastorePathChain.length >= 1);

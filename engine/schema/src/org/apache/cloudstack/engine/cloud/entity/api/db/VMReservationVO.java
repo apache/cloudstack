@@ -86,6 +86,7 @@ public class VMReservationVO implements Identity, InternalIdentity {
         this.uuid = UUID.randomUUID().toString();
     }
 
+    @Override
     public long getId() {
         return id;
     }

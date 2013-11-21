@@ -23,9 +23,11 @@ import javax.naming.ConfigurationException;
 
 import junit.framework.Assert;
 
-import org.apache.cloudstack.region.dao.RegionDao;
 import org.junit.Test;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
+
+import org.apache.cloudstack.region.dao.RegionDao;
 
 import com.cloud.exception.InvalidParameterValueException;
 
@@ -36,7 +38,7 @@ public class RegionManagerTest {
         RegionManagerImpl regionMgr = new RegionManagerImpl();
         RegionDao regionDao = Mockito.mock(RegionDao.class);
         RegionVO region = new RegionVO(2, "APAC", "");
-        Mockito.when(regionDao.findByName(Mockito.anyString())).thenReturn(region);
+        Mockito.when(regionDao.findByName(Matchers.anyString())).thenReturn(region);
         regionMgr._regionDao = regionDao;
         try {
             regionMgr.addRegion(2, "APAC", "");

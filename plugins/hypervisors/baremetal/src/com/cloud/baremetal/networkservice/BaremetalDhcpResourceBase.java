@@ -39,14 +39,10 @@ import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupExternalDhcpCommand;
-import com.cloud.agent.api.StartupPxeServerCommand;
 import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.script.Script;
-import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.vm.VirtualMachine.State;
-import com.trilead.ssh2.SCPClient;
 
 public class BaremetalDhcpResourceBase extends ManagerBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(BaremetalDhcpResourceBase.class);

@@ -16,9 +16,12 @@
 // under the License.
 package com.cloud.network.resource;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,16 +47,9 @@ import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
-import com.cloud.dc.Vlan;
 import com.cloud.host.Host;
-import com.cloud.network.IpAddress;
 import com.cloud.network.cisco.CiscoVnmcConnectionImpl;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.network.rules.StaticNat;
-import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.rules.FirewallRule.TrafficType;
-import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.utils.exception.ExecutionException;
 
 public class CiscoVnmcResourceTest {
@@ -159,8 +155,10 @@ public class CiscoVnmcResourceTest {
         when(_connection.createTenantVDCAclPolicy(anyString(), anyString())).thenReturn(true);
         when(_connection.createTenantVDCAclPolicyRef(anyString(), anyString(), anyBoolean())).thenReturn(true);
         when(_connection.deleteTenantVDCAclRule(anyString(), anyLong(), anyString())).thenReturn(true);
-        when(_connection.createTenantVDCIngressAclRule(anyString(), anyLong(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(true);
-        when(_connection.createTenantVDCEgressAclRule(anyString(), anyLong(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(true);
+        when(_connection.createTenantVDCIngressAclRule(anyString(), anyLong(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(
+            true);
+        when(_connection.createTenantVDCEgressAclRule(anyString(), anyLong(), anyString(), anyString(), anyString(), anyString(), anyString(), anyString())).thenReturn(
+            true);
         when(_connection.associateAclPolicySet(anyString())).thenReturn(true);
 
         Answer answer = _resource.executeRequest(cmd);

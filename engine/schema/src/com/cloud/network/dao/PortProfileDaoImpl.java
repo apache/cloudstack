@@ -20,6 +20,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -29,8 +30,8 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
@@ -54,17 +55,20 @@ public class PortProfileDaoImpl extends GenericDaoBase<PortProfileVO, Long> impl
         accessVlanSearch.done();
     }
 
+    @Override
     public PortProfileVO findByName(String portProfileName) {
         SearchCriteria<PortProfileVO> sc = nameSearch.create();
         sc.setParameters("portProfileName", portProfileName);
         return findOneBy(sc);
     }
 
+    @Override
     @DB
     public boolean doesVlanRangeClash(int lowVlanId, int highVlanId) {
         String dbName = "cloud";
         String tableName = "port_profile";
-        String condition = "(trunk_low_vlan_id BETWEEN " + lowVlanId + " AND " + highVlanId + ")" + " OR (trunk_high_vlan_id BETWEEN " + lowVlanId + " AND " + highVlanId + ")";
+        String condition =
+            "(trunk_low_vlan_id BETWEEN " + lowVlanId + " AND " + highVlanId + ")" + " OR (trunk_high_vlan_id BETWEEN " + lowVlanId + " AND " + highVlanId + ")";
         String selectSql = "SELECT * FROM `" + dbName + "`.`" + tableName + "` WHERE " + condition;
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
@@ -81,6 +85,7 @@ public class PortProfileDaoImpl extends GenericDaoBase<PortProfileVO, Long> impl
         return false;
     }
 
+    @Override
     public List<PortProfileVO> listByVlanId(int vlanId) {
         SearchCriteria<PortProfileVO> sc = accessVlanSearch.create();
         sc.setParameters("accessVlanId", vlanId);

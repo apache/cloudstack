@@ -293,13 +293,14 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.redundantRouter = redundantRouter;
     }
 
+    @Override
     public boolean getEgressDefaultPolicy() {
         return egressdefaultpolicy;
     }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps,
-            boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean specifyIpRanges, boolean isPersistent,
-            boolean internalLb, boolean publicLb) {
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps,
+            Integer multicastRateMbps, boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean conserveMode,
+            boolean specifyIpRanges, boolean isPersistent, boolean internalLb, boolean publicLb) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
@@ -327,10 +328,10 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.internalLb = internalLb;
     }
 
-    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps, Integer multicastRateMbps,
-            boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb, boolean sharedSourceNat,
-            boolean redundantRouter, boolean elasticIp, boolean elasticLb, boolean specifyIpRanges, boolean inline, boolean isPersistent, boolean associatePublicIP,
-            boolean publicLb, boolean internalLb, boolean egressdefaultpolicy) {
+    public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps,
+            Integer multicastRateMbps, boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb,
+            boolean sharedSourceNat, boolean redundantRouter, boolean elasticIp, boolean elasticLb, boolean specifyIpRanges, boolean inline, boolean isPersistent,
+            boolean associatePublicIP, boolean publicLb, boolean internalLb, boolean egressdefaultpolicy) {
         this(name,
             displayText,
             trafficType,
@@ -454,6 +455,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.isPersistent = isPersistent;
     }
 
+    @Override
     public boolean getIsPersistent() {
         return isPersistent;
     }

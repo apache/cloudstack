@@ -36,98 +36,98 @@ import streamer.PipelineImpl;
  */
 public class ClientMCSChannelJoinRequest_ServerMCSChannelConfirmPDUs extends OneTimeSwitch {
 
-  private static final int MCS_CHANNEL_CONFIRM_PDU = 15;
+    private static final int MCS_CHANNEL_CONFIRM_PDU = 15;
 
-  protected int[] channels;
-  protected int channelRequestsSent = 0;
+    protected int[] channels;
+    protected int channelRequestsSent = 0;
 
-  protected RdpState state;
+    protected RdpState state;
 
-  public ClientMCSChannelJoinRequest_ServerMCSChannelConfirmPDUs(String id, int[] channels, RdpState state) {
-    super(id);
-    this.channels = channels;
-    this.state=state;
-  }
+    public ClientMCSChannelJoinRequest_ServerMCSChannelConfirmPDUs(String id, int[] channels, RdpState state) {
+        super(id);
+        this.channels = channels;
+        this.state = state;
+    }
 
-  @Override
-  protected void handleOneTimeData(ByteBuffer buf, Link link) {
-    if (buf == null)
-      return;
+    @Override
+    protected void handleOneTimeData(ByteBuffer buf, Link link) {
+        if (buf == null)
+            return;
 
-    // Parse channel confirm response
-    int typeAndFlags = buf.readUnsignedByte();
-    int type = typeAndFlags >> 2;
-    // int flags = typeAndFlags & 0x3;
+        // Parse channel confirm response
+        int typeAndFlags = buf.readUnsignedByte();
+        int type = typeAndFlags >> 2;
+        // int flags = typeAndFlags & 0x3;
 
-    if (type != MCS_CHANNEL_CONFIRM_PDU)
-      throw new RuntimeException("["+this+"] ERROR: Incorrect type of MCS AttachUserConfirm PDU. Expected value: 15, actual value: " + type + ", data: " + buf + ".");
+        if (type != MCS_CHANNEL_CONFIRM_PDU)
+            throw new RuntimeException("[" + this + "] ERROR: Incorrect type of MCS AttachUserConfirm PDU. Expected value: 15, actual value: " + type + ", data: " + buf +
+                ".");
 
-    int rtSuccess = buf.readUnsignedByte() >> 4;
-    if (rtSuccess != 0)
-      throw new RuntimeException("["+this+"] ERROR: Cannot connect to channel: request failed. Error code: " + rtSuccess + ", channel ID: " + channels[channelRequestsSent - 1]
-          + ", data: " + buf + ".");
+        int rtSuccess = buf.readUnsignedByte() >> 4;
+        if (rtSuccess != 0)
+            throw new RuntimeException("[" + this + "] ERROR: Cannot connect to channel: request failed. Error code: " + rtSuccess + ", channel ID: " +
+                channels[channelRequestsSent - 1] + ", data: " + buf + ".");
 
-    // Initiator and requested fields MAY be ignored, however, the channelId
-    // field MUST be examined. If the value of the channelId field does not
-    // correspond with the value of the channelId field sent in the previous MCS
-    // Channel Join Request PDU the connection SHOULD be dropped.
+        // Initiator and requested fields MAY be ignored, however, the channelId
+        // field MUST be examined. If the value of the channelId field does not
+        // correspond with the value of the channelId field sent in the previous MCS
+        // Channel Join Request PDU the connection SHOULD be dropped.
 
-    // Initiator: 1007 (6+1001)
-    // int initator=buf.readUnsignedShort();
-    buf.skipBytes(2);
+        // Initiator: 1007 (6+1001)
+        // int initator=buf.readUnsignedShort();
+        buf.skipBytes(2);
 
-    // Requested channel
-    // int requestedChannel=buf.readUnsignedShort();
-    buf.skipBytes(2);
+        // Requested channel
+        // int requestedChannel=buf.readUnsignedShort();
+        buf.skipBytes(2);
 
-    // Actual channel
-    int actualChannel = buf.readUnsignedShort();
-    if (actualChannel != channels[channelRequestsSent - 1])
-      throw new RuntimeException("Unexpeceted channeld ID returned. Expected channeld ID: " + channels[channelRequestsSent - 1] + ", actual channel ID: "
-          + actualChannel + ", data: " + buf + ".");
+        // Actual channel
+        int actualChannel = buf.readUnsignedShort();
+        if (actualChannel != channels[channelRequestsSent - 1])
+            throw new RuntimeException("Unexpeceted channeld ID returned. Expected channeld ID: " + channels[channelRequestsSent - 1] + ", actual channel ID: " +
+                actualChannel + ", data: " + buf + ".");
 
-    state.channelJoined(actualChannel);
+        state.channelJoined(actualChannel);
 
-    buf.unref();
+        buf.unref();
 
+        if (channelRequestsSent < channels.length)
+            sendChannelRequest(channels[channelRequestsSent++]);
+        else
+            switchOff();
+    }
 
-    if (channelRequestsSent < channels.length)
-      sendChannelRequest(channels[channelRequestsSent++]);
-    else
-      switchOff();
-  }
+    @Override
+    protected void onStart() {
+        super.onStart();
 
-  @Override
-  protected void onStart() {
-    super.onStart();
+        sendChannelRequest(channels[channelRequestsSent++]);
 
-    sendChannelRequest(channels[channelRequestsSent++]);
+        // Switch off after receiving response(s)
+    }
 
-    // Switch off after receiving response(s)
-  }
+    private void sendChannelRequest(int channel) {
+        ByteBuffer buf = new ByteBuffer(5, true);
 
-  private void sendChannelRequest(int channel) {
-    ByteBuffer buf = new ByteBuffer(5, true);
+        buf.writeByte(0x38); // Channel Join request
 
-    buf.writeByte(0x38); // Channel Join request
+        buf.writeShort(0x03); // ChannelJoinRequest::initiator: 1004
+        buf.writeShort(channel);
 
-    buf.writeShort(0x03); // ChannelJoinRequest::initiator: 1004
-    buf.writeShort(channel);
+        pushDataToOTOut(buf);
+    }
 
-    pushDataToOTOut(buf);
-  }
+    /**
+     * Example.
+     *
+     * @see http://msdn.microsoft.com/en-us/library/cc240834.aspx
+     */
+    public static void main(String args[]) {
+        // System.setProperty("streamer.Link.debug", "true");
+        System.setProperty("streamer.Element.debug", "true");
+        // System.setProperty("streamer.Pipeline.debug", "true");
 
-  /**
-   * Example.
-   *
-   * @see http://msdn.microsoft.com/en-us/library/cc240834.aspx
-   */
-  public static void main(String args[]) {
-    // System.setProperty("streamer.Link.debug", "true");
-    System.setProperty("streamer.Element.debug", "true");
-    // System.setProperty("streamer.Pipeline.debug", "true");
-
-    /* @formatter:off */
+        /* @formatter:off */
     byte[] clientRequestPacket = new byte[] {
         0x03, 0x00, 0x00, 0x0c,  //  TPKT Header (length = 12 bytes)
         0x02, (byte) 0xf0, (byte) 0x80,  //  X.224 Data TPDU
@@ -204,19 +204,19 @@ public class ClientMCSChannelJoinRequest_ServerMCSChannelConfirmPDUs extends One
     };
     /* @formatter:on */
 
-    RdpState rdpState = new RdpState();
-    MockSource source = new MockSource("source", ByteBuffer.convertByteArraysToByteBuffers(serverResponsePacket, new byte[] { 1, 2, 3 }));
-    Element todo = new ClientMCSChannelJoinRequest_ServerMCSChannelConfirmPDUs("channels", new int[] { 1007 }, rdpState);
-    Element x224 = new ClientX224DataPdu("x224");
-    Element tpkt = new ClientTpkt("tpkt");
-    Element sink = new MockSink("sink", ByteBuffer.convertByteArraysToByteBuffers(clientRequestPacket));
-    Element mainSink = new MockSink("mainSink", ByteBuffer.convertByteArraysToByteBuffers(new byte[] { 1, 2, 3 }));
+        RdpState rdpState = new RdpState();
+        MockSource source = new MockSource("source", ByteBuffer.convertByteArraysToByteBuffers(serverResponsePacket, new byte[] {1, 2, 3}));
+        Element todo = new ClientMCSChannelJoinRequest_ServerMCSChannelConfirmPDUs("channels", new int[] {1007}, rdpState);
+        Element x224 = new ClientX224DataPdu("x224");
+        Element tpkt = new ClientTpkt("tpkt");
+        Element sink = new MockSink("sink", ByteBuffer.convertByteArraysToByteBuffers(clientRequestPacket));
+        Element mainSink = new MockSink("mainSink", ByteBuffer.convertByteArraysToByteBuffers(new byte[] {1, 2, 3}));
 
-    Pipeline pipeline = new PipelineImpl("test");
-    pipeline.add(source, todo, x224, tpkt, sink, mainSink);
-    pipeline.link("source", "channels", "mainSink");
-    pipeline.link("channels >" + OTOUT, "x224", "tpkt", "sink");
-    pipeline.runMainLoop("source", STDOUT, false, false);
-  }
+        Pipeline pipeline = new PipelineImpl("test");
+        pipeline.add(source, todo, x224, tpkt, sink, mainSink);
+        pipeline.link("source", "channels", "mainSink");
+        pipeline.link("channels >" + OTOUT, "x224", "tpkt", "sink");
+        pipeline.runMainLoop("source", STDOUT, false, false);
+    }
 
 }

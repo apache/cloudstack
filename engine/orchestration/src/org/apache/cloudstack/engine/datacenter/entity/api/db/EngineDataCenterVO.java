@@ -208,8 +208,8 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
         this.firewallProvider = firewallProvider;
     }
 
-    public EngineDataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId,
-            NetworkType zoneType, String zoneToken, String domainSuffix) {
+    public EngineDataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain,
+            Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
         this(name, description, dns1, dns2, dns3, dns4, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix, false, false, null, null);
         this.id = id;
         this.allocationState = Grouping.AllocationState.Enabled;

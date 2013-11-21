@@ -223,7 +223,8 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
 
         GenericSearchBuilder<ClusterVO, Long> clusterIdSearch = createSearchBuilder(Long.class);
         clusterIdSearch.selectFields(clusterIdSearch.entity().getId());
-        clusterIdSearch.join("disabledPodIdSearch", disabledPodIdSearch, clusterIdSearch.entity().getPodId(), disabledPodIdSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        clusterIdSearch.join("disabledPodIdSearch", disabledPodIdSearch, clusterIdSearch.entity().getPodId(), disabledPodIdSearch.entity().getId(),
+            JoinBuilder.JoinType.INNER);
         clusterIdSearch.done();
 
         SearchCriteria<Long> sc = clusterIdSearch.create();

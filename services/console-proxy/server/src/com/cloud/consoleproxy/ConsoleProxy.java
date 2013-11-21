@@ -35,10 +35,11 @@ import java.util.concurrent.Executor;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.xml.DOMConfigurator;
 
-import com.cloud.consoleproxy.util.Logger;
-import com.cloud.utils.PropertiesUtil;
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpServer;
+
+import com.cloud.consoleproxy.util.Logger;
+import com.cloud.utils.PropertiesUtil;
 
 /**
  *
@@ -193,8 +194,9 @@ public class ConsoleProxy {
         if (authMethod != null) {
             Object result;
             try {
-                result = authMethod.invoke(ConsoleProxy.context, param.getClientHostAddress(), String.valueOf(param.getClientHostPort()), param.getClientTag(),
-                    param.getClientHostPassword(), param.getTicket(), new Boolean(reauthentication));
+                result =
+                    authMethod.invoke(ConsoleProxy.context, param.getClientHostAddress(), String.valueOf(param.getClientHostPort()), param.getClientTag(),
+                        param.getClientHostPassword(), param.getTicket(), new Boolean(reauthentication));
             } catch (IllegalAccessException e) {
                 s_logger.error("Unable to invoke authenticateConsoleAccess due to IllegalAccessException" + " for vm: " + param.getClientTag(), e);
                 authResult.setSuccess(false);
@@ -408,7 +410,8 @@ public class ConsoleProxy {
                 s_logger.info("The rfb thread died, reinitializing the viewer " + viewer);
                 viewer.initClient(param);
             } else if (!param.getClientHostPassword().equals(viewer.getClientHostPassword())) {
-                s_logger.warn("Bad sid detected(VNC port may be reused). sid in session: " + viewer.getClientHostPassword() + ", sid in request: " + param.getClientHostPassword());
+                s_logger.warn("Bad sid detected(VNC port may be reused). sid in session: " + viewer.getClientHostPassword() + ", sid in request: " +
+                    param.getClientHostPassword());
                 viewer.initClient(param);
             }
         }
@@ -446,7 +449,8 @@ public class ConsoleProxy {
                         throw new AuthenticationException("Cannot use the existing viewer " + viewer + ": modified AJAX session id");
                 }
 
-                if (param.getClientHostPassword() == null || param.getClientHostPassword().isEmpty() || !param.getClientHostPassword().equals(viewer.getClientHostPassword()))
+                if (param.getClientHostPassword() == null || param.getClientHostPassword().isEmpty() ||
+                    !param.getClientHostPassword().equals(viewer.getClientHostPassword()))
                     throw new AuthenticationException("Cannot use the existing viewer " + viewer + ": bad sid");
 
                 if (!viewer.isFrontEndAlive()) {
@@ -505,6 +509,7 @@ public class ConsoleProxy {
     }
 
     static class ThreadExecutor implements Executor {
+        @Override
         public void execute(Runnable r) {
             new Thread(r).start();
         }

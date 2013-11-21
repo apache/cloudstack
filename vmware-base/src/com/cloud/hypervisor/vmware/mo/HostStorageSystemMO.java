@@ -18,11 +18,11 @@ package com.cloud.hypervisor.vmware.mo;
 
 import java.util.List;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-
 import com.vmware.vim25.HostInternetScsiHbaStaticTarget;
 import com.vmware.vim25.HostStorageDeviceInfo;
 import com.vmware.vim25.ManagedObjectReference;
+
+import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class HostStorageSystemMO extends BaseMO {
     public HostStorageSystemMO(VmwareContext context, ManagedObjectReference morHostDatastore) {

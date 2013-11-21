@@ -16,15 +16,17 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.org.Cluster;
-import com.cloud.serializer.Param;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.cloud.org.Cluster;
+import com.cloud.serializer.Param;
 
 @EntityReference(value = Cluster.class)
 public class ClusterResponse extends BaseResponse {

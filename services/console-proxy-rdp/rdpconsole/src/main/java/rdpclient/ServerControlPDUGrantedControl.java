@@ -20,24 +20,24 @@ import streamer.ByteBuffer;
 import streamer.Link;
 import streamer.OneTimeSwitch;
 
-public class ServerControlPDUGrantedControl  extends OneTimeSwitch {
+public class ServerControlPDUGrantedControl extends OneTimeSwitch {
 
-  public ServerControlPDUGrantedControl(String id) {
-    super(id);
-  }
+    public ServerControlPDUGrantedControl(String id) {
+        super(id);
+    }
 
-  @Override
-  protected void handleOneTimeData(ByteBuffer buf, Link link) {
-    if (buf == null)
-      return;
+    @Override
+    protected void handleOneTimeData(ByteBuffer buf, Link link) {
+        if (buf == null)
+            return;
 
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
 
-    // Ignore packet
-    buf.unref();
-    switchOff();
-  }
+        // Ignore packet
+        buf.unref();
+        switchOff();
+    }
 
 }
 /* @formatter:off */

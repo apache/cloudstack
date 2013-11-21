@@ -57,8 +57,6 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
@@ -494,7 +492,8 @@ public class DatabaseConfig {
         } catch (URISyntaxException e1) {
             return;
         }
-        String insertSql1 = "INSERT INTO `host` (`id`, `name`, `status` , `type` , `private_ip_address`, `private_netmask` ,`private_mac_address` , `storage_ip_address` ,`storage_netmask`, `storage_mac_address`, `data_center_id`, `version`, `dom0_memory`, `last_ping`, `resource`, `guid`, `hypervisor_type`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        String insertSql1 =
+            "INSERT INTO `host` (`id`, `name`, `status` , `type` , `private_ip_address`, `private_netmask` ,`private_mac_address` , `storage_ip_address` ,`storage_netmask`, `storage_mac_address`, `data_center_id`, `version`, `dom0_memory`, `last_ping`, `resource`, `guid`, `hypervisor_type`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         String insertSqlHostDetails = "INSERT INTO `host_details` (`id`, `host_id`, `name`, `value`) VALUES(?,?,?,?)";
         String insertSql2 = "INSERT INTO `op_host` (`id`, `sequence`) VALUES(?, ?)";
         TransactionLegacy txn = TransactionLegacy.currentTxn();
@@ -572,7 +571,8 @@ public class DatabaseConfig {
         long dataCenterId = Long.parseLong(_currentObjectParams.get("zoneId"));
         long podId = Long.parseLong(_currentObjectParams.get("podId"));
         String hypervisor = _currentObjectParams.get("hypervisorType");
-        String insertSql1 = "INSERT INTO `cluster` (`id`, `name`, `data_center_id` , `pod_id`, `hypervisor_type` , `cluster_type`, `allocation_state`) VALUES (?,?,?,?,?,?,?)";
+        String insertSql1 =
+            "INSERT INTO `cluster` (`id`, `name`, `data_center_id` , `pod_id`, `hypervisor_type` , `cluster_type`, `allocation_state`) VALUES (?,?,?,?,?,?,?)";
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
@@ -606,7 +606,8 @@ public class DatabaseConfig {
         String storageType = _currentObjectParams.get("storageType");
         String uuid = UUID.nameUUIDFromBytes(new String(hostAddress + hostPath).getBytes()).toString();
 
-        String insertSql1 = "INSERT INTO `storage_pool` (`id`, `name`, `uuid` , `pool_type` , `port`, `data_center_id` ,`available_bytes` , `capacity_bytes` ,`host_address`, `path`, `created`, `pod_id`,`status` , `cluster_id`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        String insertSql1 =
+            "INSERT INTO `storage_pool` (`id`, `name`, `uuid` , `pool_type` , `port`, `data_center_id` ,`available_bytes` , `capacity_bytes` ,`host_address`, `path`, `created`, `pod_id`,`status` , `cluster_id`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         // String insertSql2 = "INSERT INTO `netfs_storage_pool` VALUES (?,?,?)";
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
@@ -709,10 +710,11 @@ public class DatabaseConfig {
         int userData = Integer.parseInt(_currentObjectParams.get("userData"));
         int securityGroup = Integer.parseInt(_currentObjectParams.get("securityGroup"));
 
-        String insertSql1 = "INSERT INTO `physical_network_service_providers` (`id`, `uuid`, `physical_network_id` , `provider_name`, `state` ,"
-                            + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
-                            + "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`,"
-                            + "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        String insertSql1 =
+            "INSERT INTO `physical_network_service_providers` (`id`, `uuid`, `physical_network_id` , `provider_name`, `state` ,"
+                + "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`,"
+                + "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`,"
+                + "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
@@ -925,7 +927,8 @@ public class DatabaseConfig {
             useLocalStorage = false;
         }
 
-        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
+        ServiceOfferingVO serviceOffering =
+            new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
 
         Long bytesReadRate = Long.parseLong(_currentObjectParams.get("bytesReadRate"));
         if ((bytesReadRate != null) && (bytesReadRate > 0))
@@ -1126,7 +1129,9 @@ public class DatabaseConfig {
         }
 
         // insert system user
-        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created)" + " VALUES (1, 'system', RAND(), 1, 'system', 'cloud', now())";
+        insertSql =
+            "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created)"
+                + " VALUES (1, 'system', RAND(), 1, 'system', 'cloud', now())";
         txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertSql);
@@ -1175,8 +1180,9 @@ public class DatabaseConfig {
         }
 
         // now insert the user
-        insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, email, created) " + "VALUES (" + id + ",'" + username + "','" +
-                    sb.toString() + "', 2, '" + firstname + "','" + lastname + "','" + email + "',now())";
+        insertSql =
+            "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, email, created) " + "VALUES (" + id + ",'" + username + "','" +
+                sb.toString() + "', 2, '" + firstname + "','" + lastname + "','" + email + "',now())";
 
         txn = TransactionLegacy.currentTxn();
         try {
@@ -1229,8 +1235,9 @@ public class DatabaseConfig {
             }
         }
 
-        String insertSql = "INSERT INTO `cloud`.`configuration` (instance, component, name, value, description, category) " + "VALUES ('" + instance + "','" + component + "','" +
-                           name + "','" + value + "','" + description + "','" + category + "')";
+        String insertSql =
+            "INSERT INTO `cloud`.`configuration` (instance, component, name, value, description, category) " + "VALUES ('" + instance + "','" + component + "','" + name +
+                "','" + value + "','" + description + "','" + category + "')";
 
         String selectSql = "SELECT name FROM cloud.configuration WHERE name = '" + name + "'";
 

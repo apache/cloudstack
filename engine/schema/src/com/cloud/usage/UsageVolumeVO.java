@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.usage;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -25,6 +23,8 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "usage_volume")
@@ -86,6 +86,7 @@ public class UsageVolumeVO implements InternalIdentity {
         return domainId;
     }
 
+    @Override
     public long getId() {
         return id;
     }

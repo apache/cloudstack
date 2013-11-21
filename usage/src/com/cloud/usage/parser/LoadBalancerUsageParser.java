@@ -26,11 +26,11 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-import org.apache.cloudstack.usage.UsageTypes;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.usage.UsageTypes;
+
 import com.cloud.usage.UsageLoadBalancerPolicyVO;
-import com.cloud.usage.UsageServer;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageLoadBalancerPolicyDao;
@@ -141,16 +141,17 @@ public class LoadBalancerUsageParser {
         String usageDisplay = dFormat.format(usage);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating Volume usage record for load balancer: " + lbId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate +
-                           ", for account: " + account.getId());
+            s_logger.debug("Creating Volume usage record for load balancer: " + lbId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " +
+                endDate + ", for account: " + account.getId());
         }
 
         // Create the usage record
         String usageDesc = "Load Balancing Policy: " + lbId + " usage time";
 
         //ToDo: get zone id
-        UsageVO usageRecord = new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), null, null, null, null, lbId,
-            null, startDate, endDate);
+        UsageVO usageRecord =
+            new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), null, null, null, null, lbId, null,
+                startDate, endDate);
         m_usageDao.persist(usageRecord);
     }
 

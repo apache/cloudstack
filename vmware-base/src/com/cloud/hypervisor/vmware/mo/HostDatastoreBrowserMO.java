@@ -20,10 +20,11 @@ import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
 import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
 import com.vmware.vim25.ManagedObjectReference;
+
+import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class HostDatastoreBrowserMO extends BaseMO {
 

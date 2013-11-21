@@ -61,7 +61,8 @@ public class XSerializerXmlAdapter implements XSerializerAdapter {
                 if (value != null) {
                     indent(true, indentLevel, writer);
                     writer.print("<" + elementName + ">");
-                    writer.print(DateHelper.getGMTDateFormat("yyyy-MM-dd").format((Date)value) + "T" + DateHelper.getGMTDateFormat("HH:mm:ss").format((Date)value) + ".000Z");
+                    writer.print(DateHelper.getGMTDateFormat("yyyy-MM-dd").format((Date)value) + "T" + DateHelper.getGMTDateFormat("HH:mm:ss").format((Date)value) +
+                        ".000Z");
                     writer.print("</" + elementName + ">");
                 } else {
                     if (!serializer.omitNullField(f)) {

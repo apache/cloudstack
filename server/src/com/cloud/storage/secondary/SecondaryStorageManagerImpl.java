@@ -157,7 +157,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 // because sooner or later, it will be driven into Running state
 //
 @Local(value = {SecondaryStorageVmManager.class})
-public class SecondaryStorageManagerImpl extends ManagerBase implements SecondaryStorageVmManager, VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
+public class SecondaryStorageManagerImpl extends ManagerBase implements SecondaryStorageVmManager, VirtualMachineGuru, SystemVmLoadScanHandler<Long>,
+        ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30
@@ -502,7 +503,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             return secStorageVm;
         } else {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to allocate secondary storage vm storage, remove the secondary storage vm record from DB, secondary storage vm id: " + secStorageVmId);
+                s_logger.debug("Unable to allocate secondary storage vm storage, remove the secondary storage vm record from DB, secondary storage vm id: " +
+                    secStorageVmId);
             }
 
             SubscriptionMgr.getInstance().notifySubscribers(ALERT_SUBJECT, this,
@@ -547,14 +549,16 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             defaultNetwork = defaultNetworks.get(0);
         }
 
-        List<? extends NetworkOffering> offerings = _networkModel.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork,
-            NetworkOfferingVO.SystemManagementNetwork, NetworkOfferingVO.SystemStorageNetwork);
+        List<? extends NetworkOffering> offerings =
+            _networkModel.getSystemAccountNetworkOfferings(NetworkOffering.SystemControlNetwork, NetworkOffering.SystemManagementNetwork,
+                NetworkOffering.SystemStorageNetwork);
         LinkedHashMap<Network, NicProfile> networks = new LinkedHashMap<Network, NicProfile>(offerings.size() + 1);
         NicProfile defaultNic = new NicProfile();
         defaultNic.setDefaultNic(true);
         defaultNic.setDeviceId(2);
         try {
-            networks.put(_networkMgr.setupNetwork(systemAcct, _networkOfferingDao.findById(defaultNetwork.getNetworkOfferingId()), plan, null, null, false).get(0), defaultNic);
+            networks.put(_networkMgr.setupNetwork(systemAcct, _networkOfferingDao.findById(defaultNetwork.getNetworkOfferingId()), plan, null, null, false).get(0),
+                defaultNic);
             for (NetworkOffering offering : offerings) {
                 networks.put(_networkMgr.setupNetwork(systemAcct, offering, plan, null, null, false).get(0), null);
             }
@@ -570,8 +574,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenterId);
         }
 
-        SecondaryStorageVmVO secStorageVm = new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-            dataCenterId, systemAcct.getDomainId(), systemAcct.getId(), role, _serviceOffering.getOfferHA());
+        SecondaryStorageVmVO secStorageVm =
+            new SecondaryStorageVmVO(id, _serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
+                systemAcct.getDomainId(), systemAcct.getId(), role, _serviceOffering.getOfferHA());
         secStorageVm.setDynamicallyScalable(template.isDynamicallyScalable());
         secStorageVm = _secStorageVmDao.persist(secStorageVm);
         try {
@@ -701,7 +706,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
             if (secStorageVm == null) {
                 if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Unable to start secondary storage vm for standby capacity, secStorageVm vm Id : " + secStorageVmId + ", will recycle it and start a new one");
+                    s_logger.info("Unable to start secondary storage vm for standby capacity, secStorageVm vm Id : " + secStorageVmId +
+                        ", will recycle it and start a new one");
                 }
 
                 if (secStorageVmFromStoppedPool) {
@@ -745,8 +751,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 return true;
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Primary storage is not ready, wait until it is ready to launch secondary storage vm. dcId: " + dataCenterId + " system.vm.use.local.storage: " +
-                                   _useLocalStorage + "If you want to use local storage to start ssvm, need to set system.vm.use.local.storage to true");
+                    s_logger.debug("Primary storage is not ready, wait until it is ready to launch secondary storage vm. dcId: " + dataCenterId +
+                        " system.vm.use.local.storage: " + _useLocalStorage +
+                        "If you want to use local storage to start ssvm, need to set system.vm.use.local.storage to true");
                 }
             }
 
@@ -839,8 +846,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             int ramSize = NumbersUtil.parseInt(_configDao.getValue("ssvm.ram.size"), DEFAULT_SS_VM_RAMSIZE);
             int cpuFreq = NumbersUtil.parseInt(_configDao.getValue("ssvm.cpu.mhz"), DEFAULT_SS_VM_CPUMHZ);
             _useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-            _serviceOffering = new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, ramSize, cpuFreq, null, null, false, null, _useLocalStorage, true, null, true,
-                VirtualMachine.Type.SecondaryStorageVm, true);
+            _serviceOffering =
+                new ServiceOfferingVO("System Offering For Secondary Storage VM", 1, ramSize, cpuFreq, null, null, false, null, _useLocalStorage, true, null, true,
+                    VirtualMachine.Type.SecondaryStorageVm, true);
             _serviceOffering.setUniqueName(ServiceOffering.ssvmDefaultOffUniqueName);
             _serviceOffering = _offeringDao.persistSystemServiceOffering(_serviceOffering);
 
@@ -1175,7 +1183,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             try {
                 _rulesMgr.disableStaticNat(ip.getId(), ctx.getCallingAccount(), ctx.getCallingUserId(), true);
             } catch (Exception ex) {
-                s_logger.warn("Failed to disable static nat and release system ip " + ip + " as a part of vm " + profile.getVirtualMachine() + " stop due to exception ", ex);
+                s_logger.warn("Failed to disable static nat and release system ip " + ip + " as a part of vm " + profile.getVirtualMachine() + " stop due to exception ",
+                    ex);
             }
         }
     }
@@ -1240,8 +1249,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     public Pair<AfterScanAction, Object> scanPool(Long pool) {
         long dataCenterId = pool.longValue();
 
-        List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Running, State.Migrating,
-            State.Starting, State.Stopped, State.Stopping);
+        List<SecondaryStorageVmVO> ssVms =
+            _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Running, State.Migrating, State.Starting,
+                State.Stopped, State.Stopping);
         int vmSize = (ssVms == null) ? 0 : ssVms.size();
         List<DataStore> ssStores = _dataStoreMgr.getImageStoresByScope(new ZoneScope(dataCenterId));
         int storeSize = (ssStores == null) ? 0 : ssStores.size();

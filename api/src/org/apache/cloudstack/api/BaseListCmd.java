@@ -64,6 +64,7 @@ public abstract class BaseListCmd extends BaseCmd {
         return pageSize;
     }
 
+    @Override
     public void configure() {
         if (MAX_PAGESIZE == null) {
             if (_configService.getDefaultPageSize().longValue() != PAGESIZE_UNLIMITED) {

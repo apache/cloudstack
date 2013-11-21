@@ -16,9 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.BaseResponse;
+
+import com.cloud.serializer.Param;
 
 public class LdapUserResponse extends BaseResponse {
     @SerializedName("email")

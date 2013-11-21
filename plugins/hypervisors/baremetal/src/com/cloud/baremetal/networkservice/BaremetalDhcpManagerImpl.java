@@ -148,16 +148,18 @@ public class BaremetalDhcpManagerImpl extends ManagerBase implements BaremetalDh
         if (dns == null) {
             dns = nic.getDns2();
         }
-        DhcpEntryCommand dhcpCommand = new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), profile.getVirtualMachine().getHostName(), null, dns, nic.getGateway(), null,
-            _ntwkModel.getExecuteInSeqNtwkElmtCmd());
-        String errMsg = String.format("Set dhcp entry on external DHCP %1$s failed(ip=%2$s, mac=%3$s, vmname=%4$s)", h.getPrivateIpAddress(), nic.getIp4Address(),
-            nic.getMacAddress(), profile.getVirtualMachine().getHostName());
+        DhcpEntryCommand dhcpCommand =
+            new DhcpEntryCommand(nic.getMacAddress(), nic.getIp4Address(), profile.getVirtualMachine().getHostName(), null, dns, nic.getGateway(), null,
+                _ntwkModel.getExecuteInSeqNtwkElmtCmd());
+        String errMsg =
+            String.format("Set dhcp entry on external DHCP %1$s failed(ip=%2$s, mac=%3$s, vmname=%4$s)", h.getPrivateIpAddress(), nic.getIp4Address(),
+                nic.getMacAddress(), profile.getVirtualMachine().getHostName());
         // prepareBareMetalDhcpEntry(nic, dhcpCommand);
         try {
             Answer ans = _agentMgr.send(h.getId(), dhcpCommand);
             if (ans.getResult()) {
-                s_logger.debug(String.format("Set dhcp entry on external DHCP %1$s successfully(ip=%2$s, mac=%3$s, vmname=%4$s)", h.getPrivateIpAddress(), nic.getIp4Address(),
-                    nic.getMacAddress(), profile.getVirtualMachine().getHostName()));
+                s_logger.debug(String.format("Set dhcp entry on external DHCP %1$s successfully(ip=%2$s, mac=%3$s, vmname=%4$s)", h.getPrivateIpAddress(),
+                    nic.getIp4Address(), nic.getMacAddress(), profile.getVirtualMachine().getHostName()));
                 return true;
             } else {
                 s_logger.debug(errMsg + " " + ans.getDetails());
@@ -208,14 +210,14 @@ public class BaremetalDhcpManagerImpl extends ManagerBase implements BaremetalDh
         zoneId = pNetwork.getDataCenterId();
         DataCenterVO zone = _dcDao.findById(zoneId);
 
-        PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(),
-            BaremetalDhcpManager.BAREMETAL_DHCP_SERVICE_PROVIDER.getName());
+        PhysicalNetworkServiceProviderVO ntwkSvcProvider =
+            _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), BaremetalDhcpManager.BAREMETAL_DHCP_SERVICE_PROVIDER.getName());
         if (ntwkSvcProvider == null) {
             throw new CloudRuntimeException("Network Service Provider: " + BaremetalDhcpManager.BAREMETAL_DHCP_SERVICE_PROVIDER.getName() +
-                                            " is not enabled in the physical network: " + cmd.getPhysicalNetworkId() + "to add this device");
+                " is not enabled in the physical network: " + cmd.getPhysicalNetworkId() + "to add this device");
         } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
             throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() + " is in shutdown state in the physical network: " +
-                                            cmd.getPhysicalNetworkId() + "to add this device");
+                cmd.getPhysicalNetworkId() + "to add this device");
         }
 
         List<HostVO> dhcps = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.BaremetalDhcp, null, null, zoneId);

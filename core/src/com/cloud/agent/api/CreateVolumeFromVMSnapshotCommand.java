@@ -52,7 +52,8 @@ public class CreateVolumeFromVMSnapshotCommand extends Command {
         this.storagePoolUuid = storagePoolUuid;
     }
 
-    public CreateVolumeFromVMSnapshotCommand(String path, String name, Boolean fullClone, String storagePoolUuid, StorageFilerTO pool, DiskProfile diskProfile, Long volumeId) {
+    public CreateVolumeFromVMSnapshotCommand(String path, String name, Boolean fullClone, String storagePoolUuid, StorageFilerTO pool, DiskProfile diskProfile,
+            Long volumeId) {
         this.path = path;
         this.name = name;
         this.fullClone = fullClone;

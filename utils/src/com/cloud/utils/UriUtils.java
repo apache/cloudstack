@@ -109,7 +109,8 @@ public class UriUtils {
             return errMsg;
         }
         if (!UriUtils.cifsCredentialsPresent(uri)) {
-            String errMsg = "cifs URI missing user and password details. " + "Add them as query parameters, e.g. " + "cifs://example.com/some_share?user=foo&password=bar";
+            String errMsg =
+                "cifs URI missing user and password details. " + "Add them as query parameters, e.g. " + "cifs://example.com/some_share?user=foo&password=bar";
             s_logger.warn(errMsg);
             return errMsg;
         }
@@ -174,7 +175,8 @@ public class UriUtils {
     public static Pair<String, Integer> validateUrl(String url) throws IllegalArgumentException {
         try {
             URI uri = new URI(url);
-            if ((uri.getScheme() == null) || (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
+            if ((uri.getScheme() == null) ||
+                (!uri.getScheme().equalsIgnoreCase("http") && !uri.getScheme().equalsIgnoreCase("https") && !uri.getScheme().equalsIgnoreCase("file"))) {
                 throw new IllegalArgumentException("Unsupported scheme for url: " + url);
             }
             int port = uri.getPort();

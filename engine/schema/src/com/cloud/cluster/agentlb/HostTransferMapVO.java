@@ -25,8 +25,9 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
-import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "op_host_transfer")
@@ -87,6 +88,7 @@ public class HostTransferMapVO implements InternalIdentity {
         this.state = state;
     }
 
+    @Override
     public long getId() {
         return id;
     }

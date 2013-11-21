@@ -22,17 +22,12 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import com.cloud.api.query.vo.ProjectAccountJoinVO;
-import com.cloud.api.query.vo.ProjectInvitationJoinVO;
-import com.cloud.api.query.vo.ProjectJoinVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.user.Account;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.Pair;
 
 @Local(value = {ProjectManager.class})
 public class MockProjectManagerImpl extends ManagerBase implements ProjectManager {

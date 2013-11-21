@@ -71,6 +71,7 @@ public class MethodCapturer<T> {
                 }
             }});
             en.setCallbackFilter(new CallbackFilter() {
+                @Override
                 public int accept(Method method) {
                     if (method.getParameterTypes().length == 0 && method.getName().equals("finalize")) {
                         return 1;
@@ -79,7 +80,7 @@ public class MethodCapturer<T> {
                 }
             });
 
-            ((MethodCapturer<T>)capturerNew).setInstance((T)en.create());
+            capturerNew.setInstance((T)en.create());
 
             // We expect MethodCapturer is only used for singleton objects here, so we only maintain a limited cache
             // here

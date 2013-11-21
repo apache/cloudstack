@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.storage;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -23,7 +25,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 @APICommand(name = "listImageStores", description = "Lists image stores.", responseObject = ImageStoreResponse.class, since = "4.2.0")
 public class ListImageStoresCmd extends BaseListCmd {

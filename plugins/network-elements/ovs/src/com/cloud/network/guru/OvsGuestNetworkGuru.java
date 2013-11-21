@@ -86,22 +86,24 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    protected void allocateVnet(Network network, NetworkVO implemented, long dcId, long physicalNetworkId, String reservationId) throws InsufficientVirtualNetworkCapcityException {
+    protected void allocateVnet(Network network, NetworkVO implemented, long dcId, long physicalNetworkId, String reservationId)
+        throws InsufficientVirtualNetworkCapcityException {
         if (network.getBroadcastUri() == null) {
             String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), reservationId, UseSystemGuestVlans.valueIn(network.getAccountId()));
             if (vnet == null) {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a part of network " + network + " implement ", DataCenter.class, dcId);
             }
             implemented.setBroadcastUri(BroadcastDomainType.Vswitch.toUri(vnet));
-            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN,
-                "Assigned Zone Vlan: " + vnet + " Network Id: " + network.getId(), 0);
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO,
+                EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + network.getId(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
         }
     }
 
     @Override
-    public Network implement(Network config, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
+    public Network implement(Network config, NetworkOffering offering, DeployDestination dest, ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException {
         assert (config.getState() == State.Implementing) : "Why are we implementing " + config;
         if (!_ovsTunnelMgr.isOvsTunnelEnabled()) {
             return null;

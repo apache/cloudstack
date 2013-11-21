@@ -23,6 +23,9 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.NamingException;
 
+import org.apache.log4j.Logger;
+import org.bouncycastle.util.encoders.Base64;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -34,8 +37,6 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.ldap.LdapManager;
 import org.apache.cloudstack.ldap.LdapUser;
-import org.apache.log4j.Logger;
-import org.bouncycastle.util.encoders.Base64;
 
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
@@ -94,8 +95,8 @@ public class LdapCreateAccountCmd extends BaseCmd {
     }
 
     UserAccount createCloudstackUserAccount(final LdapUser user) {
-        return _accountService.createUserAccount(username, generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, accountType,
-            domainId, networkDomain, details, accountUUID, userUUID);
+        return _accountService.createUserAccount(username, generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName,
+            accountType, domainId, networkDomain, details, accountUUID, userUUID);
     }
 
     @Override

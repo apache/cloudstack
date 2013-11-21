@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -27,8 +29,6 @@ import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -63,7 +63,10 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
                description = "The guest network the Load Balancer will be created for")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.SOURCE_PORT, type = CommandType.INTEGER, required = true, description = "the source port the network traffic will be load balanced from")
+    @Parameter(name = ApiConstants.SOURCE_PORT,
+               type = CommandType.INTEGER,
+               required = true,
+               description = "the source port the network traffic will be load balanced from")
     private Integer sourcePort;
 
     @Parameter(name = ApiConstants.ALGORITHM, type = CommandType.STRING, required = true, description = "load balancer algorithm (source, roundrobin, leastconn)")
@@ -85,7 +88,10 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
                description = "the network id of the source ip address")
     private Long sourceIpNetworkId;
 
-    @Parameter(name = ApiConstants.SCHEME, type = CommandType.STRING, required = true, description = "the load balancer scheme. Supported value in this release is Internal")
+    @Parameter(name = ApiConstants.SCHEME,
+               type = CommandType.STRING,
+               required = true,
+               description = "the load balancer scheme. Supported value in this release is Internal")
     private String scheme;
 
     /////////////////////////////////////////////////////
@@ -207,8 +213,9 @@ public class CreateApplicationLoadBalancerCmd extends BaseAsyncCreateCmd {
     public void create() {
         try {
 
-            ApplicationLoadBalancerRule result = _appLbService.createApplicationLoadBalancer(getName(), getDescription(), getScheme(), getSourceIpNetworkId(), getSourceIp(),
-                getSourcePort(), getInstancePort(), getAlgorithm(), getNetworkId(), getEntityOwnerId());
+            ApplicationLoadBalancerRule result =
+                _appLbService.createApplicationLoadBalancer(getName(), getDescription(), getScheme(), getSourceIpNetworkId(), getSourceIp(), getSourcePort(),
+                    getInstancePort(), getAlgorithm(), getNetworkId(), getEntityOwnerId());
             this.setEntityId(result.getId());
             this.setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException e) {

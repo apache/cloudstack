@@ -17,25 +17,19 @@
 package com.cloud.network.dao;
 
 import java.util.List;
-import java.util.Map;
 
 import javax.ejb.Local;
-import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.network.Network;
 import com.cloud.network.UserIpv6AddressVO;
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.GenericQueryBuilder;
 
 @Component
 @Local(value = UserIpv6AddressDao.class)

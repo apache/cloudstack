@@ -18,6 +18,8 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -26,8 +28,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.api.response.CiscoVnmcResourceResponse;
 import com.cloud.exception.ConcurrentOperationException;
@@ -49,7 +49,11 @@ public class DeleteCiscoVnmcResourceCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.UUID, required = true, entityType = CiscoVnmcResourceResponse.class, description = "Cisco Vnmc resource ID")
+    @Parameter(name = ApiConstants.RESOURCE_ID,
+               type = CommandType.UUID,
+               required = true,
+               entityType = CiscoVnmcResourceResponse.class,
+               description = "Cisco Vnmc resource ID")
     private Long ciscoVnmcResourceId;
 
     /////////////////////////////////////////////////////
@@ -65,7 +69,8 @@ public class DeleteCiscoVnmcResourceCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             boolean result = _ciscoVnmcElementService.deleteCiscoVnmcResource(this);
             if (result) {

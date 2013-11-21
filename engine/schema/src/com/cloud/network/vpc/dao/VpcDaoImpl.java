@@ -22,15 +22,14 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.network.Network;
-import com.cloud.network.vpc.VpcServiceMapVO;
 import org.springframework.stereotype.Component;
 
+import com.cloud.network.Network;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcServiceMapVO;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
-
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;

@@ -27,10 +27,11 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.AddBaremetalKickStartPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
 import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
@@ -96,10 +97,11 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
             String tpl = profile.getTemplate().getUrl();
             assert tpl != null : "How can a null template get here!!!";
             String[] tpls = tpl.split(";");
-            CloudRuntimeException err = new CloudRuntimeException(
-                String.format(
-                    "template url[%s] is not correctly encoded. it must be in format of ks=http_link_to_kickstartfile;kernel=nfs_path_to_pxe_kernel;initrd=nfs_path_to_pxe_initrd",
-                    tpl));
+            CloudRuntimeException err =
+                new CloudRuntimeException(
+                    String.format(
+                        "template url[%s] is not correctly encoded. it must be in format of ks=http_link_to_kickstartfile;kernel=nfs_path_to_pxe_kernel;initrd=nfs_path_to_pxe_initrd",
+                        tpl));
             if (tpls.length != 3) {
                 throw err;
             }
@@ -172,14 +174,14 @@ public class BaremetalKickStartServiceImpl extends BareMetalPxeServiceBase imple
         }
         zoneId = pNetwork.getDataCenterId();
 
-        PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(),
-            BaremetalPxeManager.BAREMETAL_PXE_SERVICE_PROVIDER.getName());
+        PhysicalNetworkServiceProviderVO ntwkSvcProvider =
+            _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), BaremetalPxeManager.BAREMETAL_PXE_SERVICE_PROVIDER.getName());
         if (ntwkSvcProvider == null) {
             throw new CloudRuntimeException("Network Service Provider: " + BaremetalPxeManager.BAREMETAL_PXE_SERVICE_PROVIDER.getName() +
-                                            " is not enabled in the physical network: " + cmd.getPhysicalNetworkId() + "to add this device");
+                " is not enabled in the physical network: " + cmd.getPhysicalNetworkId() + "to add this device");
         } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
             throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() + " is in shutdown state in the physical network: " +
-                                            cmd.getPhysicalNetworkId() + "to add this device");
+                cmd.getPhysicalNetworkId() + "to add this device");
         }
 
         List<HostVO> pxes = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.BaremetalPxe, zoneId);

@@ -23,7 +23,6 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-import javax.naming.NamingException;
 
 import org.springframework.stereotype.Component;
 
@@ -80,11 +79,8 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.org.Grouping.AllocationState;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.vm.VirtualMachine.Type;
 
 @Component
 @Local(value = {ConfigurationManager.class, ConfigurationService.class})
@@ -433,9 +429,9 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability,
-        Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, GuestType type, boolean systemOnly, Long serviceOfferingId, boolean conserveMode,
-        Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent, Map<NetworkOffering.Detail, String> details,
-        boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive) {
+        Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, GuestType type, boolean systemOnly, Long serviceOfferingId,
+        boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
+        Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive) {
         // TODO Auto-generated method stub
         return null;
     }

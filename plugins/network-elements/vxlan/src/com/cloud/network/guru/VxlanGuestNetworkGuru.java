@@ -18,9 +18,10 @@ package com.cloud.network.guru;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -32,9 +33,9 @@ import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkProfile;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.State;
+import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
@@ -43,7 +44,6 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Component
@@ -81,11 +81,14 @@ public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
         return network;
     }
 
-    protected void allocateVnet(Network network, NetworkVO implemented, long dcId, long physicalNetworkId, String reservationId) throws InsufficientVirtualNetworkCapcityException {
+    @Override
+    protected void allocateVnet(Network network, NetworkVO implemented, long dcId, long physicalNetworkId, String reservationId)
+        throws InsufficientVirtualNetworkCapcityException {
         if (network.getBroadcastUri() == null) {
             String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), reservationId, UseSystemGuestVlans.valueIn(network.getAccountId()));
             if (vnet == null) {
-                throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a " + "part of network " + network + " implement ", DataCenter.class, dcId);
+                throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a " + "part of network " + network + " implement ", DataCenter.class,
+                    dcId);
             }
             implemented.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(vnet));
             allocateVnetComplete(network, implemented, dcId, physicalNetworkId, reservationId, vnet);
@@ -102,7 +105,8 @@ public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
+    public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException {
         assert (network.getState() == State.Implementing) : "Why are we implementing " + network;
 
         long dcId = dest.getDataCenter().getId();
@@ -115,8 +119,9 @@ public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
             physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
         }
 
-        NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
-            network.getDataCenterId(), physicalNetworkId);
+        NetworkVO implemented =
+            new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
+                network.getDataCenterId(), physicalNetworkId);
 
         allocateVnet(network, implemented, dcId, physicalNetworkId, context.getReservationId());
 

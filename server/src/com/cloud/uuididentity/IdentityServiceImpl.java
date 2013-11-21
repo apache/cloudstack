@@ -16,16 +16,13 @@
 // under the License.
 package com.cloud.uuididentity;
 
-import java.util.Map;
-
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.IdentityService;
 import org.springframework.stereotype.Component;
 
-import com.cloud.utils.component.Manager;
+import org.apache.cloudstack.api.IdentityService;
+
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.uuididentity.dao.IdentityDao;
 

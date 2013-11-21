@@ -1394,8 +1394,8 @@ public class ApiDBUtils {
             if (template != null) {
                 jobInstanceId = template.getUuid();
             }
-        } else if (jobInstanceType == ApiCommandJobType.VirtualMachine || jobInstanceType == ApiCommandJobType.ConsoleProxy || jobInstanceType == ApiCommandJobType.SystemVm ||
-                   jobInstanceType == ApiCommandJobType.DomainRouter) {
+        } else if (jobInstanceType == ApiCommandJobType.VirtualMachine || jobInstanceType == ApiCommandJobType.ConsoleProxy ||
+            jobInstanceType == ApiCommandJobType.SystemVm || jobInstanceType == ApiCommandJobType.DomainRouter) {
             VMInstanceVO vm = ApiDBUtils.findVMInstanceById(job.getInstanceId());
             if (vm != null) {
                 jobInstanceId = vm.getUuid();

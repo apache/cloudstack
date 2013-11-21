@@ -16,14 +16,9 @@
 // under the License.
 package com.cloud.ovm.object;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import com.cloud.utils.Pair;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 public class Test {
     public static void main(String[] args) {
@@ -90,7 +85,8 @@ public class Test {
             //System.out.println(vm.toJson());
             Connection c = new Connection("192.168.189.12", "oracle", "password");
             //System.out.println(Coder.toJson(OvmHost.getDetails(c)));
-            String txt = "{\"MasterIp\": \"192.168.189.12\", \"dom0Memory\": 790626304, \"freeMemory\": 16378757120, \"totalMemory\": 17169383424, \"cpuNum\": 4, \"agentVersion\": \"2.3-38\", \"cpuSpeed\": 2261}";
+            String txt =
+                "{\"MasterIp\": \"192.168.189.12\", \"dom0Memory\": 790626304, \"freeMemory\": 16378757120, \"totalMemory\": 17169383424, \"cpuNum\": 4, \"agentVersion\": \"2.3-38\", \"cpuSpeed\": 2261}";
             //OvmHost.Details d = new GsonBuilder().create().fromJson(txt, OvmHost.Details.class);
             //OvmHost.Details d = Coder.fromJson(txt, OvmHost.Details.class);
             //OvmHost.Details d = OvmHost.getDetails(c);

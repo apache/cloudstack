@@ -41,18 +41,16 @@ public class UsageLoadBalancerPolicyDaoImpl extends GenericDaoBase<UsageLoadBala
     protected static final String REMOVE_BY_USERID_LBID = "DELETE FROM usage_load_balancer_policy WHERE account_id = ? AND id = ?";
     protected static final String UPDATE_DELETED = "UPDATE usage_load_balancer_policy SET deleted = ? WHERE account_id = ? AND id = ? and deleted IS NULL";
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, created, deleted " + "FROM usage_load_balancer_policy "
-                                                                 + "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
-                                                                 + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
+        + "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
     protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT id, zone_id, account_id, domain_id, created, deleted " + "FROM usage_load_balancer_policy "
-                                                                + "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
-                                                                + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
+        + "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
     protected static final String GET_ALL_USAGE_RECORDS = "SELECT id, zone_id, account_id, domain_id, created, deleted " + "FROM usage_load_balancer_policy "
-                                                          + "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
-                                                          + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
+        + "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
 
     public UsageLoadBalancerPolicyDaoImpl() {
     }
 
+    @Override
     public void removeBy(long accountId, long lbId) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
@@ -72,6 +70,7 @@ public class UsageLoadBalancerPolicyDaoImpl extends GenericDaoBase<UsageLoadBala
         }
     }
 
+    @Override
     public void update(UsageLoadBalancerPolicyVO usage) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;

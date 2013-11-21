@@ -16,8 +16,16 @@
 // under the License.
 package org.apache.cloudstack.network.element;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.Arrays;
 import java.util.HashMap;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -25,10 +33,6 @@ import org.apache.cloudstack.network.dao.SspCredentialDao;
 import org.apache.cloudstack.network.dao.SspCredentialVO;
 import org.apache.cloudstack.network.dao.SspTenantDao;
 import org.apache.cloudstack.network.dao.SspUuidDao;
-import org.apache.cloudstack.network.element.SspElement;
-
-import org.junit.Before;
-import org.junit.Test;
 
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.Host;
@@ -44,10 +48,6 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.resource.ResourceManager;
 import com.cloud.vm.dao.NicDao;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.*;
 
 public class SspElementTest {
     SspElement _element = new SspElement();

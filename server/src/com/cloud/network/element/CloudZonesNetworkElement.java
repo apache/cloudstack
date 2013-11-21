@@ -28,7 +28,6 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.Command.OnError;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.manager.Commands;
@@ -150,8 +149,8 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
         return capabilities;
     }
 
-    private VmDataCommand generateVmDataCommand(String vmPrivateIpAddress, String userData, String serviceOffering, String zoneName, String guestIpAddress, String vmName,
-        String vmInstanceName, long vmId, String vmUuid, String publicKey) {
+    private VmDataCommand generateVmDataCommand(String vmPrivateIpAddress, String userData, String serviceOffering, String zoneName, String guestIpAddress,
+        String vmName, String vmInstanceName, long vmId, String vmUuid, String publicKey) {
         VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName, _networkMgr.getExecuteInSeqNtwkElmtCmd());
 
         cmd.addVmData("userdata", "user-data", userData);
@@ -188,7 +187,8 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         // TODO Auto-generated method stub
         return true;
     }

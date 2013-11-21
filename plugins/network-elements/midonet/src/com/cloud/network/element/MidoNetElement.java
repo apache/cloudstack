@@ -19,6 +19,40 @@
 
 package com.cloud.network.element;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import javax.ws.rs.core.MultivaluedMap;
+
+import org.apache.log4j.Logger;
+import org.midonet.client.MidonetApi;
+import org.midonet.client.dto.DtoRule;
+import org.midonet.client.dto.DtoRule.DtoRange;
+import org.midonet.client.exception.HttpInternalServerError;
+import org.midonet.client.resource.Bridge;
+import org.midonet.client.resource.BridgePort;
+import org.midonet.client.resource.DhcpHost;
+import org.midonet.client.resource.DhcpSubnet;
+import org.midonet.client.resource.Port;
+import org.midonet.client.resource.ResourceCollection;
+import org.midonet.client.resource.Route;
+import org.midonet.client.resource.Router;
+import org.midonet.client.resource.RouterPort;
+import org.midonet.client.resource.Rule;
+import org.midonet.client.resource.RuleChain;
+import org.springframework.stereotype.Component;
+
+import com.sun.jersey.core.util.MultivaluedMapImpl;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.configuration.Config;
@@ -41,55 +75,22 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.user.AccountVO;
-import com.cloud.user.dao.AccountDao;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
-import org.midonet.client.MidonetApi;
-import org.midonet.client.exception.HttpInternalServerError;
-import org.midonet.client.dto.DtoRule;
-import org.midonet.client.dto.DtoRule.DtoRange;
-import org.midonet.client.resource.Bridge;
-import org.midonet.client.resource.BridgePort;
-import org.midonet.client.resource.DhcpHost;
-import org.midonet.client.resource.DhcpSubnet;
-import org.midonet.client.resource.Port;
-import org.midonet.client.resource.ResourceCollection;
-import org.midonet.client.resource.Route;
-import org.midonet.client.resource.Router;
-import org.midonet.client.resource.RouterPort;
-import org.midonet.client.resource.Rule;
-import org.midonet.client.resource.RuleChain;
-import com.sun.jersey.core.util.MultivaluedMapImpl;
-
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import javax.ws.rs.core.MultivaluedMap;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 
 @Component
 @Local(value = {NetworkElement.class, ConnectivityProvider.class, FirewallServiceProvider.class, SourceNatServiceProvider.class, DhcpServiceProvider.class,
-        StaticNatServiceProvider.class, PortForwardingServiceProvider.class, IpDeployer.class})
+    StaticNatServiceProvider.class, PortForwardingServiceProvider.class, IpDeployer.class})
 public class MidoNetElement extends AdapterBase implements ConnectivityProvider, DhcpServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, IpDeployer,
         PortForwardingServiceProvider, FirewallServiceProvider, PluggableService {
 
@@ -137,11 +138,11 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        String routerIdValue = (String)_configDao.getValue(Config.MidoNetProviderRouterId.key());
+        String routerIdValue = _configDao.getValue(Config.MidoNetProviderRouterId.key());
         if (routerIdValue != null)
             _providerRouterId = UUID.fromString(routerIdValue);
 
-        String value = (String)_configDao.getValue(Config.MidoNetAPIServerAddress.key());
+        String value = _configDao.getValue(Config.MidoNetAPIServerAddress.key());
 
         if (value == null) {
             throw new ConfigurationException("Could not find midonet API location in config");
@@ -191,8 +192,8 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
         return true;
     }
 
-    public void
-        applySourceNat(Router tenantRouter, Router providerRouter, RouterPort tenantUplink, RouterPort providerDownlink, RuleChain pre, RuleChain post, PublicIpAddress addr) {
+    public void applySourceNat(Router tenantRouter, Router providerRouter, RouterPort tenantUplink, RouterPort providerDownlink, RuleChain pre, RuleChain post,
+        PublicIpAddress addr) {
 
         boolean needAdd = true;
         String SNtag = "/SourceNat";
@@ -246,7 +247,14 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
             .create();
 
         // Set outbound (SNAT) rule
-        post.addRule().type(DtoRule.SNAT).flowAction(DtoRule.Accept).outPorts(new UUID[] {tenantUplink.getId()}).natTargets(targets).position(1).properties(ruleProps).create();
+        post.addRule()
+            .type(DtoRule.SNAT)
+            .flowAction(DtoRule.Accept)
+            .outPorts(new UUID[] {tenantUplink.getId()})
+            .natTargets(targets)
+            .position(1)
+            .properties(ruleProps)
+            .create();
 
         // Set up default route from tenant router to provider router
         tenantRouter.addRoute()
@@ -378,8 +386,8 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
      * From interface DHCPServiceProvider
      */
     @Override
-    public boolean addDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-        InsufficientCapacityException, ResourceUnavailableException {
+    public boolean addDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
 
         s_logger.debug("addDhcpEntry called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
         if (!this.midoInNetwork(network)) {
@@ -681,15 +689,16 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
                                 Pair<String, Integer> cidrParts = NetUtils.getCidr(relatedCidr);
 
                                 // Create rule with correct proto, cidr, ACCEPT, dst IP
-                                Rule toApply = preFilter.addRule()
-                                    .type(DtoRule.Jump)
-                                    .jumpChainId(preNat.getId())
-                                    .position(1)
-                                    .nwSrcAddress(cidrParts.first())
-                                    .nwSrcLength(cidrParts.second())
-                                    .nwDstAddress(ruleTO.getSrcIp())
-                                    .nwDstLength(32)
-                                    .nwProto(SimpleFirewallRule.stringToProtocolNumber(rule.getProtocol()));
+                                Rule toApply =
+                                    preFilter.addRule()
+                                        .type(DtoRule.Jump)
+                                        .jumpChainId(preNat.getId())
+                                        .position(1)
+                                        .nwSrcAddress(cidrParts.first())
+                                        .nwSrcLength(cidrParts.second())
+                                        .nwDstAddress(ruleTO.getSrcIp())
+                                        .nwDstLength(32)
+                                        .nwProto(SimpleFirewallRule.stringToProtocolNumber(rule.getProtocol()));
 
                                 if (rule.getProtocol().equals("icmp")) {
                                     // ICMP rules - reuse port fields
@@ -739,8 +748,8 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
     }
 
     @Override
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-        ResourceUnavailableException, InsufficientCapacityException {
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         s_logger.debug("prepare called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
         if (!midoInNetwork(network)) {
             return false;
@@ -799,7 +808,8 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
     }
 
     @Override
-    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         s_logger.debug("release called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
         if (!midoInNetwork(network)) {
             return false;
@@ -878,7 +888,8 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
     }
 
     @Override
-    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         // Nothing to do here because the cleanup of the networks themselves clean up the resources.
         return true;
     }
@@ -1007,15 +1018,16 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
 
                         DtoRule.DtoNatTarget[] preTargets = new DtoRule.DtoNatTarget[] {new DtoRule.DtoNatTarget(vmIp, vmIp, privPortStart, privPortEnd)};
 
-                        Rule preNatRule = preNat.addRule()
-                            .type(DtoRule.DNAT)
-                            .flowAction(DtoRule.Accept)
-                            .nwDstAddress(publicIp)
-                            .nwDstLength(32)
-                            .tpDst(new DtoRange(pubPortStart, pubPortEnd))
-                            .natTargets(preTargets)
-                            .nwProto(SimpleFirewallRule.stringToProtocolNumber(rule.getProtocol()))
-                            .position(1);
+                        Rule preNatRule =
+                            preNat.addRule()
+                                .type(DtoRule.DNAT)
+                                .flowAction(DtoRule.Accept)
+                                .nwDstAddress(publicIp)
+                                .nwDstLength(32)
+                                .tpDst(new DtoRange(pubPortStart, pubPortEnd))
+                                .natTargets(preTargets)
+                                .nwProto(SimpleFirewallRule.stringToProtocolNumber(rule.getProtocol()))
+                                .position(1);
 
                         Integer cnt = ipRuleCounts.get(publicIp);
                         if (cnt != null) {
@@ -1028,14 +1040,15 @@ public class MidoNetElement extends AdapterBase implements ConnectivityProvider,
                         preNatRule.create();
 
                         if (routes.get(publicIp) == null) {
-                            Route route = providerRouter.addRoute()
-                                .type("Normal")
-                                .weight(100)
-                                .srcNetworkAddr("0.0.0.0")
-                                .srcNetworkLength(0)
-                                .dstNetworkAddr(publicIp)
-                                .dstNetworkLength(32)
-                                .nextHopPort(providerDownlink.getId());
+                            Route route =
+                                providerRouter.addRoute()
+                                    .type("Normal")
+                                    .weight(100)
+                                    .srcNetworkAddr("0.0.0.0")
+                                    .srcNetworkLength(0)
+                                    .dstNetworkAddr(publicIp)
+                                    .dstNetworkLength(32)
+                                    .nextHopPort(providerDownlink.getId());
                             route.create();
                             routes.put(publicIp, route);
                         }

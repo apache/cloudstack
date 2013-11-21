@@ -22,6 +22,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 
 import com.cloud.dc.DataCenter;
@@ -57,7 +58,6 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.ExceptionUtil;
@@ -138,15 +138,16 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             state = State.Setup;
         }
 
-        NetworkVO config = new NetworkVO(offering.getTrafficType(), Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(), state, plan.getDataCenterId(),
-            plan.getPhysicalNetworkId());
+        NetworkVO config =
+            new NetworkVO(offering.getTrafficType(), Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(), state, plan.getDataCenterId(), plan.getPhysicalNetworkId());
 
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) || (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {
                 throw new InvalidParameterValueException("cidr and gateway must be specified together.");
             }
 
-            if ((userSpecified.getIp6Cidr() == null && userSpecified.getIp6Gateway() != null) || (userSpecified.getIp6Cidr() != null && userSpecified.getIp6Gateway() == null)) {
+            if ((userSpecified.getIp6Cidr() == null && userSpecified.getIp6Gateway() != null) ||
+                (userSpecified.getIp6Cidr() != null && userSpecified.getIp6Gateway() == null)) {
                 throw new InvalidParameterValueException("cidrv6 and gatewayv6 must be specified together.");
             }
 
@@ -198,8 +199,8 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
-        ConcurrentOperationException {
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+        InsufficientAddressCapacityException, ConcurrentOperationException {
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
 
@@ -240,14 +241,15 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         try {
             Transaction.execute(new TransactionCallbackWithExceptionNoReturn<InsufficientCapacityException>() {
                 @Override
-                public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+                public void doInTransactionWithoutResult(TransactionStatus status) throws InsufficientVirtualNetworkCapcityException,
+                    InsufficientAddressCapacityException {
                     _ipAddrMgr.allocateDirectIp(nic, dc, vm, network, requestedIp4Addr, requestedIp6Addr);
                     //save the placeholder nic if the vm is the Virtual router
                     if (vm.getType() == VirtualMachine.Type.DomainRouter) {
                         Nic placeholderNic = _networkModel.getPlaceholderNicForRouter(network, null);
                         if (placeholderNic == null) {
-                            s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIp4Address() + " and ipv6 address " + nic.getIp6Address() + " for the network " +
-                                           network);
+                            s_logger.debug("Saving placeholder nic with ip4 address " + nic.getIp4Address() + " and ipv6 address " + nic.getIp6Address() +
+                                " for the network " + network);
                             _networkMgr.savePlaceholderNic(network, nic.getIp4Address(), nic.getIp6Address(), VirtualMachine.Type.DomainRouter);
                         }
                     }

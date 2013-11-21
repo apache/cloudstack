@@ -177,8 +177,8 @@ public class VMTemplateStoragePoolVO implements VMTemplateStorageResourceAssoc, 
         this.markedForGC = false;
     }
 
-    public VMTemplateStoragePoolVO(long poolId, long templateId, Date lastUpdated, int downloadPercent, Status downloadState, String localDownloadPath, String errorString,
-            String jobId, String installPath, long templateSize) {
+    public VMTemplateStoragePoolVO(long poolId, long templateId, Date lastUpdated, int downloadPercent, Status downloadState, String localDownloadPath,
+            String errorString, String jobId, String installPath, long templateSize) {
         super();
         this.poolId = poolId;
         this.templateId = templateId;

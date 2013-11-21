@@ -57,7 +57,8 @@ public class JmxUtil {
         }
     }
 
-    public static void unregisterMBean(String objTypeName, String objInstanceName) throws MalformedObjectNameException, MBeanRegistrationException, InstanceNotFoundException {
+    public static void unregisterMBean(String objTypeName, String objInstanceName) throws MalformedObjectNameException, MBeanRegistrationException,
+        InstanceNotFoundException {
 
         ObjectName name = composeMBeanName(objTypeName, objInstanceName);
         unregisterMBean(name);

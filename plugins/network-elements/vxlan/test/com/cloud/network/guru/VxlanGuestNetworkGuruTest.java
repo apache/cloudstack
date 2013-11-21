@@ -16,21 +16,31 @@
 // under the License.
 package com.cloud.network.guru;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Command;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -38,7 +48,6 @@ import com.cloud.domain.Domain;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
-import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
@@ -49,12 +58,9 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.user.Account;
 import com.cloud.vm.ReservationContext;
-
-import java.util.Arrays;
 
 public class VxlanGuestNetworkGuruTest {
     PhysicalNetworkDao physnetdao = mock(PhysicalNetworkDao.class);
@@ -81,7 +87,7 @@ public class VxlanGuestNetworkGuruTest {
         when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
         when(dc.getGuestNetworkCidr()).thenReturn("10.1.1.1/24");
 
-        when(dcdao.findById(anyLong())).thenReturn((DataCenterVO)dc);
+        when(dcdao.findById(anyLong())).thenReturn(dc);
     }
 
     @Test

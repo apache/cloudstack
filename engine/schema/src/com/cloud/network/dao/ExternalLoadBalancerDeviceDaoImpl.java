@@ -16,6 +16,12 @@
 // under the License.
 package com.cloud.network.dao;
 
+import java.util.List;
+
+import javax.ejb.Local;
+
+import org.springframework.stereotype.Component;
+
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO.LBDeviceAllocationState;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.utils.db.DB;
@@ -23,10 +29,6 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import java.util.List;
 
 @Component
 @Local(value = ExternalLoadBalancerDeviceDao.class)
@@ -76,6 +78,7 @@ public class ExternalLoadBalancerDeviceDaoImpl extends GenericDaoBase<ExternalLo
 
     }
 
+    @Override
     public List<ExternalLoadBalancerDeviceVO> listByPhysicalNetwork(long physicalNetworkId) {
         SearchCriteria<ExternalLoadBalancerDeviceVO> sc = physicalNetworkIdSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);

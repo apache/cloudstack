@@ -120,7 +120,8 @@ public class MfaDeleteStatus implements org.apache.axis2.databinding.ADBBean {
     }
 
     public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+        org.apache.axis2.databinding.ADBException {
         serialize(parentQName, factory, xmlWriter, false);
     }
 
@@ -178,9 +179,8 @@ public class MfaDeleteStatus implements org.apache.axis2.databinding.ADBBean {
     /**
      * Util method to write an attribute with the ns prefix
      */
-    private void
-        writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+    private void writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue,
+        javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
         if (xmlWriter.getPrefix(namespace) == null) {
             xmlWriter.writeNamespace(prefix, namespace);
             xmlWriter.setPrefix(prefix, namespace);
@@ -320,8 +320,8 @@ public class MfaDeleteStatus implements org.apache.axis2.databinding.ADBBean {
 
         //We can safely assume an element has only one type associated with it
         return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(MY_QNAME, new java.lang.Object[] {
-                org.apache.axis2.databinding.utils.reader.ADBXMLStreamReader.ELEMENT_TEXT, org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localMfaDeleteStatus)},
-            null);
+            org.apache.axis2.databinding.utils.reader.ADBXMLStreamReader.ELEMENT_TEXT,
+            org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localMfaDeleteStatus)}, null);
 
     }
 
@@ -333,7 +333,7 @@ public class MfaDeleteStatus implements org.apache.axis2.databinding.ADBBean {
         public static MfaDeleteStatus fromValue(java.lang.String value) throws java.lang.IllegalArgumentException {
             MfaDeleteStatus enumeration = (MfaDeleteStatus)
 
-                    _table_.get(value);
+            _table_.get(value);
 
             if (enumeration == null)
                 throw new java.lang.IllegalArgumentException();

@@ -16,6 +16,20 @@
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.ejb.Local;
+
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VM;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkUsageAnswer;
@@ -23,17 +37,6 @@ import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VM;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-
-import javax.ejb.Local;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 @Local(value = ServerResource.class)
 public class XcpServerResource extends CitrixResourceBase {
@@ -143,7 +146,7 @@ public class XcpServerResource extends CitrixResourceBase {
         //setMemoryLimits(staticMin, staticMax, dynamicMin, dynamicMax)
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Memory Limits for VM [" + vm.getNameLabel(conn) + "[staticMin:" + mem_32m + ", staticMax:" + maxMemsize + ", dynamicMin: " + minMemsize +
-                           ", dynamicMax:" + maxMemsize + "]]");
+                ", dynamicMax:" + maxMemsize + "]]");
         }
         vm.setMemoryLimits(conn, mem_32m, maxMemsize, minMemsize, maxMemsize);
     }

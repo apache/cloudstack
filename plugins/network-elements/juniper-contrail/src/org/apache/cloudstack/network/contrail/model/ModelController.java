@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.network.contrail.model;
 
+import net.juniper.contrail.api.ApiConnector;
+
 import org.apache.cloudstack.network.contrail.management.ContrailManager;
 
 import com.cloud.dc.dao.VlanDao;
@@ -24,8 +26,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
-
-import net.juniper.contrail.api.ApiConnector;
 
 /**
  * Collection of state necessary for model object to update the Contrail API server.
@@ -35,13 +35,12 @@ public class ModelController {
     ApiConnector _api;
     ContrailManager _manager;
     UserVmDao _vmDao;
-    NetworkDao  _networkDao;
+    NetworkDao _networkDao;
     NicDao _nicDao;
-    VlanDao  _vlanDao;
+    VlanDao _vlanDao;
     IPAddressDao _ipAddressDao;
 
-    public ModelController(ContrailManager manager, ApiConnector api, UserVmDao vmDao, NetworkDao networkDao,
-            NicDao nicDao, VlanDao vlanDao, IPAddressDao ipAddressDao) {
+    public ModelController(ContrailManager manager, ApiConnector api, UserVmDao vmDao, NetworkDao networkDao, NicDao nicDao, VlanDao vlanDao, IPAddressDao ipAddressDao) {
         _manager = manager;
         assert api != null;
         _api = api;
@@ -56,9 +55,11 @@ public class ModelController {
         assert ipAddressDao != null;
         _ipAddressDao = ipAddressDao;
     }
+
     ApiConnector getApiAccessor() {
         return _api;
     }
+
     ContrailManager getManager() {
         return _manager;
     }

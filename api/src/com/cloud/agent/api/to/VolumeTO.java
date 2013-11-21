@@ -92,6 +92,7 @@ public class VolumeTO implements InternalIdentity {
         this.deviceId = id;
     }
 
+    @Override
     public long getId() {
         return id;
     }

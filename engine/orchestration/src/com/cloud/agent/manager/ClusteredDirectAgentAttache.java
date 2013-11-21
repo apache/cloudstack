@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.agent.manager;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.exception.AgentUnavailableException;
@@ -28,7 +27,8 @@ public class ClusteredDirectAgentAttache extends DirectAgentAttache implements R
     private final ClusteredAgentManagerImpl _mgr;
     private final long _nodeId;
 
-    public ClusteredDirectAgentAttache(AgentManagerImpl agentMgr, long id, String name, long mgmtId, ServerResource resource, boolean maintenance, ClusteredAgentManagerImpl mgr) {
+    public ClusteredDirectAgentAttache(AgentManagerImpl agentMgr, long id, String name, long mgmtId, ServerResource resource, boolean maintenance,
+            ClusteredAgentManagerImpl mgr) {
         super(agentMgr, id, name, resource, maintenance, mgr);
         _mgr = mgr;
         _nodeId = mgmtId;

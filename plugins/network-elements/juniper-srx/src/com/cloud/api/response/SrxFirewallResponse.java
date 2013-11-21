@@ -16,13 +16,14 @@
 // under the License.
 package com.cloud.api.response;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.EntityReference;
-import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.dao.ExternalFirewallDeviceVO;
+import com.cloud.serializer.Param;
 
 @EntityReference(value = ExternalFirewallDeviceVO.class)
 @SuppressWarnings("unused")

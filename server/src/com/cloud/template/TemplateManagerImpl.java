@@ -511,7 +511,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 });
             } else {
                 s_logger.info("Skip loading template " + template.getId() + " into primary storage " + pool.getId() + " as pool zone " + pool.getDataCenterId() +
-                              " is different from the requested zone " + zoneId);
+                    " is different from the requested zone " + zoneId);
             }
         }
     }
@@ -858,7 +858,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         List<VMInstanceVO> nonExpungedVms = _vmInstanceDao.listNonExpungedByZoneAndTemplate(zoneId, templateId);
 
         if (!nonExpungedVms.isEmpty()) {
-            s_logger.debug("Template " + template.getName() + " in zone " + zone.getName() + " is not deleteable because there are non-expunged VMs deployed from this template.");
+            s_logger.debug("Template " + template.getName() + " in zone " + zone.getName() +
+                " is not deleteable because there are non-expunged VMs deployed from this template.");
             return false;
         }
         List<UserVmVO> userVmUsingIso = _userVmDao.listByIsoId(templateId);
@@ -873,7 +874,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         for (VolumeVO volume : volumes) {
             List<SnapshotVO> snapshots = _snapshotDao.listByVolumeIdVersion(volume.getId(), "2.1");
             if (!snapshots.isEmpty()) {
-                s_logger.debug("Template " + template.getName() + " in zone " + zone.getName() + " is not deleteable because there are 2.1 snapshots using this template.");
+                s_logger.debug("Template " + template.getName() + " in zone " + zone.getName() +
+                    " is not deleteable because there are 2.1 snapshots using this template.");
                 return false;
             }
         }
@@ -1238,8 +1240,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         if (accountNames != null) {
             if ((operation == null) || (!operation.equalsIgnoreCase("add") && !operation.equalsIgnoreCase("remove") && !operation.equalsIgnoreCase("reset"))) {
-                throw new InvalidParameterValueException("Invalid operation on accounts, the operation must be either 'add' or 'remove' in order to modify launch permissions." +
-                                                         "  Given operation is: '" + operation + "'");
+                throw new InvalidParameterValueException(
+                    "Invalid operation on accounts, the operation must be either 'add' or 'remove' in order to modify launch permissions." + "  Given operation is: '" +
+                        operation + "'");
             }
         }
 
@@ -1303,8 +1306,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                                 _launchPermissionDao.persist(launchPermission);
                             }
                         } else {
-                            throw new InvalidParameterValueException("Unable to grant a launch permission to account " + accountName + " in domain id=" + domain.getUuid() +
-                                                                     ", account not found.  " + "No permissions updated, please verify the account names and retry.");
+                            throw new InvalidParameterValueException("Unable to grant a launch permission to account " + accountName + " in domain id=" +
+                                domain.getUuid() + ", account not found.  " + "No permissions updated, please verify the account names and retry.");
                         }
                     }
                 }
@@ -1411,8 +1414,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     }
                 }
                 TemplateDataStoreVO srcTmpltStore = _tmplStoreDao.findByStoreTemplate(store.getId(), templateId);
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, privateTemplate.getAccountId(), zoneId, privateTemplate.getId(),
-                    privateTemplate.getName(), null, privateTemplate.getSourceTemplateId(), srcTmpltStore.getPhysicalSize(), privateTemplate.getSize());
+                UsageEventVO usageEvent =
+                    new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, privateTemplate.getAccountId(), zoneId, privateTemplate.getId(), privateTemplate.getName(), null,
+                        privateTemplate.getSourceTemplateId(), srcTmpltStore.getPhysicalSize(), privateTemplate.getSize());
                 _usageEventDao.persist(usageEvent);
             } catch (InterruptedException e) {
                 s_logger.debug("Failed to create template", e);
@@ -1450,7 +1454,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                         if (accountId != null) {
                             _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.template);
                             _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.secondary_storage, new Long(volumeFinal != null ? volumeFinal.getSize()
-                                    : snapshotFinal.getSize()));
+                                : snapshotFinal.getSize()));
                         }
                     }
                 });
@@ -1466,7 +1470,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     private static boolean isAdmin(short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
+        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) ||
+            (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN));
     }
 
     @Override
@@ -1515,8 +1520,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("Failed to create private template record, neither volume ID nor snapshot ID were specified.");
         }
         if ((volumeId != null) && (snapshotId != null)) {
-            throw new InvalidParameterValueException("Failed to create private template record, please specify only one of volume ID (" + volumeId + ") and snapshot ID (" +
-                                                     snapshotId + ")");
+            throw new InvalidParameterValueException("Failed to create private template record, please specify only one of volume ID (" + volumeId +
+                ") and snapshot ID (" + snapshotId + ")");
         }
 
         HypervisorType hyperType;
@@ -1556,7 +1561,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
             if (snapshot.getState() != Snapshot.State.BackedUp) {
                 throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.State.BackedUp +
-                                                         " state yet and can't be used for template creation");
+                    " state yet and can't be used for template creation");
             }
 
             /*
@@ -1608,8 +1613,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 s_logger.debug("Adding template tag: " + templateTag);
             }
         }
-        privateTemplate = new VMTemplateVO(nextTemplateId, uniqueName, name, ImageFormat.RAW, isPublic, featured, isExtractable, TemplateType.USER, null, null, requiresHvmValue,
-            bitsValue, templateOwner.getId(), null, description, passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails());
+        privateTemplate =
+            new VMTemplateVO(nextTemplateId, uniqueName, name, ImageFormat.RAW, isPublic, featured, isExtractable, TemplateType.USER, null, null, requiresHvmValue,
+                bitsValue, templateOwner.getId(), null, description, passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails());
         privateTemplate.setDynamicallyScalable(isDynamicScalingEnabled);
 
         if (sourceTemplateId != null) {
@@ -1632,7 +1638,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
 
             _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.template);
-            _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.secondary_storage, new Long(volume != null ? volume.getSize() : snapshot.getSize()));
+            _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.secondary_storage,
+                new Long(volume != null ? volume.getSize() : snapshot.getSize()));
         }
 
         if (template != null) {
@@ -1751,8 +1758,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
         }
 
-        boolean updateNeeded = !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null && bootable == null && sortKey == null &&
-                                 isDynamicallyScalable == null && isRoutingTemplate == null);
+        boolean updateNeeded =
+            !(name == null && displayText == null && format == null && guestOSId == null && passwordEnabled == null && bootable == null && sortKey == null &&
+                isDynamicallyScalable == null && isRoutingTemplate == null);
         if (!updateNeeded) {
             return template;
         }

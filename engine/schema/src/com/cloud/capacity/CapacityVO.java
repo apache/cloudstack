@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.capacity;
 
-import javax.persistence.Transient;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -27,9 +26,9 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "op_host_capacity")

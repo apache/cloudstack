@@ -115,7 +115,8 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public Network implement(Network config, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
+    public Network implement(Network config, NetworkOffering offering, DeployDestination dest, ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException {
         assert (config.getState() == State.Implementing) : "Why are we implementing " + config;
 
         if (Boolean.parseBoolean(_configDao.getValue(Config.OvsTunnelNetwork.key()))) {
@@ -127,14 +128,16 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         }
 
         DataCenter zone = dest.getDataCenter();
-        NetworkVO implemented = new NetworkVO(config.getTrafficType(), config.getMode(), config.getBroadcastDomainType(), config.getNetworkOfferingId(), State.Allocated,
-            config.getDataCenterId(), config.getPhysicalNetworkId());
+        NetworkVO implemented =
+            new NetworkVO(config.getTrafficType(), config.getMode(), config.getBroadcastDomainType(), config.getNetworkOfferingId(), State.Allocated,
+                config.getDataCenterId(), config.getPhysicalNetworkId());
 
         // Get a vlan tag
         int vlanTag;
         if (config.getBroadcastUri() == null) {
-            String vnet = _dcDao.allocateVnet(zone.getId(), config.getPhysicalNetworkId(), config.getAccountId(), context.getReservationId(),
-                UseSystemGuestVlans.valueIn(config.getAccountId()));
+            String vnet =
+                _dcDao.allocateVnet(zone.getId(), config.getPhysicalNetworkId(), config.getAccountId(), context.getReservationId(),
+                    UseSystemGuestVlans.valueIn(config.getAccountId()));
 
             try {
                 // when supporting more types of networks this need to become
@@ -145,8 +148,8 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             }
 
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlanTag));
-            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), config.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN,
-                "Assigned Zone Vlan: " + vnet + " Network Id: " + config.getId(), 0);
+            ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), config.getAccountId(), EventVO.LEVEL_INFO,
+                EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: " + vnet + " Network Id: " + config.getId(), 0);
         } else {
             vlanTag = Integer.parseInt(BroadcastDomainType.getValue(config.getBroadcastUri()));
             implemented.setBroadcastUri(config.getBroadcastUri());
@@ -213,7 +216,8 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+    public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+        InsufficientAddressCapacityException {
 
         if (_networkModel.networkIsConfiguredForExternalNetworking(config.getDataCenterId(), config.getId()) && nic != null && nic.getRequestedIpv4() != null) {
             throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);

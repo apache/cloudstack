@@ -136,7 +136,8 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
     }
 
     public boolean isTemplateUpdateable(Long templateId, Long storeId) {
-        List<TemplateDataStoreVO> downloadsInProgress = _vmTemplateStoreDao.listByTemplateStoreDownloadStatus(templateId, storeId, Status.DOWNLOAD_IN_PROGRESS, Status.DOWNLOADED);
+        List<TemplateDataStoreVO> downloadsInProgress =
+            _vmTemplateStoreDao.listByTemplateStoreDownloadStatus(templateId, storeId, Status.DOWNLOAD_IN_PROGRESS, Status.DOWNLOADED);
         return (downloadsInProgress.size() == 0);
     }
 
@@ -147,7 +148,8 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
         vmTemplateStore = _vmTemplateStoreDao.findByStoreTemplate(store.getId(), template.getId());
         if (vmTemplateStore == null) {
-            vmTemplateStore = new TemplateDataStoreVO(store.getId(), template.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, "jobid0000", null, template.getUri());
+            vmTemplateStore =
+                new TemplateDataStoreVO(store.getId(), template.getId(), new Date(), 0, Status.NOT_DOWNLOADED, null, null, "jobid0000", null, template.getUri());
             vmTemplateStore.setDataStoreRole(store.getRole());
             vmTemplateStore = _vmTemplateStoreDao.persist(vmTemplateStore);
         } else if ((vmTemplateStore.getJobId() != null) && (vmTemplateStore.getJobId().length() > 2)) {
@@ -203,12 +205,13 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 initiateTemplateDownload(template, callback);
             } else {
                 s_logger.info("Template url is null, cannot download");
-                DownloadAnswer ans = new DownloadAnswer("Template url is null", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR.UNKNOWN);
+                DownloadAnswer ans = new DownloadAnswer("Template url is null", Status.UNKNOWN);
                 callback.complete(ans);
             }
         } else {
             s_logger.info("Template download is already in progress or already downloaded");
-            DownloadAnswer ans = new DownloadAnswer("Template download is already in progress or already downloaded", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR.UNKNOWN);
+            DownloadAnswer ans =
+                new DownloadAnswer("Template download is already in progress or already downloaded", Status.UNKNOWN);
             callback.complete(ans);
         }
     }

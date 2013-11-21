@@ -34,8 +34,8 @@ public class SSHKeysHelper {
     private static String toHexString(byte[] b) {
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < b.length; i++) {
-            sb.append(hexChars[(int)(((int)b[i] >> 4) & 0x0f)]);
-            sb.append(hexChars[(int)(((int)b[i]) & 0x0f)]);
+            sb.append(hexChars[(b[i] >> 4) & 0x0f]);
+            sb.append(hexChars[(b[i]) & 0x0f]);
         }
         return sb.toString();
     }

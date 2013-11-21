@@ -19,13 +19,14 @@ package org.apache.cloudstack.network.contrail.model;
 
 import java.io.IOException;
 
-import org.apache.cloudstack.network.contrail.management.ContrailManager;
-import org.apache.log4j.Logger;
-
+import net.juniper.contrail.api.ApiConnector;
 import net.juniper.contrail.api.types.MacAddressesType;
 import net.juniper.contrail.api.types.VirtualMachineInterface;
 import net.juniper.contrail.api.types.VirtualMachineInterfacePropertiesType;
-import net.juniper.contrail.api.ApiConnector;
+
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.network.contrail.management.ContrailManager;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.Network;
@@ -95,7 +96,7 @@ public class VMInterfaceModel extends ModelObjectBase {
     public int compareTo(ModelObject o) {
         VMInterfaceModel other;
         try {
-            other = (VMInterfaceModel) o;
+            other = (VMInterfaceModel)o;
         } catch (ClassCastException ex) {
             String clsname = o.getClass().getName();
             return VMInterfaceModel.class.getName().compareTo(clsname);
@@ -105,7 +106,7 @@ public class VMInterfaceModel extends ModelObjectBase {
 
     @Override
     public void delete(ModelController controller) throws IOException {
-        for (ModelObject successor: successors()) {
+        for (ModelObject successor : successors()) {
             successor.delete(controller);
         }
 
@@ -117,7 +118,7 @@ public class VMInterfaceModel extends ModelObjectBase {
     public void destroy(ModelController controller) throws IOException {
         delete(controller);
 
-        for (ModelObject successor: successors()) {
+        for (ModelObject successor : successors()) {
             successor.destroy(controller);
         }
         clearSuccessors();
@@ -126,7 +127,7 @@ public class VMInterfaceModel extends ModelObjectBase {
     public InstanceIpModel getInstanceIp() {
         for (ModelObject successor : successors()) {
             if (successor.getClass() == InstanceIpModel.class) {
-                return (InstanceIpModel) successor;
+                return (InstanceIpModel)successor;
             }
         }
         return null;
@@ -154,23 +155,23 @@ public class VMInterfaceModel extends ModelObjectBase {
         Network network = controller.getNetworkDao().findById(nic.getNetworkId());
 
         switch (nic.getState()) {
-        case Allocated:
-        case Reserved:
-            _nicActive = true;
-            break;
-        default:
-            _nicActive = false;
-            break;
+            case Allocated:
+            case Reserved:
+                _nicActive = true;
+                break;
+            default:
+                _nicActive = false;
+                break;
         }
 
         switch (network.getState()) {
-        case Implemented:
-        case Setup:
-            _netActive = true;
-            break;
-        default:
-            _netActive = false;
-            break;
+            case Implemented:
+            case Setup:
+                _netActive = true;
+                break;
+            default:
+                _netActive = false;
+                break;
         }
         assert _vnModel != null;
         _networkId = _vnModel.getUuid();
@@ -200,7 +201,7 @@ public class VMInterfaceModel extends ModelObjectBase {
         ContrailManager manager = controller.getManager();
         ApiConnector api = controller.getApiAccessor();
 
-        VirtualMachineInterface vmi = (VirtualMachineInterface) api.findById(VirtualMachineInterface.class, _uuid);
+        VirtualMachineInterface vmi = (VirtualMachineInterface)api.findById(VirtualMachineInterface.class, _uuid);
         boolean create = false;
         if (vmi == null) {
             create = true;
@@ -226,18 +227,18 @@ public class VMInterfaceModel extends ModelObjectBase {
 
         if (create) {
             if (!api.create(vmi)) {
-                throw new InternalErrorException("Unable to create virtual-machine-interface " +  _uuid);
+                throw new InternalErrorException("Unable to create virtual-machine-interface " + _uuid);
             }
         } else {
             if (!api.update(vmi)) {
-                throw new InternalErrorException("Unable to update virtual-machine-interface " +  _uuid);
+                throw new InternalErrorException("Unable to update virtual-machine-interface " + _uuid);
             }
         }
 
         api.read(vmi);
 
         int ipCount = 0;
-        for (ModelObject successor: successors()) {
+        for (ModelObject successor : successors()) {
             if (successor.getClass() == InstanceIpModel.class) {
                 ipCount++;
             }

@@ -23,9 +23,6 @@ import com.cloud.consoleproxy.ConsoleProxyClientListener;
 import com.cloud.consoleproxy.vnc.BufferedImageCanvas;
 import com.cloud.consoleproxy.vnc.RfbConstants;
 import com.cloud.consoleproxy.vnc.VncScreenDescription;
-import com.cloud.consoleproxy.vnc.packet.server.CopyRect;
-import com.cloud.consoleproxy.vnc.packet.server.RawRect;
-import com.cloud.consoleproxy.vnc.packet.server.Rect;
 
 public class FramebufferUpdatePacket {
 
@@ -33,7 +30,8 @@ public class FramebufferUpdatePacket {
     private final BufferedImageCanvas canvas;
     private final ConsoleProxyClientListener clientListener;
 
-    public FramebufferUpdatePacket(BufferedImageCanvas canvas, VncScreenDescription screen, DataInputStream is, ConsoleProxyClientListener clientListener) throws IOException {
+    public FramebufferUpdatePacket(BufferedImageCanvas canvas, VncScreenDescription screen, DataInputStream is, ConsoleProxyClientListener clientListener)
+            throws IOException {
 
         this.screen = screen;
         this.canvas = canvas;

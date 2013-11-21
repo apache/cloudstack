@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.admin.systemvm;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -30,7 +32,6 @@ import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
@@ -60,7 +61,9 @@ public class ListSystemVMsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "the state of the system VM")
     private String state;
 
-    @Parameter(name = ApiConstants.SYSTEM_VM_TYPE, type = CommandType.STRING, description = "the system VM type. Possible types are \"consoleproxy\" and \"secondarystoragevm\".")
+    @Parameter(name = ApiConstants.SYSTEM_VM_TYPE,
+               type = CommandType.STRING,
+               description = "the system VM type. Possible types are \"consoleproxy\" and \"secondarystoragevm\".")
     private String systemVmType;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID of the system VM")
@@ -118,6 +121,7 @@ public class ListSystemVMsCmd extends BaseListCmd {
         return s_name;
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.SystemVm;
     }

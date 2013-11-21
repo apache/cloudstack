@@ -39,16 +39,17 @@ public class UsageVMInstanceDaoImpl extends GenericDaoBase<UsageVMInstanceVO, Lo
     public static final Logger s_logger = Logger.getLogger(UsageVMInstanceDaoImpl.class.getName());
 
     protected static final String UPDATE_USAGE_INSTANCE_SQL = "UPDATE usage_vm_instance SET end_date = ? "
-                                                              + "WHERE account_id = ? and vm_instance_id = ? and usage_type = ? and end_date IS NULL";
+        + "WHERE account_id = ? and vm_instance_id = ? and usage_type = ? and end_date IS NULL";
     protected static final String DELETE_USAGE_INSTANCE_SQL = "DELETE FROM usage_vm_instance WHERE account_id = ? and vm_instance_id = ? and usage_type = ?";
-    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT usage_type, zone_id, account_id, vm_instance_id, vm_name, service_offering_id, template_id, hypervisor_type, start_date, end_date "
-                                                                 + "FROM usage_vm_instance "
-                                                                 + "WHERE account_id = ? AND ((end_date IS NULL) OR (start_date BETWEEN ? AND ?) OR "
-                                                                 + "      (end_date BETWEEN ? AND ?) OR ((start_date <= ?) AND (end_date >= ?)))";
+    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT =
+        "SELECT usage_type, zone_id, account_id, vm_instance_id, vm_name, service_offering_id, template_id, hypervisor_type, start_date, end_date "
+            + "FROM usage_vm_instance " + "WHERE account_id = ? AND ((end_date IS NULL) OR (start_date BETWEEN ? AND ?) OR "
+            + "      (end_date BETWEEN ? AND ?) OR ((start_date <= ?) AND (end_date >= ?)))";
 
     public UsageVMInstanceDaoImpl() {
     }
 
+    @Override
     public void update(UsageVMInstanceVO instance) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
@@ -69,6 +70,7 @@ public class UsageVMInstanceDaoImpl extends GenericDaoBase<UsageVMInstanceVO, Lo
         }
     }
 
+    @Override
     public void delete(UsageVMInstanceVO instance) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
@@ -89,6 +91,7 @@ public class UsageVMInstanceDaoImpl extends GenericDaoBase<UsageVMInstanceVO, Lo
         }
     }
 
+    @Override
     public List<UsageVMInstanceVO> getUsageRecords(long accountId, Date startDate, Date endDate) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
@@ -123,8 +126,8 @@ public class UsageVMInstanceDaoImpl extends GenericDaoBase<UsageVMInstanceVO, Lo
                 if (r_endDate != null) {
                     instanceEndDate = DateUtil.parseDateString(s_gmtTimeZone, r_endDate);
                 }
-                UsageVMInstanceVO usageInstance = new UsageVMInstanceVO(r_usageType, r_zoneId, r_accountId, r_vmId, r_vmName, r_soId, r_tId, hypervisorType, instanceStartDate,
-                    instanceEndDate);
+                UsageVMInstanceVO usageInstance =
+                    new UsageVMInstanceVO(r_usageType, r_zoneId, r_accountId, r_vmId, r_vmName, r_soId, r_tId, hypervisorType, instanceStartDate, instanceEndDate);
                 usageInstances.add(usageInstance);
             }
         } catch (Exception ex) {

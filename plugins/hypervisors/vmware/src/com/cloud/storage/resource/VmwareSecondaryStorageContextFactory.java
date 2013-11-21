@@ -18,8 +18,6 @@ package com.cloud.storage.resource;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareContextPool;

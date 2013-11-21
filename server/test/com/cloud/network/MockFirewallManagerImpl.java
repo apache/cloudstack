@@ -30,13 +30,12 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.TrafficType;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 
 @Local(value = {FirewallManager.class, FirewallService.class})

@@ -192,7 +192,8 @@ public class UserVmManagerTest {
 
     // Test restoreVm when VM is in stopped state
     @Test
-    public void testRestoreVMF2() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void testRestoreVMF2() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
 
         doReturn(VirtualMachine.State.Stopped).when(_vmMock).getState();
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
@@ -222,7 +223,8 @@ public class UserVmManagerTest {
 
     // Test restoreVM when VM is in running state
     @Test
-    public void testRestoreVMF3() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void testRestoreVMF3() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
 
         doReturn(VirtualMachine.State.Running).when(_vmMock).getState();
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
@@ -252,7 +254,8 @@ public class UserVmManagerTest {
 
     // Test restoreVM on providing new template Id, when VM is in running state
     @Test
-    public void testRestoreVMF4() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void testRestoreVMF4() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         doReturn(VirtualMachine.State.Running).when(_vmMock).getState();
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
         when(_volsDao.findByInstanceAndType(314L, Volume.Type.ROOT)).thenReturn(_rootVols);
@@ -288,7 +291,8 @@ public class UserVmManagerTest {
 
     // Test restoreVM on providing new ISO Id, when VM(deployed using ISO) is in running state
     @Test
-    public void testRestoreVMF5() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void testRestoreVMF5() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         doReturn(VirtualMachine.State.Running).when(_vmMock).getState();
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
         when(_volsDao.findByInstanceAndType(314L, Volume.Type.ROOT)).thenReturn(_rootVols);
@@ -502,7 +506,8 @@ public class UserVmManagerTest {
         boolean ha = false;
         boolean useLocalStorage = false;
 
-        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
+        ServiceOfferingVO serviceOffering =
+            new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, useLocalStorage, false, null, false, null, false);
         return serviceOffering;
     }
 

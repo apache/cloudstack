@@ -18,11 +18,12 @@ package com.cloud.hypervisor.vmware.manager;
 
 import java.util.List;
 
+import com.vmware.vim25.ManagedObjectReference;
+
 import com.cloud.agent.api.Command;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.vmware.vim25.ManagedObjectReference;
 
 public interface VmwareHostService {
     VmwareContext getServiceContext(Command cmd);

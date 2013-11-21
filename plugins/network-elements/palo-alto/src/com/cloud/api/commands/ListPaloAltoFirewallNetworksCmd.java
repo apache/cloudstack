@@ -21,12 +21,17 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+
 import com.cloud.api.response.PaloAltoFirewallResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -37,19 +42,23 @@ import com.cloud.network.Network;
 import com.cloud.network.element.PaloAltoFirewallElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listPaloAltoFirewallNetworks", responseObject=NetworkResponse.class, description="lists network that are using Palo Alto firewall device")
+@APICommand(name = "listPaloAltoFirewallNetworks", responseObject = NetworkResponse.class, description = "lists network that are using Palo Alto firewall device")
 public class ListPaloAltoFirewallNetworksCmd extends BaseListCmd {
 
     public static final Logger s_logger = Logger.getLogger(ListPaloAltoFirewallNetworksCmd.class.getName());
     private static final String s_name = "listpaloaltofirewallnetworksresponse";
-    @Inject PaloAltoFirewallElementService _paFwService;
+    @Inject
+    PaloAltoFirewallElementService _paFwService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.UUID, entityType = PaloAltoFirewallResponse.class,
-            required = true, description="palo alto balancer device ID")
+    @Parameter(name = ApiConstants.LOAD_BALANCER_DEVICE_ID,
+               type = CommandType.UUID,
+               entityType = PaloAltoFirewallResponse.class,
+               required = true,
+               description = "palo alto balancer device ID")
     private Long fwDeviceId;
 
     /////////////////////////////////////////////////////
@@ -65,9 +74,10 @@ public class ListPaloAltoFirewallNetworksCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
-            List<? extends Network> networks  = _paFwService.listNetworks(this);
+            List<? extends Network> networks = _paFwService.listNetworks(this);
             ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
             List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
 
@@ -81,7 +91,7 @@ public class ListPaloAltoFirewallNetworksCmd extends BaseListCmd {
             response.setResponses(networkResponses);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

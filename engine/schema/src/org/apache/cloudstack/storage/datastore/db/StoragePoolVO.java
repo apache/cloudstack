@@ -30,8 +30,8 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.utils.db.GenericDao;
@@ -40,7 +40,12 @@ import com.cloud.utils.db.GenericDao;
 @Table(name = "storage_pool")
 public class StoragePoolVO implements StoragePool {
     @Id
-    @TableGenerator(name = "storage_pool_sq", table = "sequence", pkColumnName = "name", valueColumnName = "value", pkColumnValue = "storage_pool_seq", allocationSize = 1)
+    @TableGenerator(name = "storage_pool_sq",
+                    table = "sequence",
+                    pkColumnName = "name",
+                    valueColumnName = "value",
+                    pkColumnValue = "storage_pool_seq",
+                    allocationSize = 1)
     @Column(name = "id", updatable = false, nullable = false)
     private long id;
 
@@ -112,10 +117,12 @@ public class StoragePoolVO implements StoragePool {
     @Enumerated(value = EnumType.STRING)
     private HypervisorType hypervisor;
 
+    @Override
     public long getId() {
         return id;
     }
 
+    @Override
     public StoragePoolStatus getStatus() {
         return status;
     }
@@ -124,8 +131,8 @@ public class StoragePoolVO implements StoragePool {
         this.status = StoragePoolStatus.Initial;
     }
 
-    public StoragePoolVO(long poolId, String name, String uuid, StoragePoolType type, long dataCenterId, Long podId, long availableBytes, long capacityBytes, String hostAddress,
-            int port, String hostPath) {
+    public StoragePoolVO(long poolId, String name, String uuid, StoragePoolType type, long dataCenterId, Long podId, long availableBytes, long capacityBytes,
+            String hostAddress, int port, String hostPath) {
         this.name = name;
         this.id = poolId;
         this.uuid = uuid;
@@ -153,14 +160,17 @@ public class StoragePoolVO implements StoragePool {
         this.uuid = UUID.randomUUID().toString();
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }
 
+    @Override
     public StoragePoolType getPoolType() {
         return poolType;
     }
@@ -169,6 +179,7 @@ public class StoragePoolVO implements StoragePool {
         this.poolType = protocol;
     }
 
+    @Override
     public Date getCreated() {
         return created;
     }
@@ -177,18 +188,22 @@ public class StoragePoolVO implements StoragePool {
         return removed;
     }
 
+    @Override
     public Date getUpdateTime() {
         return updateTime;
     }
 
+    @Override
     public long getDataCenterId() {
         return dataCenterId;
     }
 
+    @Override
     public long getUsedBytes() {
         return usedBytes;
     }
 
+    @Override
     public String getStorageProviderName() {
         return storageProviderName;
     }
@@ -197,6 +212,7 @@ public class StoragePoolVO implements StoragePool {
         storageProviderName = providerName;
     }
 
+    @Override
     public long getCapacityBytes() {
         return capacityBytes;
     }
@@ -221,10 +237,12 @@ public class StoragePoolVO implements StoragePool {
         this.capacityIops = capacityIops;
     }
 
+    @Override
     public Long getCapacityIops() {
         return capacityIops;
     }
 
+    @Override
     public Long getClusterId() {
         return clusterId;
     }
@@ -233,6 +251,7 @@ public class StoragePoolVO implements StoragePool {
         this.clusterId = clusterId;
     }
 
+    @Override
     public String getHostAddress() {
         return hostAddress;
     }
@@ -241,10 +260,12 @@ public class StoragePoolVO implements StoragePool {
         this.hostAddress = host;
     }
 
+    @Override
     public String getPath() {
         return path;
     }
 
+    @Override
     public String getUserInfo() {
         return userInfo;
     }
@@ -277,6 +298,7 @@ public class StoragePoolVO implements StoragePool {
         this.userInfo = userInfo;
     }
 
+    @Override
     public int getPort() {
         return port;
     }
@@ -285,6 +307,7 @@ public class StoragePoolVO implements StoragePool {
         this.port = port;
     }
 
+    @Override
     public Long getPodId() {
         return podId;
     }
@@ -328,16 +351,19 @@ public class StoragePoolVO implements StoragePool {
         return new StringBuilder("Pool[").append(id).append("|").append(poolType).append("]").toString();
     }
 
+    @Override
     public boolean isShared() {
         return this.scope == ScopeType.HOST ? false : true;
     }
 
+    @Override
     public boolean isLocal() {
         return !isShared();
     }
 
     @Override
     public boolean isInMaintenance() {
-        return status == StoragePoolStatus.PrepareForMaintenance || status == StoragePoolStatus.Maintenance || status == StoragePoolStatus.ErrorInMaintenance || removed != null;
+        return status == StoragePoolStatus.PrepareForMaintenance || status == StoragePoolStatus.Maintenance || status == StoragePoolStatus.ErrorInMaintenance ||
+            removed != null;
     }
 }

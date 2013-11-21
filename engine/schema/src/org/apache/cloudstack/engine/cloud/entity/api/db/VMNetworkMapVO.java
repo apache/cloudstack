@@ -22,6 +22,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
@@ -51,6 +52,7 @@ public class VMNetworkMapVO implements InternalIdentity {
         this.networkId = networkId;
     }
 
+    @Override
     public long getId() {
         return id;
     }

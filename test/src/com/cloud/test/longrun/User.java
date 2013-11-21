@@ -16,11 +16,11 @@
 // under the License.
 package com.cloud.test.longrun;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Map;
-import java.io.InputStream;
-import java.io.IOException;
-import java.net.URLEncoder;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
@@ -44,8 +44,7 @@ public class User {
     private String password;
     private String encryptedPassword;
 
-    public User(String userName, String password, String server, String developerServer)
-    {
+    public User(String userName, String password, String server, String developerServer) {
         this.server = server;
         this.developerServer = developerServer;
         this.userName = userName;
@@ -130,9 +129,9 @@ public class User {
         String encodedUsername = URLEncoder.encode(this.getUserName(), "UTF-8");
         this.encryptedPassword = TestClientWithAPI.createMD5Password(this.getPassword());
         String encodedPassword = URLEncoder.encode(this.encryptedPassword, "UTF-8");
-        String url = this.server + "?command=createUser&username=" + encodedUsername
-                     + "&password=" + encodedPassword
-                     + "&firstname=Test&lastname=Test&email=alena@vmops.com&domainId=1";
+        String url =
+            this.server + "?command=createUser&username=" + encodedUsername + "&password=" + encodedPassword +
+                "&firstname=Test&lastname=Test&email=alena@vmops.com&domainId=1";
         String userIdStr = null;
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(url);
@@ -140,8 +139,7 @@ public class User {
 
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
-            Map<String, String> userIdValues = TestClientWithAPI.getSingleValueFromXML(is,
-                new String[] {"id"});
+            Map<String, String> userIdValues = TestClientWithAPI.getSingleValueFromXML(is, new String[] {"id"});
             userIdStr = userIdValues.get("id");
             if ((userIdStr != null) && (Long.parseLong(userIdStr) != -1)) {
                 this.setUserId(userIdStr);
@@ -153,35 +151,27 @@ public class User {
 
         String encodedApiKey = URLEncoder.encode(this.apiKey, "UTF-8");
         String encodedZoneId = URLEncoder.encode("" + zoneId, "UTF-8");
-        String requestToSign = "apiKey=" + encodedApiKey
-                               + "&command=associateIpAddress" + "&zoneId=" + encodedZoneId;
+        String requestToSign = "apiKey=" + encodedApiKey + "&command=associateIpAddress" + "&zoneId=" + encodedZoneId;
         requestToSign = requestToSign.toLowerCase();
         String signature = TestClientWithAPI.signRequest(requestToSign, this.secretKey);
         String encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
-        String url = this.developerServer + "?command=associateIpAddress" + "&apiKey="
-                     + encodedApiKey + "&zoneId=" + encodedZoneId + "&signature="
-                     + encodedSignature;
+        String url = this.developerServer + "?command=associateIpAddress" + "&apiKey=" + encodedApiKey + "&zoneId=" + encodedZoneId + "&signature=" + encodedSignature;
 
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(url);
         int responseCode = client.executeMethod(method);
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
-            Map<String, String> values = TestClientWithAPI.getSingleValueFromXML(is,
-                new String[] {"ipaddress"});
+            Map<String, String> values = TestClientWithAPI.getSingleValueFromXML(is, new String[] {"ipaddress"});
             this.getPublicIp().add(values.get("ipaddress"));
             s_logger.info("Ip address is " + values.get("ipaddress"));
         } else if (responseCode == 500) {
             InputStream is = method.getResponseBodyAsStream();
-            Map<String, String> errorInfo = TestClientWithAPI.getSingleValueFromXML(is,
-                new String[] {"errorcode", "description"});
-            s_logger.error("associate ip test failed with errorCode: "
-                           + errorInfo.get("errorCode") + " and description: "
-                           + errorInfo.get("description"));
+            Map<String, String> errorInfo = TestClientWithAPI.getSingleValueFromXML(is, new String[] {"errorcode", "description"});
+            s_logger.error("associate ip test failed with errorCode: " + errorInfo.get("errorCode") + " and description: " + errorInfo.get("description"));
         } else {
-            s_logger.error("internal error processing request: "
-                           + method.getStatusText());
+            s_logger.error("internal error processing request: " + method.getStatusText());
         }
 
     }
@@ -190,28 +180,22 @@ public class User {
 
         String encodedUsername = URLEncoder.encode(this.userName, "UTF-8");
         String encodedPassword = URLEncoder.encode(this.password, "UTF-8");
-        String url = server + "?command=register&username=" + encodedUsername
-                     + "&domainid=1";
+        String url = server + "?command=register&username=" + encodedUsername + "&domainid=1";
         s_logger.info("registering: " + this.userName + " with url " + url);
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(url);
         int responseCode = client.executeMethod(method);
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
-            Map<String, String> requestKeyValues = TestClientWithAPI.getSingleValueFromXML(is,
-                new String[] {"apikey", "secretkey"});
+            Map<String, String> requestKeyValues = TestClientWithAPI.getSingleValueFromXML(is, new String[] {"apikey", "secretkey"});
             this.setApiKey(requestKeyValues.get("apikey"));
             this.setSecretKey(requestKeyValues.get("secretkey"));
         } else if (responseCode == 500) {
             InputStream is = method.getResponseBodyAsStream();
-            Map<String, String> errorInfo = TestClientWithAPI.getSingleValueFromXML(is,
-                new String[] {"errorcode", "description"});
-            s_logger.error("registration failed with errorCode: "
-                           + errorInfo.get("errorCode") + " and description: "
-                           + errorInfo.get("description"));
+            Map<String, String> errorInfo = TestClientWithAPI.getSingleValueFromXML(is, new String[] {"errorcode", "description"});
+            s_logger.error("registration failed with errorCode: " + errorInfo.get("errorCode") + " and description: " + errorInfo.get("description"));
         } else {
-            s_logger.error("internal error processing request: "
-                           + method.getStatusText());
+            s_logger.error("internal error processing request: " + method.getStatusText());
         }
     }
 

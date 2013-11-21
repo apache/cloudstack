@@ -27,6 +27,13 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VBD;
+import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VM;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkUsageAnswer;
@@ -43,12 +50,6 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VDI;
-import com.xensource.xenapi.VM;
 
 @Local(value = ServerResource.class)
 public class XcpOssResource extends CitrixResourceBase {
@@ -83,6 +84,7 @@ public class XcpOssResource extends CitrixResourceBase {
         }
     }
 
+    @Override
     protected VBD createPatchVbd(Connection conn, String vmName, VM vm) throws XmlRpcException, XenAPIException {
         if (_host.localSRuuid != null) {
             //create an iso vdi on it

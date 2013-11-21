@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.network.dao;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -29,6 +26,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * ExternalFirewallDeviceVO contains information of a external firewall device (Juniper SRX) added into a deployment
@@ -97,6 +97,7 @@ public class ExternalFirewallDeviceVO implements InternalIdentity, Identity {
         this.uuid = UUID.randomUUID().toString();
     }
 
+    @Override
     public long getId() {
         return id;
     }
@@ -149,6 +150,7 @@ public class ExternalFirewallDeviceVO implements InternalIdentity, Identity {
         isDedicatedDevice = isDedicated;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }

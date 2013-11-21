@@ -142,7 +142,8 @@ public class VpnConnectionSetType implements org.apache.axis2.databinding.ADBBea
     }
 
     public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+        org.apache.axis2.databinding.ADBException {
         serialize(parentQName, factory, xmlWriter, false);
     }
 
@@ -208,9 +209,8 @@ public class VpnConnectionSetType implements org.apache.axis2.databinding.ADBBea
     /**
      * Util method to write an attribute with the ns prefix
      */
-    private void
-        writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+    private void writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue,
+        javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
         if (xmlWriter.getPrefix(namespace) == null) {
             xmlWriter.writeNamespace(prefix, namespace);
             xmlWriter.setPrefix(prefix, namespace);
@@ -463,8 +463,8 @@ public class VpnConnectionSetType implements org.apache.axis2.databinding.ADBBea
                     }
                     // call the converter utility  to convert and set the array
 
-                    object.setItem((com.amazon.ec2.VpnConnectionType[])org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(com.amazon.ec2.VpnConnectionType.class,
-                        list1));
+                    object.setItem((com.amazon.ec2.VpnConnectionType[])org.apache.axis2.databinding.utils.ConverterUtil.convertToArray(
+                        com.amazon.ec2.VpnConnectionType.class, list1));
 
                 }  // End of if for expected property start element
 

@@ -17,7 +17,6 @@
 package org.apache.cloudstack.framework.config.dao;
 
 import java.util.Map;
-import java.util.List;
 
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 

@@ -27,8 +27,6 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
@@ -36,6 +34,9 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
 import com.cloud.event.dao.EventDao;
 import com.cloud.server.ManagementServerImpl;
@@ -63,6 +64,7 @@ public class EventControlsUnitTest extends TestCase {
         when(_eventDao.listToArchiveOrDeleteEvents(anyList(), anyString(), any(Date.class), any(Date.class), anyList())).thenReturn(_events);
     }
 
+    @Override
     @After
     public void tearDown() throws Exception {
     }

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -25,8 +27,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteCustomerGateway;
@@ -40,7 +40,11 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = Site2SiteCustomerGatewayResponse.class, required = true, description = "id of customer gateway")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = Site2SiteCustomerGatewayResponse.class,
+               required = true,
+               description = "id of customer gateway")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "name of this customer gateway")
@@ -61,10 +65,16 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ESP_POLICY, type = CommandType.STRING, required = true, description = "ESP policy of the customer gateway")
     private String espPolicy;
 
-    @Parameter(name = ApiConstants.IKE_LIFETIME, type = CommandType.LONG, required = false, description = "Lifetime of phase 1 VPN connection to the customer gateway, in seconds")
+    @Parameter(name = ApiConstants.IKE_LIFETIME,
+               type = CommandType.LONG,
+               required = false,
+               description = "Lifetime of phase 1 VPN connection to the customer gateway, in seconds")
     private Long ikeLifetime;
 
-    @Parameter(name = ApiConstants.ESP_LIFETIME, type = CommandType.LONG, required = false, description = "Lifetime of phase 2 VPN connection to the customer gateway, in seconds")
+    @Parameter(name = ApiConstants.ESP_LIFETIME,
+               type = CommandType.LONG,
+               required = false,
+               description = "Lifetime of phase 2 VPN connection to the customer gateway, in seconds")
     private Long espLifetime;
 
     @Parameter(name = ApiConstants.DPD, type = CommandType.BOOLEAN, required = false, description = "If DPD is enabled for VPN connection")
@@ -77,7 +87,7 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
                type = CommandType.UUID,
                entityType = DomainResponse.class,
                description = "the domain ID associated with the gateway. If used with the account parameter returns the "
-                             + "gateway associated with the account for the specified domain.")
+                   + "gateway associated with the account for the specified domain.")
     private Long domainId;
 
     /////////////////////////////////////////////////////

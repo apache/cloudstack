@@ -24,10 +24,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.consoleproxy.util.Logger;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+
+import com.cloud.consoleproxy.util.Logger;
 
 public class ConsoleProxyResourceHandler implements HttpHandler {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyResourceHandler.class);
@@ -58,6 +59,7 @@ public class ConsoleProxyResourceHandler implements HttpHandler {
     public ConsoleProxyResourceHandler() {
     }
 
+    @Override
     public void handle(HttpExchange t) throws IOException {
         try {
             if (s_logger.isDebugEnabled())

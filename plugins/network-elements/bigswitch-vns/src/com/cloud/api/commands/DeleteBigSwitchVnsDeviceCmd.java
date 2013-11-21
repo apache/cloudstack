@@ -65,7 +65,8 @@ public class DeleteBigSwitchVnsDeviceCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             boolean result = _bigswitchVnsElementService.deleteBigSwitchVnsDevice(this);
             if (result) {

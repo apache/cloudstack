@@ -68,7 +68,6 @@ import com.cloud.host.Host;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.ExecutionException;
@@ -248,8 +247,8 @@ public class JuniperSrxResource implements ServerResource {
         private String icmpCode;
         private final String countName;
 
-        private FirewallFilterTerm(String name, List<String> sourceCidrs, String destIp, String protocol, Integer startPort, Integer endPort, Integer icmpType, Integer icmpCode,
-                String countName) {
+        private FirewallFilterTerm(String name, List<String> sourceCidrs, String destIp, String protocol, Integer startPort, Integer endPort, Integer icmpType,
+                Integer icmpCode, String countName) {
             this.name = name;
             this.sourceCidrs = sourceCidrs;
             this.destIp = destIp;
@@ -840,7 +839,8 @@ public class JuniperSrxResource implements ServerResource {
                 for (String guestVlan : guestVlans) {
                     List<FirewallRuleTO> activeRulesForGuestNw = activeRules.get(guestVlan);
 
-                    removeEgressSecurityPolicyAndApplications(SecurityPolicyType.SECURITYPOLICY_EGRESS, guestVlan, extractCidrs(activeRulesForGuestNw), defaultEgressPolicy);
+                    removeEgressSecurityPolicyAndApplications(SecurityPolicyType.SECURITYPOLICY_EGRESS, guestVlan, extractCidrs(activeRulesForGuestNw),
+                        defaultEgressPolicy);
                     if (activeRulesForGuestNw.size() > 0 && type == FirewallRule.FirewallRuleType.User) {
                         addEgressSecurityPolicyAndApplications(SecurityPolicyType.SECURITYPOLICY_EGRESS, guestVlan, extractApplications(activeRulesForGuestNw),
                             extractCidrs(activeRulesForGuestNw), defaultEgressPolicy);
@@ -873,9 +873,10 @@ public class JuniperSrxResource implements ServerResource {
                         endPort = rule.getSrcPortRange()[1];
                     }
 
-                    FirewallFilterTerm term = new FirewallFilterTerm(genIpIdentifier(rule.getSrcIp()) + "-" + String.valueOf(rule.getId()), rule.getSourceCidrList(),
-                        rule.getSrcIp(), rule.getProtocol(), startPort, endPort, rule.getIcmpType(), rule.getIcmpCode(), genIpIdentifier(rule.getSrcIp()) +
-                                                                                                                         _usageFilterIPInput.getCounterIdentifier());
+                    FirewallFilterTerm term =
+                        new FirewallFilterTerm(genIpIdentifier(rule.getSrcIp()) + "-" + String.valueOf(rule.getId()), rule.getSourceCidrList(), rule.getSrcIp(),
+                            rule.getProtocol(), startPort, endPort, rule.getIcmpType(), rule.getIcmpCode(), genIpIdentifier(rule.getSrcIp()) +
+                                _usageFilterIPInput.getCounterIdentifier());
                     if (!rule.revoked()) {
                         manageProxyArp(SrxCommand.ADD, getVlanTag(rule.getSrcVlanTag()), rule.getSrcIp());
                         manageFirewallFilter(SrxCommand.ADD, term, _publicZoneInputFilterName);
@@ -986,7 +987,7 @@ public class JuniperSrxResource implements ServerResource {
 
             if (privateVlanTag != null) {
                 s_logger.warn("Found a static NAT rule (" + staticNatRulePublicIp + " <-> " + staticNatRulePrivateIp + ") for guest VLAN with tag " + privateVlanTag +
-                              " that is active when the guest network is being removed. Removing rule...");
+                    " that is active when the guest network is being removed. Removing rule...");
             }
 
             removeStaticNatRule(publicVlanTag, staticNatRulePublicIp, staticNatRulePrivateIp);
@@ -1242,8 +1243,8 @@ public class JuniperSrxResource implements ServerResource {
 
         String srcPortRange = srcPortStart + "-" + srcPortEnd;
         String destPortRange = destPortStart + "-" + destPortEnd;
-        s_logger.debug("Added destination NAT rule for protocol " + protocol + ", public IP " + publicIp + ", private IP " + privateIp + ", source port range " + srcPortRange +
-                       ", and dest port range " + destPortRange);
+        s_logger.debug("Added destination NAT rule for protocol " + protocol + ", public IP " + publicIp + ", private IP " + privateIp + ", source port range " +
+            srcPortRange + ", and dest port range " + destPortRange);
     }
 
     private void removeDestinationNatRule(Long publicVlanTag, String publicIp, String privateIp, int srcPort, int destPort) throws ExecutionException {
@@ -1254,7 +1255,8 @@ public class JuniperSrxResource implements ServerResource {
 
         manageAddressBookEntry(SrxCommand.DELETE, _privateZone, privateIp, null);
 
-        s_logger.debug("Removed destination NAT rule for public IP " + publicIp + ", private IP " + privateIp + ", source port " + srcPort + ", and dest port " + destPort);
+        s_logger.debug("Removed destination NAT rule for public IP " + publicIp + ", private IP " + privateIp + ", source port " + srcPort + ", and dest port " +
+            destPort);
     }
 
     private void removeDestinationNatRules(Long privateVlanTag, Map<String, Long> publicVlanTags, List<String[]> destNatRules) throws ExecutionException {
@@ -1270,8 +1272,8 @@ public class JuniperSrxResource implements ServerResource {
             }
 
             if (privateVlanTag != null) {
-                s_logger.warn("Found a destination NAT rule (public IP: " + publicIp + ", private IP: " + privateIp + ", public port: " + srcPort + ", private port: " + destPort +
-                              ") for guest VLAN with tag " + privateVlanTag + " that is active when the guest network is being removed. Removing rule...");
+                s_logger.warn("Found a destination NAT rule (public IP: " + publicIp + ", private IP: " + privateIp + ", public port: " + srcPort + ", private port: " +
+                    destPort + ") for guest VLAN with tag " + privateVlanTag + " that is active when the guest network is being removed. Removing rule...");
             }
 
             removeDestinationNatRule(publicVlanTag, publicIp, privateIp, srcPort, destPort);
@@ -2161,7 +2163,8 @@ public class JuniperSrxResource implements ServerResource {
      */
 
     private String genDestinationNatRuleName(String publicIp, String privateIp, long srcPort, long destPort) {
-        return "destnatrule-" + String.valueOf(genObjectName(publicIp, privateIp, String.valueOf(srcPort), String.valueOf(destPort)).hashCode()).replaceAll("[^a-zA-Z0-9]", "");
+        return "destnatrule-" +
+            String.valueOf(genObjectName(publicIp, privateIp, String.valueOf(srcPort), String.valueOf(destPort)).hashCode()).replaceAll("[^a-zA-Z0-9]", "");
     }
 
     private boolean manageDestinationNatRule(SrxCommand command, String publicIp, String privateIp, long srcPort, long destPort) throws ExecutionException {
@@ -2185,7 +2188,8 @@ public class JuniperSrxResource implements ServerResource {
                 }
 
                 if (!manageDestinationNatPool(SrxCommand.CHECK_IF_EXISTS, privateIp, destPort)) {
-                    throw new ExecutionException("The destination NAT pool corresponding to private IP: " + privateIp + " and destination port: " + destPort + " does not exist.");
+                    throw new ExecutionException("The destination NAT pool corresponding to private IP: " + privateIp + " and destination port: " + destPort +
+                        " does not exist.");
                 }
 
                 xml = SrxXml.DEST_NAT_RULE_ADD.getXml();
@@ -2197,8 +2201,8 @@ public class JuniperSrxResource implements ServerResource {
                 xml = replaceXmlValue(xml, "pool-name", poolName);
 
                 if (!sendRequestAndCheckResponse(command, xml)) {
-                    throw new ExecutionException("Failed to add destination NAT rule from public IP " + publicIp + ", public port " + srcPort + ", private IP " + privateIp +
-                                                 ", and private port " + destPort);
+                    throw new ExecutionException("Failed to add destination NAT rule from public IP " + publicIp + ", public port " + srcPort + ", private IP " +
+                        privateIp + ", and private port " + destPort);
                 } else {
                     return true;
                 }
@@ -2215,8 +2219,8 @@ public class JuniperSrxResource implements ServerResource {
                 xml = replaceXmlValue(xml, "rule-name", ruleName);
 
                 if (!sendRequestAndCheckResponse(command, xml)) {
-                    throw new ExecutionException("Failed to delete destination NAT rule from public IP " + publicIp + ", public port " + srcPort + ", private IP " + privateIp +
-                                                 ", and private port " + destPort);
+                    throw new ExecutionException("Failed to delete destination NAT rule from public IP " + publicIp + ", public port " + srcPort + ", private IP " +
+                        privateIp + ", and private port " + destPort);
                 } else {
                     return true;
                 }
@@ -2228,7 +2232,8 @@ public class JuniperSrxResource implements ServerResource {
 
     }
 
-    private List<String[]> getDestNatRules(RuleMatchCondition condition, String publicIp, String privateIp, String privateGateway, Long privateCidrSize) throws ExecutionException {
+    private List<String[]> getDestNatRules(RuleMatchCondition condition, String publicIp, String privateIp, String privateGateway, Long privateCidrSize)
+        throws ExecutionException {
         List<String[]> destNatRules = new ArrayList<String[]>();
 
         String xmlRequest = SrxXml.DEST_NAT_RULE_GETALL.getXml();
@@ -2961,7 +2966,8 @@ public class JuniperSrxResource implements ServerResource {
         return true;
     }
 
-    private boolean removeEgressSecurityPolicyAndApplications(SecurityPolicyType type, String guestVlan, List<String> cidrs, boolean defaultEgressAction) throws ExecutionException {
+    private boolean removeEgressSecurityPolicyAndApplications(SecurityPolicyType type, String guestVlan, List<String> cidrs, boolean defaultEgressAction)
+        throws ExecutionException {
         if (!manageSecurityPolicy(type, SrxCommand.CHECK_IF_EXISTS, null, null, guestVlan, null, cidrs, null, defaultEgressAction)) {
             return true;
         }
@@ -2998,8 +3004,8 @@ public class JuniperSrxResource implements ServerResource {
         return true;
     }
 
-    private boolean addEgressSecurityPolicyAndApplications(SecurityPolicyType type, String guestVlan, List<Object[]> applications, List<String> cidrs, boolean defaultEgressAction)
-        throws ExecutionException {
+    private boolean addEgressSecurityPolicyAndApplications(SecurityPolicyType type, String guestVlan, List<Object[]> applications, List<String> cidrs,
+        boolean defaultEgressAction) throws ExecutionException {
         // Add all necessary applications
         List<String> applicationNames = new ArrayList<String>();
         for (Object[] application : applications) {

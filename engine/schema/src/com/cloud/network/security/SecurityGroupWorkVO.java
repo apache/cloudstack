@@ -29,8 +29,9 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "op_nwgrp_work")
@@ -64,10 +65,12 @@ public class SecurityGroupWorkVO implements SecurityGroupWork, InternalIdentity 
     protected SecurityGroupWorkVO() {
     }
 
+    @Override
     public long getId() {
         return id;
     }
 
+    @Override
     public Long getInstanceId() {
         return instanceId;
     }
@@ -102,10 +105,12 @@ public class SecurityGroupWorkVO implements SecurityGroupWork, InternalIdentity 
         return dateTaken;
     }
 
+    @Override
     public void setStep(Step step) {
         this.step = step;
     }
 
+    @Override
     public Step getStep() {
         return step;
     }
@@ -114,6 +119,7 @@ public class SecurityGroupWorkVO implements SecurityGroupWork, InternalIdentity 
         dateTaken = date;
     }
 
+    @Override
     public Long getLogsequenceNumber() {
         return logsequenceNumber;
     }

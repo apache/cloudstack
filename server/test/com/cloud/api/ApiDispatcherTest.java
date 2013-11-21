@@ -19,12 +19,7 @@
 package com.cloud.api;
 
 import java.util.HashMap;
-import java.util.Map;
 
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.context.CallContext;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -33,6 +28,11 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -61,8 +61,8 @@ public class ApiDispatcherTest {
         boolean boolparam1;
 
         @Override
-        public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
-            NetworkRuleConflictException {
+        public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+            ResourceAllocationException, NetworkRuleConflictException {
             // well documented nothing
         }
 

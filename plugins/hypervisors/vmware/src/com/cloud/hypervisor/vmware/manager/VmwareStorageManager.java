@@ -24,7 +24,9 @@ import com.cloud.agent.api.CreateVMSnapshotCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
-import com.cloud.agent.api.storage.*;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.CreateEntityDownloadURLCommand;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 
 public interface VmwareStorageManager {
     Answer execute(VmwareHostService hostService, PrimaryStorageDownloadCommand cmd);

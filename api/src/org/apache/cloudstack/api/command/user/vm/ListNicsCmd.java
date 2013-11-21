@@ -39,7 +39,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.vm.Nic;
-import com.cloud.vm.NicSecondaryIp;
 
 @APICommand(name = "listNics", description = "list the vm nics  IP to NIC", responseObject = NicResponse.class)
 public class ListNicsCmd extends BaseListCmd {

@@ -40,8 +40,8 @@ import com.cloud.vm.VirtualMachineProfile;
 public interface IpAddressManager {
     static final String UseSystemPublicIpsCK = "use.system.public.ips";
     static final ConfigKey<Boolean> UseSystemPublicIps = new ConfigKey<Boolean>("Advanced", Boolean.class, UseSystemPublicIpsCK, "true",
-        "If true, when account has dedicated public ip range(s), once the ips dedicated to the account have been consumed ips will be acquired from the system pool", true,
-        ConfigKey.Scope.Account);
+        "If true, when account has dedicated public ip range(s), once the ips dedicated to the account have been consumed ips will be acquired from the system pool",
+        true, ConfigKey.Scope.Account);
 
     /**
      * Assigns a new public ip address.
@@ -73,7 +73,8 @@ public interface IpAddressManager {
      */
     boolean disassociatePublicIpAddress(long id, long userId, Account caller);
 
-    boolean applyRules(List<? extends FirewallRule> rules, FirewallRule.Purpose purpose, NetworkRuleApplier applier, boolean continueOnError) throws ResourceUnavailableException;
+    boolean applyRules(List<? extends FirewallRule> rules, FirewallRule.Purpose purpose, NetworkRuleApplier applier, boolean continueOnError)
+        throws ResourceUnavailableException;
 
     /**
      * @throws ResourceAllocationException TODO
@@ -93,7 +94,8 @@ public interface IpAddressManager {
 
     boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException;
 
-    boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError, List<? extends PublicIpAddress> publicIps) throws ResourceUnavailableException;
+    boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError, List<? extends PublicIpAddress> publicIps)
+        throws ResourceUnavailableException;
 
     IPAddressVO markIpAsUnavailable(long addrId);
 
@@ -125,13 +127,13 @@ public interface IpAddressManager {
     IPAddressVO associateIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException,
         InsufficientAddressCapacityException, ConcurrentOperationException;
 
-    IpAddress allocatePortableIp(Account ipOwner, Account caller, long dcId, Long networkId, Long vpcID) throws ConcurrentOperationException, ResourceAllocationException,
-        InsufficientAddressCapacityException;
+    IpAddress allocatePortableIp(Account ipOwner, Account caller, long dcId, Long networkId, Long vpcID) throws ConcurrentOperationException,
+        ResourceAllocationException, InsufficientAddressCapacityException;
 
     boolean releasePortableIpAddress(long addrId);
 
-    IPAddressVO associatePortableIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException,
-        InsufficientAddressCapacityException, ConcurrentOperationException;
+    IPAddressVO associatePortableIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException,
+        ResourceUnavailableException, InsufficientAddressCapacityException, ConcurrentOperationException;
 
     IPAddressVO disassociatePortableIPToGuestNetwork(long ipAddrId, long networkId) throws ResourceAllocationException, ResourceUnavailableException,
         InsufficientAddressCapacityException, ConcurrentOperationException;
@@ -159,11 +161,11 @@ public interface IpAddressManager {
     PublicIp assignDedicateIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId, boolean isSourceNat) throws ConcurrentOperationException,
         InsufficientAddressCapacityException;
 
-    IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId, DataCenter zone) throws ConcurrentOperationException, ResourceAllocationException,
-        InsufficientAddressCapacityException;
+    IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId, DataCenter zone) throws ConcurrentOperationException,
+        ResourceAllocationException, InsufficientAddressCapacityException;
 
-    PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem)
-        throws InsufficientAddressCapacityException;
+    PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp,
+        boolean isSystem) throws InsufficientAddressCapacityException;
 
     int getRuleCountForIp(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state);
 

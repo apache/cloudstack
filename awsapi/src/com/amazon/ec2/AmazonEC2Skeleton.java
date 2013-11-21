@@ -56,7 +56,8 @@ public class AmazonEC2Skeleton implements AmazonEC2SkeletonInterface {
                                  * @param resetNetworkInterfaceAttribute4
      */
 
-    public com.amazon.ec2.ResetNetworkInterfaceAttributeResponse resetNetworkInterfaceAttribute(com.amazon.ec2.ResetNetworkInterfaceAttribute resetNetworkInterfaceAttribute4) {
+    public com.amazon.ec2.ResetNetworkInterfaceAttributeResponse resetNetworkInterfaceAttribute(
+        com.amazon.ec2.ResetNetworkInterfaceAttribute resetNetworkInterfaceAttribute4) {
         //TODO : fill this with the necessary business logic
         throw new java.lang.UnsupportedOperationException("Please implement " + this.getClass().getName() + "#resetNetworkInterfaceAttribute");
     }
@@ -320,7 +321,8 @@ public class AmazonEC2Skeleton implements AmazonEC2SkeletonInterface {
                                  * @param authorizeSecurityGroupIngress52
      */
 
-    public com.amazon.ec2.AuthorizeSecurityGroupIngressResponse authorizeSecurityGroupIngress(com.amazon.ec2.AuthorizeSecurityGroupIngress authorizeSecurityGroupIngress52) {
+    public com.amazon.ec2.AuthorizeSecurityGroupIngressResponse
+        authorizeSecurityGroupIngress(com.amazon.ec2.AuthorizeSecurityGroupIngress authorizeSecurityGroupIngress52) {
         //TODO : fill this with the necessary business logic
         throw new java.lang.UnsupportedOperationException("Please implement " + this.getClass().getName() + "#authorizeSecurityGroupIngress");
     }
@@ -574,7 +576,8 @@ public class AmazonEC2Skeleton implements AmazonEC2SkeletonInterface {
                                  * @param createReservedInstancesListing98
      */
 
-    public com.amazon.ec2.CreateReservedInstancesListingResponse createReservedInstancesListing(com.amazon.ec2.CreateReservedInstancesListing createReservedInstancesListing98) {
+    public com.amazon.ec2.CreateReservedInstancesListingResponse createReservedInstancesListing(
+        com.amazon.ec2.CreateReservedInstancesListing createReservedInstancesListing98) {
         //TODO : fill this with the necessary business logic
         throw new java.lang.UnsupportedOperationException("Please implement " + this.getClass().getName() + "#createReservedInstancesListing");
     }
@@ -849,7 +852,8 @@ public class AmazonEC2Skeleton implements AmazonEC2SkeletonInterface {
                                  * @param cancelReservedInstancesListing148
      */
 
-    public com.amazon.ec2.CancelReservedInstancesListingResponse cancelReservedInstancesListing(com.amazon.ec2.CancelReservedInstancesListing cancelReservedInstancesListing148) {
+    public com.amazon.ec2.CancelReservedInstancesListingResponse cancelReservedInstancesListing(
+        com.amazon.ec2.CancelReservedInstancesListing cancelReservedInstancesListing148) {
         //TODO : fill this with the necessary business logic
         throw new java.lang.UnsupportedOperationException("Please implement " + this.getClass().getName() + "#cancelReservedInstancesListing");
     }
@@ -993,7 +997,8 @@ public class AmazonEC2Skeleton implements AmazonEC2SkeletonInterface {
                                  * @param createSpotDatafeedSubscription174
      */
 
-    public com.amazon.ec2.CreateSpotDatafeedSubscriptionResponse createSpotDatafeedSubscription(com.amazon.ec2.CreateSpotDatafeedSubscription createSpotDatafeedSubscription174) {
+    public com.amazon.ec2.CreateSpotDatafeedSubscriptionResponse createSpotDatafeedSubscription(
+        com.amazon.ec2.CreateSpotDatafeedSubscription createSpotDatafeedSubscription174) {
         //TODO : fill this with the necessary business logic
         throw new java.lang.UnsupportedOperationException("Please implement " + this.getClass().getName() + "#createSpotDatafeedSubscription");
     }
@@ -1027,8 +1032,8 @@ public class AmazonEC2Skeleton implements AmazonEC2SkeletonInterface {
                                  * @param modifyNetworkInterfaceAttribute180
      */
 
-    public com.amazon.ec2.ModifyNetworkInterfaceAttributeResponse
-        modifyNetworkInterfaceAttribute(com.amazon.ec2.ModifyNetworkInterfaceAttribute modifyNetworkInterfaceAttribute180) {
+    public com.amazon.ec2.ModifyNetworkInterfaceAttributeResponse modifyNetworkInterfaceAttribute(
+        com.amazon.ec2.ModifyNetworkInterfaceAttribute modifyNetworkInterfaceAttribute180) {
         //TODO : fill this with the necessary business logic
         throw new java.lang.UnsupportedOperationException("Please implement " + this.getClass().getName() + "#modifyNetworkInterfaceAttribute");
     }
@@ -1525,7 +1530,8 @@ public class AmazonEC2Skeleton implements AmazonEC2SkeletonInterface {
                                  * @param deleteSpotDatafeedSubscription270
      */
 
-    public com.amazon.ec2.DeleteSpotDatafeedSubscriptionResponse deleteSpotDatafeedSubscription(com.amazon.ec2.DeleteSpotDatafeedSubscription deleteSpotDatafeedSubscription270) {
+    public com.amazon.ec2.DeleteSpotDatafeedSubscriptionResponse deleteSpotDatafeedSubscription(
+        com.amazon.ec2.DeleteSpotDatafeedSubscription deleteSpotDatafeedSubscription270) {
         //TODO : fill this with the necessary business logic
         throw new java.lang.UnsupportedOperationException("Please implement " + this.getClass().getName() + "#deleteSpotDatafeedSubscription");
     }

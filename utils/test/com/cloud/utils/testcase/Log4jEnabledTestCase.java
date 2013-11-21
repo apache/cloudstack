@@ -21,11 +21,12 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Random;
 
-import org.apache.log4j.xml.DOMConfigurator;
-
 import junit.framework.TestCase;
 
+import org.apache.log4j.xml.DOMConfigurator;
+
 public class Log4jEnabledTestCase extends TestCase {
+    @Override
     protected void setUp() {
         URL configUrl = System.class.getResource("/conf/log4j-cloud.xml");
         if (configUrl != null) {

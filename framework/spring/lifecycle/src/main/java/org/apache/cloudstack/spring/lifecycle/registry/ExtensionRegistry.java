@@ -27,12 +27,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanNameAware;
+
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
 import com.cloud.utils.component.Registry;
 
@@ -58,23 +59,23 @@ public class ExtensionRegistry implements Registry<Object>, Configurable, BeanNa
 
     @Override
     public boolean register(Object item) {
-        if ( registered.contains(item) )
+        if (registered.contains(item))
             return false;
 
         String[] order = new String[] {};
         Set<String> exclude = new HashSet<String>();
 
-        if ( orderConfigKeyObj != null ) {
+        if (orderConfigKeyObj != null) {
             Object value = orderConfigKeyObj.value();
-            if ( value != null && value.toString().trim().length() > 0 ) {
+            if (value != null && value.toString().trim().length() > 0) {
                 order = value.toString().trim().split("\\s*,\\s*");
             }
         }
 
-        if ( excludeKeyObj != null ) {
+        if (excludeKeyObj != null) {
             Object value = excludeKeyObj.value();
-            if ( value != null && value.toString().trim().length() > 0 ) {
-                for ( String e : value.toString().trim().split("\\s*,\\s*") ) {
+            if (value != null && value.toString().trim().length() > 0) {
+                for (String e : value.toString().trim().split("\\s*,\\s*")) {
                     exclude.add(e);
                 }
             }
@@ -82,32 +83,32 @@ public class ExtensionRegistry implements Registry<Object>, Configurable, BeanNa
 
         String name = RegistryUtils.getName(item);
 
-        if ( name != null && exclude.size() > 0 && exclude.contains(name) ) {
+        if (name != null && exclude.size() > 0 && exclude.contains(name)) {
             return false;
         }
 
-        if ( name == null && order.length > 0 ) {
+        if (name == null && order.length > 0) {
             throw new RuntimeException("getName() is null for [" + item + "]");
         }
 
         int i = 0;
-        for ( String orderTest : order ) {
-            if ( orderTest.equals(name) ) {
+        for (String orderTest : order) {
+            if (orderTest.equals(name)) {
                 registered.add(i, item);
                 i = -1;
                 break;
             }
 
-            if ( registered.size() <= i ) {
+            if (registered.size() <= i) {
                 break;
             }
 
-            if ( RegistryUtils.getName(registered.get(i)).equals(orderTest) ) {
+            if (RegistryUtils.getName(registered.get(i)).equals(orderTest)) {
                 i++;
             }
         }
 
-        if ( i != -1 ) {
+        if (i != -1) {
             registered.add(item);
         }
 
@@ -135,20 +136,18 @@ public class ExtensionRegistry implements Registry<Object>, Configurable, BeanNa
     public ConfigKey<?>[] getConfigKeys() {
         List<ConfigKey<String>> result = new ArrayList<ConfigKey<String>>();
 
-        if ( orderConfigKey != null && orderConfigKeyObj == null ) {
-            orderConfigKeyObj = new ConfigKey<String>("Advanced", String.class, orderConfigKey, orderConfigDefault,
-                    "The order of precedence for the extensions", false);
+        if (orderConfigKey != null && orderConfigKeyObj == null) {
+            orderConfigKeyObj = new ConfigKey<String>("Advanced", String.class, orderConfigKey, orderConfigDefault, "The order of precedence for the extensions", false);
         }
 
-        if ( orderConfigKeyObj != null )
+        if (orderConfigKeyObj != null)
             result.add(orderConfigKeyObj);
 
-        if ( excludeKey != null && excludeKeyObj == null ) {
-            excludeKeyObj = new ConfigKey<String>("Advanced", String.class, excludeKey, excludeDefault,
-                    "Extensions to exclude from being registered", false);
+        if (excludeKey != null && excludeKeyObj == null) {
+            excludeKeyObj = new ConfigKey<String>("Advanced", String.class, excludeKey, excludeDefault, "Extensions to exclude from being registered", false);
         }
 
-        if ( excludeKeyObj != null ) {
+        if (excludeKeyObj != null) {
             result.add(excludeKeyObj);
         }
 
@@ -157,21 +156,21 @@ public class ExtensionRegistry implements Registry<Object>, Configurable, BeanNa
 
     @PostConstruct
     public void init() {
-        if ( name == null ) {
-            for ( String part : beanName.replaceAll("([A-Z])", " $1").split("\\s+") ) {
-                part = StringUtils.capitalize(part.toLowerCase());;
+        if (name == null) {
+            for (String part : beanName.replaceAll("([A-Z])", " $1").split("\\s+")) {
+                part = StringUtils.capitalize(part.toLowerCase());
+                ;
 
                 name = name == null ? part : name + " " + part;
             }
         }
 
-        if ( preRegistered != null ) {
-            for ( Object o : preRegistered ) {
+        if (preRegistered != null) {
+            for (Object o : preRegistered) {
                 register(o);
             }
         }
     }
-
 
     public String getOrderConfigKey() {
         return orderConfigKey;

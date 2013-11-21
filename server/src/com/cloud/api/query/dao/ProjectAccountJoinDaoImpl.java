@@ -21,9 +21,9 @@ import java.util.List;
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.projects.ProjectAccount;

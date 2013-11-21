@@ -20,6 +20,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 
 import com.cloud.dc.DataCenter;
@@ -101,8 +102,9 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
         }
 
         if (offering.getTrafficType() == TrafficType.Public) {
-            NetworkVO ntwk = new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.Vlan, offering.getId(), State.Setup, plan.getDataCenterId(),
-                plan.getPhysicalNetworkId());
+            NetworkVO ntwk =
+                new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.Vlan, offering.getId(), State.Setup, plan.getDataCenterId(),
+                    plan.getPhysicalNetworkId());
             return ntwk;
         } else {
             return null;
@@ -142,8 +144,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
-        ConcurrentOperationException {
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+        InsufficientAddressCapacityException, ConcurrentOperationException {
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
 

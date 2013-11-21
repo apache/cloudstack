@@ -21,13 +21,13 @@ import java.util.Set;
 
 public class RdpState {
 
-  public long serverShareId;
-  public int serverUserChannelId;
+    public long serverShareId;
+    public int serverUserChannelId;
 
-  public Set<Integer> channels=new HashSet<Integer>();
+    public Set<Integer> channels = new HashSet<Integer>();
 
-  public void channelJoined(int actualChannel) {
-    channels.add(actualChannel);
-  }
+    public void channelJoined(int actualChannel) {
+        channels.add(actualChannel);
+    }
 
 }

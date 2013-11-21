@@ -46,8 +46,8 @@ public abstract class AbstractBeanCollector extends AbstractSmartLifeCycle imple
 
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-        for ( Class<?> typeClass : typeClasses ) {
-            if ( typeClass.isAssignableFrom(bean.getClass()) ) {
+        for (Class<?> typeClass : typeClasses) {
+            if (typeClass.isAssignableFrom(bean.getClass())) {
                 doPostProcessBeforeInitialization(bean, beanName);
                 break;
             }
@@ -62,7 +62,7 @@ public abstract class AbstractBeanCollector extends AbstractSmartLifeCycle imple
     protected void doPostProcessAfterInitialization(Object bean, Class<?> typeClass, String beanName) throws BeansException {
         Set<Object> beansOfType = beans.get(typeClass);
 
-        if ( beansOfType == null ) {
+        if (beansOfType == null) {
             beansOfType = new HashSet<Object>();
             beans.put(typeClass, beansOfType);
         }
@@ -72,8 +72,8 @@ public abstract class AbstractBeanCollector extends AbstractSmartLifeCycle imple
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-        for ( Class<?> typeClass : typeClasses ) {
-            if ( typeClass.isAssignableFrom(bean.getClass()) ) {
+        for (Class<?> typeClass : typeClasses) {
+            if (typeClass.isAssignableFrom(bean.getClass())) {
                 doPostProcessAfterInitialization(bean, typeClass, beanName);
             }
         }
@@ -83,23 +83,23 @@ public abstract class AbstractBeanCollector extends AbstractSmartLifeCycle imple
 
     protected <T> Set<T> getBeans(Class<T> typeClass) {
         @SuppressWarnings("unchecked")
-        Set<T> result = (Set<T>) beans.get(typeClass);
+        Set<T> result = (Set<T>)beans.get(typeClass);
 
-        if ( result == null )
+        if (result == null)
             return Collections.emptySet();
 
         return result;
     }
 
     public Class<?> getTypeClass() {
-        if ( typeClasses == null || typeClasses.length == 0 )
+        if (typeClasses == null || typeClasses.length == 0)
             return null;
 
         return typeClasses[0];
     }
 
     public void setTypeClass(Class<?> typeClass) {
-        this.typeClasses = new Class<?>[] { typeClass };
+        this.typeClasses = new Class<?>[] {typeClass};
     }
 
     public Class<?>[] getTypeClasses() {

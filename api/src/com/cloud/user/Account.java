@@ -56,6 +56,7 @@ public interface Account extends ControlledEntity, InternalIdentity, Identity {
 
     public Long getDefaultZoneId();
 
+    @Override
     public String getUuid();
 
     boolean isDefault();

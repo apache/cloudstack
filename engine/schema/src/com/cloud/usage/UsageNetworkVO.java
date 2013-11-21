@@ -58,8 +58,8 @@ public class UsageNetworkVO {
     protected UsageNetworkVO() {
     }
 
-    public UsageNetworkVO(Long accountId, long zoneId, long hostId, String hostType, Long networkId, long bytesSent, long bytesReceived, long aggBytesReceived, long aggBytesSent,
-            long eventTimeMillis) {
+    public UsageNetworkVO(Long accountId, long zoneId, long hostId, String hostType, Long networkId, long bytesSent, long bytesReceived, long aggBytesReceived,
+            long aggBytesSent, long eventTimeMillis) {
         this.accountId = accountId;
         this.zoneId = zoneId;
         this.hostId = hostId;

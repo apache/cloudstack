@@ -16,26 +16,36 @@
 // under the License.
 package com.cloud.api.response;
 
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.ApiResponseGsonHelper;
-import com.cloud.api.ApiServer;
-import com.cloud.utils.encoding.URLEncoder;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.exception.ExceptionProxyObject;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.log4j.Logger;
+
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.response.*;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.CreateCmdResponse;
+import org.apache.cloudstack.api.response.ExceptionResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiResponseGsonHelper;
+import com.cloud.api.ApiServer;
+import com.cloud.utils.encoding.URLEncoder;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.exception.ExceptionProxyObject;
 
 public class ApiResponseSerializer {
     private static final Logger s_logger = Logger.getLogger(ApiResponseSerializer.class.getName());
@@ -99,7 +109,7 @@ public class ApiResponseSerializer {
             } else if (result instanceof SuccessResponse) {
                 sb.append("{ \"success\" : \"").append(((SuccessResponse)result).getSuccess()).append("\"} ");
             } else if (result instanceof ExceptionResponse) {
-                String jsonErrorText = gson.toJson((ExceptionResponse)result);
+                String jsonErrorText = gson.toJson(result);
                 jsonErrorText = unescape(jsonErrorText);
                 sb.append(jsonErrorText);
             } else {

@@ -24,7 +24,6 @@ import org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO;
 
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
-import com.cloud.host.Status;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.db.GenericDao;
@@ -34,7 +33,8 @@ import com.cloud.utils.fsm.StateDao;
  * Data Access Object for server
  *
  */
-public interface EngineHostDao extends GenericDao<EngineHostVO, Long>, StateDao<DataCenterResourceEntity.State, DataCenterResourceEntity.State.Event, DataCenterResourceEntity> {
+public interface EngineHostDao extends GenericDao<EngineHostVO, Long>,
+        StateDao<DataCenterResourceEntity.State, DataCenterResourceEntity.State.Event, DataCenterResourceEntity> {
     long countBy(long clusterId, ResourceState... states);
 
     /**

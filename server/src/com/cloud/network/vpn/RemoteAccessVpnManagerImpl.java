@@ -25,13 +25,14 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;
 import org.apache.cloudstack.api.command.user.vpn.ListVpnUsersCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.domain.DomainVO;
@@ -172,7 +173,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         if (networkId == null && vpcId == null) {
             throw new InvalidParameterValueException("Unable to create remote access vpn for the ipAddress: " + ipAddr.getAddress().addr() +
-                                                     " as ip is not associated with any network or VPC");
+                " as ip is not associated with any network or VPC");
         }
 
         RemoteAccessVpnVO vpnVO = _remoteAccessVpnDao.findByPublicIpAddress(publicIpId);
@@ -239,10 +240,12 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
             @Override
             public RemoteAccessVpn doInTransaction(TransactionStatus status) throws NetworkRuleConflictException {
                 if (vpcId == null) {
-                    _rulesMgr.reservePorts(ipAddr, NetUtils.UDP_PROTO, Purpose.Vpn, openFirewallFinal, caller, NetUtils.VPN_PORT, NetUtils.VPN_L2TP_PORT, NetUtils.VPN_NATT_PORT);
+                    _rulesMgr.reservePorts(ipAddr, NetUtils.UDP_PROTO, Purpose.Vpn, openFirewallFinal, caller, NetUtils.VPN_PORT, NetUtils.VPN_L2TP_PORT,
+                        NetUtils.VPN_NATT_PORT);
                 }
-                RemoteAccessVpnVO vpnVO = new RemoteAccessVpnVO(ipAddr.getAccountId(), ipAddr.getDomainId(), ipAddr.getAssociatedWithNetworkId(), publicIpId, vpcId, range[0],
-                    newIpRange, sharedSecret);
+                RemoteAccessVpnVO vpnVO =
+                    new RemoteAccessVpnVO(ipAddr.getAccountId(), ipAddr.getDomainId(), ipAddr.getAssociatedWithNetworkId(), publicIpId, vpcId, range[0], newIpRange,
+                        sharedSecret);
                 return _remoteAccessVpnDao.persist(vpnVO);
             }
         });
@@ -346,7 +349,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                                     for (FirewallRule vpnFwRule : vpnFwRules) {
                                         _rulesDao.remove(vpnFwRule.getId());
                                         s_logger.debug("Successfully removed firewall rule with ip id=" + vpnFwRule.getSourceIpAddressId() + " and port " +
-                                                       vpnFwRule.getSourcePortStart() + " as a part of vpn cleanup");
+                                            vpnFwRule.getSourcePortStart() + " as a part of vpn cleanup");
                                     }
                                 }
                             }
@@ -475,8 +478,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                         List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpn.getAccountId());
                         for (VpnUserVO user : vpnUsers) {
                             if (user.getState() != VpnUser.State.Revoke) {
-                                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPN_USER_ADD, user.getAccountId(), 0, user.getId(), user.getUsername(), user.getClass()
-                                    .getName(), user.getUuid());
+                                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPN_USER_ADD, user.getAccountId(), 0, user.getId(), user.getUsername(),
+                                    user.getClass().getName(), user.getUuid());
                             }
                         }
                     }
@@ -552,8 +555,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                         @Override
                         public void doInTransactionWithoutResult(TransactionStatus status) {
                             _vpnUsersDao.remove(user.getId());
-                            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername(),
-                                user.getClass().getName(), user.getUuid());
+                            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername(), user.getClass()
+                                .getName(), user.getUuid());
                         }
                     });
                 }
@@ -571,8 +574,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         Account caller = CallContext.current().getCallingAccount();
         List<Long> permittedAccounts = new ArrayList<Long>();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-            cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+            new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -625,9 +628,10 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
             _accountMgr.checkAccess(caller, null, true, publicIp);
         }
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
-            cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
+            new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(),
+            false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();

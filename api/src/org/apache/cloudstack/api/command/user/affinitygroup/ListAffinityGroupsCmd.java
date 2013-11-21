@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.affinitygroup;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -24,7 +26,6 @@ import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.log4j.Logger;
 
 @APICommand(name = "listAffinityGroups", description = "Lists affinity groups", responseObject = AffinityGroupResponse.class)
 public class ListAffinityGroupsCmd extends BaseListAccountResourcesCmd {
@@ -39,7 +40,10 @@ public class ListAffinityGroupsCmd extends BaseListAccountResourcesCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "lists affinity groups by name")
     private String affinityGroupName;
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, description = "lists affinity groups by virtual machine id", entityType = UserVmResponse.class)
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+               type = CommandType.UUID,
+               description = "lists affinity groups by virtual machine id",
+               entityType = UserVmResponse.class)
     private Long virtualMachineId;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, description = "list the affinity group by the id provided", entityType = AffinityGroupResponse.class)
@@ -75,8 +79,9 @@ public class ListAffinityGroupsCmd extends BaseListAccountResourcesCmd {
     @Override
     public void execute() {
 
-        ListResponse<AffinityGroupResponse> response = _queryService.listAffinityGroups(id, affinityGroupName, affinityGroupType, virtualMachineId, this.getAccountName(),
-            this.getDomainId(), this.isRecursive(), this.listAll(), this.getStartIndex(), this.getPageSizeVal());
+        ListResponse<AffinityGroupResponse> response =
+            _queryService.listAffinityGroups(id, affinityGroupName, affinityGroupType, virtualMachineId, this.getAccountName(), this.getDomainId(), this.isRecursive(),
+                this.listAll(), this.getStartIndex(), this.getPageSizeVal());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
 

@@ -25,11 +25,12 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -55,16 +56,18 @@ public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolV
     protected final SearchBuilder<VMTemplateStoragePoolVO> updateStateSearch;
 
     protected static final String UPDATE_TEMPLATE_HOST_REF = "UPDATE template_spool_ref SET download_state = ?, download_pct= ?, last_updated = ? "
-                                                             + ", error_str = ?, local_path = ?, job_id = ? " + "WHERE pool_id = ? and template_id = ?";
+        + ", error_str = ?, local_path = ?, job_id = ? " + "WHERE pool_id = ? and template_id = ?";
 
     protected static final String DOWNLOADS_STATE_DC = "SELECT * FROM template_spool_ref t, storage_pool p where t.pool_id = p.id and p.data_center_id=? "
-                                                       + " and t.template_id=? and t.download_state = ?";
+        + " and t.template_id=? and t.download_state = ?";
 
-    protected static final String DOWNLOADS_STATE_DC_POD = "SELECT * FROM template_spool_ref tp, storage_pool_host_ref ph, host h where tp.pool_id = ph.pool_id and ph.host_id = h.id and h.data_center_id=? and h.pod_id=? "
-                                                           + " and tp.template_id=? and tp.download_state=?";
+    protected static final String DOWNLOADS_STATE_DC_POD =
+        "SELECT * FROM template_spool_ref tp, storage_pool_host_ref ph, host h where tp.pool_id = ph.pool_id and ph.host_id = h.id and h.data_center_id=? and h.pod_id=? "
+            + " and tp.template_id=? and tp.download_state=?";
 
-    protected static final String HOST_TEMPLATE_SEARCH = "SELECT * FROM template_spool_ref tp, storage_pool_host_ref ph, host h where tp.pool_id = ph.pool_id and ph.host_id = h.id and h.id=? "
-                                                         + " and tp.template_id=? ";
+    protected static final String HOST_TEMPLATE_SEARCH =
+        "SELECT * FROM template_spool_ref tp, storage_pool_host_ref ph, host h where tp.pool_id = ph.pool_id and ph.host_id = h.id and h.id=? "
+            + " and tp.template_id=? ";
 
     public VMTemplatePoolDaoImpl() {
         PoolSearch = createSearchBuilder();

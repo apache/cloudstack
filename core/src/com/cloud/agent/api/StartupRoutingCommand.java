@@ -78,14 +78,22 @@ public class StartupRoutingCommand extends StartupCommand {
 
     }
 
-    public StartupRoutingCommand(int cpus, long speed, long memory, long dom0MinMemory, String caps, HypervisorType hypervisorType, RouterPrivateIpStrategy privIpStrategy,
-            Map<String, VmState> vms, Map<String, HostVmStateReportEntry> hostVmStateReport) {
+    public StartupRoutingCommand(int cpus, long speed, long memory, long dom0MinMemory, String caps, HypervisorType hypervisorType,
+            RouterPrivateIpStrategy privIpStrategy, Map<String, VmState> vms, Map<String, HostVmStateReportEntry> hostVmStateReport) {
         this(cpus, speed, memory, dom0MinMemory, caps, hypervisorType, vms, hostVmStateReport);
         getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStrategy.toString());
     }
 
     public StartupRoutingCommand(int cpus, long speed, long memory, long dom0MinMemory, String caps, HypervisorType hypervisorType, RouterPrivateIpStrategy privIpStrategy) {
-        this(cpus, speed, memory, dom0MinMemory, caps, hypervisorType, new HashMap<String, String>(), new HashMap<String, VmState>(), new HashMap<String, HostVmStateReportEntry>());
+        this(cpus,
+            speed,
+            memory,
+            dom0MinMemory,
+            caps,
+            hypervisorType,
+            new HashMap<String, String>(),
+            new HashMap<String, VmState>(),
+            new HashMap<String, HostVmStateReportEntry>());
 
         getHostDetails().put(RouterPrivateIpStrategy.class.getCanonicalName(), privIpStrategy.toString());
     }

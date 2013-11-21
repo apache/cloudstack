@@ -316,7 +316,15 @@ public class NicVO implements Nic {
 
     @Override
     public String toString() {
-        return new StringBuilder("Nic[").append(id).append("-").append(instanceId).append("-").append(reservationId).append("-").append(ip4Address).append("]").toString();
+        return new StringBuilder("Nic[").append(id)
+            .append("-")
+            .append(instanceId)
+            .append("-")
+            .append(reservationId)
+            .append("-")
+            .append(ip4Address)
+            .append("]")
+            .toString();
     }
 
     @Override
@@ -351,6 +359,7 @@ public class NicVO implements Nic {
         this.ip6Cidr = ip6Cidr;
     }
 
+    @Override
     public boolean getSecondaryIp() {
         return secondaryIp;
     }

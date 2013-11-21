@@ -44,7 +44,7 @@ public class ListResourceDetailsCmd extends BaseListProjectAndAccountResourcesCm
     private String key;
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "if set to true, only details marked with display=true, are returned."
-                                                                                          + " Always false is the call is made by the regular user", since = "4.3")
+        + " Always false is the call is made by the regular user", since = "4.3")
     private Boolean forDisplay;
 
     public String getResourceId() {

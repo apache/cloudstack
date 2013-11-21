@@ -31,6 +31,7 @@ public class HA extends TestCase {
         this.setClient();
     }
 
+    @Override
     public boolean executeTest() {
         int error = 0;
         Element rootElement = this.getInputFile().get(0).getDocumentElement();
@@ -49,22 +50,22 @@ public class HA extends TestCase {
             api.sendCommand(this.getClient(), this.getConn());
 
             //verify the response parameters
-            if ((api.getResponseCode() != 200) && (api.getRequired() == true))
-            {
+            if ((api.getResponseCode() != 200) && (api.getRequired() == true)) {
                 s_logger.error("Exiting the test....Command " + api.getName() + " required for the future run, failed with an error code " + api.getResponseCode() +
-                               ". Command was sent with the url " + api.getUrl());
+                    ". Command was sent with the url " + api.getUrl());
                 return false;
-            }
-            else if ((api.getResponseCode() != 200) && (api.getResponseType() != ResponseType.ERROR)) {
+            } else if ((api.getResponseCode() != 200) && (api.getResponseType() != ResponseType.ERROR)) {
                 error++;
-                s_logger.error("Command " + api.getTestCaseInfo() + " failed with an error code " + api.getResponseCode() + " . Command was sent with url  " + api.getUrl());
+                s_logger.error("Command " + api.getTestCaseInfo() + " failed with an error code " + api.getResponseCode() + " . Command was sent with url  " +
+                    api.getUrl());
             } else if ((api.getResponseCode() == 200) && (api.getResponseType() == ResponseType.ERROR)) {
                 error++;
                 s_logger.error("Command " + api.getTestCaseInfo() + " which was supposed to failed, passed. The command was sent with url  " + api.getUrl());
             } else {
                 //set parameters for the future use
                 if (api.setParam(this.getParam()) == false) {
-                    s_logger.error("Exiting the test...Command " + api.getName() + " didn't return parameters needed for the future use. Command was sent with url " + api.getUrl());
+                    s_logger.error("Exiting the test...Command " + api.getName() + " didn't return parameters needed for the future use. Command was sent with url " +
+                        api.getUrl());
                     return false;
                 }
                 s_logger.info("Command " + api.getTestCaseInfo() + " passed");

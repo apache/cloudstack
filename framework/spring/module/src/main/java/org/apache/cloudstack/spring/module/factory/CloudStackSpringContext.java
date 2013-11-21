@@ -23,15 +23,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.cloudstack.spring.module.locator.ModuleDefinitionLocator;
-import org.apache.cloudstack.spring.module.locator.impl.ClasspathModuleDefinitionLocator;
-import org.apache.cloudstack.spring.module.model.ModuleDefinition;
-import org.apache.cloudstack.spring.module.model.ModuleDefinitionSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.io.Resource;
+
+import org.apache.cloudstack.spring.module.locator.ModuleDefinitionLocator;
+import org.apache.cloudstack.spring.module.locator.impl.ClasspathModuleDefinitionLocator;
+import org.apache.cloudstack.spring.module.model.ModuleDefinition;
+import org.apache.cloudstack.spring.module.model.ModuleDefinitionSet;
 
 public class CloudStackSpringContext {
 
@@ -63,7 +64,7 @@ public class CloudStackSpringContext {
     public void init() throws IOException {
         Collection<ModuleDefinition> defs = loader.locateModules(contextName);
 
-        if ( defs.size() == 0 )
+        if (defs.size() == 0)
             throw new RuntimeException("No modules found to load for Spring");
 
         moduleDefinitionSet = factory.loadModules(defs, baseName);
@@ -72,7 +73,7 @@ public class CloudStackSpringContext {
     public void registerShutdownHook() {
         ApplicationContext base = moduleDefinitionSet.getApplicationContext(baseName);
 
-        if ( base instanceof ConfigurableApplicationContext ) {
+        if (base instanceof ConfigurableApplicationContext) {
             ((ConfigurableApplicationContext)base).registerShutdownHook();
         }
     }
@@ -80,18 +81,18 @@ public class CloudStackSpringContext {
     public ModuleDefinition getModuleDefinitionForWeb(String name) {
         ModuleDefinition def = moduleDefinitionSet.getModuleDefinition(name);
 
-        if ( def != null ) {
+        if (def != null) {
             return def;
         }
 
         /* Grab farthest descendant that is deterministic */
         def = moduleDefinitionSet.getModuleDefinition(baseName);
 
-        if ( def == null ) {
+        if (def == null) {
             throw new RuntimeException("Failed to find base spring module to extend for web");
         }
 
-        while ( def.getChildren().size() == 1 ) {
+        while (def.getChildren().size() == 1) {
             def = def.getChildren().iterator().next();
         }
 
@@ -105,21 +106,21 @@ public class CloudStackSpringContext {
     }
 
     public String[] getConfigLocationsForWeb(String name, String[] configured) {
-        if ( configured == null )
+        if (configured == null)
             configured = new String[] {};
 
         ModuleDefinition def = getModuleDefinitionForWeb(name);
 
         List<Resource> inherited = new ArrayList<Resource>();
 
-        while ( def != null ) {
+        while (def != null) {
             inherited.addAll(def.getInheritableContextLocations());
             def = moduleDefinitionSet.getModuleDefinition(def.getParentName());
         }
 
         List<String> urlList = new ArrayList<String>();
 
-        for ( Resource r : inherited ) {
+        for (Resource r : inherited) {
             try {
                 String urlString = r.getURL().toExternalForm();
                 urlList.add(urlString);

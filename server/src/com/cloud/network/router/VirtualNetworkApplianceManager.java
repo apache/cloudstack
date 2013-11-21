@@ -80,12 +80,14 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
      * @param routers TODO
      *
      */
-    boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile profile, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
+    boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile profile, List<? extends VirtualRouter> routers)
+        throws ResourceUnavailableException;
 
     boolean saveSSHPublicKeyToRouter(Network network, NicProfile nic, VirtualMachineProfile profile, List<? extends VirtualRouter> routers, String SSHPublicKey)
         throws ResourceUnavailableException;
 
-    boolean saveUserDataToRouter(Network network, NicProfile nic, VirtualMachineProfile profile, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
+    boolean saveUserDataToRouter(Network network, NicProfile nic, VirtualMachineProfile profile, List<? extends VirtualRouter> routers)
+        throws ResourceUnavailableException;
 
     List<DomainRouterVO> deployVirtualRouterInGuestNetwork(Network guestNetwork, DeployDestination dest, Account owner, Map<VirtualMachineProfile.Param, Object> params,
         boolean isRedundant) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException;
@@ -94,7 +96,8 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 
     boolean deleteRemoteAccessVpn(Network network, RemoteAccessVpn vpn, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 
-    boolean associatePublicIP(Network network, final List<? extends PublicIpAddress> ipAddress, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
+    boolean associatePublicIP(Network network, final List<? extends PublicIpAddress> ipAddress, List<? extends VirtualRouter> routers)
+        throws ResourceUnavailableException;
 
     boolean applyFirewallRules(Network network, final List<? extends FirewallRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 
@@ -108,9 +111,11 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 
     boolean applyStaticNats(Network network, final List<? extends StaticNat> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 
-    boolean applyDhcpEntry(Network config, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, List<DomainRouterVO> routers) throws ResourceUnavailableException;
+    boolean applyDhcpEntry(Network config, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, List<DomainRouterVO> routers)
+        throws ResourceUnavailableException;
 
-    boolean applyUserData(Network config, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, List<DomainRouterVO> routers) throws ResourceUnavailableException;
+    boolean applyUserData(Network config, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, List<DomainRouterVO> routers)
+        throws ResourceUnavailableException;
 
     boolean applyLoadBalancingRules(Network network, List<? extends LoadBalancingRule> rules, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 

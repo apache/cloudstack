@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.securitygroup;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -27,8 +29,6 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
@@ -45,7 +45,10 @@ public class DeleteSecurityGroupCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account of the security group. Must be specified with domain ID")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, description = "the domain ID of account owning the security group", entityType = DomainResponse.class)
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               description = "the domain ID of account owning the security group",
+               entityType = DomainResponse.class)
     private Long domainId;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, description = "the project of the security group", entityType = ProjectResponse.class)

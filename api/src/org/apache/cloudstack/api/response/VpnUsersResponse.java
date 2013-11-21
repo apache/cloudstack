@@ -16,13 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.VpnUser;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = VpnUser.class)
 @SuppressWarnings("unused")
@@ -67,6 +68,7 @@ public class VpnUsersResponse extends BaseResponse implements ControlledEntityRe
         this.userName = name;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
@@ -76,6 +78,7 @@ public class VpnUsersResponse extends BaseResponse implements ControlledEntityRe
         this.domainId = domainId;
     }
 
+    @Override
     public void setDomainName(String name) {
         this.domainName = name;
     }

@@ -21,18 +21,19 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
-import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
+import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+
 import com.cloud.host.Host;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
-import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 
 @APICommand(name = "listExternalFirewalls", description = "List external firewall appliances.", responseObject = ExternalFirewallResponse.class)
 public class ListExternalFirewallsCmd extends BaseListCmd {

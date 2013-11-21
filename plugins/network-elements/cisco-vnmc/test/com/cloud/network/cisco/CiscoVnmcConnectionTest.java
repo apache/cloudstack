@@ -24,7 +24,6 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import com.cloud.network.cisco.CiscoVnmcConnectionImpl;
 import com.cloud.utils.exception.ExecutionException;
 
 @Ignore("Requires actual VNMC to connect to")

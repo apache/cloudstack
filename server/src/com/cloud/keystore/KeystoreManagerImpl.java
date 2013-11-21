@@ -24,13 +24,11 @@ import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -72,7 +70,8 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
 
     @Override
     public void saveCertificate(String name, String certificate, String key, String domainSuffix) {
-        if (name == null || name.isEmpty() || certificate == null || certificate.isEmpty() || key == null || key.isEmpty() || domainSuffix == null || domainSuffix.isEmpty())
+        if (name == null || name.isEmpty() || certificate == null || certificate.isEmpty() || key == null || key.isEmpty() || domainSuffix == null ||
+            domainSuffix.isEmpty())
             throw new CloudRuntimeException("invalid parameter in saveCerticate");
 
         _ksDao.save(name, certificate, key, domainSuffix);

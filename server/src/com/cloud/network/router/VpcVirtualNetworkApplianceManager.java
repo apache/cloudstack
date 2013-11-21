@@ -18,6 +18,7 @@ package com.cloud.network.router;
 
 import java.util.List;
 import java.util.Map;
+
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -27,7 +28,10 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
-import com.cloud.network.vpc.*;
+import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRouteProfile;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachineProfile.Param;

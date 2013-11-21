@@ -87,6 +87,7 @@ public class EventVO implements Event {
         this.uuid = UUID.randomUUID().toString();
     }
 
+    @Override
     public long getId() {
         return id;
     }

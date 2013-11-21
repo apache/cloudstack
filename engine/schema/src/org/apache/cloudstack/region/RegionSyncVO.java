@@ -53,6 +53,7 @@ public class RegionSyncVO implements RegionSync {
         this.api = api;
     }
 
+    @Override
     public int getRegionId() {
         return regionId;
     }
@@ -61,6 +62,7 @@ public class RegionSyncVO implements RegionSync {
         this.regionId = regionId;
     }
 
+    @Override
     public String getApi() {
         return api;
     }
@@ -69,6 +71,7 @@ public class RegionSyncVO implements RegionSync {
         this.api = api;
     }
 
+    @Override
     public Date getCreateDate() {
         return createDate;
     }
@@ -85,6 +88,7 @@ public class RegionSyncVO implements RegionSync {
         this.processed = processed;
     }
 
+    @Override
     public long getId() {
         return id;
     }

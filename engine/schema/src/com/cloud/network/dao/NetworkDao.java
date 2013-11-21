@@ -21,8 +21,8 @@ import java.util.Map;
 
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.Network.State;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.fsm.StateDao;

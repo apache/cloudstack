@@ -37,13 +37,11 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "host")
@@ -379,10 +377,10 @@ public class HostVO implements Host {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public HostVO(long id, String name, Type type, String privateIpAddress, String privateNetmask, String privateMacAddress, String publicIpAddress, String publicNetmask,
-            String publicMacAddress, String storageIpAddress, String storageNetmask, String storageMacAddress, String deuxStorageIpAddress, String duxStorageNetmask,
-            String deuxStorageMacAddress, String guid, Status status, String version, String iqn, Date disconnectedOn, long dcId, Long podId, long serverId, long ping,
-            String parent, long totalSize, StoragePoolType fsType) {
+    public HostVO(long id, String name, Type type, String privateIpAddress, String privateNetmask, String privateMacAddress, String publicIpAddress,
+            String publicNetmask, String publicMacAddress, String storageIpAddress, String storageNetmask, String storageMacAddress, String deuxStorageIpAddress,
+            String duxStorageNetmask, String deuxStorageMacAddress, String guid, Status status, String version, String iqn, Date disconnectedOn, long dcId, Long podId,
+            long serverId, long ping, String parent, long totalSize, StoragePoolType fsType) {
         this(id,
             name,
             type,
@@ -415,9 +413,10 @@ public class HostVO implements Host {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public HostVO(long id, String name, Type type, String privateIpAddress, String privateNetmask, String privateMacAddress, String publicIpAddress, String publicNetmask,
-            String publicMacAddress, String storageIpAddress, String storageNetmask, String storageMacAddress, String guid, Status status, String version, String url,
-            Date disconnectedOn, long dcId, Long podId, long serverId, long ping, Integer cpus, Long speed, Long totalMemory, long dom0MinMemory, String caps) {
+    public HostVO(long id, String name, Type type, String privateIpAddress, String privateNetmask, String privateMacAddress, String publicIpAddress,
+            String publicNetmask, String publicMacAddress, String storageIpAddress, String storageNetmask, String storageMacAddress, String guid, Status status,
+            String version, String url, Date disconnectedOn, long dcId, Long podId, long serverId, long ping, Integer cpus, Long speed, Long totalMemory,
+            long dom0MinMemory, String caps) {
         this.id = id;
         this.name = name;
         this.status = status;

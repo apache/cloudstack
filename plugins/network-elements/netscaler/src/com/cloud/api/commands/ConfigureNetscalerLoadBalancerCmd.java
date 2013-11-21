@@ -18,12 +18,15 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.PodResponse;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
@@ -80,8 +83,8 @@ public class ConfigureNetscalerLoadBalancerCmd extends BaseAsyncCmd {
                entityType = PodResponse.class,
                required = false,
                description = "Used when NetScaler device is provider of EIP service."
-                             + " This parameter represents the list of pod's, for which there exists a policy based route on datacenter L3 router to "
-                             + "route pod's subnet IP to a NetScaler device.")
+                   + " This parameter represents the list of pod's, for which there exists a policy based route on datacenter L3 router to "
+                   + "route pod's subnet IP to a NetScaler device.")
     private List<Long> podIds;
 
     /////////////////////////////////////////////////////
@@ -113,7 +116,8 @@ public class ConfigureNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             ExternalLoadBalancerDeviceVO lbDeviceVO = _netsclarLbService.configureNetscalerLoadBalancer(this);
             if (lbDeviceVO != null) {

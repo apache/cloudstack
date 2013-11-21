@@ -25,10 +25,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
 import com.cloud.api.query.dao.ResourceTagJoinDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -286,7 +287,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
                             throw new InvalidParameterValueException("Value for the key " + key + " is either null or empty");
                         }
 
-                        ResourceTagVO resourceTag = new ResourceTagVO(key, value, accountDomainPair.first(), accountDomainPair.second(), id, resourceType, customer, resourceUuid);
+                        ResourceTagVO resourceTag =
+                            new ResourceTagVO(key, value, accountDomainPair.first(), accountDomainPair.second(), id, resourceType, customer, resourceUuid);
                         resourceTag = _resourceTagDao.persist(resourceTag);
                         resourceTags.add(resourceTag);
                     }

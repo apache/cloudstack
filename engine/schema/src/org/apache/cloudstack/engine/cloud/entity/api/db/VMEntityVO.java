@@ -234,6 +234,7 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
         return type;
     }
 
+    @Override
     public long getUpdated() {
         return updated;
     }

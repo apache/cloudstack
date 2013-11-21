@@ -42,15 +42,14 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
 
     protected static final String REMOVE_BY_USERID_STORAGEID = "DELETE FROM usage_storage WHERE account_id = ? AND id = ? AND storage_type = ?";
     protected static final String UPDATE_DELETED = "UPDATE usage_storage SET deleted = ? WHERE account_id = ? AND id = ? AND storage_type = ? and deleted IS NULL";
-    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, storage_type, source_id, size, created, deleted, virtual_size "
-                                                                 + "FROM usage_storage " + "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
-                                                                 + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
-    protected static final String GET_USAGE_RECORDS_BY_DOMAIN = "SELECT id, zone_id, account_id, domain_id, storage_type, source_id, size, created, deleted, virtual_size "
-                                                                + "FROM usage_storage " + "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
-                                                                + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
+    protected static final String GET_USAGE_RECORDS_BY_ACCOUNT =
+        "SELECT id, zone_id, account_id, domain_id, storage_type, source_id, size, created, deleted, virtual_size " + "FROM usage_storage "
+            + "WHERE account_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
+    protected static final String GET_USAGE_RECORDS_BY_DOMAIN =
+        "SELECT id, zone_id, account_id, domain_id, storage_type, source_id, size, created, deleted, virtual_size " + "FROM usage_storage "
+            + "WHERE domain_id = ? AND ((deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?)))";
     protected static final String GET_ALL_USAGE_RECORDS = "SELECT id, zone_id, account_id, domain_id, storage_type, source_id, size, created, deleted, virtual_size "
-                                                          + "FROM usage_storage " + "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR "
-                                                          + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
+        + "FROM usage_storage " + "WHERE (deleted IS NULL) OR (created BETWEEN ? AND ?) OR " + "      (deleted BETWEEN ? AND ?) OR ((created <= ?) AND (deleted >= ?))";
 
     private final SearchBuilder<UsageStorageVO> IdSearch;
     private final SearchBuilder<UsageStorageVO> IdZoneSearch;
@@ -89,6 +88,7 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
         return listBy(sc, null);
     }
 
+    @Override
     public void removeBy(long accountId, long volId, int storage_type) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
@@ -109,6 +109,7 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
         }
     }
 
+    @Override
     public void update(UsageStorageVO usage) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;

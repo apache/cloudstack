@@ -16,13 +16,12 @@
 // under the License.
 package rdpclient;
 
-
 /**
  * Try to determine packet content by it header fingerprint.
  */
 public class ClientPacketSniffer extends PacketSniffer {
 
-  private static final Pair[] clientRegexps = new Pair[] {
+    private static final Pair[] clientRegexps = new Pair[] {
 // @formatter:off
     new Pair("Client FastPath input",           "04"),
     new Pair("Client X224ConnectionRequest",    "03 00 XX XX 27 E0"),
@@ -41,10 +40,10 @@ public class ClientPacketSniffer extends PacketSniffer {
 //    new Pair("Client UNKNOWN PACKET (ERROR)",   ".*"),
     // @formatter:on
 
-  };
+        };
 
-  public ClientPacketSniffer(String id) {
-    super(id, clientRegexps);
-  }
+    public ClientPacketSniffer(String id) {
+        super(id, clientRegexps);
+    }
 
 }

@@ -17,11 +17,6 @@
 
 package org.apache.cloudstack.syslog;
 
-import com.cloud.utils.net.NetUtils;
-import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.net.SyslogAppender;
-import org.apache.log4j.spi.LoggingEvent;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -30,6 +25,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+
+import org.apache.log4j.AppenderSkeleton;
+import org.apache.log4j.net.SyslogAppender;
+import org.apache.log4j.spi.LoggingEvent;
+
+import com.cloud.utils.net.NetUtils;
 
 public class AlertsSyslogAppender extends AppenderSkeleton {
     String _syslogHosts = null;

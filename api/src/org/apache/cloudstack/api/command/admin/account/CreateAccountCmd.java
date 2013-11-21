@@ -16,8 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.account;
 
-import com.cloud.user.Account;
-import com.cloud.user.UserAccount;
+import java.util.Collection;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,10 +31,8 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
-import java.util.Collection;
-import java.util.Map;
+import com.cloud.user.Account;
+import com.cloud.user.UserAccount;
 
 @APICommand(name = "createAccount", description = "Creates an account", responseObject = AccountResponse.class)
 public class CreateAccountCmd extends BaseCmd {
@@ -172,8 +172,9 @@ public class CreateAccountCmd extends BaseCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Account Name: " + getAccountName() + ", Domain Id:" + getDomainId());
-        UserAccount userAccount = _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(),
-            getAccountType(), getDomainId(), getNetworkDomain(), getDetails(), getAccountUUID(), getUserUUID());
+        UserAccount userAccount =
+            _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(),
+                getDomainId(), getNetworkDomain(), getDetails(), getAccountUUID(), getUserUUID());
         if (userAccount != null) {
             AccountResponse response = _responseGenerator.createUserAccountResponse(userAccount);
             response.setResponseName(getCommandName());

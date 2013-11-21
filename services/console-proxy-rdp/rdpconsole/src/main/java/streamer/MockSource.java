@@ -18,71 +18,72 @@ package streamer;
 
 public class MockSource extends FakeSource {
 
-  protected ByteBuffer bufs[] = null;
+    protected ByteBuffer bufs[] = null;
 
-  public MockSource(String id) {
-    super(id);
-  }
-
-  public MockSource(String id, ByteBuffer bufs[]) {
-    super(id);
-    this.bufs = bufs;
-  }
-
-  /**
-   * Initialize data.
-   */
-  @Override
-  public ByteBuffer initializeData() {
-    if (packetNumber >= bufs.length) {
-      sendEventToAllPads(Event.STREAM_CLOSE, Direction.OUT);
-      return null;
+    public MockSource(String id) {
+        super(id);
     }
 
-    ByteBuffer buf = bufs[packetNumber];
+    public MockSource(String id, ByteBuffer bufs[]) {
+        super(id);
+        this.bufs = bufs;
+    }
 
-    buf.putMetadata(ByteBuffer.SEQUENCE_NUMBER, packetNumber);
-    return buf;
-  }
+    /**
+     * Initialize data.
+     */
+    @Override
+    public ByteBuffer initializeData() {
+        if (packetNumber >= bufs.length) {
+            sendEventToAllPads(Event.STREAM_CLOSE, Direction.OUT);
+            return null;
+        }
 
-  @Override
-  public void handleEvent(Event event, Direction direction) {
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Event received: " + event + ".");
+        ByteBuffer buf = bufs[packetNumber];
 
-  }
+        buf.putMetadata(ByteBuffer.SEQUENCE_NUMBER, packetNumber);
+        return buf;
+    }
 
-  @Override
-  public String toString() {
-    return "MockSource(" + id + ")";
-  }
+    @Override
+    public void handleEvent(Event event, Direction direction) {
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Event received: " + event + ".");
 
-  /**
-   * Example.
-   */
-  public static void main(String args[]) {
+    }
 
-    Element mockSource = new MockSource("source") {
-      {
-        this.bufs = new ByteBuffer[] { new ByteBuffer(new byte[] { 1, 1, 2, 3, 4, 5 }), new ByteBuffer(new byte[] { 2, 1, 2, 3, 4 }),
-            new ByteBuffer(new byte[] { 3, 1, 2, 3 }), new ByteBuffer(new byte[] { 4, 1, 2 }), new ByteBuffer(new byte[] { 5, 1 }) };
-        this.verbose = true;
-        this.delay = 100;
-        // this.numBuffers = this.bufs.length;
-      }
-    };
+    @Override
+    public String toString() {
+        return "MockSource(" + id + ")";
+    }
 
-    Element fakeSink = new FakeSink("sink") {
-      {
-        this.verbose = true;
-      }
-    };
+    /**
+     * Example.
+     */
+    public static void main(String args[]) {
 
-    Link link = new SyncLink();
+        Element mockSource = new MockSource("source") {
+            {
+                this.bufs =
+                    new ByteBuffer[] {new ByteBuffer(new byte[] {1, 1, 2, 3, 4, 5}), new ByteBuffer(new byte[] {2, 1, 2, 3, 4}), new ByteBuffer(new byte[] {3, 1, 2, 3}),
+                        new ByteBuffer(new byte[] {4, 1, 2}), new ByteBuffer(new byte[] {5, 1})};
+                this.verbose = true;
+                this.delay = 100;
+                // this.numBuffers = this.bufs.length;
+            }
+        };
 
-    mockSource.setLink(STDOUT, link, Direction.OUT);
-    fakeSink.setLink(STDIN, link, Direction.IN);
+        Element fakeSink = new FakeSink("sink") {
+            {
+                this.verbose = true;
+            }
+        };
 
-    link.run();
-  }
+        Link link = new SyncLink();
+
+        mockSource.setLink(STDOUT, link, Direction.OUT);
+        fakeSink.setLink(STDIN, link, Direction.IN);
+
+        link.run();
+    }
 }

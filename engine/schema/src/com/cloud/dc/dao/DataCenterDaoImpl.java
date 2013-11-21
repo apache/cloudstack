@@ -26,7 +26,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.TableGenerator;
 
-import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 

@@ -16,22 +16,22 @@
 // under the License.
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
-import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
-import org.apache.cloudstack.storage.helper.StorageStrategyFactoryImpl;
-import org.junit.Test;
-
-import com.cloud.host.Host;
-import com.cloud.storage.Snapshot;
-
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.Test;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
+import org.apache.cloudstack.storage.helper.StorageStrategyFactoryImpl;
+
+import com.cloud.host.Host;
+import com.cloud.storage.Snapshot;
 
 public class StrategyPriorityTest {
 

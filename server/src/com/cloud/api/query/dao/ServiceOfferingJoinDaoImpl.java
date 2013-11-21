@@ -20,9 +20,10 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;

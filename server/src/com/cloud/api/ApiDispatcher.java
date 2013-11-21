@@ -210,8 +210,8 @@ public class ApiDispatcher {
             Object paramObj = unpackedParams.get(parameterAnnotation.name());
             if (paramObj == null) {
                 if (parameterAnnotation.required()) {
-                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) +
-                                                                           " due to missing parameter " + parameterAnnotation.name());
+                    throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " +
+                        cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to missing parameter " + parameterAnnotation.name());
                 }
                 continue;
             }
@@ -221,20 +221,21 @@ public class ApiDispatcher {
                 setFieldValue(field, cmd, paramObj, parameterAnnotation);
             } catch (IllegalArgumentException argEx) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Unable to execute API command " + cmd.getCommandName() + " due to invalid value " + paramObj + " for parameter " + parameterAnnotation.name());
+                    s_logger.debug("Unable to execute API command " + cmd.getCommandName() + " due to invalid value " + paramObj + " for parameter " +
+                        parameterAnnotation.name());
                 }
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) +
-                                                                       " due to invalid value " + paramObj + " for parameter " + parameterAnnotation.name());
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " +
+                    cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to invalid value " + paramObj + " for parameter " +
+                    parameterAnnotation.name());
             } catch (ParseException parseEx) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Invalid date parameter " + paramObj + " passed to command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
                 }
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to parse date " + paramObj + " for command " +
-                                                                       cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) +
-                                                                       ", please pass dates in the format mentioned in the api documentation");
+                    cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + ", please pass dates in the format mentioned in the api documentation");
             } catch (InvalidParameterValueException invEx) {
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " + cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) +
-                                                                       " due to invalid value. " + invEx.getMessage());
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to execute API command " +
+                    cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8) + " due to invalid value. " + invEx.getMessage());
             } catch (CloudRuntimeException cloudEx) {
                 s_logger.error("CloudRuntimeException", cloudEx);
                 // FIXME: Better error message? This only happens if the API command is not executable, which typically
@@ -242,7 +243,7 @@ public class ApiDispatcher {
                 // there was
                 // and IllegalAccessException setting one of the parameters.
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Internal error executing API command " +
-                                                                          cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
+                    cmd.getCommandName().substring(0, cmd.getCommandName().length() - 8));
             }
 
             //check access on the resource this field points to
@@ -320,10 +321,12 @@ public class ApiDispatcher {
 
             } catch (IllegalArgumentException e) {
                 s_logger.error("Error initializing command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
-                throw new CloudRuntimeException("Internal error initializing parameters for command " + cmd.getCommandName() + " [field " + field.getName() + " is not accessible]");
+                throw new CloudRuntimeException("Internal error initializing parameters for command " + cmd.getCommandName() + " [field " + field.getName() +
+                    " is not accessible]");
             } catch (IllegalAccessException e) {
                 s_logger.error("Error initializing command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
-                throw new CloudRuntimeException("Internal error initializing parameters for command " + cmd.getCommandName() + " [field " + field.getName() + " is not accessible]");
+                throw new CloudRuntimeException("Internal error initializing parameters for command " + cmd.getCommandName() + " [field " + field.getName() +
+                    " is not accessible]");
             }
 
         }
@@ -384,7 +387,7 @@ public class ApiDispatcher {
             if (s_logger.isDebugEnabled())
                 s_logger.debug("Object entity uuid = " + uuid + " does not exist in the database.");
             throw new InvalidParameterValueException("Invalid parameter " + annotation.name() + " value=" + uuid +
-                                                     " due to incorrect long value format, or entity does not exist or due to incorrect parameter annotation for the field in api cmd class.");
+                " due to incorrect long value format, or entity does not exist or due to incorrect parameter annotation for the field in api cmd class.");
         }
         return internalId;
     }
@@ -402,8 +405,8 @@ public class ApiDispatcher {
                     // This piece of code is for maintaining backward compatibility
                     // and support both the date formats(Bug 9724)
                     // Do the date messaging for ListEventsCmd only
-                    if (cmdObj instanceof ListEventsCmd || cmdObj instanceof DeleteEventsCmd || cmdObj instanceof ArchiveEventsCmd || cmdObj instanceof ArchiveAlertsCmd ||
-                        cmdObj instanceof DeleteAlertsCmd) {
+                    if (cmdObj instanceof ListEventsCmd || cmdObj instanceof DeleteEventsCmd || cmdObj instanceof ArchiveEventsCmd ||
+                        cmdObj instanceof ArchiveAlertsCmd || cmdObj instanceof DeleteAlertsCmd) {
                         boolean isObjInNewDateFormat = isObjInNewDateFormat(paramObj.toString());
                         if (isObjInNewDateFormat) {
                             DateFormat newFormat = BaseCmd.NEW_INPUT_FORMAT;
@@ -504,7 +507,8 @@ public class ApiDispatcher {
             }
         } catch (IllegalAccessException ex) {
             s_logger.error("Error initializing command " + cmdObj.getCommandName() + ", field " + field.getName() + " is not accessible.");
-            throw new CloudRuntimeException("Internal error initializing parameters for command " + cmdObj.getCommandName() + " [field " + field.getName() + " is not accessible]");
+            throw new CloudRuntimeException("Internal error initializing parameters for command " + cmdObj.getCommandName() + " [field " + field.getName() +
+                " is not accessible]");
         }
     }
 

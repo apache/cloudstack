@@ -66,7 +66,6 @@ import com.cloud.bridge.util.HeaderParam;
 import com.cloud.bridge.util.RestAuth;
 import com.cloud.bridge.util.S3SoapAuth;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 public class S3RestServlet extends HttpServlet {
@@ -306,8 +305,8 @@ public class S3RestServlet extends HttpServlet {
         return params;
     }
 
-    public static void authenticateRequest(HttpServletRequest request, S3AuthParams params) throws InstantiationException, IllegalAccessException, ClassNotFoundException,
-        SQLException {
+    public static void authenticateRequest(HttpServletRequest request, S3AuthParams params) throws InstantiationException, IllegalAccessException,
+        ClassNotFoundException, SQLException {
         RestAuth auth = new RestAuth(ServiceProvider.getInstance().getUseSubDomain());
         String AWSAccessKey = null;
         String signature = null;

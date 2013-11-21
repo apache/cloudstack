@@ -134,7 +134,8 @@ public class DiskOfferingVO implements DiskOffering {
         uuid = UUID.randomUUID().toString();
     }
 
-    public DiskOfferingVO(Long domainId, String name, String displayText, long diskSize, String tags, boolean isCustomized, Boolean isCustomizedIops, Long minIops, Long maxIops) {
+    public DiskOfferingVO(Long domainId, String name, String displayText, long diskSize, String tags, boolean isCustomized, Boolean isCustomizedIops, Long minIops,
+            Long maxIops) {
         this.domainId = domainId;
         this.name = name;
         this.displayText = displayText;
@@ -151,7 +152,8 @@ public class DiskOfferingVO implements DiskOffering {
         state = State.Active;
     }
 
-    public DiskOfferingVO(String name, String displayText, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage, boolean systemUse, boolean customized) {
+    public DiskOfferingVO(String name, String displayText, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage, boolean systemUse,
+            boolean customized) {
         domainId = null;
         type = Type.Service;
         this.name = name;
@@ -167,8 +169,8 @@ public class DiskOfferingVO implements DiskOffering {
 
     // domain specific offerings constructor (null domainId implies public
     // offering)
-    public DiskOfferingVO(String name, String displayText, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage, boolean systemUse, boolean customized,
-            Long domainId) {
+    public DiskOfferingVO(String name, String displayText, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage, boolean systemUse,
+            boolean customized, Long domainId) {
         type = Type.Service;
         this.name = name;
         this.displayText = displayText;
@@ -442,10 +444,12 @@ public class DiskOfferingVO implements DiskOffering {
         return iopsWriteRate;
     }
 
+    @Override
     public void setHypervisorSnapshotReserve(Integer hypervisorSnapshotReserve) {
         this.hypervisorSnapshotReserve = hypervisorSnapshotReserve;
     }
 
+    @Override
     public Integer getHypervisorSnapshotReserve() {
         return hypervisorSnapshotReserve;
     }

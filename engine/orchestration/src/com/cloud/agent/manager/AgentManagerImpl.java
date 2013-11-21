@@ -38,12 +38,13 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -97,9 +98,8 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.QueryBuilder;
-import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.HypervisorVersionChangedException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -166,8 +166,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Inject
     ResourceManager _resourceMgr;
 
-    protected final ConfigKey<Integer> Workers = new ConfigKey<Integer>(Integer.class, "workers", "Advanced", "5", "Number of worker threads handling remote agent connections.",
-        false);
+    protected final ConfigKey<Integer> Workers = new ConfigKey<Integer>(Integer.class, "workers", "Advanced", "5",
+        "Number of worker threads handling remote agent connections.", false);
     protected final ConfigKey<Integer> Port = new ConfigKey<Integer>(Integer.class, "port", "Advanced", "8250", "Port to listen on for remote agent connections.", false);
     protected final ConfigKey<Integer> PingInterval = new ConfigKey<Integer>(Integer.class, "ping.interval", "Advanced", "60",
         "Interval to send application level pings to make sure the connection is still working", false);
@@ -177,8 +177,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         "Seconds to wait before alerting on a disconnected agent", true);
     protected final ConfigKey<Integer> DirectAgentLoadSize = new ConfigKey<Integer>(Integer.class, "direct.agent.load.size", "Advanced", "16",
         "The number of direct agents to load each time", false);
-    protected final ConfigKey<Integer> DirectAgentPoolSize = new ConfigKey<Integer>(Integer.class, "direct.agent.pool.size", "Advanced", "500", "Default size for DirectAgentPool",
-        false);
+    protected final ConfigKey<Integer> DirectAgentPoolSize = new ConfigKey<Integer>(Integer.class, "direct.agent.pool.size", "Advanced", "500",
+        "Default size for DirectAgentPool", false);
     protected final ConfigKey<Float> DirectAgentThreadCap = new ConfigKey<Float>(Float.class, "direct.agent.thread.cap", "Advanced", "0.1",
         "Percentage (as a value between 0 and 1) of direct.agent.pool.size to be used as upper thread cap for a single direct agent to process requests", false);
 
@@ -494,13 +494,13 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     if (e instanceof ConnectionException) {
                         ConnectionException ce = (ConnectionException)e;
                         if (ce.isSetupError()) {
-                            s_logger.warn("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " +
-                                          e.getMessage());
+                            s_logger.warn("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId +
+                                " due to " + e.getMessage());
                             handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true, true);
                             throw ce;
                         } else {
-                            s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId + " due to " +
-                                          e.getMessage());
+                            s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId +
+                                " due to " + e.getMessage());
                             handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested, true, true);
                             return attache;
                         }
@@ -508,9 +508,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested, true, true);
                         throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
                     } else {
-                        s_logger.error(
-                            "Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage(),
-                            e);
+                        s_logger.error("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId +
+                            " due to " + e.getMessage(), e);
                         handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true, true);
                         throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
                     }
@@ -1071,6 +1070,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             _request = request;
         }
 
+        @Override
         protected void runInContext() {
             _request.logD("Processing the first command ");
             StartupCommand[] startups = new StartupCommand[_cmds.length];
@@ -1170,7 +1170,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     } else if (cmd instanceof ShutdownCommand) {
                         final ShutdownCommand shutdown = (ShutdownCommand)cmd;
                         final String reason = shutdown.getReason();
-                        s_logger.info("Host " + attache.getId() + " has informed us that it is shutting down with reason " + reason + " and detail " + shutdown.getDetail());
+                        s_logger.info("Host " + attache.getId() + " has informed us that it is shutting down with reason " + reason + " and detail " +
+                            shutdown.getDetail());
                         if (reason.equals(ShutdownCommand.Update)) {
                             //disconnectWithoutInvestigation(attache, Event.UpdateNeeded);
                             throw new CloudRuntimeException("Agent update not implemented");
@@ -1197,17 +1198,18 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                                         // gateway (cannot ping the default route)
                                         DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
                                         HostPodVO podVO = _podDao.findById(host.getPodId());
-                                        String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " +
-                                                          podVO.getName();
+                                        String hostDesc =
+                                            "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
 
-                                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId(), "Host lost connection to gateway, " +
-                                                                                                                                      hostDesc, "Host [" + hostDesc +
-                                                                                                                                                "] lost connection to gateway (default route) and is possibly having network connection issues.");
+                                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId(),
+                                            "Host lost connection to gateway, " + hostDesc, "Host [" + hostDesc +
+                                                "] lost connection to gateway (default route) and is possibly having network connection issues.");
                                     } else {
                                         _alertMgr.clearAlert(AlertManager.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId());
                                     }
                                 } else {
-                                    s_logger.debug("Not processing " + PingRoutingCommand.class.getSimpleName() + " for agent id=" + cmdHostId + "; can't find the host in the DB");
+                                    s_logger.debug("Not processing " + PingRoutingCommand.class.getSimpleName() + " for agent id=" + cmdHostId +
+                                        "; can't find the host in the DB");
                                 }
                             }
                             answer = new PingAnswer((PingCommand)cmd);
@@ -1330,9 +1332,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             try {
                 return _statusStateMachine.transitTo(host, e, host.getId(), _hostDao);
             } catch (NoTransitionException e1) {
-                status_logger.debug("Cannot transit agent status with event " + e + " for host " + host.getId() + ", name=" + host.getName() + ", mangement server id is " + msId);
+                status_logger.debug("Cannot transit agent status with event " + e + " for host " + host.getId() + ", name=" + host.getName() +
+                    ", mangement server id is " + msId);
                 throw new CloudRuntimeException("Cannot transit agent status with event " + e + " for host " + host.getId() + ", mangement server id is " + msId + "," +
-                                                e1.getMessage());
+                    e1.getMessage());
             }
         } finally {
             _agentStatusLock.unlock();

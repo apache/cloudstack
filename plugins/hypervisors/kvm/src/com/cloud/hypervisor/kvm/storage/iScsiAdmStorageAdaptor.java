@@ -16,11 +16,12 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
 import com.cloud.agent.api.to.DiskTO;

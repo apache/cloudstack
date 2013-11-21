@@ -39,12 +39,17 @@ import javax.mail.URLName;
 import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import com.sun.mail.smtp.SMTPMessage;
+import com.sun.mail.smtp.SMTPSSLTransport;
+import com.sun.mail.smtp.SMTPTransport;
+
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.ProjectAccountJoinDao;
@@ -77,7 +82,6 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -87,9 +91,6 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.sun.mail.smtp.SMTPMessage;
-import com.sun.mail.smtp.SMTPSSLTransport;
-import com.sun.mail.smtp.SMTPTransport;
 
 @Component
 @Local(value = {ProjectService.class, ProjectManager.class})
@@ -483,7 +484,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
                         ProjectAccountVO futureOwner = _projectAccountDao.findByProjectIdAccountId(projectId, futureOwnerAccount.getAccountId());
                         if (futureOwner == null) {
                             throw new InvalidParameterValueException("Account " + newOwnerName +
-                                                                     " doesn't belong to the project. Add it to the project first and then change the project's ownership");
+                                " doesn't belong to the project. Add it to the project first and then change the project's ownership");
                         }
 
                         //do resource limit check
@@ -527,8 +528,8 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
         //User can be added to Active project only
         if (project.getState() != Project.State.Active) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Can't add account to the specified project id in state=" + project.getState() +
-                                                                                   " as it's no longer active");
+            InvalidParameterValueException ex =
+                new InvalidParameterValueException("Can't add account to the specified project id in state=" + project.getState() + " as it's no longer active");
             ex.addProxyObject(project.getUuid(), "projectId");
             throw ex;
         }
@@ -615,7 +616,8 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
         //check that account-to-remove exists
         Account account = _accountMgr.getActiveAccountByName(accountName, project.getDomainId());
         if (account == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find account name=" + accountName + " in domain id=" + project.getDomainId());
+            InvalidParameterValueException ex =
+                new InvalidParameterValueException("Unable to find account name=" + accountName + " in domain id=" + project.getDomainId());
             DomainVO domain = ApiDBUtils.findDomainById(project.getDomainId());
             String domainUuid = String.valueOf(project.getDomainId());
             if (domain != null) {
@@ -638,8 +640,9 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
 
         //can't remove the owner of the project
         if (projectAccount.getAccountRole() == Role.Admin) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to delete account " + accountName +
-                                                                                   " from the project with specified id as the account is the owner of the project");
+            InvalidParameterValueException ex =
+                new InvalidParameterValueException("Unable to delete account " + accountName +
+                    " from the project with specified id as the account is the owner of the project");
             ex.addProxyObject(project.getUuid(), "projectId");
             throw ex;
         }

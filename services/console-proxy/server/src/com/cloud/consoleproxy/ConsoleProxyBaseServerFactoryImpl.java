@@ -21,8 +21,9 @@ import java.net.InetSocketAddress;
 
 import javax.net.ssl.SSLServerSocket;
 
-import com.cloud.consoleproxy.util.Logger;
 import com.sun.net.httpserver.HttpServer;
+
+import com.cloud.consoleproxy.util.Logger;
 
 public class ConsoleProxyBaseServerFactoryImpl implements ConsoleProxyServerFactory {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyBaseServerFactoryImpl.class);

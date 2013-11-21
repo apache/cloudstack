@@ -21,7 +21,8 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,10 +35,10 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 
@@ -152,7 +153,8 @@ public class ListHostsCmd extends BaseListCmd {
                 }
                 dv = EnumSet.copyOf(dc);
             } catch (IllegalArgumentException e) {
-                throw new InvalidParameterValueException("The details parameter contains a non permitted value. The allowed values are " + EnumSet.allOf(HostDetails.class));
+                throw new InvalidParameterValueException("The details parameter contains a non permitted value. The allowed values are " +
+                    EnumSet.allOf(HostDetails.class));
             }
         }
         return dv;
@@ -171,6 +173,7 @@ public class ListHostsCmd extends BaseListCmd {
         return s_name;
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.Host;
     }
@@ -182,8 +185,8 @@ public class ListHostsCmd extends BaseListCmd {
             response = _queryService.searchForServers(this);
         } else {
             Pair<List<? extends Host>, Integer> result;
-            Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigration = _mgr.listHostsForMigrationOfVM(getVirtualMachineId(),
-                this.getStartIndex(), this.getPageSizeVal());
+            Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigration =
+                _mgr.listHostsForMigrationOfVM(getVirtualMachineId(), this.getStartIndex(), this.getPageSizeVal());
             result = hostsForMigration.first();
             List<? extends Host> hostsWithCapacity = hostsForMigration.second();
 

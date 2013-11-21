@@ -20,12 +20,13 @@ import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.bridge.util.JsonAccessor;
-import com.cloud.gate.testcase.BaseTestCase;
-import com.cloud.stack.models.CloudStackSnapshot;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+
+import com.cloud.bridge.util.JsonAccessor;
+import com.cloud.gate.testcase.BaseTestCase;
+import com.cloud.stack.models.CloudStackSnapshot;
 
 public class JsonAccessorTestCase extends BaseTestCase {
     protected final static Logger logger = Logger.getLogger(UtilTestCase.class);
@@ -53,7 +54,8 @@ public class JsonAccessorTestCase extends BaseTestCase {
     }
 
     public void testGson() {
-        String response = "{ \"queryasyncjobresultresponse\" : {\"jobid\":5868,\"jobstatus\":1,\"jobprocstatus\":0,\"jobresultcode\":0,\"jobresulttype\":\"object\",\"jobresult\":{\"snapshot\":{\"id\":3161,\"account\":\"admin\",\"domainid\":1,\"domain\":\"ROOT\",\"snapshottype\":\"MANUAL\",\"volumeid\":186928,\"volumename\":\"KY-DATA-VOL\",\"volumetype\":\"DATADISK\",\"created\":\"2011-06-02T05:05:41-0700\",\"name\":\"i-2-246446-VM_KY-DATA-VOL_20110602120541\",\"intervaltype\":\"MANUAL\",\"state\":\"BackedUp\"}}}}";
+        String response =
+            "{ \"queryasyncjobresultresponse\" : {\"jobid\":5868,\"jobstatus\":1,\"jobprocstatus\":0,\"jobresultcode\":0,\"jobresulttype\":\"object\",\"jobresult\":{\"snapshot\":{\"id\":3161,\"account\":\"admin\",\"domainid\":1,\"domain\":\"ROOT\",\"snapshottype\":\"MANUAL\",\"volumeid\":186928,\"volumename\":\"KY-DATA-VOL\",\"volumetype\":\"DATADISK\",\"created\":\"2011-06-02T05:05:41-0700\",\"name\":\"i-2-246446-VM_KY-DATA-VOL_20110602120541\",\"intervaltype\":\"MANUAL\",\"state\":\"BackedUp\"}}}}";
 
         JsonParser parser = new JsonParser();
         JsonElement json = parser.parse(response);

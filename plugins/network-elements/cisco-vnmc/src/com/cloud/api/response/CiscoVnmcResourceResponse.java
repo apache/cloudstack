@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -23,7 +25,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 
 import com.cloud.network.cisco.CiscoVnmcController;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = CiscoVnmcController.class)
 public class CiscoVnmcResourceResponse extends BaseResponse {

@@ -103,6 +103,7 @@ import com.amazon.ec2.RunInstancesResponse;
 import com.amazon.ec2.StartInstancesResponse;
 import com.amazon.ec2.StopInstancesResponse;
 import com.amazon.ec2.TerminateInstancesResponse;
+
 import com.cloud.bridge.model.UserCredentialsVO;
 import com.cloud.bridge.persist.dao.CloudStackUserDaoImpl;
 import com.cloud.bridge.persist.dao.OfferingDaoImpl;
@@ -131,8 +132,8 @@ import com.cloud.bridge.service.core.ec2.EC2Engine;
 import com.cloud.bridge.service.core.ec2.EC2Filter;
 import com.cloud.bridge.service.core.ec2.EC2GroupFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2Image;
-import com.cloud.bridge.service.core.ec2.EC2ImageFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2ImageAttributes.ImageAttribute;
+import com.cloud.bridge.service.core.ec2.EC2ImageFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2ImageLaunchPermission;
 import com.cloud.bridge.service.core.ec2.EC2ImportKeyPair;
 import com.cloud.bridge.service.core.ec2.EC2InstanceFilterSet;
@@ -160,7 +161,6 @@ import com.cloud.bridge.util.AuthenticationUtils;
 import com.cloud.bridge.util.ConfigurationHelper;
 import com.cloud.bridge.util.EC2RestAuth;
 import com.cloud.stack.models.CloudStackAccount;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component("EC2RestServlet")
@@ -829,9 +829,8 @@ public class EC2RestServlet extends HttpServlet {
         }
 
         // -> execute the request
-        RevokeSecurityGroupIngressResponse EC2response = EC2SoapServiceImpl.toRevokeSecurityGroupIngressResponse(ServiceProvider.getInstance()
-            .getEC2Engine()
-            .revokeSecurityGroup(EC2request));
+        RevokeSecurityGroupIngressResponse EC2response =
+            EC2SoapServiceImpl.toRevokeSecurityGroupIngressResponse(ServiceProvider.getInstance().getEC2Engine().revokeSecurityGroup(EC2request));
         serializeResponse(response, EC2response);
     }
 
@@ -915,9 +914,8 @@ public class EC2RestServlet extends HttpServlet {
         }
 
         // -> execute the request
-        AuthorizeSecurityGroupIngressResponse EC2response = EC2SoapServiceImpl.toAuthorizeSecurityGroupIngressResponse(ServiceProvider.getInstance()
-            .getEC2Engine()
-            .authorizeSecurityGroup(EC2request));
+        AuthorizeSecurityGroupIngressResponse EC2response =
+            EC2SoapServiceImpl.toAuthorizeSecurityGroupIngressResponse(ServiceProvider.getInstance().getEC2Engine().authorizeSecurityGroup(EC2request));
         serializeResponse(response, EC2response);
     }
 
@@ -1013,9 +1011,8 @@ public class EC2RestServlet extends HttpServlet {
         }
 
         // -> execute the request
-        CreateSecurityGroupResponse EC2response = EC2SoapServiceImpl.toCreateSecurityGroupResponse(ServiceProvider.getInstance()
-            .getEC2Engine()
-            .createSecurityGroup(groupName, groupDescription));
+        CreateSecurityGroupResponse EC2response =
+            EC2SoapServiceImpl.toCreateSecurityGroupResponse(ServiceProvider.getInstance().getEC2Engine().createSecurityGroup(groupName, groupDescription));
         serializeResponse(response, EC2response);
     }
 
@@ -1030,7 +1027,8 @@ public class EC2RestServlet extends HttpServlet {
         }
 
         // -> execute the request
-        DeleteSecurityGroupResponse EC2response = EC2SoapServiceImpl.toDeleteSecurityGroupResponse(ServiceProvider.getInstance().getEC2Engine().deleteSecurityGroup(groupName));
+        DeleteSecurityGroupResponse EC2response =
+            EC2SoapServiceImpl.toDeleteSecurityGroupResponse(ServiceProvider.getInstance().getEC2Engine().deleteSecurityGroup(groupName));
         serializeResponse(response, EC2response);
     }
 
@@ -1167,7 +1165,8 @@ public class EC2RestServlet extends HttpServlet {
         }
 
         // -> execute the request
-        ModifyImageAttributeResponse EC2response = EC2SoapServiceImpl.toModifyImageAttributeResponse(ServiceProvider.getInstance().getEC2Engine().modifyImageAttribute(ec2request));
+        ModifyImageAttributeResponse EC2response =
+            EC2SoapServiceImpl.toModifyImageAttributeResponse(ServiceProvider.getInstance().getEC2Engine().modifyImageAttribute(ec2request));
         serializeResponse(response, EC2response);
     }
 
@@ -1231,7 +1230,8 @@ public class EC2RestServlet extends HttpServlet {
         ec2request.addLaunchPermission(launchPermission);
 
         // -> execute the request
-        ResetImageAttributeResponse EC2response = EC2SoapServiceImpl.toResetImageAttributeResponse(ServiceProvider.getInstance().getEC2Engine().modifyImageAttribute(ec2request));
+        ResetImageAttributeResponse EC2response =
+            EC2SoapServiceImpl.toResetImageAttributeResponse(ServiceProvider.getInstance().getEC2Engine().modifyImageAttribute(ec2request));
         serializeResponse(response, EC2response);
     }
 
@@ -1442,9 +1442,8 @@ public class EC2RestServlet extends HttpServlet {
         }
 
         // -> execute the request
-        DescribeAvailabilityZonesResponse EC2response = EC2SoapServiceImpl.toDescribeAvailabilityZonesResponse(ServiceProvider.getInstance()
-            .getEC2Engine()
-            .describeAvailabilityZones(EC2request));
+        DescribeAvailabilityZonesResponse EC2response =
+            EC2SoapServiceImpl.toDescribeAvailabilityZonesResponse(ServiceProvider.getInstance().getEC2Engine().describeAvailabilityZones(EC2request));
         serializeResponse(response, EC2response);
     }
 
@@ -1499,9 +1498,8 @@ public class EC2RestServlet extends HttpServlet {
             throw new EC2ServiceException(ClientError.MissingParamter, "Missing required parameter - Attribute");
         }
 
-        DescribeImageAttributeResponse EC2response = EC2SoapServiceImpl.toDescribeImageAttributeResponse(ServiceProvider.getInstance()
-            .getEC2Engine()
-            .describeImageAttribute(ec2request));
+        DescribeImageAttributeResponse EC2response =
+            EC2SoapServiceImpl.toDescribeImageAttributeResponse(ServiceProvider.getInstance().getEC2Engine().describeImageAttribute(ec2request));
         serializeResponse(response, EC2response);
     }
 
@@ -1678,9 +1676,8 @@ public class EC2RestServlet extends HttpServlet {
         }
 
         // -> execute the request
-        DescribeInstanceAttributeResponse EC2response = EC2SoapServiceImpl.toDescribeInstanceAttributeResponse(ServiceProvider.getInstance()
-            .getEC2Engine()
-            .describeInstances(EC2request));
+        DescribeInstanceAttributeResponse EC2response =
+            EC2SoapServiceImpl.toDescribeInstanceAttributeResponse(ServiceProvider.getInstance().getEC2Engine().describeInstances(EC2request));
         serializeResponse(response, EC2response);
     }
 
@@ -1709,9 +1706,8 @@ public class EC2RestServlet extends HttpServlet {
         }
 
         // -> execute the request
-        ModifyInstanceAttributeResponse EC2response = EC2SoapServiceImpl.toModifyInstanceAttributeResponse(ServiceProvider.getInstance()
-            .getEC2Engine()
-            .modifyInstanceAttribute(ec2Request));
+        ModifyInstanceAttributeResponse EC2response =
+            EC2SoapServiceImpl.toModifyInstanceAttributeResponse(ServiceProvider.getInstance().getEC2Engine().modifyInstanceAttribute(ec2Request));
         serializeResponse(response, EC2response);
     }
 
@@ -1769,7 +1765,8 @@ public class EC2RestServlet extends HttpServlet {
 
         // -> execute the request
         EC2Engine engine = ServiceProvider.getInstance().getEC2Engine();
-        DescribeVolumesResponse EC2response = EC2SoapServiceImpl.toDescribeVolumesResponse(ServiceProvider.getInstance().getEC2Engine().describeVolumes(EC2request), engine);
+        DescribeVolumesResponse EC2response =
+            EC2SoapServiceImpl.toDescribeVolumesResponse(ServiceProvider.getInstance().getEC2Engine().describeVolumes(EC2request), engine);
         serializeResponse(response, EC2response);
     }
 

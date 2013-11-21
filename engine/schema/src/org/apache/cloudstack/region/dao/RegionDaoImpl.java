@@ -18,9 +18,10 @@ package org.apache.cloudstack.region.dao;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.region.RegionVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.region.RegionVO;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;

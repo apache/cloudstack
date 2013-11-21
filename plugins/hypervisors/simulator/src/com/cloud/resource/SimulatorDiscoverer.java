@@ -82,8 +82,8 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
      *      java.lang.Long, java.net.URI, java.lang.String, java.lang.String)
      */
     @Override
-    public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags)
-        throws DiscoveryException {
+    public Map<? extends ServerResource, Map<String, String>>
+        find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) throws DiscoveryException {
         Map<AgentResourceBase, Map<String, String>> resources;
 
         try {
@@ -92,10 +92,10 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
             String host = uri.getAuthority();
             String commands = URLDecoder.decode(uri.getPath());
 
-            long cpuSpeed = _mockAgentMgr.DEFAULT_HOST_SPEED_MHZ;
-            long cpuCores = _mockAgentMgr.DEFAULT_HOST_CPU_CORES;
-            long memory = _mockAgentMgr.DEFAULT_HOST_MEM_SIZE;
-            long localstorageSize = _mockStorageMgr.DEFAULT_HOST_STORAGE_SIZE;
+            long cpuSpeed = MockAgentManager.DEFAULT_HOST_SPEED_MHZ;
+            long cpuCores = MockAgentManager.DEFAULT_HOST_CPU_CORES;
+            long memory = MockAgentManager.DEFAULT_HOST_MEM_SIZE;
+            long localstorageSize = MockStorageManager.DEFAULT_HOST_STORAGE_SIZE;
             if (scheme.equals("http")) {
                 if (host == null || !host.startsWith("sim")) {
                     String msg = "uri is not of simulator type so we're not taking care of the discovery for this: " + uri;

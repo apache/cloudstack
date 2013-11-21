@@ -16,10 +16,16 @@
 // under the License.
 package com.cloud.network.dao;
 
-import com.cloud.network.MonitoringService;
-
-import javax.persistence.*;
 import java.util.UUID;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import com.cloud.network.MonitoringService;
 
 @Entity
 @Table(name = "monitoring_services")
@@ -64,6 +70,7 @@ public class MonitoringServiceVO implements MonitoringService {
     @Column(name = "uuid")
     String uuid = UUID.randomUUID().toString();
 
+    @Override
     public long getId() {
         return id;
     }

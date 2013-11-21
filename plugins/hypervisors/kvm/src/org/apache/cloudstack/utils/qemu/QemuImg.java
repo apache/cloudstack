@@ -16,16 +16,11 @@
 // under the License.
 package org.apache.cloudstack.utils.qemu;
 
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.cloudstack.utils.qemu.QemuImgException;
-
-import com.cloud.utils.script.Script;
-import com.cloud.utils.script.OutputInterpreter;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
+
+import com.cloud.utils.script.OutputInterpreter;
+import com.cloud.utils.script.Script;
 
 public class QemuImg {
 
@@ -42,6 +37,7 @@ public class QemuImg {
             this.format = format;
         }
 
+        @Override
         public String toString() {
             return this.format;
         }

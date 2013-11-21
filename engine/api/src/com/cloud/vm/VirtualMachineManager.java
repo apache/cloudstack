@@ -50,7 +50,7 @@ import com.cloud.utils.fsm.NoTransitionException;
 public interface VirtualMachineManager extends Manager {
     static final ConfigKey<Boolean> ExecuteInSequence = new ConfigKey<Boolean>("Advanced", Boolean.class, "execute.in.sequence.hypervisor.commands", "false",
         "If set to true, StartCommand, StopCommand, CopyCommand will be synchronized on the agent side."
-                + " If set to false, these commands become asynchronous. Default value is false.", true);
+            + " If set to false, these commands become asynchronous. Default value is false.", true);
 
     public interface Topics {
         public static final String VM_POWER_STATE = "vm.powerstate";
@@ -78,8 +78,8 @@ public interface VirtualMachineManager extends Manager {
         LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferings, LinkedHashMap<? extends Network, ? extends NicProfile> auxiliaryNetworks, DeploymentPlan plan,
         HypervisorType hyperType) throws InsufficientCapacityException;
 
-    void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering, LinkedHashMap<? extends Network, ? extends NicProfile> networkProfiles,
-        DeploymentPlan plan, HypervisorType hyperType) throws InsufficientCapacityException;
+    void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering,
+        LinkedHashMap<? extends Network, ? extends NicProfile> networkProfiles, DeploymentPlan plan, HypervisorType hyperType) throws InsufficientCapacityException;
 
     void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params);
 
@@ -109,7 +109,8 @@ public interface VirtualMachineManager extends Manager {
 
     void migrate(String vmUuid, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException;
 
-    void migrateWithStorage(String vmUuid, long srcId, long destId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException, ConcurrentOperationException;
+    void migrateWithStorage(String vmUuid, long srcId, long destId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException,
+        ConcurrentOperationException;
 
     void reboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException;
 

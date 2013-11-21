@@ -20,8 +20,8 @@ import java.util.Date;
 import java.util.List;
 
 import com.cloud.network.security.SecurityGroupWork;
-import com.cloud.network.security.SecurityGroupWorkVO;
 import com.cloud.network.security.SecurityGroupWork.Step;
+import com.cloud.network.security.SecurityGroupWorkVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface SecurityGroupWorkDao extends GenericDao<SecurityGroupWorkVO, Long> {

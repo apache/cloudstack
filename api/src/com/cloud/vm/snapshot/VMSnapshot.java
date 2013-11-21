@@ -19,23 +19,19 @@ package com.cloud.vm.snapshot;
 
 import java.util.Date;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-import org.apache.cloudstack.acl.ControlledEntity;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
 
 public interface VMSnapshot extends ControlledEntity, Identity, InternalIdentity, StateObject<VMSnapshot.State> {
 
     enum State {
-        Allocated("The VM snapshot is allocated but has not been created yet."),
-        Creating("The VM snapshot is being created."),
-        Ready("The VM snapshot is ready to be used."),
-        Reverting("The VM snapshot is being used to revert"),
-        Expunging("The volume is being expunging"),
-        Removed("The volume is destroyed, and can't be recovered."),
-        Error("The volume is in error state, and can't be recovered");
+        Allocated("The VM snapshot is allocated but has not been created yet."), Creating("The VM snapshot is being created."), Ready(
+                "The VM snapshot is ready to be used."), Reverting("The VM snapshot is being used to revert"), Expunging("The volume is being expunging"), Removed(
+                "The volume is destroyed, and can't be recovered."), Error("The volume is in error state, and can't be recovered");
 
         String _description;
 
@@ -74,12 +70,14 @@ public interface VMSnapshot extends ControlledEntity, Identity, InternalIdentity
         CreateRequested, OperationFailed, OperationSucceeded, RevertRequested, ExpungeRequested,
     }
 
+    @Override
     long getId();
 
     public String getName();
 
     public Long getVmId();
 
+    @Override
     public State getState();
 
     public Date getCreated();
@@ -102,5 +100,6 @@ public interface VMSnapshot extends ControlledEntity, Identity, InternalIdentity
 
     public Date getRemoved();
 
+    @Override
     public long getAccountId();
 }

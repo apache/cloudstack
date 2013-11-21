@@ -29,6 +29,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.trilead.ssh2.SCPClient;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.HostVmStateReportEntry;
@@ -38,11 +40,11 @@ import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.vm.VirtualMachine.State;
-import com.trilead.ssh2.SCPClient;
 
 public class BaremetalDhcpdResource extends BaremetalDhcpResourceBase {
     private static final Logger s_logger = Logger.getLogger(BaremetalDhcpdResource.class);
 
+    @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         com.trilead.ssh2.Connection sshConnection = null;
         try {
@@ -116,8 +118,9 @@ public class BaremetalDhcpdResource extends BaremetalDhcpResourceBase {
             if (sshConnection == null) {
                 return new Answer(cmd, false, "ssh authenticate failed");
             }
-            String addDhcp = String.format("python /usr/bin/dhcpd_edithosts.py %1$s %2$s %3$s %4$s %5$s %6$s", cmd.getVmMac(), cmd.getVmIpAddress(), cmd.getVmName(), cmd.getDns(),
-                cmd.getGateway(), cmd.getNextServer());
+            String addDhcp =
+                String.format("python /usr/bin/dhcpd_edithosts.py %1$s %2$s %3$s %4$s %5$s %6$s", cmd.getVmMac(), cmd.getVmIpAddress(), cmd.getVmName(), cmd.getDns(),
+                    cmd.getGateway(), cmd.getNextServer());
             if (!SSHCmdHelper.sshExecuteCmd(sshConnection, addDhcp)) {
                 return new Answer(cmd, false, "add Dhcp entry failed");
             } else {

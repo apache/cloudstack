@@ -17,14 +17,6 @@
 
 package com.cloud.usage.dao;
 
-import com.cloud.usage.UsageVMSnapshotVO;
-import com.cloud.utils.DateUtil;
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.TransactionLegacy;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -32,18 +24,29 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
+import javax.ejb.Local;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import com.cloud.usage.UsageVMSnapshotVO;
+import com.cloud.utils.DateUtil;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.TransactionLegacy;
+
 @Component
 @Local(value = {UsageVMSnapshotDao.class})
 public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Long> implements UsageVMSnapshotDao {
     public static final Logger s_logger = Logger.getLogger(UsageVMSnapshotDaoImpl.class.getName());
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, vm_id, disk_offering_id, size, created, processed "
-                                                                 + " FROM usage_vmsnapshot" + " WHERE account_id = ? " + " AND ( (created BETWEEN ? AND ?) OR "
-                                                                 + "      (created < ? AND processed is NULL) ) ORDER BY created asc";
+        + " FROM usage_vmsnapshot" + " WHERE account_id = ? " + " AND ( (created BETWEEN ? AND ?) OR "
+        + "      (created < ? AND processed is NULL) ) ORDER BY created asc";
     protected static final String UPDATE_DELETED = "UPDATE usage_vmsnapshot SET processed = ? WHERE account_id = ? AND id = ? and vm_id = ?  and created = ?";
 
-    protected static final String PREVIOUS_QUERY = "SELECT id, zone_id, account_id, domain_id, vm_id, disk_offering_id,size, created, processed " + "FROM usage_vmsnapshot "
-                                                   + "WHERE account_id = ? AND id = ? AND vm_id = ? AND created < ? AND processed IS NULL " + "ORDER BY created desc limit 1";
+    protected static final String PREVIOUS_QUERY = "SELECT id, zone_id, account_id, domain_id, vm_id, disk_offering_id,size, created, processed "
+        + "FROM usage_vmsnapshot " + "WHERE account_id = ? AND id = ? AND vm_id = ? AND created < ? AND processed IS NULL " + "ORDER BY created desc limit 1";
 
+    @Override
     public void update(UsageVMSnapshotVO usage) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
@@ -65,6 +68,7 @@ public class UsageVMSnapshotDaoImpl extends GenericDaoBase<UsageVMSnapshotVO, Lo
         }
     }
 
+    @Override
     public List<UsageVMSnapshotVO> getUsageRecords(Long accountId, Long domainId, Date startDate, Date endDate) {
         List<UsageVMSnapshotVO> usageRecords = new ArrayList<UsageVMSnapshotVO>();
 

@@ -21,25 +21,24 @@ import java.awt.event.KeyEvent;
 import streamer.Order;
 
 public class KeyOrder extends Order {
-  public KeyOrder() {
-    type = "key event";
-  }
+    public KeyOrder() {
+        type = "key event";
+    }
 
-  public KeyOrder(KeyEvent event, boolean pressed) {
-    type = "key event";
+    public KeyOrder(KeyEvent event, boolean pressed) {
+        type = "key event";
 
-    this.event = event;
-    this.pressed = pressed;
-  }
+        this.event = event;
+        this.pressed = pressed;
+    }
 
-  public KeyEvent event;
+    public KeyEvent event;
 
-  public boolean pressed;
+    public boolean pressed;
 
-  @Override
-  public String toString() {
-    return "KeyOrder [event=" + event + ", pressed=" + pressed + "]";
-  }
-
+    @Override
+    public String toString() {
+        return "KeyOrder [event=" + event + ", pressed=" + pressed + "]";
+    }
 
 }

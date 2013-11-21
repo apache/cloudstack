@@ -37,6 +37,7 @@ public class ResourceLimitManagerImplTest extends TestCase {
 
     }
 
+    @Override
     @After
     public void tearDown() throws Exception {
     }

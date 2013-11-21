@@ -20,14 +20,14 @@ package org.apache.cloudstack.spring.lifecycle.registry;
 
 import java.util.List;
 
-import com.cloud.utils.component.ComponentLifecycleBase;
-import com.cloud.utils.component.Named;
-import com.cloud.utils.component.Registry;
-
 import javax.inject.Inject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.cloud.utils.component.ComponentLifecycleBase;
+import com.cloud.utils.component.Named;
+import com.cloud.utils.component.Registry;
 
 public class DumpRegistry extends ComponentLifecycleBase {
 
@@ -46,11 +46,11 @@ public class DumpRegistry extends ComponentLifecycleBase {
 
     @Override
     public boolean start() {
-        for ( Registry<?> registry : registries ) {
+        for (Registry<?> registry : registries) {
             StringBuilder buffer = new StringBuilder();
 
-            for ( Object o : registry.getRegistered() ) {
-                if ( buffer.length() > 0 )
+            for (Object o : registry.getRegistered()) {
+                if (buffer.length() > 0)
                     buffer.append(", ");
 
                 buffer.append(getName(o));
@@ -65,7 +65,7 @@ public class DumpRegistry extends ComponentLifecycleBase {
     protected String getName(Object o) {
         String name = null;
         if (o instanceof Named) {
-            name = ((Named) o).getName();
+            name = ((Named)o).getName();
         }
 
         if (name == null) {

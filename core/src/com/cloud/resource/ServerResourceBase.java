@@ -99,7 +99,7 @@ public abstract class ServerResourceBase implements ServerResource {
                 if (//!nic.isLoopback() &&
                     //nic.isUp() &&
                 !nic.isVirtual() && !nicName.startsWith("vnif") && !nicName.startsWith("vnbr") && !nicName.startsWith("peth") && !nicName.startsWith("vif") &&
-                        !nicName.startsWith("virbr") && !nicName.contains(":")) {
+                    !nicName.startsWith("virbr") && !nicName.contains(":")) {
                     final String[] info = NetUtils.getNicParams(nicName);
                     if (info != null && info[0] != null) {
                         _privateNic = nic;

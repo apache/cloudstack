@@ -16,9 +16,11 @@
 // under the License.
 package com.cloud.server.api.response;
 
-import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
+import org.apache.cloudstack.api.ApiConstants;
+
+import com.cloud.serializer.Param;
 
 public class PxePingResponse extends NwDevicePxeServerResponse {
     @SerializedName(ApiConstants.PING_STORAGE_SERVER_IP)

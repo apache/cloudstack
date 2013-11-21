@@ -28,11 +28,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "host_pod_ref")
@@ -96,6 +94,7 @@ public class HostPodVO implements Pod {
         return id;
     }
 
+    @Override
     public long getDataCenterId() {
         return dataCenterId;
     }
@@ -104,6 +103,7 @@ public class HostPodVO implements Pod {
         this.dataCenterId = dataCenterId;
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -139,6 +139,7 @@ public class HostPodVO implements Pod {
         this.gateway = gateway;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
@@ -147,6 +148,7 @@ public class HostPodVO implements Pod {
         this.description = description;
     }
 
+    @Override
     public AllocationState getAllocationState() {
         return allocationState;
     }
@@ -165,6 +167,7 @@ public class HostPodVO implements Pod {
         return NumbersUtil.hash(id);
     }
 
+    @Override
     public boolean getExternalDhcp() {
         return externalDhcp;
     }

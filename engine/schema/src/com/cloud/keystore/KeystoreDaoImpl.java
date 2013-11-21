@@ -80,7 +80,8 @@ public class KeystoreDaoImpl extends GenericDaoBase<KeystoreVO, Long> implements
         try {
             txn.start();
 
-            String sql = "INSERT INTO keystore (`name`, `certificate`, `key`, `domain_suffix`) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE `certificate`=?, `key`=?, `domain_suffix`=?";
+            String sql =
+                "INSERT INTO keystore (`name`, `certificate`, `key`, `domain_suffix`) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE `certificate`=?, `key`=?, `domain_suffix`=?";
             PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql);
             pstmt.setString(1, name);
             pstmt.setString(2, certificate);

@@ -17,17 +17,24 @@
 
 package com.cloud.api.commands;
 
-import org.apache.cloudstack.api.response.ClusterResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import com.cloud.api.response.CiscoNexusVSMResponse;
+import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+
+import com.cloud.api.response.CiscoNexusVSMResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
@@ -35,11 +42,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.CiscoNexusVSMDevice;
 import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.user.Account;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.inject.Inject;
 
 @APICommand(name = "listCiscoNexusVSMs",
             responseObject = CiscoNexusVSMResponse.class,
@@ -96,7 +98,8 @@ public class ListCiscoNexusVSMsCmd extends BaseListCmd {
     // automagically gets translated to the corresponding db id before this execute() method
     // is invoked. That's the reason why we don't have any uuid-dbid translation code here.
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         List<? extends CiscoNexusVSMDevice> vsmDeviceList = _ciscoNexusVSMService.getCiscoNexusVSMs(this);
 
         if (vsmDeviceList.size() > 0) {

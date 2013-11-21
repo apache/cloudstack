@@ -20,8 +20,8 @@ import streamer.BaseElement;
 
 public class HandshakeEnd extends BaseElement {
 
-  public HandshakeEnd(String id) {
-    super(id);
-  }
+    public HandshakeEnd(String id) {
+        super(id);
+    }
 
 }

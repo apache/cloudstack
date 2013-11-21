@@ -78,8 +78,9 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
         }
 
         if (offering.getTrafficType() == Networks.TrafficType.Public) {
-            NetworkVO ntwk = new NetworkVO(offering.getTrafficType(), Networks.Mode.Static, Networks.BroadcastDomainType.Mido, offering.getId(), Network.State.Allocated,
-                plan.getDataCenterId(), plan.getPhysicalNetworkId());
+            NetworkVO ntwk =
+                new NetworkVO(offering.getTrafficType(), Networks.Mode.Static, Networks.BroadcastDomainType.Mido, offering.getId(), Network.State.Allocated,
+                    plan.getDataCenterId(), plan.getPhysicalNetworkId());
             return ntwk;
         } else {
             return null;
@@ -130,8 +131,8 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException,
-        ConcurrentOperationException {
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+        InsufficientAddressCapacityException, ConcurrentOperationException {
 
         s_logger.debug("allocate called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
@@ -183,8 +184,9 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
         //get physical network id
         long physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
 
-        NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(),
-            Network.State.Allocated, network.getDataCenterId(), physicalNetworkId);
+        NetworkVO implemented =
+            new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), Network.State.Allocated,
+                network.getDataCenterId(), physicalNetworkId);
 
         if (network.getGateway() != null) {
             implemented.setGateway(network.getGateway());

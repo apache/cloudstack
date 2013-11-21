@@ -19,7 +19,6 @@ package com.cloud.snapshot;
 
 import java.io.IOException;
 
-import org.apache.cloudstack.test.utils.SpringUtils;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
 import org.springframework.context.annotation.Configuration;
@@ -27,6 +26,8 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
+
+import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.dc.dao.ClusterDaoImpl;
@@ -42,7 +43,7 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
 
 @Configuration
 @ComponentScan(basePackageClasses = {SnapshotDaoImpl.class, ResourceTagsDaoImpl.class, VMInstanceDaoImpl.class, VolumeDaoImpl.class, NicDaoImpl.class, HostDaoImpl.class,
-        HostDetailsDaoImpl.class, HostTagsDaoImpl.class, HostTransferMapDaoImpl.class, ClusterDaoImpl.class, HostPodDaoImpl.class},
+                   HostDetailsDaoImpl.class, HostTagsDaoImpl.class, HostTransferMapDaoImpl.class, ClusterDaoImpl.class, HostPodDaoImpl.class},
                includeFilters = {@Filter(value = SnapshotDaoTestConfiguration.Library.class, type = FilterType.CUSTOM)},
                useDefaultFilters = false)
 public class SnapshotDaoTestConfiguration {

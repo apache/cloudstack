@@ -16,10 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
 import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
@@ -42,6 +43,7 @@ public class ListTemplatePermissionsCmd extends BaseListTemplateOrIsoPermissions
         return Logger.getLogger(ListTemplatePermissionsCmd.class.getName());
     }
 
+    @Override
     protected boolean templateIsCorrectType(VirtualMachineTemplate template) {
         return !template.getFormat().equals(ImageFormat.ISO);
     }

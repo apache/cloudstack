@@ -17,15 +17,14 @@
 
 package org.apache.cloudstack.api.response;
 
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
+
+import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class ApplicationLoadBalancerResponse extends BaseResponse implements ControlledEntityResponse {
@@ -89,6 +88,7 @@ public class ApplicationLoadBalancerResponse extends BaseResponse implements Con
     @Param(description = "the list of resource tags associated with the Load Balancer", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
@@ -98,6 +98,7 @@ public class ApplicationLoadBalancerResponse extends BaseResponse implements Con
         this.domainId = domainId;
     }
 
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }

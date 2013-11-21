@@ -86,7 +86,8 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         try {
             txn.start();
 
-            pstmt = txn.prepareAutoCloseStatement("update mshost set name=?, version=?, service_ip=?, service_port=?, last_update=?, removed=null, alert_count=0, runid=?, state=? where id=?");
+            pstmt =
+                txn.prepareAutoCloseStatement("update mshost set name=?, version=?, service_ip=?, service_port=?, last_update=?, removed=null, alert_count=0, runid=?, state=? where id=?");
             pstmt.setString(1, name);
             pstmt.setString(2, version);
             pstmt.setString(3, serviceIP);
@@ -243,7 +244,8 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
-            pstmt = txn.prepareAutoCloseStatement("select t.mgmt_server_id from (select mgmt_server_id, count(*) as count from host group by mgmt_server_id) as t WHERE t.count > 0 AND t.mgmt_server_id NOT IN (select msid from mshost)");
+            pstmt =
+                txn.prepareAutoCloseStatement("select t.mgmt_server_id from (select mgmt_server_id, count(*) as count from host group by mgmt_server_id) as t WHERE t.count > 0 AND t.mgmt_server_id NOT IN (select msid from mshost)");
 
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {

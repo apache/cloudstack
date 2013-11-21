@@ -140,7 +140,7 @@ public class VmwareClient {
 
         // Extract a cookie. See vmware sample program com.vmware.httpfileaccess.GetVMFiles
         Map<String, List<String>> headers = (Map<String, List<String>>)((BindingProvider)vimPort).getResponseContext().get(MessageContext.HTTP_RESPONSE_HEADERS);
-        List<String> cookies = (List<String>)headers.get("Set-cookie");
+        List<String> cookies = headers.get("Set-cookie");
         String cookieValue = cookies.get(0);
         StringTokenizer tokenizer = new StringTokenizer(cookieValue, ";");
         cookieValue = tokenizer.nextToken();
@@ -317,7 +317,8 @@ public class VmwareClient {
         boolean retVal = false;
 
         // info has a property - state for state of the task
-        Object[] result = waitForValues(task, new String[] {"info.state", "info.error"}, new String[] {"state"}, new Object[][] {new Object[] {TaskInfoState.SUCCESS,
+        Object[] result =
+            waitForValues(task, new String[] {"info.state", "info.error"}, new String[] {"state"}, new Object[][] {new Object[] {TaskInfoState.SUCCESS,
                 TaskInfoState.ERROR}});
 
         if (result[0].equals(TaskInfoState.SUCCESS)) {

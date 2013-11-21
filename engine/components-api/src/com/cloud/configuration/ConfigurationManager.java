@@ -39,10 +39,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.org.Grouping.AllocationState;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.user.Account;
-import com.cloud.vm.VirtualMachine;
 
 /**
  * ConfigurationManager handles adding pods/zones, changing IP ranges, enabling external firewalls, and editing
@@ -137,8 +134,8 @@ public interface ConfigurationManager {
      *            (true if it is ok to not validate that gateway IP address overlap with Start/End IP of the POD)
      * @return Pod
      */
-    HostPodVO
-        createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp, String allocationState, boolean skipGatewayOverlapCheck);
+    HostPodVO createPod(long userId, String podName, long zoneId, String gateway, String cidr, String startIp, String endIp, String allocationState,
+        boolean skipGatewayOverlapCheck);
 
     /**
      * Creates a new zone
@@ -162,8 +159,9 @@ public interface ConfigurationManager {
      * @throws
      * @throws
      */
-    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId,
-        NetworkType zoneType, String allocationState, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled, String ip6Dns1, String ip6Dns2);
+    DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain,
+        Long domainId, NetworkType zoneType, String allocationState, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled, String ip6Dns1,
+        String ip6Dns2);
 
     /**
      * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated
@@ -214,9 +212,9 @@ public interface ConfigurationManager {
         boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges, boolean isPersistent,
         Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive);
 
-    Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, String startIP, String endIP, String vlanGateway,
-        String vlanNetmask, String vlanId, Account vlanOwner, String startIPv6, String endIPv6, String vlanIp6Gateway, String vlanIp6Cidr) throws InsufficientCapacityException,
-        ConcurrentOperationException, InvalidParameterValueException;
+    Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, String startIP, String endIP,
+        String vlanGateway, String vlanNetmask, String vlanId, Account vlanOwner, String startIPv6, String endIPv6, String vlanIp6Gateway, String vlanIp6Cidr)
+        throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
 
     void createDefaultSystemNetworks(long zoneId) throws ConcurrentOperationException;
 

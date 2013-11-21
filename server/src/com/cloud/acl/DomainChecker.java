@@ -19,11 +19,12 @@ package com.cloud.acl;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.api.BaseCmd;
-import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DedicatedResourceVO;
@@ -176,7 +177,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             //if account is normal user or domain admin
             //check if account's domain is a child of zone's domain (Note: This is made consistent with the list command for disk offering)
             else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN ||
-                     account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+                account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
                 if (account.getDomainId() == dof.getDomainId()) {
                     return true; //disk offering and account at exact node
                 } else {
@@ -213,7 +214,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
             //if account is normal user or domain admin
             //check if account's domain is a child of zone's domain (Note: This is made consistent with the list command for service offering)
             else if (account.getType() == Account.ACCOUNT_TYPE_NORMAL || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN ||
-                     account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+                account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
                 if (account.getDomainId() == so.getDomainId()) {
                     return true; //service offering and account at exact node
                 } else {

@@ -16,10 +16,6 @@
 // under the License.
 package com.cloud.bridge.model;
 
-import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Set;
-
 public interface SHost {
 
     public static final int STORAGE_HOST_TYPE_LOCAL = 0;

@@ -52,6 +52,7 @@ public class VMComputeTagVO implements InternalIdentity {
         this.computeTag = tag;
     }
 
+    @Override
     public long getId() {
         return id;
     }

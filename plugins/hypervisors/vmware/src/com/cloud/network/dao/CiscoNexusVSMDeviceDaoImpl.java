@@ -17,6 +17,7 @@
 package com.cloud.network.dao;
 
 import java.util.List;
+
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -75,35 +76,41 @@ public class CiscoNexusVSMDeviceDaoImpl extends GenericDaoBase<CiscoNexusVSMDevi
         // We may add more and conditions by specifying more fields, like say, accountId.
     }
 
+    @Override
     public CiscoNexusVSMDeviceVO getVSMbyDomainId(long domId) {
         SearchCriteria<CiscoNexusVSMDeviceVO> sc = domainIdSearch.create();
         sc.setParameters("vsmSwitchDomainId", domId);
         return findOneBy(sc);
     }
 
+    @Override
     public CiscoNexusVSMDeviceVO getVSMbyName(String vsmName) {
         SearchCriteria<CiscoNexusVSMDeviceVO> sc = nameSearch.create();
         sc.setParameters("vsmName", vsmName);
         return findOneBy(sc);
     }
 
+    @Override
     public CiscoNexusVSMDeviceVO getVSMbyIpaddress(String ipaddress) {
         SearchCriteria<CiscoNexusVSMDeviceVO> sc = ipaddrSearch.create();
         sc.setParameters("ipaddr", ipaddress);
         return findOneBy(sc);
     }
 
+    @Override
     public List<CiscoNexusVSMDeviceVO> listByMgmtVlan(int vlanId) {
         SearchCriteria<CiscoNexusVSMDeviceVO> sc = mgmtVlanIdSearch.create();
         sc.setParameters("managementVlan", vlanId);
         return search(sc, null);
     }
 
+    @Override
     public List<CiscoNexusVSMDeviceVO> listAllVSMs() {
         SearchCriteria<CiscoNexusVSMDeviceVO> sc = fullTableSearch.create();
         return search(sc, null);
     }
 
+    @Override
     public List<CiscoNexusVSMDeviceVO> listByVlanId(int vlanId) {
         SearchCriteria<CiscoNexusVSMDeviceVO> sc = genericVlanIdSearch.create();
         sc.setParameters("managementVlan", vlanId);

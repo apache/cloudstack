@@ -17,20 +17,21 @@
 
 package com.cloud.capacity;
 
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import org.junit.Assert;
+import org.junit.Test;
+
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.dao.UserVmDetailsDao;
-import org.apache.log4j.Logger;
-import org.junit.*;
-import org.junit.Test;
-import org.mockito.Mockito;
-
-import static org.mockito.Mockito.*;
 
 public class CapacityManagerTest {
     CapacityDao CDao = mock(CapacityDao.class);
@@ -46,7 +47,7 @@ public class CapacityManagerTest {
 
     public CapacityManagerImpl setUp() {
         CapacityManagerImpl capMgr = new CapacityManagerImpl();
-        ((CapacityManagerImpl)capMgr)._clusterDetailsDao = ClusterDetailsDao;
+        capMgr._clusterDetailsDao = ClusterDetailsDao;
         capMgr._capacityDao = CDao;
         capMgr._offeringsDao = SOfferingDao;
         return capMgr;

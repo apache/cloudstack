@@ -22,8 +22,9 @@ import java.io.InputStream;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.utils.Pair;
 import com.trilead.ssh2.ChannelCondition;
+
+import com.cloud.utils.Pair;
 
 public class SshHelper {
     private static int DEFAULT_CONNECT_TIMEOUT = 60000;
@@ -42,9 +43,8 @@ public class SshHelper {
         scpTo(host, port, user, pemKeyFile, password, remoteTargetDirectory, localFile, fileMode, DEFAULT_CONNECT_TIMEOUT, DEFAULT_KEX_TIMEOUT);
     }
 
-    public static void
-        scpTo(String host, int port, String user, File pemKeyFile, String password, String remoteTargetDirectory, byte[] data, String remoteFileName, String fileMode)
-            throws Exception {
+    public static void scpTo(String host, int port, String user, File pemKeyFile, String password, String remoteTargetDirectory, byte[] data, String remoteFileName,
+        String fileMode) throws Exception {
 
         scpTo(host, port, user, pemKeyFile, password, remoteTargetDirectory, data, remoteFileName, fileMode, DEFAULT_CONNECT_TIMEOUT, DEFAULT_KEX_TIMEOUT);
     }
@@ -155,8 +155,9 @@ public class SshHelper {
             int currentReadBytes = 0;
             while (true) {
                 if ((stdout.available() == 0) && (stderr.available() == 0)) {
-                    int conditions = sess.waitForCondition(ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA | ChannelCondition.EOF | ChannelCondition.EXIT_STATUS,
-                        waitResultTimeoutInMs);
+                    int conditions =
+                        sess.waitForCondition(ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA | ChannelCondition.EOF | ChannelCondition.EXIT_STATUS,
+                            waitResultTimeoutInMs);
 
                     if ((conditions & ChannelCondition.TIMEOUT) != 0) {
                         String msg = "Timed out in waiting SSH execution result";

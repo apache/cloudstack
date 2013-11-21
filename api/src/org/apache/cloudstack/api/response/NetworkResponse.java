@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -25,7 +27,6 @@ import org.apache.cloudstack.api.EntityReference;
 import com.cloud.network.Network;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {Network.class, ProjectAccount.class})
@@ -279,6 +280,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.type = type;
     }
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
@@ -312,6 +314,7 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
         this.isSystem = isSystem;
     }
 
+    @Override
     public void setDomainName(String domain) {
         this.domain = domain;
     }

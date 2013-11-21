@@ -28,10 +28,10 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.network.Site2SiteVpnConnection.State;
-import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = ("s2s_vpn_connection"))
@@ -132,6 +132,7 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
         this.removed = removed;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }
@@ -146,6 +147,7 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
         return accountId;
     }
 
+    @Override
     public boolean isPassive() {
         return passive;
     }

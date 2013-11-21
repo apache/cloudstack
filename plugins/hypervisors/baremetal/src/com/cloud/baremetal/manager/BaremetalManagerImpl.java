@@ -26,28 +26,18 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.AddBaremetalHostCmd;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.manager.Commands;
-import com.cloud.deploy.DeployDestination;
-import com.cloud.exception.ResourceUnavailableException;
+import org.apache.cloudstack.api.AddBaremetalHostCmd;
+
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.fsm.StateListener;
-import com.cloud.vm.ReservationContext;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineGuru;
-import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = {BaremetalManager.class})
 public class BaremetalManagerImpl extends ManagerBase implements BaremetalManager, StateListener<State, VirtualMachine.Event, VirtualMachine> {

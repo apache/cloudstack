@@ -139,7 +139,8 @@ public class DescribeSpotInstanceRequestsType implements org.apache.axis2.databi
     }
 
     public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+        org.apache.axis2.databinding.ADBException {
         serialize(parentQName, factory, xmlWriter, false);
     }
 
@@ -198,9 +199,8 @@ public class DescribeSpotInstanceRequestsType implements org.apache.axis2.databi
     /**
      * Util method to write an attribute with the ns prefix
      */
-    private void
-        writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+    private void writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue,
+        javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
         if (xmlWriter.getPrefix(namespace) == null) {
             xmlWriter.writeNamespace(prefix, namespace);
             xmlWriter.setPrefix(prefix, namespace);
@@ -414,7 +414,8 @@ public class DescribeSpotInstanceRequestsType implements org.apache.axis2.databi
                 while (!reader.isStartElement() && !reader.isEndElement())
                     reader.next();
 
-                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "spotInstanceRequestIdSet").equals(reader.getName())) {
+                if (reader.isStartElement() &&
+                    new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "spotInstanceRequestIdSet").equals(reader.getName())) {
 
                     object.setSpotInstanceRequestIdSet(com.amazon.ec2.SpotInstanceRequestIdSetType.Factory.parse(reader));
 

@@ -27,7 +27,6 @@ import java.util.Vector;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.net.NetUtils;
 
@@ -51,11 +50,13 @@ public class PodZoneConfig {
 
         String sql = null;
         if (id != -1)
-            sql = "INSERT INTO `cloud`.`host_pod_ref` (id, name, data_center_id, gateway, cidr_address, cidr_size) " + "VALUES ('" + id + "','" + name + "','" + dcId + "','" +
-                  gateway + "','" + cidrAddress + "','" + cidrSize + "')";
+            sql =
+                "INSERT INTO `cloud`.`host_pod_ref` (id, name, data_center_id, gateway, cidr_address, cidr_size) " + "VALUES ('" + id + "','" + name + "','" + dcId +
+                    "','" + gateway + "','" + cidrAddress + "','" + cidrSize + "')";
         else
-            sql = "INSERT INTO `cloud`.`host_pod_ref` (name, data_center_id, gateway, cidr_address, cidr_size) " + "VALUES ('" + name + "','" + dcId + "','" + gateway + "','" +
-                  cidrAddress + "','" + cidrSize + "')";
+            sql =
+                "INSERT INTO `cloud`.`host_pod_ref` (name, data_center_id, gateway, cidr_address, cidr_size) " + "VALUES ('" + name + "','" + dcId + "','" + gateway +
+                    "','" + cidrAddress + "','" + cidrSize + "')";
 
         DatabaseConfig.saveSQL(sql, "Failed to save pod due to exception. Please contact Cloud Support.");
 
@@ -124,7 +125,7 @@ public class PodZoneConfig {
                     return "The subnet of the pod you are adding conflicts with the subnet of the Guest IP Network. Please specify a different CIDR.";
                 } else {
                     return "Warning: The subnet of pod " + podName + " in zone " + zoneName +
-                           " conflicts with the subnet of the Guest IP Network. Please change either the pod's CIDR or the Guest IP Network's subnet, and re-run install-vmops-management.";
+                        " conflicts with the subnet of the Guest IP Network. Please change either the pod's CIDR or the Guest IP Network's subnet, and re-run install-vmops-management.";
                 }
             }
 
@@ -150,10 +151,10 @@ public class PodZoneConfig {
                     String otherPodName = PodZoneConfig.getPodName(otherPodId.longValue(), dcId);
                     if (podName.equals("newPod")) {
                         return "The subnet of the pod you are adding conflicts with the subnet of pod " + otherPodName + " in zone " + zoneName +
-                               ". Please specify a different CIDR.";
+                            ". Please specify a different CIDR.";
                     } else {
                         return "Warning: The pods " + podName + " and " + otherPodName + " in zone " + zoneName +
-                               " have conflicting CIDR subnets. Please change the CIDR of one of these pods.";
+                            " have conflicting CIDR subnets. Please change the CIDR of one of these pods.";
                     }
                 }
             }
@@ -201,8 +202,8 @@ public class PodZoneConfig {
             "Unable to start DB connection to read vlan DB id. Please contact Cloud Support.");
     }
 
-    public List<String> modifyVlan(String zone, boolean add, String vlanId, String vlanGateway, String vlanNetmask, String pod, String vlanType, String ipRange, long networkId,
-        long physicalNetworkId) {
+    public List<String> modifyVlan(String zone, boolean add, String vlanId, String vlanGateway, String vlanNetmask, String pod, String vlanType, String ipRange,
+        long networkId, long physicalNetworkId) {
         // Check if the zone is valid
         long zoneId = getZoneId(zone);
         if (zoneId == -1)
@@ -472,10 +473,12 @@ public class PodZoneConfig {
         DatabaseConfig.saveSQL(sql, "Failed to delete zone due to exception. Please contact Cloud Support.");
     }
 
-    public void saveVlan(long zoneId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String vlanType, String ipRange, long networkId, long physicalNetworkId) {
-        String sql = "INSERT INTO `cloud`.`vlan` (vlan_id, vlan_gateway, vlan_netmask, data_center_id, vlan_type, description, network_id, physical_network_id) " + "VALUES ('" +
-                     vlanId + "','" + vlanGateway + "','" + vlanNetmask + "','" + zoneId + "','" + vlanType + "','" + ipRange + "','" + networkId + "','" + physicalNetworkId +
-                     "')";
+    public void saveVlan(long zoneId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String vlanType, String ipRange, long networkId,
+        long physicalNetworkId) {
+        String sql =
+            "INSERT INTO `cloud`.`vlan` (vlan_id, vlan_gateway, vlan_netmask, data_center_id, vlan_type, description, network_id, physical_network_id) " + "VALUES ('" +
+                vlanId + "','" + vlanGateway + "','" + vlanNetmask + "','" + zoneId + "','" + vlanType + "','" + ipRange + "','" + networkId + "','" + physicalNetworkId +
+                "')";
         DatabaseConfig.saveSQL(sql, "Failed to save vlan due to exception. Please contact Cloud Support.");
     }
 

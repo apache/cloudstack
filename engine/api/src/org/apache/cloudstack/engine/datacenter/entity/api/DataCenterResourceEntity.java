@@ -19,7 +19,6 @@
 package org.apache.cloudstack.engine.datacenter.entity.api;
 
 import javax.ws.rs.GET;
-
 import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
 

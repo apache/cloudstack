@@ -21,6 +21,7 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface DedicatedResources extends InfrastructureEntity, InternalIdentity, Identity {
+    @Override
     long getId();
 
     Long getDataCenterId();
@@ -35,6 +36,7 @@ public interface DedicatedResources extends InfrastructureEntity, InternalIdenti
 
     Long getAccountId();
 
+    @Override
     String getUuid();
 
     long getAffinityGroupId();

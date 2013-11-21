@@ -27,12 +27,13 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.TreeMap;
 
-import org.apache.cloudstack.spring.module.model.ModuleDefinition;
-import org.apache.cloudstack.spring.module.util.ModuleLocationUtils;
 import org.apache.commons.io.IOUtils;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.util.StringUtils;
+
+import org.apache.cloudstack.spring.module.model.ModuleDefinition;
+import org.apache.cloudstack.spring.module.util.ModuleLocationUtils;
 
 public class DefaultModuleDefinition implements ModuleDefinition {
 
@@ -60,7 +61,7 @@ public class DefaultModuleDefinition implements ModuleDefinition {
 
     public void init() throws IOException {
 
-        if ( ! moduleProperties.exists() ) {
+        if (!moduleProperties.exists()) {
             return;
         }
 
@@ -85,11 +86,11 @@ public class DefaultModuleDefinition implements ModuleDefinition {
             name = props.getProperty(NAME);
             parent = props.getProperty(PARENT);
 
-            if ( ! StringUtils.hasText(name) ) {
+            if (!StringUtils.hasText(name)) {
                 throw new IOException("Missing name property in [" + location() + "]");
             }
 
-            if ( ! StringUtils.hasText(parent) ) {
+            if (!StringUtils.hasText(parent)) {
                 parent = null;
             }
 
@@ -103,19 +104,16 @@ public class DefaultModuleDefinition implements ModuleDefinition {
         String expectedLocation = ModuleLocationUtils.getModuleLocation(baseDir, name);
         Resource self = resolver.getResource(expectedLocation);
 
-        if ( ! self.exists() ) {
-            throw new IOException("Resource [" + location() + "] is expected to exist at [" +
-                    expectedLocation + "] please ensure the name property is correct");
+        if (!self.exists()) {
+            throw new IOException("Resource [" + location() + "] is expected to exist at [" + expectedLocation + "] please ensure the name property is correct");
         }
 
         String moduleUrl = moduleProperties.getURL().toExternalForm();
         String selfUrl = self.getURL().toExternalForm();
 
-        if ( ! moduleUrl.equals(selfUrl) ) {
-            throw new IOException("Resource [" + location() + "] and [" +
-                    self.getURL() + "] do not appear to be the same resource, " +
-                    "please ensure the name property is correct or that the " +
-                    "module is not defined twice");
+        if (!moduleUrl.equals(selfUrl)) {
+            throw new IOException("Resource [" + location() + "] and [" + self.getURL() + "] do not appear to be the same resource, " +
+                "please ensure the name property is correct or that the " + "module is not defined twice");
         }
     }
 
@@ -123,30 +121,37 @@ public class DefaultModuleDefinition implements ModuleDefinition {
         return moduleProperties.getURL().toString();
     }
 
+    @Override
     public void addChild(ModuleDefinition def) {
         children.put(def.getName(), def);
     }
 
+    @Override
     public Collection<ModuleDefinition> getChildren() {
         return children.values();
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    @Override
     public String getParentName() {
         return parent;
     }
 
+    @Override
     public List<Resource> getConfigLocations() {
         return configLocations;
     }
 
+    @Override
     public List<Resource> getContextLocations() {
         return contextLocations;
     }
 
+    @Override
     public List<Resource> getInheritableContextLocations() {
         return inheritableContextLocations;
     }
@@ -156,13 +161,14 @@ public class DefaultModuleDefinition implements ModuleDefinition {
         return overrideContextLocations;
     }
 
+    @Override
     public boolean isValid() {
         return valid;
     }
 
+    @Override
     public ClassLoader getClassLoader() {
         return resolver.getClassLoader();
     }
-
 
 }

@@ -23,8 +23,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.utils.db.Encrypt;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.db.Encrypt;
 
 @Entity
 @Table(name = "account_details")
@@ -69,6 +70,7 @@ public class AccountDetailVO implements InternalIdentity {
         this.value = value;
     }
 
+    @Override
     public long getId() {
         return id;
     }

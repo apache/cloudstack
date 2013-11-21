@@ -29,105 +29,105 @@ package streamer;
  */
 public abstract class OneTimeSwitch extends BaseElement {
 
-  /**
-   * One-time out - name of output pad for one time logic. By default, output
-   * directly to socket.
-   */
-  public static final String OTOUT = "otout";
+    /**
+     * One-time out - name of output pad for one time logic. By default, output
+     * directly to socket.
+     */
+    public static final String OTOUT = "otout";
 
-  private boolean switched = false;
+    private boolean switched = false;
 
-  public OneTimeSwitch(String id) {
-    super(id);
-    declarePads();
-  }
+    public OneTimeSwitch(String id) {
+        super(id);
+        declarePads();
+    }
 
-  protected void declarePads() {
-    inputPads.put(STDIN, null);
-    outputPads.put(OTOUT, null);
-    outputPads.put(STDOUT, null);
-  }
+    protected void declarePads() {
+        inputPads.put(STDIN, null);
+        outputPads.put(OTOUT, null);
+        outputPads.put(STDOUT, null);
+    }
 
-  @Override
-  public void handleData(ByteBuffer buf, Link link) {
-    if (switched)
-      throw new RuntimeException(this + " element is switched off and must not receive any data or events anymore.");
+    @Override
+    public void handleData(ByteBuffer buf, Link link) {
+        if (switched)
+            throw new RuntimeException(this + " element is switched off and must not receive any data or events anymore.");
 
-    if (buf == null)
-      return;
+        if (buf == null)
+            return;
 
-    handleOneTimeData(buf, link);
-  }
+        handleOneTimeData(buf, link);
+    }
 
-  public void pushDataToOTOut(ByteBuffer buf) {
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Sending data:  " + buf + ".");
+    public void pushDataToOTOut(ByteBuffer buf) {
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Sending data:  " + buf + ".");
 
-    outputPads.get(OTOUT).sendData(buf);
-  }
+        outputPads.get(OTOUT).sendData(buf);
+    }
 
-  /**
-   * Switch this element off. Pass data directly to main output(s).
-   */
-  public void switchOff() {
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Switching OFF.");
+    /**
+     * Switch this element off. Pass data directly to main output(s).
+     */
+    public void switchOff() {
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Switching OFF.");
 
-    switched = true;
-    verbose = false;
+        switched = true;
+        verbose = false;
 
-    // Rewire links: drop otout link, replace stdout link by stdin to send data
-    // directly to stdout
-    Link stdout = (Link) outputPads.get(STDOUT);
-    Link stdin = (Link) inputPads.get(STDIN);
-    Link otout = (Link) outputPads.get(OTOUT);
+        // Rewire links: drop otout link, replace stdout link by stdin to send data
+        // directly to stdout
+        Link stdout = (Link)outputPads.get(STDOUT);
+        Link stdin = (Link)inputPads.get(STDIN);
+        Link otout = (Link)outputPads.get(OTOUT);
 
-    otout.drop();
+        otout.drop();
 
-    // Wake up next peer(s)
-    sendEventToAllPads(Event.STREAM_START, Direction.OUT);
+        // Wake up next peer(s)
+        sendEventToAllPads(Event.STREAM_START, Direction.OUT);
 
-    stdin.setSink(null);
-    inputPads.remove(STDIN);
+        stdin.setSink(null);
+        inputPads.remove(STDIN);
 
-    Element nextPeer = stdout.getSink();
-    nextPeer.replaceLink(stdout, stdin);
-    stdout.drop();
+        Element nextPeer = stdout.getSink();
+        nextPeer.replaceLink(stdout, stdin);
+        stdout.drop();
 
-    for (Object link : inputPads.values().toArray())
-      ((Link) link).drop();
-    for (Object link : outputPads.values().toArray())
-      ((Link) link).drop();
+        for (Object link : inputPads.values().toArray())
+            ((Link)link).drop();
+        for (Object link : outputPads.values().toArray())
+            ((Link)link).drop();
 
-  }
+    }
 
-  public void switchOn() {
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Switching ON.");
+    public void switchOn() {
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Switching ON.");
 
-    switched = false;
-  }
+        switched = false;
+    }
 
-  /**
-   * Override this method to handle one-time packet(s) at handshake or
-   * initialization stages. Execute method @see switchRoute() when this method
-   * is no longer necessary.
-   */
-  protected abstract void handleOneTimeData(ByteBuffer buf, Link link);
+    /**
+     * Override this method to handle one-time packet(s) at handshake or
+     * initialization stages. Execute method @see switchRoute() when this method
+     * is no longer necessary.
+     */
+    protected abstract void handleOneTimeData(ByteBuffer buf, Link link);
 
-  @Override
-  public void handleEvent(Event event, Direction direction) {
-    if (event == Event.STREAM_START) {
-      if (verbose)
-        System.out.println("[" + this + "] INFO: Event " + event + " is received.");
+    @Override
+    public void handleEvent(Event event, Direction direction) {
+        if (event == Event.STREAM_START) {
+            if (verbose)
+                System.out.println("[" + this + "] INFO: Event " + event + " is received.");
 
-      switchOn();
+            switchOn();
 
-      // Execute this element onStart(), but do not propagate event further,
-      // to not wake up next elements too early
-      onStart();
-    } else
-      super.handleEvent(event, direction);
-  }
+            // Execute this element onStart(), but do not propagate event further,
+            // to not wake up next elements too early
+            onStart();
+        } else
+            super.handleEvent(event, direction);
+    }
 
 }

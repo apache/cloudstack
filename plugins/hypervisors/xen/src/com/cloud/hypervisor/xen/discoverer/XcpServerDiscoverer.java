@@ -150,8 +150,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     }
 
     @Override
-    public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags)
-        throws DiscoveryException {
+    public Map<? extends ServerResource, Map<String, String>>
+        find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags) throws DiscoveryException {
         Map<CitrixResourceBase, Map<String, String>> resources = new HashMap<CitrixResourceBase, Map<String, String>>();
         Connection conn = null;
         if (!url.getScheme().equals("http")) {
@@ -465,8 +465,9 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             return new XcpOssResource();
         }
 
-        String msg = "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2, 6.1.0, 6.2.0 but this one is " +
-                     prodBrand + " " + prodVersion;
+        String msg =
+            "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2, 6.1.0, 6.2.0 but this one is " +
+                prodBrand + " " + prodVersion;
         _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
         s_logger.debug(msg);
         throw new RuntimeException(msg);
@@ -552,8 +553,9 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         Long id;
         if (tmplt == null) {
             id = _tmpltDao.getNextInSequence(Long.class, "id");
-            VMTemplateVO template = VMTemplateVO.createPreHostIso(id, isoName, isoName, ImageFormat.ISO, true, true, TemplateType.PERHOST, null, null, true, 64,
-                Account.ACCOUNT_ID_SYSTEM, null, "xen-pv-drv-iso", false, 1, false, HypervisorType.XenServer);
+            VMTemplateVO template =
+                VMTemplateVO.createPreHostIso(id, isoName, isoName, ImageFormat.ISO, true, true, TemplateType.PERHOST, null, null, true, 64, Account.ACCOUNT_ID_SYSTEM,
+                    null, "xen-pv-drv-iso", false, 1, false, HypervisorType.XenServer);
             _tmpltDao.persist(template);
         } else {
             id = tmplt.getId();
@@ -618,8 +620,9 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         }
 
         if (resource == null) {
-            String msg = "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6, 5.6 FP1, 5.6 SP2 and Xenserver 6.0 , 6.0.2, 6.1.0, 6.2.0 but this one is " +
-                         prodBrand + " " + prodVersion;
+            String msg =
+                "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6, 5.6 FP1, 5.6 SP2 and Xenserver 6.0 , 6.0.2, 6.1.0, 6.2.0 but this one is " +
+                    prodBrand + " " + prodVersion;
             s_logger.debug(msg);
             throw new RuntimeException(msg);
         }
@@ -734,8 +737,9 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 }
             }
             if (!success) {
-                String msg = "Unable to eject host " + host.getGuid() + " due to there is no host up in this cluster, please execute xe pool-eject host-uuid=" + host.getGuid() +
-                             "in this host " + host.getPrivateIpAddress();
+                String msg =
+                    "Unable to eject host " + host.getGuid() + " due to there is no host up in this cluster, please execute xe pool-eject host-uuid=" + host.getGuid() +
+                        "in this host " + host.getPrivateIpAddress();
                 s_logger.warn(msg);
                 _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Unable to eject host " + host.getGuid(), msg);
             }

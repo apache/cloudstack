@@ -115,6 +115,6 @@ public interface UserVmManager extends UserVmService {
 
     void collectVmDiskStatistics(UserVmVO userVm);
 
-    UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha, Boolean isDisplayVmEnabled, Long osTypeId, String userData, Boolean isDynamicallyScalable,
-        HTTPMethod httpMethod) throws ResourceUnavailableException, InsufficientCapacityException;
+    UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha, Boolean isDisplayVmEnabled, Long osTypeId, String userData,
+        Boolean isDynamicallyScalable, HTTPMethod httpMethod) throws ResourceUnavailableException, InsufficientCapacityException;
 }

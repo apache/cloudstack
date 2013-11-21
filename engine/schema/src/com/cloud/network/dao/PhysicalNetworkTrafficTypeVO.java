@@ -29,7 +29,6 @@ import javax.persistence.Table;
 
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkTrafficType;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "physical_network_traffic_types")
@@ -70,8 +69,8 @@ public class PhysicalNetworkTrafficTypeVO implements PhysicalNetworkTrafficType 
     public PhysicalNetworkTrafficTypeVO() {
     }
 
-    public PhysicalNetworkTrafficTypeVO(long physicalNetworkId, TrafficType trafficType, String xenLabel, String kvmLabel, String vmwareLabel, String simulatorLabel, String vlan,
-            String hypervLabel) {
+    public PhysicalNetworkTrafficTypeVO(long physicalNetworkId, TrafficType trafficType, String xenLabel, String kvmLabel, String vmwareLabel, String simulatorLabel,
+            String vlan, String hypervLabel) {
         this.physicalNetworkId = physicalNetworkId;
         this.trafficType = trafficType;
         this.xenNetworkLabel = xenLabel;

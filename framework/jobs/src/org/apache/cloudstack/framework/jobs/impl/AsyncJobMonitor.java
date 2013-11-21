@@ -19,13 +19,13 @@ package org.apache.cloudstack.framework.jobs.impl;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
@@ -86,7 +86,8 @@ public class AsyncJobMonitor extends ManagerBase {
         synchronized (this) {
             for (Map.Entry<Long, ActiveTaskRecord> entry : _activeTasks.entrySet()) {
                 if (entry.getValue().millisSinceLastJobHeartbeat() > _inactivityWarningThresholdMs) {
-                    s_logger.warn("Task (job-" + entry.getValue().getJobId() + ") has been pending for " + entry.getValue().millisSinceLastJobHeartbeat() / 1000 + " seconds");
+                    s_logger.warn("Task (job-" + entry.getValue().getJobId() + ") has been pending for " + entry.getValue().millisSinceLastJobHeartbeat() / 1000 +
+                        " seconds");
                 }
             }
         }

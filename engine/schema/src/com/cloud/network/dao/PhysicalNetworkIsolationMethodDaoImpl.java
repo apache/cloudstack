@@ -28,7 +28,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-public class PhysicalNetworkIsolationMethodDaoImpl extends GenericDaoBase<PhysicalNetworkIsolationMethodVO, Long> implements GenericDao<PhysicalNetworkIsolationMethodVO, Long> {
+public class PhysicalNetworkIsolationMethodDaoImpl extends GenericDaoBase<PhysicalNetworkIsolationMethodVO, Long> implements
+        GenericDao<PhysicalNetworkIsolationMethodVO, Long> {
     private final GenericSearchBuilder<PhysicalNetworkIsolationMethodVO, String> IsolationMethodSearch;
     private final SearchBuilder<PhysicalNetworkIsolationMethodVO> AllFieldsSearch;
 

@@ -17,58 +17,39 @@
 package com.cloud.deploy;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
-import org.apache.log4j.Logger;
-
-import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.Pod;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
-import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.org.Cluster;
-import com.cloud.org.Grouping;
-import com.cloud.resource.ResourceState;
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -77,7 +58,6 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.vm.DiskProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -297,9 +277,11 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
                 return;
             }
             if (capacity == Capacity.CAPACITY_TYPE_CPU) {
-                clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(), ClusterCPUCapacityDisableThreshold.key(), cpu_requested);
+                clustersCrossingThreshold =
+                    _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(), ClusterCPUCapacityDisableThreshold.key(), cpu_requested);
             } else if (capacity == Capacity.CAPACITY_TYPE_MEMORY) {
-                clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(), ClusterMemoryCapacityDisableThreshold.key(), ram_requested);
+                clustersCrossingThreshold =
+                    _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(), ClusterMemoryCapacityDisableThreshold.key(), ram_requested);
             }
 
             if (clustersCrossingThreshold != null && clustersCrossingThreshold.size() != 0) {
@@ -309,7 +291,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
                 clusterListForVmAllocation.removeAll(clustersCrossingThreshold);
 
                 s_logger.debug("Cannot allocate cluster list " + clustersCrossingThreshold.toString() + " for vm creation since their allocated percentage" +
-                               " crosses the disable capacity threshold defined at each cluster/ at global value for capacity Type : " + capacity + ", skipping these clusters");
+                    " crosses the disable capacity threshold defined at each cluster/ at global value for capacity Type : " + capacity + ", skipping these clusters");
             }
 
         }
@@ -375,7 +357,8 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
      * other than the capacity based ordering which is done by default.
      * @return List<Long> ordered list of Cluster Ids
      */
-    protected List<Long> reorderClusters(long id, boolean isZone, Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo, VirtualMachineProfile vmProfile, DeploymentPlan plan) {
+    protected List<Long> reorderClusters(long id, boolean isZone, Pair<List<Long>, Map<Long, Double>> clusterCapacityInfo, VirtualMachineProfile vmProfile,
+        DeploymentPlan plan) {
         List<Long> reordersClusterIds = clusterCapacityInfo.first();
         return reordersClusterIds;
     }
@@ -414,12 +397,12 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
         //we need clusters having enough cpu AND RAM to host this particular VM and order them by aggregate cluster capacity
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Listing clusters in order of aggregate capacity, that have (atleast one host with) enough CPU and RAM capacity under this " +
-                           (isZone ? "Zone: " : "Pod: ") + id);
+                (isZone ? "Zone: " : "Pod: ") + id);
         }
         String capacityTypeToOrder = _configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
-        short capacityType = CapacityVO.CAPACITY_TYPE_CPU;
+        short capacityType = Capacity.CAPACITY_TYPE_CPU;
         if ("RAM".equalsIgnoreCase(capacityTypeToOrder)) {
-            capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
+            capacityType = Capacity.CAPACITY_TYPE_MEMORY;
         }
 
         List<Long> clusterIdswithEnoughCapacity = _capacityDao.listClustersInZoneOrPodByHostCapacities(id, requiredCpu, requiredRam, capacityType, isZone);
@@ -451,9 +434,9 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentClusterPla
             s_logger.debug("Listing pods in order of aggregate capacity, that have (atleast one host with) enough CPU and RAM capacity under this Zone: " + zoneId);
         }
         String capacityTypeToOrder = _configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
-        short capacityType = CapacityVO.CAPACITY_TYPE_CPU;
+        short capacityType = Capacity.CAPACITY_TYPE_CPU;
         if ("RAM".equalsIgnoreCase(capacityTypeToOrder)) {
-            capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
+            capacityType = Capacity.CAPACITY_TYPE_MEMORY;
         }
 
         List<Long> podIdswithEnoughCapacity = _capacityDao.listPodsByHostCapacities(zoneId, requiredCpu, requiredRam, capacityType);

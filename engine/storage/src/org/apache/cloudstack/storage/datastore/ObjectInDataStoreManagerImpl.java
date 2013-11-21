@@ -18,6 +18,9 @@ package org.apache.cloudstack.storage.datastore;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -37,8 +40,6 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.db.ObjectInDataStoreDao;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.S3TO;
@@ -129,8 +130,9 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                     ts.setTemplateId(obj.getId());
                     ts.setDataStoreId(dataStore.getId());
                     ts.setDataStoreRole(dataStore.getRole());
-                    String installPath = TemplateConstants.DEFAULT_TMPLT_ROOT_DIR + "/" + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR +
-                                         templateDao.findById(obj.getId()).getAccountId() + "/" + obj.getId();
+                    String installPath =
+                        TemplateConstants.DEFAULT_TMPLT_ROOT_DIR + "/" + TemplateConstants.DEFAULT_TMPLT_FIRST_LEVEL_DIR +
+                            templateDao.findById(obj.getId()).getAccountId() + "/" + obj.getId();
                     if (dataStore.getTO() instanceof S3TO) {
                         TemplateInfo tmpl = (TemplateInfo)obj;
                         installPath += "/" + tmpl.getUniqueName(); // for S3, we

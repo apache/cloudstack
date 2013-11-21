@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DatastoreInfo;
 import com.vmware.vim25.DynamicProperty;
@@ -36,6 +35,8 @@ import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VmfsDatastoreCreateSpec;
 import com.vmware.vim25.VmfsDatastoreOption;
+
+import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class HostDatastoreSystemMO extends BaseMO {
 

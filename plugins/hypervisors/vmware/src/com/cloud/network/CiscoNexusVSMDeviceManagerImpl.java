@@ -29,22 +29,22 @@ import com.cloud.dc.ClusterVSMMapVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
+import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
+import com.cloud.network.dao.PortProfileDao;
 import com.cloud.resource.ResourceManager;
+import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
-import com.cloud.network.dao.PortProfileDao;
-import com.cloud.exception.ResourceInUseException;
-import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
 
 public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
 
@@ -204,7 +204,8 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
                     for (Host host : hosts) {
                         if (host.getType() == Host.Type.Routing) {
                             s_logger.info("Non-empty cluster with id" + clusterId + "still has a host that uses this VSM. Please empty the cluster first");
-                            throw new ResourceInUseException("Non-empty cluster with id" + clusterId + "still has a host that uses this VSM. Please empty the cluster first");
+                            throw new ResourceInUseException("Non-empty cluster with id" + clusterId +
+                                "still has a host that uses this VSM. Please empty the cluster first");
                         }
                     }
                 }

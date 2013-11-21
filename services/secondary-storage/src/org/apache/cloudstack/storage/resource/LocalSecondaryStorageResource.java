@@ -21,11 +21,12 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.template.DownloadManager;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
@@ -188,7 +189,8 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
     @Override
     public StartupCommand[] initialize() {
 
-        final StartupStorageCommand cmd = new StartupStorageCommand(_parent, StoragePoolType.Filesystem, 1024l * 1024l * 1024l * 1024l, _dlMgr.gatherTemplateInfo(_parent));
+        final StartupStorageCommand cmd =
+            new StartupStorageCommand(_parent, StoragePoolType.Filesystem, 1024l * 1024l * 1024l * 1024l, _dlMgr.gatherTemplateInfo(_parent));
         cmd.setResourceType(Storage.StorageResourceType.LOCAL_SECONDARY_STORAGE);
         cmd.setIqn("local://");
         fillNetworkInformation(cmd);

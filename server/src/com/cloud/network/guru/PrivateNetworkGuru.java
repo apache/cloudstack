@@ -111,8 +111,8 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
         } else {
             broadcastType = BroadcastDomainType.Vlan;
         }
-        NetworkVO network = new NetworkVO(offering.getTrafficType(), Mode.Static, broadcastType, offering.getId(), State.Allocated, plan.getDataCenterId(),
-            plan.getPhysicalNetworkId());
+        NetworkVO network =
+            new NetworkVO(offering.getTrafficType(), Mode.Static, broadcastType, offering.getId(), State.Allocated, plan.getDataCenterId(), plan.getPhysicalNetworkId());
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) || (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {
                 throw new InvalidParameterValueException("cidr and gateway must be specified together.");
@@ -151,13 +151,15 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
+    public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException {
 
         return network;
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+        InsufficientAddressCapacityException {
         DataCenter dc = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
         NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
         if (!canHandle(offering, dc)) {
@@ -184,8 +186,8 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
             PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(network.getDataCenterId(), network.getId(), null);
             String vlanTag = BroadcastDomainType.getValue(network.getBroadcastUri());
             String netmask = NetUtils.getCidrNetmask(network.getCidr());
-            PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask,
-                NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress())));
+            PrivateIpAddress ip =
+                new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress())));
 
             nic.setIp4Address(ip.getIpAddress());
             nic.setGateway(ip.getGateway());

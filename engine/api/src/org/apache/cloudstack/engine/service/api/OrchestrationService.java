@@ -61,15 +61,16 @@ public interface OrchestrationService {
     @POST
     @Path("/createvm")
     VirtualMachineEntity createVirtualMachine(@QueryParam("id") String id, @QueryParam("owner") String owner, @QueryParam("template-id") String templateId,
-        @QueryParam("host-name") String hostName, @QueryParam("display-name") String displayName, @QueryParam("hypervisor") String hypervisor, @QueryParam("cpu") int cpu,
-        @QueryParam("speed") int speed, @QueryParam("ram") long memory, @QueryParam("disk-size") Long diskSize, @QueryParam("compute-tags") List<String> computeTags,
-        @QueryParam("root-disk-tags") List<String> rootDiskTags, @QueryParam("network-nic-map") Map<String, NicProfile> networkNicMap,
-        @QueryParam("deploymentplan") DeploymentPlan plan, @QueryParam("root-disk-size") Long rootDiskSize) throws InsufficientCapacityException;
+        @QueryParam("host-name") String hostName, @QueryParam("display-name") String displayName, @QueryParam("hypervisor") String hypervisor,
+        @QueryParam("cpu") int cpu, @QueryParam("speed") int speed, @QueryParam("ram") long memory, @QueryParam("disk-size") Long diskSize,
+        @QueryParam("compute-tags") List<String> computeTags, @QueryParam("root-disk-tags") List<String> rootDiskTags,
+        @QueryParam("network-nic-map") Map<String, NicProfile> networkNicMap, @QueryParam("deploymentplan") DeploymentPlan plan,
+        @QueryParam("root-disk-size") Long rootDiskSize) throws InsufficientCapacityException;
 
     @POST
     VirtualMachineEntity createVirtualMachineFromScratch(@QueryParam("id") String id, @QueryParam("owner") String owner, @QueryParam("iso-id") String isoId,
-        @QueryParam("host-name") String hostName, @QueryParam("display-name") String displayName, @QueryParam("hypervisor") String hypervisor, @QueryParam("os") String os,
-        @QueryParam("cpu") int cpu, @QueryParam("speed") int speed, @QueryParam("ram") long memory, @QueryParam("disk-size") Long diskSize,
+        @QueryParam("host-name") String hostName, @QueryParam("display-name") String displayName, @QueryParam("hypervisor") String hypervisor,
+        @QueryParam("os") String os, @QueryParam("cpu") int cpu, @QueryParam("speed") int speed, @QueryParam("ram") long memory, @QueryParam("disk-size") Long diskSize,
         @QueryParam("compute-tags") List<String> computeTags, @QueryParam("root-disk-tags") List<String> rootDiskTags,
         @QueryParam("network-nic-map") Map<String, NicProfile> networkNicMap, @QueryParam("deploymentplan") DeploymentPlan plan) throws InsufficientCapacityException;
 

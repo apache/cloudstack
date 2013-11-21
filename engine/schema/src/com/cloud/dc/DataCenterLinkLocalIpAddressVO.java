@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.dc;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -28,6 +26,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+
+import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "op_dc_link_local_ip_address_alloc")
@@ -66,6 +66,7 @@ public class DataCenterLinkLocalIpAddressVO implements InternalIdentity {
         this.podId = podId;
     }
 
+    @Override
     public long getId() {
         return id;
     }

@@ -23,8 +23,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.domain.PartOf;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.domain.PartOf;
 
 @Entity
 @Table(name = "domain_network_ref")

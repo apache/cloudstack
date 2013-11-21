@@ -20,23 +20,15 @@ package org.apache.cloudstack.api;
 
 import javax.inject.Inject;
 
-import com.cloud.baremetal.networkservice.BaremetalPxeResponse;
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.PodResponse;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.baremetal.database.BaremetalPxeVO;
 import com.cloud.baremetal.networkservice.BaremetalPxeManager;
+import com.cloud.baremetal.networkservice.BaremetalPxeResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -86,8 +78,8 @@ public class AddBaremetalPxeCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException,
-        NetworkRuleConflictException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException, NetworkRuleConflictException {
         try {
             BaremetalPxeVO vo = pxeMgr.addPxeServer(this);
             BaremetalPxeResponse rsp = pxeMgr.getApiResponse(vo);

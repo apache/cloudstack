@@ -20,7 +20,6 @@ import java.util.List;
 
 import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 public interface DataCenterVnetDao extends GenericDao<DataCenterVnetVO, Long> {

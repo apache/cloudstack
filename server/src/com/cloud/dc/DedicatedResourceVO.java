@@ -20,7 +20,6 @@ import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
-
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -74,10 +73,12 @@ public class DedicatedResourceVO implements DedicatedResources {
         this.affinityGroupId = affinityGroupId;
     }
 
+    @Override
     public long getId() {
         return id;
     }
 
+    @Override
     public Long getDataCenterId() {
         return dataCenterId;
     }
@@ -86,6 +87,7 @@ public class DedicatedResourceVO implements DedicatedResources {
         this.dataCenterId = dataCenterId;
     }
 
+    @Override
     public Long getPodId() {
         return podId;
     }
@@ -94,6 +96,7 @@ public class DedicatedResourceVO implements DedicatedResources {
         this.podId = podId;
     }
 
+    @Override
     public Long getClusterId() {
         return clusterId;
     }
@@ -102,6 +105,7 @@ public class DedicatedResourceVO implements DedicatedResources {
         this.clusterId = clusterId;
     }
 
+    @Override
     public Long getHostId() {
         return hostId;
     }
@@ -114,6 +118,7 @@ public class DedicatedResourceVO implements DedicatedResources {
         this.id = dedicatedResourceId;
     }
 
+    @Override
     public Long getDomainId() {
         return domainId;
     }
@@ -122,6 +127,7 @@ public class DedicatedResourceVO implements DedicatedResources {
         this.domainId = domainId;
     }
 
+    @Override
     public Long getAccountId() {
         return accountId;
     }
@@ -130,6 +136,7 @@ public class DedicatedResourceVO implements DedicatedResources {
         this.accountId = accountId;
     }
 
+    @Override
     public String getUuid() {
         return this.uuid;
     }
@@ -138,6 +145,7 @@ public class DedicatedResourceVO implements DedicatedResources {
         this.uuid = uuid;
     }
 
+    @Override
     public long getAffinityGroupId() {
         return affinityGroupId;
     }

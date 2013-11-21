@@ -27,6 +27,7 @@ import com.amazon.s3.client.AmazonS3Stub.CreateBucket;
 import com.amazon.s3.client.AmazonS3Stub.CreateBucketResponse;
 import com.amazon.s3.client.AmazonS3Stub.DeleteBucket;
 import com.amazon.s3.client.AmazonS3Stub.DeleteBucketResponse;
+
 import com.cloud.gate.testcase.BaseTestCase;
 
 public class ServiceTestCase extends BaseTestCase {

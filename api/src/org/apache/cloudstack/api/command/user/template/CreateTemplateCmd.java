@@ -16,15 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
-import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.projects.Project;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Volume;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.Account;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -40,16 +36,19 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.projects.Project;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
-@APICommand(name = "createTemplate",
-            responseObject = TemplateResponse.class,
-            description = "Creates a template of a virtual machine. " + "The virtual machine must be in a STOPPED state. "
-                          + "A template created from this command is automatically designated as a private template visible to the account that created it.")
+@APICommand(name = "createTemplate", responseObject = TemplateResponse.class, description = "Creates a template of a virtual machine. "
+    + "The virtual machine must be in a STOPPED state. "
+    + "A template created from this command is automatically designated as a private template visible to the account that created it.")
 public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTemplateCmd.class.getName());
     private static final String s_name = "createtemplateresponse";
@@ -84,7 +83,9 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
                description = "the ID of the OS Type that best represents the OS of this template.")
     private Long osTypeId;
 
-    @Parameter(name = ApiConstants.PASSWORD_ENABLED, type = CommandType.BOOLEAN, description = "true if the template supports the password reset feature; default is false")
+    @Parameter(name = ApiConstants.PASSWORD_ENABLED,
+               type = CommandType.BOOLEAN,
+               description = "true if the template supports the password reset feature; default is false")
     private Boolean passwordEnabled;
 
     @Parameter(name = ApiConstants.REQUIRES_HVM, type = CommandType.BOOLEAN, description = "true if the template requres HVM, false otherwise")
@@ -108,7 +109,9 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
                description = "Optional, VM ID. If this presents, it is going to create a baremetal template for VM this ID refers to. This is only for VM whose hypervisor type is BareMetal")
     private Long vmId;
 
-    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "Optional, only for baremetal hypervisor. The directory name where template stored on CIFS server")
+    @Parameter(name = ApiConstants.URL,
+               type = CommandType.STRING,
+               description = "Optional, only for baremetal hypervisor. The directory name where template stored on CIFS server")
     private String url;
 
     @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "the tag for this template.")
@@ -231,8 +234,8 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             Project project = _projectService.findByProjectAccountId(accountId);
             if (project.getState() != Project.State.Active) {
-                PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the specified project id in state=" + project.getState() +
-                                                                             " as it's no longer active");
+                PermissionDeniedException ex =
+                    new PermissionDeniedException("Can't add resources to the specified project id in state=" + project.getState() + " as it's no longer active");
                 ex.addProxyObject(project.getUuid(), "projectId");
             }
         } else if (account.getState() == Account.State.disabled) {

@@ -178,8 +178,8 @@ public class VolumeVO implements Volume {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public VolumeVO(String name, long dcId, Long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Long minIops, Long maxIops,
-            String iScsiName, Volume.Type vType) {
+    public VolumeVO(String name, long dcId, Long podId, long accountId, long domainId, Long instanceId, String folder, String path, long size, Long minIops,
+            Long maxIops, String iScsiName, Volume.Type vType) {
         this.name = name;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -555,6 +555,7 @@ public class VolumeVO implements Volume {
         this.displayVolume = displayVolume;
     }
 
+    @Override
     public Storage.ImageFormat getFormat() {
         return format;
     }
@@ -567,6 +568,7 @@ public class VolumeVO implements Volume {
         this.vmSnapshotChainSize = vmSnapshotChainSize;
     }
 
+    @Override
     public Long getVmSnapshotChainSize() {
         return this.vmSnapshotChainSize;
     }
@@ -585,10 +587,12 @@ public class VolumeVO implements Volume {
         this.state = state;
     }
 
+    @Override
     public void setHypervisorSnapshotReserve(Integer hypervisorSnapshotReserve) {
         this.hypervisorSnapshotReserve = hypervisorSnapshotReserve;
     }
 
+    @Override
     public Integer getHypervisorSnapshotReserve() {
         return hypervisorSnapshotReserve;
     }

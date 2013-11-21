@@ -16,21 +16,22 @@
 // under the License.
 package com.cloud.utils.cisco.n1kv.vsm;
 
-import org.apache.log4j.Logger;
+import java.io.IOException;
+import java.io.StringReader;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.w3c.dom.DOMException;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSSerializer;
-import org.xml.sax.SAXException;
 import org.xml.sax.InputSource;
-import java.io.StringReader;
-import java.io.IOException;
+import org.xml.sax.SAXException;
 
 public abstract class VsmResponse {
 
@@ -109,6 +110,7 @@ public abstract class VsmResponse {
         return _responseOk;
     }
 
+    @Override
     public String toString() {
         StringBuffer error = new StringBuffer("");
 

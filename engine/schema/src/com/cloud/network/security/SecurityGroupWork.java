@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.network.security;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 /**
  * Work related to security groups for a vm
  *

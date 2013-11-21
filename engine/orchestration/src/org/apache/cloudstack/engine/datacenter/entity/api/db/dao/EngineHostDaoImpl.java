@@ -502,7 +502,8 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
         List<EngineHostVO> result = new ArrayList<EngineHostVO>();
         ResultSet rs = null;
         try {
-            String sql = "select h.id from host h left join  cluster c on h.cluster_id=c.id where h.mgmt_server_id is not null and h.last_ping < ? and h.status in ('Up', 'Updating', 'Disconnected', 'Connecting') and h.type not in ('ExternalFirewall', 'ExternalLoadBalancer', 'TrafficMonitor', 'SecondaryStorage', 'LocalSecondaryStorage', 'L2Networking') and (h.cluster_id is null or c.managed_state = 'Managed') ;";
+            String sql =
+                "select h.id from host h left join  cluster c on h.cluster_id=c.id where h.mgmt_server_id is not null and h.last_ping < ? and h.status in ('Up', 'Updating', 'Disconnected', 'Connecting') and h.type not in ('ExternalFirewall', 'ExternalLoadBalancer', 'TrafficMonitor', 'SecondaryStorage', 'LocalSecondaryStorage', 'L2Networking') and (h.cluster_id is null or c.managed_state = 'Managed') ;";
             pstmt = txn.prepareStatement(sql);
             pstmt.setLong(1, timeout);
             rs = pstmt.executeQuery();
@@ -593,10 +594,11 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
     @Override
     @DB
     public List<RunningHostCountInfo> getRunningHostCounts(Date cutTime) {
-        String sql = "select * from (" + "select h.data_center_id, h.type, count(*) as count from host as h INNER JOIN mshost as m ON h.mgmt_server_id=m.msid "
-                     + "where h.status='Up' and h.type='SecondaryStorage' and m.last_update > ? " + "group by h.data_center_id, h.type " + "UNION ALL "
-                     + "select h.data_center_id, h.type, count(*) as count from host as h INNER JOIN mshost as m ON h.mgmt_server_id=m.msid "
-                     + "where h.status='Up' and h.type='Routing' and m.last_update > ? " + "group by h.data_center_id, h.type) as t " + "ORDER by t.data_center_id, t.type";
+        String sql =
+            "select * from (" + "select h.data_center_id, h.type, count(*) as count from host as h INNER JOIN mshost as m ON h.mgmt_server_id=m.msid "
+                + "where h.status='Up' and h.type='SecondaryStorage' and m.last_update > ? " + "group by h.data_center_id, h.type " + "UNION ALL "
+                + "select h.data_center_id, h.type, count(*) as count from host as h INNER JOIN mshost as m ON h.mgmt_server_id=m.msid "
+                + "where h.status='Up' and h.type='Routing' and m.last_update > ? " + "group by h.data_center_id, h.type) as t " + "ORDER by t.data_center_id, t.type";
 
         ArrayList<RunningHostCountInfo> l = new ArrayList<RunningHostCountInfo>();
 
@@ -752,8 +754,8 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
     }
 
     @Override
-    public List<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> lockRows(SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc,
-        Filter filter, boolean exclusive) {
+    public List<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> lockRows(
+        SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc, Filter filter, boolean exclusive) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -766,15 +768,15 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
     }
 
     @Override
-    public List<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> search(SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc,
-        Filter filter) {
+    public List<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> search(
+        SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc, Filter filter) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public List<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> search(SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc,
-        Filter filter, boolean enable_query_cache) {
+    public List<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> search(
+        SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc, Filter filter, boolean enable_query_cache) {
         // TODO Auto-generated method stub
         return null;
     }

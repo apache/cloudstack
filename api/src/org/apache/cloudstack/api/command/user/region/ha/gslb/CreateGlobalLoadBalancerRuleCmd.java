@@ -17,21 +17,27 @@
 
 package org.apache.cloudstack.api.command.user.region.ha.gslb;
 
-import com.cloud.event.EventTypes;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.region.ha.GlobalLoadBalancerRule;
-import com.cloud.region.ha.GlobalLoadBalancingRulesService;
+import javax.inject.Inject;
 
-import org.apache.cloudstack.api.*;
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.RegionResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.region.ha.GlobalLoadBalancerRule;
+import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 
 @APICommand(name = "createGlobalLoadBalancerRule", description = "Creates a global load balancer rule", responseObject = GlobalLoadBalancerResponse.class)
 public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
@@ -69,7 +75,7 @@ public class CreateGlobalLoadBalancerRuleCmd extends BaseAsyncCreateCmd {
                type = CommandType.STRING,
                required = false,
                description = "load balancer algorithm (roundrobin, leastconn, proximity) "
-                             + "that method is used to distribute traffic across the zones participating in global server load balancing, if not specified defaults to 'round robin'")
+                   + "that method is used to distribute traffic across the zones participating in global server load balancing, if not specified defaults to 'round robin'")
     private String algorithm;
 
     @Parameter(name = ApiConstants.GSLB_STICKY_SESSION_METHOD,

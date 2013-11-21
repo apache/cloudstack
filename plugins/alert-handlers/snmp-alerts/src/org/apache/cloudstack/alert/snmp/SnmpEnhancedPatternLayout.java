@@ -17,11 +17,11 @@
 
 package org.apache.cloudstack.alert.snmp;
 
-import org.apache.log4j.EnhancedPatternLayout;
-import org.apache.log4j.spi.LoggingEvent;
-
 import java.util.Date;
 import java.util.StringTokenizer;
+
+import org.apache.log4j.EnhancedPatternLayout;
+import org.apache.log4j.spi.LoggingEvent;
 
 public class SnmpEnhancedPatternLayout extends EnhancedPatternLayout {
     private String _pairDelimiter = "//";

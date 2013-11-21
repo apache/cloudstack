@@ -18,12 +18,11 @@
 package com.cloud.hypervisor.vmware.mo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.utils.Pair;
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DVPortgroupConfigInfo;
 import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
@@ -36,7 +35,9 @@ import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
-import java.util.Arrays;
+
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.utils.Pair;
 
 public class DatacenterMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(DatacenterMO.class);
@@ -68,8 +69,9 @@ public class DatacenterMO extends BaseMO {
         ManagedObjectReference morFolder = (ManagedObjectReference)_context.getVimClient().getDynamicProperty(_mor, "vmFolder");
         assert (morFolder != null);
 
-        ManagedObjectReference morTask = _context.getService().registerVMTask(morFolder, String.format("[%s] %s/%s", datastoreName, templateName, templateFileName), templateName,
-            true, null, morHost);
+        ManagedObjectReference morTask =
+            _context.getService()
+                .registerVMTask(morFolder, String.format("[%s] %s/%s", datastoreName, templateName, templateFileName), templateName, true, null, morHost);
 
         boolean result = _context.getVimClient().waitForTask(morTask);
         if (!result) {

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.resource;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -26,8 +28,6 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ResourceLimit;
 
@@ -60,12 +60,12 @@ public class UpdateResourceLimitCmd extends BaseCmd {
                type = CommandType.INTEGER,
                required = true,
                description = "Type of resource to update. Values are 0, 1, 2, 3, 4, 6, 7, 8, 9, 10 and 11. 0 - Instance. Number of instances a user can create. "
-                             + "1 - IP. Number of public IP addresses a user can own. " + "2 - Volume. Number of disk volumes a user can create."
-                             + "3 - Snapshot. Number of snapshots a user can create." + "4 - Template. Number of templates that a user can register/create."
-                             + "6 - Network. Number of guest network a user can create." + "7 - VPC. Number of VPC a user can create."
-                             + "8 - CPU. Total number of CPU cores a user can use." + "9 - Memory. Total Memory (in MB) a user can use."
-                             + "10 - PrimaryStorage. Total primary storage space (in GiB) a user can use."
-                             + "11 - SecondaryStorage. Total secondary storage space (in GiB) a user can use.")
+                   + "1 - IP. Number of public IP addresses a user can own. " + "2 - Volume. Number of disk volumes a user can create."
+                   + "3 - Snapshot. Number of snapshots a user can create." + "4 - Template. Number of templates that a user can register/create."
+                   + "6 - Network. Number of guest network a user can create." + "7 - VPC. Number of VPC a user can create."
+                   + "8 - CPU. Total number of CPU cores a user can use." + "9 - Memory. Total Memory (in MB) a user can use."
+                   + "10 - PrimaryStorage. Total primary storage space (in GiB) a user can use."
+                   + "11 - SecondaryStorage. Total secondary storage space (in GiB) a user can use.")
     private Integer resourceType;
 
     /////////////////////////////////////////////////////

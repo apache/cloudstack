@@ -78,6 +78,7 @@ public class SecurityGroupRuleDaoImpl extends GenericDaoBase<SecurityGroupRuleVO
 
     }
 
+    @Override
     public List<SecurityGroupRuleVO> listBySecurityGroupId(long securityGroupId, SecurityRuleType type) {
         SearchCriteria<SecurityGroupRuleVO> sc = securityGroupIdAndTypeSearch.create();
         sc.setParameters("securityGroupId", securityGroupId);
@@ -92,6 +93,7 @@ public class SecurityGroupRuleDaoImpl extends GenericDaoBase<SecurityGroupRuleVO
         return listBy(sc);
     }
 
+    @Override
     public int deleteBySecurityGroup(long securityGroupId) {
         SearchCriteria<SecurityGroupRuleVO> sc = securityGroupIdSearch.create();
         sc.setParameters("securityGroupId", securityGroupId);

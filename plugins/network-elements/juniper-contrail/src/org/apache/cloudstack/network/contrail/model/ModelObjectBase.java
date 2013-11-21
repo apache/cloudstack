@@ -37,6 +37,7 @@ public abstract class ModelObjectBase implements ModelObject {
             return lhs.compareTo(rhs);
         }
     }
+
     private TreeSet<ModelReference> _ancestors;
 
     private TreeSet<ModelObject> _successors;
@@ -49,7 +50,7 @@ public abstract class ModelObjectBase implements ModelObject {
     @Override
     public void addSuccessor(ModelObject child) {
         _successors.add(child);
-        ModelObjectBase base = (ModelObjectBase) child;
+        ModelObjectBase base = (ModelObjectBase)child;
         base._ancestors.add(new ModelReference(this));
     }
 
@@ -74,7 +75,7 @@ public abstract class ModelObjectBase implements ModelObject {
     @Override
     public void clearSuccessors() {
         for (ModelObject successor : _successors) {
-            clearAncestorReference((ModelObjectBase) successor);
+            clearAncestorReference((ModelObjectBase)successor);
         }
         _successors.clear();
     }
@@ -83,10 +84,8 @@ public abstract class ModelObjectBase implements ModelObject {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result
-                + ((_ancestors == null) ? 0 : _ancestors.hashCode());
-        result = prime * result
-                + ((_successors == null) ? 0 : _successors.hashCode());
+        result = prime * result + ((_ancestors == null) ? 0 : _ancestors.hashCode());
+        result = prime * result + ((_successors == null) ? 0 : _successors.hashCode());
         return result;
     }
 
@@ -98,7 +97,7 @@ public abstract class ModelObjectBase implements ModelObject {
             return false;
         ModelObject other;
         try {
-            other = (ModelObject) rhs;
+            other = (ModelObject)rhs;
         } catch (ClassCastException ex) {
             return false;
         }
@@ -116,7 +115,7 @@ public abstract class ModelObjectBase implements ModelObject {
 
     @Override
     public void removeSuccessor(ModelObject child) {
-        clearAncestorReference((ModelObjectBase) child);
+        clearAncestorReference((ModelObjectBase)child);
         _successors.remove(child);
     }
 

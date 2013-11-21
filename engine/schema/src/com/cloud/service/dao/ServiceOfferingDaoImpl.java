@@ -25,9 +25,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -37,6 +34,8 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.dao.UserVmDetailsDao;
 
 @Component
 @Local(value = {ServiceOfferingDao.class})
@@ -188,6 +187,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         detailsDao.saveDetails(resourceDetails);
     }
 
+    @Override
     public ServiceOfferingVO findById(Long vmId, long serviceOfferingId) {
         ServiceOfferingVO offering = super.findById(serviceOfferingId);
         if (offering.isDynamic()) {
@@ -203,6 +203,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         return offering;
     }
 
+    @Override
     public ServiceOfferingVO findByIdIncludingRemoved(Long vmId, long serviceOfferingId) {
         ServiceOfferingVO offering = super.findByIdIncludingRemoved(serviceOfferingId);
         if (offering.isDynamic()) {
@@ -219,11 +220,13 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         return offering;
     }
 
+    @Override
     public boolean isDynamic(long serviceOfferingId) {
         ServiceOfferingVO offering = super.findById(serviceOfferingId);
         return offering.getCpu() == null || offering.getSpeed() == null || offering.getRamSize() == null;
     }
 
+    @Override
     public ServiceOfferingVO getcomputeOffering(long serviceOfferingId, Integer cpuCores, Integer cpuSpeed, Integer memory) {
         ServiceOfferingVO offering = super.findById(serviceOfferingId);
         offering.setCpu(cpuCores);

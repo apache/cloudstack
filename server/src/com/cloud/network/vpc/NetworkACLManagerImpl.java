@@ -23,6 +23,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.configuration.ConfigurationManager;
@@ -212,8 +213,8 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_ITEM_CREATE, eventDescription = "creating network ACL Item", create = true)
-    public NetworkACLItem createNetworkACLItem(final Integer portStart, final Integer portEnd, final String protocol, final List<String> sourceCidrList, final Integer icmpCode,
-        final Integer icmpType, final NetworkACLItem.TrafficType trafficType, final Long aclId, final String action, Integer number) {
+    public NetworkACLItem createNetworkACLItem(final Integer portStart, final Integer portEnd, final String protocol, final List<String> sourceCidrList,
+        final Integer icmpCode, final Integer icmpType, final NetworkACLItem.TrafficType trafficType, final Long aclId, final String action, Integer number) {
         // If number is null, set it to currentMax + 1 (for backward compatibility)
         if (number == null) {
             number = _networkACLItemDao.getMaxNumberByACL(aclId) + 1;
@@ -228,8 +229,8 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
                     ruleAction = NetworkACLItem.Action.Deny;
                 }
 
-                NetworkACLItemVO newRule = new NetworkACLItemVO(portStart, portEnd, protocol.toLowerCase(), aclId, sourceCidrList, icmpCode, icmpType, trafficType, ruleAction,
-                    numberFinal);
+                NetworkACLItemVO newRule =
+                    new NetworkACLItemVO(portStart, portEnd, protocol.toLowerCase(), aclId, sourceCidrList, icmpCode, icmpType, trafficType, ruleAction, numberFinal);
                 newRule = _networkACLItemDao.persist(newRule);
 
                 if (!_networkACLItemDao.setStateToAdd(newRule)) {
@@ -390,8 +391,8 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     }
 
     @Override
-    public NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType, String action, Integer number,
-        Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType) throws ResourceUnavailableException {
+    public NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType, String action,
+        Integer number, Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType) throws ResourceUnavailableException {
         NetworkACLItemVO aclItem = _networkACLItemDao.findById(id);
         aclItem.setState(State.Add);
 

@@ -76,8 +76,9 @@ public class SyncQueueItemDaoImpl extends GenericDaoBase<SyncQueueItemVO, Long> 
     public List<SyncQueueItemVO> getNextQueueItems(int maxItems) {
         List<SyncQueueItemVO> l = new ArrayList<SyncQueueItemVO>();
 
-        String sql = "SELECT i.id, i.queue_id, i.content_type, i.content_id, i.created " + " FROM sync_queue AS q JOIN sync_queue_item AS i ON q.id = i.queue_id "
-                     + " WHERE i.queue_proc_number IS NULL " + " GROUP BY q.id " + " ORDER BY i.id " + " LIMIT 0, ?";
+        String sql =
+            "SELECT i.id, i.queue_id, i.content_type, i.content_id, i.created " + " FROM sync_queue AS q JOIN sync_queue_item AS i ON q.id = i.queue_id "
+                + " WHERE i.queue_proc_number IS NULL " + " GROUP BY q.id " + " ORDER BY i.id " + " LIMIT 0, ?";
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;

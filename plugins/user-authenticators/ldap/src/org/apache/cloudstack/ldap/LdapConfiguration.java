@@ -22,8 +22,8 @@ import javax.inject.Inject;
 import javax.naming.directory.SearchControls;
 
 import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.utils.Pair;
 
 public class LdapConfiguration {

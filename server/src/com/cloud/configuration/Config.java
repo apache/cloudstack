@@ -43,7 +43,14 @@ public enum Config {
 
     // Alert
 
-    AlertEmailAddresses("Alert", ManagementServer.class, String.class, "alert.email.addresses", null, "Comma separated list of email addresses used for sending alerts.", null),
+    AlertEmailAddresses(
+            "Alert",
+            ManagementServer.class,
+            String.class,
+            "alert.email.addresses",
+            null,
+            "Comma separated list of email addresses used for sending alerts.",
+            null),
     AlertEmailSender("Alert", ManagementServer.class, String.class, "alert.email.sender", null, "Sender of alert email (will be in the From header of the email).", null),
     AlertSMTPHost("Alert", ManagementServer.class, String.class, "alert.smtp.host", null, "SMTP hostname used for sending out email alerts.", null),
     AlertSMTPPassword(
@@ -55,14 +62,7 @@ public enum Config {
             "Password for SMTP authentication (applies only if alert.smtp.useAuth is true).",
             null),
     AlertSMTPPort("Alert", ManagementServer.class, Integer.class, "alert.smtp.port", "465", "Port the SMTP server is listening on.", null),
-    AlertSMTPUseAuth(
-            "Alert",
-            ManagementServer.class,
-            String.class,
-            "alert.smtp.useAuth",
-            null,
-            "If true, use SMTP authentication when sending emails.",
-            null),
+    AlertSMTPUseAuth("Alert", ManagementServer.class, String.class, "alert.smtp.useAuth", null, "If true, use SMTP authentication when sending emails.", null),
     AlertSMTPUsername(
             "Alert",
             ManagementServer.class,
@@ -71,14 +71,7 @@ public enum Config {
             null,
             "Username for SMTP authentication (applies only if alert.smtp.useAuth is true).",
             null),
-    CapacityCheckPeriod(
-            "Alert",
-            ManagementServer.class,
-            Integer.class,
-            "capacity.check.period",
-            "300000",
-            "The interval in milliseconds between capacity checks",
-            null),
+    CapacityCheckPeriod("Alert", ManagementServer.class, Integer.class, "capacity.check.period", "300000", "The interval in milliseconds between capacity checks", null),
     PublicIpCapacityThreshold(
             "Alert",
             ManagementServer.class,
@@ -164,7 +157,14 @@ public enum Config {
             "time interval between cache replacement threads (in seconds).",
             null),
     MaxUploadVolumeSize("Storage", ManagementServer.class, Integer.class, "storage.max.volume.upload.size", "500", "The maximum size for a uploaded volume(in GB).", null),
-    TotalRetries("Storage", AgentManager.class, Integer.class, "total.retries", "4", "The number of times each command sent to a host should be retried in case of failure.", null),
+    TotalRetries(
+            "Storage",
+            AgentManager.class,
+            Integer.class,
+            "total.retries",
+            "4",
+            "The number of times each command sent to a host should be retried in case of failure.",
+            null),
     StoragePoolMaxWaitSeconds(
             "Storage",
             ManagementServer.class,
@@ -233,7 +233,14 @@ public enum Config {
             "global",
             "Load Balancer(haproxy) stats visibilty, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default",
             null),
-    NetworkLBHaproxyStatsUri("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.uri", "/admin?stats", "Load Balancer(haproxy) uri.", null),
+    NetworkLBHaproxyStatsUri(
+            "Network",
+            ManagementServer.class,
+            String.class,
+            "network.loadbalancer.haproxy.stats.uri",
+            "/admin?stats",
+            "Load Balancer(haproxy) uri.",
+            null),
     NetworkLBHaproxyStatsAuth(
             "Secure",
             ManagementServer.class,
@@ -242,7 +249,14 @@ public enum Config {
             "admin1:AdMiN123",
             "Load Balancer(haproxy) authetication string in the format username:password",
             null),
-    NetworkLBHaproxyStatsPort("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.port", "8081", "Load Balancer(haproxy) stats port number.", null),
+    NetworkLBHaproxyStatsPort(
+            "Network",
+            ManagementServer.class,
+            String.class,
+            "network.loadbalancer.haproxy.stats.port",
+            "8081",
+            "Load Balancer(haproxy) stats port number.",
+            null),
     NetworkLBHaproxyMaxConn(
             "Network",
             ManagementServer.class,
@@ -251,9 +265,23 @@ public enum Config {
             "4096",
             "Load Balancer(haproxy) maximum number of concurrent connections(global max)",
             null),
-    NetworkRouterRpFilter("Network", ManagementServer.class, Integer.class, "network.disable.rpfilter", "true", "disable rp_filter on Domain Router VM public interfaces.", null),
+    NetworkRouterRpFilter(
+            "Network",
+            ManagementServer.class,
+            Integer.class,
+            "network.disable.rpfilter",
+            "true",
+            "disable rp_filter on Domain Router VM public interfaces.",
+            null),
 
-    GuestVlanBits("Network", ManagementServer.class, Integer.class, "guest.vlan.bits", "12", "The number of bits to reserve for the VLAN identifier in the guest subnet.", null),
+    GuestVlanBits(
+            "Network",
+            ManagementServer.class,
+            Integer.class,
+            "guest.vlan.bits",
+            "12",
+            "The number of bits to reserve for the VLAN identifier in the guest subnet.",
+            null),
     //MulticastThrottlingRate("Network", ManagementServer.class, Integer.class, "multicast.throttling.rate", "10", "Default multicast rate in megabits per second allowed.", null),
     DirectNetworkNoDefaultRoute(
             "Network",
@@ -516,7 +544,14 @@ public enum Config {
             "86400",
             "Determines how long (in seconds) to wait before actually expunging destroyed vm. The default value = the default value of expunge.interval",
             null),
-    ExpungeInterval("Advanced", UserVmManager.class, Integer.class, "expunge.interval", "86400", "The interval (in seconds) to wait before running the expunge thread.", null),
+    ExpungeInterval(
+            "Advanced",
+            UserVmManager.class,
+            Integer.class,
+            "expunge.interval",
+            "86400",
+            "The interval (in seconds) to wait before running the expunge thread.",
+            null),
     ExpungeWorkers("Advanced", UserVmManager.class, Integer.class, "expunge.workers", "1", "Number of workers performing expunge ", null),
     ExtractURLCleanUpInterval(
             "Advanced",
@@ -526,7 +561,14 @@ public enum Config {
             "7200",
             "The interval (in seconds) to wait before cleaning up the extract URL's ",
             null),
-    DisableExtraction("Advanced", ManagementServer.class, Boolean.class, "disable.extraction", "false", "Flag for disabling extraction of template, isos and volumes", null),
+    DisableExtraction(
+            "Advanced",
+            ManagementServer.class,
+            Boolean.class,
+            "disable.extraction",
+            "false",
+            "Flag for disabling extraction of template, isos and volumes",
+            null),
     ExtractURLExpirationInterval(
             "Advanced",
             ManagementServer.class,
@@ -562,8 +604,22 @@ public enum Config {
             String.valueOf(VpcVirtualNetworkApplianceManager.DEFAULT_ROUTER_CPU_MHZ),
             "Default CPU speed (MHz) for router VM.",
             null),
-    RestartRetryInterval("Advanced", HighAvailabilityManager.class, Integer.class, "restart.retry.interval", "600", "Time (in seconds) between retries to restart a vm", null),
-    RouterStatsInterval("Advanced", NetworkOrchestrationService.class, Integer.class, "router.stats.interval", "300", "Interval (in seconds) to report router statistics.", null),
+    RestartRetryInterval(
+            "Advanced",
+            HighAvailabilityManager.class,
+            Integer.class,
+            "restart.retry.interval",
+            "600",
+            "Time (in seconds) between retries to restart a vm",
+            null),
+    RouterStatsInterval(
+            "Advanced",
+            NetworkOrchestrationService.class,
+            Integer.class,
+            "router.stats.interval",
+            "300",
+            "Interval (in seconds) to report router statistics.",
+            null),
     ExternalNetworkStatsInterval(
             "Advanced",
             NetworkOrchestrationService.class,
@@ -597,7 +653,14 @@ public enum Config {
             "specify extra public nics used for virtual router(up to 5)",
             "0-5"),
     ScaleRetry("Advanced", ManagementServer.class, Integer.class, "scale.retry", "2", "Number of times to retry scaling up the vm", null),
-    StopRetryInterval("Advanced", HighAvailabilityManager.class, Integer.class, "stop.retry.interval", "600", "Time in seconds between retries to stop or destroy a vm", null),
+    StopRetryInterval(
+            "Advanced",
+            HighAvailabilityManager.class,
+            Integer.class,
+            "stop.retry.interval",
+            "600",
+            "Time in seconds between retries to stop or destroy a vm",
+            null),
     StorageCleanupInterval(
             "Advanced",
             StorageManager.class,
@@ -611,7 +674,14 @@ public enum Config {
     XapiWait("Advanced", AgentManager.class, Integer.class, "xapiwait", "600", "Time (in seconds) to wait for XAPI to return", null),
     MigrateWait("Advanced", AgentManager.class, Integer.class, "migratewait", "3600", "Time (in seconds) to wait for VM migrate finish", null),
     HAWorkers("Advanced", AgentManager.class, Integer.class, "ha.workers", "5", "Number of ha worker threads.", null),
-    MountParent("Advanced", ManagementServer.class, String.class, "mount.parent", "/var/cloudstack/mnt", "The mount point on the Management Server for Secondary Storage.", null),
+    MountParent(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "mount.parent",
+            "/var/cloudstack/mnt",
+            "The mount point on the Management Server for Secondary Storage.",
+            null),
 //    UpgradeURL("Advanced", ManagementServer.class, String.class, "upgrade.url", "http://example.com:8080/client/agent/update.zip", "The upgrade URL is the URL of the management server that agents will connect to in order to automatically upgrade.", null),
     SystemVMUseLocalStorage(
             "Advanced",
@@ -645,7 +715,7 @@ public enum Config {
             String.class,
             "hypervisor.list",
             HypervisorType.Hyperv + "," + HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VMware + "," + HypervisorType.BareMetal + "," +
-                    HypervisorType.Ovm + "," + HypervisorType.LXC,
+                HypervisorType.Ovm + "," + HypervisorType.LXC,
             "The list of hypervisors that this deployment will use.",
             "hypervisorList"),
     ManagementNetwork("Advanced", ManagementServer.class, String.class, "management.network.cidr", null, "The cidr of management server network", null),
@@ -665,7 +735,14 @@ public enum Config {
             String.valueOf(SecondaryStorageVmManager.DEFAULT_SS_VM_MTUSIZE),
             "MTU size (in Byte) of storage network in secondary storage vms",
             null),
-    MaxTemplateAndIsoSize("Advanced", ManagementServer.class, Long.class, "max.template.iso.size", "50", "The maximum size for a downloaded template or ISO (in GB).", null),
+    MaxTemplateAndIsoSize(
+            "Advanced",
+            ManagementServer.class,
+            Long.class,
+            "max.template.iso.size",
+            "50",
+            "The maximum size for a downloaded template or ISO (in GB).",
+            null),
     SecStorageAllowedInternalDownloadSites(
             "Advanced",
             ManagementServer.class,
@@ -698,9 +775,30 @@ public enum Config {
             "10",
             "The minimal number of command execution sessions that system is able to serve immediately(standby capacity)",
             null),
-    SecStorageSessionMax("Advanced", AgentManager.class, Integer.class, "secstorage.session.max", "50", "The max number of command execution sessions that a SSVM can handle", null),
-    SecStorageCmdExecutionTimeMax("Advanced", AgentManager.class, Integer.class, "secstorage.cmd.execution.time.max", "30", "The max command execution time in minute", null),
-    SecStorageProxy("Advanced", AgentManager.class, String.class, "secstorage.proxy", null, "http proxy used by ssvm, in http://username:password@proxyserver:port format", null),
+    SecStorageSessionMax(
+            "Advanced",
+            AgentManager.class,
+            Integer.class,
+            "secstorage.session.max",
+            "50",
+            "The max number of command execution sessions that a SSVM can handle",
+            null),
+    SecStorageCmdExecutionTimeMax(
+            "Advanced",
+            AgentManager.class,
+            Integer.class,
+            "secstorage.cmd.execution.time.max",
+            "30",
+            "The max command execution time in minute",
+            null),
+    SecStorageProxy(
+            "Advanced",
+            AgentManager.class,
+            String.class,
+            "secstorage.proxy",
+            null,
+            "http proxy used by ssvm, in http://username:password@proxyserver:port format",
+            null),
     AlertPurgeInterval(
             "Advanced",
             ManagementServer.class,
@@ -726,7 +824,14 @@ public enum Config {
             "The interval in milliseconds between host reservation release checks",
             null),
     // LB HealthCheck Interval.
-    LBHealthCheck("Advanced", ManagementServer.class, String.class, "healthcheck.update.interval", "600", "Time Interval to fetch the LB health check states (in sec)", null),
+    LBHealthCheck(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "healthcheck.update.interval",
+            "600",
+            "Time Interval to fetch the LB health check states (in sec)",
+            null),
 
     DirectAttachNetworkEnabled(
             "Advanced",
@@ -744,8 +849,22 @@ public enum Config {
             null,
             "Direct-attach VMs using external DHCP server (API url)",
             null),
-    CheckPodCIDRs("Advanced", ManagementServer.class, String.class, "check.pod.cidrs", "true", "If true, different pods must belong to different CIDR subnets.", "true,false"),
-    NetworkGcWait("Advanced", ManagementServer.class, Integer.class, "network.gc.wait", "600", "Time (in seconds) to wait before shutting down a network that's not in used", null),
+    CheckPodCIDRs(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "check.pod.cidrs",
+            "true",
+            "If true, different pods must belong to different CIDR subnets.",
+            "true,false"),
+    NetworkGcWait(
+            "Advanced",
+            ManagementServer.class,
+            Integer.class,
+            "network.gc.wait",
+            "600",
+            "Time (in seconds) to wait before shutting down a network that's not in used",
+            null),
     NetworkGcInterval("Advanced", ManagementServer.class, Integer.class, "network.gc.interval", "600", "Seconds to wait before checking for networks to shutdown", null),
     CapacitySkipcountingHours(
             "Advanced",
@@ -964,7 +1083,14 @@ public enum Config {
             null),
     XenSetupMultipath("Advanced", ManagementServer.class, String.class, "xen.setup.multipath", "false", "Setup the host to do multipath", null),
     XenBondStorageNic("Advanced", ManagementServer.class, String.class, "xen.bond.storage.nics", null, "Attempt to bond the two networks if found", null),
-    XenHeartBeatInterval("Advanced", ManagementServer.class, Integer.class, "xen.heartbeat.interval", "60", "heartbeat to use when implementing XenServer Self Fencing", null),
+    XenHeartBeatInterval(
+            "Advanced",
+            ManagementServer.class,
+            Integer.class,
+            "xen.heartbeat.interval",
+            "60",
+            "heartbeat to use when implementing XenServer Self Fencing",
+            null),
     XenGuestNetwork("Hidden", ManagementServer.class, String.class, "xen.guest.network.device", null, "Specify for guest network name label", null),
     XenMaxNics("Advanced", AgentManager.class, Integer.class, "xen.nics.max", "7", "Maximum allowed nics for Vms created on Xen", null),
     XenPVdriverVersion(
@@ -985,7 +1111,14 @@ public enum Config {
             "false",
             "Enable/Disable Cisco Nexus 1000v vSwitch in VMware environment",
             null),
-    VmwareUseDVSwitch("Network", ManagementServer.class, Boolean.class, "vmware.use.dvswitch", "false", "Enable/Disable Nexus/Vmware dvSwitch in VMware environment", null),
+    VmwareUseDVSwitch(
+            "Network",
+            ManagementServer.class,
+            Boolean.class,
+            "vmware.use.dvswitch",
+            "false",
+            "Enable/Disable Nexus/Vmware dvSwitch in VMware environment",
+            null),
     VmwarePortsPerDVPortGroup(
             "Network",
             ManagementServer.class,
@@ -994,7 +1127,14 @@ public enum Config {
             "256",
             "Default number of ports per Vmware dvPortGroup in VMware environment",
             null),
-    VmwareCreateFullClone("Advanced", ManagementServer.class, Boolean.class, "vmware.create.full.clone", "true", "If set to true, creates guest VMs as full clones on ESX", null),
+    VmwareCreateFullClone(
+            "Advanced",
+            ManagementServer.class,
+            Boolean.class,
+            "vmware.create.full.clone",
+            "true",
+            "If set to true, creates guest VMs as full clones on ESX",
+            null),
     VmwareServiceConsole(
             "Advanced",
             ManagementServer.class,
@@ -1060,7 +1200,14 @@ public enum Config {
             "E1000",
             "Specify the default network device type for system VMs, valid values are E1000, PCNet32, Vmxnet2, Vmxnet3",
             null),
-    VmwareRecycleHungWorker("Advanced", ManagementServer.class, Boolean.class, "vmware.recycle.hung.wokervm", "false", "Specify whether or not to recycle hung worker VMs", null),
+    VmwareRecycleHungWorker(
+            "Advanced",
+            ManagementServer.class,
+            Boolean.class,
+            "vmware.recycle.hung.wokervm",
+            "false",
+            "Specify whether or not to recycle hung worker VMs",
+            null),
     VmwareHungWorkerTimeout("Advanced", ManagementServer.class, Long.class, "vmware.hung.wokervm.timeout", "7200", "Worker VM timeout in seconds", null),
     VmwareEnableNestedVirtualization(
             "Advanced",
@@ -1104,9 +1251,30 @@ public enum Config {
             null),
 
     // Hyperv
-    HypervPublicNetwork("Hidden", ManagementServer.class, String.class, "hyperv.public.network.device", null, "Specify the public virtual switch on host for public network", null),
-    HypervPrivateNetwork("Hidden", ManagementServer.class, String.class, "hyperv.private.network.device", null, "Specify the virtual switch on host for private network", null),
-    HypervGuestNetwork("Hidden", ManagementServer.class, String.class, "hyperv.guest.network.device", null, "Specify the virtual switch on host for private network", null),
+    HypervPublicNetwork(
+            "Hidden",
+            ManagementServer.class,
+            String.class,
+            "hyperv.public.network.device",
+            null,
+            "Specify the public virtual switch on host for public network",
+            null),
+    HypervPrivateNetwork(
+            "Hidden",
+            ManagementServer.class,
+            String.class,
+            "hyperv.private.network.device",
+            null,
+            "Specify the virtual switch on host for private network",
+            null),
+    HypervGuestNetwork(
+            "Hidden",
+            ManagementServer.class,
+            String.class,
+            "hyperv.guest.network.device",
+            null,
+            "Specify the virtual switch on host for private network",
+            null),
 
     // Usage
     UsageExecutionTimezone("Usage", ManagementServer.class, String.class, "usage.execution.timezone", null, "The timezone to use for usage job execution time", null),
@@ -1135,7 +1303,14 @@ public enum Config {
             "86400",
             "Interval (in seconds) to collect stats from Traffic Monitor",
             null),
-    UsageSanityCheckInterval("Usage", ManagementServer.class, Integer.class, "usage.sanity.check.interval", null, "Interval (in days) to check sanity of usage data", null),
+    UsageSanityCheckInterval(
+            "Usage",
+            ManagementServer.class,
+            Integer.class,
+            "usage.sanity.check.interval",
+            null,
+            "Interval (in days) to check sanity of usage data",
+            null),
     UsageAggregationTimezone("Usage", ManagementServer.class, String.class, "usage.aggregation.timezone", "GMT", "The timezone to use for usage stats aggregation", null),
     TrafficSentinelIncludeZones(
             "Usage",
@@ -1464,7 +1639,14 @@ public enum Config {
             null,
             "Sender of project invitation email (will be in the From header of the email)",
             null),
-    ProjectSMTPHost("Project Defaults", ManagementServer.class, String.class, "project.smtp.host", null, "SMTP hostname used for sending out email project invitations", null),
+    ProjectSMTPHost(
+            "Project Defaults",
+            ManagementServer.class,
+            String.class,
+            "project.smtp.host",
+            null,
+            "SMTP hostname used for sending out email project invitations",
+            null),
     ProjectSMTPPassword(
             "Secure",
             ManagementServer.class,
@@ -1474,7 +1656,14 @@ public enum Config {
             "Password for SMTP authentication (applies only if project.smtp.useAuth is true)",
             null),
     ProjectSMTPPort("Project Defaults", ManagementServer.class, Integer.class, "project.smtp.port", "465", "Port the SMTP server is listening on", null),
-    ProjectSMTPUseAuth("Project Defaults", ManagementServer.class, String.class, "project.smtp.useAuth", null, "If true, use SMTP authentication when sending emails", null),
+    ProjectSMTPUseAuth(
+            "Project Defaults",
+            ManagementServer.class,
+            String.class,
+            "project.smtp.useAuth",
+            null,
+            "If true, use SMTP authentication when sending emails",
+            null),
     ProjectSMTPUsername(
             "Project Defaults",
             ManagementServer.class,
@@ -1527,7 +1716,14 @@ public enum Config {
             "Service offering used by secondary storage; if NULL - system offering will be used",
             null),
     HaTag("Advanced", ManagementServer.class, String.class, "ha.tag", null, "HA tag defining that the host marked with this tag can be used for HA purposes only", null),
-    VpcCleanupInterval("Advanced", ManagementServer.class, Integer.class, "vpc.cleanup.interval", "3600", "The interval (in seconds) between cleanup for Inactive VPCs", null),
+    VpcCleanupInterval(
+            "Advanced",
+            ManagementServer.class,
+            Integer.class,
+            "vpc.cleanup.interval",
+            "3600",
+            "The interval (in seconds) between cleanup for Inactive VPCs",
+            null),
     VpcMaxNetworks("Advanced", ManagementServer.class, Integer.class, "vpc.max.networks", "3", "Maximum number of networks per vpc", null),
     DetailBatchQuerySize("Advanced", ManagementServer.class, Integer.class, "detail.batch.query.size", "2000", "Default entity detail batch query size for listing", null),
     ConcurrentSnapshotsThresholdPerHost(
@@ -1602,7 +1798,7 @@ public enum Config {
             "s3.singleupload.max.size",
             "5",
             "The maximum size limit for S3 single part upload API(in GB). If it is set to 0, then it means always use multi-part upload to upload object to S3. "
-                    + "If it is set to -1, then it means always use single-part upload to upload object to S3. ",
+                + "If it is set to -1, then it means always use single-part upload to upload object to S3. ",
             null),
 
     // Ldap
@@ -1610,7 +1806,14 @@ public enum Config {
     LdapBindPassword("Advanced", ManagementServer.class, String.class, "ldap.bind.password", null, "Sets the bind password for LDAP", null),
     LdapBindPrincipal("Advanced", ManagementServer.class, String.class, "ldap.bind.principal", null, "Sets the bind principal for LDAP", null),
     LdapEmailAttribute("Advanced", ManagementServer.class, String.class, "ldap.email.attribute", "mail", "Sets the email attribute used within LDAP", null),
-    LdapFirstnameAttribute("Advanced", ManagementServer.class, String.class, "ldap.firstname.attribute", "givenname", "Sets the firstname attribute used within LDAP", null),
+    LdapFirstnameAttribute(
+            "Advanced",
+            ManagementServer.class,
+            String.class,
+            "ldap.firstname.attribute",
+            "givenname",
+            "Sets the firstname attribute used within LDAP",
+            null),
     LdapLastnameAttribute("Advanced", ManagementServer.class, String.class, "ldap.lastname.attribute", "sn", "Sets the lastname attribute used within LDAP", null),
     LdapUsernameAttribute("Advanced", ManagementServer.class, String.class, "ldap.username.attribute", "uid", "Sets the username attribute used within LDAP", null),
     LdapUserObject("Advanced", ManagementServer.class, String.class, "ldap.user.object", "inetOrgPerson", "Sets the object type of users within LDAP", null),
@@ -1664,7 +1867,7 @@ public enum Config {
             "execute.in.sequence.network.element.commands",
             "false",
             "If set to true, DhcpEntryCommand, SavePasswordCommand, UserDataCommand, VmDataCommand will be synchronized on the agent side."
-                    + " If set to false, these commands become asynchronous. Default value is false.",
+                + " If set to false, these commands become asynchronous. Default value is false.",
             null),
 
     UCSSyncBladeInterval(

@@ -21,20 +21,21 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
-import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.command.user.offering.ListServiceOfferingsCmd;
+import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+
 import com.cloud.host.Host;
 import com.cloud.network.element.PaloAltoFirewallElementService;
-import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 
-@APICommand(name = "listExternalFirewalls", description="List external firewall appliances.", responseObject = ExternalFirewallResponse.class)
+@APICommand(name = "listExternalFirewalls", description = "List external firewall appliances.", responseObject = ExternalFirewallResponse.class)
 public class ListExternalFirewallsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
     private static final String s_name = "listexternalfirewallsresponse";
@@ -43,8 +44,7 @@ public class ListExternalFirewallsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            required = true, description="zone Id")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "zone Id")
     private long zoneId;
 
     /////////////////////////////////////////////////////
@@ -59,7 +59,8 @@ public class ListExternalFirewallsCmd extends BaseListCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @Inject PaloAltoFirewallElementService _paElementService;
+    @Inject
+    PaloAltoFirewallElementService _paElementService;
 
     @Override
     public String getCommandName() {
@@ -68,7 +69,7 @@ public class ListExternalFirewallsCmd extends BaseListCmd {
 
     @SuppressWarnings("deprecation")
     @Override
-    public void execute(){
+    public void execute() {
 
         List<? extends Host> externalFirewalls = _paElementService.listExternalFirewalls(this);
 

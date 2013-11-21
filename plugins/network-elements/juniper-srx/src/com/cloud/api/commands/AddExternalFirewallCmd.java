@@ -18,19 +18,20 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ExternalFirewallResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
-import org.apache.cloudstack.api.response.ExternalFirewallResponse;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 

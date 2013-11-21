@@ -20,8 +20,9 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.ldap.LdapConfigurationVO;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.ldap.LdapConfigurationVO;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDaoBase;

@@ -18,9 +18,10 @@ package org.apache.cloudstack.resourcedetail.dao;
 
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.resourcedetail.RemoteAccessVpnDetailVO;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
-import org.springframework.stereotype.Component;
 
 @Component
 @Local(value = {RemoteAccessVpnDetailsDao.class})

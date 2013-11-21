@@ -25,9 +25,22 @@ import java.util.Set;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
+
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Network;
+import com.xensource.xenapi.SR;
+import com.xensource.xenapi.Task;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VBD;
+import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VIF;
+import com.xensource.xenapi.VM;
+
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -51,17 +64,6 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine.State;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.Network;
-import com.xensource.xenapi.SR;
-import com.xensource.xenapi.Task;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VDI;
-import com.xensource.xenapi.VIF;
-import com.xensource.xenapi.VM;
 
 @Local(value = ServerResource.class)
 public class XenServer610Resource extends XenServer56FP1Resource {
@@ -420,7 +422,7 @@ public class XenServer610Resource extends XenServer56FP1Resource {
         long staticMax = Math.min(recommendedValue, 4l * dynamicMinRam);  // XS constraint for stability
         if (dynamicMaxRam > staticMax) { // XS contraint that dynamic max <= static max
             s_logger.warn("dynamixMax " + dynamicMaxRam + " cant be greater than static max " + staticMax +
-                          ", can lead to stability issues. Setting static max as much as dynamic max ");
+                ", can lead to stability issues. Setting static max as much as dynamic max ");
             return dynamicMaxRam;
         }
         return staticMax;

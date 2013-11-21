@@ -30,6 +30,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.commands.AddSspCmd;
 import org.apache.cloudstack.api.commands.DeleteSspCmd;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -40,8 +42,6 @@ import org.apache.cloudstack.network.dao.SspTenantDao;
 import org.apache.cloudstack.network.dao.SspTenantVO;
 import org.apache.cloudstack.network.dao.SspUuidDao;
 import org.apache.cloudstack.network.dao.SspUuidVO;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
@@ -69,15 +69,14 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.element.ConnectivityProvider;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
-import com.cloud.resource.ResourceManager;
 
 /**
  * Stratosphere sdn platform network element
@@ -308,6 +307,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
         return _hostDao.remove(cmd.getHostId());
     }
 
+    @Override
     public boolean createNetwork(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) {
         if (_sspUuidDao.findUuidByNetwork(network) != null) {
             s_logger.info("Network already has ssp TenantNetwork uuid :" + network.toString());
@@ -344,6 +344,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
         }
     }
 
+    @Override
     public boolean deleteNetwork(Network network) {
         String tenantNetworkUuid = _sspUuidDao.findUuidByNetwork(network);
         if (tenantNetworkUuid != null) {
@@ -365,6 +366,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
     }
 
     // we use context.reservationId for dedup of guru & element operations.
+    @Override
     public boolean createNicEnv(Network network, NicProfile nic, DeployDestination dest, ReservationContext context) {
         String tenantNetworkUuid = _sspUuidDao.findUuidByNetwork(network);
         if (tenantNetworkUuid == null) {
@@ -416,6 +418,7 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
         return false;
     }
 
+    @Override
     public boolean deleteNicEnv(Network network, NicProfile nic, ReservationContext context) {
         if (context == null) {
             s_logger.error("ReservationContext was null for " + nic + " " + network);
@@ -503,8 +506,8 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
      * @see org.apache.cloudstack.network.element.NetworkElement#prepare(com.cloud.network.Network, com.cloud.vm.NicProfile, com.cloud.vm.VirtualMachineProfile, com.cloud.deploy.DeployDestination, com.cloud.vm.ReservationContext)
      */
     @Override
-    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-        ResourceUnavailableException, InsufficientCapacityException {
+    public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         s_logger.trace("prepare");
         return createNicEnv(network, nic, dest, context);
     }
@@ -517,7 +520,8 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
      * @see org.apache.cloudstack.network.element.NetworkElement#release(com.cloud.network.Network, com.cloud.vm.NicProfile, com.cloud.vm.VirtualMachineProfile, com.cloud.vm.ReservationContext)
      */
     @Override
-    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean release(Network network, NicProfile nic, VirtualMachineProfile vm, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         s_logger.trace("release");
         return deleteNicEnv(network, nic, context);
     }
@@ -536,7 +540,8 @@ public class SspElement extends AdapterBase implements ConnectivityProvider, Ssp
     }
 
     @Override
-    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         s_logger.trace("shutdownProviderInstances");
         return true;
     }

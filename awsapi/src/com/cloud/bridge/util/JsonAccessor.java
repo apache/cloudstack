@@ -22,11 +22,12 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.cloud.bridge.service.exception.InternalErrorException;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+
+import com.cloud.bridge.service.exception.InternalErrorException;
 
 /**
  * JsonAccessor provides the functionality to allow navigating JSON object graph using simple expressions,

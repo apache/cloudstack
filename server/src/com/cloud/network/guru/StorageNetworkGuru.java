@@ -39,11 +39,10 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.Nic.ReservationStrategy;
 
 @Local(value = NetworkGuru.class)
 public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGuru {
@@ -89,8 +88,9 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
             return null;
         }
 
-        NetworkVO config = new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.Native, offering.getId(), Network.State.Setup, plan.getDataCenterId(),
-            plan.getPhysicalNetworkId());
+        NetworkVO config =
+            new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.Native, offering.getId(), Network.State.Setup, plan.getDataCenterId(),
+                plan.getPhysicalNetworkId());
         return config;
     }
 
@@ -105,7 +105,8 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+        InsufficientAddressCapacityException {
         assert network.getTrafficType() == TrafficType.Storage : "Well, I can't take care of this config now can I? " + network;
         if (!_sNwMgr.isStorageIpRangeAvailable(network.getDataCenterId())) {
             return super.allocate(network, nic, vm);

@@ -47,13 +47,12 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account associated with the VPC. " + "Must be used with the domainId parameter.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account associated with the VPC. "
+        + "Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID,
-               type = CommandType.UUID,
-               entityType = DomainResponse.class,
-               description = "the domain ID associated with the VPC. " + "If used with the account parameter returns the VPC associated with the account for the specified domain.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the domain ID associated with the VPC. "
+        + "If used with the account parameter returns the VPC associated with the account for the specified domain.")
     private Long domainId;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "create VPC for the project")
@@ -69,10 +68,14 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd {
     private String displayText;
 
     @Parameter(name = ApiConstants.CIDR, type = CommandType.STRING, required = true, description = "the cidr of the VPC. All VPC "
-                                                                                                   + "guest networks' cidrs should be within this CIDR")
+        + "guest networks' cidrs should be within this CIDR")
     private String cidr;
 
-    @Parameter(name = ApiConstants.VPC_OFF_ID, type = CommandType.UUID, entityType = VpcOfferingResponse.class, required = true, description = "the ID of the VPC offering")
+    @Parameter(name = ApiConstants.VPC_OFF_ID,
+               type = CommandType.UUID,
+               entityType = VpcOfferingResponse.class,
+               required = true,
+               description = "the ID of the VPC offering")
     private Long vpcOffering;
 
     @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "VPC network domain. All networks inside the VPC will belong to this domain")

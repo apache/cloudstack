@@ -180,8 +180,8 @@ public class DatastoreMO extends BaseMO {
         return false;
     }
 
-    public boolean copyDatastoreFile(String srcFilePath, ManagedObjectReference morSrcDc, ManagedObjectReference morDestDs, String destFilePath, ManagedObjectReference morDestDc,
-        boolean forceOverwrite) throws Exception {
+    public boolean copyDatastoreFile(String srcFilePath, ManagedObjectReference morSrcDc, ManagedObjectReference morDestDs, String destFilePath,
+        ManagedObjectReference morDestDc, boolean forceOverwrite) throws Exception {
 
         String srcDsName = getName();
         DatastoreMO destDsMo = new DatastoreMO(_context, morDestDs);
@@ -208,8 +208,8 @@ public class DatastoreMO extends BaseMO {
         return false;
     }
 
-    public boolean moveDatastoreFile(String srcFilePath, ManagedObjectReference morSrcDc, ManagedObjectReference morDestDs, String destFilePath, ManagedObjectReference morDestDc,
-        boolean forceOverwrite) throws Exception {
+    public boolean moveDatastoreFile(String srcFilePath, ManagedObjectReference morSrcDc, ManagedObjectReference morDestDs, String destFilePath,
+        ManagedObjectReference morDestDc, boolean forceOverwrite) throws Exception {
 
         String srcDsName = getName();
         DatastoreMO destDsMo = new DatastoreMO(_context, morDestDs);

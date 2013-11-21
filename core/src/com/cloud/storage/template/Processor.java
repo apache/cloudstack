@@ -16,11 +16,11 @@
 // under the License.
 package com.cloud.storage.template;
 
+import java.io.File;
+
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.utils.component.Adapter;
-
-import java.io.File;
 
 /**
  * Generic interface to process different types of image formats

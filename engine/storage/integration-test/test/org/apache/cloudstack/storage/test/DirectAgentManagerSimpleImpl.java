@@ -26,10 +26,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.host.Host;
-import com.cloud.host.Status;
-import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.utils.fsm.StateMachine2;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -157,8 +153,8 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
                 String password = clusterDetailsDao.findDetail(cluster.getId(), "password").getValue();
                 VmwareServerDiscoverer discover = new VmwareServerDiscoverer();
 
-                Map<? extends ServerResource, Map<String, String>> resources = discover.find(host.getDataCenterId(), host.getPodId(), host.getClusterId(), uri, userName, password,
-                    null);
+                Map<? extends ServerResource, Map<String, String>> resources =
+                    discover.find(host.getDataCenterId(), host.getPodId(), host.getClusterId(), uri, userName, password, null);
                 for (Map.Entry<? extends ServerResource, Map<String, String>> entry : resources.entrySet()) {
                     resource = entry.getKey();
                 }

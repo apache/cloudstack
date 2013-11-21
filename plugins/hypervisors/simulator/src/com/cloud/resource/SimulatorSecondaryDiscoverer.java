@@ -25,13 +25,12 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.VMTemplateDao;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.resource.SecondaryStorageDiscoverer;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -46,9 +45,7 @@ import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value = Discoverer.class)
 public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer implements ResourceStateAdapter, Listener {
@@ -77,7 +74,8 @@ public class SimulatorSecondaryDiscoverer extends SecondaryStorageDiscoverer imp
     }
 
     @Override
-    public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) {
+    public Map<? extends ServerResource, Map<String, String>>
+        find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) {
         if (!uri.getScheme().equalsIgnoreCase("sim")) {
             s_logger.debug("It's not NFS or file or ISO, so not a secondary storage server: " + uri.toString());
             return null;

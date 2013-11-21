@@ -20,16 +20,13 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 
 import javax.net.ssl.SSLEngine;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.transport.Request;
@@ -71,6 +68,7 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
         return _forward;
     }
 
+    @Override
     protected void checkAvailability(final Command[] cmds) throws AgentUnavailableException {
 
         if (_transferMode) {
@@ -250,6 +248,7 @@ public class ClusteredAgentAttache extends ConnectedAgentAttache implements Rout
         _transferRequests.clear();
     }
 
+    @Override
     public void cleanup(final Status state) {
         super.cleanup(state);
         _transferRequests.clear();

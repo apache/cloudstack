@@ -61,9 +61,8 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
                description = "services supported by the vpc offering")
     private List<String> supportedServices;
 
-    @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST,
-               type = CommandType.MAP,
-               description = "provider to service mapping. " + "If not specified, the provider for the service will be mapped to the default provider on the physical network")
+    @Parameter(name = ApiConstants.SERVICE_PROVIDER_LIST, type = CommandType.MAP, description = "provider to service mapping. "
+        + "If not specified, the provider for the service will be mapped to the default provider on the physical network")
     private Map<String, String> serviceProviderList;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,

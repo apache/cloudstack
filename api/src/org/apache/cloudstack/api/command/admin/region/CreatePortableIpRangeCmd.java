@@ -17,13 +17,8 @@
 
 package org.apache.cloudstack.api.command.admin.region;
 
-import javax.inject.Inject;
+import org.apache.log4j.Logger;
 
-import com.cloud.dc.Vlan;
-import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,15 +28,17 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PortableIpRangeResponse;
 import org.apache.cloudstack.api.response.RegionResponse;
-import org.apache.cloudstack.api.response.VlanIpRangeResponse;
 import org.apache.cloudstack.region.PortableIpRange;
-import org.apache.cloudstack.region.Region;
-import org.apache.cloudstack.region.RegionService;
-import org.apache.log4j.Logger;
 
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 
-@APICommand(name = "createPortableIpRange", responseObject = PortableIpRangeResponse.class, description = "adds a range of portable public IP's to a region", since = "4.2.0")
+@APICommand(name = "createPortableIpRange",
+            responseObject = PortableIpRangeResponse.class,
+            description = "adds a range of portable public IP's to a region",
+            since = "4.2.0")
 public class CreatePortableIpRangeCmd extends BaseAsyncCreateCmd {
 
     public static final Logger s_logger = Logger.getLogger(CreatePortableIpRangeCmd.class.getName());

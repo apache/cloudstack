@@ -57,7 +57,8 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand {
     protected SetupGuestNetworkCommand() {
     }
 
-    public SetupGuestNetworkCommand(String dhcpRange, String networkDomain, boolean isRedundant, Integer priority, String defaultDns1, String defaultDns2, boolean add, NicTO nic) {
+    public SetupGuestNetworkCommand(String dhcpRange, String networkDomain, boolean isRedundant, Integer priority, String defaultDns1, String defaultDns2, boolean add,
+            NicTO nic) {
         this.dhcpRange = dhcpRange;
         this.networkDomain = networkDomain;
         this.defaultDns1 = defaultDns1;

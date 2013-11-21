@@ -16,19 +16,32 @@
 // under the License.
 package com.cloud.usage;
 
-import com.cloud.usage.parser.*;
-import com.cloud.user.AccountVO;
-import com.cloud.utils.component.ComponentContext;
+import java.util.Date;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
 import junit.framework.TestCase;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.Date;
+import com.cloud.usage.parser.IPAddressUsageParser;
+import com.cloud.usage.parser.LoadBalancerUsageParser;
+import com.cloud.usage.parser.NetworkOfferingUsageParser;
+import com.cloud.usage.parser.NetworkUsageParser;
+import com.cloud.usage.parser.PortForwardingUsageParser;
+import com.cloud.usage.parser.SecurityGroupUsageParser;
+import com.cloud.usage.parser.StorageUsageParser;
+import com.cloud.usage.parser.VMInstanceUsageParser;
+import com.cloud.usage.parser.VPNUserUsageParser;
+import com.cloud.usage.parser.VmDiskUsageParser;
+import com.cloud.usage.parser.VolumeUsageParser;
+import com.cloud.user.AccountVO;
+import com.cloud.utils.component.ComponentContext;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/UsageManagerTestContext.xml")
@@ -84,17 +97,17 @@ public class UsageManagerTest extends TestCase {
     public void testParsers() throws ConfigurationException {
         AccountVO account = new AccountVO();
         account.setId(2L);
-        vmParser.parse(account, startDate, endDate);
-        ipParser.parse(account, startDate, endDate);
-        lbParser.parse(account, startDate, endDate);
-        noParser.parse(account, startDate, endDate);
-        netParser.parse(account, startDate, endDate);
-        vmdiskParser.parse(account, startDate, endDate);
-        pfParser.parse(account, startDate, endDate);
-        sgParser.parse(account, startDate, endDate);
-        stParser.parse(account, startDate, endDate);
-        volParser.parse(account, startDate, endDate);
-        vpnParser.parse(account, startDate, endDate);
+        VMInstanceUsageParser.parse(account, startDate, endDate);
+        IPAddressUsageParser.parse(account, startDate, endDate);
+        LoadBalancerUsageParser.parse(account, startDate, endDate);
+        NetworkOfferingUsageParser.parse(account, startDate, endDate);
+        NetworkUsageParser.parse(account, startDate, endDate);
+        VmDiskUsageParser.parse(account, startDate, endDate);
+        PortForwardingUsageParser.parse(account, startDate, endDate);
+        SecurityGroupUsageParser.parse(account, startDate, endDate);
+        StorageUsageParser.parse(account, startDate, endDate);
+        VolumeUsageParser.parse(account, startDate, endDate);
+        VPNUserUsageParser.parse(account, startDate, endDate);
     }
 
 }

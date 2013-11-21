@@ -24,21 +24,21 @@ import streamer.OneTimeSwitch;
 
 public class UpgradeSocketToSSL extends OneTimeSwitch {
 
-  public UpgradeSocketToSSL(String id) {
-    super(id);
-  }
+    public UpgradeSocketToSSL(String id) {
+        super(id);
+    }
 
-  @Override
-  protected void onStart() {
+    @Override
+    protected void onStart() {
 
-    sendEventToAllPads(Event.SOCKET_UPGRADE_TO_SSL, Direction.IN);
-    switchOff();
-  }
+        sendEventToAllPads(Event.SOCKET_UPGRADE_TO_SSL, Direction.IN);
+        switchOff();
+    }
 
-  @Override
-  protected void handleOneTimeData(ByteBuffer buf, Link link) {
-    throw new RuntimeException("Unexpected data: " + buf + ".");
+    @Override
+    protected void handleOneTimeData(ByteBuffer buf, Link link) {
+        throw new RuntimeException("Unexpected data: " + buf + ".");
 
-  }
+    }
 
 }

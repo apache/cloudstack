@@ -142,7 +142,8 @@ public class NotificationConfiguration implements org.apache.axis2.databinding.A
     }
 
     public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
-        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException {
+        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+        org.apache.axis2.databinding.ADBException {
         serialize(parentQName, factory, xmlWriter, false);
     }
 
@@ -187,7 +188,8 @@ public class NotificationConfiguration implements org.apache.axis2.databinding.A
             if (localTopicConfiguration != null) {
                 for (int i = 0; i < localTopicConfiguration.length; i++) {
                     if (localTopicConfiguration[i] != null) {
-                        localTopicConfiguration[i].serialize(new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "TopicConfiguration"), factory, xmlWriter);
+                        localTopicConfiguration[i].serialize(new javax.xml.namespace.QName("http://s3.amazonaws.com/doc/2006-03-01/", "TopicConfiguration"), factory,
+                            xmlWriter);
                     } else {
 
                         // we don't have to do any thing since minOccures is zero
@@ -208,9 +210,8 @@ public class NotificationConfiguration implements org.apache.axis2.databinding.A
     /**
      * Util method to write an attribute with the ns prefix
      */
-    private void
-        writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue, javax.xml.stream.XMLStreamWriter xmlWriter)
-            throws javax.xml.stream.XMLStreamException {
+    private void writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue,
+        javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
         if (xmlWriter.getPrefix(namespace) == null) {
             xmlWriter.writeNamespace(prefix, namespace);
             xmlWriter.setPrefix(prefix, namespace);

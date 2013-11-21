@@ -50,6 +50,7 @@ public enum ApiErrorCode {
         this.httpCode = httpCode;
     }
 
+    @Override
     public String toString() {
         return String.valueOf(this.httpCode);
     }

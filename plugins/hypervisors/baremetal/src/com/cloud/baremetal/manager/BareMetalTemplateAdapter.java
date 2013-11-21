@@ -28,11 +28,12 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
@@ -44,14 +45,12 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.TemplateProfile;
-import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.template.TemplateAdapter;
 import com.cloud.template.TemplateAdapterBase;
 import com.cloud.user.Account;
-import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -97,8 +96,9 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 
     private void templateCreateUsage(VMTemplateVO template, long dcId) {
         if (template.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, template.getAccountId(), dcId, template.getId(), template.getName(), null,
-                template.getSourceTemplateId(), 0L);
+            UsageEventVO usageEvent =
+                new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, template.getAccountId(), dcId, template.getId(), template.getName(), null,
+                    template.getSourceTemplateId(), 0L);
             _usageEventDao.persist(usageEvent);
         }
     }
@@ -109,7 +109,8 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
         Long zoneId = profile.getZoneId();
 
         // create an entry at template_store_ref with store_id = null to represent that this template is ready for use.
-        TemplateDataStoreVO vmTemplateHost = new TemplateDataStoreVO(null, template.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, null, template.getUrl());
+        TemplateDataStoreVO vmTemplateHost =
+            new TemplateDataStoreVO(null, template.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, null, template.getUrl());
         this._tmpltStoreDao.persist(vmTemplateHost);
 
         if (zoneId == null || zoneId == -1) {
@@ -125,6 +126,7 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
         return template;
     }
 
+    @Override
     public TemplateProfile prepareDelete(DeleteIsoCmd cmd) {
         throw new CloudRuntimeException("Baremetal doesn't support ISO, how the delete get here???");
     }

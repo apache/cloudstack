@@ -16,11 +16,16 @@
 // under the License.
 package com.cloud.bridge.util;
 
-import java.security.InvalidKeyException;
-import java.security.SignatureException;
-import java.util.*;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.security.InvalidKeyException;
+import java.security.SignatureException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;

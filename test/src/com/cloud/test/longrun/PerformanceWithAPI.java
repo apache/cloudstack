@@ -20,8 +20,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLEncoder;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -71,6 +71,7 @@ public class PerformanceWithAPI {
 
         for (int i = 0; i < numThreads; i++) {
             new Thread(new Runnable() {
+                @Override
                 public void run() {
                     try {
 
@@ -101,8 +102,7 @@ public class PerformanceWithAPI {
 
                                 if (singlePrivateIp != null) {
                                     s_logger.info("VM with private Ip " + singlePrivateIp + " was successfully created");
-                                }
-                                else {
+                                } else {
                                     s_logger.info("Problems with VM creation for a user" + myUser.getUserName());
                                     break;
                                 }
@@ -112,8 +112,7 @@ public class PerformanceWithAPI {
                                 singlePublicIp = myUser.getPublicIp().get(myUser.getPublicIp().size() - 1);
                                 if (singlePublicIp != null) {
                                     s_logger.info("Successfully got public Ip " + singlePublicIp + " for user " + myUser.getUserName());
-                                }
-                                else {
+                                } else {
                                     s_logger.info("Problems with getting public Ip address for user" + myUser.getUserName());
                                     break;
                                 }
@@ -131,8 +130,8 @@ public class PerformanceWithAPI {
                             s_logger.info("Starting performance test for Guest network that has " + myUser.getPublicIp().size() + " public IP addresses");
                             for (int j = 0; j < myUser.getPublicIp().size(); j++) {
                                 s_logger.info("Starting test for user which has " + myUser.getVirtualMachines().size() + " vms. Public IP for the user is " +
-                                              myUser.getPublicIp().get(j) + " , number of retries is " + _retry + " , private IP address of the machine is" +
-                                              myUser.getVirtualMachines().get(j).getPrivateIp());
+                                    myUser.getPublicIp().get(j) + " , number of retries is " + _retry + " , private IP address of the machine is" +
+                                    myUser.getVirtualMachines().get(j).getPrivateIp());
                                 guestNetwork myNetwork = new guestNetwork(myUser.getPublicIp().get(j), _retry);
                                 myNetwork.setVirtualMachines(myUser.getVirtualMachines());
                                 new Thread(myNetwork).start();
@@ -156,11 +155,9 @@ public class PerformanceWithAPI {
         String encodedApiKey = URLEncoder.encode(myUser.getApiKey(), "UTF-8");
         int responseCode = 500;
 
-        String requestToSign = "apiKey=" + encodedApiKey
-                               + "&command=createOrUpdateIpForwardingRule&privateIp="
-                               + encodedPrivateIp + "&privatePort=" + encodedPrivatePort
-                               + "&protocol=tcp&publicIp="
-                               + encodedPublicIp + "&publicPort=" + encodedPublicPort;
+        String requestToSign =
+            "apiKey=" + encodedApiKey + "&command=createOrUpdateIpForwardingRule&privateIp=" + encodedPrivateIp + "&privatePort=" + encodedPrivatePort +
+                "&protocol=tcp&publicIp=" + encodedPublicIp + "&publicPort=" + encodedPublicPort;
 
         requestToSign = requestToSign.toLowerCase();
         s_logger.info("Request to sign is " + requestToSign);
@@ -168,32 +165,24 @@ public class PerformanceWithAPI {
         String signature = TestClientWithAPI.signRequest(requestToSign, myUser.getSecretKey());
         String encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
-        String url = myUser.getDeveloperServer() + "?command=createOrUpdateIpForwardingRule"
-                     + "&publicIp=" + encodedPublicIp
-                     + "&publicPort=" + encodedPublicPort + "&privateIp=" + encodedPrivateIp
-                     + "&privatePort=" + encodedPrivatePort + "&protocol=tcp&apiKey=" + encodedApiKey
-                     + "&signature=" + encodedSignature;
+        String url =
+            myUser.getDeveloperServer() + "?command=createOrUpdateIpForwardingRule" + "&publicIp=" + encodedPublicIp + "&publicPort=" + encodedPublicPort +
+                "&privateIp=" + encodedPrivateIp + "&privatePort=" + encodedPrivatePort + "&protocol=tcp&apiKey=" + encodedApiKey + "&signature=" + encodedSignature;
 
         s_logger.info("Trying to create IP forwarding rule: " + url);
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(url);
         responseCode = client.executeMethod(method);
-        s_logger.info("create ip forwarding rule response code: "
-                      + responseCode);
+        s_logger.info("create ip forwarding rule response code: " + responseCode);
         if (responseCode == 200) {
             s_logger.info("The rule is created successfully");
         } else if (responseCode == 500) {
             InputStream is = method.getResponseBodyAsStream();
-            Map<String, String> errorInfo = TestClientWithAPI.getSingleValueFromXML(is,
-                new String[] {"errorCode", "description"});
-            s_logger
-                .error("create ip forwarding rule (linux) test failed with errorCode: "
-                       + errorInfo.get("errorCode")
-                       + " and description: "
-                       + errorInfo.get("description"));
+            Map<String, String> errorInfo = TestClientWithAPI.getSingleValueFromXML(is, new String[] {"errorCode", "description"});
+            s_logger.error("create ip forwarding rule (linux) test failed with errorCode: " + errorInfo.get("errorCode") + " and description: " +
+                errorInfo.get("description"));
         } else {
-            s_logger.error("internal error processing request: "
-                           + method.getStatusText());
+            s_logger.error("internal error processing request: " + method.getStatusText());
         }
         return responseCode;
     }

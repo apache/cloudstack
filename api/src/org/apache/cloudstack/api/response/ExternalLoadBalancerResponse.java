@@ -16,10 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 public class ExternalLoadBalancerResponse extends NetworkDeviceResponse {
 
@@ -51,10 +52,12 @@ public class ExternalLoadBalancerResponse extends NetworkDeviceResponse {
     @Param(description = "the number of times to retry requests to the external load balancer")
     private String numRetries;
 
+    @Override
     public String getId() {
         return id;
     }
 
+    @Override
     public void setId(String id) {
         this.id = id;
     }

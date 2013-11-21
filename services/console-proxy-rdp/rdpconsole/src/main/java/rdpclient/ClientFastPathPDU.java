@@ -25,31 +25,31 @@ import streamer.Link;
  */
 public class ClientFastPathPDU extends BaseElement {
 
-  public ClientFastPathPDU(String id) {
-    super(id);
-  }
+    public ClientFastPathPDU(String id) {
+        super(id);
+    }
 
-  @Override
-  public void handleData(ByteBuffer buf, Link link) {
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
+    @Override
+    public void handleData(ByteBuffer buf, Link link) {
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
 
-    if (buf.length > 32767-3)
-      throw new RuntimeException("Packet is too long: " + buf + ".");
+        if (buf.length > 32767 - 3)
+            throw new RuntimeException("Packet is too long: " + buf + ".");
 
-    ByteBuffer data = new ByteBuffer(6);
+        ByteBuffer data = new ByteBuffer(6);
 
-    // FastPath, 1 event, no checksum, not encrypted
-    data.writeByte(0x4);
+        // FastPath, 1 event, no checksum, not encrypted
+        data.writeByte(0x4);
 
-    // Length of full packet, including length field, in network order.
-    // Topmost bit of first byte indicates that field has 2 bytes
-    data.writeShort((1 + 2 + buf.length) | 0x8000);
-    data.trimAtCursor();
+        // Length of full packet, including length field, in network order.
+        // Topmost bit of first byte indicates that field has 2 bytes
+        data.writeShort((1 + 2 + buf.length) | 0x8000);
+        data.trimAtCursor();
 
-    buf.prepend(data);
+        buf.prepend(data);
 
-    pushDataToAllOuts(buf);
-  }
+        pushDataToAllOuts(buf);
+    }
 
 }

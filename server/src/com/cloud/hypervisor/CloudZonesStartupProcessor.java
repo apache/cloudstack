@@ -23,10 +23,11 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.ResourceDetail;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.ResourceDetail;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.StartupCommandProcessor;
@@ -184,7 +185,7 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
             }
             if (currentCountOfHosts >= maxHosts) {
                 throw new AgentAuthnException("Number of running Routing hosts in the Zone:" + zone.getName() + " is already at the max limit:" + maxHosts +
-                                              ", cannot start one more host");
+                    ", cannot start one more host");
             }
         }
 
