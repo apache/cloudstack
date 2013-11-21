@@ -22,7 +22,7 @@
 -- Disable foreign key checking
 SET foreign_key_checks = 0;
 
-ALTER TABLE `cloud`.`disk_offering` ADD `cache_mode` VARCHAR( 16 ) NOT NULL DEFAULT 'none' COMMENT 'The disk cache mode to use for disks created with this offering';
+ALTER TABLE `cloud`.`disk_offering` ADD `cache_mode` VARCHAR( 16 ) DEFAULT 'none' COMMENT 'The disk cache mode to use for disks created with this offering';
 
 DROP VIEW IF EXISTS `cloud`.`disk_offering_view`;
 CREATE VIEW `cloud`.`disk_offering_view` AS
