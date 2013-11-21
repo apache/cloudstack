@@ -43,6 +43,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -158,6 +160,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     public static boolean encodeApiResponse = false;
     public static String jsonContentType = "text/javascript";
+    public static String controlCharacters = "[\000-\011\013-\014\016-\037\177]"; // Non-printable ASCII characters - numbers 0 to 31 and 127 decimal
     @Inject ApiDispatcher _dispatcher;
 
     @Inject private AccountManager _accountMgr;
@@ -348,10 +351,10 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     String[] value = (String[]) params.get(key);
                     // fail if parameter value contains ASCII control (non-printable) characters
                     if (value[0] != null) {
-                        String newValue = StringUtils.stripControlCharacters(value[0]);
-                        if ( !newValue.equals(value[0]) ) {
-                            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Received value " + value[0] + " for parameter "
-                                    + key + " is invalid, contains illegal ASCII non-printable characters");
+                        Pattern pattern = Pattern.compile(controlCharacters);
+                        Matcher matcher = pattern.matcher(value[0]);
+                        if (matcher.find()) {
+                            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Received value " + value[0] + " for parameter " + key + " is invalid, contains illegal ASCII non-printable characters");
                         }
                     }
                     paramMap.put(key, value[0]);
