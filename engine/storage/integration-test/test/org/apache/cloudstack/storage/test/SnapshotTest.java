@@ -276,8 +276,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
                 resourceMgr.listAllUpAndEnabledHosts((Type) Matchers.any(), Matchers.anyLong(), Matchers.anyLong(),
                         Matchers.anyLong())).thenReturn(hosts);
 
-        remoteEp = RemoteHostEndPoint.getHypervisorHostEndPoint(this.host.getId(), this.host.getPrivateIpAddress(),
-                this.host.getPublicIpAddress());
+        remoteEp = RemoteHostEndPoint.getHypervisorHostEndPoint(this.host);
         Mockito.when(epSelector.select(Matchers.any(DataObject.class), Matchers.any(DataObject.class))).thenReturn(
                 remoteEp);
         Mockito.when(epSelector.select(Matchers.any(DataObject.class))).thenReturn(remoteEp);
