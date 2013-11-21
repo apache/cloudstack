@@ -14,15 +14,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api;
+package com.cloud.vm;
 
-import java.io.Serializable;
+import com.cloud.storage.StoragePool;
 
-// This interface is a contract that getId() will give the internal
-// ID of an entity which extends this interface
-// Any class having an internal ID in db table/schema should extend this
-// For example, all ControlledEntity, OwnedBy would have an internal ID
+public class VmWorkStorageMigration extends VmWork {
+	private static final long serialVersionUID = -8677979691741157474L;
 
-public interface InternalIdentity extends Serializable {
-    long getId();
+	StoragePool destPool;
+	
+    public VmWorkStorageMigration(long userId, long accountId, long vmId, StoragePool destPool) {
+    	super(userId, accountId, vmId);
+    	
+    	this.destPool = destPool;
+    }
+    
+    public StoragePool getDestStoragePool() {
+    	return this.destPool;
+    }
 }

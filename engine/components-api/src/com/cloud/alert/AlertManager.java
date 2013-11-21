@@ -50,6 +50,8 @@ public interface AlertManager extends Manager {
     public static final short ALERT_TYPE_DIRECT_ATTACHED_PUBLIC_IP = 24;
     public static final short ALERT_TYPE_LOCAL_STORAGE = 25;
     public static final short ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED = 26; // Generated when the resource limit exceeds the limit. Currently used for recurring snapshots only
+
+    public static final short ALERT_TYPE_SYNC = 27;
     
     static final ConfigKey<Double> StorageCapacityThreshold = new ConfigKey<Double>(Double.class, "cluster.storage.capacity.notificationthreshold", "Alert", "0.75",
         "Percentage (as a value between 0 and 1) of storage utilization above which alerts will be sent about low storage available.", true, ConfigKey.Scope.Cluster, null);

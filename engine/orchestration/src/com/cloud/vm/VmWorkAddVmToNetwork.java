@@ -14,15 +14,29 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api;
+package com.cloud.vm;
 
-import java.io.Serializable;
+import com.cloud.network.Network;
 
-// This interface is a contract that getId() will give the internal
-// ID of an entity which extends this interface
-// Any class having an internal ID in db table/schema should extend this
-// For example, all ControlledEntity, OwnedBy would have an internal ID
+public class VmWorkAddVmToNetwork extends VmWork {
+	private static final long serialVersionUID = 8861516006586736813L;
 
-public interface InternalIdentity extends Serializable {
-    long getId();
+	Network network;
+	NicProfile requstedNicProfile;
+	
+	public VmWorkAddVmToNetwork(long userId, long accountId, long vmId, 
+		Network network, NicProfile requested) {
+		super(userId, accountId, vmId);
+	
+		this.network = network;
+		this.requstedNicProfile = requested;
+	}
+	
+	public Network getNetwork() {
+		return this.network;
+	}
+	
+	public NicProfile getRequestedNicProfile() {
+		return this.requstedNicProfile;
+	}
 }

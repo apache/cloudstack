@@ -213,7 +213,12 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
          * UserBareMetal is only used for selecting VirtualMachineGuru, there is no
          * VM with this type. UserBareMetal should treat exactly as User.
          */
-        UserBareMetal(false);
+        UserBareMetal(false),
+        
+        /*
+         * General VM type for queuing VM orchestration work
+         */
+        Instance(false);
 
         boolean _isUsedBySystem;
 

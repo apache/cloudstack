@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -16,16 +16,33 @@
 // under the License.
 package com.cloud.vm;
 
-import java.util.Map;
+import com.cloud.deploy.DeployDestination;
 
-import com.cloud.agent.api.HostVmStateReportEntry;
+public class VmWorkMigrateForScale extends VmWork {
+	private static final long serialVersionUID = 6854870395568389613L;
 
-public interface VirtualMachinePowerStateSync {
+	long srcHostId;
+	DeployDestination deployDestination;
+	Long newSvcOfferingId;
 	
-	void resetHostSyncState(long hostId);
+    public VmWorkMigrateForScale(long userId, long accountId, long vmId, long srcHostId, 
+    	DeployDestination dest, Long newSvcOfferingId) {
+    	
+    	super(userId, accountId, vmId);
+    	this.srcHostId = srcHostId;
+    	this.deployDestination = dest;
+    	this.newSvcOfferingId = newSvcOfferingId;
+    }
 	
-	void processHostVmStateReport(long hostId, Map<String, HostVmStateReportEntry> report);
-	
-	// to adapt legacy ping report
-	void processHostVmStatePingReport(long hostId, Map<String, HostVmStateReportEntry> report);
+    public long getSrcHostId() {
+    	return srcHostId;
+    }
+    
+    public DeployDestination getDeployDestination() {
+    	return this.deployDestination;
+    }
+    
+    public Long getNewServiceOfferringId() {
+    	return this.newSvcOfferingId;
+    }
 }

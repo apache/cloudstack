@@ -27,7 +27,6 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 
 import com.cloud.agent.api.HostVmStateReportEntry;
-import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStateSync {
@@ -56,11 +55,11 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
     }
 
     @Override
-	public void processHostVmStatePingReport(long hostId, Map<String, PowerState> report) {
+	public void processHostVmStatePingReport(long hostId, Map<String, HostVmStateReportEntry> report) {
     	if(s_logger.isDebugEnabled())
     		s_logger.debug("Process host VM state report from ping process. host: " + hostId);
     	
-    	Map<Long, VirtualMachine.PowerState> translatedInfo = convertHostPingInfos(report);
+    	Map<Long, VirtualMachine.PowerState> translatedInfo = convertToInfos(report);
     	processReport(hostId, translatedInfo);
     }
     
@@ -79,25 +78,6 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
                 _messageBus.publish(null, VirtualMachineManager.Topics.VM_POWER_STATE, PublishScope.GLOBAL, entry.getKey());
     		}
     	}
-    }
- 
-    private Map<Long, VirtualMachine.PowerState> convertHostPingInfos(Map<String, PowerState> states) {
-        final HashMap<Long, VirtualMachine.PowerState> map = new HashMap<Long, VirtualMachine.PowerState>();
-        if (states == null) {
-            return map;
-        }
-    	
-        for (Map.Entry<String, PowerState> entry : states.entrySet()) {
-        	VMInstanceVO vm = findVM(entry.getKey());
-        	if(vm != null) {
-        		map.put(vm.getId(), entry.getValue());
-        		break;
-        	} else {
-        		s_logger.info("Unable to find matched VM in CloudStack DB. name: " + entry.getKey());
-        	}
-        }
-
-        return map;
     }
     	    
     private Map<Long, VirtualMachine.PowerState> convertToInfos(Map<String, HostVmStateReportEntry> states) {

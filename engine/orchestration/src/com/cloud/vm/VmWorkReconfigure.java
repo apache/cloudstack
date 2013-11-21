@@ -14,15 +14,30 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api;
+package com.cloud.vm;
 
-import java.io.Serializable;
+import com.cloud.offering.ServiceOffering;
 
-// This interface is a contract that getId() will give the internal
-// ID of an entity which extends this interface
-// Any class having an internal ID in db table/schema should extend this
-// For example, all ControlledEntity, OwnedBy would have an internal ID
-
-public interface InternalIdentity extends Serializable {
-    long getId();
+public class VmWorkReconfigure extends VmWork {
+	private static final long serialVersionUID = -4517030323758086615L;
+	
+	ServiceOffering newServiceOffering;
+	boolean sameHost;
+	
+    public VmWorkReconfigure(long userId, long accountId, long vmId, 
+    	ServiceOffering newServiceOffering, boolean sameHost) {
+    	
+    	super(userId, accountId, vmId);
+    	
+    	this.newServiceOffering = newServiceOffering;
+    	this.sameHost = sameHost;
+    }
+    
+    public ServiceOffering getNewServiceOffering() {
+    	return this.newServiceOffering;
+    }
+    
+    public boolean isSameHost() {
+    	return this.sameHost;
+    }
 }
