@@ -21,8 +21,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class DummyImpl implements DummyInterface {
 
-	@Override
-	public void foo() {
-		System.out.println("Basic foo implementation");
-	}
+    @Override
+    public void foo() {
+        System.out.println("Basic foo implementation");
+    }
 }

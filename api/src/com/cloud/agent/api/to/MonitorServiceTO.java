@@ -30,7 +30,7 @@ public class MonitorServiceTO implements InternalIdentity {
     protected MonitorServiceTO() {
     }
 
-    public MonitorServiceTO (String service, String processname, String serviceName, String servicepath, String pidFile, boolean isDefault) {
+    public MonitorServiceTO(String service, String processname, String serviceName, String servicepath, String pidFile, boolean isDefault) {
         this.service = service;
         this.processname = processname;
         this.serviceName = serviceName;
@@ -38,8 +38,6 @@ public class MonitorServiceTO implements InternalIdentity {
         this.pidFile = pidFile;
         this.isDefault = isDefault;
     }
-
-
 
     public boolean isDefault() {
         return isDefault;
@@ -53,7 +51,6 @@ public class MonitorServiceTO implements InternalIdentity {
     public long getId() {
         return id;
     }
-
 
     public String getService() {
         return service;

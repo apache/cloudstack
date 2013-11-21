@@ -78,8 +78,9 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
         }
 
         if (offering.getTrafficType() == Networks.TrafficType.Public) {
-            NetworkVO ntwk = new NetworkVO(offering.getTrafficType(), Networks.Mode.Static, Networks.BroadcastDomainType.Mido,
-                    offering.getId(), Network.State.Allocated, plan.getDataCenterId(), plan.getPhysicalNetworkId());
+            NetworkVO ntwk =
+                new NetworkVO(offering.getTrafficType(), Networks.Mode.Static, Networks.BroadcastDomainType.Mido, offering.getId(), Network.State.Allocated,
+                    plan.getDataCenterId(), plan.getPhysicalNetworkId());
             return ntwk;
         } else {
             return null;
@@ -92,7 +93,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
 
     @Override
     protected void getIp(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network) throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException, ConcurrentOperationException {
+        InsufficientAddressCapacityException, ConcurrentOperationException {
         if (nic.getIp4Address() == null) {
             PublicIp ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), Vlan.VlanType.VirtualNetwork, null, null, false);
             nic.setIp4Address(ip.getAddress().toString());
@@ -130,9 +131,8 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm)
-            throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException, ConcurrentOperationException {
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapcityException,
+        InsufficientAddressCapacityException, ConcurrentOperationException {
 
         s_logger.debug("allocate called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
         DataCenter dc = _dcDao.findById(network.getDataCenterId());
@@ -149,7 +149,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
 
         if (nic.getIp4Address() == null) {
             nic.setStrategy(Nic.ReservationStrategy.Start);
-        } else if (vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter){
+        } else if (vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter) {
             nic.setStrategy(Nic.ReservationStrategy.Managed);
         } else {
             nic.setStrategy(Nic.ReservationStrategy.Create);
@@ -162,7 +162,7 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
 
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
+        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException {
         s_logger.debug("reserve called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
         if (nic.getIp4Address() == null) {
             getIp(nic, dest.getDataCenter(), vm, network);
@@ -177,14 +177,15 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
 
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException {
+        throws InsufficientVirtualNetworkCapcityException {
         s_logger.debug("implement called with network: " + network.toString());
         long dcId = destination.getDataCenter().getId();
 
         //get physical network id
         long physicalNetworkId = _networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
 
-        NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), Network.State.Allocated,
+        NetworkVO implemented =
+            new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), Network.State.Allocated,
                 network.getDataCenterId(), physicalNetworkId);
 
         if (network.getGateway() != null) {
@@ -201,7 +202,8 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
 
     }
 
-    @Override @DB
+    @Override
+    @DB
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
         s_logger.debug("deallocate called with network: " + network.toString() + " nic: " + nic.toString() + " vm: " + vm.toString());
         if (s_logger.isDebugEnabled()) {
@@ -213,8 +215,8 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
-                _ipAddrMgr.markIpAsUnavailable(ip.getId());
-                _ipAddressDao.unassignIpAddress(ip.getId());
+                    _ipAddrMgr.markIpAsUnavailable(ip.getId());
+                    _ipAddressDao.unassignIpAddress(ip.getId());
                 }
             });
         }
@@ -243,16 +245,11 @@ public class MidoNetPublicNetworkGuru extends PublicNetworkGuru {
         networkProfile.setDns2(dc.getDns2());
     }
 
-    private URI generateBroadcastUri(Network network){
+    private URI generateBroadcastUri(Network network) {
         AccountVO acc = _accountDao.findById(network.getAccountId());
         String accountUUIDStr = acc.getUuid();
         String networkUUIDStr = String.valueOf(network.getId());
-        return Networks.BroadcastDomainType.Mido.toUri(accountUUIDStr +
-                                                       "." +
-                                                       networkUUIDStr +
-                                                       ":" +
-                                                       networkUUIDStr);
+        return Networks.BroadcastDomainType.Mido.toUri(accountUUIDStr + "." + networkUUIDStr + ":" + networkUUIDStr);
     }
-
 
 }

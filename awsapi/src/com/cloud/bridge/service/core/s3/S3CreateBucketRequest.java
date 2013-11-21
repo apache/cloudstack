@@ -17,44 +17,44 @@
 package com.cloud.bridge.service.core.s3;
 
 public class S3CreateBucketRequest extends S3Request {
-	protected String bucketName;
-	protected S3CreateBucketConfiguration config;
-	protected String cannedAccessPolicy;    // -> REST only sets an acl with a simple keyword
-	protected S3AccessControlList acl;
-	
-	public S3CreateBucketRequest() {
-		super();
-	}
+    protected String bucketName;
+    protected S3CreateBucketConfiguration config;
+    protected String cannedAccessPolicy;    // -> REST only sets an acl with a simple keyword
+    protected S3AccessControlList acl;
 
-	public String getBucketName() {
-		return bucketName;
-	}
+    public S3CreateBucketRequest() {
+        super();
+    }
 
-	public void setBucketName(String bucketName) {
-		this.bucketName = bucketName;
-	}
+    public String getBucketName() {
+        return bucketName;
+    }
 
-	public S3CreateBucketConfiguration getConfig() {
-		return config;
-	}
+    public void setBucketName(String bucketName) {
+        this.bucketName = bucketName;
+    }
 
-	public void setConfig(S3CreateBucketConfiguration config) {
-		this.config = config;
-	}
-	
-	public String getCannedAccess() {
-		return cannedAccessPolicy;
-	}
+    public S3CreateBucketConfiguration getConfig() {
+        return config;
+    }
 
-	public void setCannedAccess(String cannedAccessPolicy) {
-		this.cannedAccessPolicy = cannedAccessPolicy;
-	}
+    public void setConfig(S3CreateBucketConfiguration config) {
+        this.config = config;
+    }
 
-	public S3AccessControlList getAcl() {
-		return acl;
-	}
-	
-	public void setAcl(S3AccessControlList acl) {
-		this.acl = acl;
-	}
+    public String getCannedAccess() {
+        return cannedAccessPolicy;
+    }
+
+    public void setCannedAccess(String cannedAccessPolicy) {
+        this.cannedAccessPolicy = cannedAccessPolicy;
+    }
+
+    public S3AccessControlList getAcl() {
+        return acl;
+    }
+
+    public void setAcl(S3AccessControlList acl) {
+        this.acl = acl;
+    }
 }

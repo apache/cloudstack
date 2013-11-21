@@ -16,6 +16,13 @@
 // under the License.
 package com.cloud.vm.dao;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.ejb.Local;
+
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -23,15 +30,9 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.vm.NicIpAlias;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import java.util.ArrayList;
-import java.util.List;
-
 
 @Component
-@Local(value=NicIpAliasDao.class)
+@Local(value = NicIpAliasDao.class)
 public class NicIpAliasDaoImpl extends GenericDaoBase<NicIpAliasVO, Long> implements NicIpAliasDao {
     private final SearchBuilder<NicIpAliasVO> AllFieldsSearch;
     private final GenericSearchBuilder<NicIpAliasVO, String> IpSearch;
@@ -81,7 +82,6 @@ public class NicIpAliasDaoImpl extends GenericDaoBase<NicIpAliasVO, Long> implem
         sc.setParameters("network", networkId);
         return listBy(sc);
     }
-
 
     @Override
     public List<NicIpAliasVO> listByNetworkIdAndState(long networkId, NicIpAlias.state state) {
@@ -149,6 +149,7 @@ public class NicIpAliasDaoImpl extends GenericDaoBase<NicIpAliasVO, Long> implem
         sc.setParameters("instanceId", vmId);
         return findOneBy(sc);
     }
+
     @Override
     public NicIpAliasVO findByIp4AddressAndNicId(String ip4Address, long nicId) {
         SearchCriteria<NicIpAliasVO> sc = AllFieldsSearch.create();
@@ -158,8 +159,7 @@ public class NicIpAliasDaoImpl extends GenericDaoBase<NicIpAliasVO, Long> implem
     }
 
     @Override
-    public NicIpAliasVO findByIp4AddressAndNetworkIdAndInstanceId(
-            long networkId, Long vmId, String vmIp) {
+    public NicIpAliasVO findByIp4AddressAndNetworkIdAndInstanceId(long networkId, Long vmId, String vmIp) {
         SearchCriteria<NicIpAliasVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
         sc.setParameters("instanceId", vmId);
@@ -170,7 +170,7 @@ public class NicIpAliasDaoImpl extends GenericDaoBase<NicIpAliasVO, Long> implem
     @Override
     public Integer countAliasIps(long id) {
         SearchCriteria<NicIpAliasVO> sc = AllFieldsSearch.create();
-        sc.setParameters("instanceId",id);
+        sc.setParameters("instanceId", id);
         List<NicIpAliasVO> list = listBy(sc);
         return list.size();
     }

@@ -54,8 +54,8 @@ public interface AccountService {
      *
      * @return the user if created successfully, null otherwise
      */
-    UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain,
-            Map<String, String> details, String accountUUID, String userUUID);
+    UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName,
+        short accountType, Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID);
 
     /**
      * Locks a user by userId. A locked user cannot access the API, but will still have running VMs/IP addresses
@@ -70,7 +70,8 @@ public interface AccountService {
 
     User getSystemUser();
 
-    User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID);
+        User
+        createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID);
 
     boolean isAdmin(short accountType);
 

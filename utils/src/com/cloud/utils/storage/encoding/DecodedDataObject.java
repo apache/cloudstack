@@ -24,34 +24,30 @@ public class DecodedDataObject {
     private String name;
     private String path;
     private DecodedDataStore store;
-    
-    public DecodedDataObject(String objType,
-            Long size,
-            String name,
-            String path,
-            DecodedDataStore store) {
+
+    public DecodedDataObject(String objType, Long size, String name, String path, DecodedDataStore store) {
         this.objType = objType;
         this.size = size;
         this.path = path;
         this.store = store;
     }
-    
+
     public String getObjType() {
         return this.objType;
     }
-    
+
     public Long getSize() {
         return this.size;
     }
-    
+
     public String getName() {
         return this.name;
     }
-    
+
     public String getPath() {
         return this.path;
     }
-    
+
     public DecodedDataStore getStore() {
         return this.store;
     }

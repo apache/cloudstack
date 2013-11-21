@@ -38,17 +38,23 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
-import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru {
 
-    @Inject VMTemplateDetailsDao _templateDetailsDao;
-    @Inject NicDao _nicDao;
-    @Inject VMInstanceDao _virtualMachineDao;
-    @Inject UserVmDetailsDao _userVmDetailsDao;
-    @Inject NicSecondaryIpDao _nicSecIpDao;
-    @Inject ConfigurationServer _configServer;
+    @Inject
+    VMTemplateDetailsDao _templateDetailsDao;
+    @Inject
+    NicDao _nicDao;
+    @Inject
+    VMInstanceDao _virtualMachineDao;
+    @Inject
+    UserVmDetailsDao _userVmDetailsDao;
+    @Inject
+    NicSecondaryIpDao _nicSecIpDao;
+    @Inject
+    ConfigurationServer _configServer;
 
     protected HypervisorGuruBase() {
         super();
@@ -79,7 +85,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         //check whether the this nic has secondary ip addresses set
         //set nic secondary ip address in NicTO which are used for security group
         // configuration. Use full when vm stop/start
-        List <String> secIps = null;
+        List<String> secIps = null;
         if (nicVO.getSecondaryIp()) {
             secIps = _nicSecIpDao.getSecondaryIpAddressesForNic(nicVO.getId());
         }
@@ -87,16 +93,16 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         return to;
     }
 
-
     protected VirtualMachineTO toVirtualMachineTO(VirtualMachineProfile vmProfile) {
 
         ServiceOffering offering = vmProfile.getServiceOffering();
         VirtualMachine vm = vmProfile.getVirtualMachine();
-        Long minMemory = (long) (offering.getRamSize() / vmProfile.getMemoryOvercommitRatio());
-        int minspeed = (int) (offering.getSpeed() / vmProfile.getCpuOvercommitRatio());
-        int  maxspeed = (offering.getSpeed());
-        VirtualMachineTO to = new VirtualMachineTO(vm.getId(), vm.getInstanceName(), vm.getType(), offering.getCpu(), minspeed, maxspeed,
-                minMemory * 1024l * 1024l, offering.getRamSize() * 1024l * 1024l, null, null, vm.isHaEnabled(), vm.limitCpuUse(), vm.getVncPassword());
+        Long minMemory = (long)(offering.getRamSize() / vmProfile.getMemoryOvercommitRatio());
+        int minspeed = (int)(offering.getSpeed() / vmProfile.getCpuOvercommitRatio());
+        int maxspeed = (offering.getSpeed());
+        VirtualMachineTO to =
+            new VirtualMachineTO(vm.getId(), vm.getInstanceName(), vm.getType(), offering.getCpu(), minspeed, maxspeed, minMemory * 1024l * 1024l,
+                offering.getRamSize() * 1024l * 1024l, null, null, vm.isHaEnabled(), vm.limitCpuUse(), vm.getVncPassword());
         to.setBootArgs(vmProfile.getBootArgs());
 
         List<NicProfile> nicProfiles = vmProfile.getNics();
@@ -109,14 +115,14 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setNics(nics);
         to.setDisks(vmProfile.getDisks().toArray(new DiskTO[vmProfile.getDisks().size()]));
 
-        if(vmProfile.getTemplate().getBits() == 32) {
+        if (vmProfile.getTemplate().getBits() == 32) {
             to.setArch("i686");
         } else {
             to.setArch("x86_64");
         }
 
         Map<String, String> detailsInVm = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
-        if(detailsInVm != null) {
+        if (detailsInVm != null) {
             to.setDetails(detailsInVm);
         }
         // Workaround to make sure the TO has the UUID we need for Niciri integration

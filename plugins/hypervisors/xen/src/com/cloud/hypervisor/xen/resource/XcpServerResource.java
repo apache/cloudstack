@@ -11,10 +11,24 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.hypervisor.xen.resource;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.ejb.Local;
+
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VM;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -23,19 +37,8 @@ import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VM;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
 
-import javax.ejb.Local;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
-@Local(value=ServerResource.class)
+@Local(value = ServerResource.class)
 public class XcpServerResource extends CitrixResourceBase {
     private final static Logger s_logger = Logger.getLogger(XcpServerResource.class);
     private static final long mem_32m = 33554432L;
@@ -48,7 +51,7 @@ public class XcpServerResource extends CitrixResourceBase {
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof NetworkUsageCommand) {
-            return execute((NetworkUsageCommand) cmd);
+            return execute((NetworkUsageCommand)cmd);
         } else {
             return super.executeRequest(cmd);
         }
@@ -75,7 +78,7 @@ public class XcpServerResource extends CitrixResourceBase {
     protected NetworkUsageAnswer execute(NetworkUsageCommand cmd) {
         try {
             Connection conn = getConnection();
-            if(cmd.getOption()!=null && cmd.getOption().equals("create") ){
+            if (cmd.getOption() != null && cmd.getOption().equals("create")) {
                 String result = networkUsage(conn, cmd.getPrivateIP(), "create", null);
                 NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, result, 0L, 0L);
                 return answer;
@@ -142,9 +145,8 @@ public class XcpServerResource extends CitrixResourceBase {
     protected void setMemory(Connection conn, VM vm, long minMemsize, long maxMemsize) throws XmlRpcException, XenAPIException {
         //setMemoryLimits(staticMin, staticMax, dynamicMin, dynamicMax)
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Memory Limits for VM [" + vm.getNameLabel(conn) +
-                    "[staticMin:" + mem_32m + ", staticMax:" + maxMemsize
-                    + ", dynamicMin: " + minMemsize + ", dynamicMax:" + maxMemsize+"]]");
+            s_logger.debug("Memory Limits for VM [" + vm.getNameLabel(conn) + "[staticMin:" + mem_32m + ", staticMax:" + maxMemsize + ", dynamicMin: " + minMemsize +
+                ", dynamicMax:" + maxMemsize + "]]");
         }
         vm.setMemoryLimits(conn, mem_32m, maxMemsize, minMemsize, maxMemsize);
     }

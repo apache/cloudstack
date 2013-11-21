@@ -22,9 +22,10 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
@@ -32,7 +33,7 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.script.Script;
 
-@Local(value=Processor.class)
+@Local(value = Processor.class)
 public class VmdkProcessor extends AdapterBase implements Processor {
     private static final Logger s_logger = Logger.getLogger(VmdkProcessor.class);
 
@@ -41,7 +42,7 @@ public class VmdkProcessor extends AdapterBase implements Processor {
     @Override
     public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
         if (format != null) {
-            if(s_logger.isInfoEnabled()) {
+            if (s_logger.isInfoEnabled()) {
                 s_logger.info("We currently don't handle conversion from " + format + " to VMDK.");
             }
             return null;
@@ -50,7 +51,7 @@ public class VmdkProcessor extends AdapterBase implements Processor {
         s_logger.info("Template processing. templatePath: " + templatePath + ", templateName: " + templateName);
         String templateFilePath = templatePath + File.separator + templateName + "." + ImageFormat.OVA.getFileExtension();
         if (!_storage.exists(templateFilePath)) {
-            if(s_logger.isInfoEnabled()) {
+            if (s_logger.isInfoEnabled()) {
                 s_logger.info("Unable to find the vmware template file: " + templateFilePath);
             }
             return null;
@@ -94,11 +95,11 @@ public class VmdkProcessor extends AdapterBase implements Processor {
 
     public long getTemplateVirtualSize(String templatePath, String templateName) throws InternalErrorException {
         // get the virtual size from the OVF file meta data
-        long virtualSize=0;
+        long virtualSize = 0;
         String templateFileFullPath = templatePath.endsWith(File.separator) ? templatePath : templatePath + File.separator;
         templateFileFullPath += templateName.endsWith(ImageFormat.OVA.getFileExtension()) ? templateName : templateName + "." + ImageFormat.OVA.getFileExtension();
         String ovfFileName = getOVFFilePath(templateFileFullPath);
-        if(ovfFileName == null) {
+        if (ovfFileName == null) {
             String msg = "Unable to locate OVF file in template package directory: " + templatePath;
             s_logger.error(msg);
             throw new InternalErrorException(msg);
@@ -106,7 +107,7 @@ public class VmdkProcessor extends AdapterBase implements Processor {
         try {
             Document ovfDoc = null;
             ovfDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(ovfFileName));
-            Element disk  = (Element) ovfDoc.getElementsByTagName("Disk").item(0);
+            Element disk = (Element)ovfDoc.getElementsByTagName("Disk").item(0);
             virtualSize = Long.parseLong(disk.getAttribute("ovf:capacity"));
             String allocationUnits = disk.getAttribute("ovf:capacityAllocationUnits");
             if ((virtualSize != 0) && (allocationUnits != null)) {
@@ -124,7 +125,7 @@ public class VmdkProcessor extends AdapterBase implements Processor {
             }
             return virtualSize;
         } catch (Exception e) {
-            String msg = "Unable to parse OVF XML document to get the virtual disk size due to"+e;
+            String msg = "Unable to parse OVF XML document to get the virtual disk size due to" + e;
             s_logger.error(msg);
             throw new InternalErrorException(msg);
         }
@@ -132,11 +133,11 @@ public class VmdkProcessor extends AdapterBase implements Processor {
 
     private String getOVFFilePath(String srcOVAFileName) {
         File file = new File(srcOVAFileName);
-        assert(_storage != null);
+        assert (_storage != null);
         String[] files = _storage.listFiles(file.getParent());
-        if(files != null) {
-            for(String fileName : files) {
-                if(fileName.toLowerCase().endsWith(".ovf")) {
+        if (files != null) {
+            for (String fileName : files) {
+                if (fileName.toLowerCase().endsWith(".ovf")) {
                     File ovfFile = new File(fileName);
                     return file.getParent() + File.separator + ovfFile.getName();
                 }

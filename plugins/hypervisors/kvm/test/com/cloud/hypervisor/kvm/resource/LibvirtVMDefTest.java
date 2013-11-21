@@ -27,11 +27,9 @@ public class LibvirtVMDefTest extends TestCase {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
         ifDef.defEthernet("targetDeviceName", "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.nicModel.VIRTIO);
 
-        String expected = "<interface type='ethernet'>\n" +
-                "<target dev='targetDeviceName'/>\n" +
-                "<mac address='00:11:22:aa:bb:dd'/>\n" +
-                "<model type='virtio'/>\n" +
-                "</interface>\n";
+        String expected =
+            "<interface type='ethernet'>\n" + "<target dev='targetDeviceName'/>\n" + "<mac address='00:11:22:aa:bb:dd'/>\n" + "<model type='virtio'/>\n"
+                + "</interface>\n";
 
         assertEquals(expected, ifDef.toString());
     }
@@ -40,16 +38,14 @@ public class LibvirtVMDefTest extends TestCase {
         LibvirtVMDef.InterfaceDef ifDef = new LibvirtVMDef.InterfaceDef();
         ifDef.defDirectNet("targetDeviceName", null, "00:11:22:aa:bb:dd", LibvirtVMDef.InterfaceDef.nicModel.VIRTIO, "private");
 
-        String expected = "<interface type='" + LibvirtVMDef.InterfaceDef.guestNetType.DIRECT + "'>\n" +
-                "<source dev='targetDeviceName' mode='private'/>\n" +
-                "<mac address='00:11:22:aa:bb:dd'/>\n" +
-                "<model type='virtio'/>\n" +
-                "</interface>\n";
+        String expected =
+            "<interface type='" + LibvirtVMDef.InterfaceDef.guestNetType.DIRECT + "'>\n" + "<source dev='targetDeviceName' mode='private'/>\n" +
+                "<mac address='00:11:22:aa:bb:dd'/>\n" + "<model type='virtio'/>\n" + "</interface>\n";
 
         assertEquals(expected, ifDef.toString());
     }
 
-    public void testCpuModeDef(){
+    public void testCpuModeDef() {
         LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
         cpuModeDef.setMode("custom");
         cpuModeDef.setModel("Nehalem");

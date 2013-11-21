@@ -28,48 +28,48 @@ import javax.persistence.Table;
 import com.cloud.network.RemoteAccessVpn;
 
 @Entity
-@Table(name=("remote_access_vpn"))
+@Table(name = ("remote_access_vpn"))
 public class RemoteAccessVpnVO implements RemoteAccessVpn {
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="network_id")
+    @Column(name = "network_id")
     private Long networkId;
-    
-    @Column(name="domain_id")
+
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="vpn_server_addr_id")
+    @Column(name = "vpn_server_addr_id")
     private long serverAddressId;
-    
-    @Column(name="local_ip")
+
+    @Column(name = "local_ip")
     private String localIp;
 
-    @Column(name="ip_range")
+    @Column(name = "ip_range")
     private String ipRange;
 
-    @Column(name="ipsec_psk")
+    @Column(name = "ipsec_psk")
     private String ipsecPresharedKey;
-    
-    @Column(name="state")
+
+    @Column(name = "state")
     private State state;
-    
+
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
-    
-    @Column(name="uuid")
+
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="vpc_id")
+    @Column(name = "vpc_id")
     private Long vpcId;
-    
-    public RemoteAccessVpnVO() { 
+
+    public RemoteAccessVpnVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public RemoteAccessVpnVO(long accountId, long domainId, Long networkId, long publicIpId, Long vpcId, String localIp, String ipRange,  String presharedKey) {
+    public RemoteAccessVpnVO(long accountId, long domainId, Long networkId, long publicIpId, Long vpcId, String localIp, String ipRange, String presharedKey) {
         this.accountId = accountId;
         this.serverAddressId = publicIpId;
         this.ipRange = ipRange;
@@ -81,12 +81,12 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
         this.uuid = UUID.randomUUID().toString();
         this.vpcId = vpcId;
     }
-    
+
     @Override
     public State getState() {
         return state;
     }
-    
+
     public void setState(State state) {
         this.state = state;
     }
@@ -95,44 +95,44 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     public long getAccountId() {
         return accountId;
     }
-    
+
     @Override
-	public long getServerAddressId() {
+    public long getServerAddressId() {
         return serverAddressId;
     }
 
     @Override
     public String getIpRange() {
-		return ipRange;
-	}
+        return ipRange;
+    }
 
     public void setIpRange(String ipRange) {
-		this.ipRange = ipRange;
-	}
+        this.ipRange = ipRange;
+    }
 
-	@Override
+    @Override
     public String getIpsecPresharedKey() {
-		return ipsecPresharedKey;
-	}
+        return ipsecPresharedKey;
+    }
 
     public void setIpsecPresharedKey(String ipsecPresharedKey) {
-		this.ipsecPresharedKey = ipsecPresharedKey;
-	}
+        this.ipsecPresharedKey = ipsecPresharedKey;
+    }
 
-	@Override
+    @Override
     public String getLocalIp() {
-		return localIp;
-	}
+        return localIp;
+    }
 
-	@Override
+    @Override
     public long getDomainId() {
-		return domainId;
-	}
-	
-	@Override
+        return domainId;
+    }
+
+    @Override
     public Long getNetworkId() {
-	    return networkId;
-	}
+        return networkId;
+    }
 
     @Override
     public long getId() {
@@ -145,7 +145,7 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     }
 
     @Override
-	public Long getVpcId() {
-		return vpcId;
-	}
+    public Long getVpcId() {
+        return vpcId;
+    }
 }

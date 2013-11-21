@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.pod;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -24,12 +26,11 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.Pod;
 import com.cloud.user.Account;
 
-@APICommand(name = "createPod", description="Creates a new Pod.", responseObject=PodResponse.class)
+@APICommand(name = "createPod", description = "Creates a new Pod.", responseObject = PodResponse.class)
 public class CreatePodCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePodCmd.class.getName());
 
@@ -38,26 +39,29 @@ public class CreatePodCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the Pod")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the Pod")
     private String podName;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
-            required=true, description="the Zone ID in which the Pod will be created")
+    @Parameter(name = ApiConstants.ZONE_ID,
+               type = CommandType.UUID,
+               entityType = ZoneResponse.class,
+               required = true,
+               description = "the Zone ID in which the Pod will be created")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, required=true, description="the starting IP address for the Pod")
+    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, required = true, description = "the starting IP address for the Pod")
     private String startIp;
 
-    @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address for the Pod")
+    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, description = "the ending IP address for the Pod")
     private String endIp;
 
-    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, required=true, description="the netmask for the Pod")
+    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, required = true, description = "the netmask for the Pod")
     private String netmask;
 
-    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, required=true, description="the gateway for the Pod")
+    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, required = true, description = "the gateway for the Pod")
     private String gateway;
 
-    @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this Pod for allocation of new resources")
+    @Parameter(name = ApiConstants.ALLOCATION_STATE, type = CommandType.STRING, description = "Allocation state of this Pod for allocation of new resources")
     private String allocationState;
 
     /////////////////////////////////////////////////////
@@ -107,7 +111,7 @@ public class CreatePodCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pod result = _configService.createPod(getZoneId(), getPodName(), getStartIp(), getEndIp(), getGateway(), getNetmask(), getAllocationState());
         if (result != null) {
             PodResponse response = _responseGenerator.createPodResponse(result, false);

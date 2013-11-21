@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.router;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -24,12 +26,11 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.user.Account;
 
-@APICommand(name = "changeServiceForRouter", description="Upgrades domain router to a new service offering", responseObject=DomainRouterResponse.class)
+@APICommand(name = "changeServiceForRouter", description = "Upgrades domain router to a new service offering", responseObject = DomainRouterResponse.class)
 public class UpgradeRouterCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeRouterCmd.class.getName());
     private static final String s_name = "changeserviceforrouterresponse";
@@ -38,12 +39,14 @@ public class UpgradeRouterCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = DomainRouterResponse.class,
-            required=true, description="The ID of the router")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainRouterResponse.class, required = true, description = "The ID of the router")
     private Long id;
 
-    @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType = ServiceOfferingResponse.class,
-            required=true, description="the service offering ID to apply to the domain router")
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
+               type = CommandType.UUID,
+               entityType = ServiceOfferingResponse.class,
+               required = true,
+               description = "the service offering ID to apply to the domain router")
     private Long serviceOfferingId;
 
     /////////////////////////////////////////////////////
@@ -64,7 +67,7 @@ public class UpgradeRouterCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-         return s_name;
+        return s_name;
     }
 
     @Override
@@ -78,9 +81,9 @@ public class UpgradeRouterCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         VirtualRouter router = _routerService.upgradeRouter(this);
-        if (router != null){
+        if (router != null) {
             DomainRouterResponse routerResponse = _responseGenerator.createDomainRouterResponse(router);
             routerResponse.setResponseName(getCommandName());
             this.setResponseObject(routerResponse);

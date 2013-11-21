@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -23,12 +25,11 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateServiceOffering", description="Updates a service offering.", responseObject=ServiceOfferingResponse.class)
+@APICommand(name = "updateServiceOffering", description = "Updates a service offering.", responseObject = ServiceOfferingResponse.class)
 public class UpdateServiceOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateServiceOfferingCmd.class.getName());
     private static final String s_name = "updateserviceofferingresponse";
@@ -36,18 +37,22 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ServiceOfferingResponse.class,
-            required=true, description="the ID of the service offering to be updated")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = ServiceOfferingResponse.class,
+               required = true,
+               description = "the ID of the service offering to be updated")
     private Long id;
 
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the service offering to be updated")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the service offering to be updated")
     private String displayText;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the service offering to be updated")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the service offering to be updated")
     private String serviceOfferingName;
 
-    @Parameter(name=ApiConstants.SORT_KEY, type=CommandType.INTEGER, description="sort key of the service offering, integer")
+    @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the service offering, integer")
     private Integer sortKey;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -72,7 +77,6 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-
     @Override
     public String getCommandName() {
         return s_name;
@@ -84,11 +88,11 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         //Note
         //Once an offering is created, we cannot update the domainId field (keeping consistent with zones logic)
         ServiceOffering result = _configService.updateServiceOffering(this);
-        if (result != null){
+        if (result != null) {
             ServiceOfferingResponse response = _responseGenerator.createServiceOfferingResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);

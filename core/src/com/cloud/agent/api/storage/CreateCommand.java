@@ -26,7 +26,7 @@ public class CreateCommand extends Command {
     private StorageFilerTO pool;
     private DiskProfile diskCharacteristics;
     private String templateUrl;
-    boolean executeInSequence = false; 
+    boolean executeInSequence = false;
 
     protected CreateCommand() {
         super();

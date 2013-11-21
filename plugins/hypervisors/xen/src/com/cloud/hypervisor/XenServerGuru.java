@@ -26,14 +26,15 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value=HypervisorGuru.class)
+@Local(value = HypervisorGuru.class)
 public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru {
-    @Inject GuestOSDao _guestOsDao;
+    @Inject
+    GuestOSDao _guestOsDao;
 
     protected XenServerGuru() {
         super();
     }
-    
+
     @Override
     public HypervisorType getHypervisorType() {
         return HypervisorType.XenServer;
@@ -43,19 +44,19 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru 
     public VirtualMachineTO implement(VirtualMachineProfile vm) {
         BootloaderType bt = BootloaderType.PyGrub;
         if (vm.getBootLoaderType() == BootloaderType.CD) {
-        	 bt = vm.getBootLoaderType();
+            bt = vm.getBootLoaderType();
         }
         VirtualMachineTO to = toVirtualMachineTO(vm);
         to.setBootloader(bt);
-        
+
         // Determine the VM's OS description
         GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
         to.setOs(guestOS.getDisplayName());
-        
+
         return to;
     }
-    
-	@Override
+
+    @Override
     public boolean trackVmHostChange() {
         return true;
     }

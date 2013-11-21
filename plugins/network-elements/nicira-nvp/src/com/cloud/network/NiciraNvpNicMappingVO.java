@@ -26,27 +26,27 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="nicira_nvp_nic_map")
+@Table(name = "nicira_nvp_nic_map")
 public class NiciraNvpNicMappingVO implements InternalIdentity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="id")
+    @Column(name = "id")
     private long id;
 
-    @Column(name="logicalswitch")
+    @Column(name = "logicalswitch")
     private String logicalSwitchUuid;
 
-    @Column(name="logicalswitchport")
+    @Column(name = "logicalswitchport")
     private String logicalSwitchPortUuid;
 
-    @Column(name="nic")
+    @Column(name = "nic")
     private String nicUuid;
 
-    public NiciraNvpNicMappingVO () {
+    public NiciraNvpNicMappingVO() {
     }
 
-    public NiciraNvpNicMappingVO (final String logicalSwitchUuid, final String logicalSwitchPortUuid, final String nicUuid) {
+    public NiciraNvpNicMappingVO(final String logicalSwitchUuid, final String logicalSwitchPortUuid, final String nicUuid) {
         this.logicalSwitchUuid = logicalSwitchUuid;
         this.logicalSwitchPortUuid = logicalSwitchPortUuid;
         this.nicUuid = nicUuid;

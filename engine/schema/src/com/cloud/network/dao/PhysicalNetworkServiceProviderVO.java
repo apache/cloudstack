@@ -30,10 +30,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.network.Network.Service;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "physical_network_service_providers")
@@ -42,62 +43,62 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
-    
-    @Column(name="uuid")
-    private String uuid; 
+
+    @Column(name = "uuid")
+    private String uuid;
 
     @Column(name = "physical_network_id")
     private long physicalNetworkId;
-    
+
     @Column(name = "destination_physical_network_id")
-    private long destPhysicalNetworkId;    
+    private long destPhysicalNetworkId;
 
     @Column(name = "provider_name")
     private String providerName;
 
-    @Column(name="state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
     State state;
-    
+
     @Column(name = "vpn_service_provided")
     boolean vpnServiceProvided;
 
     @Column(name = "dhcp_service_provided")
     boolean dhcpServiceProvided;
-    
+
     @Column(name = "dns_service_provided")
     boolean dnsServiceProvided;
-    
+
     @Column(name = "gateway_service_provided")
     boolean gatewayServiceProvided;
-    
+
     @Column(name = "firewall_service_provided")
     boolean firewallServiceProvided;
-    
+
     @Column(name = "source_nat_service_provided")
     boolean sourcenatServiceProvided;
-    
+
     @Column(name = "load_balance_service_provided")
     boolean lbServiceProvided;
-    
+
     @Column(name = "static_nat_service_provided")
     boolean staticnatServiceProvided;
-    
+
     @Column(name = "port_forwarding_service_provided")
     boolean portForwardingServiceProvided;
-    
+
     @Column(name = "user_data_service_provided")
     boolean userdataServiceProvided;
-    
+
     @Column(name = "security_group_service_provided")
     boolean securitygroupServiceProvided;
-    
+
     @Column(name = "networkacl_service_provided")
     boolean networkAclServiceProvided;
-    
-    @Column(name=GenericDao.REMOVED_COLUMN)
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
-    
+
     public PhysicalNetworkServiceProviderVO() {
     }
 
@@ -118,16 +119,15 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
         return physicalNetworkId;
     }
 
-
     @Override
     public State getState() {
         return state;
     }
-    
+
     @Override
     public void setState(State state) {
         this.state = state;
-    }    
+    }
 
     @Override
     public String getProviderName() {
@@ -137,12 +137,12 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
     public void setDestinationPhysicalNetworkId(long destPhysicalNetworkId) {
         this.destPhysicalNetworkId = destPhysicalNetworkId;
     }
-    
+
     @Override
     public long getDestinationPhysicalNetworkId() {
         return destPhysicalNetworkId;
     }
-    
+
     @Override
     public boolean isVpnServiceProvided() {
         return vpnServiceProvided;
@@ -239,16 +239,16 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
     public void setSecuritygroupServiceProvided(boolean securitygroupServiceProvided) {
         this.securitygroupServiceProvided = securitygroupServiceProvided;
     }
-    
+
     @Override
     public String getUuid() {
         return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
-    
+
     public Date getRemoved() {
         return removed;
     }
@@ -256,8 +256,8 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
     public void setRemoved(Date removed) {
         this.removed = removed;
     }
-    
-    public void setEnabledServices(List<Service> services){
+
+    public void setEnabledServices(List<Service> services) {
         this.setVpnServiceProvided(services.contains(Service.Vpn));
         this.setDhcpServiceProvided(services.contains(Service.Dhcp));
         this.setDnsServiceProvided(services.contains(Service.Dns));
@@ -271,46 +271,46 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
         this.setSecuritygroupServiceProvided(services.contains(Service.SecurityGroup));
         this.setNetworkAclServiceProvided(services.contains(Service.NetworkACL));
     }
-    
+
     @Override
-    public List<Service> getEnabledServices(){
+    public List<Service> getEnabledServices() {
         List<Service> services = new ArrayList<Service>();
-        if(this.isVpnServiceProvided()){
+        if (this.isVpnServiceProvided()) {
             services.add(Service.Vpn);
         }
-        if(this.isDhcpServiceProvided()){
+        if (this.isDhcpServiceProvided()) {
             services.add(Service.Dhcp);
         }
-        if(this.isDnsServiceProvided()){
+        if (this.isDnsServiceProvided()) {
             services.add(Service.Dns);
         }
-        if(this.isGatewayServiceProvided()){
+        if (this.isGatewayServiceProvided()) {
             services.add(Service.Gateway);
         }
-        if(this.isFirewallServiceProvided()){
+        if (this.isFirewallServiceProvided()) {
             services.add(Service.Firewall);
         }
-        if(this.isLbServiceProvided()){
+        if (this.isLbServiceProvided()) {
             services.add(Service.Lb);
         }
-        if(this.sourcenatServiceProvided){
+        if (this.sourcenatServiceProvided) {
             services.add(Service.SourceNat);
         }
-        if(this.staticnatServiceProvided){
+        if (this.staticnatServiceProvided) {
             services.add(Service.StaticNat);
         }
-        if(this.portForwardingServiceProvided){
+        if (this.portForwardingServiceProvided) {
             services.add(Service.PortForwarding);
         }
-        if(this.isUserdataServiceProvided()){
+        if (this.isUserdataServiceProvided()) {
             services.add(Service.UserData);
         }
-        if(this.isSecuritygroupServiceProvided()){
+        if (this.isSecuritygroupServiceProvided()) {
             services.add(Service.SecurityGroup);
         }
         return services;
     }
-    
+
     @Override
     public boolean isNetworkAclServiceProvided() {
         return networkAclServiceProvided;

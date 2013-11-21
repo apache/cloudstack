@@ -17,40 +17,37 @@
 package com.cloud.bridge.service.core.s3;
 
 import java.util.Calendar;
-import java.util.TimeZone;
 
 public class S3ListAllMyBucketsEntry {
-	private String name;
-	private Calendar creationDate;
-	
-	public S3ListAllMyBucketsEntry() {
-	}
+    private String name;
+    private Calendar creationDate;
 
-	public String getName() {
-		return name;
-	}
+    public S3ListAllMyBucketsEntry() {
+    }
 
-	public void setName(String name) {
-		this.name = name;
-	}
+    public String getName() {
+        return name;
+    }
 
-	public Calendar getCreationDate() { 
-		
-		// cal.setTimeZone(TimeZone.getTimeZone("Z"));
-		// java.util.Date d = cal.getTime();
-		
-       // java.util.Date d = creationDate.getTime();
-	   // com.cloud.bridge.util.ISO8601SimpleDateTimeFormat sdf = new com.cloud.bridge.util.ISO8601SimpleDateTimeFormat();
-	   // sdf.format(d); 
-	// java.lang.StringBuffer b = com.cloud.bridge.util.ISO8601SimpleDateTimeFormat.format(d); return b;
-		
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Calendar getCreationDate() {
+
+        // cal.setTimeZone(TimeZone.getTimeZone("Z"));
+        // java.util.Date d = cal.getTime();
+
+        // java.util.Date d = creationDate.getTime();
+        // com.cloud.bridge.util.ISO8601SimpleDateTimeFormat sdf = new com.cloud.bridge.util.ISO8601SimpleDateTimeFormat();
+        // sdf.format(d);
+        // java.lang.StringBuffer b = com.cloud.bridge.util.ISO8601SimpleDateTimeFormat.format(d); return b;
+
         return creationDate;
-        
-        
-        
-	}
 
-	public void setCreationDate(Calendar creationDate) {
-		this.creationDate = creationDate;
-	}
+    }
+
+    public void setCreationDate(Calendar creationDate) {
+        this.creationDate = creationDate;
+    }
 }

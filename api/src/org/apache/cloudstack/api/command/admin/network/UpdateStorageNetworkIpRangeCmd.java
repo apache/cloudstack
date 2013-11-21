@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -23,7 +25,6 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.event.EventTypes;
@@ -33,7 +34,10 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateStorageNetworkIpRange", description="Update a Storage network IP range, only allowed when no IPs in this range have been allocated.", responseObject=StorageNetworkIpRangeResponse.class, since="3.0.0")
+@APICommand(name = "updateStorageNetworkIpRange",
+            description = "Update a Storage network IP range, only allowed when no IPs in this range have been allocated.",
+            responseObject = StorageNetworkIpRangeResponse.class,
+            since = "3.0.0")
 public class UpdateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateStorageNetworkIpRangeCmd.class);
     private static final String s_name = "updatestoragenetworkiprangeresponse";
@@ -41,20 +45,23 @@ public class UpdateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=StorageNetworkIpRangeResponse.class,
-            required=true, description="UUID of storage network ip range")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = StorageNetworkIpRangeResponse.class,
+               required = true,
+               description = "UUID of storage network ip range")
     private Long id;
 
-    @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, description="the beginning IP address")
+    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, description = "the beginning IP address")
     private String startIp;
 
-    @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address")
+    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, description = "the ending IP address")
     private String endIp;
 
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.INTEGER, description="Optional. the vlan the ip range sits on")
+    @Parameter(name = ApiConstants.VLAN, type = CommandType.INTEGER, description = "Optional. the vlan the ip range sits on")
     private Integer vlan;
 
-    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, description="the netmask for storage network")
+    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, description = "the netmask for storage network")
     private String netmask;
 
     /////////////////////////////////////////////////////
@@ -92,7 +99,7 @@ public class UpdateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-            ResourceAllocationException {
+        ResourceAllocationException {
         try {
             StorageNetworkIpRange result = _storageNetworkService.updateIpRange(this);
             StorageNetworkIpRangeResponse response = _responseGenerator.createStorageNetworkIpRangeResponse(result);
@@ -116,4 +123,3 @@ public class UpdateStorageNetworkIpRangeCmd extends BaseAsyncCmd {
     }
 
 }
-

@@ -16,6 +16,28 @@
 // under the License.
 package org.apache.cloudstack.storage.test;
 
+import java.io.IOException;
+
+import org.mockito.Mockito;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.ComponentScan.Filter;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.FilterType;
+import org.springframework.core.type.classreading.MetadataReader;
+import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.core.type.filter.TypeFilter;
+
+import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.service.api.OrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
+import org.apache.cloudstack.framework.rpc.RpcProvider;
+import org.apache.cloudstack.storage.cache.manager.StorageCacheManagerImpl;
+import org.apache.cloudstack.storage.test.ChildTestConfiguration.Library;
+import org.apache.cloudstack.test.utils.SpringUtils;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.capacity.dao.CapacityDaoImpl;
@@ -24,10 +46,10 @@ import com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl;
 import com.cloud.dc.ClusterDetailsDaoImpl;
 import com.cloud.dc.dao.ClusterDaoImpl;
 import com.cloud.dc.dao.DataCenterDaoImpl;
+import com.cloud.dc.dao.DataCenterDetailsDaoImpl;
 import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
 import com.cloud.dc.dao.DataCenterLinkLocalIpAddressDaoImpl;
 import com.cloud.dc.dao.DataCenterVnetDaoImpl;
-import com.cloud.dc.dao.DataCenterDetailsDaoImpl;
 import com.cloud.dc.dao.HostPodDaoImpl;
 import com.cloud.dc.dao.PodVlanDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
@@ -73,41 +95,19 @@ import com.cloud.vm.dao.UserVmDaoImpl;
 import com.cloud.vm.dao.UserVmDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
-import org.apache.cloudstack.acl.APIChecker;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.engine.service.api.OrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
-import org.apache.cloudstack.framework.rpc.RpcProvider;
-import org.apache.cloudstack.storage.cache.manager.StorageCacheManagerImpl;
-import org.apache.cloudstack.storage.test.ChildTestConfiguration.Library;
-import org.apache.cloudstack.test.utils.SpringUtils;
-import org.mockito.Mockito;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.ComponentScan.Filter;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.FilterType;
-import org.springframework.core.type.classreading.MetadataReader;
-import org.springframework.core.type.classreading.MetadataReaderFactory;
-import org.springframework.core.type.filter.TypeFilter;
-
-import java.io.IOException;
 
 @Configuration
-@ComponentScan(basePackageClasses = { NicDaoImpl.class, VMInstanceDaoImpl.class, VMTemplateHostDaoImpl.class,
-        VolumeHostDaoImpl.class, VolumeDaoImpl.class, VMTemplatePoolDaoImpl.class, ResourceTagsDaoImpl.class,
-        VMTemplateDaoImpl.class, MockStorageMotionStrategy.class, ConfigurationDaoImpl.class, ClusterDaoImpl.class,
-        HostPodDaoImpl.class, VMTemplateZoneDaoImpl.class, VMTemplateDetailsDaoImpl.class, HostDetailsDaoImpl.class,
-        HostTagsDaoImpl.class, HostTransferMapDaoImpl.class, DataCenterIpAddressDaoImpl.class,
-        DataCenterLinkLocalIpAddressDaoImpl.class, DataCenterVnetDaoImpl.class, PodVlanDaoImpl.class,
-        DataCenterDetailsDaoImpl.class, DiskOfferingDaoImpl.class, StoragePoolHostDaoImpl.class, UserVmDaoImpl.class,
-        UserVmDetailsDaoImpl.class, ServiceOfferingDaoImpl.class, CapacityDaoImpl.class, SnapshotDaoImpl.class,
-        VMSnapshotDaoImpl.class, OCFS2ManagerImpl.class, ClusterDetailsDaoImpl.class, SecondaryStorageVmDaoImpl.class,
-        ConsoleProxyDaoImpl.class, StoragePoolWorkDaoImpl.class, StorageCacheManagerImpl.class, UserDaoImpl.class,
-        DataCenterDaoImpl.class, StoragePoolDetailsDaoImpl.class, DomainDaoImpl.class, DownloadMonitorImpl.class,
-        AccountDaoImpl.class, ActionEventUtils.class, EventDaoImpl.class}, includeFilters = { @Filter(value = Library.class, type = FilterType.CUSTOM) },
-        useDefaultFilters = false)
+@ComponentScan(basePackageClasses = {NicDaoImpl.class, VMInstanceDaoImpl.class, VMTemplateHostDaoImpl.class, VolumeHostDaoImpl.class, VolumeDaoImpl.class,
+                   VMTemplatePoolDaoImpl.class, ResourceTagsDaoImpl.class, VMTemplateDaoImpl.class, MockStorageMotionStrategy.class, ConfigurationDaoImpl.class,
+                   ClusterDaoImpl.class, HostPodDaoImpl.class, VMTemplateZoneDaoImpl.class, VMTemplateDetailsDaoImpl.class, HostDetailsDaoImpl.class,
+                   HostTagsDaoImpl.class, HostTransferMapDaoImpl.class, DataCenterIpAddressDaoImpl.class, DataCenterLinkLocalIpAddressDaoImpl.class,
+                   DataCenterVnetDaoImpl.class, PodVlanDaoImpl.class, DataCenterDetailsDaoImpl.class, DiskOfferingDaoImpl.class, StoragePoolHostDaoImpl.class,
+                   UserVmDaoImpl.class, UserVmDetailsDaoImpl.class, ServiceOfferingDaoImpl.class, CapacityDaoImpl.class, SnapshotDaoImpl.class, VMSnapshotDaoImpl.class,
+                   OCFS2ManagerImpl.class, ClusterDetailsDaoImpl.class, SecondaryStorageVmDaoImpl.class, ConsoleProxyDaoImpl.class, StoragePoolWorkDaoImpl.class,
+                   StorageCacheManagerImpl.class, UserDaoImpl.class, DataCenterDaoImpl.class, StoragePoolDetailsDaoImpl.class, DomainDaoImpl.class,
+                   DownloadMonitorImpl.class, AccountDaoImpl.class, ActionEventUtils.class, EventDaoImpl.class},
+               includeFilters = {@Filter(value = Library.class, type = FilterType.CUSTOM)},
+               useDefaultFilters = false)
 public class ChildTestConfiguration extends TestConfiguration {
 
     @Bean

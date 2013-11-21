@@ -20,18 +20,18 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackEventType {
-	@SerializedName(ApiConstants.NAME)
-	private String name;
-	
-	/**
-	 * 
-	 */
-	public CloudStackEventType() {
-		// TODO Auto-generated constructor stub
-	}
-	
-	public String getName() {
-		return name;
-	}
+    @SerializedName(ApiConstants.NAME)
+    private String name;
+
+    /**
+     *
+     */
+    public CloudStackEventType() {
+        // TODO Auto-generated constructor stub
+    }
+
+    public String getName() {
+        return name;
+    }
 
 }

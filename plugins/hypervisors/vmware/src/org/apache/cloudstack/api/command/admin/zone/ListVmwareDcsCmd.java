@@ -46,7 +46,8 @@ import com.cloud.user.Account;
 @APICommand(name = "listVmwareDcs", responseObject = VmwareDatacenterResponse.class, description = "Retrieves VMware DC(s) associated with a zone.")
 public class ListVmwareDcsCmd extends BaseListCmd {
 
-    @Inject public VmwareDatacenterService _vmwareDatacenterService;
+    @Inject
+    public VmwareDatacenterService _vmwareDatacenterService;
 
     public static final Logger s_logger = Logger.getLogger(ListVmwareDcsCmd.class.getName());
 
@@ -56,8 +57,7 @@ public class ListVmwareDcsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            required = true, description="Id of the CloudStack zone.")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "Id of the CloudStack zone.")
     private Long zoneId;
 
     /////////////////////////////////////////////////////
@@ -73,7 +73,8 @@ public class ListVmwareDcsCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         List<? extends VmwareDatacenter> vmwareDcList = null;
 
         try {

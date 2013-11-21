@@ -20,111 +20,111 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackEvent {
-	@SerializedName(ApiConstants.ID)
-	private Long id;
-	@SerializedName(ApiConstants.ACCOUNT)
-	private String account;
-	@SerializedName(ApiConstants.CREATED)
-	private String created;
-	@SerializedName(ApiConstants.DESCRIPTION)
-	private String description;
-	@SerializedName(ApiConstants.DOMAIN)
-	private String domain;
-	@SerializedName(ApiConstants.DOMAIN_ID)
-	private Long domainId;
-	@SerializedName(ApiConstants.LEVEL)
-	private String level;
-	@SerializedName(ApiConstants.PARENT_ID)
-	private Long parentId;
-	@SerializedName(ApiConstants.STATE)
-	private String state;
-	@SerializedName(ApiConstants.TYPE)
-	private String type;
-	@SerializedName(ApiConstants.USERNAME)
-	private String userName;
-	
-	/**
-	 * 
-	 */
-	public CloudStackEvent() {
-		// TODO Auto-generated constructor stub
-	}
+    @SerializedName(ApiConstants.ID)
+    private Long id;
+    @SerializedName(ApiConstants.ACCOUNT)
+    private String account;
+    @SerializedName(ApiConstants.CREATED)
+    private String created;
+    @SerializedName(ApiConstants.DESCRIPTION)
+    private String description;
+    @SerializedName(ApiConstants.DOMAIN)
+    private String domain;
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    private Long domainId;
+    @SerializedName(ApiConstants.LEVEL)
+    private String level;
+    @SerializedName(ApiConstants.PARENT_ID)
+    private Long parentId;
+    @SerializedName(ApiConstants.STATE)
+    private String state;
+    @SerializedName(ApiConstants.TYPE)
+    private String type;
+    @SerializedName(ApiConstants.USERNAME)
+    private String userName;
 
-	/**
-	 * @return the id
-	 */
-	public Long getId() {
-		return id;
-	}
+    /**
+     *
+     */
+    public CloudStackEvent() {
+        // TODO Auto-generated constructor stub
+    }
 
-	/**
-	 * @return the account
-	 */
-	public String getAccount() {
-		return account;
-	}
+    /**
+     * @return the id
+     */
+    public Long getId() {
+        return id;
+    }
 
-	/**
-	 * @return the created
-	 */
-	public String getCreated() {
-		return created;
-	}
+    /**
+     * @return the account
+     */
+    public String getAccount() {
+        return account;
+    }
 
-	/**
-	 * @return the description
-	 */
-	public String getDescription() {
-		return description;
-	}
+    /**
+     * @return the created
+     */
+    public String getCreated() {
+        return created;
+    }
 
-	/**
-	 * @return the domain
-	 */
-	public String getDomain() {
-		return domain;
-	}
+    /**
+     * @return the description
+     */
+    public String getDescription() {
+        return description;
+    }
 
-	/**
-	 * @return the domainId
-	 */
-	public Long getDomainId() {
-		return domainId;
-	}
+    /**
+     * @return the domain
+     */
+    public String getDomain() {
+        return domain;
+    }
 
-	/**
-	 * @return the level
-	 */
-	public String getLevel() {
-		return level;
-	}
+    /**
+     * @return the domainId
+     */
+    public Long getDomainId() {
+        return domainId;
+    }
 
-	/**
-	 * @return the parentId
-	 */
-	public Long getParentId() {
-		return parentId;
-	}
+    /**
+     * @return the level
+     */
+    public String getLevel() {
+        return level;
+    }
 
-	/**
-	 * @return the state
-	 */
-	public String getState() {
-		return state;
-	}
+    /**
+     * @return the parentId
+     */
+    public Long getParentId() {
+        return parentId;
+    }
 
-	/**
-	 * @return the type
-	 */
-	public String getType() {
-		return type;
-	}
+    /**
+     * @return the state
+     */
+    public String getState() {
+        return state;
+    }
 
-	/**
-	 * @return the userName
-	 */
-	public String getUserName() {
-		return userName;
-	}
+    /**
+     * @return the type
+     */
+    public String getType() {
+        return type;
+    }
+
+    /**
+     * @return the userName
+     */
+    public String getUserName() {
+        return userName;
+    }
 
 }

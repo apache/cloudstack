@@ -79,24 +79,12 @@ public class Match {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime
-                * result
-                + ((destinationIpAddresses == null) ? 0
-                        : destinationIpAddresses.hashCode());
-        result = prime
-                * result
-                + ((destinationPort == null) ? 0 : destinationPort
-                        .hashCode());
-        result = prime * result
-                + ((ethertype == null) ? 0 : ethertype.hashCode());
-        result = prime * result
-                + ((protocol == null) ? 0 : protocol.hashCode());
-        result = prime
-                * result
-                + ((sourceIpAddresses == null) ? 0 : sourceIpAddresses
-                        .hashCode());
-        result = prime * result
-                + ((sourcePort == null) ? 0 : sourcePort.hashCode());
+        result = prime * result + ((destinationIpAddresses == null) ? 0 : destinationIpAddresses.hashCode());
+        result = prime * result + ((destinationPort == null) ? 0 : destinationPort.hashCode());
+        result = prime * result + ((ethertype == null) ? 0 : ethertype.hashCode());
+        result = prime * result + ((protocol == null) ? 0 : protocol.hashCode());
+        result = prime * result + ((sourceIpAddresses == null) ? 0 : sourceIpAddresses.hashCode());
+        result = prime * result + ((sourcePort == null) ? 0 : sourcePort.hashCode());
         return result;
     }
 
@@ -111,7 +99,7 @@ public class Match {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        Match other = (Match) obj;
+        Match other = (Match)obj;
         if (destinationIpAddresses == null) {
             if (other.destinationIpAddresses != null)
                 return false;

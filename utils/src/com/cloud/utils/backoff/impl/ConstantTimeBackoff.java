@@ -32,14 +32,14 @@ import com.cloud.utils.component.AdapterBase;
 /**
  * An implementation of BackoffAlgorithm that waits for some seconds.
  * After the time the client can try to perform the operation again.
- * 
+ *
  * @config
- * {@table 
+ * {@table
  *    || Param Name | Description | Values | Default ||
  *    || seconds    | seconds to sleep | integer | 5 ||
  *  }
- **/ 
-@Local(value={BackoffAlgorithm.class})
+ **/
+@Local(value = {BackoffAlgorithm.class})
 public class ConstantTimeBackoff extends AdapterBase implements BackoffAlgorithm, ConstantTimeBackoffMBean {
     long _time;
     private final ConcurrentHashMap<String, Thread> _asleep = new ConcurrentHashMap<String, Thread>();
@@ -54,8 +54,7 @@ public class ConstantTimeBackoff extends AdapterBase implements BackoffAlgorithm
         } catch (InterruptedException e) {
             // JMX or other threads may interrupt this thread, but let's log it
             // anyway, no exception to log as this is not an error
-            LOG.info("Thread " + current.getName()
-                    + " interrupted while waiting for retry");
+            LOG.info("Thread " + current.getName() + " interrupted while waiting for retry");
         } finally {
             _asleep.remove(current.getName());
         }
@@ -84,7 +83,7 @@ public class ConstantTimeBackoff extends AdapterBase implements BackoffAlgorithm
             th.interrupt();
             return true;
         }
-        
+
         return false;
     }
 

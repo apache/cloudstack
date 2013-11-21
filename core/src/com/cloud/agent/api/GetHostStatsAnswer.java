@@ -33,8 +33,8 @@ public class GetHostStatsAnswer extends Answer implements HostStats {
         this.hostStats = hostStatistics;
     }
 
-    public GetHostStatsAnswer(GetHostStatsCommand cmd, double cpuUtilization, double freeMemoryKBs, double totalMemoryKBs, double networkReadKBs,
-            double networkWriteKBs, String entityType) {
+    public GetHostStatsAnswer(GetHostStatsCommand cmd, double cpuUtilization, double freeMemoryKBs, double totalMemoryKBs, double networkReadKBs, double networkWriteKBs,
+            String entityType) {
         super(cmd);
         hostStats = new HostStatsEntry();
 

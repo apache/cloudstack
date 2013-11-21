@@ -19,9 +19,10 @@ package org.apache.cloudstack.network.guru;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.network.element.SspElement;
 import org.apache.cloudstack.network.element.SspManager;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
@@ -40,13 +41,12 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * Stratosphere SDN Platform NetworkGuru
  */
-@Local(value=NetworkGuru.class)
+@Local(value = NetworkGuru.class)
 public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigrationResponder {
     private static final Logger s_logger = Logger.getLogger(SspGuestNetworkGuru.class);
 
@@ -59,34 +59,33 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
 
     public SspGuestNetworkGuru() {
         super();
-        _isolationMethods = new IsolationMethod[] { IsolationMethod.SSP };
+        _isolationMethods = new IsolationMethod[] {IsolationMethod.SSP};
     }
 
     @Override
-    protected boolean canHandle(NetworkOffering offering,
-            NetworkType networkType, PhysicalNetwork physicalNetwork) {
+    protected boolean canHandle(NetworkOffering offering, NetworkType networkType, PhysicalNetwork physicalNetwork) {
         s_logger.trace("canHandle");
 
         String setting = null;
-        if(physicalNetwork != null && physicalNetwork.getIsolationMethods().contains("SSP")){
+        if (physicalNetwork != null && physicalNetwork.getIsolationMethods().contains("SSP")) {
             // Be careful, PhysicalNetwork#getIsolationMethods() returns List<String>, not List<IsolationMethod>
             setting = "physicalnetwork setting";
-        }else if(_ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.getProvider(SspElement.s_SSP_NAME))){
+        } else if (_ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.getProvider(SspElement.s_SSP_NAME))) {
             setting = "network offering setting";
         }
-        if(setting != null){
-            if (networkType != NetworkType.Advanced){
-                s_logger.info("SSP enebled by "+setting+" but not active because networkType was "+networkType);
-            }else if(!isMyTrafficType(offering.getTrafficType())){
-                s_logger.info("SSP enabled by "+setting+" but not active because traffic type not Guest");
-            }else if(offering.getGuestType() != Network.GuestType.Isolated){
+        if (setting != null) {
+            if (networkType != NetworkType.Advanced) {
+                s_logger.info("SSP enebled by " + setting + " but not active because networkType was " + networkType);
+            } else if (!isMyTrafficType(offering.getTrafficType())) {
+                s_logger.info("SSP enabled by " + setting + " but not active because traffic type not Guest");
+            } else if (offering.getGuestType() != Network.GuestType.Isolated) {
                 s_logger.info("SSP works for network isolatation.");
-            }else if(!_sspMgr.canHandle(physicalNetwork)){
+            } else if (!_sspMgr.canHandle(physicalNetwork)) {
                 s_logger.info("SSP manager not ready");
-            }else{
+            } else {
                 return true;
             }
-        }else{
+        } else {
             s_logger.debug("SSP not configured to be active");
         }
         return false;
@@ -100,37 +99,30 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
      * @see org.apache.cloudstack.network.guru.GuestNetworkGuru#implement(com.cloud.network.Network, com.cloud.offering.NetworkOffering, com.cloud.deploy.DeployDestination, com.cloud.vm.ReservationContext)
      */
     @Override
-    public Network implement(Network network, NetworkOffering offering,
-            DeployDestination dest, ReservationContext context)
-                    throws InsufficientVirtualNetworkCapcityException {
-        s_logger.trace("implement "+network.toString());
+    public Network implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException {
+        s_logger.trace("implement " + network.toString());
         super.implement(network, offering, dest, context);
         _sspMgr.createNetwork(network, offering, dest, context);
         return network;
     }
 
-
     @Override
     public void shutdown(NetworkProfile profile, NetworkOffering offering) {
-        s_logger.trace("shutdown "+profile.toString());
+        s_logger.trace("shutdown " + profile.toString());
         _sspMgr.deleteNetwork(profile);
         super.shutdown(profile, offering);
     }
 
     @Override
-    public void reserve(NicProfile nic, Network network,
-            VirtualMachineProfile vm,
-            DeployDestination dest, ReservationContext context)
-                    throws InsufficientVirtualNetworkCapcityException,
-                    InsufficientAddressCapacityException {
+    public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         super.reserve(nic, network, vm, dest, context);
         _sspMgr.createNicEnv(network, nic, dest, context);
     }
 
     @Override
-    public boolean release(NicProfile nic,
-            VirtualMachineProfile vm,
-            String reservationId) {
+    public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
         Network network = _networkDao.findById(nic.getNetworkId());
         _sspMgr.deleteNicEnv(network, nic, new ReservationContextImpl(reservationId, null, null));
         return super.release(nic, vm, reservationId);
@@ -142,9 +134,7 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     }
 
     @Override
-    public boolean prepareMigration(NicProfile nic, Network network,
-            VirtualMachineProfile vm,
-            DeployDestination dest, ReservationContext context) {
+    public boolean prepareMigration(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) {
         try {
             reserve(nic, network, vm, dest, context);
         } catch (InsufficientVirtualNetworkCapcityException e) {
@@ -158,16 +148,12 @@ public class SspGuestNetworkGuru extends GuestNetworkGuru implements NetworkMigr
     }
 
     @Override
-    public void rollbackMigration(NicProfile nic, Network network,
-            VirtualMachineProfile vm,
-            ReservationContext src, ReservationContext dst) {
+    public void rollbackMigration(NicProfile nic, Network network, VirtualMachineProfile vm, ReservationContext src, ReservationContext dst) {
         release(nic, vm, dst.getReservationId());
     }
 
     @Override
-    public void commitMigration(NicProfile nic, Network network,
-            VirtualMachineProfile vm,
-            ReservationContext src, ReservationContext dst) {
+    public void commitMigration(NicProfile nic, Network network, VirtualMachineProfile vm, ReservationContext src, ReservationContext dst) {
         release(nic, vm, src.getReservationId());
     }
 }

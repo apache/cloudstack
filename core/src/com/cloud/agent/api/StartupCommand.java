@@ -60,8 +60,8 @@ public class StartupCommand extends Command {
     }
 
     public StartupCommand(Long id, Host.Type type, String name, String dataCenter, String pod, String guid, String version, String gatewayIpAddress) {
-		this(id, type, name, dataCenter, pod, guid, version);
-		this.gatewayIpAddress = gatewayIpAddress;
+        this(id, type, name, dataCenter, pod, guid, version);
+        this.gatewayIpAddress = gatewayIpAddress;
     }
 
     public Host.Type getHostType() {
@@ -69,7 +69,7 @@ public class StartupCommand extends Command {
     }
 
     public void setHostType(Host.Type type) {
-    	this.type = type;
+        this.type = type;
     }
 
     public String getIqn() {
@@ -101,30 +101,30 @@ public class StartupCommand extends Command {
     }
 
     public String getStorageIpAddressDeux() {
-		return storageIpAddressDeux;
-	}
+        return storageIpAddressDeux;
+    }
 
-	public void setStorageIpAddressDeux(String storageIpAddressDeux) {
-		this.storageIpAddressDeux = storageIpAddressDeux;
-	}
+    public void setStorageIpAddressDeux(String storageIpAddressDeux) {
+        this.storageIpAddressDeux = storageIpAddressDeux;
+    }
 
-	public String getStorageMacAddressDeux() {
-		return storageMacAddressDeux;
-	}
+    public String getStorageMacAddressDeux() {
+        return storageMacAddressDeux;
+    }
 
-	public void setStorageMacAddressDeux(String storageMacAddressDeux) {
-		this.storageMacAddressDeux = storageMacAddressDeux;
-	}
+    public void setStorageMacAddressDeux(String storageMacAddressDeux) {
+        this.storageMacAddressDeux = storageMacAddressDeux;
+    }
 
-	public String getStorageNetmaskDeux() {
-		return storageNetmaskDeux;
-	}
+    public String getStorageNetmaskDeux() {
+        return storageNetmaskDeux;
+    }
 
-	public void setStorageNetmaskDeux(String storageNetmaskDeux) {
-		this.storageNetmaskDeux = storageNetmaskDeux;
-	}
+    public void setStorageNetmaskDeux(String storageNetmaskDeux) {
+        this.storageNetmaskDeux = storageNetmaskDeux;
+    }
 
-	public String getGuid() {
+    public String getGuid() {
         return guid;
     }
 
@@ -149,8 +149,8 @@ public class StartupCommand extends Command {
     }
 
     public void setGuid(String guid, String resourceName) {
-    	this.resourceName = resourceName;
-    	this.guid = guid + "-" + resourceName;
+        this.resourceName = resourceName;
+        this.guid = guid + "-" + resourceName;
     }
 
     public String getPublicNetmask() {
@@ -238,36 +238,36 @@ public class StartupCommand extends Command {
     }
 
     public String getAgentTag() {
-    	return agentTag;
+        return agentTag;
     }
 
     public void setAgentTag(String tag) {
-    	agentTag = tag;
+        agentTag = tag;
     }
 
     public void setResourceName(String resourceName) {
-    	this.resourceName = resourceName;
+        this.resourceName = resourceName;
     }
 
     public String getGuidWithoutResource() {
-    	if (resourceName == null) {
+        if (resourceName == null) {
             return guid;
         } else {
-    	  int hyph = guid.lastIndexOf('-');
-    	  if (hyph == -1) {
-    		  return guid;
-    	  }
-    	  String tmpResource = guid.substring(hyph+1, guid.length());
-    	  if (resourceName.equals(tmpResource)){
-    		  return guid.substring(0, hyph);
-    	  } else {
-    		  return guid;
-    	  }
-    	}
+            int hyph = guid.lastIndexOf('-');
+            if (hyph == -1) {
+                return guid;
+            }
+            String tmpResource = guid.substring(hyph + 1, guid.length());
+            if (resourceName.equals(tmpResource)) {
+                return guid.substring(0, hyph);
+            } else {
+                return guid;
+            }
+        }
     }
 
     public String getResourceName() {
-    	return resourceName;
+        return resourceName;
     }
 
     public String getGatewayIpAddress() {
@@ -277,7 +277,6 @@ public class StartupCommand extends Command {
     public void setGatewayIpAddress(String gatewayIpAddress) {
         this.gatewayIpAddress = gatewayIpAddress;
     }
-
 
     @Override
     public boolean executeInSequence() {

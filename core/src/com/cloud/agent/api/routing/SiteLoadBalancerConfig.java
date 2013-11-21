@@ -48,8 +48,7 @@ public class SiteLoadBalancerConfig {
     // wight corresponding to this site
     long weight = 1;
 
-    public SiteLoadBalancerConfig(boolean revoked, String serviceType, String servicePublicIp, String servicePort,
-                                  long dataCenterId) {
+    public SiteLoadBalancerConfig(boolean revoked, String serviceType, String servicePublicIp, String servicePort, long dataCenterId) {
         this.revoked = revoked;
         this.serviceType = serviceType;
         this.servicePublicIp = servicePublicIp;
@@ -57,9 +56,8 @@ public class SiteLoadBalancerConfig {
         this.dataCenterId = dataCenterId;
     }
 
-    public SiteLoadBalancerConfig(String gslbProviderPublicIP, String gslbProviderPrivateIp, boolean local,
-                                  boolean revoked, String serviceType, String servicePublicIp, String port,
-                                  long dataCenterId) {
+    public SiteLoadBalancerConfig(String gslbProviderPublicIP, String gslbProviderPrivateIp, boolean local, boolean revoked, String serviceType, String servicePublicIp,
+            String port, long dataCenterId) {
         this(revoked, serviceType, servicePublicIp, port, dataCenterId);
         this.gslbProviderPrivateIp = gslbProviderPrivateIp;
         this.gslbProviderPublicIp = gslbProviderPublicIP;
@@ -67,7 +65,7 @@ public class SiteLoadBalancerConfig {
     }
 
     public String getServiceType() {
-        return  serviceType;
+        return serviceType;
     }
 
     public void setServiceType(String serviceType) {
@@ -103,7 +101,7 @@ public class SiteLoadBalancerConfig {
     }
 
     public long getDataCenterId() {
-        return  dataCenterId;
+        return dataCenterId;
     }
 
     public void setGslbProviderPublicIp(String publicIp) {
@@ -123,7 +121,7 @@ public class SiteLoadBalancerConfig {
     }
 
     public void setWeight(long weight) {
-        assert(weight >= 1 && weight <= 100);
+        assert (weight >= 1 && weight <= 100);
         this.weight = weight;
     }
 

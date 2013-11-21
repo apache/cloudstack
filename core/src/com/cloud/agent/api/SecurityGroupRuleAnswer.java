@@ -18,21 +18,18 @@ package com.cloud.agent.api;
 
 public class SecurityGroupRuleAnswer extends Answer {
     public static enum FailureReason {
-        NONE,
-        UNKNOWN,
-        PROGRAMMING_FAILED,
-        CANNOT_BRIDGE_FIREWALL
+        NONE, UNKNOWN, PROGRAMMING_FAILED, CANNOT_BRIDGE_FIREWALL
     }
+
     Long logSequenceNumber = null;
     Long vmId = null;
     FailureReason reason = FailureReason.NONE;
-
 
     protected SecurityGroupRuleAnswer() {
     }
 
     public SecurityGroupRuleAnswer(SecurityGroupRulesCmd cmd) {
-    	super(cmd);
+        super(cmd);
         this.logSequenceNumber = cmd.getSeqNum();
         this.vmId = cmd.getVmId();
     }

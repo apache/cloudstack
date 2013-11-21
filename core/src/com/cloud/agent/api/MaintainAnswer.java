@@ -17,7 +17,7 @@
 package com.cloud.agent.api;
 
 public class MaintainAnswer extends Answer {
-	boolean willMigrate;
+    boolean willMigrate;
 
     public MaintainAnswer() {
     }
@@ -41,6 +41,6 @@ public class MaintainAnswer extends Answer {
     }
 
     public boolean getMigrate() {
-    	return this.willMigrate;
+        return this.willMigrate;
     }
 }

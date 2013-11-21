@@ -29,81 +29,81 @@ import com.cloud.event.Event.State;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="event_view")
+@Table(name = "event_view")
 public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Id
-    @Column(name="id", updatable=false, nullable = false)
+    @Column(name = "id", updatable = false, nullable = false)
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="type")
+    @Column(name = "type")
     private String type;
 
-    @Enumerated(value=EnumType.STRING)
-    @Column(name="state")
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "state")
     private State state;
 
-    @Column(name="description")
+    @Column(name = "description")
     private String description;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date createDate;
 
-    @Column(name="user_id")
+    @Column(name = "user_id")
     private long userId;
 
-    @Column(name="user_name")
+    @Column(name = "user_name")
     private String userName;
 
-    @Column(name="level")
+    @Column(name = "level")
     private String level;
 
-    @Column(name="start_id")
+    @Column(name = "start_id")
     private long startId;
 
-    @Column(name="start_uuid")
+    @Column(name = "start_uuid")
     private String startUuid;
 
-    @Column(name="parameters", length=1024)
+    @Column(name = "parameters", length = 1024)
     private String parameters;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="account_uuid")
+    @Column(name = "account_uuid")
     private String accountUuid;
 
-    @Column(name="account_name")
+    @Column(name = "account_name")
     private String accountName = null;
 
-    @Column(name="account_type")
+    @Column(name = "account_type")
     private short accountType;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="domain_uuid")
+    @Column(name = "domain_uuid")
     private String domainUuid;
 
-    @Column(name="domain_name")
+    @Column(name = "domain_name")
     private String domainName = null;
 
-    @Column(name="domain_path")
+    @Column(name = "domain_path")
     private String domainPath = null;
 
-    @Column(name="project_id")
+    @Column(name = "project_id")
     private long projectId;
 
-    @Column(name="project_uuid")
+    @Column(name = "project_uuid")
     private String projectUuid;
 
-    @Column(name="project_name")
+    @Column(name = "project_name")
     private String projectName;
 
-    @Column(name="archived")
+    @Column(name = "archived")
     private boolean archived;
 
     public EventJoinVO() {

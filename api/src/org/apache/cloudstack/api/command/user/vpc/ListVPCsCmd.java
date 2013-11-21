@@ -19,59 +19,53 @@ package org.apache.cloudstack.api.command.user.vpc;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.vpc.Vpc;
 
-
-@APICommand(name = "listVPCs", description="Lists VPCs", responseObject=VpcResponse.class)
-public class ListVPCsCmd extends BaseListTaggedResourcesCmd{
+@APICommand(name = "listVPCs", description = "Lists VPCs", responseObject = VpcResponse.class)
+public class ListVPCsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVPCsCmd.class.getName());
     private static final String s_name = "listvpcsresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     ////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VpcResponse.class,
-            description="list VPC by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "list VPC by id")
     private Long id;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
-            description="list by zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "list by zone")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="list by name of the VPC")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list by name of the VPC")
     private String vpcName;
 
-    @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="List by display text of " +
-            "the VPC")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "List by display text of " + "the VPC")
     private String displayText;
 
-    @Parameter(name=ApiConstants.CIDR, type=CommandType.STRING, description="list by cidr of the VPC. All VPC " +
-            "guest networks' cidrs should be within this CIDR")
+    @Parameter(name = ApiConstants.CIDR, type = CommandType.STRING, description = "list by cidr of the VPC. All VPC "
+        + "guest networks' cidrs should be within this CIDR")
     private String cidr;
 
-    @Parameter(name=ApiConstants.VPC_OFF_ID, type=CommandType.UUID, entityType=VpcOfferingResponse.class
-            , description="list by ID of the VPC offering")
+    @Parameter(name = ApiConstants.VPC_OFF_ID, type = CommandType.UUID, entityType = VpcOfferingResponse.class, description = "list by ID of the VPC offering")
     private Long VpcOffId;
 
-    @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, collectionType=CommandType.STRING,
-            description="list VPC supporting certain services")
+    @Parameter(name = ApiConstants.SUPPORTED_SERVICES, type = CommandType.LIST, collectionType = CommandType.STRING, description = "list VPC supporting certain services")
     private List<String> supportedServices;
 
-    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list VPCs by state")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "list VPCs by state")
     private String state;
 
-    @Parameter(name=ApiConstants.RESTART_REQUIRED, type=CommandType.BOOLEAN, description="list VPCs by restartRequired option")
+    @Parameter(name = ApiConstants.RESTART_REQUIRED, type = CommandType.BOOLEAN, description = "list VPCs by restartRequired option")
     private Boolean restartRequired;
 
     /////////////////////////////////////////////////////
@@ -120,10 +114,10 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd{
 
     @Override
     public void execute() {
-        List<? extends Vpc> vpcs = _vpcService.listVpcs(getId(), getVpcName(), getDisplayText(),
-                getSupportedServices(), getCidr(), getVpcOffId(), getState(), getAccountName(), getDomainId(),
-                this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(), getZoneId(), this.isRecursive(),
-                this.listAll(), getRestartRequired(), getTags(), getProjectId());
+        List<? extends Vpc> vpcs =
+            _vpcService.listVpcs(getId(), getVpcName(), getDisplayText(), getSupportedServices(), getCidr(), getVpcOffId(), getState(), getAccountName(), getDomainId(),
+                this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(), getZoneId(), this.isRecursive(), this.listAll(), getRestartRequired(), getTags(),
+                getProjectId());
         ListResponse<VpcResponse> response = new ListResponse<VpcResponse>();
         List<VpcResponse> offeringResponses = new ArrayList<VpcResponse>();
         for (Vpc vpc : vpcs) {

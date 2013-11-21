@@ -20,32 +20,34 @@ import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.serializer.Param;
 
 public class SecurityGroupRuleResultObject {
-    @Param(name="id")
+    @Param(name = "id")
     private Long id;
 
-    @Param(name="startport")
+    @Param(name = "startport")
     private int startPort;
 
-    @Param(name="endport")
+    @Param(name = "endport")
     private int endPort;
 
-    @Param(name="protocol")
+    @Param(name = "protocol")
     private String protocol;
 
-    @Param(name="securitygroup")
+    @Param(name = "securitygroup")
     private String allowedSecurityGroup = null;
 
-    @Param(name="account")
+    @Param(name = "account")
     private String allowedSecGroupAcct = null;
 
-    @Param(name="cidr")
+    @Param(name = "cidr")
     private String allowedSourceIpCidr = null;
-    
+
     private SecurityRuleType type;
 
-    public SecurityGroupRuleResultObject() { }
+    public SecurityGroupRuleResultObject() {
+    }
 
-    public SecurityGroupRuleResultObject(Long id, int startPort, int endPort, String protocol, String allowedSecurityGroup, String allowedSecGroupAcct, String allowedSourceIpCidr) {
+    public SecurityGroupRuleResultObject(Long id, int startPort, int endPort, String protocol, String allowedSecurityGroup, String allowedSecGroupAcct,
+            String allowedSourceIpCidr) {
         this.id = id;
         this.startPort = startPort;
         this.endPort = endPort;
@@ -68,14 +70,13 @@ public class SecurityGroupRuleResultObject {
     }
 
     public void setRuleType(SecurityRuleType type) {
-    	this.type = type;
+        this.type = type;
     }
-    
 
     public SecurityRuleType getRuleType() {
-    	return type;
+        return type;
     }
-    
+
     public void setStartPort(int startPort) {
         this.startPort = startPort;
     }

@@ -41,7 +41,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  * SearchBase contains the methods that are used to build up search
  * queries.  While this class is public it's not really meant for public
  * consumption.  Unfortunately, it has to be public for methods to be mocked.
- * 
+ *
  * @see GenericSearchBuilder
  * @see GenericQueryBuilder
  *
@@ -84,7 +84,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
 
     /**
      * Specifies how the search query should be grouped
-     * 
+     *
      * @param fields fields of the entity object that should be grouped on.  The order is important.
      * @return GroupBy object to perform more operations on.
      * @see GroupBy
@@ -98,7 +98,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
 
     /**
      * Specifies what to select in the search.
-     * 
+     *
      * @param fieldName The field name of the result object to put the value of the field selected.  This can be null if you're selecting only one field and the result is not a complex object.
      * @param func function to place.
      * @param field column to select.  Call this with this.entity() method.
@@ -148,7 +148,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
 
     /**
      * Select fields from the entity object to be selected in the search query.
-     * 
+     *
      * @param fields fields from the entity object
      * @return itself
      */
@@ -183,7 +183,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
 
     /**
      * joins this search with another search
-     * 
+     *
      * @param name name given to the other search.  used for setJoinParameters.
      * @param builder The other search
      * @param joinField1 field of the first table used to perform the join
@@ -252,7 +252,7 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
 
     /**
      * creates the SearchCriteria so the actual values can be filled in.
-     * 
+     *
      * @return SearchCriteria
      */
     public SearchCriteria<K> create() {
@@ -265,13 +265,13 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
     /**
      * Adds an OR condition to the search.  Normally you should use this to
      * perform an 'OR' with a big conditional in parenthesis.  For example,
-     * 
+     *
      * search.or().op(entity.getId(), Op.Eq, "abc").cp()
-     * 
+     *
      * The above fragment produces something similar to
-     * 
+     *
      * "OR (id = $abc) where abc is the token to be replaced by a value later.
-     * 
+     *
      * @return this
      */
     @SuppressWarnings("unchecked")
@@ -283,13 +283,13 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
     /**
      * Adds an AND condition to the search.  Normally you should use this to
      * perform an 'AND' with a big conditional in parenthesis.  For example,
-     * 
+     *
      * search.and().op(entity.getId(), Op.Eq, "abc").cp()
-     * 
+     *
      * The above fragment produces something similar to
-     * 
+     *
      * "AND (id = $abc) where abc is the token to be replaced by a value later.
-     * 
+     *
      * @return this
      */
     @SuppressWarnings("unchecked")

@@ -22,8 +22,8 @@ import javax.inject.Inject;
 import javax.naming.directory.SearchControls;
 
 import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+
 import com.cloud.utils.Pair;
 
 public class LdapConfiguration {
@@ -40,8 +40,7 @@ public class LdapConfiguration {
     public LdapConfiguration() {
     }
 
-    public LdapConfiguration(final ConfigurationDao configDao,
-                             final LdapManager ldapManager) {
+    public LdapConfiguration(final ConfigurationDao configDao, final LdapManager ldapManager) {
         _configDao = configDao;
         _ldapManager = ldapManager;
     }
@@ -67,8 +66,7 @@ public class LdapConfiguration {
     }
 
     public String getEmailAttribute() {
-        final String emailAttribute = _configDao
-                                      .getValue("ldap.email.attribute");
+        final String emailAttribute = _configDao.getValue("ldap.email.attribute");
         return emailAttribute == null ? "mail" : emailAttribute;
     }
 
@@ -77,26 +75,22 @@ public class LdapConfiguration {
     }
 
     public String getFirstnameAttribute() {
-        final String firstnameAttribute = _configDao
-                                          .getValue("ldap.firstname.attribute");
+        final String firstnameAttribute = _configDao.getValue("ldap.firstname.attribute");
         return firstnameAttribute == null ? "givenname" : firstnameAttribute;
     }
 
     public String getLastnameAttribute() {
-        final String lastnameAttribute = _configDao
-                                         .getValue("ldap.lastname.attribute");
+        final String lastnameAttribute = _configDao.getValue("ldap.lastname.attribute");
         return lastnameAttribute == null ? "sn" : lastnameAttribute;
     }
 
     public String getProviderUrl() {
         final String protocol = getSSLStatus() == true ? "ldaps://" : "ldap://";
-        final Pair<List<? extends LdapConfigurationVO>, Integer> result = _ldapManager
-                .listConfigurations(new LdapListConfigurationCmd(_ldapManager));
+        final Pair<List<? extends LdapConfigurationVO>, Integer> result = _ldapManager.listConfigurations(new LdapListConfigurationCmd(_ldapManager));
         final StringBuilder providerUrls = new StringBuilder();
         String delim = "";
         for (final LdapConfigurationVO resource : result.first()) {
-            final String providerUrl = protocol + resource.getHostname() + ":"
-                                       + resource.getPort();
+            final String providerUrl = protocol + resource.getHostname() + ":" + resource.getPort();
             providerUrls.append(delim).append(providerUrl);
             delim = " ";
         }
@@ -104,9 +98,7 @@ public class LdapConfiguration {
     }
 
     public String[] getReturnAttributes() {
-        return new String[] { getUsernameAttribute(), getEmailAttribute(),
-                              getFirstnameAttribute(), getLastnameAttribute(), getCommonNameAttribute()
-                            };
+        return new String[] {getUsernameAttribute(), getEmailAttribute(), getFirstnameAttribute(), getLastnameAttribute(), getCommonNameAttribute()};
     }
 
     public int getScope() {
@@ -134,8 +126,7 @@ public class LdapConfiguration {
     }
 
     public String getUsernameAttribute() {
-        final String usernameAttribute = _configDao
-                                         .getValue("ldap.username.attribute");
+        final String usernameAttribute = _configDao.getValue("ldap.username.attribute");
         return usernameAttribute == null ? "uid" : usernameAttribute;
     }
 

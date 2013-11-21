@@ -28,37 +28,37 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 @Entity
-@Table(name="multipart_parts")
+@Table(name = "multipart_parts")
 public class MultiPartPartsVO {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="ID")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ID")
     private Long id;
-    
-    @Column(name="UploadID")
+
+    @Column(name = "UploadID")
     private Long uploadid;
-    
-    @Column(name="partNumber")
+
+    @Column(name = "partNumber")
     private int partNumber;
-    
-    @Column(name="MD5")
+
+    @Column(name = "MD5")
     private String md5;
-    
-    @Column(name="StoredPath")
+
+    @Column(name = "StoredPath")
     private String storedPath;
-    
-    @Column(name="StoredSize")
+
+    @Column(name = "StoredSize")
     private Long storedSize;
-    
-    @Column(name="CreateTime")
-    @Temporal(value=TemporalType.TIMESTAMP)
+
+    @Column(name = "CreateTime")
+    @Temporal(value = TemporalType.TIMESTAMP)
     private Date createTime;
 
-    public MultiPartPartsVO() { }
-    
-    public MultiPartPartsVO(int uploadId, int partNumber, String md5,
-            String storedPath, int size, Date date) {
+    public MultiPartPartsVO() {
+    }
+
+    public MultiPartPartsVO(int uploadId, int partNumber, String md5, String storedPath, int size, Date date) {
         this.uploadid = new Long(uploadId);
         this.partNumber = partNumber;
         this.md5 = md5;
@@ -118,7 +118,5 @@ public class MultiPartPartsVO {
     public Long getId() {
         return id;
     }
-    
-    
 
 }

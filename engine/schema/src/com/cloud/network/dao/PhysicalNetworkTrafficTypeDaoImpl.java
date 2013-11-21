@@ -33,7 +33,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=PhysicalNetworkTrafficTypeDao.class) @DB()
+@Local(value = PhysicalNetworkTrafficTypeDao.class)
+@DB()
 public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNetworkTrafficTypeVO, Long> implements PhysicalNetworkTrafficTypeDao {
     final SearchBuilder<PhysicalNetworkTrafficTypeVO> physicalNetworkSearch;
     final GenericSearchBuilder<PhysicalNetworkTrafficTypeVO, String> kvmAllFieldsSearch;
@@ -62,7 +63,6 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
         hypervAllFieldsSearch.selectFields(hypervAllFieldsSearch.entity().getHypervNetworkLabel());
         hypervAllFieldsSearch.done();
 
-
         xenAllFieldsSearch = createSearchBuilder(String.class);
         xenAllFieldsSearch.and("physicalNetworkId", xenAllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
         xenAllFieldsSearch.and("trafficType", xenAllFieldsSearch.entity().getTrafficType(), Op.EQ);
@@ -74,13 +74,13 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
         vmWareAllFieldsSearch.and("trafficType", vmWareAllFieldsSearch.entity().getTrafficType(), Op.EQ);
         vmWareAllFieldsSearch.selectFields(vmWareAllFieldsSearch.entity().getVmwareNetworkLabel());
         vmWareAllFieldsSearch.done();
-        
+
         simulatorAllFieldsSearch = createSearchBuilder(String.class);
         simulatorAllFieldsSearch.and("physicalNetworkId", simulatorAllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
         simulatorAllFieldsSearch.and("trafficType", simulatorAllFieldsSearch.entity().getTrafficType(), Op.EQ);
         simulatorAllFieldsSearch.selectFields(simulatorAllFieldsSearch.entity().getSimulatorNetworkLabel());
         simulatorAllFieldsSearch.done();
-        
+
         ovmAllFieldsSearch = createSearchBuilder(String.class);
         ovmAllFieldsSearch.and("physicalNetworkId", ovmAllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
         ovmAllFieldsSearch.and("trafficType", ovmAllFieldsSearch.entity().getTrafficType(), Op.EQ);
@@ -96,7 +96,7 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
     }
 
     @Override
-    public boolean isTrafficTypeSupported(long physicalNetworkId, TrafficType trafficType){
+    public boolean isTrafficTypeSupported(long physicalNetworkId, TrafficType trafficType) {
         SearchCriteria<PhysicalNetworkTrafficTypeVO> sc = physicalNetworkSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         sc.setParameters("trafficType", trafficType);
@@ -117,16 +117,15 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
         } else if (hType == HypervisorType.VMware) {
             sc = vmWareAllFieldsSearch.create();
         } else if (hType == HypervisorType.Simulator) {
-        	sc = simulatorAllFieldsSearch.create();
+            sc = simulatorAllFieldsSearch.create();
         } else if (hType == HypervisorType.Ovm) {
-        	sc = ovmAllFieldsSearch.create();
+            sc = ovmAllFieldsSearch.create();
         } else if (hType == HypervisorType.BareMetal) {
-        	return null;
+            return null;
         } else if (hType == HypervisorType.Hyperv) {
             sc = hypervAllFieldsSearch.create();
-        } 
-        else {
-            assert(false) : "We don't handle this hypervisor type";
+        } else {
+            assert (false) : "We don't handle this hypervisor type";
             return null;
         }
 
@@ -138,7 +137,7 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
     }
 
     @Override
-    public PhysicalNetworkTrafficTypeVO findBy(long physicalNetworkId, TrafficType trafficType){
+    public PhysicalNetworkTrafficTypeVO findBy(long physicalNetworkId, TrafficType trafficType) {
         SearchCriteria<PhysicalNetworkTrafficTypeVO> sc = physicalNetworkSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         sc.setParameters("trafficType", trafficType);
@@ -149,6 +148,6 @@ public class PhysicalNetworkTrafficTypeDaoImpl extends GenericDaoBase<PhysicalNe
     public void deleteTrafficTypes(long physicalNetworkId) {
         SearchCriteria<PhysicalNetworkTrafficTypeVO> sc = physicalNetworkSearch.create();
         sc.setParameters("physicalNetworkId", physicalNetworkId);
-        remove(sc);        
+        remove(sc);
     }
 }

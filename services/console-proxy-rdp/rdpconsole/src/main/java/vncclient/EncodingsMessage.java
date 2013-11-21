@@ -22,42 +22,42 @@ import streamer.Link;
 
 public class EncodingsMessage extends BaseElement {
 
-  protected final int[] encodings;
+    protected final int[] encodings;
 
-  public EncodingsMessage(String id, int[] encodings) {
-    super(id);
-    this.encodings = encodings;
-    declarePads();
-  }
-
-  protected void declarePads() {
-    inputPads.put(STDIN, null);
-    outputPads.put(STDOUT, null);
-  }
-
-  @Override
-  public void handleData(ByteBuffer buf, Link link) {
-    if (buf == null)
-      return;
-
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
-    buf.unref();
-
-    ByteBuffer outBuf = new ByteBuffer(4 + encodings.length * 4);
-
-    outBuf.writeByte(RfbConstants.CLIENT_SET_ENCODINGS);
-
-    outBuf.writeByte(0);// padding
-
-    outBuf.writeShort(encodings.length);
-
-    for (int i = 0; i < encodings.length; i++) {
-      outBuf.writeInt(encodings[i]);
+    public EncodingsMessage(String id, int[] encodings) {
+        super(id);
+        this.encodings = encodings;
+        declarePads();
     }
 
-    pushDataToAllOuts(outBuf);
+    protected void declarePads() {
+        inputPads.put(STDIN, null);
+        outputPads.put(STDOUT, null);
+    }
 
-  }
+    @Override
+    public void handleData(ByteBuffer buf, Link link) {
+        if (buf == null)
+            return;
+
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
+        buf.unref();
+
+        ByteBuffer outBuf = new ByteBuffer(4 + encodings.length * 4);
+
+        outBuf.writeByte(RfbConstants.CLIENT_SET_ENCODINGS);
+
+        outBuf.writeByte(0);// padding
+
+        outBuf.writeShort(encodings.length);
+
+        for (int i = 0; i < encodings.length; i++) {
+            outBuf.writeInt(encodings[i]);
+        }
+
+        pushDataToAllOuts(outBuf);
+
+    }
 
 }

@@ -41,30 +41,29 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
     }
 
     @Override
-    public void handle(HttpRequest request, HttpResponse response, HttpContext context)
-    throws HttpException, IOException {
+    public void handle(HttpRequest request, HttpResponse response, HttpContext context) throws HttpException, IOException {
 
         try {
-            if(s_logger.isTraceEnabled()) {
+            if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Start Handling cluster HTTP request");
             }
 
             parseRequest(request);
             handleRequest(request, response);
 
-            if(s_logger.isTraceEnabled()) {
+            if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Handle cluster HTTP request done");
             }
 
-        } catch(Throwable e) {
-            if(s_logger.isDebugEnabled()) {
+        } catch (Throwable e) {
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Exception " + e.toString());
             }
 
             try {
-            	writeResponse(response, HttpStatus.SC_INTERNAL_SERVER_ERROR, null);
-            } catch(Throwable e2) {
-                if(s_logger.isDebugEnabled()) {
+                writeResponse(response, HttpStatus.SC_INTERNAL_SERVER_ERROR, null);
+            } catch (Throwable e2) {
+                if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Exception " + e2.toString());
                 }
             }
@@ -73,13 +72,13 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
 
     @SuppressWarnings("deprecation")
     private void parseRequest(HttpRequest request) throws IOException {
-        if(request instanceof HttpEntityEnclosingRequest) {
+        if (request instanceof HttpEntityEnclosingRequest) {
             HttpEntityEnclosingRequest entityRequest = (HttpEntityEnclosingRequest)request;
 
             String body = EntityUtils.toString(entityRequest.getEntity());
-            if(body != null) {
+            if (body != null) {
                 String[] paramArray = body.split("&");
-                if(paramArray != null) {
+                if (paramArray != null) {
                     for (String paramEntry : paramArray) {
                         String[] paramValue = paramEntry.split("=");
                         if (paramValue.length != 2) {
@@ -89,7 +88,7 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
                         String name = URLDecoder.decode(paramValue[0]);
                         String value = URLDecoder.decode(paramValue[1]);
 
-                        if(s_logger.isTraceEnabled()) {
+                        if (s_logger.isTraceEnabled()) {
                             s_logger.trace("Parsed request parameter " + name + "=" + value);
                         }
                         request.getParams().setParameter(name, value);
@@ -100,7 +99,7 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
     }
 
     private void writeResponse(HttpResponse response, int statusCode, String content) {
-        if(content == null) {
+        if (content == null) {
             content = "";
         }
         response.setStatusCode(statusCode);
@@ -119,44 +118,44 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
         int nMethod = RemoteMethodConstants.METHOD_UNKNOWN;
         String responseContent = null;
         try {
-            if(method != null) {
+            if (method != null) {
                 nMethod = Integer.parseInt(method);
             }
 
-            switch(nMethod) {
-            case RemoteMethodConstants.METHOD_DELIVER_PDU :
-                responseContent = handleDeliverPduMethodCall(req);
-                break;
+            switch (nMethod) {
+                case RemoteMethodConstants.METHOD_DELIVER_PDU:
+                    responseContent = handleDeliverPduMethodCall(req);
+                    break;
 
-            case RemoteMethodConstants.METHOD_PING :
-                responseContent = handlePingMethodCall(req);
-                break;
+                case RemoteMethodConstants.METHOD_PING:
+                    responseContent = handlePingMethodCall(req);
+                    break;
 
-            case RemoteMethodConstants.METHOD_UNKNOWN :
-            default :
-                assert(false);
-                s_logger.error("unrecognized method " + nMethod);
-                break;
+                case RemoteMethodConstants.METHOD_UNKNOWN:
+                default:
+                    assert (false);
+                    s_logger.error("unrecognized method " + nMethod);
+                    break;
             }
-        } catch(Throwable e) {
+        } catch (Throwable e) {
             s_logger.error("Unexpected exception when processing cluster service request : ", e);
         }
 
-        if(responseContent != null) {
-        	if(s_logger.isTraceEnabled())
-        		s_logger.trace("Write reponse with HTTP OK " + responseContent);
-        	
+        if (responseContent != null) {
+            if (s_logger.isTraceEnabled())
+                s_logger.trace("Write reponse with HTTP OK " + responseContent);
+
             writeResponse(response, HttpStatus.SC_OK, responseContent);
         } else {
-        	if(s_logger.isTraceEnabled())
-        		s_logger.trace("Write reponse with HTTP Bad request");
-        	
+            if (s_logger.isTraceEnabled())
+                s_logger.trace("Write reponse with HTTP Bad request");
+
             writeResponse(response, HttpStatus.SC_BAD_REQUEST, null);
         }
     }
 
     private String handleDeliverPduMethodCall(HttpRequest req) {
-        
+
         String pduSeq = (String)req.getParams().getParameter("pduSeq");
         String pduAckSeq = (String)req.getParams().getParameter("pduAckSeq");
         String sourcePeer = (String)req.getParams().getParameter("sourcePeer");
@@ -175,7 +174,7 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
         pdu.setJsonPackage(gsonPackage);
         pdu.setStopOnError("1".equals(stopOnError));
         pdu.setPduType(Integer.parseInt(pduType));
-        
+
         manager.OnReceiveClusterServicePdu(pdu);
         return "true";
     }
@@ -183,7 +182,7 @@ public class ClusterServiceServletHttpHandler implements HttpRequestHandler {
     private String handlePingMethodCall(HttpRequest req) {
         String callingPeer = (String)req.getParams().getParameter("callingPeer");
 
-        if(s_logger.isDebugEnabled()) {
+        if (s_logger.isDebugEnabled()) {
             s_logger.debug("Handle ping request from " + callingPeer);
         }
 

@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -28,15 +28,15 @@ import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.utils.Pair;
 
 public interface ApplicationLoadBalancerService {
-    
-    ApplicationLoadBalancerRule createApplicationLoadBalancer(String name, String description, Scheme scheme, long sourceIpNetworkId, String sourceIp,
-            int sourcePort, int instancePort, String algorithm, long networkId, long lbOwnerId) throws InsufficientAddressCapacityException,
-            NetworkRuleConflictException, InsufficientVirtualNetworkCapcityException;
-    
+
+    ApplicationLoadBalancerRule createApplicationLoadBalancer(String name, String description, Scheme scheme, long sourceIpNetworkId, String sourceIp, int sourcePort,
+        int instancePort, String algorithm, long networkId, long lbOwnerId) throws InsufficientAddressCapacityException, NetworkRuleConflictException,
+        InsufficientVirtualNetworkCapcityException;
+
     boolean deleteApplicationLoadBalancer(long id);
-    
+
     Pair<List<? extends ApplicationLoadBalancerRule>, Integer> listApplicationLoadBalancers(ListApplicationLoadBalancersCmd cmd);
-    
+
     ApplicationLoadBalancerRule getApplicationLoadBalancer(long ruleId);
 
 }

@@ -36,154 +36,154 @@ public class MockServerTest extends TestCase {
 
     public void testIsMockServerCanRespond() throws Exception {
 
-	final byte[] mockClientData = new byte[] { 0x01, 0x02, 0x03 };
-	final byte[] mockServerData = new byte[] { 0x03, 0x02, 0x01 };
+        final byte[] mockClientData = new byte[] {0x01, 0x02, 0x03};
+        final byte[] mockServerData = new byte[] {0x03, 0x02, 0x01};
 
-	MockServer server = new MockServer(new Packet[] { new Packet("Client hello") {
-	    {
-		type = CLIENT;
-		data = mockClientData;
-	    }
-	}, new Packet("Server hello") {
-	    {
-		type = SERVER;
-		data = mockServerData;
-	    }
-	} });
+        MockServer server = new MockServer(new Packet[] {new Packet("Client hello") {
+            {
+                type = CLIENT;
+                data = mockClientData;
+            }
+        }, new Packet("Server hello") {
+            {
+                type = SERVER;
+                data = mockServerData;
+            }
+        }});
 
-	server.start();
+        server.start();
 
-	// Connect to server and send and receive mock data
+        // Connect to server and send and receive mock data
 
-	Socket socket = SocketFactory.getDefault().createSocket();
-	try {
-	    socket.connect(server.getAddress());
+        Socket socket = SocketFactory.getDefault().createSocket();
+        try {
+            socket.connect(server.getAddress());
 
-	    InputStream is = socket.getInputStream();
-	    OutputStream os = socket.getOutputStream();
+            InputStream is = socket.getInputStream();
+            OutputStream os = socket.getOutputStream();
 
-	    // Write mock data to server
-	    os.write(mockClientData);
+            // Write mock data to server
+            os.write(mockClientData);
 
-	    // Read data from server
-	    byte actualData[] = new byte[mockServerData.length];
-	    int actualDataLength = is.read(actualData);
+            // Read data from server
+            byte actualData[] = new byte[mockServerData.length];
+            int actualDataLength = is.read(actualData);
 
-	    // Compare mock data with actual data
-	    assertEquals("Unexpected length of actual data read from server.", mockServerData.length, actualDataLength);
+            // Compare mock data with actual data
+            assertEquals("Unexpected length of actual data read from server.", mockServerData.length, actualDataLength);
 
-	    for (int i = 0; i < actualDataLength; i++) {
-		assertEquals("Unexpected byte #" + i + " in response", mockServerData[i], actualData[i]);
-	    }
+            for (int i = 0; i < actualDataLength; i++) {
+                assertEquals("Unexpected byte #" + i + " in response", mockServerData[i], actualData[i]);
+            }
 
-	    server.waitUntilShutdowned(1 * 1000 /* up to 1 second */);
+            server.waitUntilShutdowned(1 * 1000 /* up to 1 second */);
 
-	    assertNull("Unexpected exception at mock server side.", server.getException());
-	    assertTrue("Server is not shutdowned at after conversation.", server.isShutdowned());
+            assertNull("Unexpected exception at mock server side.", server.getException());
+            assertTrue("Server is not shutdowned at after conversation.", server.isShutdowned());
 
-	} finally {
-	    socket.close();
-	}
+        } finally {
+            socket.close();
+        }
     }
 
     public void testIsMockServerCanUpgradeConnectionToSsl() throws Exception {
 
-	final byte[] mockClientData1 = new byte[] { 0x01, 0x02, 0x03 };
-	final byte[] mockServerData1 = new byte[] { 0x03, 0x02, 0x01 };
+        final byte[] mockClientData1 = new byte[] {0x01, 0x02, 0x03};
+        final byte[] mockServerData1 = new byte[] {0x03, 0x02, 0x01};
 
-	final byte[] mockClientData2 = new byte[] { 0x02, 0x04, 0x02, 0x03 };
-	final byte[] mockServerData2 = new byte[] { 0x02, 0x02, 0x01, 0x04 };
+        final byte[] mockClientData2 = new byte[] {0x02, 0x04, 0x02, 0x03};
+        final byte[] mockServerData2 = new byte[] {0x02, 0x02, 0x01, 0x04};
 
-	MockServer server = new MockServer(new Packet[] { new Packet("Client hello") {
-	    {
-		type = CLIENT;
-		data = mockClientData1;
-	    }
-	}, new Packet("Server hello") {
-	    {
-		type = SERVER;
-		data = mockServerData1;
-	    }
-	}, new Packet("Upgrade connection to SSL") {
-	    {
-		type = UPGRADE_TO_SSL;
-	    }
-	}, new Packet("Client data over SSL") {
-	    {
-		type = CLIENT;
-		data = mockClientData2;
-	    }
-	}, new Packet("Server data over SSL") {
-	    {
-		type = SERVER;
-		data = mockServerData2;
-	    }
-	} });
+        MockServer server = new MockServer(new Packet[] {new Packet("Client hello") {
+            {
+                type = CLIENT;
+                data = mockClientData1;
+            }
+        }, new Packet("Server hello") {
+            {
+                type = SERVER;
+                data = mockServerData1;
+            }
+        }, new Packet("Upgrade connection to SSL") {
+            {
+                type = UPGRADE_TO_SSL;
+            }
+        }, new Packet("Client data over SSL") {
+            {
+                type = CLIENT;
+                data = mockClientData2;
+            }
+        }, new Packet("Server data over SSL") {
+            {
+                type = SERVER;
+                data = mockServerData2;
+            }
+        }});
 
-	server.start();
+        server.start();
 
-	// Connect to server and send and receive mock data
+        // Connect to server and send and receive mock data
 
-	Socket socket = SocketFactory.getDefault().createSocket();
-	try {
-	    InetSocketAddress address = server.getAddress();
-	    socket.connect(address);
+        Socket socket = SocketFactory.getDefault().createSocket();
+        try {
+            InetSocketAddress address = server.getAddress();
+            socket.connect(address);
 
-	    // Send hello data over plain connection
-	    {
-		InputStream is = socket.getInputStream();
-		OutputStream os = socket.getOutputStream();
+            // Send hello data over plain connection
+            {
+                InputStream is = socket.getInputStream();
+                OutputStream os = socket.getOutputStream();
 
-		// Write mock data to server
-		os.write(mockClientData1);
+                // Write mock data to server
+                os.write(mockClientData1);
 
-		// Read data from server
-		byte actualData[] = new byte[mockServerData1.length];
-		int actualDataLength = is.read(actualData);
+                // Read data from server
+                byte actualData[] = new byte[mockServerData1.length];
+                int actualDataLength = is.read(actualData);
 
-		// Compare mock data with actual data
-		assertEquals("Unexpected length of actual data read from server.", mockServerData1.length, actualDataLength);
+                // Compare mock data with actual data
+                assertEquals("Unexpected length of actual data read from server.", mockServerData1.length, actualDataLength);
 
-		for (int i = 0; i < actualDataLength; i++) {
-		    assertEquals("Unexpected byte #" + i + " in response", mockServerData1[i], actualData[i]);
-		}
-	    }
+                for (int i = 0; i < actualDataLength; i++) {
+                    assertEquals("Unexpected byte #" + i + " in response", mockServerData1[i], actualData[i]);
+                }
+            }
 
-	    // Upgrade connection to SSL and send mock data
-	    {
-		//System.setProperty("javax.net.debug", "ssl");
+            // Upgrade connection to SSL and send mock data
+            {
+                //System.setProperty("javax.net.debug", "ssl");
 
-		final SSLSocketFactory sslSocketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-		SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket(socket, address.getHostName(), address.getPort(), true);
-		sslSocket.setEnabledCipherSuites(sslSocket.getSupportedCipherSuites());
-		sslSocket.startHandshake();
+                final SSLSocketFactory sslSocketFactory = (SSLSocketFactory)SSLSocketFactory.getDefault();
+                SSLSocket sslSocket = (SSLSocket)sslSocketFactory.createSocket(socket, address.getHostName(), address.getPort(), true);
+                sslSocket.setEnabledCipherSuites(sslSocket.getSupportedCipherSuites());
+                sslSocket.startHandshake();
 
-		InputStream is = sslSocket.getInputStream();
-		OutputStream os = sslSocket.getOutputStream();
+                InputStream is = sslSocket.getInputStream();
+                OutputStream os = sslSocket.getOutputStream();
 
-		// Write mock data to server
-		os.write(mockClientData2);
+                // Write mock data to server
+                os.write(mockClientData2);
 
-		// Read data from server
-		byte actualData[] = new byte[mockServerData2.length];
-		int actualDataLength = is.read(actualData);
+                // Read data from server
+                byte actualData[] = new byte[mockServerData2.length];
+                int actualDataLength = is.read(actualData);
 
-		// Compare mock data with actual data
-		assertEquals("Unexpected length of actual data read from server.", mockServerData2.length, actualDataLength);
+                // Compare mock data with actual data
+                assertEquals("Unexpected length of actual data read from server.", mockServerData2.length, actualDataLength);
 
-		for (int i = 0; i < actualDataLength; i++) {
-		    assertEquals("Unexpected byte #" + i + " in response", mockServerData2[i], actualData[i]);
-		}
+                for (int i = 0; i < actualDataLength; i++) {
+                    assertEquals("Unexpected byte #" + i + " in response", mockServerData2[i], actualData[i]);
+                }
 
-	    }
+            }
 
-	    server.waitUntilShutdowned(1 * 1000 /* up to 1 second */);
+            server.waitUntilShutdowned(1 * 1000 /* up to 1 second */);
 
-	    assertNull("Unexpected exception at mock server side.", server.getException());
-	    assertTrue("Server is not shutdowned at after conversation.", server.isShutdowned());
-	} finally {
-	    socket.close();
-	}
+            assertNull("Unexpected exception at mock server side.", server.getException());
+            assertTrue("Server is not shutdowned at after conversation.", server.isShutdowned());
+        } finally {
+            socket.close();
+        }
 
     }
 }

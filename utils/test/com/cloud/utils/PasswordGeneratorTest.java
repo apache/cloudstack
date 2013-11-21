@@ -45,9 +45,7 @@ public class PasswordGeneratorTest {
         // the transformation it is reversable
         Assert.assertEquals("abc", PasswordGenerator.rot13("nop"));
         // which means for any string
-        Assert.assertEquals("abcdefghijklmnooprstuvxyzuv1234?",
-                PasswordGenerator.rot13(PasswordGenerator
-                        .rot13("abcdefghijklmnooprstuvxyzuv1234?")));
+        Assert.assertEquals("abcdefghijklmnooprstuvxyzuv1234?", PasswordGenerator.rot13(PasswordGenerator.rot13("abcdefghijklmnooprstuvxyzuv1234?")));
         // same for capital letters
         Assert.assertEquals("ABC", PasswordGenerator.rot13("NOP"));
         Assert.assertEquals("NOP", PasswordGenerator.rot13("ABC"));

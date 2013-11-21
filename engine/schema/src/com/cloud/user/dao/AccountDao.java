@@ -28,26 +28,39 @@ import com.cloud.utils.db.GenericDao;
 
 public interface AccountDao extends GenericDao<AccountVO, Long> {
     Pair<User, Account> findUserAccountByApiKey(String apiKey);
+
     List<AccountVO> findAccountsLike(String accountName);
+
     List<AccountVO> findActiveAccounts(Long maxAccountId, Filter filter);
+
     List<AccountVO> findRecentlyDeletedAccounts(Long maxAccountId, Date earliestRemovedDate, Filter filter);
+
     List<AccountVO> findNewAccounts(Long minAccountId, Filter filter);
+
     List<AccountVO> findCleanupsForRemovedAccounts(Long domainId);
-    List<AccountVO> findActiveAccountsForDomain(Long domain);     
+
+    List<AccountVO> findActiveAccountsForDomain(Long domain);
+
     void markForCleanup(long accountId);
+
     List<AccountVO> listAccounts(String accountName, Long domainId, Filter filter);
+
     List<AccountVO> findCleanupsForDisabledAccounts();
-    
+
     //return account only in enabled state
     Account findEnabledAccount(String accountName, Long domainId);
+
     Account findEnabledNonProjectAccount(String accountName, Long domainId);
-    
+
     //returns account even when it's removed
     Account findAccountIncludingRemoved(String accountName, Long domainId);
+
     Account findNonProjectAccountIncludingRemoved(String accountName, Long domainId);
-    
+
     //returns only non-removed account
     Account findActiveAccount(String accountName, Long domainId);
+
     Account findActiveNonProjectAccount(String accountName, Long domainId);
+
     List<Long> getAccountIdsForDomains(List<Long> ids);
 }

@@ -32,6 +32,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -164,8 +165,9 @@ public class VmwareDatacenterApiUnitTest {
         ComponentContext.initComponentsLifeCycle();
         MockitoAnnotations.initMocks(this);
 
-        DataCenterVO zone = new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null,  "10.0.0.1/24",
-                null, null, NetworkType.Basic, null, null, true,  true, null, null);
+        DataCenterVO zone =
+            new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
+                true, null, null);
         zoneId = 1L;
 
         HostPodVO pod = new HostPodVO(UUID.randomUUID().toString(), zoneId, "192.168.56.1", "192.168.56.0/24", 8, "test");
@@ -199,21 +201,21 @@ public class VmwareDatacenterApiUnitTest {
 
         dcZoneMap = new VmwareDatacenterZoneMapVO(zoneId, vmwareDcId);
 
-        Mockito.when(_dcDao.persist(Mockito.any(DataCenterVO.class))).thenReturn(zone);
+        Mockito.when(_dcDao.persist(Matchers.any(DataCenterVO.class))).thenReturn(zone);
         Mockito.when(_dcDao.findById(1L)).thenReturn(zone);
-        Mockito.when(_podDao.persist(Mockito.any(HostPodVO.class))).thenReturn(pod);
+        Mockito.when(_podDao.persist(Matchers.any(HostPodVO.class))).thenReturn(pod);
         Mockito.when(_podDao.findById(1L)).thenReturn(pod);
-        Mockito.when(_clusterDao.persist(Mockito.any(ClusterVO.class))).thenReturn(cluster);
+        Mockito.when(_clusterDao.persist(Matchers.any(ClusterVO.class))).thenReturn(cluster);
         Mockito.when(_clusterDao.findById(1L)).thenReturn(cluster);
         Mockito.when(_clusterDao.listByZoneId(1L)).thenReturn(null);
         Mockito.when(_clusterDao.expunge(1L)).thenReturn(true);
-        Mockito.when(_clusterDetailsDao.persist(Mockito.any(ClusterDetailsVO.class))).thenReturn(clusterDetails);
+        Mockito.when(_clusterDetailsDao.persist(Matchers.any(ClusterDetailsVO.class))).thenReturn(clusterDetails);
         Mockito.when(_clusterDetailsDao.expunge(1L)).thenReturn(true);
-        Mockito.when(_vmwareDcDao.persist(Mockito.any(VmwareDatacenterVO.class))).thenReturn(dc);
+        Mockito.when(_vmwareDcDao.persist(Matchers.any(VmwareDatacenterVO.class))).thenReturn(dc);
         Mockito.when(_vmwareDcDao.findById(1L)).thenReturn(null);
         Mockito.when(_vmwareDcDao.expunge(1L)).thenReturn(true);
         Mockito.when(_vmwareDcDao.getVmwareDatacenterByNameAndVcenter(vmwareDcName, vCenterHost)).thenReturn(null);
-        Mockito.when(_vmwareDcZoneMapDao.persist(Mockito.any(VmwareDatacenterZoneMapVO.class))).thenReturn(dcZoneMap);
+        Mockito.when(_vmwareDcZoneMapDao.persist(Matchers.any(VmwareDatacenterZoneMapVO.class))).thenReturn(dcZoneMap);
         Mockito.when(_vmwareDcZoneMapDao.findByZoneId(1L)).thenReturn(null);
         Mockito.when(_vmwareDcZoneMapDao.expunge(1L)).thenReturn(true);
         Mockito.when(addCmd.getZoneId()).thenReturn(1L);
@@ -296,7 +298,9 @@ public class VmwareDatacenterApiUnitTest {
     }
 
     @Configuration
-    @ComponentScan(basePackageClasses = {VmwareManagerImpl.class}, includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)}, useDefaultFilters = false)
+    @ComponentScan(basePackageClasses = {VmwareManagerImpl.class},
+                   includeFilters = {@Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
+                   useDefaultFilters = false)
     public static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         @Bean
@@ -388,7 +392,7 @@ public class VmwareDatacenterApiUnitTest {
         public ManagementServerHostPeerDao managementServerHostPeerDao() {
             return Mockito.mock(ManagementServerHostPeerDao.class);
         }
-        
+
         @Bean
         public ConfigurationDao configurationDao() {
             return Mockito.mock(ConfigurationDao.class);
@@ -431,6 +435,7 @@ public class VmwareDatacenterApiUnitTest {
         public DataStoreManager dataStoreManager() {
             return Mockito.mock(DataStoreManager.class);
         }
+
         public static class Library implements TypeFilter {
 
             @Override

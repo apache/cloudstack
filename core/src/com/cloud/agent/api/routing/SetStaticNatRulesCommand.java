@@ -20,7 +20,7 @@ import java.util.List;
 
 import com.cloud.agent.api.to.StaticNatRuleTO;
 
-public class SetStaticNatRulesCommand extends NetworkElementCommand{
+public class SetStaticNatRulesCommand extends NetworkElementCommand {
 
     StaticNatRuleTO[] rules;
     Long vpcId;

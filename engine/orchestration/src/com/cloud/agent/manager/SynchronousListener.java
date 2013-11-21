@@ -30,7 +30,7 @@ import com.cloud.utils.Profiler;
 
 public class SynchronousListener implements Listener {
     private static final Logger s_logger = Logger.getLogger(SynchronousListener.class);
-	
+
     protected Answer[] _answers;
     protected boolean _disconnected;
     protected String _peer;
@@ -39,24 +39,24 @@ public class SynchronousListener implements Listener {
         _answers = null;
         _peer = null;
     }
-    
+
     public void setPeer(String peer) {
         _peer = peer;
     }
-    
+
     public String getPeer() {
         return _peer;
     }
-    
+
     public Answer[] getAnswers() {
         return _answers;
     }
-    
+
     @Override
     public boolean isRecurring() {
         return false;
     }
-    
+
     public boolean isDisconnected() {
         return _disconnected;
     }
@@ -67,17 +67,17 @@ public class SynchronousListener implements Listener {
         notifyAll();
         return true;
     }
-    
+
     @Override
     public synchronized boolean processDisconnect(long agentId, Status state) {
-    	if(s_logger.isTraceEnabled())
-    		s_logger.trace("Agent disconnected, agent id: " + agentId + ", state: " + state + ". Will notify waiters");
-    	
+        if (s_logger.isTraceEnabled())
+            s_logger.trace("Agent disconnected, agent id: " + agentId + ", state: " + state + ". Will notify waiters");
+
         _disconnected = true;
         notifyAll();
         return true;
     }
-    
+
     @Override
     public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) {
     }
@@ -86,21 +86,21 @@ public class SynchronousListener implements Listener {
     public boolean processCommands(long agentId, long seq, Command[] req) {
         return false;
     }
-    
+
     @Override
     public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
-    	return null;
+        return null;
     }
-    
+
     public Answer[] waitFor() throws InterruptedException {
         return waitFor(-1);
     }
-    
+
     public synchronized Answer[] waitFor(int s) throws InterruptedException {
         if (_disconnected) {
             return null;
         }
-        
+
         if (_answers != null) {
             return _answers;
         }
@@ -114,22 +114,22 @@ public class SynchronousListener implements Listener {
             wait(ms);
         }
         profiler.stop();
-        
-        if(s_logger.isTraceEnabled()) {
-        	s_logger.trace("Synchronized command - sending completed, time: " + profiler.getDuration() + ", answer: " +
-    			(_answers != null ? _answers[0].toString() : "null"));
+
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace("Synchronized command - sending completed, time: " + profiler.getDuration() + ", answer: " +
+                (_answers != null ? _answers[0].toString() : "null"));
         }
         return _answers;
     }
-    
+
     @Override
     public boolean processTimeout(long agentId, long seq) {
-    	return true;
+        return true;
     }
-    
+
     @Override
     public int getTimeout() {
-    	return -1;
+        return -1;
     }
-    
+
 }

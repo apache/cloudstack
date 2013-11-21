@@ -18,7 +18,7 @@ package streamer;
 
 public interface DataSink {
 
-  void sendData(ByteBuffer buf);
+    void sendData(ByteBuffer buf);
 
-  void sendEvent(Event event, Direction direction);
+    void sendEvent(Event event, Direction direction);
 }

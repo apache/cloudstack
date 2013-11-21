@@ -21,6 +21,7 @@ import java.util.List;
 import com.cloud.utils.db.GenericDao;
 
 public interface RouterNetworkDao extends GenericDao<RouterNetworkVO, Long> {
-    public List<Long> getRouterNetworks(long routerId); 
-    public RouterNetworkVO findByRouterAndNetwork (long routerId, long networkId);
+    public List<Long> getRouterNetworks(long routerId);
+
+    public RouterNetworkVO findByRouterAndNetwork(long routerId, long networkId);
 }

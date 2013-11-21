@@ -25,37 +25,45 @@ import com.cloud.serializer.Param;
 
 @SuppressWarnings("unused")
 public class CapabilitiesResponse extends BaseResponse {
-    @SerializedName("securitygroupsenabled") @Param(description="true if security groups support is enabled, false otherwise")
+    @SerializedName("securitygroupsenabled")
+    @Param(description = "true if security groups support is enabled, false otherwise")
     private boolean securityGroupsEnabled;
 
-    @SerializedName("cloudstackversion") @Param(description="version of the cloud stack")
+    @SerializedName("cloudstackversion")
+    @Param(description = "version of the cloud stack")
     private String cloudStackVersion;
 
-    @SerializedName("userpublictemplateenabled") @Param(description="true if user and domain admins can set templates to be shared, false otherwise")
+    @SerializedName("userpublictemplateenabled")
+    @Param(description = "true if user and domain admins can set templates to be shared, false otherwise")
     private boolean userPublicTemplateEnabled;
 
-    @SerializedName("supportELB") @Param(description="true if region supports elastic load balancer on basic zones")
+    @SerializedName("supportELB")
+    @Param(description = "true if region supports elastic load balancer on basic zones")
     private String supportELB;
 
-    @SerializedName(ApiConstants.PROJECT_INVITE_REQUIRED) @Param(description="If invitation confirmation is required when add account to project")
+    @SerializedName(ApiConstants.PROJECT_INVITE_REQUIRED)
+    @Param(description = "If invitation confirmation is required when add account to project")
     private Boolean projectInviteRequired;
 
-    @SerializedName(ApiConstants.ALLOW_USER_CREATE_PROJECTS) @Param(description="true if regular user is allowed to create projects")
+    @SerializedName(ApiConstants.ALLOW_USER_CREATE_PROJECTS)
+    @Param(description = "true if regular user is allowed to create projects")
     private Boolean allowUsersCreateProjects;
 
-    @SerializedName(ApiConstants.CUSTOM_DISK_OFF_MAX_SIZE) @Param(description="maximum size that can be specified when " +
-            "create disk from disk offering with custom size")
+    @SerializedName(ApiConstants.CUSTOM_DISK_OFF_MAX_SIZE)
+    @Param(description = "maximum size that can be specified when " + "create disk from disk offering with custom size")
     private Long diskOffMaxSize;
 
-    @SerializedName("regionsecondaryenabled") @Param(description = "true if region wide secondary is enabled, false otherwise")
+    @SerializedName("regionsecondaryenabled")
+    @Param(description = "true if region wide secondary is enabled, false otherwise")
     private boolean regionSecondaryEnabled;
 
-    @SerializedName("apilimitinterval") @Param(description="time interval (in seconds) to reset api count")
+    @SerializedName("apilimitinterval")
+    @Param(description = "time interval (in seconds) to reset api count")
     private Integer apiLimitInterval;
 
-    @SerializedName("apilimitmax") @Param(description="Max allowed number of api requests within the specified interval")
+    @SerializedName("apilimitmax")
+    @Param(description = "Max allowed number of api requests within the specified interval")
     private Integer apiLimitMax;
-
 
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
@@ -85,7 +93,7 @@ public class CapabilitiesResponse extends BaseResponse {
         this.diskOffMaxSize = diskOffMaxSize;
     }
 
-    public void setRegionSecondaryEnabled(boolean regionSecondaryEnabled){
+    public void setRegionSecondaryEnabled(boolean regionSecondaryEnabled) {
         this.regionSecondaryEnabled = regionSecondaryEnabled;
     }
 
@@ -96,6 +104,5 @@ public class CapabilitiesResponse extends BaseResponse {
     public void setApiLimitMax(Integer apiLimitMax) {
         this.apiLimitMax = apiLimitMax;
     }
-
 
 }

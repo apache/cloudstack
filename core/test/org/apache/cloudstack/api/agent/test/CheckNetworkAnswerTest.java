@@ -20,21 +20,21 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.cloud.agent.api.storage.ResizeVolumeCommand;
-import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.storage.Storage;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolStatus;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
-
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import com.cloud.agent.api.storage.ResizeVolumeCommand;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
 
 public class CheckNetworkAnswerTest {
     CheckNetworkCommand cnc;
@@ -97,8 +97,7 @@ public class CheckNetworkAnswerTest {
             public Date getCreated() {
                 Date date = null;
                 try {
-                    date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
-                    .parse("01/01/1970 12:12:12");
+                    date = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss").parse("01/01/1970 12:12:12");
                 } catch (ParseException e) {
                     e.printStackTrace();
                 }
@@ -191,9 +190,7 @@ public class CheckNetworkAnswerTest {
         Long newSize = 4194304L;
         Long currentSize = 1048576L;
 
-        ResizeVolumeCommand rv = new ResizeVolumeCommand("dummydiskpath",
-                new StorageFilerTO(dummypool), currentSize, newSize, false,
-                "vmName");
+        ResizeVolumeCommand rv = new ResizeVolumeCommand("dummydiskpath", new StorageFilerTO(dummypool), currentSize, newSize, false, "vmName");
 
         @Test
         public void testExecuteInSequence() {
@@ -241,8 +238,7 @@ public class CheckNetworkAnswerTest {
             assertEquals(Storage.StoragePoolType.Filesystem, type);
 
             String str = pool.toString();
-            assertTrue(str.equals("Pool[" + id.toString() + "|" + host + ":"
-                    + port.toString() + "|" + path + "]"));
+            assertTrue(str.equals("Pool[" + id.toString() + "|" + host + ":" + port.toString() + "|" + path + "]"));
         }
 
         @Test

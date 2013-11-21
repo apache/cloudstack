@@ -32,14 +32,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
-import org.apache.cloudstack.context.CallContext;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.network.dao.LoadBalancerCertMapDao;
 import com.cloud.network.dao.LoadBalancerCertMapVO;
@@ -85,7 +86,7 @@ public class CertServiceTest {
     static boolean isJCEInstalled() {
         return Boolean.getBoolean("cloudstack.jce.enabled");
     }
-    
+
     @Test
     /**
      * Given a certificate signed by a CA and a valid CA chain, upload should succeed
@@ -95,31 +96,27 @@ public class CertServiceTest {
 
         TransactionLegacy txn = TransactionLegacy.open("runUploadSslCertWithCAChain");
 
-        String certFile  = getClass().getResource("/certs/rsa_ca_signed.crt").getFile();
-        String keyFile   = getClass().getResource("/certs/rsa_ca_signed.key").getFile();
+        String certFile = getClass().getResource("/certs/rsa_ca_signed.crt").getFile();
+        String keyFile = getClass().getResource("/certs/rsa_ca_signed.key").getFile();
         String chainFile = getClass().getResource("/certs/root_chain.crt").getFile();
         String password = "user";
-
 
         String cert = URLEncoder.encode(readFileToString(new File(certFile)), "UTF-8");
         String key = URLEncoder.encode(readFileToString(new File(keyFile)), "UTF-8");
         String chain = URLEncoder.encode(readFileToString(new File(chainFile)), "UTF-8");
 
-        CertServiceImpl certService =  new CertServiceImpl();
+        CertServiceImpl certService = new CertServiceImpl();
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
         when(certService._sslCertDao.persist(any(SslCertVO.class))).thenReturn(new SslCertVO());
 
-
         certService._accountDao = Mockito.mock(AccountDao.class);
         when(certService._accountDao.findByIdIncludingRemoved(anyLong())).thenReturn((AccountVO)account);
-
 
         //creating the command
         UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
@@ -152,29 +149,25 @@ public class CertServiceTest {
 
         TransactionLegacy txn = TransactionLegacy.open("runUploadSslCertSelfSignedWithPassword");
 
-        String certFile  = getClass().getResource("/certs/rsa_self_signed_with_pwd.crt").getFile();
-        String keyFile   = getClass().getResource("/certs/rsa_self_signed_with_pwd.key").getFile();
+        String certFile = getClass().getResource("/certs/rsa_self_signed_with_pwd.crt").getFile();
+        String keyFile = getClass().getResource("/certs/rsa_self_signed_with_pwd.key").getFile();
         String password = "test";
-
 
         String cert = URLEncoder.encode(readFileToString(new File(certFile)), "UTF-8");
         String key = URLEncoder.encode(readFileToString(new File(keyFile)), "UTF-8");
 
-        CertServiceImpl certService =  new CertServiceImpl();
+        CertServiceImpl certService = new CertServiceImpl();
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
         when(certService._sslCertDao.persist(any(SslCertVO.class))).thenReturn(new SslCertVO());
 
-
         certService._accountDao = Mockito.mock(AccountDao.class);
         when(certService._accountDao.findByIdIncludingRemoved(anyLong())).thenReturn((AccountVO)account);
-
 
         //creating the command
         UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
@@ -203,28 +196,24 @@ public class CertServiceTest {
 
         TransactionLegacy txn = TransactionLegacy.open("runUploadSslCertSelfSignedNoPassword");
 
-        String certFile  = getClass().getResource("/certs/rsa_self_signed.crt").getFile();
-        String keyFile   = getClass().getResource("/certs/rsa_self_signed.key").getFile();
-
+        String certFile = getClass().getResource("/certs/rsa_self_signed.crt").getFile();
+        String keyFile = getClass().getResource("/certs/rsa_self_signed.key").getFile();
 
         String cert = URLEncoder.encode(readFileToString(new File(certFile)), "UTF-8");
         String key = URLEncoder.encode(readFileToString(new File(keyFile)), "UTF-8");
 
-        CertServiceImpl certService =  new CertServiceImpl();
+        CertServiceImpl certService = new CertServiceImpl();
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
         when(certService._sslCertDao.persist(any(SslCertVO.class))).thenReturn(new SslCertVO());
 
-
         certService._accountDao = Mockito.mock(AccountDao.class);
         when(certService._accountDao.findByIdIncludingRemoved(anyLong())).thenReturn((AccountVO)account);
-
 
         //creating the command
         UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
@@ -241,27 +230,24 @@ public class CertServiceTest {
         certService.uploadSslCert(uploadCmd);
     }
 
-
     @Test
-    public void runUploadSslCertBadChain()  throws IOException, IllegalAccessException, NoSuchFieldException {
+    public void runUploadSslCertBadChain() throws IOException, IllegalAccessException, NoSuchFieldException {
         Assume.assumeTrue(isOpenJdk() || isJCEInstalled());
 
-        String certFile  = getClass().getResource("/certs/rsa_ca_signed.crt").getFile();
-        String keyFile   = getClass().getResource("/certs/rsa_ca_signed.key").getFile();
+        String certFile = getClass().getResource("/certs/rsa_ca_signed.crt").getFile();
+        String keyFile = getClass().getResource("/certs/rsa_ca_signed.key").getFile();
         String chainFile = getClass().getResource("/certs/rsa_self_signed.crt").getFile();
         String password = "user";
-
 
         String cert = URLEncoder.encode(readFileToString(new File(certFile)), "UTF-8");
         String key = URLEncoder.encode(readFileToString(new File(keyFile)), "UTF-8");
         String chain = URLEncoder.encode(readFileToString(new File(chainFile)), "UTF-8");
 
-        CertServiceImpl certService =  new CertServiceImpl();
+        CertServiceImpl certService = new CertServiceImpl();
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
@@ -296,26 +282,24 @@ public class CertServiceTest {
     }
 
     @Test
-    public void runUploadSslCertNoRootCert()  throws IOException, IllegalAccessException, NoSuchFieldException {
+    public void runUploadSslCertNoRootCert() throws IOException, IllegalAccessException, NoSuchFieldException {
 
         Assume.assumeTrue(isOpenJdk() || isJCEInstalled());
 
-        String certFile  = getClass().getResource("/certs/rsa_ca_signed.crt").getFile();
-        String keyFile   = getClass().getResource("/certs/rsa_ca_signed.key").getFile();
+        String certFile = getClass().getResource("/certs/rsa_ca_signed.crt").getFile();
+        String keyFile = getClass().getResource("/certs/rsa_ca_signed.key").getFile();
         String chainFile = getClass().getResource("/certs/rsa_ca_signed2.crt").getFile();
         String password = "user";
-
 
         String cert = URLEncoder.encode(readFileToString(new File(certFile)), "UTF-8");
         String key = URLEncoder.encode(readFileToString(new File(keyFile)), "UTF-8");
         String chain = URLEncoder.encode(readFileToString(new File(chainFile)), "UTF-8");
 
-        CertServiceImpl certService =  new CertServiceImpl();
+        CertServiceImpl certService = new CertServiceImpl();
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
@@ -354,21 +338,19 @@ public class CertServiceTest {
     public void runUploadSslCertNoChain() throws IOException, IllegalAccessException, NoSuchFieldException {
 
         Assume.assumeTrue(isOpenJdk() || isJCEInstalled());
-        
-        String certFile = getClass().getResource("/certs/rsa_ca_signed.crt").getFile();
-        String keyFile  = getClass().getResource("/certs/rsa_ca_signed.key").getFile();
-        String password = "user";
 
+        String certFile = getClass().getResource("/certs/rsa_ca_signed.crt").getFile();
+        String keyFile = getClass().getResource("/certs/rsa_ca_signed.key").getFile();
+        String password = "user";
 
         String cert = URLEncoder.encode(readFileToString(new File(certFile)), "UTF-8");
         String key = URLEncoder.encode(readFileToString(new File(keyFile)), "UTF-8");
 
-        CertServiceImpl certService =  new CertServiceImpl();
+        CertServiceImpl certService = new CertServiceImpl();
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
@@ -403,19 +385,17 @@ public class CertServiceTest {
     public void runUploadSslCertBadPassword() throws IOException, IllegalAccessException, NoSuchFieldException {
 
         String certFile = getClass().getResource("/certs/rsa_self_signed_with_pwd.crt").getFile();
-        String keyFile  = getClass().getResource("/certs/rsa_self_signed_with_pwd.key").getFile();
+        String keyFile = getClass().getResource("/certs/rsa_self_signed_with_pwd.key").getFile();
         String password = "bad_password";
-
 
         String cert = URLEncoder.encode(readFileToString(new File(certFile)), "UTF-8");
         String key = URLEncoder.encode(readFileToString(new File(keyFile)), "UTF-8");
 
-        CertServiceImpl certService =  new CertServiceImpl();
+        CertServiceImpl certService = new CertServiceImpl();
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
@@ -437,7 +417,6 @@ public class CertServiceTest {
         passField.setAccessible(true);
         passField.set(uploadCmd, password);
 
-
         try {
             certService.uploadSslCert(uploadCmd);
             fail("Given an encrypted private key with a bad password. Upload should fail.");
@@ -451,17 +430,16 @@ public class CertServiceTest {
     public void runUploadSslCertBadkeyPair() throws IOException, IllegalAccessException, NoSuchFieldException {
         // Reading appropritate files
         String certFile = getClass().getResource("/certs/rsa_self_signed.crt").getFile();
-        String keyFile  = getClass().getResource("/certs/rsa_random_pkey.key").getFile();
+        String keyFile = getClass().getResource("/certs/rsa_random_pkey.key").getFile();
 
         String cert = URLEncoder.encode(readFileToString(new File(certFile)), "UTF-8");
         String key = URLEncoder.encode(readFileToString(new File(keyFile)), "UTF-8");
 
-        CertServiceImpl certService =  new CertServiceImpl();
+        CertServiceImpl certService = new CertServiceImpl();
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
@@ -491,17 +469,16 @@ public class CertServiceTest {
 
         // Reading appropritate files
         String certFile = getClass().getResource("/certs/rsa_self_signed.crt").getFile();
-        String keyFile  = getClass().getResource("/certs/dsa_self_signed.key").getFile();
+        String keyFile = getClass().getResource("/certs/dsa_self_signed.key").getFile();
 
         String cert = URLEncoder.encode(readFileToString(new File(certFile)), "UTF-8");
         String key = URLEncoder.encode(readFileToString(new File(keyFile)), "UTF-8");
 
-        CertServiceImpl certService =  new CertServiceImpl();
+        CertServiceImpl certService = new CertServiceImpl();
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
@@ -532,17 +509,16 @@ public class CertServiceTest {
 
         // Reading appropritate files
         String certFile = getClass().getResource("/certs/expired_cert.crt").getFile();
-        String keyFile  = getClass().getResource("/certs/rsa_self_signed.key").getFile();
+        String keyFile = getClass().getResource("/certs/rsa_self_signed.key").getFile();
 
         String cert = URLEncoder.encode(readFileToString(new File(certFile)), "UTF-8");
         String key = URLEncoder.encode(readFileToString(new File(keyFile)), "UTF-8");
 
-        CertServiceImpl certService =  new CertServiceImpl();
+        CertServiceImpl certService = new CertServiceImpl();
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
@@ -572,17 +548,16 @@ public class CertServiceTest {
     public void runUploadSslCertNotX509() throws IOException, IllegalAccessException, NoSuchFieldException {
         // Reading appropritate files
         String certFile = getClass().getResource("/certs/non_x509_pem.crt").getFile();
-        String keyFile  = getClass().getResource("/certs/rsa_self_signed.key").getFile();
+        String keyFile = getClass().getResource("/certs/rsa_self_signed.key").getFile();
 
         String cert = URLEncoder.encode(readFileToString(new File(certFile)), "UTF-8");
         String key = URLEncoder.encode(readFileToString(new File(keyFile)), "UTF-8");
 
-        CertServiceImpl certService =  new CertServiceImpl();
+        CertServiceImpl certService = new CertServiceImpl();
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
@@ -613,17 +588,16 @@ public class CertServiceTest {
 
         // Reading appropritate files
         String certFile = getClass().getResource("/certs/bad_format_cert.crt").getFile();
-        String keyFile  = getClass().getResource("/certs/rsa_self_signed.key").getFile();
+        String keyFile = getClass().getResource("/certs/rsa_self_signed.key").getFile();
 
         String cert = URLEncoder.encode(readFileToString(new File(certFile)), "UTF-8");
         String key = URLEncoder.encode(readFileToString(new File(keyFile)), "UTF-8");
 
-        CertServiceImpl certService =  new CertServiceImpl();
+        CertServiceImpl certService = new CertServiceImpl();
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
@@ -649,7 +623,6 @@ public class CertServiceTest {
         }
     }
 
-
     @Test
     /**
      * Delete with a valid Id should succeed
@@ -658,13 +631,12 @@ public class CertServiceTest {
 
         TransactionLegacy txn = TransactionLegacy.open("runDeleteSslCertValid");
 
-        CertServiceImpl certService =  new CertServiceImpl();
+        CertServiceImpl certService = new CertServiceImpl();
         long certId = 1;
 
         //setting mock objects
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
@@ -692,14 +664,13 @@ public class CertServiceTest {
 
         TransactionLegacy txn = TransactionLegacy.open("runDeleteSslCertBoundCert");
 
-        CertServiceImpl certService =  new CertServiceImpl();
+        CertServiceImpl certService = new CertServiceImpl();
 
         //setting mock objects
         long certId = 1;
 
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
@@ -715,7 +686,6 @@ public class CertServiceTest {
         certService._lbCertDao = Mockito.mock(LoadBalancerCertMapDao.class);
         when(certService._lbCertDao.listByCertId(anyLong())).thenReturn(lbMapList);
 
-
         certService._entityMgr = Mockito.mock(EntityManager.class);
         when(certService._entityMgr.findById(eq(LoadBalancerVO.class), anyLong())).thenReturn(new LoadBalancerVO());
 
@@ -730,10 +700,9 @@ public class CertServiceTest {
         try {
             certService.deleteSslCert(deleteCmd);
             fail("Delete with a cert id bound to a lb should fail");
-        }catch (Exception e){
+        } catch (Exception e) {
             assertTrue(e.getMessage().contains("Certificate in use by a loadbalancer"));
         }
-
 
     }
 
@@ -743,11 +712,10 @@ public class CertServiceTest {
         TransactionLegacy txn = TransactionLegacy.open("runDeleteSslCertInvalidId");
 
         long certId = 1;
-        CertServiceImpl certService =  new CertServiceImpl();
+        CertServiceImpl certService = new CertServiceImpl();
 
         certService._accountMgr = Mockito.mock(AccountManager.class);
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short) 0, UUID.randomUUID().toString());
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(certService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
@@ -769,12 +737,11 @@ public class CertServiceTest {
         try {
             certService.deleteSslCert(deleteCmd);
             fail("Delete with an invalid ID should fail");
-        }catch (Exception e){
+        } catch (Exception e) {
             assertTrue(e.getMessage().contains("Invalid certificate id"));
         }
 
     }
-
 
     public class UploadSslCertCmdExtn extends UploadSslCertCmd {
         @Override

@@ -23,8 +23,11 @@ import com.cloud.utils.db.GenericDao;
 
 public interface VolumeDao extends GenericDao<NetappVolumeVO, Long> {
 
-	NetappVolumeVO findVolume(String ipAddress, String aggregateName, String volumeName);
-	List<NetappVolumeVO> listVolumes(String poolName);
-	NetappVolumeVO returnRoundRobinMarkerInPool(String poolName,int roundRobinMarker);
-	List<NetappVolumeVO> listVolumesAscending(String poolName);
+    NetappVolumeVO findVolume(String ipAddress, String aggregateName, String volumeName);
+
+    List<NetappVolumeVO> listVolumes(String poolName);
+
+    NetappVolumeVO returnRoundRobinMarkerInPool(String poolName, int roundRobinMarker);
+
+    List<NetappVolumeVO> listVolumesAscending(String poolName);
 }

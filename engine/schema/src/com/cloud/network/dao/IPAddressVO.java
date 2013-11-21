@@ -39,105 +39,104 @@ import com.cloud.utils.net.Ip;
  *
  */
 @Entity
-@Table(name=("user_ip_address"))
+@Table(name = ("user_ip_address"))
 public class IPAddressVO implements IpAddress {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     long id;
 
-	@Column(name="account_id")
-	private Long allocatedToAccountId = null;
+    @Column(name = "account_id")
+    private Long allocatedToAccountId = null;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private Long allocatedInDomainId = null;
 
-	@Id
-	@Column(name="public_ip_address")
-	@Enumerated(value=EnumType.STRING)
-	private Ip address = null;
+    @Id
+    @Column(name = "public_ip_address")
+    @Enumerated(value = EnumType.STRING)
+    private Ip address = null;
 
-	@Column(name="data_center_id", updatable=false)
-	private long dataCenterId;
+    @Column(name = "data_center_id", updatable = false)
+    private long dataCenterId;
 
-	@Column(name="source_nat")
-	private boolean sourceNat;
+    @Column(name = "source_nat")
+    private boolean sourceNat;
 
-	@Column(name="allocated")
-	@Temporal(value=TemporalType.TIMESTAMP)
-	private Date allocatedTime;
+    @Column(name = "allocated")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date allocatedTime;
 
-	@Column(name="vlan_db_id")
-	private long vlanId;
+    @Column(name = "vlan_db_id")
+    private long vlanId;
 
-	@Column(name="one_to_one_nat")
-	private boolean oneToOneNat;
+    @Column(name = "one_to_one_nat")
+    private boolean oneToOneNat;
 
-	@Column(name="vm_id")
+    @Column(name = "vm_id")
     private Long associatedWithVmId;
 
-	@Column(name="state")
-	private State state;
+    @Column(name = "state")
+    private State state;
 
-	@Column(name="mac_address")
-	private long macAddress;
+    @Column(name = "mac_address")
+    private long macAddress;
 
-	@Column(name="source_network_id")
+    @Column(name = "source_network_id")
     private Long sourceNetworkId;
 
-	@Column(name="network_id")
-	private Long associatedWithNetworkId;
+    @Column(name = "network_id")
+    private Long associatedWithNetworkId;
 
-	@Column(name="uuid")
-	private String uuid;
+    @Column(name = "uuid")
+    private String uuid;
 
-    @Column(name="physical_network_id")
+    @Column(name = "physical_network_id")
     private Long physicalNetworkId;
 
-    @Column(name="is_system")
+    @Column(name = "is_system")
     private boolean system;
 
-	@Column(name="account_id")
-	@Transient
-	private Long accountId = null;
+    @Column(name = "account_id")
+    @Transient
+    private Long accountId = null;
 
-	@Transient
-    @Column(name="domain_id")
+    @Transient
+    @Column(name = "domain_id")
     private Long domainId = null;
 
-    @Column(name="vpc_id")
+    @Column(name = "vpc_id")
     private Long vpcId;
 
-    @Column(name="dnat_vmip")
+    @Column(name = "dnat_vmip")
     private String vmIp;
 
-    @Column(name="is_portable")
+    @Column(name = "is_portable")
     private boolean portable = false;
 
-	protected IPAddressVO() {
-		this.uuid = UUID.randomUUID().toString();
-	}
+    protected IPAddressVO() {
+        this.uuid = UUID.randomUUID().toString();
+    }
 
-	@Override
+    @Override
     public boolean readyToUse() {
-	    return state == State.Allocated;
-	}
+        return state == State.Allocated;
+    }
 
-	public IPAddressVO(Ip address, long dataCenterId, long macAddress, long vlanDbId, boolean sourceNat) {
-		this.address = address;
-		this.dataCenterId = dataCenterId;
-		this.vlanId = vlanDbId;
-		this.sourceNat = sourceNat;
-		this.allocatedInDomainId = null;
-		this.allocatedToAccountId = null;
-		this.allocatedTime = null;
-		this.state = State.Free;
-		this.macAddress = macAddress;
-		this.uuid = UUID.randomUUID().toString();
-	}
+    public IPAddressVO(Ip address, long dataCenterId, long macAddress, long vlanDbId, boolean sourceNat) {
+        this.address = address;
+        this.dataCenterId = dataCenterId;
+        this.vlanId = vlanDbId;
+        this.sourceNat = sourceNat;
+        this.allocatedInDomainId = null;
+        this.allocatedToAccountId = null;
+        this.allocatedTime = null;
+        this.state = State.Free;
+        this.macAddress = macAddress;
+        this.uuid = UUID.randomUUID().toString();
+    }
 
-    public  IPAddressVO(Ip address, long dataCenterId, Long networkId, Long vpcId, long physicalNetworkId, long sourceNetworkId,
-                        long vlanDbId, boolean portable) {
+    public IPAddressVO(Ip address, long dataCenterId, Long networkId, Long vpcId, long physicalNetworkId, long sourceNetworkId, long vlanDbId, boolean portable) {
         this.address = address;
         this.dataCenterId = dataCenterId;
         this.associatedWithNetworkId = networkId;
@@ -150,43 +149,43 @@ public class IPAddressVO implements IpAddress {
     }
 
     public long getMacAddress() {
-	    return macAddress;
-	}
+        return macAddress;
+    }
 
-	@Override
+    @Override
     public long getDataCenterId() {
-	    return dataCenterId;
-	}
+        return dataCenterId;
+    }
 
     public void setDataCenterId(long dcId) {
         this.dataCenterId = dcId;
     }
 
-	@Override
+    @Override
     public Ip getAddress() {
-		return address;
-	}
+        return address;
+    }
 
-	@Override
+    @Override
     public Long getAllocatedToAccountId() {
-		return allocatedToAccountId;
-	}
+        return allocatedToAccountId;
+    }
 
     @Override
     public Long getAllocatedInDomainId() {
         return allocatedInDomainId;
     }
 
-	@Override
-	public Long getAssociatedWithNetworkId() {
-	    return associatedWithNetworkId;
-	}
+    @Override
+    public Long getAssociatedWithNetworkId() {
+        return associatedWithNetworkId;
+    }
 
-	public void setAssociatedWithNetworkId(Long networkId) {
-	    this.associatedWithNetworkId = networkId;
-	}
+    public void setAssociatedWithNetworkId(Long networkId) {
+        this.associatedWithNetworkId = networkId;
+    }
 
-	@Override
+    @Override
     public Long getAssociatedWithVmId() {
         return associatedWithVmId;
     }
@@ -195,49 +194,49 @@ public class IPAddressVO implements IpAddress {
         this.associatedWithVmId = associatedWithVmId;
     }
 
-	@Override
+    @Override
     public Date getAllocatedTime() {
-		return allocatedTime;
-	}
+        return allocatedTime;
+    }
 
     public void setAllocatedToAccountId(Long accountId) {
-		this.allocatedToAccountId = accountId;
-	}
+        this.allocatedToAccountId = accountId;
+    }
 
     public void setAllocatedInDomainId(Long domainId) {
         this.allocatedInDomainId = domainId;
     }
 
     public void setSourceNat(boolean sourceNat) {
-		this.sourceNat = sourceNat;
-	}
+        this.sourceNat = sourceNat;
+    }
 
-	@Override
+    @Override
     public boolean isSourceNat() {
-		return sourceNat;
-	}
+        return sourceNat;
+    }
 
     public void setAllocatedTime(Date allocated) {
-		this.allocatedTime = allocated;
-	}
+        this.allocatedTime = allocated;
+    }
 
-	@Override
+    @Override
     public long getVlanId() {
-		return this.vlanId;
-	}
+        return this.vlanId;
+    }
 
     public void setVlanId(long vlanDbId) {
-		this.vlanId = vlanDbId;
-	}
+        this.vlanId = vlanDbId;
+    }
 
-	@Override
+    @Override
     public boolean isOneToOneNat() {
-		return oneToOneNat;
-	}
+        return oneToOneNat;
+    }
 
     public void setOneToOneNat(boolean oneToOneNat) {
-		this.oneToOneNat = oneToOneNat;
-	}
+        this.oneToOneNat = oneToOneNat;
+    }
 
     @Override
     public long getDomainId() {
@@ -254,16 +253,17 @@ public class IPAddressVO implements IpAddress {
         return state;
     }
 
+    @Override
     public void setState(State state) {
         this.state = state;
     }
 
-	@Override
+    @Override
     public String toString() {
-	    return new StringBuilder("Ip[").append(address).append("-").append(dataCenterId).append("]").toString();
-	}
+        return new StringBuilder("Ip[").append(address).append("-").append(dataCenterId).append("]").toString();
+    }
 
-	@Override
+    @Override
     public long getId() {
         return id;
     }
@@ -278,13 +278,14 @@ public class IPAddressVO implements IpAddress {
 
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return this.uuid;
     }
 
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
 
+    @Override
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
@@ -294,13 +295,13 @@ public class IPAddressVO implements IpAddress {
     }
 
     @Override
-	public boolean getSystem() {
-		return system;
-	}
+    public boolean getSystem() {
+        return system;
+    }
 
-	public void setSystem(boolean isSystem) {
-		this.system = isSystem;
-	}
+    public void setSystem(boolean isSystem) {
+        this.system = isSystem;
+    }
 
     @Override
     public boolean isPortable() {
@@ -311,7 +312,7 @@ public class IPAddressVO implements IpAddress {
         this.portable = portable;
     }
 
-	@Override
+    @Override
     public Long getVpcId() {
         return vpcId;
     }

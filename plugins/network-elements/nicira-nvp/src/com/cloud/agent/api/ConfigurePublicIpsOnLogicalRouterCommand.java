@@ -24,8 +24,7 @@ public class ConfigurePublicIpsOnLogicalRouterCommand extends Command {
     private String l3GatewayServiceUuid;
     private List<String> publicCidrs;
 
-    public ConfigurePublicIpsOnLogicalRouterCommand(final String logicalRouterUuid,
-            final String l3GatewayServiceUuid, final List<String> publicCidrs) {
+    public ConfigurePublicIpsOnLogicalRouterCommand(final String logicalRouterUuid, final String l3GatewayServiceUuid, final List<String> publicCidrs) {
         super();
         this.logicalRouterUuid = logicalRouterUuid;
         this.publicCidrs = publicCidrs;

@@ -35,6 +35,7 @@ public class TemplateTO implements InternalIdentity {
         this.format = template.getFormat();
     }
 
+    @Override
     public long getId() {
         return id;
     }

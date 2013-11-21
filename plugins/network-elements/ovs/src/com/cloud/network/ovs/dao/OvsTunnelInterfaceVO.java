@@ -17,8 +17,6 @@
 
 package com.cloud.network.ovs.dao;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -26,87 +24,90 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 @Entity
-@Table(name=("ovs_tunnel_interface"))
+@Table(name = ("ovs_tunnel_interface"))
 public class OvsTunnelInterfaceVO implements InternalIdentity {
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "id")
-	private long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private long id;
 
-	@Column(name = "ip")
-	private String ip;
+    @Column(name = "ip")
+    private String ip;
 
-	@Column(name = "netmask")
-	private String netmask;
+    @Column(name = "netmask")
+    private String netmask;
 
-	@Column(name = "mac")
-	private String mac;
+    @Column(name = "mac")
+    private String mac;
 
-	@Column(name = "host_id")
-	private long hostId;
+    @Column(name = "host_id")
+    private long hostId;
 
-	@Column(name = "label")
+    @Column(name = "label")
     private String label;
-	
-	public OvsTunnelInterfaceVO() {
-		
-	}
-	
-	public OvsTunnelInterfaceVO(String ip, String netmask, String mac, long hostId, String label) {
-		this.ip = ip;
-		this.netmask = netmask;
-		this.mac = mac;
-		this.hostId = hostId;
-		this.label = label;
-	}
 
-	public long getId() {
-		return id;
-	}
+    public OvsTunnelInterfaceVO() {
 
-	public void setId(long id) {
-		this.id = id;
-	}
+    }
 
-	public String getIp() {
-		return ip;
-	}
+    public OvsTunnelInterfaceVO(String ip, String netmask, String mac, long hostId, String label) {
+        this.ip = ip;
+        this.netmask = netmask;
+        this.mac = mac;
+        this.hostId = hostId;
+        this.label = label;
+    }
 
-	public void setIp(String ip) {
-		this.ip = ip;
-	}
+    @Override
+    public long getId() {
+        return id;
+    }
 
-	public String getNetmask() {
-		return netmask;
-	}
+    public void setId(long id) {
+        this.id = id;
+    }
 
-	public void setNetmask(String netmask) {
-		this.netmask = netmask;
-	}
+    public String getIp() {
+        return ip;
+    }
 
-	public String getMac() {
-		return mac;
-	}
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
 
-	public void setMac(String mac) {
-		this.mac = mac;
-	}
+    public String getNetmask() {
+        return netmask;
+    }
 
-	public long getHostId() {
-		return hostId;
-	}
+    public void setNetmask(String netmask) {
+        this.netmask = netmask;
+    }
 
-	public void setHostId(long hostId) {
-		this.hostId = hostId;
-	}
+    public String getMac() {
+        return mac;
+    }
 
-	public String getLabel() {
-		return label;
-	}
+    public void setMac(String mac) {
+        this.mac = mac;
+    }
 
-	public void setLabel(String label) {
-		this.label = label;
-	}
+    public long getHostId() {
+        return hostId;
+    }
+
+    public void setHostId(long hostId) {
+        this.hostId = hostId;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
+    }
 
 }

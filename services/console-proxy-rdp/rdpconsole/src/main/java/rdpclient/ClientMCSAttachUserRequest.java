@@ -24,58 +24,59 @@ import streamer.MockSource;
 import streamer.OneTimeSwitch;
 import streamer.Pipeline;
 import streamer.PipelineImpl;
+
 /**
  * @see http://msdn.microsoft.com/en-us/library/cc240684.aspx
  */
 public class ClientMCSAttachUserRequest extends OneTimeSwitch {
 
-  public ClientMCSAttachUserRequest(String id) {
-    super(id);
-  }
+    public ClientMCSAttachUserRequest(String id) {
+        super(id);
+    }
 
-  @Override
-  protected void handleOneTimeData(ByteBuffer buf, Link link) {
-    if (buf == null)
-      return;
+    @Override
+    protected void handleOneTimeData(ByteBuffer buf, Link link) {
+        if (buf == null)
+            return;
 
-    throw new RuntimeException("Unexpected packet: " + buf + ".");
-  }
+        throw new RuntimeException("Unexpected packet: " + buf + ".");
+    }
 
-  @Override
-  protected void onStart() {
-    super.onStart();
+    @Override
+    protected void onStart() {
+        super.onStart();
 
-    int length = 1;
-    ByteBuffer buf = new ByteBuffer(length, true);
+        int length = 1;
+        ByteBuffer buf = new ByteBuffer(length, true);
 
-    buf.writeByte(0x28); // AttachUserRequest
+        buf.writeByte(0x28); // AttachUserRequest
 
-    pushDataToOTOut(buf);
+        pushDataToOTOut(buf);
 
-    switchOff();
-  }
+        switchOff();
+    }
 
-  /**
-   * Example.
-   */
-  public static void main(String args[]) {
-    // System.setProperty("streamer.Link.debug", "true");
-    System.setProperty("streamer.Element.debug", "true");
-    // System.setProperty("streamer.Pipeline.debug", "true");
+    /**
+     * Example.
+     */
+    public static void main(String args[]) {
+        // System.setProperty("streamer.Link.debug", "true");
+        System.setProperty("streamer.Element.debug", "true");
+        // System.setProperty("streamer.Pipeline.debug", "true");
 
-    /* @formatter:off */
+        /* @formatter:off */
     byte[] packet = new byte[] {
 
         0x03, 0x00, 0x00, 0x08,  //  TPKT Header (length = 8 bytes)
         0x02, (byte) 0xf0, (byte) 0x80,  //  X.224 Data TPDU
-        
+
         // PER encoded (ALIGNED variant of BASIC-PER) PDU contents:
-        0x28, 
-        
+        0x28,
+
         // 0x28:
         // 0 - --\
         // 0 -   |
-        // 1 -   | CHOICE: From DomainMCSPDU select attachUserRequest (10) 
+        // 1 -   | CHOICE: From DomainMCSPDU select attachUserRequest (10)
         // 0 -   | of type AttachUserRequest
         // 1 -   |
         // 0 - --/
@@ -85,18 +86,18 @@ public class ClientMCSAttachUserRequest extends OneTimeSwitch {
     };
     /* @formatter:on */
 
-    MockSource source = new MockSource("source", ByteBuffer.convertByteArraysToByteBuffers(new byte[] { 1, 2, 3 }));
-    Element todo = new ClientMCSAttachUserRequest("TODO");
-    Element x224 = new ClientX224DataPdu("x224");
-    Element tpkt = new ClientTpkt("tpkt");
-    Element sink = new MockSink("sink", ByteBuffer.convertByteArraysToByteBuffers(packet));
-    Element mainSink = new MockSink("mainSink", ByteBuffer.convertByteArraysToByteBuffers(new byte[] { 1, 2, 3 }));
+        MockSource source = new MockSource("source", ByteBuffer.convertByteArraysToByteBuffers(new byte[] {1, 2, 3}));
+        Element todo = new ClientMCSAttachUserRequest("TODO");
+        Element x224 = new ClientX224DataPdu("x224");
+        Element tpkt = new ClientTpkt("tpkt");
+        Element sink = new MockSink("sink", ByteBuffer.convertByteArraysToByteBuffers(packet));
+        Element mainSink = new MockSink("mainSink", ByteBuffer.convertByteArraysToByteBuffers(new byte[] {1, 2, 3}));
 
-    Pipeline pipeline = new PipelineImpl("test");
-    pipeline.add(source, todo, x224, tpkt, sink, mainSink);
-    pipeline.link("source", "TODO", "mainSink");
-    pipeline.link("TODO >" + OTOUT, "x224", "tpkt", "sink");
-    pipeline.runMainLoop("source", STDOUT, false, false);
-  }
+        Pipeline pipeline = new PipelineImpl("test");
+        pipeline.add(source, todo, x224, tpkt, sink, mainSink);
+        pipeline.link("source", "TODO", "mainSink");
+        pipeline.link("TODO >" + OTOUT, "x224", "tpkt", "sink");
+        pipeline.runMainLoop("source", STDOUT, false, false);
+    }
 
 }

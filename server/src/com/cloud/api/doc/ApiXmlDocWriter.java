@@ -81,7 +81,7 @@ public class ApiXmlDocWriter {
     private static TreeMap<Object, String> regular_user_api_commands_sorted = new TreeMap<Object, String>();
     private static String dirName = "";
     private static final List<String> _asyncResponses = setAsyncResponses();
-            
+
     private static List<String> setAsyncResponses() {
         List<String> asyncResponses = new ArrayList<String>();
         asyncResponses.add(TemplateResponse.class.getName());
@@ -94,15 +94,15 @@ public class ApiXmlDocWriter {
         asyncResponses.add(SecurityGroupResponse.class.getName());
         //asyncResponses.add(ExternalLoadBalancerResponse.class.getName());
         asyncResponses.add(SnapshotResponse.class.getName());
-        
+
         return asyncResponses;
     }
 
     public static void main(String[] args) {
 
-        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class, new String[]{"org.apache.cloudstack.api", "com.cloud.api"});
+        Set<Class<?>> cmdClasses = ReflectUtil.getClassesWithAnnotation(APICommand.class, new String[] {"org.apache.cloudstack.api", "com.cloud.api"});
 
-        for(Class<?> cmdClass: cmdClasses) {
+        for (Class<?> cmdClass : cmdClasses) {
             String apiName = cmdClass.getAnnotation(APICommand.class).name();
             if (_apiNameCmdClassMap.containsKey(apiName)) {
                 System.out.println("Warning, API Cmd class " + cmdClass.getName() + " has non-unique apiname" + apiName);
@@ -148,7 +148,7 @@ public class ApiXmlDocWriter {
         Iterator<?> propertiesIterator = preProcessedCommands.keys.iterator();
         // Get command classes and response object classes
         while (propertiesIterator.hasNext()) {
-            String key = (String) propertiesIterator.next();
+            String key = (String)propertiesIterator.next();
             String preProcessedCommand = preProcessedCommands.getProperty(key);
             int splitIndex = preProcessedCommand.lastIndexOf(";");
             String commandRoleMask = preProcessedCommand.substring(splitIndex + 1);
@@ -210,7 +210,7 @@ public class ApiXmlDocWriter {
             // Write commands in the order they are represented in commands.properties.in file
             Iterator<?> it = all_api_commands.keySet().iterator();
             while (it.hasNext()) {
-                String key = (String) it.next();
+                String key = (String)it.next();
 
                 // Write admin commands
                 if (key.equals("login")) {
@@ -279,7 +279,7 @@ public class ApiXmlDocWriter {
             // Write sorted commands
             it = all_api_commands_sorted.keySet().iterator();
             while (it.hasNext()) {
-                String key = (String) it.next();
+                String key = (String)it.next();
 
                 if (key.equals("login")) {
                     writeLoginCommand(rootAdminSorted);
@@ -340,36 +340,32 @@ public class ApiXmlDocWriter {
         }
 
         if (impl == null) {
-            throw new IllegalStateException(String.format("An %1$s annotation is required for class %2$s.",
-                    APICommand.class.getCanonicalName(), clas.getCanonicalName()));
+            throw new IllegalStateException(String.format("An %1$s annotation is required for class %2$s.", APICommand.class.getCanonicalName(), clas.getCanonicalName()));
         }
 
         if (impl.includeInApiDoc()) {
             String commandDescription = impl.description();
             if (commandDescription != null && !commandDescription.isEmpty()) {
-            	apiCommand.setDescription(commandDescription);
+                apiCommand.setDescription(commandDescription);
             } else {
-            	System.out.println("Command " + apiCommand.getName() + " misses description");
+                System.out.println("Command " + apiCommand.getName() + " misses description");
             }
 
-            
             String commandUsage = impl.usage();
             if (commandUsage != null && !commandUsage.isEmpty()) {
-            	apiCommand.setUsage(commandUsage);
-            }
-            
-            //Set version when the API is added
-            if(!impl.since().isEmpty()){
-            	apiCommand.setSinceVersion(impl.since());
+                apiCommand.setUsage(commandUsage);
             }
 
-            boolean isAsync = ReflectUtil.isCmdClassAsync(clas,
-                    new Class<?>[] {BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
+            //Set version when the API is added
+            if (!impl.since().isEmpty()) {
+                apiCommand.setSinceVersion(impl.since());
+            }
+
+            boolean isAsync = ReflectUtil.isCmdClassAsync(clas, new Class<?>[] {BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
 
             apiCommand.setAsync(isAsync);
 
-            Set<Field> fields = ReflectUtil.getAllFieldsForClass(clas,
-                    new Class<?>[] {BaseCmd.class, BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
+            Set<Field> fields = ReflectUtil.getAllFieldsForClass(clas, new Class<?>[] {BaseCmd.class, BaseAsyncCmd.class, BaseAsyncCreateCmd.class});
 
             request = setRequestFields(fields);
 
@@ -394,14 +390,18 @@ public class ApiXmlDocWriter {
         // Create a new command, set name and description
         Command apiCommand = new Command();
         apiCommand.setName("login");
-        apiCommand
-                .setDescription("Logs a user into the CloudStack. A successful login attempt will generate a JSESSIONID cookie value that can be passed in subsequent Query command calls until the \"logout\" command has been issued or the session has expired.");
+        apiCommand.setDescription("Logs a user into the CloudStack. A successful login attempt will generate a JSESSIONID cookie value that can be passed in subsequent Query command calls until the \"logout\" command has been issued or the session has expired.");
 
         // Generate request
         request.add(new Argument("username", "Username", true));
-        request.add(new Argument("password", "Hashed password (Default is MD5). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section.", true));
-        request.add(new Argument("domain", "path of the domain that the user belongs to. Example: domain=/com/cloud/internal.  If no domain is passed in, the ROOT domain is assumed.", false));
-        request.add(new Argument("domainId", "id of the domain that the user belongs to. If both domain and domainId are passed in, \"domainId\" parameter takes precendence", false));
+        request.add(new Argument(
+            "password",
+            "Hashed password (Default is MD5). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter See Docs section.",
+            true));
+        request.add(new Argument("domain",
+            "path of the domain that the user belongs to. Example: domain=/com/cloud/internal.  If no domain is passed in, the ROOT domain is assumed.", false));
+        request.add(new Argument("domainId",
+            "id of the domain that the user belongs to. If both domain and domainId are passed in, \"domainId\" parameter takes precendence", false));
         apiCommand.setRequest(request);
 
         // Generate response
@@ -454,15 +454,15 @@ public class ApiXmlDocWriter {
                 if (!parameterAnnotation.description().isEmpty()) {
                     reqArg.setDescription(parameterAnnotation.description());
                 }
-                
+
                 if (parameterAnnotation.type() == BaseCmd.CommandType.LIST || parameterAnnotation.type() == BaseCmd.CommandType.MAP) {
                     reqArg.setType(parameterAnnotation.type().toString().toLowerCase());
                 }
-                
-                if(!parameterAnnotation.since().isEmpty()){
-                	reqArg.setSinceVersion(parameterAnnotation.since());
+
+                if (!parameterAnnotation.since().isEmpty()) {
+                    reqArg.setSinceVersion(parameterAnnotation.since());
                 }
-                
+
                 if (reqArg.isRequired()) {
                     if (parameterAnnotation.name().equals("id")) {
                         id = reqArg;
@@ -495,48 +495,48 @@ public class ApiXmlDocWriter {
         for (Field responseField : responseFields) {
             SerializedName nameAnnotation = responseField.getAnnotation(SerializedName.class);
             if (nameAnnotation != null) {
-            	 Param paramAnnotation = responseField.getAnnotation(Param.class);
-                 Argument respArg = new Argument(nameAnnotation.value());
+                Param paramAnnotation = responseField.getAnnotation(Param.class);
+                Argument respArg = new Argument(nameAnnotation.value());
 
-                 boolean hasChildren = false;
-                 if (paramAnnotation != null && paramAnnotation.includeInApiDoc()) {
-                     String description = paramAnnotation.description();
-                     Class fieldClass = paramAnnotation.responseObject();
-                     if (description != null && !description.isEmpty()) {
-                         respArg.setDescription(description);
-                     }
+                boolean hasChildren = false;
+                if (paramAnnotation != null && paramAnnotation.includeInApiDoc()) {
+                    String description = paramAnnotation.description();
+                    Class fieldClass = paramAnnotation.responseObject();
+                    if (description != null && !description.isEmpty()) {
+                        respArg.setDescription(description);
+                    }
 
-                     if(!paramAnnotation.since().isEmpty()){
-                    	 respArg.setSinceVersion(paramAnnotation.since());
-                     }
-                     
-                     if (fieldClass != null) {
-                         Class<?> superClass = fieldClass.getSuperclass();
-                         if (superClass != null) {
-                             String superName = superClass.getName();
-                             if (superName.equals(BaseResponse.class.getName())) {
-                                 ArrayList<Argument> fieldArguments = new ArrayList<Argument>();
-                                 Field[] fields = fieldClass.getDeclaredFields();
-                                 fieldArguments = setResponseFields(fields, fieldClass);
-                                 respArg.setArguments(fieldArguments);
-                                 hasChildren = true;
-                             }
-                         }
-                     }
-                 }
+                    if (!paramAnnotation.since().isEmpty()) {
+                        respArg.setSinceVersion(paramAnnotation.since());
+                    }
 
-                 if (paramAnnotation != null && paramAnnotation.includeInApiDoc()) {
-                     if (nameAnnotation.value().equals("id")) {
-                         id = respArg;
-                     } else {
-                         if (hasChildren) {
-                             respArg.setName(nameAnnotation.value() + "(*)");
-                             sortedArguments.add(respArg);
-                         } else {
-                             sortedChildlessArguments.add(respArg);
-                         }
-                     }
-                 }
+                    if (fieldClass != null) {
+                        Class<?> superClass = fieldClass.getSuperclass();
+                        if (superClass != null) {
+                            String superName = superClass.getName();
+                            if (superName.equals(BaseResponse.class.getName())) {
+                                ArrayList<Argument> fieldArguments = new ArrayList<Argument>();
+                                Field[] fields = fieldClass.getDeclaredFields();
+                                fieldArguments = setResponseFields(fields, fieldClass);
+                                respArg.setArguments(fieldArguments);
+                                hasChildren = true;
+                            }
+                        }
+                    }
+                }
+
+                if (paramAnnotation != null && paramAnnotation.includeInApiDoc()) {
+                    if (nameAnnotation.value().equals("id")) {
+                        id = respArg;
+                    } else {
+                        if (hasChildren) {
+                            respArg.setName(nameAnnotation.value() + "(*)");
+                            sortedArguments.add(respArg);
+                        } else {
+                            sortedChildlessArguments.add(respArg);
+                        }
+                    }
+                }
             }
         }
 
@@ -548,7 +548,7 @@ public class ApiXmlDocWriter {
         }
         arguments.addAll(sortedChildlessArguments);
         arguments.addAll(sortedArguments);
-        
+
         if (responseClas.getName().equalsIgnoreCase(AsyncJobResponse.class.getName())) {
             Argument jobIdArg = new Argument("jobid", "the ID of the async job");
             arguments.add(jobIdArg);
@@ -558,7 +558,7 @@ public class ApiXmlDocWriter {
             arguments.add(jobIdArg);
             arguments.add(jobStatusArg);
         }
-        
+
         return arguments;
     }
 

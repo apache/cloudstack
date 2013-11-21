@@ -50,6 +50,7 @@ public class GuestOSVO implements GuestOS {
         return id;
     }
 
+    @Override
     public long getCategoryId() {
         return categoryId;
     }

@@ -16,6 +16,7 @@
 // under the License.package com.cloud.server;
 
 package com.cloud.server;
+
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +34,6 @@ public interface ResourceMetaDataService {
      */
     boolean addResourceMetaData(String resourceId, ResourceObjectType resourceType, Map<String, String> details);
 
-
     /**
      *
      * @param resourceId
@@ -43,9 +43,7 @@ public interface ResourceMetaDataService {
      */
     public boolean deleteResourceMetaData(String resourceId, ResourceObjectType resourceType, String key);
 
-
     ResourceDetail getDetail(long resourceId, ResourceObjectType resourceType, String key);
-
 
     Map<String, String> getDetailsMap(long resourceId, ResourceObjectType resourceType, Boolean forDisplay);
 

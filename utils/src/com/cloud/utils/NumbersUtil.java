@@ -92,7 +92,7 @@ public class NumbersUtil {
 
     /**
      * Converts a string of the format 'yy-MM-dd'T'HH:mm:ss.SSS" into ms.
-     * 
+     *
      * @param str containing the interval.
      * @param defaultValue value to return if str doesn't parse.  If -1, throws VmopsRuntimeException
      * @return interval in ms

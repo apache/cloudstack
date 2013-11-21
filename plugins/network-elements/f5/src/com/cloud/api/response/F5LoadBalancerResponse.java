@@ -16,44 +16,55 @@
 // under the License.
 package com.cloud.api.response;
 
-import org.apache.cloudstack.api.EntityReference;
-import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
+import com.cloud.serializer.Param;
 
-@EntityReference(value=ExternalLoadBalancerDeviceVO.class)
+@EntityReference(value = ExternalLoadBalancerDeviceVO.class)
 public class F5LoadBalancerResponse extends BaseResponse {
-    @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_ID) @Param(description="device id of the F5 load balancer")
+    @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_ID)
+    @Param(description = "device id of the F5 load balancer")
     private String id;
 
-    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network to which this F5 device belongs to")
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
+    @Param(description = "the physical network to which this F5 device belongs to")
     private String physicalNetworkId;
 
-    @SerializedName(ApiConstants.PROVIDER) @Param(description="name of the provider")
+    @SerializedName(ApiConstants.PROVIDER)
+    @Param(description = "name of the provider")
     private String providerName;
 
-    @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_NAME) @Param(description="device name")
+    @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_NAME)
+    @Param(description = "device name")
     private String deviceName;
 
-    @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_STATE) @Param(description="device state")
+    @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_STATE)
+    @Param(description = "device state")
     private String deviceState;
 
-    @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_CAPACITY) @Param(description="device capacity")
+    @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_CAPACITY)
+    @Param(description = "device capacity")
     private Long deviceCapacity;
 
-    @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED) @Param(description="true if device is dedicated for an account")
+    @SerializedName(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED)
+    @Param(description = "true if device is dedicated for an account")
     private Boolean dedicatedLoadBalancer;
 
-    @SerializedName(ApiConstants.PUBLIC_INTERFACE) @Param(description="the public interface of the load balancer")
+    @SerializedName(ApiConstants.PUBLIC_INTERFACE)
+    @Param(description = "the public interface of the load balancer")
     private String publicInterface;
 
-    @SerializedName(ApiConstants.PRIVATE_INTERFACE) @Param(description="the private interface of the load balancer")
+    @SerializedName(ApiConstants.PRIVATE_INTERFACE)
+    @Param(description = "the private interface of the load balancer")
     private String privateInterface;
 
-    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the management IP address of the external load balancer")
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "the management IP address of the external load balancer")
     private String ipAddress;
 
     public void setId(String lbDeviceId) {

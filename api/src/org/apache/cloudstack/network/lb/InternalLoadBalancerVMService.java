@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -25,10 +25,9 @@ import com.cloud.user.Account;
 
 public interface InternalLoadBalancerVMService {
 
-    VirtualRouter startInternalLbVm(long internalLbVmId, Account caller, long callerUserId) 
-            throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    VirtualRouter startInternalLbVm(long internalLbVmId, Account caller, long callerUserId) throws StorageUnavailableException, InsufficientCapacityException,
+        ConcurrentOperationException, ResourceUnavailableException;
 
-    VirtualRouter stopInternalLbVm(long vmId, boolean forced, Account caller, long callerUserId)
-            throws ConcurrentOperationException, ResourceUnavailableException;
+    VirtualRouter stopInternalLbVm(long vmId, boolean forced, Account caller, long callerUserId) throws ConcurrentOperationException, ResourceUnavailableException;
 
 }

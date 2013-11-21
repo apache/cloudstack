@@ -33,12 +33,13 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value=NetworkServiceMapDao.class) @DB()
+@Local(value = NetworkServiceMapDao.class)
+@DB()
 public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO, Long> implements NetworkServiceMapDao {
     final SearchBuilder<NetworkServiceMapVO> AllFieldsSearch;
     final SearchBuilder<NetworkServiceMapVO> MultipleServicesSearch;
     final GenericSearchBuilder<NetworkServiceMapVO, String> DistinctProvidersSearch;
-    
+
     protected NetworkServiceMapDaoImpl() {
         super();
         AllFieldsSearch = createSearchBuilder();
@@ -46,13 +47,13 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
         AllFieldsSearch.and("service", AllFieldsSearch.entity().getService(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("provider", AllFieldsSearch.entity().getProvider(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
-        
+
         MultipleServicesSearch = createSearchBuilder();
         MultipleServicesSearch.and("networkId", MultipleServicesSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         MultipleServicesSearch.and("service", MultipleServicesSearch.entity().getService(), SearchCriteria.Op.IN);
         MultipleServicesSearch.and("provider", MultipleServicesSearch.entity().getProvider(), SearchCriteria.Op.EQ);
         MultipleServicesSearch.done();
-        
+
         DistinctProvidersSearch = createSearchBuilder(String.class);
         DistinctProvidersSearch.and("networkId", DistinctProvidersSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         DistinctProvidersSearch.and("provider", DistinctProvidersSearch.entity().getProvider(), SearchCriteria.Op.EQ);
@@ -60,26 +61,26 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
         DistinctProvidersSearch.selectFields(DistinctProvidersSearch.entity().getProvider());
         DistinctProvidersSearch.done();
     }
-    
+
     @Override
     public boolean areServicesSupportedInNetwork(long networkId, Service... services) {
         SearchCriteria<NetworkServiceMapVO> sc = MultipleServicesSearch.create();
         sc.setParameters("networkId", networkId);
-        
+
         if (services != null) {
             String[] servicesStr = new String[services.length];
-            
+
             int i = 0;
             for (Service service : services) {
                 servicesStr[i] = service.getName();
                 i++;
             }
-            
+
             sc.setParameters("service", (Object[])servicesStr);
         }
-        
+
         List<NetworkServiceMapVO> networkServices = listBy(sc);
-        
+
         if (services != null) {
             if (networkServices.size() == services.length) {
                 return true;
@@ -87,10 +88,10 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
         } else if (!networkServices.isEmpty()) {
             return true;
         }
-        
+
         return false;
     }
-    
+
     @Override
     public boolean canProviderSupportServiceInNetwork(long networkId, Service service, Provider provider) {
         SearchCriteria<NetworkServiceMapVO> sc = AllFieldsSearch.create();
@@ -103,7 +104,7 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
             return false;
         }
     }
-    
+
     protected List<String> getServicesForProviderInNetwork(long networkId, Provider provider) {
         List<String> services = new ArrayList<String>();
         SearchCriteria<NetworkServiceMapVO> sc = AllFieldsSearch.create();
@@ -113,10 +114,10 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
         for (NetworkServiceMapVO instance : map) {
             services.add(instance.getService());
         }
-        
+
         return services;
     }
-    
+
     @Override
     public String getProviderForServiceInNetwork(long networkId, Service service) {
         SearchCriteria<NetworkServiceMapVO> sc = AllFieldsSearch.create();
@@ -126,24 +127,24 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
         if (ntwkSvc == null) {
             throw new UnsupportedServiceException("Service " + service.getName() + " is not supported in the network id=" + networkId);
         }
-        
+
         return ntwkSvc.getProvider();
     }
- 
+
     @Override
     public List<NetworkServiceMapVO> getServicesInNetwork(long networkId) {
         SearchCriteria<NetworkServiceMapVO> sc = AllFieldsSearch.create();
         sc.setParameters("networkId", networkId);
         return listBy(sc);
     }
-    
+
     @Override
     public void deleteByNetworkId(long networkId) {
         SearchCriteria<NetworkServiceMapVO> sc = AllFieldsSearch.create();
         sc.setParameters("networkId", networkId);
         remove(sc);
     }
-    
+
     @Override
     public List<String> getDistinctProviders(long networkId) {
         SearchCriteria<String> sc = DistinctProvidersSearch.create();
@@ -151,17 +152,17 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
         List<String> results = customSearch(sc, null);
         return results;
     }
-    
+
     @Override
     public String isProviderForNetwork(long networkId, Provider provider) {
-    	SearchCriteria<String> sc = DistinctProvidersSearch.create();
+        SearchCriteria<String> sc = DistinctProvidersSearch.create();
         sc.setParameters("networkId", networkId);
         sc.setParameters("provider", provider.getName());
         List<String> results = customSearch(sc, null);
         if (results.isEmpty()) {
-        	return null;
+            return null;
         } else {
-        	return results.get(0);
+            return results.get(0);
         }
     }
 
@@ -172,5 +173,5 @@ public class NetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO
         sc.setParameters("service", service.getName());
         return customSearch(sc, null);
     }
-    
+
 }

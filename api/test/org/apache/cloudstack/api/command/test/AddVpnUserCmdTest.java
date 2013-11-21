@@ -19,13 +19,15 @@ package org.apache.cloudstack.api.command.test;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.vpn.AddVpnUserCmd;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
+
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.vpn.AddVpnUserCmd;
 
 import com.cloud.network.VpnUser;
 import com.cloud.network.vpn.RemoteAccessVpnService;
@@ -39,6 +41,7 @@ public class AddVpnUserCmdTest extends TestCase {
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    @Override
     @Before
     public void setUp() {
 
@@ -69,27 +72,27 @@ public class AddVpnUserCmdTest extends TestCase {
 
     /*
      * @Test public void testExecuteVpnUserNotFound() {
-     * 
+     *
      * EntityManager entityManager = Mockito.mock(EntityManager.class);
-     * 
+     *
      * Mockito.when(entityManager.findById(VpnUser.class,
      * Mockito.anyLong())).thenReturn(null);
-     * 
+     *
      * addVpnUserCmd._entityMgr = entityManager; try { addVpnUserCmd.execute();
      * } catch (Exception e) { }
-     * 
+     *
      * }
-     * 
-     * 
+     *
+     *
      * @Test public void testExecuteVpnUserFound() {
-     * 
+     *
      * EntityManager entityManager = Mockito.mock(EntityManager.class);
      * addVpnUserCmd._entityMgr = entityManager;
-     * 
+     *
      * VpnUser vpnUser = Mockito.mock(VpnUser.class);
      * Mockito.when(entityManager.findById(VpnUser.class,
      * Mockito.anyLong())).thenReturn(vpnUser); addVpnUserCmd.execute();
-     * 
+     *
      * }
      */
 
@@ -99,18 +102,14 @@ public class AddVpnUserCmdTest extends TestCase {
         AccountService accountService = Mockito.mock(AccountService.class);
 
         Account account = Mockito.mock(Account.class);
-        Mockito.when(accountService.getAccount(Mockito.anyLong())).thenReturn(
-                account);
+        Mockito.when(accountService.getAccount(Matchers.anyLong())).thenReturn(account);
 
         addVpnUserCmd._accountService = accountService;
 
-        RemoteAccessVpnService ravService = Mockito
-                .mock(RemoteAccessVpnService.class);
+        RemoteAccessVpnService ravService = Mockito.mock(RemoteAccessVpnService.class);
 
         VpnUser vpnUser = Mockito.mock(VpnUser.class);
-        Mockito.when(
-                ravService.addVpnUser(Mockito.anyLong(), Mockito.anyString(),
-                        Mockito.anyString())).thenReturn(vpnUser);
+        Mockito.when(ravService.addVpnUser(Matchers.anyLong(), Matchers.anyString(), Matchers.anyString())).thenReturn(vpnUser);
 
         addVpnUserCmd._ravService = ravService;
 
@@ -123,24 +122,19 @@ public class AddVpnUserCmdTest extends TestCase {
 
         AccountService accountService = Mockito.mock(AccountService.class);
         Account account = Mockito.mock(Account.class);
-        Mockito.when(accountService.getAccount(Mockito.anyLong())).thenReturn(
-                account);
+        Mockito.when(accountService.getAccount(Matchers.anyLong())).thenReturn(account);
 
         addVpnUserCmd._accountService = accountService;
 
-        RemoteAccessVpnService ravService = Mockito
-                .mock(RemoteAccessVpnService.class);
-        Mockito.when(
-                ravService.addVpnUser(Mockito.anyLong(), Mockito.anyString(),
-                        Mockito.anyString())).thenReturn(null);
+        RemoteAccessVpnService ravService = Mockito.mock(RemoteAccessVpnService.class);
+        Mockito.when(ravService.addVpnUser(Matchers.anyLong(), Matchers.anyString(), Matchers.anyString())).thenReturn(null);
 
         addVpnUserCmd._ravService = ravService;
 
         try {
             addVpnUserCmd.create();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to add vpn user",
-                    exception.getDescription());
+            Assert.assertEquals("Failed to add vpn user", exception.getDescription());
         }
 
     }

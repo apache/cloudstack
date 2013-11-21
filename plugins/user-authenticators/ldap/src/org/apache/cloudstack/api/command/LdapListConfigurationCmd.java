@@ -21,6 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -28,15 +30,13 @@ import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.ldap.LdapConfigurationVO;
 import org.apache.cloudstack.ldap.LdapManager;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
 @APICommand(name = "listLdapConfigurations", responseObject = LdapConfigurationResponse.class, description = "Lists all LDAP configurations", since = "4.2.0")
 public class LdapListConfigurationCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger
-                                          .getLogger(LdapListConfigurationCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(LdapListConfigurationCmd.class.getName());
 
     private static final String s_name = "ldapconfigurationresponse";
 
@@ -58,12 +58,10 @@ public class LdapListConfigurationCmd extends BaseListCmd {
         _ldapManager = ldapManager;
     }
 
-    private List<LdapConfigurationResponse> createLdapConfigurationResponses(
-        final List<? extends LdapConfigurationVO> configurations) {
+    private List<LdapConfigurationResponse> createLdapConfigurationResponses(final List<? extends LdapConfigurationVO> configurations) {
         final List<LdapConfigurationResponse> responses = new ArrayList<LdapConfigurationResponse>();
         for (final LdapConfigurationVO resource : configurations) {
-            final LdapConfigurationResponse configurationResponse = _ldapManager
-                    .createLdapConfigurationResponse(resource);
+            final LdapConfigurationResponse configurationResponse = _ldapManager.createLdapConfigurationResponse(resource);
             configurationResponse.setObjectName("LdapConfiguration");
             responses.add(configurationResponse);
         }
@@ -72,10 +70,8 @@ public class LdapListConfigurationCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        final Pair<List<? extends LdapConfigurationVO>, Integer> result = _ldapManager
-                .listConfigurations(this);
-        final List<LdapConfigurationResponse> responses = createLdapConfigurationResponses(result
-                .first());
+        final Pair<List<? extends LdapConfigurationVO>, Integer> result = _ldapManager.listConfigurations(this);
+        final List<LdapConfigurationResponse> responses = createLdapConfigurationResponses(result.first());
         final ListResponse<LdapConfigurationResponse> response = new ListResponse<LdapConfigurationResponse>();
         response.setResponses(responses, result.second());
         response.setResponseName(getCommandName());

@@ -19,7 +19,6 @@
 
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -54,18 +53,17 @@ public class SimulatorImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
     @Inject
     ImageStoreProviderManager imageStoreMgr;
 
-
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
-        Long dcId = (Long) dsInfos.get("zoneId");
-        String url = (String) dsInfos.get("url");
-        String name = (String) dsInfos.get("name");
+        Long dcId = (Long)dsInfos.get("zoneId");
+        String url = (String)dsInfos.get("url");
+        String name = (String)dsInfos.get("name");
         if (name == null) {
             name = url;
         }
-        String providerName = (String) dsInfos.get("providerName");
-        DataStoreRole role = (DataStoreRole) dsInfos.get("role");
-        Map<String, String> details = (Map<String, String>) dsInfos.get("details");
+        String providerName = (String)dsInfos.get("providerName");
+        DataStoreRole role = (DataStoreRole)dsInfos.get("role");
+        Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
         s_logger.info("Trying to add a new data store at " + url + " to data center " + dcId);
 
@@ -75,10 +73,8 @@ public class SimulatorImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
             if (uri.getScheme() == null) {
                 throw new InvalidParameterValueException("uri.scheme is null " + url + ", add nfs:// as a prefix");
             } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
-                if (uri.getHost() == null || uri.getHost().equalsIgnoreCase("") || uri.getPath() == null
-                        || uri.getPath().equalsIgnoreCase("")) {
-                    throw new InvalidParameterValueException(
-                            "Your host and/or path is wrong.  Make sure it is of the format nfs://hostname/path");
+                if (uri.getHost() == null || uri.getHost().equalsIgnoreCase("") || uri.getPath() == null || uri.getPath().equalsIgnoreCase("")) {
+                    throw new InvalidParameterValueException("Your host and/or path is wrong.  Make sure it is of the format nfs://hostname/path");
                 }
             }
         } catch (URISyntaxException e) {
@@ -86,8 +82,7 @@ public class SimulatorImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         }
 
         if (dcId == null) {
-            throw new InvalidParameterValueException(
-                    "DataCenter id is null, and simulator image store has to be associated with a data center");
+            throw new InvalidParameterValueException("DataCenter id is null, and simulator image store has to be associated with a data center");
         }
 
         Map<String, Object> imageStoreParameters = new HashMap<String, Object>();

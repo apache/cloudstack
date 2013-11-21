@@ -17,8 +17,13 @@
 
 package org.apache.cloudstack.api.command.user.region.ha.gslb;
 
-import com.cloud.region.ha.GlobalLoadBalancerRule;
-import com.cloud.region.ha.GlobalLoadBalancingRulesService;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
@@ -26,11 +31,9 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.RegionResponse;
-import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
+import com.cloud.region.ha.GlobalLoadBalancerRule;
+import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 
 @APICommand(name = "listGlobalLoadBalancerRules", description = "Lists load balancer rules.", responseObject = GlobalLoadBalancerResponse.class)
 public class ListGlobalLoadBalancerRuleCmd extends BaseListTaggedResourcesCmd {
@@ -78,7 +81,7 @@ public class ListGlobalLoadBalancerRuleCmd extends BaseListTaggedResourcesCmd {
         ListResponse<GlobalLoadBalancerResponse> gslbRuleResponse = new ListResponse<GlobalLoadBalancerResponse>();
         List<GlobalLoadBalancerResponse> gslbResponses = new ArrayList<GlobalLoadBalancerResponse>();
         if (globalLoadBalancers != null) {
-            for (GlobalLoadBalancerRule gslbRule: globalLoadBalancers) {
+            for (GlobalLoadBalancerRule gslbRule : globalLoadBalancers) {
                 GlobalLoadBalancerResponse gslbResponse = _responseGenerator.createGlobalLoadBalancerResponse(gslbRule);
                 gslbResponse.setObjectName("globalloadbalancerrule");
                 gslbResponses.add(gslbResponse);

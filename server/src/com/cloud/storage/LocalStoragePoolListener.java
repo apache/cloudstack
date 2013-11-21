@@ -18,8 +18,9 @@ package com.cloud.storage;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -39,11 +40,16 @@ import com.cloud.utils.db.DB;
 
 public class LocalStoragePoolListener implements Listener {
     private final static Logger s_logger = Logger.getLogger(LocalStoragePoolListener.class);
-    @Inject PrimaryDataStoreDao _storagePoolDao;
-    @Inject StoragePoolHostDao _storagePoolHostDao;
-    @Inject CapacityDao _capacityDao;
-    @Inject StorageManager _storageMgr;
-    @Inject DataCenterDao _dcDao;
+    @Inject
+    PrimaryDataStoreDao _storagePoolDao;
+    @Inject
+    StoragePoolHostDao _storagePoolHostDao;
+    @Inject
+    CapacityDao _capacityDao;
+    @Inject
+    StorageManager _storageMgr;
+    @Inject
+    DataCenterDao _dcDao;
 
     @Override
     public int getTimeout() {
@@ -64,20 +70,20 @@ public class LocalStoragePoolListener implements Listener {
     public boolean processCommands(long agentId, long seq, Command[] commands) {
         return false;
     }
-    
+
     @Override
     @DB
     public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (!(cmd instanceof StartupStorageCommand)) {
             return;
         }
-        
+
         StartupStorageCommand ssCmd = (StartupStorageCommand)cmd;
-        
+
         if (ssCmd.getResourceType() != Storage.StorageResourceType.STORAGE_POOL) {
             return;
         }
-        
+
         StoragePoolInfo pInfo = ssCmd.getPoolInfo();
         if (pInfo == null) {
             return;
@@ -85,7 +91,6 @@ public class LocalStoragePoolListener implements Listener {
 
         this._storageMgr.createLocalStorage(host, pInfo);
     }
-   
 
     @Override
     public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {

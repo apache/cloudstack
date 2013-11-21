@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -45,7 +45,7 @@ import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-@Local(value = { ConsoleProxyManager.class })
+@Local(value = {ConsoleProxyManager.class})
 public class AgentBasedConsoleProxyManager extends ManagerBase implements ConsoleProxyManager {
     private static final Logger s_logger = Logger.getLogger(AgentBasedConsoleProxyManager.class);
 
@@ -70,13 +70,14 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     @Inject
     protected KeystoreManager _ksMgr;
 
-    @Inject ConfigurationDao _configDao;
-    @Inject ManagementServer _ms;
+    @Inject
+    ConfigurationDao _configDao;
+    @Inject
+    ManagementServer _ms;
 
     public class AgentBasedAgentHook extends AgentHookBase {
 
-        public AgentBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao,
-                KeystoreManager ksMgr, AgentManager agentMgr, ManagementServer ms) {
+        public AgentBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr, AgentManager agentMgr, ManagementServer ms) {
             super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr, ms);
         }
 
@@ -91,7 +92,7 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
         if (vm.getHostId() == null) {
             return -1;
         }
-        GetVncPortAnswer answer = (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(), new GetVncPortCommand(vm.getId(), vm.getHostName()));
+        GetVncPortAnswer answer = (GetVncPortAnswer)_agentMgr.easySend(vm.getHostId(), new GetVncPortCommand(vm.getId(), vm.getHostName()));
         return (answer == null || !answer.getResult()) ? -1 : answer.getPort();
     }
 
@@ -122,8 +123,7 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
 
         _consoleProxyUrlDomain = configs.get("consoleproxy.url.domain");
 
-        _listener =
-                new ConsoleProxyListener(new AgentBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr, _agentMgr, _ms));
+        _listener = new ConsoleProxyListener(new AgentBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr, _agentMgr, _ms));
         _agentMgr.registerForHostEvents(_listener, true, true, false);
 
         if (s_logger.isInfoEnabled()) {
@@ -147,8 +147,7 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
         HostVO host = findHost(userVm);
         if (host != null) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Assign embedded console proxy running at " + host.getName() + " to user vm " + userVmId + " with public IP "
-                        + host.getPublicIpAddress());
+                s_logger.debug("Assign embedded console proxy running at " + host.getName() + " to user vm " + userVmId + " with public IP " + host.getPublicIpAddress());
             }
 
             // only private IP, public IP, host id have meaningful values, rest
@@ -156,8 +155,8 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
             String publicIp = host.getPublicIpAddress();
             if (publicIp == null) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host " + host.getName() + "/" + host.getPrivateIpAddress()
-                            + " does not have public interface, we will return its private IP for cosole proxy.");
+                    s_logger.debug("Host " + host.getName() + "/" + host.getPrivateIpAddress() +
+                        " does not have public interface, we will return its private IP for cosole proxy.");
                 }
                 publicIp = host.getPrivateIpAddress();
             }
@@ -174,9 +173,6 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
         }
         return null;
     }
-
-
-
 
     @Override
     public ConsoleProxyVO startProxy(long proxyVmId) {

@@ -18,7 +18,7 @@ package com.cloud.agent.api.routing;
 
 import com.cloud.agent.api.Answer;
 
-public class IpAssocAnswer extends Answer{
+public class IpAssocAnswer extends Answer {
     String[] results;
 
     public static final String errorResult = "Failed";
@@ -38,7 +38,7 @@ public class IpAssocAnswer extends Answer{
         }
         this.result = finalResult;
         this.details = null;
-        assert(cmd.getIpAddresses().length == results.length) : "Shouldn't the results match the commands?";
+        assert (cmd.getIpAddresses().length == results.length) : "Shouldn't the results match the commands?";
         this.results = results;
     }
 

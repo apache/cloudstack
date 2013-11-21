@@ -19,11 +19,14 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.*;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.api.response.F5LoadBalancerResponse;
@@ -37,22 +40,29 @@ import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "configureF5LoadBalancer", responseObject=F5LoadBalancerResponse.class, description="configures a F5 load balancer device")
+@APICommand(name = "configureF5LoadBalancer", responseObject = F5LoadBalancerResponse.class, description = "configures a F5 load balancer device")
 public class ConfigureF5LoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ConfigureF5LoadBalancerCmd.class.getName());
     private static final String s_name = "configuref5Rloadbalancerresponse";
-    @Inject F5ExternalLoadBalancerElementService _f5DeviceManagerService;
+    @Inject
+    F5ExternalLoadBalancerElementService _f5DeviceManagerService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.UUID, entityType = F5LoadBalancerResponse.class,
-            required=true, description="F5 load balancer device ID")
+    @Parameter(name = ApiConstants.LOAD_BALANCER_DEVICE_ID,
+               type = CommandType.UUID,
+               entityType = F5LoadBalancerResponse.class,
+               required = true,
+               description = "F5 load balancer device ID")
     private Long lbDeviceId;
 
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_CAPACITY, type=CommandType.LONG, required=false, description="capacity of the device, Capacity will be interpreted as number of networks device can handle")
+    @Parameter(name = ApiConstants.LOAD_BALANCER_DEVICE_CAPACITY,
+               type = CommandType.LONG,
+               required = false,
+               description = "capacity of the device, Capacity will be interpreted as number of networks device can handle")
     private Long capacity;
 
     /////////////////////////////////////////////////////
@@ -72,7 +82,8 @@ public class ConfigureF5LoadBalancerCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             ExternalLoadBalancerDeviceVO lbDeviceVO = _f5DeviceManagerService.configureF5LoadBalancer(this);
             if (lbDeviceVO != null) {
@@ -83,7 +94,7 @@ public class ConfigureF5LoadBalancerCmd extends BaseAsyncCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure F5 load balancer due to internal error.");
             }
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

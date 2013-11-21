@@ -27,26 +27,18 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
-
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
-import com.amazonaws.services.ec2.model.HypervisorType;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CreateVMSnapshotAnswer;
-import com.cloud.agent.api.CreateVMSnapshotCommand;
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
@@ -75,35 +67,53 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
-
-
 public class VMSnapshotManagerTest {
-    @Spy VMSnapshotManagerImpl _vmSnapshotMgr = new VMSnapshotManagerImpl();
-    @Mock Account admin;
-    @Mock VMSnapshotDao _vmSnapshotDao;
-    @Mock VolumeDao _volumeDao;
-    @Mock AccountDao _accountDao;
-    @Mock VMInstanceDao _vmInstanceDao;
-    @Mock UserVmDao _userVMDao;
-    @Mock HostDao _hostDao;
-    @Mock UserDao _userDao;
-    @Mock AgentManager _agentMgr;
-    @Mock HypervisorGuruManager _hvGuruMgr;
-    @Mock AccountManager _accountMgr;
-    @Mock GuestOSDao _guestOSDao;
-    @Mock PrimaryDataStoreDao _storagePoolDao;
-    @Mock SnapshotDao _snapshotDao;
-    @Mock VirtualMachineManager _itMgr;
-    @Mock ConfigurationDao _configDao;
-    @Mock HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
+    @Spy
+    VMSnapshotManagerImpl _vmSnapshotMgr = new VMSnapshotManagerImpl();
+    @Mock
+    Account admin;
+    @Mock
+    VMSnapshotDao _vmSnapshotDao;
+    @Mock
+    VolumeDao _volumeDao;
+    @Mock
+    AccountDao _accountDao;
+    @Mock
+    VMInstanceDao _vmInstanceDao;
+    @Mock
+    UserVmDao _userVMDao;
+    @Mock
+    HostDao _hostDao;
+    @Mock
+    UserDao _userDao;
+    @Mock
+    AgentManager _agentMgr;
+    @Mock
+    HypervisorGuruManager _hvGuruMgr;
+    @Mock
+    AccountManager _accountMgr;
+    @Mock
+    GuestOSDao _guestOSDao;
+    @Mock
+    PrimaryDataStoreDao _storagePoolDao;
+    @Mock
+    SnapshotDao _snapshotDao;
+    @Mock
+    VirtualMachineManager _itMgr;
+    @Mock
+    ConfigurationDao _configDao;
+    @Mock
+    HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     int _vmSnapshotMax = 10;
 
     private static long TEST_VM_ID = 3L;
-    @Mock UserVmVO vmMock;
-    @Mock VolumeVO volumeMock;
+    @Mock
+    UserVmVO vmMock;
+    @Mock
+    VolumeVO volumeMock;
 
     @Before
-    public void setup(){
+    public void setup() {
         MockitoAnnotations.initMocks(this);
         doReturn(admin).when(_vmSnapshotMgr).getCaller();
         _vmSnapshotMgr._accountDao = _accountDao;
@@ -115,8 +125,7 @@ public class VMSnapshotManagerTest {
         _vmSnapshotMgr._guestOSDao = _guestOSDao;
         _vmSnapshotMgr._hypervisorCapabilitiesDao = _hypervisorCapabilitiesDao;
 
-        doNothing().when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class),
-                any(Boolean.class), any(ControlledEntity.class));
+        doNothing().when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
 
         _vmSnapshotMgr._vmSnapshotMax = _vmSnapshotMax;
 
@@ -124,7 +133,7 @@ public class VMSnapshotManagerTest {
         when(_vmSnapshotDao.findByName(anyLong(), anyString())).thenReturn(null);
         when(_vmSnapshotDao.findByVm(anyLong())).thenReturn(new ArrayList<VMSnapshotVO>());
         when(_hypervisorCapabilitiesDao.isVmSnapshotEnabled(Hypervisor.HypervisorType.XenServer, "default")).thenReturn(true);
-        
+
         List<VolumeVO> mockVolumeList = new ArrayList<VolumeVO>();
         mockVolumeList.add(volumeMock);
         when(volumeMock.getInstanceId()).thenReturn(TEST_VM_ID);
@@ -137,60 +146,59 @@ public class VMSnapshotManagerTest {
     }
 
     // vmId null case
-    @Test(expected=InvalidParameterValueException.class)
-    public void testAllocVMSnapshotF1() throws ResourceAllocationException{
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAllocVMSnapshotF1() throws ResourceAllocationException {
         when(_userVMDao.findById(TEST_VM_ID)).thenReturn(null);
-        _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID,"","",true);
+        _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID, "", "", true);
     }
 
     // hypervisorCapabilities not expected case
-    @Test(expected=InvalidParameterValueException.class)
-    public void testAllocVMSnapshotF6() throws ResourceAllocationException{
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAllocVMSnapshotF6() throws ResourceAllocationException {
         when(vmMock.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.Ovm);
         when(_hypervisorCapabilitiesDao.isVmSnapshotEnabled(Hypervisor.HypervisorType.Ovm, "default")).thenReturn(false);
-        _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID,"","",true);
+        _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID, "", "", true);
     }
-    
+
     // vm state not in [running, stopped] case
-    @Test(expected=InvalidParameterValueException.class)
-    public void testAllocVMSnapshotF2() throws ResourceAllocationException{
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAllocVMSnapshotF2() throws ResourceAllocationException {
         when(vmMock.getState()).thenReturn(State.Starting);
-        _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID,"","",true);
+        _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID, "", "", true);
     }
 
     // VM in stopped state & snapshotmemory case
-    @Test(expected=InvalidParameterValueException.class)
-    public void testCreateVMSnapshotF3() throws AgentUnavailableException, OperationTimedoutException, ResourceAllocationException{
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCreateVMSnapshotF3() throws AgentUnavailableException, OperationTimedoutException, ResourceAllocationException {
         when(vmMock.getState()).thenReturn(State.Stopped);
-        _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID,"","",true);
+        _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID, "", "", true);
     }
 
     // max snapshot limit case
     @SuppressWarnings("unchecked")
-    @Test(expected=CloudRuntimeException.class)
-    public void testAllocVMSnapshotF4() throws ResourceAllocationException{
+    @Test(expected = CloudRuntimeException.class)
+    public void testAllocVMSnapshotF4() throws ResourceAllocationException {
         List<VMSnapshotVO> mockList = mock(List.class);
         when(mockList.size()).thenReturn(10);
         when(_vmSnapshotDao.findByVm(TEST_VM_ID)).thenReturn(mockList);
-        _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID,"","",true);
+        _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID, "", "", true);
     }
 
     // active volume snapshots case
     @SuppressWarnings("unchecked")
-    @Test(expected=CloudRuntimeException.class)
-    public void testAllocVMSnapshotF5() throws ResourceAllocationException{
+    @Test(expected = CloudRuntimeException.class)
+    public void testAllocVMSnapshotF5() throws ResourceAllocationException {
         List<SnapshotVO> mockList = mock(List.class);
         when(mockList.size()).thenReturn(1);
-        when(_snapshotDao.listByInstanceId(TEST_VM_ID,Snapshot.State.Creating,
-                Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp)).thenReturn(mockList);
-        _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID,"","",true);
+        when(_snapshotDao.listByInstanceId(TEST_VM_ID, Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp)).thenReturn(mockList);
+        _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID, "", "", true);
     }
 
     // successful creation case
     @Test
-    public void testCreateVMSnapshot() throws AgentUnavailableException, OperationTimedoutException, ResourceAllocationException, NoTransitionException{
+    public void testCreateVMSnapshot() throws AgentUnavailableException, OperationTimedoutException, ResourceAllocationException, NoTransitionException {
         when(vmMock.getState()).thenReturn(State.Running);
-        _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID,"","",true);
+        _vmSnapshotMgr.allocVMSnapshot(TEST_VM_ID, "", "", true);
 
     }
 

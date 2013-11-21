@@ -19,7 +19,7 @@ package com.cloud.agent.api;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.NicTO;
 
-public class SetupGuestNetworkCommand extends NetworkElementCommand{
+public class SetupGuestNetworkCommand extends NetworkElementCommand {
     String dhcpRange;
     String networkDomain;
     String defaultDns1 = null;
@@ -46,7 +46,7 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand{
     }
 
     public boolean isAdd() {
-       return add;
+        return add;
     }
 
     @Override
@@ -57,9 +57,8 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand{
     protected SetupGuestNetworkCommand() {
     }
 
-
-    public SetupGuestNetworkCommand(String dhcpRange, String networkDomain, boolean isRedundant, Integer priority,
-            String defaultDns1, String defaultDns2, boolean add, NicTO nic) {
+    public SetupGuestNetworkCommand(String dhcpRange, String networkDomain, boolean isRedundant, Integer priority, String defaultDns1, String defaultDns2, boolean add,
+            NicTO nic) {
         this.dhcpRange = dhcpRange;
         this.networkDomain = networkDomain;
         this.defaultDns1 = defaultDns1;

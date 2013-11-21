@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,8 +28,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -50,12 +50,14 @@ public class StartVMCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType=UserVmResponse.class,
-            required = true, description = "The ID of the virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
     private Long id;
 
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class,
-            description="destination Host ID to deploy the VM to - parameter available for root admin only", since="3.0.1")
+    @Parameter(name = ApiConstants.HOST_ID,
+               type = CommandType.UUID,
+               entityType = HostResponse.class,
+               description = "destination Host ID to deploy the VM to - parameter available for root admin only",
+               since = "3.0.1")
     private Long hostId;
 
     // ///////////////////////////////////////////////////
@@ -104,10 +106,12 @@ public class StartVMCmd extends BaseAsyncCmd {
         return "starting user vm: " + getId();
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.VirtualMachine;
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }
@@ -117,7 +121,7 @@ public class StartVMCmd extends BaseAsyncCmd {
         try {
             CallContext.current().setEventDetails("Vm Id: " + getId());
 
-            UserVm result ;
+            UserVm result;
             result = _userVmService.startVirtualMachine(this);
 
             if (result != null) {
@@ -139,7 +143,7 @@ public class StartVMCmd extends BaseAsyncCmd {
         } catch (InsufficientCapacityException ex) {
             StringBuilder message = new StringBuilder(ex.getMessage());
             if (ex instanceof InsufficientServerCapacityException) {
-                if (((InsufficientServerCapacityException) ex).isAffinityApplied()) {
+                if (((InsufficientServerCapacityException)ex).isAffinityApplied()) {
                     message.append(", Please check the affinity groups provided, there may not be sufficient capacity to follow them");
                 }
             }

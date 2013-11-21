@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.vpc;
 
-
 public class StaticRouteProfile implements StaticRoute {
     private long id;
     private String uuid;
@@ -30,7 +29,6 @@ public class StaticRouteProfile implements StaticRoute {
     String gateway;
     String netmask;
     String ipAddress;
-
 
     public StaticRouteProfile(StaticRoute staticRoute, VpcGateway gateway) {
         this.id = staticRoute.getId();
@@ -74,14 +72,13 @@ public class StaticRouteProfile implements StaticRoute {
 
     @Override
     public Long getVpcId() {
-       return vpcId;
+        return vpcId;
     }
 
     @Override
     public long getId() {
         return id;
     }
-
 
     @Override
     public String getUuid() {

@@ -20,46 +20,46 @@ import com.cloud.agent.api.CronCommand;
 
 public class WatchConsoleProxyLoadCommand extends ProxyCommand implements CronCommand {
 
-	private long proxyVmId;
-	private String proxyVmName;
-	private String proxyManagementIp;
-	private int proxyCmdPort;
-	int interval;
+    private long proxyVmId;
+    private String proxyVmName;
+    private String proxyManagementIp;
+    private int proxyCmdPort;
+    int interval;
 
-    public WatchConsoleProxyLoadCommand(int interval, long proxyVmId, String proxyVmName,
-    	String proxyManagementIp, int proxyCmdPort) {
+    public WatchConsoleProxyLoadCommand(int interval, long proxyVmId, String proxyVmName, String proxyManagementIp, int proxyCmdPort) {
         this.interval = interval;
-    	this.proxyVmId = proxyVmId;
-		this.proxyVmName = proxyVmName;
-		this.proxyManagementIp = proxyManagementIp;
-		this.proxyCmdPort = proxyCmdPort;
+        this.proxyVmId = proxyVmId;
+        this.proxyVmName = proxyVmName;
+        this.proxyManagementIp = proxyManagementIp;
+        this.proxyCmdPort = proxyCmdPort;
     }
 
-	protected WatchConsoleProxyLoadCommand() {
-	}
+    protected WatchConsoleProxyLoadCommand() {
+    }
 
-	public long getProxyVmId() {
-		return proxyVmId;
-	}
+    public long getProxyVmId() {
+        return proxyVmId;
+    }
 
-	public String getProxyVmName() {
-		return proxyVmName;
-	}
+    public String getProxyVmName() {
+        return proxyVmName;
+    }
 
-	public String getProxyManagementIp() {
-		return proxyManagementIp;
-	}
+    public String getProxyManagementIp() {
+        return proxyManagementIp;
+    }
 
-	public int getProxyCmdPort() {
-		return proxyCmdPort;
-	}
+    public int getProxyCmdPort() {
+        return proxyCmdPort;
+    }
 
-	public int getInterval() {
-	    return interval;
-	}
+    @Override
+    public int getInterval() {
+        return interval;
+    }
 
-	@Override
+    @Override
     public boolean executeInSequence() {
-	    return false;
-	}
+        return false;
+    }
 }

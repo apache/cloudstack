@@ -128,15 +128,12 @@ public class NiciraNvpApi {
 
         try {
             // Cast to ProtocolSocketFactory to avoid the deprecated constructor with the SecureProtocolSocketFactory parameter
-            Protocol.registerProtocol("https", new Protocol("https", (ProtocolSocketFactory) new TrustingProtocolSocketFactory(), HTTPS_PORT));
+            Protocol.registerProtocol("https", new Protocol("https", (ProtocolSocketFactory)new TrustingProtocolSocketFactory(), HTTPS_PORT));
         } catch (IOException e) {
             s_logger.warn("Failed to register the TrustingProtocolSocketFactory, falling back to default SSLSocketFactory", e);
         }
 
-        gson = new GsonBuilder()
-                .registerTypeAdapter(NatRule.class, new NatRuleAdapter())
-                .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
-                .create();
+        gson = new GsonBuilder().registerTypeAdapter(NatRule.class, new NatRuleAdapter()).setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
     }
 
     public void setControllerAddress(final String address) {
@@ -157,9 +154,7 @@ public class NiciraNvpApi {
     protected void login() throws NiciraNvpApiException {
         String url;
 
-        if (host == null || host.isEmpty() ||
-                adminuser == null || adminuser.isEmpty() ||
-                adminpass == null || adminpass.isEmpty()) {
+        if (host == null || host.isEmpty() || adminuser == null || adminuser.isEmpty() || adminpass == null || adminpass.isEmpty()) {
             throw new NiciraNvpApiException("Hostname/credentials are null or empty");
         }
 
@@ -200,7 +195,8 @@ public class NiciraNvpApi {
 
     public LogicalSwitch createLogicalSwitch(final LogicalSwitch logicalSwitch) throws NiciraNvpApiException {
         String uri = SWITCH_URI_PREFIX;
-        LogicalSwitch createdLogicalSwitch = executeCreateObject(logicalSwitch, new TypeToken<LogicalSwitch>(){}.getType(), uri, Collections.<String,String>emptyMap());
+        LogicalSwitch createdLogicalSwitch = executeCreateObject(logicalSwitch, new TypeToken<LogicalSwitch>() {
+        }.getType(), uri, Collections.<String, String> emptyMap());
 
         return createdLogicalSwitch;
     }
@@ -210,19 +206,17 @@ public class NiciraNvpApi {
         executeDeleteObject(uri);
     }
 
-    public LogicalSwitchPort createLogicalSwitchPort(final String logicalSwitchUuid, final LogicalSwitchPort logicalSwitchPort)
-            throws NiciraNvpApiException {
+    public LogicalSwitchPort createLogicalSwitchPort(final String logicalSwitchUuid, final LogicalSwitchPort logicalSwitchPort) throws NiciraNvpApiException {
         String uri = SWITCH_URI_PREFIX + logicalSwitchUuid + "/lport";
-        LogicalSwitchPort createdLogicalSwitchPort = executeCreateObject(logicalSwitchPort,
-                new TypeToken<LogicalSwitchPort>(){}.getType(), uri, Collections.<String,String>emptyMap());
+        LogicalSwitchPort createdLogicalSwitchPort = executeCreateObject(logicalSwitchPort, new TypeToken<LogicalSwitchPort>() {
+        }.getType(), uri, Collections.<String, String> emptyMap());
 
         return createdLogicalSwitchPort;
     }
 
-    public void modifyLogicalSwitchPortAttachment(final String logicalSwitchUuid, final String logicalSwitchPortUuid,
-            Attachment attachment) throws NiciraNvpApiException {
+    public void modifyLogicalSwitchPortAttachment(final String logicalSwitchUuid, final String logicalSwitchPortUuid, Attachment attachment) throws NiciraNvpApiException {
         String uri = SWITCH_URI_PREFIX + logicalSwitchUuid + "/lport/" + logicalSwitchPortUuid + "/attachment";
-        executeUpdateObject(attachment, uri, Collections.<String,String>emptyMap());
+        executeUpdateObject(attachment, uri, Collections.<String, String> emptyMap());
     }
 
     public void deleteLogicalSwitchPort(final String logicalSwitchUuid, final String logicalSwitchPortUuid) throws NiciraNvpApiException {
@@ -232,11 +226,12 @@ public class NiciraNvpApi {
 
     public String findLogicalSwitchPortUuidByVifAttachmentUuid(final String logicalSwitchUuid, final String vifAttachmentUuid) throws NiciraNvpApiException {
         String uri = SWITCH_URI_PREFIX + logicalSwitchUuid + "/lport";
-        Map<String,String> params = new HashMap<String,String>();
+        Map<String, String> params = new HashMap<String, String>();
         params.put("attachment_vif_uuid", vifAttachmentUuid);
         params.put("fields", "uuid");
 
-        NiciraNvpList<LogicalSwitchPort> lspl = executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalSwitchPort>>(){}.getType(), uri, params);
+        NiciraNvpList<LogicalSwitchPort> lspl = executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalSwitchPort>>() {
+        }.getType(), uri, params);
 
         if (lspl == null || lspl.getResultCount() != 1) {
             throw new NiciraNvpApiException("Unexpected response from API");
@@ -248,21 +243,22 @@ public class NiciraNvpApi {
 
     public ControlClusterStatus getControlClusterStatus() throws NiciraNvpApiException {
         String uri = "/ws.v1/control-cluster/status";
-        ControlClusterStatus ccs = executeRetrieveObject(new TypeToken<ControlClusterStatus>(){}.getType(), uri, null);
+        ControlClusterStatus ccs = executeRetrieveObject(new TypeToken<ControlClusterStatus>() {
+        }.getType(), uri, null);
 
         return ccs;
     }
 
-    public NiciraNvpList<LogicalSwitchPort> findLogicalSwitchPortsByUuid(final String logicalSwitchUuid,
-            final String logicalSwitchPortUuid) throws NiciraNvpApiException {
+    public NiciraNvpList<LogicalSwitchPort> findLogicalSwitchPortsByUuid(final String logicalSwitchUuid, final String logicalSwitchPortUuid) throws NiciraNvpApiException {
         String uri = SWITCH_URI_PREFIX + logicalSwitchUuid + "/lport";
-        Map<String,String> params = new HashMap<String,String>();
+        Map<String, String> params = new HashMap<String, String>();
         params.put("uuid", logicalSwitchPortUuid);
         params.put("fields", "uuid");
 
-        NiciraNvpList<LogicalSwitchPort> lspl = executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalSwitchPort>>(){}.getType(), uri, params);
+        NiciraNvpList<LogicalSwitchPort> lspl = executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalSwitchPort>>() {
+        }.getType(), uri, params);
 
-        if (lspl == null ) {
+        if (lspl == null) {
             throw new NiciraNvpApiException("Unexpected response from API");
         }
 
@@ -272,7 +268,8 @@ public class NiciraNvpApi {
     public LogicalRouterConfig createLogicalRouter(final LogicalRouterConfig logicalRouterConfig) throws NiciraNvpApiException {
         String uri = ROUTER_URI_PREFIX;
 
-        LogicalRouterConfig lrc = executeCreateObject(logicalRouterConfig, new TypeToken<LogicalRouterConfig>(){}.getType(), uri, Collections.<String,String>emptyMap());
+        LogicalRouterConfig lrc = executeCreateObject(logicalRouterConfig, new TypeToken<LogicalRouterConfig>() {
+        }.getType(), uri, Collections.<String, String> emptyMap());
 
         return lrc;
     }
@@ -286,38 +283,40 @@ public class NiciraNvpApi {
     public LogicalRouterPort createLogicalRouterPort(final String logicalRouterUuid, final LogicalRouterPort logicalRouterPort) throws NiciraNvpApiException {
         String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/lport";
 
-        LogicalRouterPort lrp = executeCreateObject(logicalRouterPort, new TypeToken<LogicalRouterPort>(){}.getType(), uri, Collections.<String,String>emptyMap());
+        LogicalRouterPort lrp = executeCreateObject(logicalRouterPort, new TypeToken<LogicalRouterPort>() {
+        }.getType(), uri, Collections.<String, String> emptyMap());
         return lrp;
     }
 
     public void deleteLogicalRouterPort(final String logicalRouterUuid, final String logicalRouterPortUuid) throws NiciraNvpApiException {
-        String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/lport/" +  logicalRouterPortUuid;
+        String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/lport/" + logicalRouterPortUuid;
 
         executeDeleteObject(uri);
     }
 
     public void modifyLogicalRouterPort(final String logicalRouterUuid, final LogicalRouterPort logicalRouterPort) throws NiciraNvpApiException {
-        String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/lport/" +  logicalRouterPort.getUuid();
+        String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/lport/" + logicalRouterPort.getUuid();
 
-        executeUpdateObject(logicalRouterPort, uri, Collections.<String,String>emptyMap());
+        executeUpdateObject(logicalRouterPort, uri, Collections.<String, String> emptyMap());
     }
 
-    public void modifyLogicalRouterPortAttachment(final String logicalRouterUuid, final String logicalRouterPortUuid,
-            final Attachment attachment) throws NiciraNvpApiException {
+    public void modifyLogicalRouterPortAttachment(final String logicalRouterUuid, final String logicalRouterPortUuid, final Attachment attachment)
+        throws NiciraNvpApiException {
         String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/lport/" + logicalRouterPortUuid + "/attachment";
-        executeUpdateObject(attachment, uri, Collections.<String,String>emptyMap());
+        executeUpdateObject(attachment, uri, Collections.<String, String> emptyMap());
     }
 
     public NatRule createLogicalRouterNatRule(final String logicalRouterUuid, final NatRule natRule) throws NiciraNvpApiException {
         String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/nat";
 
-        return executeCreateObject(natRule, new TypeToken<NatRule>(){}.getType(), uri, Collections.<String,String>emptyMap());
+        return executeCreateObject(natRule, new TypeToken<NatRule>() {
+        }.getType(), uri, Collections.<String, String> emptyMap());
     }
 
     public void modifyLogicalRouterNatRule(final String logicalRouterUuid, final NatRule natRule) throws NiciraNvpApiException {
         String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/nat/" + natRule.getUuid();
 
-        executeUpdateObject(natRule, uri, Collections.<String,String>emptyMap());
+        executeUpdateObject(natRule, uri, Collections.<String, String> emptyMap());
     }
 
     public void deleteLogicalRouterNatRule(final String logicalRouterUuid, final UUID natRuleUuid) throws NiciraNvpApiException {
@@ -326,59 +325,60 @@ public class NiciraNvpApi {
         executeDeleteObject(uri);
     }
 
-    public NiciraNvpList<LogicalRouterPort> findLogicalRouterPortByGatewayServiceAndVlanId(
-            final String logicalRouterUuid, final String gatewayServiceUuid, final long vlanId) throws NiciraNvpApiException {
+    public NiciraNvpList<LogicalRouterPort> findLogicalRouterPortByGatewayServiceAndVlanId(final String logicalRouterUuid, final String gatewayServiceUuid,
+        final long vlanId) throws NiciraNvpApiException {
         String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/lport";
-        Map<String,String> params = new HashMap<String,String>();
+        Map<String, String> params = new HashMap<String, String>();
         params.put("attachment_gwsvc_uuid", gatewayServiceUuid);
         params.put("attachment_vlan", "0");
-        params.put("fields","*");
+        params.put("fields", "*");
 
-        return executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalRouterPort>>(){}.getType(), uri, params);
+        return executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalRouterPort>>() {
+        }.getType(), uri, params);
     }
 
     public LogicalRouterConfig findOneLogicalRouterByUuid(final String logicalRouterUuid) throws NiciraNvpApiException {
         String uri = ROUTER_URI_PREFIX + logicalRouterUuid;
 
-        return executeRetrieveObject(new TypeToken<LogicalRouterConfig>(){}.getType(), uri, Collections.<String,String>emptyMap());
+        return executeRetrieveObject(new TypeToken<LogicalRouterConfig>() {
+        }.getType(), uri, Collections.<String, String> emptyMap());
     }
 
     public void updateLogicalRouterPortConfig(final String logicalRouterUuid, final LogicalRouterPort logicalRouterPort) throws NiciraNvpApiException {
         String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/lport" + logicalRouterPort.getUuid();
 
-        executeUpdateObject(logicalRouterPort, uri, Collections.<String,String>emptyMap());
+        executeUpdateObject(logicalRouterPort, uri, Collections.<String, String> emptyMap());
     }
 
     public NiciraNvpList<NatRule> findNatRulesByLogicalRouterUuid(final String logicalRouterUuid) throws NiciraNvpApiException {
         String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/nat";
-        Map<String,String> params = new HashMap<String,String>();
-        params.put("fields","*");
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("fields", "*");
 
-        return executeRetrieveObject(new TypeToken<NiciraNvpList<NatRule>>(){}.getType(), uri, params);
+        return executeRetrieveObject(new TypeToken<NiciraNvpList<NatRule>>() {
+        }.getType(), uri, params);
     }
 
-    public NiciraNvpList<LogicalRouterPort> findLogicalRouterPortByGatewayServiceUuid(final String logicalRouterUuid,
-            final String l3GatewayServiceUuid) throws NiciraNvpApiException {
+    public NiciraNvpList<LogicalRouterPort> findLogicalRouterPortByGatewayServiceUuid(final String logicalRouterUuid, final String l3GatewayServiceUuid)
+        throws NiciraNvpApiException {
         String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/lport";
-        Map<String,String> params = new HashMap<String,String>();
+        Map<String, String> params = new HashMap<String, String>();
         params.put("fields", "*");
         params.put("attachment_gwsvc_uuid", l3GatewayServiceUuid);
 
-        return executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalRouterPort>>(){}.getType(), uri, params);
+        return executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalRouterPort>>() {
+        }.getType(), uri, params);
     }
 
-    protected <T> void executeUpdateObject(final T newObject, final String uri, final Map<String,String> parameters) throws NiciraNvpApiException {
-        if (host == null || host.isEmpty() ||
-                adminuser == null || adminuser.isEmpty() ||
-                adminpass == null || adminpass.isEmpty()) {
+    protected <T> void executeUpdateObject(final T newObject, final String uri, final Map<String, String> parameters) throws NiciraNvpApiException {
+        if (host == null || host.isEmpty() || adminuser == null || adminuser.isEmpty() || adminpass == null || adminpass.isEmpty()) {
             throw new NiciraNvpApiException("Hostname/credentials are null or empty");
         }
 
-        PutMethod pm = (PutMethod) createMethod("put", uri);
+        PutMethod pm = (PutMethod)createMethod("put", uri);
         pm.setRequestHeader(CONTENT_TYPE, JSON_CONTENT_TYPE);
         try {
-            pm.setRequestEntity(new StringRequestEntity(
-                    gson.toJson(newObject),JSON_CONTENT_TYPE, null));
+            pm.setRequestEntity(new StringRequestEntity(gson.toJson(newObject), JSON_CONTENT_TYPE, null));
         } catch (UnsupportedEncodingException e) {
             throw new NiciraNvpApiException("Failed to encode json request body", e);
         }
@@ -394,19 +394,16 @@ public class NiciraNvpApi {
         pm.releaseConnection();
     }
 
-    protected <T> T executeCreateObject(final T newObject, final Type returnObjectType, final String uri,
-            final Map<String,String> parameters) throws NiciraNvpApiException {
-        if (host == null || host.isEmpty() ||
-                adminuser == null || adminuser.isEmpty() ||
-                adminpass == null || adminpass.isEmpty()) {
+    protected <T> T executeCreateObject(final T newObject, final Type returnObjectType, final String uri, final Map<String, String> parameters)
+        throws NiciraNvpApiException {
+        if (host == null || host.isEmpty() || adminuser == null || adminuser.isEmpty() || adminpass == null || adminpass.isEmpty()) {
             throw new NiciraNvpApiException("Hostname/credentials are null or empty");
         }
 
-        PostMethod pm = (PostMethod) createMethod("post", uri);
+        PostMethod pm = (PostMethod)createMethod("post", uri);
         pm.setRequestHeader(CONTENT_TYPE, JSON_CONTENT_TYPE);
         try {
-            pm.setRequestEntity(new StringRequestEntity(
-                    gson.toJson(newObject),JSON_CONTENT_TYPE, null));
+            pm.setRequestEntity(new StringRequestEntity(gson.toJson(newObject), JSON_CONTENT_TYPE, null));
         } catch (UnsupportedEncodingException e) {
             throw new NiciraNvpApiException("Failed to encode json request body", e);
         }
@@ -433,13 +430,11 @@ public class NiciraNvpApi {
     }
 
     protected void executeDeleteObject(final String uri) throws NiciraNvpApiException {
-        if (host == null || host.isEmpty() ||
-                adminuser == null || adminuser.isEmpty() ||
-                adminpass == null || adminpass.isEmpty()) {
+        if (host == null || host.isEmpty() || adminuser == null || adminuser.isEmpty() || adminpass == null || adminpass.isEmpty()) {
             throw new NiciraNvpApiException("Hostname/credentials are null or empty");
         }
 
-        DeleteMethod dm = (DeleteMethod) createMethod("delete", uri);
+        DeleteMethod dm = (DeleteMethod)createMethod("delete", uri);
         dm.setRequestHeader(CONTENT_TYPE, JSON_CONTENT_TYPE);
 
         executeMethod(dm);
@@ -453,19 +448,16 @@ public class NiciraNvpApi {
         dm.releaseConnection();
     }
 
-    protected <T> T executeRetrieveObject(final Type returnObjectType, final String uri,
-            final Map<String,String> parameters) throws NiciraNvpApiException {
-        if (host == null || host.isEmpty() ||
-                adminuser == null || adminuser.isEmpty() ||
-                adminpass == null || adminpass.isEmpty()) {
+    protected <T> T executeRetrieveObject(final Type returnObjectType, final String uri, final Map<String, String> parameters) throws NiciraNvpApiException {
+        if (host == null || host.isEmpty() || adminuser == null || adminuser.isEmpty() || adminpass == null || adminpass.isEmpty()) {
             throw new NiciraNvpApiException("Hostname/credentials are null or empty");
         }
 
-        GetMethod gm = (GetMethod) createMethod("get", uri);
+        GetMethod gm = (GetMethod)createMethod("get", uri);
         gm.setRequestHeader(CONTENT_TYPE, JSON_CONTENT_TYPE);
         if (parameters != null && !parameters.isEmpty()) {
             List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(parameters.size());
-            for (Entry<String,String> e : parameters.entrySet()) {
+            for (Entry<String, String> e : parameters.entrySet()) {
                 nameValuePairs.add(new NameValuePair(e.getKey(), e.getValue()));
             }
             gm.setQueryString(nameValuePairs.toArray(new NameValuePair[0]));
@@ -484,7 +476,7 @@ public class NiciraNvpApi {
         try {
             returnValue = (T)gson.fromJson(gm.getResponseBodyAsString(), returnObjectType);
         } catch (IOException e) {
-            s_logger.error("IOException while retrieving response body",e);
+            s_logger.error("IOException while retrieving response body", e);
             throw new NiciraNvpApiException(e);
         } finally {
             gm.releaseConnection();
@@ -520,7 +512,7 @@ public class NiciraNvpApi {
             // Safety margin of 1024 characters, anything longer is probably useless
             // and will clutter the logs
             try {
-                return  method.getResponseBodyAsString(BODY_RESP_MAX_LEN);
+                return method.getResponseBodyAsString(BODY_RESP_MAX_LEN);
             } catch (IOException e) {
                 s_logger.debug("Error while loading response body", e);
             }
@@ -541,30 +533,28 @@ public class NiciraNvpApi {
 
         public TrustingProtocolSocketFactory() throws IOException {
             // Create a trust manager that does not validate certificate chains
-            TrustManager[] trustAllCerts = new TrustManager[] {
-                new X509TrustManager() {
-                    @Override
-                    public X509Certificate[] getAcceptedIssuers() {
-                        return null;
-                    }
-
-                    @Override
-                    public void checkClientTrusted(final X509Certificate[] certs, final String authType) {
-                        // Trust always
-                    }
-
-                    @Override
-                    public void checkServerTrusted(final X509Certificate[] certs, final String authType) {
-                        // Trust always
-                    }
+            TrustManager[] trustAllCerts = new TrustManager[] {new X509TrustManager() {
+                @Override
+                public X509Certificate[] getAcceptedIssuers() {
+                    return null;
                 }
-            };
+
+                @Override
+                public void checkClientTrusted(final X509Certificate[] certs, final String authType) {
+                    // Trust always
+                }
+
+                @Override
+                public void checkServerTrusted(final X509Certificate[] certs, final String authType) {
+                    // Trust always
+                }
+            }};
 
             try {
                 // Install the all-trusting trust manager
                 SSLContext sc = SSLContext.getInstance("SSL");
                 sc.init(null, trustAllCerts, new java.security.SecureRandom());
-                ssf =  sc.getSocketFactory();
+                ssf = sc.getSocketFactory();
             } catch (KeyManagementException e) {
                 throw new IOException(e);
             } catch (NoSuchAlgorithmException e) {
@@ -578,26 +568,22 @@ public class NiciraNvpApi {
         }
 
         @Override
-        public Socket createSocket(final String address, final int port, final InetAddress localAddress,
-                final int localPort) throws IOException, UnknownHostException {
+        public Socket createSocket(final String address, final int port, final InetAddress localAddress, final int localPort) throws IOException, UnknownHostException {
             return ssf.createSocket(address, port, localAddress, localPort);
         }
 
         @Override
-        public Socket createSocket(final Socket socket, final String host, final int port,
-                final boolean autoClose) throws IOException, UnknownHostException {
+        public Socket createSocket(final Socket socket, final String host, final int port, final boolean autoClose) throws IOException, UnknownHostException {
             return ssf.createSocket(socket, host, port, autoClose);
         }
 
         @Override
-        public Socket createSocket(final String host, final int port, final InetAddress localAddress,
-                final int localPort, final HttpConnectionParams params) throws IOException,
-                UnknownHostException, ConnectTimeoutException {
+        public Socket createSocket(final String host, final int port, final InetAddress localAddress, final int localPort, final HttpConnectionParams params)
+            throws IOException, UnknownHostException, ConnectTimeoutException {
             int timeout = params.getConnectionTimeout();
             if (timeout == 0) {
                 return createSocket(host, port, localAddress, localPort);
-            }
-            else {
+            } else {
                 Socket s = ssf.createSocket();
                 s.bind(new InetSocketAddress(localAddress, localPort));
                 s.connect(new InetSocketAddress(host, port), timeout);
@@ -609,8 +595,7 @@ public class NiciraNvpApi {
     public static class NatRuleAdapter implements JsonDeserializer<NatRule> {
 
         @Override
-        public NatRule deserialize(final JsonElement jsonElement, final Type type,
-                final JsonDeserializationContext context) throws JsonParseException {
+        public NatRule deserialize(final JsonElement jsonElement, final Type type, final JsonDeserializationContext context) throws JsonParseException {
             JsonObject jsonObject = jsonElement.getAsJsonObject();
 
             if (!jsonObject.has("type")) {

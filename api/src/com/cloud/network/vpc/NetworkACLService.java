@@ -16,13 +16,13 @@
 // under the License.
 package com.cloud.network.vpc;
 
+import java.util.List;
 
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 
-import java.util.List;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.utils.Pair;
 
 public interface NetworkACLService {
     /**
@@ -49,7 +49,7 @@ public interface NetworkACLService {
      * @param vpcId
      * @return
      */
-    Pair<List<? extends NetworkACL>,Integer> listNetworkACLs(Long id, String name, Long networkId, Long vpcId);
+    Pair<List<? extends NetworkACL>, Integer> listNetworkACLs(Long id, String name, Long networkId, Long vpcId);
 
     /**
      * Delete specified network ACL. Deletion fails if the list is not empty
@@ -119,9 +119,8 @@ public interface NetworkACLService {
      * @return
      * @throws ResourceUnavailableException
      */
-    NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType,
-                                        String action, Integer number, Integer sourcePortStart, Integer sourcePortEnd,
-                                        Integer icmpCode, Integer icmpType) throws ResourceUnavailableException;
+    NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType, String action, Integer number,
+        Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType) throws ResourceUnavailableException;
 
     /**
      * Associates ACL with specified Network

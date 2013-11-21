@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.agent.api.storage;
 
-
 import com.cloud.agent.api.to.DataTO;
 
 public class CreateEntityDownloadURLCommand extends AbstractDownloadCommand {
@@ -73,12 +72,12 @@ public class CreateEntityDownloadURLCommand extends AbstractDownloadCommand {
         this.parent = parent;
     }
 
-	public String getExtractLinkUUID() {
-		return extractLinkUUID;
-	}
+    public String getExtractLinkUUID() {
+        return extractLinkUUID;
+    }
 
-	public void setExtractLinkUUID(String extractLinkUUID) {
-		this.extractLinkUUID = extractLinkUUID;
-	}
+    public void setExtractLinkUUID(String extractLinkUUID) {
+        this.extractLinkUUID = extractLinkUUID;
+    }
 
 }

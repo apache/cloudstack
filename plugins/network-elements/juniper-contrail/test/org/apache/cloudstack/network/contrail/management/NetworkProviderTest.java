@@ -25,51 +25,50 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import junit.framework.TestCase;
-
-import org.apache.cloudstack.network.contrail.management.ContrailManager;
-import org.apache.cloudstack.network.contrail.management.ServerDBSync;
-
 import net.juniper.contrail.api.ApiConnector;
 import net.juniper.contrail.api.ApiConnectorFactory;
 import net.juniper.contrail.api.ApiConnectorMock;
 import net.juniper.contrail.api.types.InstanceIp;
 import net.juniper.contrail.api.types.NetworkIpam;
+import net.juniper.contrail.api.types.Project;
 import net.juniper.contrail.api.types.SubnetType;
 import net.juniper.contrail.api.types.VirtualMachine;
 import net.juniper.contrail.api.types.VirtualMachineInterface;
 import net.juniper.contrail.api.types.VirtualNetwork;
 import net.juniper.contrail.api.types.VnSubnetsType;
-import net.juniper.contrail.api.types.Project;
 
 import org.apache.log4j.Logger;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.command.user.project.CreateProjectCmd;
-import org.apache.cloudstack.api.command.user.project.DeleteProjectCmd;
-import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
-import org.apache.cloudstack.api.command.user.nat.EnableStaticNatCmd;
-import org.apache.cloudstack.api.command.user.nat.DisableStaticNatCmd;
-import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
-import org.junit.runner.RunWith;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import com.cloud.utils.db.Merovingian2;
-import com.cloud.utils.mgmt.JmxUtil;
-
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.command.user.address.AssociateIPAddrCmd;
+import org.apache.cloudstack.api.command.user.nat.DisableStaticNatCmd;
+import org.apache.cloudstack.api.command.user.nat.EnableStaticNatCmd;
+import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
+import org.apache.cloudstack.api.command.user.project.CreateProjectCmd;
+import org.apache.cloudstack.api.command.user.project.DeleteProjectCmd;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.CloudException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkService;
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.user.Account;
@@ -78,40 +77,42 @@ import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ComponentLifecycle;
+import com.cloud.utils.db.Merovingian2;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.vm.VirtualMachineManager;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
-
-import org.apache.cloudstack.context.CallContext;
-import org.springframework.context.support.AbstractApplicationContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations="classpath:/providerContext.xml")
+@ContextConfiguration(locations = "classpath:/providerContext.xml")
 /**
  * Exercise the public API.
  */
 public class NetworkProviderTest extends TestCase {
-    private static final Logger s_logger =
-            Logger.getLogger(NetworkProviderTest.class);
+    private static final Logger s_logger = Logger.getLogger(NetworkProviderTest.class);
 
-    @Inject public ContrailManager _contrailMgr;
-    @Inject public ServerDBSync _dbSync;
-    @Inject public AccountManager _accountMgr;
-    @Inject IPAddressDao _ipAddressDao;
-    @Inject private NetworkService _networkService;
+    @Inject
+    public ContrailManager _contrailMgr;
+    @Inject
+    public ServerDBSync _dbSync;
+    @Inject
+    public AccountManager _accountMgr;
+    @Inject
+    IPAddressDao _ipAddressDao;
+    @Inject
+    private NetworkService _networkService;
 
-    @Inject public VirtualMachineManager _vmMgr;
+    @Inject
+    public VirtualMachineManager _vmMgr;
 
-    @Inject public DomainDao _domainDao;
-    @Inject public ProjectDao _projectDao;
-    @Inject public AgentManager _agentMgr;
-    
+    @Inject
+    public DomainDao _domainDao;
+    @Inject
+    public ProjectDao _projectDao;
+    @Inject
+    public AgentManager _agentMgr;
+
     private ManagementServerMock _server;
     private ApiConnector _api;
     private static int _mysql_server_port;
@@ -127,26 +128,27 @@ public class NetworkProviderTest extends TestCase {
         s_logger.info("mysql server launched on port " + _mysql_server_port);
 
         _msId = ManagementServerNode.getManagementServerId();
-        _lockMaster = Merovingian2.createLockMaster(_msId);        
+        _lockMaster = Merovingian2.createLockMaster(_msId);
     }
- 
+
     @AfterClass
     public static void globalTearDown() throws Exception {
         _lockMaster.cleanupForServer(_msId);
         JmxUtil.unregisterMBean("Locks", "Locks");
         _lockMaster = null;
-        
-        AbstractApplicationContext ctx = (AbstractApplicationContext) ComponentContext.getApplicationContext();
+
+        AbstractApplicationContext ctx = (AbstractApplicationContext)ComponentContext.getApplicationContext();
         Map<String, ComponentLifecycle> lifecycleComponents = ctx.getBeansOfType(ComponentLifecycle.class);
-        for (ComponentLifecycle bean: lifecycleComponents.values()) {
+        for (ComponentLifecycle bean : lifecycleComponents.values()) {
             bean.stop();
         }
         ctx.close();
-        
+
         s_logger.info("destroying mysql server instance running at port <" + _mysql_server_port + ">");
         TestDbSetup.destroy(_mysql_server_port, null);
     }
 
+    @Override
     @Before
     public void setUp() throws Exception {
         try {
@@ -165,6 +167,7 @@ public class NetworkProviderTest extends TestCase {
         _api = _contrailMgr.getApiConnector();
     }
 
+    @Override
     @After
     public void tearDown() throws Exception {
         _server.shutdown();
@@ -173,8 +176,7 @@ public class NetworkProviderTest extends TestCase {
     private void purgeTestNetwork() {
         Account system = _accountMgr.getSystemAccount();
         DataCenter zone = _server.getZone();
-        List<? extends Network> list =
-                _networkService.getIsolatedNetworksOwnedByAccountInZone(zone.getId(), system);
+        List<? extends Network> list = _networkService.getIsolatedNetworksOwnedByAccountInZone(zone.getId(), system);
         for (Network net : list) {
             s_logger.debug("Delete network " + net.getName());
             _networkService.deleteNetwork(net.getId());
@@ -184,8 +186,7 @@ public class NetworkProviderTest extends TestCase {
     private Network lookupTestNetwork(String name) {
         Account system = _accountMgr.getSystemAccount();
         DataCenter zone = _server.getZone();
-        List<? extends Network> list =
-                _networkService.getIsolatedNetworksOwnedByAccountInZone(zone.getId(), system);
+        List<? extends Network> list = _networkService.getIsolatedNetworksOwnedByAccountInZone(zone.getId(), system);
         for (Network net : list) {
             if (net.getName().equals(name)) {
                 return net;
@@ -220,14 +221,14 @@ public class NetworkProviderTest extends TestCase {
         return result;
     }
 
-
     @Test
     //@Ignore
-    public void testCreateNetwork() {
+        public
+        void testCreateNetwork() {
         purgeTestNetwork();
         createTestNetwork("test");
     }
- 
+
     @Test
     public void testConnectivity() {
         Network network = lookupTestNetwork("test");
@@ -257,7 +258,7 @@ public class NetworkProviderTest extends TestCase {
         _server.deleteVM(vm, network);
     }
 
-    public void deleteFloatingIp(IPAddressVO ip) throws Exception{
+    public void deleteFloatingIp(IPAddressVO ip) throws Exception {
         BaseCmd cmd = new DisableStaticNatCmd();
         BaseCmd proxy = ComponentContext.inject(cmd);
         ManagementServerMock.setParameter(proxy, "ipAddressId", BaseCmd.CommandType.LONG, ip.getId());
@@ -336,10 +337,10 @@ public class NetworkProviderTest extends TestCase {
         }
         DomainVO domain = _domainDao.findById(Domain.ROOT_DOMAIN);
         try {
-            net.juniper.contrail.api.types.Domain vncDomain = (net.juniper.contrail.api.types.Domain)
-                    _api.findById(net.juniper.contrail.api.types.Domain.class, domain.getUuid());
+            net.juniper.contrail.api.types.Domain vncDomain =
+                (net.juniper.contrail.api.types.Domain)_api.findById(net.juniper.contrail.api.types.Domain.class, domain.getUuid());
             if (_api.findByName(net.juniper.contrail.api.types.Project.class, vncDomain, name) == null) {
-                 fail("create project failed in vnc");
+                fail("create project failed in vnc");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -356,7 +357,7 @@ public class NetworkProviderTest extends TestCase {
             ManagementServerMock.setParameter(proxy, "id", BaseCmd.CommandType.LONG, project.getId());
             ((DeleteProjectCmd)proxy).execute();
             if (_api.findById(net.juniper.contrail.api.types.Project.class, project.getUuid()) != null) {
-                 fail("unable to delete project in vnc");
+                fail("unable to delete project in vnc");
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -383,7 +384,7 @@ public class NetworkProviderTest extends TestCase {
             fail("unable to create floating ip");
         }
 
-        /* reset ApiServer objects to default config only, so above created objects 
+        /* reset ApiServer objects to default config only, so above created objects
          * exists only in cludstack db but not in api server
          */
         ((ApiConnectorMock)_api).initConfig();
@@ -414,13 +415,13 @@ public class NetworkProviderTest extends TestCase {
         net.setName("test-vnc-only-net-1");
         net.setUuid(UUID.randomUUID().toString());
         net.setParent(project);
-        
+
         NetworkIpam ipam = null;
         try {
             // Find default-network-ipam
             String ipam_id = _api.findByName(NetworkIpam.class, null, "default-network-ipam");
             assertNotNull(ipam_id);
-            ipam = (NetworkIpam) _api.findById(NetworkIpam.class, ipam_id);
+            ipam = (NetworkIpam)_api.findById(NetworkIpam.class, ipam_id);
             assertNotNull(ipam);
         } catch (IOException ex) {
             fail(ex.getMessage());
@@ -462,16 +463,16 @@ public class NetworkProviderTest extends TestCase {
         } catch (IOException ex) {
             fail(ex.getMessage());
         }
-        
+
         //now db sync
         if (_dbSync.syncAll(DBSyncGeneric.SYNC_MODE_UPDATE) == ServerDBSync.SYNC_STATE_OUT_OF_SYNC) {
             s_logger.info("# Cloudstack DB & VNC are out of sync - resync done");
         }
-        
+
         if (_dbSync.syncAll(DBSyncGeneric.SYNC_MODE_CHECK) == ServerDBSync.SYNC_STATE_OUT_OF_SYNC) {
             s_logger.info("# Cloudstack DB & VNC are still out of sync");
-            fail("DB Sync failed"); 
+            fail("DB Sync failed");
         }
     }
-    
+
 }

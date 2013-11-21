@@ -32,48 +32,48 @@ import javax.persistence.Transient;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="event")
+@Table(name = "event")
 public class EventVO implements Event {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id = -1;
 
-    @Column(name="type")
+    @Column(name = "type")
     private String type;
 
-    @Enumerated(value=EnumType.STRING)
-    @Column(name="state")
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "state")
     private State state = State.Completed;
 
-    @Column(name="description", length=1024)
+    @Column(name = "description", length = 1024)
     private String description;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date createDate;
 
-    @Column(name="user_id")
+    @Column(name = "user_id")
     private long userId;
 
-    @Column(name="account_id")
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="level")
+    @Column(name = "level")
     private String level = LEVEL_INFO;
 
-    @Column(name="start_id")
+    @Column(name = "start_id")
     private long startId;
 
-    @Column(name="parameters", length=1024)
+    @Column(name = "parameters", length = 1024)
     private String parameters;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="archived")
+    @Column(name = "archived")
     private boolean archived;
 
     @Transient
@@ -87,16 +87,20 @@ public class EventVO implements Event {
         this.uuid = UUID.randomUUID().toString();
     }
 
+    @Override
     public long getId() {
         return id;
     }
+
     @Override
     public String getType() {
         return type;
     }
+
     public void setType(String type) {
         this.type = type;
     }
+
     @Override
     public State getState() {
         return state;
@@ -110,54 +114,66 @@ public class EventVO implements Event {
     public String getDescription() {
         return description;
     }
+
     public void setDescription(String description) {
         this.description = description;
     }
+
     @Override
     public Date getCreateDate() {
         return createDate;
     }
+
     public void setCreatedDate(Date createdDate) {
         createDate = createdDate;
     }
+
     @Override
     public long getUserId() {
         return userId;
     }
+
     public void setUserId(long userId) {
         this.userId = userId;
     }
+
     @Override
     public long getAccountId() {
         return accountId;
     }
+
     public void setAccountId(long accountId) {
         this.accountId = accountId;
     }
+
     @Override
     public long getDomainId() {
         return domainId;
     }
 
-	public void setDomainId(long domainId) {
-		this.domainId = domainId;
-	}
+    public void setDomainId(long domainId) {
+        this.domainId = domainId;
+    }
 
-	@Override
+    @Override
     public int getTotalSize() {
-		return totalSize;
-	}
-	public void setTotalSize(int totalSize) {
-		this.totalSize = totalSize;
-	}
-	@Override
+        return totalSize;
+    }
+
+    public void setTotalSize(int totalSize) {
+        this.totalSize = totalSize;
+    }
+
+    @Override
     public String getLevel() {
-		return level;
-	}
-	public void setLevel(String level) {
-		this.level = level;
-	}
-	@Override
+        return level;
+    }
+
+    public void setLevel(String level) {
+        this.level = level;
+    }
+
+    @Override
     public long getStartId() {
         return startId;
     }
@@ -170,6 +186,7 @@ public class EventVO implements Event {
     public String getParameters() {
         return parameters;
     }
+
     public void setParameters(String parameters) {
         this.parameters = parameters;
     }

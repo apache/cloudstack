@@ -17,22 +17,25 @@
 
 package com.cloud.storage.listener;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+
+import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventBusException;
+
 import com.cloud.event.EventCategory;
 import com.cloud.server.ManagementServer;
+import com.cloud.server.ManagementService;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Event;
 import com.cloud.storage.Volume.State;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.fsm.StateListener;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 public class VolumeStateListener implements StateListener<State, Event, Volume> {
 
@@ -60,16 +63,13 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
 
         try {
             _eventBus = ComponentContext.getComponent(EventBus.class);
-        } catch(NoSuchBeanDefinitionException nbe) {
+        } catch (NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
         }
 
         String resourceName = getEntityFromClassName(Volume.class.getName());
-        org.apache.cloudstack.framework.events.Event eventMsg =  new org.apache.cloudstack.framework.events.Event(
-                ManagementServer.Name,
-                EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(),
-                event,
-                resourceName,
+        org.apache.cloudstack.framework.events.Event eventMsg =
+            new org.apache.cloudstack.framework.events.Event(ManagementService.Name, EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(), event, resourceName,
                 vo.getUuid());
         Map<String, String> eventDescription = new HashMap<String, String>();
         eventDescription.put("resource", resourceName);
@@ -92,7 +92,7 @@ public class VolumeStateListener implements StateListener<State, Event, Volume> 
         int index = entityClassName.lastIndexOf(".");
         String entityName = entityClassName;
         if (index != -1) {
-            entityName = entityClassName.substring(index+1);
+            entityName = entityClassName.substring(index + 1);
         }
         return entityName;
     }

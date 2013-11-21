@@ -18,52 +18,52 @@ package streamer;
 
 public class FakeSink extends BaseElement {
 
-  public FakeSink(String id) {
-    super(id);
-  }
+    public FakeSink(String id) {
+        super(id);
+    }
 
-  @Override
-  public void handleData(ByteBuffer buf, Link link) {
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Received buf #" + (packetNumber) + " " + buf + ".");
+    @Override
+    public void handleData(ByteBuffer buf, Link link) {
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Received buf #" + (packetNumber) + " " + buf + ".");
 
-    if (buf == null)
-      return;
+        if (buf == null)
+            return;
 
-    // Use packetNumber variable to count incoming packets
-    packetNumber++;
+        // Use packetNumber variable to count incoming packets
+        packetNumber++;
 
-    buf.unref();
-  }
+        buf.unref();
+    }
 
-  @Override
-  public String toString() {
-    return "FakeSink(" + id + ")";
-  }
+    @Override
+    public String toString() {
+        return "FakeSink(" + id + ")";
+    }
 
-  @Override
-  public void handleEvent(Event event, Direction direction) {
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Event received: " + event + ".");
+    @Override
+    public void handleEvent(Event event, Direction direction) {
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Event received: " + event + ".");
 
-  }
+    }
 
-  /**
-   * Example.
-   */
-  public static void main(String args[]) {
+    /**
+     * Example.
+     */
+    public static void main(String args[]) {
 
-    Element sink = new FakeSink("sink") {
-      {
-        verbose = true;
-      }
-    };
+        Element sink = new FakeSink("sink") {
+            {
+                verbose = true;
+            }
+        };
 
-    byte[] data = new byte[] { 1, 2, 3 };
-    ByteBuffer buf = new ByteBuffer(data);
-    sink.setLink(STDIN, new SyncLink(), Direction.IN);
-    sink.getLink(STDIN).sendData(buf);
+        byte[] data = new byte[] {1, 2, 3};
+        ByteBuffer buf = new ByteBuffer(data);
+        sink.setLink(STDIN, new SyncLink(), Direction.IN);
+        sink.getLink(STDIN).sendData(buf);
 
-  }
+    }
 
 }

@@ -19,18 +19,18 @@ package org.apache.cloudstack.api.command.user.resource;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.ResourceLimit;
-import com.cloud.configuration.Resource.ResourceOwnerType;
 
-@APICommand(name = "listResourceLimits", description="Lists resource limits.", responseObject=ResourceLimitResponse.class)
+@APICommand(name = "listResourceLimits", description = "Lists resource limits.", responseObject = ResourceLimitResponse.class)
 public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListResourceLimitsCmd.class.getName());
 
@@ -40,22 +40,17 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="Lists resource limits by ID.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "Lists resource limits by ID.")
     private Long id;
 
-    @Parameter(name=ApiConstants.RESOURCE_TYPE, type=CommandType.INTEGER, description="Type of resource to update. Values are 0, 1, 2, 3, and 4." +
-    		                                                                            "0 - Instance. Number of instances a user can create. " +
-                                                                                        "1 - IP. Number of public IP addresses an account can own. " +
-                                                                                        "2 - Volume. Number of disk volumes an account can own." +
-                                                                                        "3 - Snapshot. Number of snapshots an account can own." +
-                                                                                        "4 - Template. Number of templates an account can register/create." +
-                                                                                        "5 - Project. Number of projects an account can own." +
-                                                                                        "6 - Network. Number of networks an account can own." +
-                                                                                        "7 - VPC. Number of VPC an account can own." +
-                                                                                        "8 - CPU. Number of CPU an account can allocate for his resources." +
-                                                                                        "9 - Memory. Amount of RAM an account can allocate for his resources." +
-                                                                                        "10 - Primary Storage. Amount of Primary storage an account can allocate for his resoruces." +
-                                                                                        "11 - Secondary Storage. Amount of Secondary storage an account can allocate for his resources.")
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.INTEGER, description = "Type of resource to update. Values are 0, 1, 2, 3, and 4."
+        + "0 - Instance. Number of instances a user can create. " + "1 - IP. Number of public IP addresses an account can own. "
+        + "2 - Volume. Number of disk volumes an account can own." + "3 - Snapshot. Number of snapshots an account can own."
+        + "4 - Template. Number of templates an account can register/create." + "5 - Project. Number of projects an account can own."
+        + "6 - Network. Number of networks an account can own." + "7 - VPC. Number of VPC an account can own."
+        + "8 - CPU. Number of CPU an account can allocate for his resources." + "9 - Memory. Amount of RAM an account can allocate for his resources."
+        + "10 - Primary Storage. Amount of Primary storage an account can allocate for his resoruces."
+        + "11 - Secondary Storage. Amount of Secondary storage an account can allocate for his resources.")
     private Integer resourceType;
 
     /////////////////////////////////////////////////////
@@ -80,8 +75,10 @@ public class ListResourceLimitsCmd extends BaseListProjectAndAccountResourcesCmd
     }
 
     @Override
-    public void execute(){
-        List<? extends ResourceLimit> result = _resourceLimitService.searchForLimits(id, finalyzeAccountId(this.getAccountName(), this.getDomainId(), this.getProjectId(), false), this.getDomainId(), resourceType, this.getStartIndex(), this.getPageSizeVal());
+    public void execute() {
+        List<? extends ResourceLimit> result =
+            _resourceLimitService.searchForLimits(id, finalyzeAccountId(this.getAccountName(), this.getDomainId(), this.getProjectId(), false), this.getDomainId(),
+                resourceType, this.getStartIndex(), this.getPageSizeVal());
         ListResponse<ResourceLimitResponse> response = new ListResponse<ResourceLimitResponse>();
         List<ResourceLimitResponse> limitResponses = new ArrayList<ResourceLimitResponse>();
         for (ResourceLimit limit : result) {

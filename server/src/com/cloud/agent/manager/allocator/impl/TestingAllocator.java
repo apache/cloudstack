@@ -34,28 +34,27 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value={HostAllocator.class})
+@Local(value = {HostAllocator.class})
 public class TestingAllocator extends AdapterBase implements HostAllocator {
-    @Inject HostDao _hostDao;
+    @Inject
+    HostDao _hostDao;
     Long _computingHost;
     Long _storageHost;
     Long _routingHost;
 
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type,
-            ExcludeList avoid, int returnUpTo) {
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo) {
         return allocateTo(vmProfile, plan, type, avoid, returnUpTo, true);
     }
 
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type,
-            ExcludeList avoid, List<? extends Host> hosts, int returnUpTo, boolean considerReservedCapacity) {
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
+        boolean considerReservedCapacity) {
         return allocateTo(vmProfile, plan, type, avoid, returnUpTo, considerReservedCapacity);
     }
 
     @Override
-    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type,
-            ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
+    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
         List<Host> availableHosts = new ArrayList<Host>();
         Host host = null;
         if (type == Host.Type.Routing && _routingHost != null) {
@@ -63,7 +62,7 @@ public class TestingAllocator extends AdapterBase implements HostAllocator {
         } else if (type == Host.Type.Storage && _storageHost != null) {
             host = _hostDao.findById(_storageHost);
         }
-        if(host != null){
+        if (host != null) {
             availableHosts.add(host);
         }
         return availableHosts;

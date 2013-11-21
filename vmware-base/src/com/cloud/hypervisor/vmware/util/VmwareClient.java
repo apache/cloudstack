@@ -77,19 +77,19 @@ public class VmwareClient {
             return;
         }
     }
-    
+
     static {
-    	try {
-			trustAllHttpsCertificates();
-	        HostnameVerifier hv = new HostnameVerifier() {
-	            @Override
-	            public boolean verify(String urlHostName, SSLSession session) {
-	                return true;
-	            }
-	        };
-	        HttpsURLConnection.setDefaultHostnameVerifier(hv);
-		} catch (Exception e) {
-		}   	
+        try {
+            trustAllHttpsCertificates();
+            HostnameVerifier hv = new HostnameVerifier() {
+                @Override
+                public boolean verify(String urlHostName, SSLSession session) {
+                    return true;
+                }
+            };
+            HttpsURLConnection.setDefaultHostnameVerifier(hv);
+        } catch (Exception e) {
+        }
     }
 
     private static void trustAllHttpsCertificates() throws Exception {
@@ -126,9 +126,9 @@ public class VmwareClient {
         SVC_INST_REF.setType(SVC_INST_NAME);
         SVC_INST_REF.setValue(SVC_INST_NAME);
 
-    	vimService = new VimService();
+        vimService = new VimService();
         vimPort = vimService.getVimPort();
-        Map<String, Object> ctxt = ((BindingProvider) vimPort).getRequestContext();
+        Map<String, Object> ctxt = ((BindingProvider)vimPort).getRequestContext();
 
         ctxt.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, url);
         ctxt.put(BindingProvider.SESSION_MAINTAIN_PROPERTY, true);
@@ -139,9 +139,8 @@ public class VmwareClient {
         ServiceContent serviceContent = vimPort.retrieveServiceContent(SVC_INST_REF);
 
         // Extract a cookie. See vmware sample program com.vmware.httpfileaccess.GetVMFiles
-        Map<String, List<String>> headers = (Map<String, List<String>>) ((BindingProvider) vimPort)
-                .getResponseContext().get(MessageContext.HTTP_RESPONSE_HEADERS);
-        List<String> cookies = (List<String>) headers.get("Set-cookie");
+        Map<String, List<String>> headers = (Map<String, List<String>>)((BindingProvider)vimPort).getResponseContext().get(MessageContext.HTTP_RESPONSE_HEADERS);
+        List<String> cookies = headers.get("Set-cookie");
         String cookieValue = cookies.get(0);
         StringTokenizer tokenizer = new StringTokenizer(cookieValue, ";");
         cookieValue = tokenizer.nextToken();
@@ -175,11 +174,11 @@ public class VmwareClient {
      * @return Service instance content
      */
     public ServiceContent getServiceContent() {
-    	
+
         try {
-			return vimPort.retrieveServiceContent(SVC_INST_REF);
-		} catch (RuntimeFaultFaultMsg e) {
-		}
+            return vimPort.retrieveServiceContent(SVC_INST_REF);
+        } catch (RuntimeFaultFaultMsg e) {
+        }
         return null;
     }
 
@@ -204,15 +203,15 @@ public class VmwareClient {
         return getServiceContent().getRootFolder();
     }
 
-	public boolean validate() {
-		//
-		// There is no official API to validate an open vCenter API session. This is hacking way to tell if
-		// an open vCenter API session is still valid for making calls.
-		//
-		// It will give false result if there really does not exist data-center in the inventory, however, I consider
-		// this really is not possible in production deployment
-		//
-		
+    public boolean validate() {
+        //
+        // There is no official API to validate an open vCenter API session. This is hacking way to tell if
+        // an open vCenter API session is still valid for making calls.
+        //
+        // It will give false result if there really does not exist data-center in the inventory, however, I consider
+        // this really is not possible in production deployment
+        //
+
         // Create PropertySpecs
         PropertySpec pSpec = new PropertySpec();
         pSpec.setType("Datacenter");
@@ -231,16 +230,16 @@ public class VmwareClient {
         specArr.add(spec);
 
         try {
-        	List<ObjectContent> ocary = vimPort.retrieveProperties(getPropCol(), specArr);
-        	if(ocary != null && ocary.size() > 0)
-        		return true;
-        } catch(Exception e) {
-        	return false;
+            List<ObjectContent> ocary = vimPort.retrieveProperties(getPropCol(), specArr);
+            if (ocary != null && ocary.size() > 0)
+                return true;
+        } catch (Exception e) {
+            return false;
         }
-        
+
         return false;
-	}
-    
+    }
+
     /**
      * Get the property value of a managed object.
      *
@@ -273,12 +272,10 @@ public class VmwareClient {
                 Class dpCls = propertyValue.getClass();
                 String dynamicPropertyName = dpCls.getName();
                 if (dynamicPropertyName.indexOf("ArrayOf") != -1) {
-                    String methodName = "get"
-                            + dynamicPropertyName
-                                    .substring(dynamicPropertyName.indexOf("ArrayOf") + "ArrayOf".length(), dynamicPropertyName.length());
+                    String methodName = "get" + dynamicPropertyName.substring(dynamicPropertyName.indexOf("ArrayOf") + "ArrayOf".length(), dynamicPropertyName.length());
 
                     Method getMorMethod = dpCls.getDeclaredMethod(methodName, null);
-                    propertyValue = getMorMethod.invoke(propertyValue, (Object[]) null);
+                    propertyValue = getMorMethod.invoke(propertyValue, (Object[])null);
                 }
             }
         }
@@ -300,7 +297,7 @@ public class VmwareClient {
         List<PropertyFilterSpec> specArr = new ArrayList<PropertyFilterSpec>();
         specArr.add(spec);
 
-        return vimPort.retrieveProperties(getPropCol(), specArr);    
+        return vimPort.retrieveProperties(getPropCol(), specArr);
     }
 
     /**
@@ -320,14 +317,15 @@ public class VmwareClient {
         boolean retVal = false;
 
         // info has a property - state for state of the task
-        Object[] result = waitForValues(task, new String[] { "info.state", "info.error" }, new String[] { "state" }, new Object[][] { new Object[] {
-                TaskInfoState.SUCCESS, TaskInfoState.ERROR } });
+        Object[] result =
+            waitForValues(task, new String[] {"info.state", "info.error"}, new String[] {"state"}, new Object[][] {new Object[] {TaskInfoState.SUCCESS,
+                TaskInfoState.ERROR}});
 
         if (result[0].equals(TaskInfoState.SUCCESS)) {
             retVal = true;
         }
         if (result[1] instanceof LocalizedMethodFault) {
-            throw new RuntimeException(((LocalizedMethodFault) result[1]).getLocalizedMessage());
+            throw new RuntimeException(((LocalizedMethodFault)result[1]).getLocalizedMessage());
         }
         return retVal;
     }
@@ -350,8 +348,8 @@ public class VmwareClient {
      * @throws InvalidPropertyFaultMsg
      * @throws InvalidCollectorVersionFaultMsg
      */
-    private Object[] waitForValues(ManagedObjectReference objmor, String[] filterProps, String[] endWaitProps, Object[][] expectedVals)
-            throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg {
+    private Object[] waitForValues(ManagedObjectReference objmor, String[] filterProps, String[] endWaitProps, Object[][] expectedVals) throws InvalidPropertyFaultMsg,
+        RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg {
         // version string is initially null
         String version = "";
         Object[] endVals = new Object[endWaitProps.length];
@@ -391,8 +389,7 @@ public class VmwareClient {
                 objupary = filtup.getObjectSet();
                 for (ObjectUpdate objup : objupary) {
                     // TODO: Handle all "kind"s of updates.
-                    if (objup.getKind() == ObjectUpdateKind.MODIFY || objup.getKind() == ObjectUpdateKind.ENTER
-                            || objup.getKind() == ObjectUpdateKind.LEAVE) {
+                    if (objup.getKind() == ObjectUpdateKind.MODIFY || objup.getKind() == ObjectUpdateKind.ENTER || objup.getKind() == ObjectUpdateKind.LEAVE) {
                         propchgary = objup.getChangeSet();
                         for (PropertyChange propchg : propchgary) {
                             updateValues(endWaitProps, endVals, propchg);
@@ -436,118 +433,117 @@ public class VmwareClient {
         SelectionSpec genericSpec = new SelectionSpec();
         genericSpec.setName(name);
         return genericSpec;
-     }
+    }
 
     /*
      * @return An array of SelectionSpec covering VM, Host, Resource pool,
      * Cluster Compute Resource and Datastore.
      */
     private List<SelectionSpec> constructCompleteTraversalSpec() {
-       // ResourcePools to VM: RP -> VM
-       TraversalSpec rpToVm = new TraversalSpec();
-       rpToVm.setName("rpToVm");
-       rpToVm.setType("ResourcePool");
-       rpToVm.setPath("vm");
-       rpToVm.setSkip(Boolean.FALSE);
+        // ResourcePools to VM: RP -> VM
+        TraversalSpec rpToVm = new TraversalSpec();
+        rpToVm.setName("rpToVm");
+        rpToVm.setType("ResourcePool");
+        rpToVm.setPath("vm");
+        rpToVm.setSkip(Boolean.FALSE);
 
-       // VirtualApp to VM: vApp -> VM
-       TraversalSpec vAppToVM = new TraversalSpec();
-       vAppToVM.setName("vAppToVM");
-       vAppToVM.setType("VirtualApp");
-       vAppToVM.setPath("vm");
+        // VirtualApp to VM: vApp -> VM
+        TraversalSpec vAppToVM = new TraversalSpec();
+        vAppToVM.setName("vAppToVM");
+        vAppToVM.setType("VirtualApp");
+        vAppToVM.setPath("vm");
 
-       // Host to VM: HostSystem -> VM
-       TraversalSpec hToVm = new TraversalSpec();
-       hToVm.setType("HostSystem");
-       hToVm.setPath("vm");
-       hToVm.setName("hToVm");
-       hToVm.getSelectSet().add(getSelectionSpec("VisitFolders"));
-       hToVm.setSkip(Boolean.FALSE);
+        // Host to VM: HostSystem -> VM
+        TraversalSpec hToVm = new TraversalSpec();
+        hToVm.setType("HostSystem");
+        hToVm.setPath("vm");
+        hToVm.setName("hToVm");
+        hToVm.getSelectSet().add(getSelectionSpec("VisitFolders"));
+        hToVm.setSkip(Boolean.FALSE);
 
-       // DataCenter to DataStore: DC -> DS
-       TraversalSpec dcToDs = new TraversalSpec();
-       dcToDs.setType("Datacenter");
-       dcToDs.setPath("datastore");
-       dcToDs.setName("dcToDs");
-       dcToDs.setSkip(Boolean.FALSE);
+        // DataCenter to DataStore: DC -> DS
+        TraversalSpec dcToDs = new TraversalSpec();
+        dcToDs.setType("Datacenter");
+        dcToDs.setPath("datastore");
+        dcToDs.setName("dcToDs");
+        dcToDs.setSkip(Boolean.FALSE);
 
-       // Recurse through all ResourcePools
-       TraversalSpec rpToRp = new TraversalSpec();
-       rpToRp.setType("ResourcePool");
-       rpToRp.setPath("resourcePool");
-       rpToRp.setSkip(Boolean.FALSE);
-       rpToRp.setName("rpToRp");
-       rpToRp.getSelectSet().add(getSelectionSpec("rpToRp"));
+        // Recurse through all ResourcePools
+        TraversalSpec rpToRp = new TraversalSpec();
+        rpToRp.setType("ResourcePool");
+        rpToRp.setPath("resourcePool");
+        rpToRp.setSkip(Boolean.FALSE);
+        rpToRp.setName("rpToRp");
+        rpToRp.getSelectSet().add(getSelectionSpec("rpToRp"));
 
-       TraversalSpec crToRp = new TraversalSpec();
-       crToRp.setType("ComputeResource");
-       crToRp.setPath("resourcePool");
-       crToRp.setSkip(Boolean.FALSE);
-       crToRp.setName("crToRp");
-       crToRp.getSelectSet().add(getSelectionSpec("rpToRp"));
+        TraversalSpec crToRp = new TraversalSpec();
+        crToRp.setType("ComputeResource");
+        crToRp.setPath("resourcePool");
+        crToRp.setSkip(Boolean.FALSE);
+        crToRp.setName("crToRp");
+        crToRp.getSelectSet().add(getSelectionSpec("rpToRp"));
 
-       TraversalSpec crToH = new TraversalSpec();
-       crToH.setSkip(Boolean.FALSE);
-       crToH.setType("ComputeResource");
-       crToH.setPath("host");
-       crToH.setName("crToH");
+        TraversalSpec crToH = new TraversalSpec();
+        crToH.setSkip(Boolean.FALSE);
+        crToH.setType("ComputeResource");
+        crToH.setPath("host");
+        crToH.setName("crToH");
 
-       TraversalSpec dcToHf = new TraversalSpec();
-       dcToHf.setSkip(Boolean.FALSE);
-       dcToHf.setType("Datacenter");
-       dcToHf.setPath("hostFolder");
-       dcToHf.setName("dcToHf");
-       dcToHf.getSelectSet().add(getSelectionSpec("VisitFolders"));
+        TraversalSpec dcToHf = new TraversalSpec();
+        dcToHf.setSkip(Boolean.FALSE);
+        dcToHf.setType("Datacenter");
+        dcToHf.setPath("hostFolder");
+        dcToHf.setName("dcToHf");
+        dcToHf.getSelectSet().add(getSelectionSpec("VisitFolders"));
 
-       TraversalSpec vAppToRp = new TraversalSpec();
-       vAppToRp.setName("vAppToRp");
-       vAppToRp.setType("VirtualApp");
-       vAppToRp.setPath("resourcePool");
-       vAppToRp.getSelectSet().add(getSelectionSpec("rpToRp"));
+        TraversalSpec vAppToRp = new TraversalSpec();
+        vAppToRp.setName("vAppToRp");
+        vAppToRp.setType("VirtualApp");
+        vAppToRp.setPath("resourcePool");
+        vAppToRp.getSelectSet().add(getSelectionSpec("rpToRp"));
 
-       TraversalSpec dcToVmf = new TraversalSpec();
-       dcToVmf.setType("Datacenter");
-       dcToVmf.setSkip(Boolean.FALSE);
-       dcToVmf.setPath("vmFolder");
-       dcToVmf.setName("dcToVmf");
-       dcToVmf.getSelectSet().add(getSelectionSpec("VisitFolders"));
+        TraversalSpec dcToVmf = new TraversalSpec();
+        dcToVmf.setType("Datacenter");
+        dcToVmf.setSkip(Boolean.FALSE);
+        dcToVmf.setPath("vmFolder");
+        dcToVmf.setName("dcToVmf");
+        dcToVmf.getSelectSet().add(getSelectionSpec("VisitFolders"));
 
-       // For Folder -> Folder recursion
-       TraversalSpec visitFolders = new TraversalSpec();
-       visitFolders.setType("Folder");
-       visitFolders.setPath("childEntity");
-       visitFolders.setSkip(Boolean.FALSE);
-       visitFolders.setName("VisitFolders");
-       List<SelectionSpec> sspecarrvf = new ArrayList<SelectionSpec>();
-       sspecarrvf.add(getSelectionSpec("crToRp"));
-       sspecarrvf.add(getSelectionSpec("crToH"));
-       sspecarrvf.add(getSelectionSpec("dcToVmf"));
-       sspecarrvf.add(getSelectionSpec("dcToHf"));
-       sspecarrvf.add(getSelectionSpec("vAppToRp"));
-       sspecarrvf.add(getSelectionSpec("vAppToVM"));
-       sspecarrvf.add(getSelectionSpec("dcToDs"));
-       sspecarrvf.add(getSelectionSpec("hToVm"));
-       sspecarrvf.add(getSelectionSpec("rpToVm"));
-       sspecarrvf.add(getSelectionSpec("VisitFolders"));
+        // For Folder -> Folder recursion
+        TraversalSpec visitFolders = new TraversalSpec();
+        visitFolders.setType("Folder");
+        visitFolders.setPath("childEntity");
+        visitFolders.setSkip(Boolean.FALSE);
+        visitFolders.setName("VisitFolders");
+        List<SelectionSpec> sspecarrvf = new ArrayList<SelectionSpec>();
+        sspecarrvf.add(getSelectionSpec("crToRp"));
+        sspecarrvf.add(getSelectionSpec("crToH"));
+        sspecarrvf.add(getSelectionSpec("dcToVmf"));
+        sspecarrvf.add(getSelectionSpec("dcToHf"));
+        sspecarrvf.add(getSelectionSpec("vAppToRp"));
+        sspecarrvf.add(getSelectionSpec("vAppToVM"));
+        sspecarrvf.add(getSelectionSpec("dcToDs"));
+        sspecarrvf.add(getSelectionSpec("hToVm"));
+        sspecarrvf.add(getSelectionSpec("rpToVm"));
+        sspecarrvf.add(getSelectionSpec("VisitFolders"));
 
-       visitFolders.getSelectSet().addAll(sspecarrvf);
+        visitFolders.getSelectSet().addAll(sspecarrvf);
 
-       List<SelectionSpec> resultspec = new ArrayList<SelectionSpec>();
-       resultspec.add(visitFolders);
-       resultspec.add(crToRp);
-       resultspec.add(crToH);
-       resultspec.add(dcToVmf);
-       resultspec.add(dcToHf);
-       resultspec.add(vAppToRp);
-       resultspec.add(vAppToVM);
-       resultspec.add(dcToDs);
-       resultspec.add(hToVm);
-       resultspec.add(rpToVm);
-       resultspec.add(rpToRp);
+        List<SelectionSpec> resultspec = new ArrayList<SelectionSpec>();
+        resultspec.add(visitFolders);
+        resultspec.add(crToRp);
+        resultspec.add(crToH);
+        resultspec.add(dcToVmf);
+        resultspec.add(dcToHf);
+        resultspec.add(vAppToRp);
+        resultspec.add(vAppToVM);
+        resultspec.add(dcToDs);
+        resultspec.add(hToVm);
+        resultspec.add(rpToVm);
+        resultspec.add(rpToRp);
 
-       return resultspec;
+        return resultspec;
     }
-
 
     /**
      * Get the ManagedObjectReference for an item under the
@@ -593,7 +589,7 @@ public class VmwareClient {
             List<DynamicProperty> propary = oc.getPropSet();
             if (type == null || type.equals(mor.getType())) {
                 if (propary.size() > 0) {
-                    String propval = (String) propary.get(0).getVal();
+                    String propval = (String)propary.get(0).getVal();
                     if (propval != null && name.equalsIgnoreCase(propval))
                         return mor;
                 }
@@ -610,12 +606,12 @@ public class VmwareClient {
      * @return the ManagedObjectReference for that property.
      */
     public ManagedObjectReference getMoRefProp(ManagedObjectReference objMor, String propName) throws Exception {
-       Object props = getDynamicProperty(objMor, propName);
-       ManagedObjectReference propmor = null;
-       if (!props.getClass().isArray()) {
-          propmor = (ManagedObjectReference)props;
-       }
-       return propmor;
+        Object props = getDynamicProperty(objMor, propName);
+        ManagedObjectReference propmor = null;
+        if (!props.getClass().isArray()) {
+            propmor = (ManagedObjectReference)props;
+        }
+        return propmor;
     }
 
     public void setVcenterSessionTimeout(int vCenterSessionTimeout) {

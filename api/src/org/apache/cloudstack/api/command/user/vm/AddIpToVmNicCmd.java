@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import com.cloud.vm.NicSecondaryIp;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -44,6 +42,7 @@ import com.cloud.network.Network;
 import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
+import com.cloud.vm.NicSecondaryIp;
 
 @APICommand(name = "addIpToNic", description = "Assigns secondary IP to NIC", responseObject = NicSecondaryIpResponse.class)
 public class AddIpToVmNicCmd extends BaseAsyncCmd {
@@ -53,13 +52,15 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.NIC_ID, type=CommandType.UUID, entityType = NicResponse.class, required = true,
-            description="the ID of the nic to which you want to assign private IP")
-            private Long nicId;
+    @Parameter(name = ApiConstants.NIC_ID,
+               type = CommandType.UUID,
+               entityType = NicResponse.class,
+               required = true,
+               description = "the ID of the nic to which you want to assign private IP")
+    private Long nicId;
 
-    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, required = false,
-            description = "Secondary IP Address")
-            private String ipAddr;
+    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, required = false, description = "Secondary IP Address")
+    private String ipAddr;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -98,7 +99,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
         return nicId;
     }
 
-    public String getIpaddress () {
+    public String getIpaddress() {
         if (ipAddr != null) {
             return ipAddr;
         } else {
@@ -125,13 +126,12 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "associating ip to nic id: " + getNetworkId() + " in zone " + getZoneId();
+        return "associating ip to nic id: " + getNetworkId() + " in zone " + getZoneId();
     }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
 
     @Override
     public String getCommandName() {
@@ -143,10 +143,9 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, ResourceAllocationException,
-    ConcurrentOperationException, InsufficientCapacityException {
+    public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
 
-        CallContext.current().setEventDetails("Nic Id: " + getNicId() );
+        CallContext.current().setEventDetails("Nic Id: " + getNicId());
         String ip;
         NicSecondaryIp result;
         String secondaryIp = null;
@@ -157,7 +156,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
         }
 
         try {
-            result =  _networkService.allocateSecondaryGuestIP(_accountService.getAccount(getEntityOwnerId()),  getZoneId(), getNicId(), getNetworkId(), getIpaddress());
+            result = _networkService.allocateSecondaryGuestIP(_accountService.getAccount(getEntityOwnerId()), getZoneId(), getNicId(), getNetworkId(), getIpaddress());
         } catch (InsufficientAddressCapacityException e) {
             throw new InvalidParameterValueException("Allocating guest ip for nic failed");
         }
@@ -167,7 +166,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCmd {
             if (getNetworkType() == NetworkType.Basic) {
                 // add security group rules for the secondary ip addresses
                 boolean success = false;
-                success = _securityGroupService.securityGroupRulesForVmSecIp(getNicId(), getNetworkId(), secondaryIp, (boolean) true);
+                success = _securityGroupService.securityGroupRulesForVmSecIp(getNicId(), getNetworkId(), secondaryIp, true);
                 if (success == false) {
                     throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to set security group rules for the secondary ip");
                 }

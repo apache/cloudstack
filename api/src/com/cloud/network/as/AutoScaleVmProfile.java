@@ -29,6 +29,7 @@ import com.cloud.utils.Pair;
  */
 public interface AutoScaleVmProfile extends ControlledEntity, InternalIdentity {
 
+    @Override
     public long getId();
 
     public String getUuid();

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -27,14 +29,12 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 
-@APICommand(name = "deleteNetwork", description="Deletes a network", responseObject=SuccessResponse.class)
-public class DeleteNetworkCmd extends BaseAsyncCmd{
+@APICommand(name = "deleteNetwork", description = "Deletes a network", responseObject = SuccessResponse.class)
+public class DeleteNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteNetworkOfferingCmd.class.getName());
     private static final String s_name = "deletenetworkresponse";
 
@@ -42,10 +42,8 @@ public class DeleteNetworkCmd extends BaseAsyncCmd{
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = NetworkResponse.class,
-            required=true, description="the ID of the network")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "the ID of the network")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -54,7 +52,6 @@ public class DeleteNetworkCmd extends BaseAsyncCmd{
     public Long getId() {
         return id;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -66,7 +63,7 @@ public class DeleteNetworkCmd extends BaseAsyncCmd{
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         CallContext.current().setEventDetails("Network Id: " + id);
         boolean result = _networkService.deleteNetwork(id);
         if (result) {
@@ -76,7 +73,6 @@ public class DeleteNetworkCmd extends BaseAsyncCmd{
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete network");
         }
     }
-
 
     @Override
     public String getSyncObjType() {
@@ -95,7 +91,7 @@ public class DeleteNetworkCmd extends BaseAsyncCmd{
 
     @Override
     public String getEventDescription() {
-        return  "Deleting network: " + id;
+        return "Deleting network: " + id;
     }
 
     @Override

@@ -40,8 +40,9 @@ import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
-@APICommand(name = "createNetworkACL", description = "Creates a ACL rule in the given network (the network has to belong to VPC)",
-responseObject = NetworkACLItemResponse.class)
+@APICommand(name = "createNetworkACL",
+            description = "Creates a ACL rule in the given network (the network has to belong to VPC)",
+            responseObject = NetworkACLItemResponse.class)
 public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkACLCmd.class.getName());
 
@@ -51,8 +52,10 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description =
-            "the protocol for the ACL rule. Valid values are TCP/UDP/ICMP/ALL or valid protocol number")
+    @Parameter(name = ApiConstants.PROTOCOL,
+               type = CommandType.STRING,
+               required = true,
+               description = "the protocol for the ACL rule. Valid values are TCP/UDP/ICMP/ALL or valid protocol number")
     private String protocol;
 
     @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "the starting port of ACL")
@@ -61,8 +64,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "the ending port of ACL")
     private Integer publicEndPort;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING,
-            description = "the cidr list to allow traffic from/to")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to allow traffic from/to")
     private List<String> cidrlist;
 
     @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the icmp message being sent")
@@ -71,22 +73,26 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this icmp message")
     private Integer icmpCode;
 
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.UUID, entityType = NetworkResponse.class,
-        description="The network of the vm the ACL will be created for")
+    @Parameter(name = ApiConstants.NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = NetworkResponse.class,
+               description = "The network of the vm the ACL will be created for")
     private Long networkId;
 
-    @Parameter(name=ApiConstants.ACL_ID, type=CommandType.UUID, entityType = NetworkACLResponse.class,
-            description="The network of the vm the ACL will be created for")
+    @Parameter(name = ApiConstants.ACL_ID,
+               type = CommandType.UUID,
+               entityType = NetworkACLResponse.class,
+               description = "The network of the vm the ACL will be created for")
     private Long aclId;
 
-    @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, description="the traffic type for the ACL," +
-            "can be Ingress or Egress, defaulted to Ingress if not specified")
+    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "the traffic type for the ACL,"
+        + "can be Ingress or Egress, defaulted to Ingress if not specified")
     private String trafficType;
 
-    @Parameter(name=ApiConstants.NUMBER, type=CommandType.INTEGER, description="The network of the vm the ACL will be created for")
+    @Parameter(name = ApiConstants.NUMBER, type = CommandType.INTEGER, description = "The network of the vm the ACL will be created for")
     private Integer number;
 
-    @Parameter(name=ApiConstants.ACTION, type=CommandType.STRING, description="scl entry action, allow or deny")
+    @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "scl entry action, allow or deny")
     private String action;
 
     // ///////////////////////////////////////////////////
@@ -94,15 +100,15 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     // ///////////////////////////////////////////////////
 
     public String getProtocol() {
-    	String p = protocol.trim();
-    	// Deal with ICMP(protocol number 1) specially because it need to be paired with icmp type and code
-        if(StringUtils.isNumeric(p)){
+        String p = protocol.trim();
+        // Deal with ICMP(protocol number 1) specially because it need to be paired with icmp type and code
+        if (StringUtils.isNumeric(p)) {
             int protoNumber = Integer.parseInt(p);
             if (protoNumber == 1) {
-            	p = "icmp";
+                p = "icmp";
             }
-    	}
-    	return p;
+        }
+        return p;
     }
 
     public List<String> getSourceCidrList() {
@@ -193,7 +199,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
         if (icmpType != null) {
             return icmpType;
         } else if (getProtocol().equalsIgnoreCase(NetUtils.ICMP_PROTO)) {
-                return -1;
+            return -1;
 
         }
         return null;
@@ -235,4 +241,3 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     }
 
 }
-

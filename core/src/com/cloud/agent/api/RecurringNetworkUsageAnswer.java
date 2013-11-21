@@ -16,19 +16,17 @@
 // under the License.
 package com.cloud.agent.api;
 
-
 public class RecurringNetworkUsageAnswer extends Answer {
-	
 
-	protected RecurringNetworkUsageAnswer() {
+    protected RecurringNetworkUsageAnswer() {
     }
-	
-	public RecurringNetworkUsageAnswer(Command command) {
-		super(command);
-	}
-	
-	public RecurringNetworkUsageAnswer(Command command, Exception e) {
-		super(command, e);
-	}
-	
+
+    public RecurringNetworkUsageAnswer(Command command) {
+        super(command);
+    }
+
+    public RecurringNetworkUsageAnswer(Command command, Exception e) {
+        super(command, e);
+    }
+
 }

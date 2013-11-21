@@ -20,22 +20,22 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackPasswordData {
-	
-	@SerializedName(ApiConstants.ENCRYPTED_PASSWORD)
-	private String encryptedPassword;
 
-	/**
-	 * 
-	 */
-	public CloudStackPasswordData() {
-		// TODO Auto-generated constructor stub
-	}
+    @SerializedName(ApiConstants.ENCRYPTED_PASSWORD)
+    private String encryptedPassword;
 
-	/**
-	 * @return the encryptedpassword
-	 */
-	public String getEncryptedpassword() {
-		return encryptedPassword;
-	}
+    /**
+     *
+     */
+    public CloudStackPasswordData() {
+        // TODO Auto-generated constructor stub
+    }
+
+    /**
+     * @return the encryptedpassword
+     */
+    public String getEncryptedpassword() {
+        return encryptedPassword;
+    }
 
 }

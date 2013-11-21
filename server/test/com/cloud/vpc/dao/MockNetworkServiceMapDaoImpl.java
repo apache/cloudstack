@@ -29,7 +29,7 @@ import com.cloud.utils.db.GenericDaoBase;
 
 @Local(value = NetworkServiceMapDao.class)
 @DB()
-public class MockNetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO, Long> implements NetworkServiceMapDao{
+public class MockNetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceMapVO, Long> implements NetworkServiceMapDao {
 
     /* (non-Javadoc)
      * @see com.cloud.network.dao.NetworkServiceMapDao#areServicesSupportedInNetwork(long, com.cloud.network.Network.Service[])
@@ -75,7 +75,7 @@ public class MockNetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceM
     @Override
     public void deleteByNetworkId(long networkId) {
         // TODO Auto-generated method stub
-        
+
     }
 
     /* (non-Javadoc)

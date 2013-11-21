@@ -28,93 +28,92 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="instance_group")
-@SecondaryTable(name="account",
-        pkJoinColumns={@PrimaryKeyJoinColumn(name="account_id", referencedColumnName="id")})
+@Table(name = "instance_group")
+@SecondaryTable(name = "account", pkJoinColumns = {@PrimaryKeyJoinColumn(name = "account_id", referencedColumnName = "id")})
 public class InstanceGroupVO implements InstanceGroup {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
-    
-    @Column(name="name")
+
+    @Column(name = "name")
     String name;
-    
-    @Column(name="account_id")
+
+    @Column(name = "account_id")
     private long accountId;
-    
-    @Column(name="domain_id", table="account", insertable=false, updatable=false)
+
+    @Column(name = "domain_id", table = "account", insertable = false, updatable = false)
     private long domainId;
-    
-    @Column(name=GenericDao.REMOVED_COLUMN)
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
-    
-	@Column(name="type", table="account", insertable=false, updatable=false)
-	private short accountType;
-    
+
+    @Column(name = "type", table = "account", insertable = false, updatable = false)
+    private short accountType;
+
     public InstanceGroupVO(String name, long accountId) {
         this.name = name;
         this.accountId = accountId;
         this.uuid = UUID.randomUUID().toString();
     }
-    
+
     protected InstanceGroupVO() {
         super();
     }
-    
+
     @Override
     public long getId() {
-    	return id;
+        return id;
     }
-    
+
     @Override
     public String getName() {
-    	return name; 
+        return name;
     }
-    
+
     @Override
     public long getAccountId() {
         return accountId;
     }
-    
+
+    @Override
     public long getDomainId() {
         return domainId;
     }
-    
+
     public Date getRemoved() {
         return removed;
     }
-    
-	public Date getCreated() {
-		return created;
-	}
-    
+
+    @Override
+    public Date getCreated() {
+        return created;
+    }
+
     public void setName(String name) {
-    	this.name = name;
+        this.name = name;
     }
 
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
-    
-	@Override
-	public Short getAccountType() {
-		return accountType;
-	}
+
+    @Override
+    public Short getAccountType() {
+        return accountType;
+    }
 }

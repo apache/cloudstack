@@ -41,12 +41,12 @@ public interface UserIpv6Address extends ControlledEntity, Identity, InternalIde
     State getState();
 
     Long getNetworkId();
-    
+
     Long getSourceNetworkId();
 
     Long getPhysicalNetworkId();
 
     void setState(UserIpv6Address.State state);
-    
+
     String getMacAddress();
 }

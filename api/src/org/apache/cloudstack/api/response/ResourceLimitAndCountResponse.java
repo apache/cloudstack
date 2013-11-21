@@ -15,14 +15,13 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 /**This interface is implemented by AccountResponse and ProjectResponse as both of them
 have limits and resource count **/
 
 package org.apache.cloudstack.api.response;
 
 public interface ResourceLimitAndCountResponse {
-    
+
     public void setNetworkLimit(String networkLimit);
 
     public void setNetworkTotal(Long networkTotal);
@@ -51,14 +50,14 @@ public interface ResourceLimitAndCountResponse {
 
     public void setPrimaryStorageTotal(Long primaryStorageTotal);
 
-    public void setPrimaryStorageAvailable(String primaryStorageAvailable) ;
+    public void setPrimaryStorageAvailable(String primaryStorageAvailable);
 
     public void setSecondaryStorageLimit(String secondaryStorageLimit);
-    
+
     public void setSecondaryStorageTotal(Long secondaryStorageTotal);
 
     public void setSecondaryStorageAvailable(String secondaryStorageAvailable);
-    
+
     public void setVmLimit(String vmLimit);
 
     public void setVmTotal(Long vmTotal);

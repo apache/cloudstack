@@ -24,7 +24,7 @@ import com.cloud.utils.component.Manager;
 /**
  * Maintains vm data (user data, meta-data, password) that can be fetched via
  * HTTP by user vms
- * 
+ *
  */
 public interface VmDataServer extends Manager {
 

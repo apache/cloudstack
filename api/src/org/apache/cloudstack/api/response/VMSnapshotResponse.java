@@ -19,16 +19,17 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
 import com.cloud.vm.snapshot.VMSnapshot;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=VMSnapshot.class)
-public class VMSnapshotResponse extends BaseResponse implements ControlledEntityResponse{
+@EntityReference(value = VMSnapshot.class)
+public class VMSnapshotResponse extends BaseResponse implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the vm snapshot")
@@ -60,38 +61,40 @@ public class VMSnapshotResponse extends BaseResponse implements ControlledEntity
 
     @SerializedName("parent")
     @Param(description = "the parent ID of the vm snapshot")
-    private String parent; 
-    
+    private String parent;
+
     @SerializedName("parentName")
     @Param(description = "the parent displayName of the vm snapshot")
-    private String parentName; 
-    
+    private String parentName;
+
     @SerializedName("current")
     @Param(description = "indiates if this is current snapshot")
-    private Boolean current; 
-    
+    private Boolean current;
+
     @SerializedName("type")
     @Param(description = "VM Snapshot type")
-    private String type; 
-    
+    private String type;
+
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "the create date of the vm snapshot")
     private Date created;
-    
+
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account associated with the disk volume")
     private String accountName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the vpn")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the vpn")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vpn")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the vpn")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the ID of the domain associated with the disk volume")
     private String domainId;
-    
+
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain associated with the disk volume")
     private String domainName;
@@ -172,7 +175,7 @@ public class VMSnapshotResponse extends BaseResponse implements ControlledEntity
     public void setCurrent(Boolean current) {
         this.current = current;
     }
-    
+
     public void setParentName(String parentName) {
         this.parentName = parentName;
     }
@@ -192,19 +195,19 @@ public class VMSnapshotResponse extends BaseResponse implements ControlledEntity
     @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
-        
+
     }
 
     @Override
     public void setProjectId(String projectId) {
         this.projectId = projectId;
-        
+
     }
 
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
-        
+
     }
 
     @Override
@@ -215,6 +218,6 @@ public class VMSnapshotResponse extends BaseResponse implements ControlledEntity
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
-        
+
     }
 }

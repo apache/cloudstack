@@ -20,13 +20,14 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.api.response.PaloAltoFirewallResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -36,25 +37,31 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.dao.ExternalFirewallDeviceVO;
 import com.cloud.network.element.PaloAltoFirewallElementService;
-import org.apache.cloudstack.context.CallContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "configurePaloAltoFirewall", responseObject=PaloAltoFirewallResponse.class, description="Configures a Palo Alto firewall device")
+@APICommand(name = "configurePaloAltoFirewall", responseObject = PaloAltoFirewallResponse.class, description = "Configures a Palo Alto firewall device")
 public class ConfigurePaloAltoFirewallCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ConfigurePaloAltoFirewallCmd.class.getName());
     private static final String s_name = "configurepaloaltofirewallresponse";
-    @Inject PaloAltoFirewallElementService _paFwService;
+    @Inject
+    PaloAltoFirewallElementService _paFwService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.FIREWALL_DEVICE_ID, type=CommandType.UUID, entityType = PaloAltoFirewallResponse.class,
-            required=true, description="Palo Alto firewall device ID")
+    @Parameter(name = ApiConstants.FIREWALL_DEVICE_ID,
+               type = CommandType.UUID,
+               entityType = PaloAltoFirewallResponse.class,
+               required = true,
+               description = "Palo Alto firewall device ID")
     private Long fwDeviceId;
 
-    @Parameter(name=ApiConstants.FIREWALL_DEVICE_CAPACITY, type=CommandType.LONG, required=false, description="capacity of the firewall device, Capacity will be interpreted as number of networks device can handle")
+    @Parameter(name = ApiConstants.FIREWALL_DEVICE_CAPACITY,
+               type = CommandType.LONG,
+               required = false,
+               description = "capacity of the firewall device, Capacity will be interpreted as number of networks device can handle")
     private Long capacity;
 
     /////////////////////////////////////////////////////
@@ -74,7 +81,8 @@ public class ConfigurePaloAltoFirewallCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             ExternalFirewallDeviceVO fwDeviceVO = _paFwService.configurePaloAltoFirewall(this);
             if (fwDeviceVO != null) {
@@ -85,7 +93,7 @@ public class ConfigurePaloAltoFirewallCmd extends BaseAsyncCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure Palo Alto firewall device due to internal error.");
             }
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

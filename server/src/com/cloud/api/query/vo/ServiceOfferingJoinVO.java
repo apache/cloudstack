@@ -23,106 +23,105 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.utils.db.GenericDao;
-
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import com.cloud.utils.db.GenericDao;
+
 @Entity
-@Table(name="service_offering_view")
+@Table(name = "service_offering_view")
 public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentity, Identity {
 
     @Id
-    @Column(name="id", updatable=false, nullable = false)
+    @Column(name = "id", updatable = false, nullable = false)
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="display_text")
+    @Column(name = "display_text")
     private String displayText;
 
-    @Column(name="tags", length=4096)
+    @Column(name = "tags", length = 4096)
     String tags;
 
-    @Column(name="use_local_storage")
+    @Column(name = "use_local_storage")
     private boolean useLocalStorage;
 
-    @Column(name="system_use")
+    @Column(name = "system_use")
     private boolean systemUse;
 
-    @Column(name="cpu")
+    @Column(name = "cpu")
     private int cpu;
 
-    @Column(name="speed")
+    @Column(name = "speed")
     private int speed;
 
-    @Column(name="ram_size")
+    @Column(name = "ram_size")
     private int ramSize;
 
-    @Column(name="nw_rate")
+    @Column(name = "nw_rate")
     private Integer rateMbps;
 
-    @Column(name="mc_rate")
+    @Column(name = "mc_rate")
     private Integer multicastRateMbps;
 
-    @Column(name="ha_enabled")
+    @Column(name = "ha_enabled")
     private boolean offerHA;
 
-    @Column(name="limit_cpu_use")
+    @Column(name = "limit_cpu_use")
     private boolean limitCpuUse;
 
-    @Column(name="is_volatile")
+    @Column(name = "is_volatile")
     private boolean volatileVm;
 
-    @Column(name="host_tag")
+    @Column(name = "host_tag")
     private String hostTag;
 
-    @Column(name="default_use")
+    @Column(name = "default_use")
     private boolean default_use;
 
-    @Column(name="vm_type")
+    @Column(name = "vm_type")
     private String vm_type;
 
-    @Column(name="sort_key")
+    @Column(name = "sort_key")
     int sortKey;
 
-    @Column(name="bytes_read_rate")
+    @Column(name = "bytes_read_rate")
     Long bytesReadRate;
 
-    @Column(name="bytes_write_rate")
+    @Column(name = "bytes_write_rate")
     Long bytesWriteRate;
 
-    @Column(name="iops_read_rate")
+    @Column(name = "iops_read_rate")
     Long iopsReadRate;
 
-    @Column(name="iops_write_rate")
+    @Column(name = "iops_write_rate")
     Long iopsWriteRate;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="domain_uuid")
+    @Column(name = "domain_uuid")
     private String domainUuid;
 
-    @Column(name="domain_name")
+    @Column(name = "domain_name")
     private String domainName = null;
 
-    @Column(name="domain_path")
+    @Column(name = "domain_path")
     private String domainPath = null;
 
     @Column(name = "deployment_planner")
     private String deploymentPlanner;
-
 
     public ServiceOfferingJoinVO() {
     }

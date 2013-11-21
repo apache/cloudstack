@@ -16,13 +16,22 @@
 // under the License.
 package com.cloud.storage;
 
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.utils.db.GenericDao;
-import com.google.gson.annotations.Expose;
-
-import javax.persistence.*;
 import java.util.Date;
 import java.util.UUID;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import com.google.gson.annotations.Expose;
+
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "snapshots")
@@ -87,8 +96,8 @@ public class SnapshotVO implements Snapshot {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public SnapshotVO(long dcId, long accountId, long domainId, Long volumeId, Long diskOfferingId, String name,
-            short snapshotType, String typeDescription, long size, HypervisorType hypervisorType) {
+    public SnapshotVO(long dcId, long accountId, long domainId, Long volumeId, Long diskOfferingId, String name, short snapshotType, String typeDescription, long size,
+            HypervisorType hypervisorType) {
         this.dataCenterId = dcId;
         this.accountId = accountId;
         this.domainId = domainId;

@@ -54,8 +54,7 @@ public class BigSwitchVnsApi {
     private final static String CONTENT_JSON = "application/json";
     private final static String HTTP_HEADER_INSTANCE_ID = "INSTANCE_ID";
     private final static String CLOUDSTACK_INSTANCE_ID = "org.apache.cloudstack";
-    private final static MultiThreadedHttpConnectionManager s_httpClientManager =
-                         new MultiThreadedHttpConnectionManager();
+    private final static MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
 
     private String _host;
 
@@ -79,17 +78,13 @@ public class BigSwitchVnsApi {
 
         if ("post".equalsIgnoreCase(type)) {
             return new PostMethod(url);
-        }
-        else if ("get".equalsIgnoreCase(type)) {
+        } else if ("get".equalsIgnoreCase(type)) {
             return new GetMethod(url);
-        }
-        else if ("delete".equalsIgnoreCase(type)) {
+        } else if ("delete".equalsIgnoreCase(type)) {
             return new DeleteMethod(url);
-        }
-        else if ("put".equalsIgnoreCase(type)) {
+        } else if ("put".equalsIgnoreCase(type)) {
             return new PutMethod(url);
-        }
-        else {
+        } else {
             throw new BigSwitchVnsApiException("Requesting unknown method type");
         }
     }
@@ -103,7 +98,6 @@ public class BigSwitchVnsApi {
         this._host = address;
     }
 
-
     /**
      * Logs into the BigSwitch API. The cookie is stored in the <code>_authcookie<code> variable.
      * <p>
@@ -114,11 +108,10 @@ public class BigSwitchVnsApi {
         return;
     }
 
-    public void createNetwork(NetworkData network)
-                throws BigSwitchVnsApiException {
+    public void createNetwork(NetworkData network) throws BigSwitchVnsApiException {
         String uri = _nsBaseUri + "/tenants/" + network.getNetwork().getTenant_id() + "/networks";
-        executeCreateObject(network, new TypeToken<NetworkData>(){}.getType(),
-                uri, Collections.<String,String>emptyMap());
+        executeCreateObject(network, new TypeToken<NetworkData>() {
+        }.getType(), uri, Collections.<String, String> emptyMap());
     }
 
     public void deleteNetwork(String tenantId, String networkId) throws BigSwitchVnsApiException {
@@ -126,63 +119,54 @@ public class BigSwitchVnsApi {
         executeDeleteObject(uri);
     }
 
-    public void createPort(String networkUuid, PortData port)
-                throws BigSwitchVnsApiException {
-	String uri = _nsBaseUri + "/tenants/" + port.getPort().getTenant_id() + "/networks/" + networkUuid + "/ports";
-        executeCreateObject(port, new TypeToken<PortData>(){}.getType(),
-                uri, Collections.<String,String>emptyMap());
+    public void createPort(String networkUuid, PortData port) throws BigSwitchVnsApiException {
+        String uri = _nsBaseUri + "/tenants/" + port.getPort().getTenant_id() + "/networks/" + networkUuid + "/ports";
+        executeCreateObject(port, new TypeToken<PortData>() {
+        }.getType(), uri, Collections.<String, String> emptyMap());
     }
 
-    public void modifyPort(String networkId, PortData port)
-                throws BigSwitchVnsApiException {
+    public void modifyPort(String networkId, PortData port) throws BigSwitchVnsApiException {
         String uri = _nsBaseUri + "/tenants/" + port.getPort().getTenant_id() + "/networks/" + networkId + "/ports";
-        executeUpdateObject(port, uri, Collections.<String,String>emptyMap());
+        executeUpdateObject(port, uri, Collections.<String, String> emptyMap());
     }
 
-    public void deletePort(String tenantId, String networkId, String portId)
-                throws BigSwitchVnsApiException {
+    public void deletePort(String tenantId, String networkId, String portId) throws BigSwitchVnsApiException {
         String uri = _nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId + "/ports/" + portId;
         executeDeleteObject(uri);
     }
 
-    public void modifyPortAttachment(String tenantId,
-            String networkId,
-            String portId,
-            AttachmentData attachment) throws BigSwitchVnsApiException {
+    public void modifyPortAttachment(String tenantId, String networkId, String portId, AttachmentData attachment) throws BigSwitchVnsApiException {
         String uri = _nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId + "/ports/" + portId + "/attachment";
-        executeUpdateObject(attachment, uri, Collections.<String,String>emptyMap());
+        executeUpdateObject(attachment, uri, Collections.<String, String> emptyMap());
     }
 
-    public void deletePortAttachment(String tenantId, String networkId, String portId)
-                throws BigSwitchVnsApiException {
+    public void deletePortAttachment(String tenantId, String networkId, String portId) throws BigSwitchVnsApiException {
         String uri = _nsBaseUri + "/tenants/" + tenantId + "/networks/" + networkId + "/ports/" + portId + "/attachment";
         executeDeleteObject(uri);
     }
 
     public ControlClusterStatus getControlClusterStatus() throws BigSwitchVnsApiException {
         String uri = _nsBaseUri + "/health";
-        ControlClusterStatus ccs = executeRetrieveObject(new TypeToken<ControlClusterStatus>(){}.getType(),
-                                                         uri, 80, null);
+        ControlClusterStatus ccs = executeRetrieveObject(new TypeToken<ControlClusterStatus>() {
+        }.getType(), uri, 80, null);
         ccs.setStatus(true);
 
         return ccs;
     }
 
-    protected <T> void executeUpdateObject(T newObject, String uri, Map<String,String> parameters)
-                       throws BigSwitchVnsApiException {
+    protected <T> void executeUpdateObject(T newObject, String uri, Map<String, String> parameters) throws BigSwitchVnsApiException {
         if (_host == null || _host.isEmpty()) {
             throw new BigSwitchVnsApiException("Hostname is null or empty");
         }
 
         Gson gson = new Gson();
 
-        PutMethod pm = (PutMethod) createMethod("put", uri, 80);
+        PutMethod pm = (PutMethod)createMethod("put", uri, 80);
         pm.setRequestHeader(CONTENT_TYPE, CONTENT_JSON);
         pm.setRequestHeader(ACCEPT, CONTENT_JSON);
         pm.setRequestHeader(HTTP_HEADER_INSTANCE_ID, CLOUDSTACK_INSTANCE_ID);
         try {
-            pm.setRequestEntity(new StringRequestEntity(
-                    gson.toJson(newObject), CONTENT_JSON, null));
+            pm.setRequestEntity(new StringRequestEntity(gson.toJson(newObject), CONTENT_JSON, null));
         } catch (UnsupportedEncodingException e) {
             throw new BigSwitchVnsApiException("Failed to encode json request body", e);
         }
@@ -198,22 +182,19 @@ public class BigSwitchVnsApi {
         pm.releaseConnection();
     }
 
-    protected <T> void executeCreateObject(T newObject, Type returnObjectType, String uri,
-                                           Map<String,String> parameters)
-                       throws BigSwitchVnsApiException {
+    protected <T> void executeCreateObject(T newObject, Type returnObjectType, String uri, Map<String, String> parameters) throws BigSwitchVnsApiException {
         if (_host == null || _host.isEmpty()) {
             throw new BigSwitchVnsApiException("Hostname is null or empty");
         }
 
         Gson gson = new Gson();
 
-        PostMethod pm = (PostMethod) createMethod("post", uri, 80);
+        PostMethod pm = (PostMethod)createMethod("post", uri, 80);
         pm.setRequestHeader(CONTENT_TYPE, CONTENT_JSON);
         pm.setRequestHeader(ACCEPT, CONTENT_JSON);
         pm.setRequestHeader(HTTP_HEADER_INSTANCE_ID, CLOUDSTACK_INSTANCE_ID);
         try {
-            pm.setRequestEntity(new StringRequestEntity(
-                    gson.toJson(newObject), CONTENT_JSON, null));
+            pm.setRequestEntity(new StringRequestEntity(gson.toJson(newObject), CONTENT_JSON, null));
         } catch (UnsupportedEncodingException e) {
             throw new BigSwitchVnsApiException("Failed to encode json request body", e);
         }
@@ -236,7 +217,7 @@ public class BigSwitchVnsApi {
             throw new BigSwitchVnsApiException("Hostname is null or empty");
         }
 
-        DeleteMethod dm = (DeleteMethod) createMethod("delete", uri, 80);
+        DeleteMethod dm = (DeleteMethod)createMethod("delete", uri, 80);
         dm.setRequestHeader(CONTENT_TYPE, CONTENT_JSON);
         dm.setRequestHeader(ACCEPT, CONTENT_JSON);
         dm.setRequestHeader(HTTP_HEADER_INSTANCE_ID, CLOUDSTACK_INSTANCE_ID);
@@ -253,20 +234,19 @@ public class BigSwitchVnsApi {
     }
 
     @SuppressWarnings("unchecked")
-    protected <T> T executeRetrieveObject(Type returnObjectType, String uri, int port, Map<String,String> parameters)
-                    throws BigSwitchVnsApiException {
+    protected <T> T executeRetrieveObject(Type returnObjectType, String uri, int port, Map<String, String> parameters) throws BigSwitchVnsApiException {
         if (_host == null || _host.isEmpty()) {
             throw new BigSwitchVnsApiException("Hostname is null or empty");
         }
 
-        GetMethod gm = (GetMethod) createMethod("get", uri, port);
+        GetMethod gm = (GetMethod)createMethod("get", uri, port);
         gm.setRequestHeader(CONTENT_TYPE, CONTENT_JSON);
         gm.setRequestHeader(ACCEPT, CONTENT_JSON);
         gm.setRequestHeader(HTTP_HEADER_INSTANCE_ID, CLOUDSTACK_INSTANCE_ID);
 
         if (parameters != null && !parameters.isEmpty()) {
             List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(parameters.size());
-            for (Entry<String,String> e : parameters.entrySet()) {
+            for (Entry<String, String> e : parameters.entrySet()) {
                 nameValuePairs.add(new NameValuePair(e.getKey(), e.getValue()));
             }
             gm.setQueryString(nameValuePairs.toArray(new NameValuePair[0]));
@@ -286,7 +266,7 @@ public class BigSwitchVnsApi {
         try {
             returnValue = (T)gson.fromJson(gm.getResponseBodyAsString(), returnObjectType);
         } catch (IOException e) {
-            s_logger.error("IOException while retrieving response body",e);
+            s_logger.error("IOException while retrieving response body", e);
             throw new BigSwitchVnsApiException(e);
         } finally {
             gm.releaseConnection();
@@ -322,7 +302,7 @@ public class BigSwitchVnsApi {
             // Safety margin of 1024 characters, anything longer is probably useless
             // and will clutter the logs
             try {
-                return  method.getResponseBodyAsString(1024);
+                return method.getResponseBodyAsString(1024);
             } catch (IOException e) {
                 s_logger.debug("Error while loading response body", e);
             }

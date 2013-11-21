@@ -25,32 +25,33 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value=HypervisorGuru.class)
+@Local(value = HypervisorGuru.class)
 public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
-    @Inject GuestOSDao _guestOsDao;
-    
-	@Override
-	public HypervisorType getHypervisorType() {
-		return HypervisorType.KVM;
-	}
-	
-	protected KVMGuru() {
-		super();
-	}
+    @Inject
+    GuestOSDao _guestOsDao;
 
-	@Override
+    @Override
+    public HypervisorType getHypervisorType() {
+        return HypervisorType.KVM;
+    }
+
+    protected KVMGuru() {
+        super();
+    }
+
+    @Override
     public VirtualMachineTO implement(VirtualMachineProfile vm) {
-		VirtualMachineTO to = toVirtualMachineTO(vm);
+        VirtualMachineTO to = toVirtualMachineTO(vm);
 
-		// Determine the VM's OS description
-		GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
-		to.setOs(guestOS.getDisplayName());
+        // Determine the VM's OS description
+        GuestOSVO guestOS = _guestOsDao.findById(vm.getVirtualMachine().getGuestOSId());
+        to.setOs(guestOS.getDisplayName());
 
-		return to;
-	}
-	
-	@Override
+        return to;
+    }
+
+    @Override
     public boolean trackVmHostChange() {
-    	return false;
+        return false;
     }
 }

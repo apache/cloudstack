@@ -108,12 +108,12 @@ public class TemplateDataFactoryImpl implements TemplateDataFactory {
 
     @Override
     public TemplateInfo getTemplate(DataObject obj, DataStore store) {
-        TemplateObject tmpObj = (TemplateObject) this.getTemplate(obj.getId(), store);
+        TemplateObject tmpObj = (TemplateObject)this.getTemplate(obj.getId(), store);
         // carry over url set in passed in data object, for copyTemplate case
         // where url is generated on demand and not persisted in DB.
         // need to think of a more generic way to pass these runtime information
         // carried through DataObject post 4.2
-        TemplateObject origTmpl = (TemplateObject) obj;
+        TemplateObject origTmpl = (TemplateObject)obj;
         tmpObj.setUrl(origTmpl.getUrl());
         return tmpObj;
     }

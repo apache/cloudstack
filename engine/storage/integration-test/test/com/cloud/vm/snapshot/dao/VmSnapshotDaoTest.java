@@ -24,11 +24,12 @@ import javax.inject.Inject;
 
 import junit.framework.Assert;
 
-import org.apache.cloudstack.storage.test.CloudStackTestNGBase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import org.apache.cloudstack.storage.test.CloudStackTestNGBase;
 
 import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 

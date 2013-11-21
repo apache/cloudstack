@@ -33,23 +33,19 @@ public class StoreEntryImpl implements StoreEntry {
         this.counter = new AtomicInteger(0);
     }
 
-
     @Override
     public boolean isExpired() {
         return System.currentTimeMillis() > expiry;
     }
 
-
-
     @Override
     public long getExpireDuration() {
-        if ( isExpired() )
+        if (isExpired())
             return 0; // already expired
         else {
             return expiry - System.currentTimeMillis();
         }
     }
-
 
     @Override
     public int incrementAndGet() {
@@ -57,7 +53,7 @@ public class StoreEntryImpl implements StoreEntry {
     }
 
     @Override
-    public int getCounter(){
+    public int getCounter() {
         return this.counter.get();
     }
 }

@@ -16,23 +16,20 @@
 // under the License.
 package com.cloud.agent.api;
 
-
 public class RebootRouterCommand extends RebootCommand {
 
-	protected String privateIp;
+    protected String privateIp;
 
-	protected RebootRouterCommand() {
-	}
+    protected RebootRouterCommand() {
+    }
 
+    public RebootRouterCommand(String vmName, String privateIp) {
+        super(vmName);
+        this.privateIp = privateIp;
+    }
 
-	public RebootRouterCommand(String vmName, String privateIp) {
-		super(vmName);
-		this.privateIp=privateIp;
-	}
-
-
-	public String getPrivateIpAddress() {
-		return privateIp;
-	}
+    public String getPrivateIpAddress() {
+        return privateIp;
+    }
 
 }

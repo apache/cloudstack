@@ -19,11 +19,7 @@ package com.cloud.utils.db;
 public class JoinBuilder<T> {
 
     public enum JoinType {
-        INNER("INNER JOIN"),
-        LEFT("LEFT JOIN"),
-        RIGHT("RIGHT JOIN"),
-        RIGHTOUTER("RIGHT OUTER JOIN"),
-        LEFTOUTER("LEFT OUTER JOIN");
+        INNER("INNER JOIN"), LEFT("LEFT JOIN"), RIGHT("RIGHT JOIN"), RIGHTOUTER("RIGHT OUTER JOIN"), LEFTOUTER("LEFT OUTER JOIN");
 
         private final String _name;
 
@@ -41,8 +37,7 @@ public class JoinBuilder<T> {
     private Attribute firstAttribute;
     private Attribute secondAttribute;
 
-    public JoinBuilder(T t, Attribute firstAttribute,
-            Attribute secondAttribute, JoinType type) {
+    public JoinBuilder(T t, Attribute firstAttribute, Attribute secondAttribute, JoinType type) {
         this.t = t;
         this.firstAttribute = firstAttribute;
         this.secondAttribute = secondAttribute;

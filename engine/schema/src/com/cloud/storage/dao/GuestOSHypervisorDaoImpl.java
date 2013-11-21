@@ -27,7 +27,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = { GuestOSHypervisorDao.class })
+@Local(value = {GuestOSHypervisorDao.class})
 public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO, Long> implements GuestOSHypervisorDao {
 
     protected final SearchBuilder<GuestOSHypervisorVO> guestOsSearch;

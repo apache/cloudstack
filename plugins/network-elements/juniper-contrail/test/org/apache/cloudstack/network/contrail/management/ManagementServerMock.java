@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.network.contrail.management;
 
+import static org.junit.Assert.assertNotNull;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,15 +26,15 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 import org.apache.log4j.Logger;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import static org.junit.Assert.*;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.PlugNicAnswer;
@@ -84,21 +86,32 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 
 public class ManagementServerMock {
-    private static final Logger s_logger =
-            Logger.getLogger(ManagementServerMock.class);
+    private static final Logger s_logger = Logger.getLogger(ManagementServerMock.class);
 
-    @Inject private AccountManager _accountMgr;
-    @Inject private ConfigurationService _configService;
-    @Inject private DataCenterDao _zoneDao;
-    @Inject private NetworkService _networkService;
-    @Inject private NetworkDao _networksDao;
-    @Inject private PhysicalNetworkDao _physicalNetworkDao;
-    @Inject private UserVmDao _userVmDao;
-    @Inject private ServiceOfferingDao _serviceOfferingDao;
-    @Inject private VMTemplateDao _vmTemplateDao;
-    @Inject private HostDao _hostDao;
-    @Inject public AgentManager _agentMgr;
-    @Inject public VirtualMachineManager _vmMgr;
+    @Inject
+    private AccountManager _accountMgr;
+    @Inject
+    private ConfigurationService _configService;
+    @Inject
+    private DataCenterDao _zoneDao;
+    @Inject
+    private NetworkService _networkService;
+    @Inject
+    private NetworkDao _networksDao;
+    @Inject
+    private PhysicalNetworkDao _physicalNetworkDao;
+    @Inject
+    private UserVmDao _userVmDao;
+    @Inject
+    private ServiceOfferingDao _serviceOfferingDao;
+    @Inject
+    private VMTemplateDao _vmTemplateDao;
+    @Inject
+    private HostDao _hostDao;
+    @Inject
+    public AgentManager _agentMgr;
+    @Inject
+    public VirtualMachineManager _vmMgr;
 
     private DataCenterVO _zone;
     private PhysicalNetwork _znet;
@@ -117,55 +130,52 @@ public class ManagementServerMock {
         }
         field.setAccessible(true);
         switch (field_type) {
-        case STRING:
-            try {
-                field.set(cmd, value);
-            } catch (Exception ex) {
-                s_logger.warn(ex);
-                return;
-            }
-            break;
-        case UUID:
-            if (value.equals("-1")) {
+            case STRING:
                 try {
-                    field.setLong(cmd, -1L);
+                    field.set(cmd, value);
                 } catch (Exception ex) {
                     s_logger.warn(ex);
                     return;
                 }
-            }
-            break;
-        case LONG:
-            try {
-                field.set(cmd, value);
-            } catch (Exception ex) {
-                s_logger.warn(ex);
-                return;
-            }
-            break;
-        default:
-            try {
-                field.set(cmd, value);
-            } catch (Exception ex) {
-                s_logger.warn(ex);
-                return;
-            }
-            break;
+                break;
+            case UUID:
+                if (value.equals("-1")) {
+                    try {
+                        field.setLong(cmd, -1L);
+                    } catch (Exception ex) {
+                        s_logger.warn(ex);
+                        return;
+                    }
+                }
+                break;
+            case LONG:
+                try {
+                    field.set(cmd, value);
+                } catch (Exception ex) {
+                    s_logger.warn(ex);
+                    return;
+                }
+                break;
+            default:
+                try {
+                    field.set(cmd, value);
+                } catch (Exception ex) {
+                    s_logger.warn(ex);
+                    return;
+                }
+                break;
         }
     }
 
     private void createHost() {
-        HostVO host = new HostVO(_host_id, "aa01", Type.BaremetalDhcp,
-                "192.168.1.1", "255.255.255.0", null,
-                null, null, null,
-                null, null, null,
-                null, null, null,
-                UUID.randomUUID().toString(), Status.Up, "1.0", null,
-                null, _zone.getId(), null, 0, 0, "aa", 0, StoragePoolType.NetworkFilesystem);
+        HostVO host =
+            new HostVO(_host_id, "aa01", Type.BaremetalDhcp, "192.168.1.1", "255.255.255.0", null, null, null, null, null, null, null, null, null, null,
+                UUID.randomUUID().toString(), Status.Up, "1.0", null, null, _zone.getId(), null, 0, 0, "aa", 0, StoragePoolType.NetworkFilesystem);
         host.setResourceState(ResourceState.Enabled);
         _hostDao.persist(host);
         _host_id = host.getId();
     }
+
     private void createPublicVlanIpRange() {
         CreateVlanIpRangeCmd cmd = new CreateVlanIpRangeCmd();
         BaseCmd proxy = ComponentContext.inject(cmd);
@@ -173,7 +183,7 @@ public class ManagementServerMock {
 
         List<NetworkVO> nets = _networksDao.listByZoneAndTrafficType(_zone.getId(), TrafficType.Public);
         if (nets != null && !nets.isEmpty()) {
-            NetworkVO public_net = nets.get(0); 
+            NetworkVO public_net = nets.get(0);
             public_net_id = public_net.getId();
         } else {
             s_logger.debug("no public network found in the zone: " + _zone.getId());
@@ -191,12 +201,11 @@ public class ManagementServerMock {
         setParameter(cmd, "vlan", BaseCmd.CommandType.STRING, "untagged");
         s_logger.debug("createPublicVlanIpRange execute : zone id: " + _zone.getId() + ", public net id: " + public_net_id);
         try {
-           _configService.createVlanAndPublicIpRange(cmd);
+            _configService.createVlanAndPublicIpRange(cmd);
         } catch (Exception e) {
-           s_logger.debug("createPublicVlanIpRange: " + e);
+            s_logger.debug("createPublicVlanIpRange: " + e);
         }
     }
-
 
     public UserVm createVM(String name, Network network) {
         VMTemplateVO tmpl = getVMTemplate();
@@ -205,20 +214,21 @@ public class ManagementServerMock {
         assertNotNull(small);
 
         Answer<?> callback = new Answer<Object>() {
+            @Override
             public Object answer(InvocationOnMock invocation) {
                 Object[] args = invocation.getArguments();
-                Commands cmds = (Commands) args[1];
+                Commands cmds = (Commands)args[1];
                 if (cmds == null) {
                     return null;
                 }
                 PlugNicAnswer reply = new PlugNicAnswer(null, true, "PlugNic");
-                com.cloud.agent.api.Answer[] answers = { reply };
+                com.cloud.agent.api.Answer[] answers = {reply};
                 cmds.setAnswers(answers);
                 return null;
             }
         };
         try {
-            Mockito.when(_agentMgr.send(Mockito.anyLong(), Mockito.any(Commands.class))).thenAnswer(callback);
+            Mockito.when(_agentMgr.send(Matchers.anyLong(), Matchers.any(Commands.class))).thenAnswer(callback);
         } catch (AgentUnavailableException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -227,8 +237,9 @@ public class ManagementServerMock {
             e.printStackTrace();
         }
         long id = _userVmDao.getNextInSequence(Long.class, "id");
-        UserVmVO vm = new UserVmVO(id, name, name, tmpl.getId(), HypervisorType.XenServer, tmpl.getGuestOSId(),
-                false, false, _zone.getDomainId(), Account.ACCOUNT_ID_SYSTEM, small.getId(), null, name, null);
+        UserVmVO vm =
+            new UserVmVO(id, name, name, tmpl.getId(), HypervisorType.XenServer, tmpl.getGuestOSId(), false, false, _zone.getDomainId(), Account.ACCOUNT_ID_SYSTEM,
+                small.getId(), null, name, null);
         vm.setState(com.cloud.vm.VirtualMachine.State.Running);
         vm.setHostId(_host_id);
         vm.setDataCenterId(network.getDataCenterId());
@@ -251,27 +262,28 @@ public class ManagementServerMock {
 
     public void deleteVM(UserVm vm, Network network) {
         Answer<?> callback = new Answer<Object>() {
+            @Override
             public Object answer(InvocationOnMock invocation) {
                 Object[] args = invocation.getArguments();
-                Commands cmds = (Commands) args[1];
+                Commands cmds = (Commands)args[1];
                 if (cmds == null) {
                     return null;
                 }
                 UnPlugNicAnswer reply = new UnPlugNicAnswer(null, true, "PlugNic");
-                com.cloud.agent.api.Answer[] answers = { reply };
+                com.cloud.agent.api.Answer[] answers = {reply};
                 cmds.setAnswers(answers);
                 return null;
             }
         };
 
         try {
-            Mockito.when(_agentMgr.send(Mockito.anyLong(), Mockito.any(Commands.class))).thenAnswer(callback);
+            Mockito.when(_agentMgr.send(Matchers.anyLong(), Matchers.any(Commands.class))).thenAnswer(callback);
         } catch (AgentUnavailableException e) {
             e.printStackTrace();
         } catch (OperationTimedoutException e) {
             e.printStackTrace();
         }
-        
+
         _userVmDao.remove(vm.getId());
     }
 
@@ -286,17 +298,17 @@ public class ManagementServerMock {
 
     private VMTemplateVO getVMTemplate() {
         List<VMTemplateVO> tmpl_list = _vmTemplateDao.listDefaultBuiltinTemplates();
-        for (VMTemplateVO tmpl: tmpl_list) {
+        for (VMTemplateVO tmpl : tmpl_list) {
             if (tmpl.getHypervisorType() == HypervisorType.XenServer) {
                 return tmpl;
             }
-        }    
+        }
         return null;
     }
 
     private ServiceOffering getServiceByName(String name) {
         List<ServiceOfferingVO> service_list = _serviceOfferingDao.findPublicServiceOfferings();
-        for (ServiceOfferingVO service: service_list) {
+        for (ServiceOfferingVO service : service_list) {
             if (service.getName().equals(name)) {
                 return service;
             }
@@ -320,73 +332,64 @@ public class ManagementServerMock {
         } catch (InvalidParameterValueException e) {
             List<String> isolationMethods = new ArrayList<String>();
             isolationMethods.add("GRE");
-            _znet = _networkService.createPhysicalNetwork(_zone.getId(), null, null, isolationMethods,
-                    BroadcastDomainRange.ZONE.toString(), _zone.getDomainId(),
-                    null, "znet");
+            _znet =
+                _networkService.createPhysicalNetwork(_zone.getId(), null, null, isolationMethods, BroadcastDomainRange.ZONE.toString(), _zone.getDomainId(), null,
+                    "znet");
             List<PhysicalNetworkVO> nets = _physicalNetworkDao.listByZoneAndTrafficType(_zone.getId(), TrafficType.Public);
             if (nets == null || nets.isEmpty()) {
                 _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Public.toString(), null, null, null, null, null, null);
             }
         }
         if (_znet.getState() != PhysicalNetwork.State.Enabled) {
-            _znet = _networkService.updatePhysicalNetwork(_znet.getId(), null, null, null,
-                    PhysicalNetwork.State.Enabled.toString());
+            _znet = _networkService.updatePhysicalNetwork(_znet.getId(), null, null, null, PhysicalNetwork.State.Enabled.toString());
         }
 
         // Ensure that the physical network supports Guest traffic.
-        Pair<List<? extends PhysicalNetworkTrafficType>, Integer> trafficTypes =
-                _networkService.listTrafficTypes(_znet.getId());
+        Pair<List<? extends PhysicalNetworkTrafficType>, Integer> trafficTypes = _networkService.listTrafficTypes(_znet.getId());
         boolean found = false;
-        for (PhysicalNetworkTrafficType ttype: trafficTypes.first()) {
+        for (PhysicalNetworkTrafficType ttype : trafficTypes.first()) {
             if (ttype.getTrafficType() == TrafficType.Guest) {
                 found = true;
             }
         }
         if (!found) {
-            _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Guest.toString(),
-                    null, null, null, null, null, null);
+            _networkService.addTrafficTypeToPhysicalNetwork(_znet.getId(), TrafficType.Guest.toString(), null, null, null, null, null, null);
         }
 
         Pair<List<? extends PhysicalNetworkServiceProvider>, Integer> providers =
-                _networkService.listNetworkServiceProviders(_znet.getId(), Provider.JuniperContrail.getName(),
-                        null, null, null);
+            _networkService.listNetworkServiceProviders(_znet.getId(), Provider.JuniperContrail.getName(), null, null, null);
         if (providers.second() == 0) {
             s_logger.debug("Add " + Provider.JuniperContrail.getName() + " to network " + _znet.getName());
-            PhysicalNetworkServiceProvider provider =
-                    _networkService.addProviderToPhysicalNetwork(_znet.getId(), Provider.JuniperContrail.getName(),
-                            null, null);
-            _networkService.updateNetworkServiceProvider(provider.getId(),
-                    PhysicalNetworkServiceProvider.State.Enabled.toString(), null);
+            PhysicalNetworkServiceProvider provider = _networkService.addProviderToPhysicalNetwork(_znet.getId(), Provider.JuniperContrail.getName(), null, null);
+            _networkService.updateNetworkServiceProvider(provider.getId(), PhysicalNetworkServiceProvider.State.Enabled.toString(), null);
         } else {
             PhysicalNetworkServiceProvider provider = providers.first().get(0);
             if (provider.getState() != PhysicalNetworkServiceProvider.State.Enabled) {
-                _networkService.updateNetworkServiceProvider(provider.getId(),
-                        PhysicalNetworkServiceProvider.State.Enabled.toString(), null); 
+                _networkService.updateNetworkServiceProvider(provider.getId(), PhysicalNetworkServiceProvider.State.Enabled.toString(), null);
             }
         }
 
-        providers = _networkService.listNetworkServiceProviders(_znet.getId(), null,
-                PhysicalNetworkServiceProvider.State.Enabled.toString(), null, null);
+        providers = _networkService.listNetworkServiceProviders(_znet.getId(), null, PhysicalNetworkServiceProvider.State.Enabled.toString(), null, null);
         s_logger.debug(_znet.getName() + " has " + providers.second().toString() + " Enabled providers");
-        for (PhysicalNetworkServiceProvider provider: providers.first()) {
+        for (PhysicalNetworkServiceProvider provider : providers.first()) {
             if (provider.getProviderName().equals(Provider.JuniperContrail.getName())) {
                 continue;
             }
             s_logger.debug("Disabling " + provider.getProviderName());
-            _networkService.updateNetworkServiceProvider(provider.getId(),
-                    PhysicalNetworkServiceProvider.State.Disabled.toString(), null);
+            _networkService.updateNetworkServiceProvider(provider.getId(), PhysicalNetworkServiceProvider.State.Disabled.toString(), null);
         }
     }
 
     private void locateZone() {
         _zone = _zoneDao.findByName("default");
         if (_zone == null) {
-            ConfigurationManager mgr = (ConfigurationManager) _configService;
-            _zone = mgr.createZone(User.UID_SYSTEM, "default", "8.8.8.8", null, "8.8.4.4", null,
-                    null /* cidr */, "ROOT", Domain.ROOT_DOMAIN,
-                    NetworkType.Advanced, null, null /* networkDomain */, false, false, null, null);
+            ConfigurationManager mgr = (ConfigurationManager)_configService;
+            _zone =
+                mgr.createZone(User.UID_SYSTEM, "default", "8.8.8.8", null, "8.8.4.4", null, null /* cidr */, "ROOT", Domain.ROOT_DOMAIN, NetworkType.Advanced, null,
+                    null /* networkDomain */, false, false, null, null);
         }
     }
+
     public void shutdown() {
         deleteHost();
     }

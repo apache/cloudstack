@@ -16,6 +16,24 @@
 // under the License.
 package org.apache.cloudstack.region;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.region.dao.RegionDao;
+
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -25,38 +43,13 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.UserAccountDao;
-import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
 import com.cloud.utils.db.DbProperties;
 
-import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
-import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
-import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
-import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
-import org.apache.cloudstack.region.dao.RegionDao;
-import org.apache.log4j.Logger;
-import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
-import org.jasypt.properties.EncryptableProperties;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
 @Component
-@Local(value = { RegionManager.class })
-public class RegionManagerImpl extends ManagerBase implements RegionManager, Manager{
+@Local(value = {RegionManager.class})
+public class RegionManagerImpl extends ManagerBase implements RegionManager, Manager {
     public static final Logger s_logger = Logger.getLogger(RegionManagerImpl.class);
 
     @Inject
@@ -69,7 +62,7 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
     private DomainManager _domainMgr;
 
     private String _name;
-    private int _id; 
+    private int _id;
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -77,7 +70,7 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
         final Properties dbProps = DbProperties.getDbProperties();
         String regionId = dbProps.getProperty("region.id");
         _id = 1;
-        if(regionId != null){
+        if (regionId != null) {
             _id = Integer.parseInt(regionId);
         }
         return true;
@@ -98,22 +91,23 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
         return _name;
     }
 
+    @Override
     public int getId() {
         return _id;
     }
 
     /**
      * {@inheritDoc}
-     */ 
+     */
     @Override
     public Region addRegion(int id, String name, String endPoint) {
         //Region Id should be unique
-        if( _regionDao.findById(id) != null ){
-            throw new InvalidParameterValueException("Region with id: "+id+" already exists");
+        if (_regionDao.findById(id) != null) {
+            throw new InvalidParameterValueException("Region with id: " + id + " already exists");
         }
         //Region Name should be unique
-        if( _regionDao.findByName(name) != null ){
-            throw new InvalidParameterValueException("Region with name: "+name+" already exists");
+        if (_regionDao.findByName(name) != null) {
+            throw new InvalidParameterValueException("Region with name: " + name + " already exists");
         }
         RegionVO region = new RegionVO(id, name, endPoint);
         return _regionDao.persist(region);
@@ -121,28 +115,28 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
 
     /**
      * {@inheritDoc}
-     */ 
+     */
     @Override
     public Region updateRegion(int id, String name, String endPoint) {
         RegionVO region = _regionDao.findById(id);
 
-        if(region == null){
-            throw new InvalidParameterValueException("Region with id: "+id+" does not exist");
+        if (region == null) {
+            throw new InvalidParameterValueException("Region with id: " + id + " does not exist");
         }
 
         //Ensure region name is unique
-        if(name != null){
+        if (name != null) {
             RegionVO region1 = _regionDao.findByName(name);
-            if(region1 != null && id != region1.getId()){
-                throw new InvalidParameterValueException("Region with name: "+name+" already exists");
+            if (region1 != null && id != region1.getId()) {
+                throw new InvalidParameterValueException("Region with name: " + name + " already exists");
             }
         }
 
-        if(name != null){
+        if (name != null) {
             region.setName(name);
         }
 
-        if(endPoint != null){
+        if (endPoint != null) {
             region.setEndPoint(endPoint);
         }
 
@@ -152,11 +146,11 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
 
     /**
      * {@inheritDoc}
-     */ 
+     */
     @Override
     public boolean removeRegion(int id) {
         RegionVO region = _regionDao.findById(id);
-        if(region == null){
+        if (region == null) {
             throw new InvalidParameterValueException("Failed to delete Region: " + id + ", Region not found");
         }
         return _regionDao.remove(id);
@@ -164,20 +158,20 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
 
     /**
      * {@inheritDoc}
-     */ 
+     */
     @Override
     public List<RegionVO> listRegions(Integer id, String name) {
         List<RegionVO> regions = new ArrayList<RegionVO>();
-        if(id != null){
+        if (id != null) {
             RegionVO region = _regionDao.findById(id);
-            if(region != null){
+            if (region != null) {
                 regions.add(region);
             }
             return regions;
         }
-        if(name != null){
+        if (name != null) {
             RegionVO region = _regionDao.findByName(name);
-            if(region != null){
+            if (region != null) {
                 regions.add(region);
             }
             return regions;
@@ -187,7 +181,7 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
 
     /**
      * {@inheritDoc}
-     */ 
+     */
     @Override
     public boolean deleteUserAccount(long accountId) {
         return _accountMgr.deleteUserAccount(accountId);
@@ -195,7 +189,7 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
 
     /**
      * {@inheritDoc}
-     */ 
+     */
     @Override
     public Account updateAccount(UpdateAccountCmd cmd) {
         return _accountMgr.updateAccount(cmd);
@@ -203,11 +197,12 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
 
     /**
      * {@inheritDoc}
-     */ 
+     */
     @Override
-    public Account disableAccount(String accountName, Long domainId, Long accountId, Boolean lockRequested) throws ConcurrentOperationException, ResourceUnavailableException {
+    public Account disableAccount(String accountName, Long domainId, Long accountId, Boolean lockRequested) throws ConcurrentOperationException,
+        ResourceUnavailableException {
         Account account = null;
-        if(lockRequested){
+        if (lockRequested) {
             account = _accountMgr.lockAccount(accountName, domainId, accountId);
         } else {
             account = _accountMgr.disableAccount(accountName, domainId, accountId);
@@ -217,7 +212,7 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
 
     /**
      * {@inheritDoc}
-     */ 
+     */
     @Override
     public Account enableAccount(String accountName, Long domainId, Long accountId) {
         return _accountMgr.enableAccount(accountName, domainId, accountId);
@@ -241,7 +236,7 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
 
     /**
      * {@inheritDoc}
-     */ 
+     */
     @Override
     public boolean deleteDomain(Long id, Boolean cleanup) {
         return _domainMgr.deleteDomain(id, cleanup);

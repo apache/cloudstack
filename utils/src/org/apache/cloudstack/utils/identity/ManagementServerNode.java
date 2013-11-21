@@ -28,33 +28,33 @@ import com.cloud.utils.net.MacAddress;
 
 @Local(value = {SystemIntegrityChecker.class})
 public class ManagementServerNode extends AdapterBase implements SystemIntegrityChecker {
-	private final Logger s_logger = Logger.getLogger(ManagementServerNode.class);
-    
-	private static final long s_nodeId = MacAddress.getMacAddress().toLong();
-    
+    private final Logger s_logger = Logger.getLogger(ManagementServerNode.class);
+
+    private static final long s_nodeId = MacAddress.getMacAddress().toLong();
+
     public ManagementServerNode() {
-    	setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);
+        setRunLevel(ComponentLifecycle.RUN_LEVEL_FRAMEWORK_BOOTSTRAP);
     }
-    
+
     @Override
     public void check() {
         if (s_nodeId <= 0) {
             throw new CloudRuntimeException("Unable to get the management server node id");
         }
     }
-    
+
     public static long getManagementServerId() {
         return s_nodeId;
     }
-    
+
     @Override
     public boolean start() {
-    	try {
-    		check();
-    	} catch (Exception e) {
-			s_logger.error("System integrity check exception", e);
-			System.exit(1);
-    	}
-    	return true;
+        try {
+            check();
+        } catch (Exception e) {
+            s_logger.error("System integrity check exception", e);
+            System.exit(1);
+        }
+        return true;
     }
 }

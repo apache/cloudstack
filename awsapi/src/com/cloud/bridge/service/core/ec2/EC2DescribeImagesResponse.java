@@ -21,16 +21,16 @@ import java.util.List;
 
 public class EC2DescribeImagesResponse {
 
-	private List<EC2Image> imageSet = new ArrayList<EC2Image>();    
+    private List<EC2Image> imageSet = new ArrayList<EC2Image>();
 
-	public EC2DescribeImagesResponse() {
-	}
-	
-	public void addImage( EC2Image param ) {
-		imageSet.add( param );
-	}
-	
-	public EC2Image[] getImageSet() {
-		return imageSet.toArray(new EC2Image[0]);
-	}
+    public EC2DescribeImagesResponse() {
+    }
+
+    public void addImage(EC2Image param) {
+        imageSet.add(param);
+    }
+
+    public EC2Image[] getImageSet() {
+        return imageSet.toArray(new EC2Image[0]);
+    }
 }

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.address;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,15 +30,13 @@ import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
 
-@APICommand(name = "disassociateIpAddress", description="Disassociates an ip address from the account.", responseObject=SuccessResponse.class)
+@APICommand(name = "disassociateIpAddress", description = "Disassociates an ip address from the account.", responseObject = SuccessResponse.class)
 public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DisassociateIPAddrCmd.class.getName());
 
@@ -46,15 +46,14 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID,entityType = IPAddressResponse.class,
-            required=true, description="the id of the public ip address" +
-            " to disassociate")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = IPAddressResponse.class, required = true, description = "the id of the public ip address"
+        + " to disassociate")
     private Long id;
 
     // unexposed parameter needed for events logging
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.UUID, entityType = AccountResponse.class,
-            expose=false)
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, expose = false)
     private Long ownerId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -73,7 +72,7 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws InsufficientAddressCapacityException{
+    public void execute() throws InsufficientAddressCapacityException {
         CallContext.current().setEventDetails("Ip Id: " + getIpAddressId());
         boolean result = false;
         if (!isPortable(id)) {
@@ -100,7 +99,7 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  ("Disassociating ip address with id=" + id);
+        return ("Disassociating ip address with id=" + id);
     }
 
     @Override
@@ -152,6 +151,6 @@ public class DisassociateIPAddrCmd extends BaseAsyncCmd {
 
     private boolean isPortable(long id) {
         IpAddress ip = getIpAddress(id);
-        return  ip.isPortable();
+        return ip.isPortable();
     }
 }

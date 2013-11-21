@@ -28,14 +28,16 @@ import com.cloud.serializer.Param;
 
 @EntityReference(value = VmwareDatacenter.class)
 public class VmwareDatacenterResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="The VMware Datacenter ID")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "The VMware Datacenter ID")
     private String id;
 
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "the Zone ID associated with this VMware Datacenter")
     private Long zoneId;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="The VMware Datacenter name")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "The VMware Datacenter name")
     private String name;
 
     @SerializedName(ApiConstants.VCENTER)

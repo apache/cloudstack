@@ -32,10 +32,10 @@ import junit.framework.Assert;
 
 import org.apache.log4j.Logger;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 
@@ -61,15 +61,13 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 //@Ignore("Requires database to be set up")
 public class CreatePrivateNetworkTest {
 
-    private static final Logger s_logger = Logger
-            .getLogger(CreatePrivateNetworkTest.class);
+    private static final Logger s_logger = Logger.getLogger(CreatePrivateNetworkTest.class);
 
     NetworkServiceImpl networkService = new NetworkServiceImpl();
 
@@ -100,52 +98,34 @@ public class CreatePrivateNetworkTest {
         networkService._networkMgr = _networkMgr;
         networkService._privateIpDao = _privateIpDao;
 
-        Account account = new AccountVO("testaccount", 1,
-                "networkdomain", (short)0, UUID.randomUUID().toString());
-        when(networkService._accountMgr.getAccount(anyLong())).thenReturn(
-                account);
+        Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
+        when(networkService._accountMgr.getAccount(anyLong())).thenReturn(account);
 
-        NetworkOfferingVO ntwkOff = new NetworkOfferingVO("offer", "fakeOffer",
-                TrafficType.Guest, true, true, null, null, false, null, null,
-                GuestType.Isolated, false, false, false, false, false,
-                false, false, false, false,
-                false, false, false, false);
-        when(networkService._networkOfferingDao.findById(anyLong()))
-                .thenReturn(ntwkOff);
-        List<NetworkOfferingVO>netofferlist = new ArrayList<NetworkOfferingVO>();
+        NetworkOfferingVO ntwkOff =
+            new NetworkOfferingVO("offer", "fakeOffer", TrafficType.Guest, true, true, null, null, false, null, null, GuestType.Isolated, false, false, false, false,
+                false, false, false, false, false, false, false, false, false);
+        when(networkService._networkOfferingDao.findById(anyLong())).thenReturn(ntwkOff);
+        List<NetworkOfferingVO> netofferlist = new ArrayList<NetworkOfferingVO>();
         netofferlist.add(ntwkOff);
-        when(networkService._networkOfferingDao.listSystemNetworkOfferings())
-                .thenReturn(netofferlist);
+        when(networkService._networkOfferingDao.listSystemNetworkOfferings()).thenReturn(netofferlist);
 
-        PhysicalNetworkVO physicalNetwork = new PhysicalNetworkVO(1L, 1L,
-                "2-5", "200", 1L, null, "testphysicalnetwork");
-        when(networkService._physicalNetworkDao.findById(anyLong()))
-                .thenReturn(physicalNetwork);
+        PhysicalNetworkVO physicalNetwork = new PhysicalNetworkVO(1L, 1L, "2-5", "200", 1L, null, "testphysicalnetwork");
+        when(networkService._physicalNetworkDao.findById(anyLong())).thenReturn(physicalNetwork);
 
-        DataCenterVO dc = new DataCenterVO(1L, "hut", "op de hei", null, null,
-                null, null, "10.1.1.0/24", "unreal.net", 1L,
-                NetworkType.Advanced, null, null);
-        when(networkService._dcDao.lockRow(anyLong(), anyBoolean()))
-                .thenReturn(dc);
+        DataCenterVO dc = new DataCenterVO(1L, "hut", "op de hei", null, null, null, null, "10.1.1.0/24", "unreal.net", 1L, NetworkType.Advanced, null, null);
+        when(networkService._dcDao.lockRow(anyLong(), anyBoolean())).thenReturn(dc);
 
-        when(networkService._networksDao.getPrivateNetwork(anyString(),
-                anyString(), eq(1L), eq(1L), anyLong())).thenReturn(null);
+        when(networkService._networksDao.getPrivateNetwork(anyString(), anyString(), eq(1L), eq(1L), anyLong())).thenReturn(null);
 
-        Network net = new NetworkVO(1L, TrafficType.Guest, Mode.None,
-                BroadcastDomainType.Vlan, 1L, 1L, 1L, 1L, "bla", "fake",
-                "eet.net", GuestType.Isolated, 1L, 1L, ACLType.Account, false,
-                1L);
-        when(networkService._networkMgr.createGuestNetwork(
-                eq(ntwkOff.getId()), eq("bla"), eq("fake"),
-                eq("10.1.1.1"), eq("10.1.1.0/24"), anyString(),
-                anyString(), eq(account), anyLong(),
-                eq(physicalNetwork),
-                eq(physicalNetwork.getDataCenterId()),
-                eq(ACLType.Account), anyBoolean(), eq(1L), anyString(),
-                anyString(), anyBoolean(), anyString())).thenReturn(net);
+        Network net =
+            new NetworkVO(1L, TrafficType.Guest, Mode.None, BroadcastDomainType.Vlan, 1L, 1L, 1L, 1L, "bla", "fake", "eet.net", GuestType.Isolated, 1L, 1L,
+                ACLType.Account, false, 1L);
+        when(
+            networkService._networkMgr.createGuestNetwork(eq(ntwkOff.getId()), eq("bla"), eq("fake"), eq("10.1.1.1"), eq("10.1.1.0/24"), anyString(), anyString(),
+                eq(account), anyLong(), eq(physicalNetwork), eq(physicalNetwork.getDataCenterId()), eq(ACLType.Account), anyBoolean(), eq(1L), anyString(), anyString(),
+                anyBoolean(), anyString())).thenReturn(net);
 
-        when(networkService._privateIpDao.findByIpAndSourceNetworkId(
-                net.getId(), "10.1.1.2")).thenReturn(null);
+        when(networkService._privateIpDao.findByIpAndSourceNetworkId(net.getId(), "10.1.1.2")).thenReturn(null);
         when(networkService._privateIpDao.findByIpAndSourceNetworkIdAndVpcId(eq(1L), anyString(), eq(1L))).thenReturn(null);
     }
 
@@ -166,24 +146,18 @@ public class CreatePrivateNetworkTest {
                 /* nw = */
                 networkService.createPrivateNetwork("bla", "fake", 1, "bla:2", "10.1.1.2", null, "10.1.1.1", "255.255.255.0", 1, 1L, true, 1L);
             } catch (CloudRuntimeException e) {
-                Assert.assertEquals("unexpected parameter exception",
-                        "string 'bla:2' has an unknown BroadcastDomainType.",
-                        e.getMessage());
+                Assert.assertEquals("unexpected parameter exception", "string 'bla:2' has an unknown BroadcastDomainType.", e.getMessage());
                 invalid = true;
             }
             try {
                 /* nw = */
                 networkService.createPrivateNetwork("bla", "fake", 1, "mido://4", "10.1.1.2", null, "10.1.1.1", "255.255.255.0", 1, 1L, false, 1L);
             } catch (InvalidParameterValueException e) {
-                Assert.assertEquals("unexpected parameter exception",
-                        "unsupported type of broadcastUri specified: mido://4",
-                        e.getMessage());
+                Assert.assertEquals("unexpected parameter exception", "unsupported type of broadcastUri specified: mido://4", e.getMessage());
                 unsupported = true;
             }
-            Assert.assertEquals("'bla' should not be accepted as scheme", true,
-                    invalid);
-            Assert.assertEquals("'mido' should not yet be supported as scheme",
-                    true, unsupported);
+            Assert.assertEquals("'bla' should not be accepted as scheme", true, invalid);
+            Assert.assertEquals("'mido' should not yet be supported as scheme", true, unsupported);
         } catch (ResourceAllocationException e) {
             s_logger.error("no resources", e);
             fail("no resources");

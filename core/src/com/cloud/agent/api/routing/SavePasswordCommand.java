@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.agent.api.routing;
 
-
 public class SavePasswordCommand extends NetworkElementCommand {
 
     String password;
@@ -39,18 +38,16 @@ public class SavePasswordCommand extends NetworkElementCommand {
         this.executeInSequence = executeInSequence;
     }
 
-	public String getPassword() {
-		return password;
-	}
+    public String getPassword() {
+        return password;
+    }
 
-	public String getVmIpAddress() {
-		return vmIpAddress;
-	}
+    public String getVmIpAddress() {
+        return vmIpAddress;
+    }
 
     public String getVmName() {
         return vmName;
     }
-
-
 
 }

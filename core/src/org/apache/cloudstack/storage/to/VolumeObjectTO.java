@@ -16,13 +16,13 @@
 // under the License.
 package org.apache.cloudstack.storage.to;
 
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.offering.DiskOffering.DiskCacheMode;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.offering.DiskOffering.DiskCacheMode;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 
@@ -53,57 +53,56 @@ public class VolumeObjectTO implements DataTO {
     }
 
     public VolumeObjectTO(VolumeInfo volume) {
-        this.uuid = volume.getUuid();
-        this.path = volume.getPath();
-        this.accountId = volume.getAccountId();
+        uuid = volume.getUuid();
+        path = volume.getPath();
+        accountId = volume.getAccountId();
         if (volume.getDataStore() != null) {
-            this.dataStore = volume.getDataStore().getTO();
+            dataStore = volume.getDataStore().getTO();
         } else {
-            this.dataStore = null;
+            dataStore = null;
         }
-        this.vmName = volume.getAttachedVmName();
-        this.size = volume.getSize();
-        this.setVolumeId(volume.getId());
-        this.chainInfo = volume.getChainInfo();
-        this.volumeType = volume.getVolumeType();
-        this.name = volume.getName();
-        this.setId(volume.getId());
-        this.format = volume.getFormat();
-        this.bytesReadRate = volume.getBytesReadRate();
-        this.bytesWriteRate = volume.getBytesWriteRate();
-        this.iopsReadRate = volume.getIopsReadRate();
-        this.iopsWriteRate = volume.getIopsWriteRate();
-        this.cacheMode = volume.getCacheMode();
-        this.hypervisorType = volume.getHypervisorType();
+        vmName = volume.getAttachedVmName();
+        size = volume.getSize();
+        setVolumeId(volume.getId());
+        chainInfo = volume.getChainInfo();
+        volumeType = volume.getVolumeType();
+        name = volume.getName();
+        setId(volume.getId());
+        format = volume.getFormat();
+        bytesReadRate = volume.getBytesReadRate();
+        bytesWriteRate = volume.getBytesWriteRate();
+        iopsReadRate = volume.getIopsReadRate();
+        iopsWriteRate = volume.getIopsWriteRate();
+        cacheMode = volume.getCacheMode();
+        hypervisorType = volume.getHypervisorType();
         setDeviceId(volume.getDeviceId());
     }
 
     public String getUuid() {
-        return this.uuid;
+        return uuid;
     }
 
     @Override
     public String getPath() {
-        return this.path;
+        return path;
     }
 
     public Volume.Type getVolumeType() {
-        return this.volumeType;
+        return volumeType;
     }
 
     @Override
     public DataStoreTO getDataStore() {
-        return this.dataStore;
+        return dataStore;
     }
 
     @Override
     public Hypervisor.HypervisorType getHypervisorType() {
-        return this.hypervisorType;
+        return hypervisorType;
     }
 
-
-    public void setDataStore(DataStoreTO store){
-        this.dataStore = store;
+    public void setDataStore(DataStoreTO store) {
+        dataStore = store;
     }
 
     public void setDataStore(PrimaryDataStoreTO dataStore) {
@@ -111,11 +110,11 @@ public class VolumeObjectTO implements DataTO {
     }
 
     public String getName() {
-        return this.name;
+        return name;
     }
 
     public Long getSize() {
-        return this.size;
+        return size;
     }
 
     @Override
@@ -190,8 +189,7 @@ public class VolumeObjectTO implements DataTO {
 
     @Override
     public String toString() {
-        return new StringBuilder("volumeTO[uuid=").append(uuid).append("|path=").append(path)
-                .append("|datastore=").append(dataStore).append("]").toString();
+        return new StringBuilder("volumeTO[uuid=").append(uuid).append("|path=").append(path).append("|datastore=").append(dataStore).append("]").toString();
     }
 
     public void setBytesReadRate(Long bytesReadRate) {
@@ -241,5 +239,4 @@ public class VolumeObjectTO implements DataTO {
     public DiskCacheMode getCacheMode() {
         return cacheMode;
     }
-
 }

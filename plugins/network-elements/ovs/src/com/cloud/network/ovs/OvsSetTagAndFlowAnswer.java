@@ -25,7 +25,7 @@ public class OvsSetTagAndFlowAnswer extends Answer {
 
     public OvsSetTagAndFlowAnswer(Command cmd, boolean success, String details) {
         super(cmd, success, details);
-        OvsSetTagAndFlowCommand c = (OvsSetTagAndFlowCommand) cmd;
+        OvsSetTagAndFlowCommand c = (OvsSetTagAndFlowCommand)cmd;
         this.vmId = c.getVmId();
         this.seqno = Long.parseLong(c.getSeqNo());
     }

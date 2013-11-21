@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.admin.network;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,13 +28,15 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ProviderResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateNetworkServiceProvider", description="Updates a network serviceProvider of a physical network", responseObject=ProviderResponse.class, since="3.0.0")
+@APICommand(name = "updateNetworkServiceProvider",
+            description = "Updates a network serviceProvider of a physical network",
+            responseObject = ProviderResponse.class,
+            since = "3.0.0")
 public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkServiceProviderCmd.class.getName());
 
@@ -41,14 +45,16 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="Enabled/Disabled/Shutdown the physical network service provider")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "Enabled/Disabled/Shutdown the physical network service provider")
     private String state;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ProviderResponse.class,
-            required=true, description="network service provider id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ProviderResponse.class, required = true, description = "network service provider id")
     private Long id;
 
-    @Parameter(name=ApiConstants.SERVICE_LIST, type=CommandType.LIST, collectionType = CommandType.STRING, description="the list of services to be enabled for this physical network service provider")
+    @Parameter(name = ApiConstants.SERVICE_LIST,
+               type = CommandType.LIST,
+               collectionType = CommandType.STRING,
+               description = "the list of services to be enabled for this physical network service provider")
     private List<String> enabledServices;
 
     /////////////////////////////////////////////////////
@@ -66,6 +72,7 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     public List<String> getEnabledServices() {
         return enabledServices;
     }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -81,13 +88,13 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         PhysicalNetworkServiceProvider result = _networkService.updateNetworkServiceProvider(getId(), getState(), getEnabledServices());
         if (result != null) {
             ProviderResponse response = _responseGenerator.createNetworkServiceProviderResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
-        }else {
+        } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update service provider");
         }
     }
@@ -99,7 +106,7 @@ public class UpdateNetworkServiceProviderCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Updating physical network ServiceProvider: " + getId();
+        return "Updating physical network ServiceProvider: " + getId();
     }
 
     @Override

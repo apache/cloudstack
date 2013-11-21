@@ -21,6 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,13 +30,11 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
+import org.apache.cloudstack.api.response.DedicateHostResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.DedicateHostResponse;
 import org.apache.cloudstack.dedicated.DedicatedService;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.DedicatedResources;
@@ -45,24 +45,25 @@ public class ListDedicatedHostsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDedicatedHostsCmd.class.getName());
 
     private static final String s_name = "listdedicatedhostsresponse";
-    @Inject DedicatedService dedicatedService;
+    @Inject
+    DedicatedService dedicatedService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class,
-            description="the ID of the host")
+    @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "the ID of the host")
     private Long hostId;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            description="the ID of the domain associated with the host")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the ID of the domain associated with the host")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING,
-            description = "the name of the account associated with the host. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the name of the account associated with the host. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.AFFINITY_GROUP_ID, type = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "list dedicated hosts by affinity group")
+    @Parameter(name = ApiConstants.AFFINITY_GROUP_ID,
+               type = CommandType.UUID,
+               entityType = AffinityGroupResponse.class,
+               description = "list dedicated hosts by affinity group")
     private Long affinityGroupId;
 
     /////////////////////////////////////////////////////
@@ -73,11 +74,11 @@ public class ListDedicatedHostsCmd extends BaseListCmd {
         return hostId;
     }
 
-    public Long getDomainId(){
+    public Long getDomainId() {
         return domainId;
     }
 
-    public String getAccountName(){
+    public String getAccountName() {
         return accountName;
     }
 
@@ -95,7 +96,7 @@ public class ListDedicatedHostsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends DedicatedResourceVO>, Integer> result = dedicatedService.listDedicatedHosts(this);
         ListResponse<DedicateHostResponse> response = new ListResponse<DedicateHostResponse>();
         List<DedicateHostResponse> Responses = new ArrayList<DedicateHostResponse>();

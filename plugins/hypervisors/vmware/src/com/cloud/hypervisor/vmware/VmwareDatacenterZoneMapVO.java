@@ -24,24 +24,23 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-
 //NOTE: This particular table is totally internal to the CS MS.
 //Do not ever include a uuid/guid field in this table. We just
 //need it map zone ids with VMware datacenter Ids.
 
 @Entity
-@Table(name="vmware_data_center_zone_map")
+@Table(name = "vmware_data_center_zone_map")
 public class VmwareDatacenterZoneMapVO implements VmwareDatacenterZoneMap {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="id")
+    @Column(name = "id")
     private long id;
 
-    @Column(name="zone_id")
+    @Column(name = "zone_id")
     private long zoneId;
 
-    @Column(name="vmware_data_center_id")
+    @Column(name = "vmware_data_center_id")
     private long vmwareDcId;
 
     public VmwareDatacenterZoneMapVO(long zoneId, long vmwareDcId) {
@@ -68,7 +67,7 @@ public class VmwareDatacenterZoneMapVO implements VmwareDatacenterZoneMap {
         return vmwareDcId;
     }
 
-     public void setZoneId(long zoneId) {
+    public void setZoneId(long zoneId) {
         this.zoneId = zoneId;
     }
 

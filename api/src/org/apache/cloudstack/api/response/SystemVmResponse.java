@@ -18,106 +18,131 @@ package org.apache.cloudstack.api.response;
 
 import java.util.Date;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
 import com.cloud.vm.VirtualMachine;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=VirtualMachine.class)
+@EntityReference(value = VirtualMachine.class)
 public class SystemVmResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the ID of the system VM")
+    @SerializedName("id")
+    @Param(description = "the ID of the system VM")
     private String id;
 
-    @SerializedName("systemvmtype") @Param(description="the system VM type")
+    @SerializedName("systemvmtype")
+    @Param(description = "the system VM type")
     private String systemVmType;
 
-    @SerializedName("jobid") @Param(description="the job ID associated with the system VM. This is only displayed if the router listed is part of a currently running asynchronous job.")
+    @SerializedName("jobid")
+    @Param(description = "the job ID associated with the system VM. This is only displayed if the router listed is part of a currently running asynchronous job.")
     private String jobId;
 
-    @SerializedName("jobstatus") @Param(description="the job status associated with the system VM.  This is only displayed if the router listed is part of a currently running asynchronous job.")
+    @SerializedName("jobstatus")
+    @Param(description = "the job status associated with the system VM.  This is only displayed if the router listed is part of a currently running asynchronous job.")
     private Integer jobStatus;
 
-    @SerializedName("zoneid") @Param(description="the Zone ID for the system VM")
+    @SerializedName("zoneid")
+    @Param(description = "the Zone ID for the system VM")
     private String zoneId;
 
-    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the Zone name for the system VM")
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "the Zone name for the system VM")
     private String zoneName;
 
-    @SerializedName("dns1") @Param(description="the first DNS for the system VM")
+    @SerializedName("dns1")
+    @Param(description = "the first DNS for the system VM")
     private String dns1;
 
-    @SerializedName("dns2") @Param(description="the second DNS for the system VM")
+    @SerializedName("dns2")
+    @Param(description = "the second DNS for the system VM")
     private String dns2;
 
-    @SerializedName("networkdomain") @Param(description="the network domain for the system VM")
+    @SerializedName("networkdomain")
+    @Param(description = "the network domain for the system VM")
     private String networkDomain;
 
-    @SerializedName("gateway") @Param(description="the gateway for the system VM")
+    @SerializedName("gateway")
+    @Param(description = "the gateway for the system VM")
     private String gateway;
 
-    @SerializedName("name") @Param(description="the name of the system VM")
+    @SerializedName("name")
+    @Param(description = "the name of the system VM")
     private String name;
 
-    @SerializedName("podid") @Param(description="the Pod ID for the system VM")
+    @SerializedName("podid")
+    @Param(description = "the Pod ID for the system VM")
     private String podId;
 
-    @SerializedName("hostid") @Param(description="the host ID for the system VM")
+    @SerializedName("hostid")
+    @Param(description = "the host ID for the system VM")
     private String hostId;
 
-    @SerializedName("hostname") @Param(description="the hostname for the system VM")
+    @SerializedName("hostname")
+    @Param(description = "the hostname for the system VM")
     private String hostName;
 
-    @SerializedName(ApiConstants.PRIVATE_IP) @Param(description="the private IP address for the system VM")
+    @SerializedName(ApiConstants.PRIVATE_IP)
+    @Param(description = "the private IP address for the system VM")
     private String privateIp;
 
-    @SerializedName(ApiConstants.PRIVATE_MAC_ADDRESS) @Param(description="the private MAC address for the system VM")
+    @SerializedName(ApiConstants.PRIVATE_MAC_ADDRESS)
+    @Param(description = "the private MAC address for the system VM")
     private String privateMacAddress;
 
-    @SerializedName(ApiConstants.PRIVATE_NETMASK) @Param(description="the private netmask for the system VM")
+    @SerializedName(ApiConstants.PRIVATE_NETMASK)
+    @Param(description = "the private netmask for the system VM")
     private String privateNetmask;
 
-    @SerializedName(ApiConstants.LINK_LOCAL_IP) @Param(description="the link local IP address for the system vm")
+    @SerializedName(ApiConstants.LINK_LOCAL_IP)
+    @Param(description = "the link local IP address for the system vm")
     private String linkLocalIp;
 
-    @SerializedName(ApiConstants.LINK_LOCAL_MAC_ADDRESS) @Param(description="the link local MAC address for the system vm")
+    @SerializedName(ApiConstants.LINK_LOCAL_MAC_ADDRESS)
+    @Param(description = "the link local MAC address for the system vm")
     private String linkLocalMacAddress;
 
-    @SerializedName(ApiConstants.LINK_LOCAL_MAC_NETMASK) @Param(description="the link local netmask for the system vm")
+    @SerializedName(ApiConstants.LINK_LOCAL_MAC_NETMASK)
+    @Param(description = "the link local netmask for the system vm")
     private String linkLocalNetmask;
 
-    @SerializedName("publicip") @Param(description="the public IP address for the system VM")
+    @SerializedName("publicip")
+    @Param(description = "the public IP address for the system VM")
     private String publicIp;
 
-    @SerializedName("publicmacaddress") @Param(description="the public MAC address for the system VM")
+    @SerializedName("publicmacaddress")
+    @Param(description = "the public MAC address for the system VM")
     private String publicMacAddress;
 
-    @SerializedName("publicnetmask") @Param(description="the public netmask for the system VM")
+    @SerializedName("publicnetmask")
+    @Param(description = "the public netmask for the system VM")
     private String publicNetmask;
 
-    @SerializedName("templateid") @Param(description="the template ID for the system VM")
+    @SerializedName("templateid")
+    @Param(description = "the template ID for the system VM")
     private String templateId;
 
-    @SerializedName("created") @Param(description="the date and time the system VM was created")
+    @SerializedName("created")
+    @Param(description = "the date and time the system VM was created")
     private Date created;
 
-    @SerializedName("state") @Param(description="the state of the system VM")
+    @SerializedName("state")
+    @Param(description = "the state of the system VM")
     private String state;
 
-    @SerializedName("activeviewersessions") @Param(description="the number of active console sessions for the console proxy system vm")
+    @SerializedName("activeviewersessions")
+    @Param(description = "the number of active console sessions for the console proxy system vm")
     private Integer activeViewerSessions;
 
-   // private Long objectId;
-
-
+    // private Long objectId;
 
     @Override
     public String getObjectId() {
         return this.getId();
     }
-
 
     public String getId() {
         return id;

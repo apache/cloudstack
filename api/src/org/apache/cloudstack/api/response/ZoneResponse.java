@@ -21,97 +21,119 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = DataCenter.class)
 public class ZoneResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="Zone id")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "Zone id")
     private String id;
 
-    @SerializedName(ApiConstants.NAME) @Param(description="Zone name")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "Zone name")
     private String name;
 
-    @SerializedName(ApiConstants.DESCRIPTION) @Param(description="Zone description")
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "Zone description")
     private String description;
 
-    @SerializedName(ApiConstants.DNS1) @Param(description="the first DNS for the Zone")
+    @SerializedName(ApiConstants.DNS1)
+    @Param(description = "the first DNS for the Zone")
     private String dns1;
 
-    @SerializedName(ApiConstants.DNS2) @Param(description="the second DNS for the Zone")
+    @SerializedName(ApiConstants.DNS2)
+    @Param(description = "the second DNS for the Zone")
     private String dns2;
 
-    @SerializedName(ApiConstants.IP6_DNS1) @Param(description="the first IPv6 DNS for the Zone")
+    @SerializedName(ApiConstants.IP6_DNS1)
+    @Param(description = "the first IPv6 DNS for the Zone")
     private String ip6Dns1;
 
-    @SerializedName(ApiConstants.IP6_DNS2) @Param(description="the second IPv6 DNS for the Zone")
+    @SerializedName(ApiConstants.IP6_DNS2)
+    @Param(description = "the second IPv6 DNS for the Zone")
     private String ip6Dns2;
 
-    @SerializedName(ApiConstants.INTERNAL_DNS1) @Param(description="the first internal DNS for the Zone")
+    @SerializedName(ApiConstants.INTERNAL_DNS1)
+    @Param(description = "the first internal DNS for the Zone")
     private String internalDns1;
 
-    @SerializedName(ApiConstants.INTERNAL_DNS2) @Param(description="the second internal DNS for the Zone")
+    @SerializedName(ApiConstants.INTERNAL_DNS2)
+    @Param(description = "the second internal DNS for the Zone")
     private String internalDns2;
 
-    @SerializedName(ApiConstants.VLAN) @Param(description="the vlan range of the zone")
+    @SerializedName(ApiConstants.VLAN)
+    @Param(description = "the vlan range of the zone")
     private String vlan;
 
-    @SerializedName(ApiConstants.GUEST_CIDR_ADDRESS) @Param(description="the guest CIDR address for the Zone")
+    @SerializedName(ApiConstants.GUEST_CIDR_ADDRESS)
+    @Param(description = "the guest CIDR address for the Zone")
     private String guestCidrAddress;
 
     //TODO - generate description
     @SerializedName("status")
     private String status;
 
-    @SerializedName(ApiConstants.DISPLAY_TEXT) @Param(description="the display text of the zone")
+    @SerializedName(ApiConstants.DISPLAY_TEXT)
+    @Param(description = "the display text of the zone")
     private String displayText;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="Network domain name for the networks in the zone")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "Network domain name for the networks in the zone")
     private String domain;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the UUID of the containing domain, null for public zones")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the UUID of the containing domain, null for public zones")
     private String domainId;
 
-    @SerializedName("domainname") @Param(description="the name of the containing domain, null for public zones")
+    @SerializedName("domainname")
+    @Param(description = "the name of the containing domain, null for public zones")
     private String domainName;
 
-    @SerializedName(ApiConstants.NETWORK_TYPE) @Param(description="the network type of the zone; can be Basic or Advanced")
+    @SerializedName(ApiConstants.NETWORK_TYPE)
+    @Param(description = "the network type of the zone; can be Basic or Advanced")
     private String networkType;
 
-    @SerializedName("securitygroupsenabled") @Param(description="true if security groups support is enabled, false otherwise")
+    @SerializedName("securitygroupsenabled")
+    @Param(description = "true if security groups support is enabled, false otherwise")
     private boolean securityGroupsEnabled;
 
-    @SerializedName("allocationstate") @Param(description="the allocation state of the cluster")
+    @SerializedName("allocationstate")
+    @Param(description = "the allocation state of the cluster")
     private String allocationState;
 
-    @SerializedName(ApiConstants.ZONE_TOKEN) @Param(description="Zone Token")
+    @SerializedName(ApiConstants.ZONE_TOKEN)
+    @Param(description = "Zone Token")
     private String zoneToken;
 
-    @SerializedName(ApiConstants.DHCP_PROVIDER) @Param(description="the dhcp Provider for the Zone")
+    @SerializedName(ApiConstants.DHCP_PROVIDER)
+    @Param(description = "the dhcp Provider for the Zone")
     private String dhcpProvider;
 
-    @SerializedName("capacity")  @Param(description="the capacity of the Zone", responseObject = CapacityResponse.class)
+    @SerializedName("capacity")
+    @Param(description = "the capacity of the Zone", responseObject = CapacityResponse.class)
     private List<CapacityResponse> capacitites;
 
-    @SerializedName(ApiConstants.LOCAL_STORAGE_ENABLED) @Param(description="true if local storage offering enabled, false otherwise")
+    @SerializedName(ApiConstants.LOCAL_STORAGE_ENABLED)
+    @Param(description = "true if local storage offering enabled, false otherwise")
     private boolean localStorageEnabled;
-    
-    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with zone.",
-            responseObject = ResourceTagResponse.class, since="4.3")
+
+    @SerializedName(ApiConstants.TAGS)
+    @Param(description = "the list of resource tags associated with zone.", responseObject = ResourceTagResponse.class, since = "4.3")
     private Set<ResourceTagResponse> tags;
-    
+
     @SerializedName(ApiConstants.RESOURCE_DETAILS)
     @Param(description = "Meta data associated with the zone (key/value pairs)", since = "4.3.0")
     private Map<String, String> resourceDetails;
-    
-    
-    public ZoneResponse(){
+
+    public ZoneResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
 
@@ -199,26 +221,26 @@ public class ZoneResponse extends BaseResponse {
         this.localStorageEnabled = localStorageEnabled;
     }
 
-	public String getIp6Dns1() {
-		return ip6Dns1;
-	}
+    public String getIp6Dns1() {
+        return ip6Dns1;
+    }
 
-	public void setIp6Dns1(String ip6Dns1) {
-		this.ip6Dns1 = ip6Dns1;
-	}
+    public void setIp6Dns1(String ip6Dns1) {
+        this.ip6Dns1 = ip6Dns1;
+    }
 
-	public String getIp6Dns2() {
-		return ip6Dns2;
-	}
+    public String getIp6Dns2() {
+        return ip6Dns2;
+    }
 
-	public void setIp6Dns2(String ip6Dns2) {
-		this.ip6Dns2 = ip6Dns2;
-	}
-	
-    public void addTag(ResourceTagResponse tag){
+    public void setIp6Dns2(String ip6Dns2) {
+        this.ip6Dns2 = ip6Dns2;
+    }
+
+    public void addTag(ResourceTagResponse tag) {
         this.tags.add(tag);
     }
-    
+
     public void setResourceDetails(Map<String, String> details) {
         this.resourceDetails = details;
     }

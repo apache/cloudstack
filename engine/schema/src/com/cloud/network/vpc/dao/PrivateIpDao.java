@@ -21,7 +21,7 @@ import java.util.List;
 import com.cloud.network.vpc.PrivateIpVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface PrivateIpDao extends GenericDao<PrivateIpVO, Long>{
+public interface PrivateIpDao extends GenericDao<PrivateIpVO, Long> {
 
     /**
      * @param dcId
@@ -60,7 +60,7 @@ public interface PrivateIpDao extends GenericDao<PrivateIpVO, Long>{
      * @param networkId
      */
     void deleteByNetworkId(long networkId);
-    
+
     int countByNetworkId(long ntwkId);
 
     /**
@@ -69,8 +69,6 @@ public interface PrivateIpDao extends GenericDao<PrivateIpVO, Long>{
      * @return
      */
     PrivateIpVO findByIpAndVpcId(long vpcId, String ip4Address);
-
-
 
     PrivateIpVO findByIpAndSourceNetworkIdAndVpcId(long networkId, String ip4Address, long vpcId);
 }

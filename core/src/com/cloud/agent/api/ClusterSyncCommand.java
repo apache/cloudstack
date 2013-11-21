@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.agent.api;
 
-
 public class ClusterSyncCommand extends Command implements CronCommand {
     int _interval;
 
@@ -25,7 +24,7 @@ public class ClusterSyncCommand extends Command implements CronCommand {
     public ClusterSyncCommand() {
     }
 
-    public ClusterSyncCommand(int interval, long clusterId){
+    public ClusterSyncCommand(int interval, long clusterId) {
         _interval = interval;
         _clusterId = clusterId;
     }

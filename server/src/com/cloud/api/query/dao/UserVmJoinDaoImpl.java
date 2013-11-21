@@ -28,15 +28,15 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
@@ -51,14 +51,13 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmStats;
 
-
 @Component
-@Local(value={UserVmJoinDao.class})
+@Local(value = {UserVmJoinDao.class})
 public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implements UserVmJoinDao {
     public static final Logger s_logger = Logger.getLogger(UserVmJoinDaoImpl.class);
 
     @Inject
-    private ConfigurationDao  _configDao;
+    private ConfigurationDao _configDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
@@ -77,7 +76,6 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         activeVmByIsoSearch.done();
     }
 
-
     @Override
     public List<UserVmJoinVO> listActiveByIsoId(Long isoId) {
         SearchCriteria<UserVmJoinVO> sc = activeVmByIsoSearch.create();
@@ -88,12 +86,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         return listBy(sc);
     }
 
-
     @Override
     public UserVmResponse newUserVmResponse(String objectName, UserVmJoinVO userVm, EnumSet<VMDetails> details, Account caller) {
         UserVmResponse userVmResponse = new UserVmResponse();
 
-        if (userVm.getHypervisorType() != null){
+        if (userVm.getHypervisorType() != null) {
             userVmResponse.setHypervisor(userVm.getHypervisorType().toString());
         }
         userVmResponse.setId(userVm.getUuid());
@@ -174,20 +171,19 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
             if (vmStats != null) {
                 userVmResponse.setCpuUsed(new DecimalFormat("#.##").format(vmStats.getCPUUtilization()) + "%");
 
-                userVmResponse.setNetworkKbsRead((long) vmStats.getNetworkReadKBs());
+                userVmResponse.setNetworkKbsRead((long)vmStats.getNetworkReadKBs());
 
-                userVmResponse.setNetworkKbsWrite((long) vmStats.getNetworkWriteKBs());
+                userVmResponse.setNetworkKbsWrite((long)vmStats.getNetworkWriteKBs());
 
-                if ((userVm.getHypervisorType() != null) 
-                        && (userVm.getHypervisorType().equals(HypervisorType.KVM)
-                        || userVm.getHypervisorType().equals(HypervisorType.XenServer))) { // support KVM and XenServer only util 2013.06.25
-                    userVmResponse.setDiskKbsRead((long) vmStats.getDiskReadKBs());
+                if ((userVm.getHypervisorType() != null) &&
+                    (userVm.getHypervisorType().equals(HypervisorType.KVM) || userVm.getHypervisorType().equals(HypervisorType.XenServer))) { // support KVM and XenServer only util 2013.06.25
+                    userVmResponse.setDiskKbsRead((long)vmStats.getDiskReadKBs());
 
-                    userVmResponse.setDiskKbsWrite((long) vmStats.getDiskWriteKBs());
+                    userVmResponse.setDiskKbsWrite((long)vmStats.getDiskWriteKBs());
 
-                    userVmResponse.setDiskIORead((long) vmStats.getDiskReadIOs());
+                    userVmResponse.setDiskIORead((long)vmStats.getDiskReadIOs());
 
-                    userVmResponse.setDiskIOWrite((long) vmStats.getDiskWriteIOs());
+                    userVmResponse.setDiskIOWrite((long)vmStats.getDiskWriteIOs());
                 }
             }
         }
@@ -246,7 +242,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         long tag_id = userVm.getTagId();
         if (tag_id > 0) {
             ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
-            if ( vtag != null ){
+            if (vtag != null) {
                 userVmResponse.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
         }
@@ -263,10 +259,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
                 userVmResponse.addAffinityGroup(resp);
             }
         }
-        
+
         // set resource details map
         // only hypervisortoolsversion can be returned to the end user       }
-        if (userVm.getDetailName() != null && userVm.getDetailName().equalsIgnoreCase(VmDetailConstants.HYPERVISOR_TOOLS_VERSION)){
+        if (userVm.getDetailName() != null && userVm.getDetailName().equalsIgnoreCase(VmDetailConstants.HYPERVISOR_TOOLS_VERSION)) {
             Map<String, String> resourceDetails = new HashMap<String, String>();
             resourceDetails.put(userVm.getDetailName(), userVm.getDetailValue());
             userVmResponse.setDetails(resourceDetails);
@@ -333,7 +329,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         long tag_id = uvo.getTagId();
         if (tag_id > 0) {
             ResourceTagJoinVO vtag = ApiDBUtils.findResourceTagViewById(tag_id);
-            if ( vtag != null ){
+            if (vtag != null) {
                 userVmData.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
         }
@@ -352,21 +348,20 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         return userVmData;
     }
 
-
     @Override
     public List<UserVmJoinVO> searchByIds(Long... vmIds) {
         // set detail batch query size
         int DETAILS_BATCH_SIZE = 2000;
         String batchCfg = _configDao.getValue("detail.batch.query.size");
-        if ( batchCfg != null ){
+        if (batchCfg != null) {
             DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
         }
         // query details by batches
         List<UserVmJoinVO> uvList = new ArrayList<UserVmJoinVO>();
         // query details by batches
         int curr_index = 0;
-        if ( vmIds.length > DETAILS_BATCH_SIZE ){
-            while ( (curr_index + DETAILS_BATCH_SIZE ) <= vmIds.length ) {
+        if (vmIds.length > DETAILS_BATCH_SIZE) {
+            while ((curr_index + DETAILS_BATCH_SIZE) <= vmIds.length) {
                 Long[] ids = new Long[DETAILS_BATCH_SIZE];
                 for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
                     ids[k] = vmIds[j];
@@ -401,8 +396,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
     public List<UserVmJoinVO> newUserVmView(UserVm... userVms) {
 
         Hashtable<Long, UserVm> userVmDataHash = new Hashtable<Long, UserVm>();
-        for (UserVm vm : userVms){
-            if ( !userVmDataHash.containsKey(vm.getId())){
+        for (UserVm vm : userVms) {
+            if (!userVmDataHash.containsKey(vm.getId())) {
                 userVmDataHash.put(vm.getId(), vm);
             }
         }
@@ -410,8 +405,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         Set<Long> vmIdSet = userVmDataHash.keySet();
         List<UserVmJoinVO> uvms = searchByIds(vmIdSet.toArray(new Long[vmIdSet.size()]));
         // populate transit password field from UserVm
-        if ( uvms != null ){
-            for (UserVmJoinVO uvm : uvms){
+        if (uvms != null) {
+            for (UserVmJoinVO uvm : uvms) {
                 UserVm v = userVmDataHash.get(uvm.getId());
                 uvm.setPassword(v.getPassword());
             }

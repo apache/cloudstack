@@ -26,23 +26,21 @@ import javax.persistence.Table;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name="mocksecstorage")
-
+@Table(name = "mocksecstorage")
 public class MockSecStorageVO implements InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="url")
+    @Column(name = "url")
     private String url;
 
-    @Column(name="capacity")
+    @Column(name = "capacity")
     private long capacity;
 
-    @Column(name="mount_point")
+    @Column(name = "mount_point")
     private String mountPoint;
-
 
     public MockSecStorageVO() {
 

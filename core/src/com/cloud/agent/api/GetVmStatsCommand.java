@@ -39,11 +39,11 @@ public class GetVmStatsCommand extends Command {
         return vmNames;
     }
 
-    public String getHostGuid(){
+    public String getHostGuid() {
         return this.hostGuid;
     }
 
-    public String getHostName(){
+    public String getHostName() {
         return this.hostName;
     }
 

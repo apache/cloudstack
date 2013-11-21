@@ -19,29 +19,32 @@ package org.apache.cloudstack.api.command.admin.network;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
 import com.cloud.user.Account;
 
-
-@APICommand(name = "listSupportedNetworkServices", description="Lists all network services provided by CloudStack or for the given Provider.", responseObject=ServiceResponse.class, since="3.0.0")
+@APICommand(name = "listSupportedNetworkServices",
+            description = "Lists all network services provided by CloudStack or for the given Provider.",
+            responseObject = ServiceResponse.class,
+            since = "3.0.0")
 public class ListSupportedNetworkServicesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSupportedNetworkServicesCmd.class.getName());
     private static final String _name = "listsupportednetworkservicesresponse";
 
-    @Parameter(name=ApiConstants.PROVIDER, type=CommandType.STRING, description="network service provider name")
+    @Parameter(name = ApiConstants.PROVIDER, type = CommandType.STRING, description = "network service provider name")
     private String providerName;
 
-    @Parameter(name=ApiConstants.SERVICE, type=CommandType.STRING, description="network service name to list providers and capabilities of")
+    @Parameter(name = ApiConstants.SERVICE, type = CommandType.STRING, description = "network service name to list providers and capabilities of")
     private String serviceName;
 
     /////////////////////////////////////////////////////
@@ -52,7 +55,6 @@ public class ListSupportedNetworkServicesCmd extends BaseListCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-
     public void setProviderName(String providerName) {
         this.providerName = providerName;
     }
@@ -60,7 +62,6 @@ public class ListSupportedNetworkServicesCmd extends BaseListCmd {
     public String getProviderName() {
         return providerName;
     }
-
 
     public String getServiceName() {
         return serviceName;
@@ -80,20 +81,20 @@ public class ListSupportedNetworkServicesCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         List<? extends Network.Service> services;
-        if(getServiceName() != null){
+        if (getServiceName() != null) {
             Network.Service service = null;
-            if(serviceName != null){
+            if (serviceName != null) {
                 service = Network.Service.getService(serviceName);
-                if(service == null){
+                if (service == null) {
                     throw new InvalidParameterValueException("Invalid Network Service=" + serviceName);
                 }
             }
             List<Network.Service> serviceList = new ArrayList<Network.Service>();
             serviceList.add(service);
             services = serviceList;
-        }else{
+        } else {
             services = _networkService.listNetworkServices(getProviderName());
         }
 

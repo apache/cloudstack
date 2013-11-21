@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -23,15 +25,13 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
-import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "detachIso", description="Detaches any ISO file (if any) currently attached to a virtual machine.", responseObject=UserVmResponse.class)
+@APICommand(name = "detachIso", description = "Detaches any ISO file (if any) currently attached to a virtual machine.", responseObject = UserVmResponse.class)
 public class DetachIsoCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DetachIsoCmd.class.getName());
 
@@ -41,8 +41,11 @@ public class DetachIsoCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
-            required=true, description="The ID of the virtual machine")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+               type = CommandType.UUID,
+               entityType = UserVmResponse.class,
+               required = true,
+               description = "The ID of the virtual machine")
     private Long virtualMachineId;
 
     /////////////////////////////////////////////////////
@@ -79,11 +82,11 @@ public class DetachIsoCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "detaching ISO from vm: " + getVirtualMachineId();
+        return "detaching ISO from vm: " + getVirtualMachineId();
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = _templateService.detachIso(virtualMachineId);
         if (result) {
             UserVm userVm = _entityMgr.findById(UserVm.class, virtualMachineId);

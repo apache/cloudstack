@@ -23,36 +23,36 @@ import com.cloud.vm.VirtualMachine.PowerState;
 // TODO vmsync
 // We should also have a HostVmStateReport class instead of using raw Map<> data structure,
 // for now, we store host-specific info at each VM entry and host fields are fixed
-// 
+//
 // This needs to be refactor-ed afterwards
 //
 public class HostVmStateReportEntry {
     VirtualMachine.PowerState state;
-    
+
     // host name or host uuid
     String host;
 
     // XS needs Xen Tools version info
     String hostToolsVersion;
-    
+
     public HostVmStateReportEntry() {
     }
-    
+
     public HostVmStateReportEntry(PowerState state, String host, String hostToolsVersion) {
         this.state = state;
         this.host = host;
         this.hostToolsVersion = hostToolsVersion;
     }
-    
+
     public PowerState getState() {
         return state;
     }
-    
+
     public String getHost() {
         return host;
     }
-    
+
     public String getHostToolsVersion() {
-    	return hostToolsVersion;
+        return hostToolsVersion;
     }
 }

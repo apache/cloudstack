@@ -23,89 +23,91 @@ import java.util.Arrays;
  */
 public class MockSink extends BaseElement {
 
-  protected ByteBuffer bufs[] = null;
+    protected ByteBuffer bufs[] = null;
 
-  public MockSink(String id) {
-    super(id);
-  }
+    public MockSink(String id) {
+        super(id);
+    }
 
-  public MockSink(String id, ByteBuffer bufs[]) {
-    super(id);
-    this.bufs = bufs;
-  }
+    public MockSink(String id, ByteBuffer bufs[]) {
+        super(id);
+        this.bufs = bufs;
+    }
 
-  @Override
-  public void handleData(ByteBuffer buf, Link link) {
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Received buf #" + (packetNumber) + " " + buf + ".");
+    @Override
+    public void handleData(ByteBuffer buf, Link link) {
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Received buf #" + (packetNumber) + " " + buf + ".");
 
-    if (buf == null)
-      return;
+        if (buf == null)
+            return;
 
-    if (packetNumber >= bufs.length)
-      throw new AssertionError("[" + this + "] Incoming buffer #" + packetNumber + " is not expected. Number of expected buffers: " + bufs.length
-          + ", unexpected buffer: " + buf + ".");
+        if (packetNumber >= bufs.length)
+            throw new AssertionError("[" + this + "] Incoming buffer #" + packetNumber + " is not expected. Number of expected buffers: " + bufs.length +
+                ", unexpected buffer: " + buf + ".");
 
-    // Compare incoming buffer with expected buffer
-    if (!Arrays.equals(bufs[packetNumber].toByteArray(), buf.toByteArray()))
-      throw new AssertionError("[" + this + "] Incoming buffer #" + packetNumber + " is not equal to expected buffer.\n  Actual bufer: " + buf
-          + ",\n  expected buffer: " + bufs[packetNumber] + ".");
+        // Compare incoming buffer with expected buffer
+        if (!Arrays.equals(bufs[packetNumber].toByteArray(), buf.toByteArray()))
+            throw new AssertionError("[" + this + "] Incoming buffer #" + packetNumber + " is not equal to expected buffer.\n  Actual bufer: " + buf +
+                ",\n  expected buffer: " + bufs[packetNumber] + ".");
 
-    if (verbose)
-      System.out.println("[" + this + "] INFO: buffers are equal.");
+        if (verbose)
+            System.out.println("[" + this + "] INFO: buffers are equal.");
 
-    // Use packetNumber variable to count incoming packets
-    packetNumber++;
+        // Use packetNumber variable to count incoming packets
+        packetNumber++;
 
-    buf.unref();
-  }
+        buf.unref();
+    }
 
-  @Override
-  protected void onClose() {
-    super.onClose();
+    @Override
+    protected void onClose() {
+        super.onClose();
 
-    if (packetNumber != bufs.length)
-      throw new AssertionError("[" + this + "] Number of expected buffers: " + bufs.length + ", number of actual buffers: " + packetNumber + ".");
-  }
+        if (packetNumber != bufs.length)
+            throw new AssertionError("[" + this + "] Number of expected buffers: " + bufs.length + ", number of actual buffers: " + packetNumber + ".");
+    }
 
-  @Override
-  public String toString() {
-    return "MockSink(" + id + ")";
-  }
+    @Override
+    public String toString() {
+        return "MockSink(" + id + ")";
+    }
 
-  /**
-   * Example.
-   */
-  public static void main(String args[]) {
+    /**
+     * Example.
+     */
+    public static void main(String args[]) {
 
-    Element mockSource = new MockSource("source") {
-      {
-        this.bufs = new ByteBuffer[] { new ByteBuffer(new byte[] { 1, 1, 2, 3, 4, 5 }), new ByteBuffer(new byte[] { 2, 1, 2, 3, 4 }),
-            new ByteBuffer(new byte[] { 3, 1, 2, 3 }), new ByteBuffer(new byte[] { 4, 1, 2 }), new ByteBuffer(new byte[] { 5, 1 }) };
-        this.verbose = true;
-        this.delay = 100;
-        this.numBuffers = this.bufs.length;
-      }
-    };
+        Element mockSource = new MockSource("source") {
+            {
+                this.bufs =
+                    new ByteBuffer[] {new ByteBuffer(new byte[] {1, 1, 2, 3, 4, 5}), new ByteBuffer(new byte[] {2, 1, 2, 3, 4}), new ByteBuffer(new byte[] {3, 1, 2, 3}),
+                        new ByteBuffer(new byte[] {4, 1, 2}), new ByteBuffer(new byte[] {5, 1})};
+                this.verbose = true;
+                this.delay = 100;
+                this.numBuffers = this.bufs.length;
+            }
+        };
 
-    Element mockSink = new MockSink("sink") {
-      {
-        this.bufs = new ByteBuffer[] { new ByteBuffer(new byte[] { 1, 1, 2, 3, 4, 5 }), new ByteBuffer(new byte[] { 2, 1, 2, 3, 4 }),
-            new ByteBuffer(new byte[] { 3, 1, 2, 3 }), new ByteBuffer(new byte[] { 4, 1, 2 }), new ByteBuffer(new byte[] { 5, 1 }) };
-        this.verbose = true;
-      }
-    };
+        Element mockSink = new MockSink("sink") {
+            {
+                this.bufs =
+                    new ByteBuffer[] {new ByteBuffer(new byte[] {1, 1, 2, 3, 4, 5}), new ByteBuffer(new byte[] {2, 1, 2, 3, 4}), new ByteBuffer(new byte[] {3, 1, 2, 3}),
+                        new ByteBuffer(new byte[] {4, 1, 2}), new ByteBuffer(new byte[] {5, 1})};
+                this.verbose = true;
+            }
+        };
 
-    Link link = new SyncLink() {
-      {
-        this.verbose = true;
-      }
-    };
+        Link link = new SyncLink() {
+            {
+                this.verbose = true;
+            }
+        };
 
-    mockSource.setLink(STDOUT, link, Direction.OUT);
-    mockSink.setLink(STDIN, link, Direction.IN);
+        mockSource.setLink(STDOUT, link, Direction.OUT);
+        mockSink.setLink(STDIN, link, Direction.IN);
 
-    link.run();
-  }
+        link.run();
+    }
 
 }

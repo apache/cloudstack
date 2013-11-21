@@ -18,12 +18,15 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.PodResponse;
-
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.api.response.NetscalerLoadBalancerResponse;
@@ -37,34 +40,51 @@ import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "configureNetscalerLoadBalancer", responseObject=NetscalerLoadBalancerResponse.class, description="configures a netscaler load balancer device")
+@APICommand(name = "configureNetscalerLoadBalancer", responseObject = NetscalerLoadBalancerResponse.class, description = "configures a netscaler load balancer device")
 public class ConfigureNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ConfigureNetscalerLoadBalancerCmd.class.getName());
     private static final String s_name = "configurenetscalerloadbalancerresponse";
-    @Inject NetscalerLoadBalancerElementService _netsclarLbService;
+    @Inject
+    NetscalerLoadBalancerElementService _netsclarLbService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.UUID, entityType = NetscalerLoadBalancerResponse.class,
-            required=true, description="Netscaler load balancer device ID")
+    @Parameter(name = ApiConstants.LOAD_BALANCER_DEVICE_ID,
+               type = CommandType.UUID,
+               entityType = NetscalerLoadBalancerResponse.class,
+               required = true,
+               description = "Netscaler load balancer device ID")
     private Long lbDeviceId;
 
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_CAPACITY, type=CommandType.LONG, required=false, description="capacity of the device, Capacity will be interpreted as number of networks device can handle")
+    @Parameter(name = ApiConstants.LOAD_BALANCER_DEVICE_CAPACITY,
+               type = CommandType.LONG,
+               required = false,
+               description = "capacity of the device, Capacity will be interpreted as number of networks device can handle")
     private Long capacity;
 
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED, type=CommandType.BOOLEAN, required=false, description="true if this netscaler device to dedicated for a account, false if the netscaler device will be shared by multiple accounts")
+    @Parameter(name = ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED,
+               type = CommandType.BOOLEAN,
+               required = false,
+               description = "true if this netscaler device to dedicated for a account, false if the netscaler device will be shared by multiple accounts")
     private Boolean dedicatedUse;
 
-    @Parameter (name=ApiConstants.INLINE, type=CommandType.BOOLEAN, required=false, description="true if netscaler load balancer is intended to be used in in-line with firewall, false if netscaler load balancer will side-by-side with firewall")
+    @Parameter(name = ApiConstants.INLINE,
+               type = CommandType.BOOLEAN,
+               required = false,
+               description = "true if netscaler load balancer is intended to be used in in-line with firewall, false if netscaler load balancer will side-by-side with firewall")
     private Boolean inline;
 
-    @Parameter(name=ApiConstants.POD_IDS, type=CommandType.LIST, collectionType = CommandType.UUID, entityType = PodResponse.class,
-            required=false, description="Used when NetScaler device is provider of EIP service." +
-            " This parameter represents the list of pod's, for which there exists a policy based route on datacenter L3 router to " +
-            "route pod's subnet IP to a NetScaler device.")
+    @Parameter(name = ApiConstants.POD_IDS,
+               type = CommandType.LIST,
+               collectionType = CommandType.UUID,
+               entityType = PodResponse.class,
+               required = false,
+               description = "Used when NetScaler device is provider of EIP service."
+                   + " This parameter represents the list of pod's, for which there exists a policy based route on datacenter L3 router to "
+                   + "route pod's subnet IP to a NetScaler device.")
     private List<Long> podIds;
 
     /////////////////////////////////////////////////////
@@ -96,7 +116,8 @@ public class ConfigureNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             ExternalLoadBalancerDeviceVO lbDeviceVO = _netsclarLbService.configureNetscalerLoadBalancer(this);
             if (lbDeviceVO != null) {
@@ -107,7 +128,7 @@ public class ConfigureNetscalerLoadBalancerCmd extends BaseAsyncCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to configure netscaler load balancer due to internal error.");
             }
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

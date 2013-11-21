@@ -22,6 +22,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,14 +37,15 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.utils.StringUtils;
 
-@APICommand(name = "authorizeSecurityGroupEgress", responseObject = SecurityGroupRuleResponse.class, description = "Authorizes a particular egress rule for this security group", since="3.0.0")
+@APICommand(name = "authorizeSecurityGroupEgress",
+            responseObject = SecurityGroupRuleResponse.class,
+            description = "Authorizes a particular egress rule for this security group",
+            since = "3.0.0")
 @SuppressWarnings("rawtypes")
 public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AuthorizeSecurityGroupIngressCmd.class.getName());
@@ -68,25 +71,33 @@ public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this icmp message")
     private Integer icmpCode;
 
-    @Parameter(name=ApiConstants.CIDR_LIST, type=CommandType.LIST, collectionType=CommandType.STRING, description="the cidr list associated")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list associated")
     private List<String> cidrList;
 
     @Parameter(name = ApiConstants.USER_SECURITY_GROUP_LIST, type = CommandType.MAP, description = "user to security group mapping")
     private Map userSecurityGroupList;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, description="an optional domainId for the security group. If the account parameter is used, domainId must also be used.", entityType = DomainResponse.class)
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               description = "an optional domainId for the security group. If the account parameter is used, domainId must also be used.",
+               entityType = DomainResponse.class)
     private Long domainId;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the security group. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the security group. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, description="an optional project of the security group", entityType=ProjectResponse.class)
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, description = "an optional project of the security group", entityType = ProjectResponse.class)
     private Long projectId;
 
-    @Parameter(name=ApiConstants.SECURITY_GROUP_ID, type=CommandType.UUID, description="The ID of the security group. Mutually exclusive with securityGroupName parameter", entityType=SecurityGroupResponse.class)
+    @Parameter(name = ApiConstants.SECURITY_GROUP_ID,
+               type = CommandType.UUID,
+               description = "The ID of the security group. Mutually exclusive with securityGroupName parameter",
+               entityType = SecurityGroupResponse.class)
     private Long securityGroupId;
 
-    @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, description="The name of the security group. Mutually exclusive with securityGroupName parameter")
+    @Parameter(name = ApiConstants.SECURITY_GROUP_NAME,
+               type = CommandType.STRING,
+               description = "The name of the security group. Mutually exclusive with securityGroupName parameter")
     private String securityGroupName;
 
     /////////////////////////////////////////////////////
@@ -184,15 +195,15 @@ public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
             Collection userGroupCollection = getUserSecurityGroupList().values();
             Iterator iter = userGroupCollection.iterator();
 
-            HashMap userGroup = (HashMap) iter.next();
-            String group = (String) userGroup.get("group");
-            String authorizedAccountName = (String) userGroup.get("account");
+            HashMap userGroup = (HashMap)iter.next();
+            String group = (String)userGroup.get("group");
+            String authorizedAccountName = (String)userGroup.get("account");
             sb.append(group + "/" + authorizedAccountName);
 
             while (iter.hasNext()) {
-                userGroup = (HashMap) iter.next();
-                group = (String) userGroup.get("group");
-                authorizedAccountName = (String) userGroup.get("account");
+                userGroup = (HashMap)iter.next();
+                group = (String)userGroup.get("group");
+                authorizedAccountName = (String)userGroup.get("account");
                 sb.append(", " + group + "/" + authorizedAccountName);
             }
         } else if (getCidrList() != null) {

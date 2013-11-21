@@ -20,131 +20,129 @@ package com.cloud.stack.models;
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackPortForwardingRule {
-	@SerializedName(ApiConstants.ID)
-	private String id;
-	@SerializedName(ApiConstants.CIDR_LIST)
-	private String cidrList;
-	@SerializedName(ApiConstants.IP_ADDRESS)
-	private String ipAddress;
-	@SerializedName(ApiConstants.IP_ADDRESS_ID)
-	private String ipAddressId;
-	@SerializedName(ApiConstants.PRIVATE_END_PORT)
-	private Long privateEndPort;
-	@SerializedName(ApiConstants.PRIVATE_PORT)
-	private Long privatePort;
-	@SerializedName(ApiConstants.PROTOCOL)
-	private String protocol;
-	@SerializedName(ApiConstants.PUBLIC_END_PORT)
-	private Long publicEndPort;
-	@SerializedName(ApiConstants.PUBLIC_PORT)
-	private Long publicPort;
-	@SerializedName(ApiConstants.STATE)
-	private String state;
-	@SerializedName(ApiConstants.VIRTUAL_MACHINE_DISPLAY_NAME)
-	private String virtualMachineDisplayName;
-	@SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-	private String virtualMachineId;
-	@SerializedName(ApiConstants.VIRTUAL_MACHINE_NAME)
-	private String virtualMachineName;
-	
-	/**
-	 * 
-	 */
-	public CloudStackPortForwardingRule() {
-		// TODO Auto-generated constructor stub
-	}
+    @SerializedName(ApiConstants.ID)
+    private String id;
+    @SerializedName(ApiConstants.CIDR_LIST)
+    private String cidrList;
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    private String ipAddress;
+    @SerializedName(ApiConstants.IP_ADDRESS_ID)
+    private String ipAddressId;
+    @SerializedName(ApiConstants.PRIVATE_END_PORT)
+    private Long privateEndPort;
+    @SerializedName(ApiConstants.PRIVATE_PORT)
+    private Long privatePort;
+    @SerializedName(ApiConstants.PROTOCOL)
+    private String protocol;
+    @SerializedName(ApiConstants.PUBLIC_END_PORT)
+    private Long publicEndPort;
+    @SerializedName(ApiConstants.PUBLIC_PORT)
+    private Long publicPort;
+    @SerializedName(ApiConstants.STATE)
+    private String state;
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_DISPLAY_NAME)
+    private String virtualMachineDisplayName;
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
+    private String virtualMachineId;
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_NAME)
+    private String virtualMachineName;
 
-	/**
-	 * @return the id
-	 */
-	public String getId() {
-		return id;
-	}
+    /**
+     *
+     */
+    public CloudStackPortForwardingRule() {
+        // TODO Auto-generated constructor stub
+    }
 
-	/**
-	 * @return the cidrList
-	 */
-	public String getCidrList() {
-		return cidrList;
-	}
+    /**
+     * @return the id
+     */
+    public String getId() {
+        return id;
+    }
 
-	/**
-	 * @return the ipAddress
-	 */
-	public String getIpAddress() {
-		return ipAddress;
-	}
+    /**
+     * @return the cidrList
+     */
+    public String getCidrList() {
+        return cidrList;
+    }
 
-	/**
-	 * @return the ipAddressId
-	 */
-	public String getIpAddressId() {
-		return ipAddressId;
-	}
+    /**
+     * @return the ipAddress
+     */
+    public String getIpAddress() {
+        return ipAddress;
+    }
 
-	/**
-	 * @return the privateEndPort
-	 */
-	public Long getPrivateEndPort() {
-		return privateEndPort;
-	}
+    /**
+     * @return the ipAddressId
+     */
+    public String getIpAddressId() {
+        return ipAddressId;
+    }
 
-	/**
-	 * @return the privatePort
-	 */
-	public Long getPrivatePort() {
-		return privatePort;
-	}
+    /**
+     * @return the privateEndPort
+     */
+    public Long getPrivateEndPort() {
+        return privateEndPort;
+    }
 
-	/**
-	 * @return the protocol
-	 */
-	public String getProtocol() {
-		return protocol;
-	}
+    /**
+     * @return the privatePort
+     */
+    public Long getPrivatePort() {
+        return privatePort;
+    }
 
-	/**
-	 * @return the publicEndPort
-	 */
-	public Long getPublicEndPort() {
-		return publicEndPort;
-	}
+    /**
+     * @return the protocol
+     */
+    public String getProtocol() {
+        return protocol;
+    }
 
-	/**
-	 * @return the publicPort
-	 */
-	public Long getPublicPort() {
-		return publicPort;
-	}
+    /**
+     * @return the publicEndPort
+     */
+    public Long getPublicEndPort() {
+        return publicEndPort;
+    }
 
-	/**
-	 * @return the state
-	 */
-	public String getState() {
-		return state;
-	}
+    /**
+     * @return the publicPort
+     */
+    public Long getPublicPort() {
+        return publicPort;
+    }
 
-	/**
-	 * @return the virtualMachineDisplayName
-	 */
-	public String getVirtualMachineDisplayName() {
-		return virtualMachineDisplayName;
-	}
+    /**
+     * @return the state
+     */
+    public String getState() {
+        return state;
+    }
 
-	/**
-	 * @return the virtualMachineId
-	 */
-	public String getVirtualMachineId() {
-		return virtualMachineId;
-	}
+    /**
+     * @return the virtualMachineDisplayName
+     */
+    public String getVirtualMachineDisplayName() {
+        return virtualMachineDisplayName;
+    }
 
-	/**
-	 * @return the virtualMachineName
-	 */
-	public String getVirtualMachineName() {
-		return virtualMachineName;
-	}
+    /**
+     * @return the virtualMachineId
+     */
+    public String getVirtualMachineId() {
+        return virtualMachineId;
+    }
 
-
+    /**
+     * @return the virtualMachineName
+     */
+    public String getVirtualMachineName() {
+        return virtualMachineName;
+    }
 
 }

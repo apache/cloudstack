@@ -30,23 +30,23 @@ public class StartAnswer extends Answer {
 
     public StartAnswer(StartCommand cmd, String msg) {
         super(cmd, false, msg);
-        this.vm  = cmd.getVirtualMachine();
+        this.vm = cmd.getVirtualMachine();
     }
 
     public StartAnswer(StartCommand cmd, Exception e) {
         super(cmd, false, e.getMessage());
-        this.vm  = cmd.getVirtualMachine();
+        this.vm = cmd.getVirtualMachine();
     }
 
     public StartAnswer(StartCommand cmd) {
         super(cmd, true, null);
-        this.vm  = cmd.getVirtualMachine();
+        this.vm = cmd.getVirtualMachine();
         this.host_guid = null;
     }
 
     public StartAnswer(StartCommand cmd, String msg, String guid) {
         super(cmd, true, msg);
-        this.vm  = cmd.getVirtualMachine();
+        this.vm = cmd.getVirtualMachine();
         this.host_guid = guid;
     }
 

@@ -16,78 +16,78 @@
 // under the License.
 package com.cloud.storage.template;
 
-public interface TemplateDownloader extends Runnable{
-	
+public interface TemplateDownloader extends Runnable {
 
-	/**
-	 * Callback used to notify completion of download
-	 *
-	 */
-	public interface DownloadCompleteCallback {
-		void downloadComplete( Status status);
+    /**
+     * Callback used to notify completion of download
+     *
+     */
+    public interface DownloadCompleteCallback {
+        void downloadComplete(Status status);
 
-	}
+    }
 
-	public static enum Status  {UNKNOWN, NOT_STARTED, IN_PROGRESS, ABORTED, UNRECOVERABLE_ERROR, RECOVERABLE_ERROR, DOWNLOAD_FINISHED, POST_DOWNLOAD_FINISHED}
+    public static enum Status {
+        UNKNOWN, NOT_STARTED, IN_PROGRESS, ABORTED, UNRECOVERABLE_ERROR, RECOVERABLE_ERROR, DOWNLOAD_FINISHED, POST_DOWNLOAD_FINISHED
+    }
 
-	public static long DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES = 50L*1024L*1024L*1024L;
-	
-	/**
-	 * Initiate download, resuming a previous one if required
-	 * @param resume resume if necessary
-	 * @param callback completion callback to be called after download is complete
-	 * @return bytes downloaded
-	 */
-	public long download(boolean resume, DownloadCompleteCallback callback);
-	
-	/**
-	 * @return
-	 */
-	public boolean stopDownload();
-	
-	/**
-	 * @return percent of file downloaded
-	 */
-	public int getDownloadPercent();
+    public static long DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES = 50L * 1024L * 1024L * 1024L;
 
-	/**
-	 * Get the status of the download
-	 * @return status of download
-	 */
-	public TemplateDownloader.Status getStatus();
+    /**
+     * Initiate download, resuming a previous one if required
+     * @param resume resume if necessary
+     * @param callback completion callback to be called after download is complete
+     * @return bytes downloaded
+     */
+    public long download(boolean resume, DownloadCompleteCallback callback);
 
+    /**
+     * @return
+     */
+    public boolean stopDownload();
 
-	/**
-	 * Get time taken to download so far
-	 * @return time in seconds taken to download
-	 */
-	public long getDownloadTime();
+    /**
+     * @return percent of file downloaded
+     */
+    public int getDownloadPercent();
 
-	/**
-	 * Get bytes downloaded
-	 * @return bytes downloaded so far
-	 */
-	public long getDownloadedBytes();
+    /**
+     * Get the status of the download
+     * @return status of download
+     */
+    public TemplateDownloader.Status getStatus();
 
-	/**
-	 * Get the error if any
-	 * @return error string if any
-	 */
-	public String getDownloadError();
+    /**
+     * Get time taken to download so far
+     * @return time in seconds taken to download
+     */
+    public long getDownloadTime();
 
-	/** Get local path of the downloaded file
-	 * @return local path of the file downloaded
-	 */
-	public String getDownloadLocalPath();
+    /**
+     * Get bytes downloaded
+     * @return bytes downloaded so far
+     */
+    public long getDownloadedBytes();
 
-	public void setStatus(TemplateDownloader.Status status);
+    /**
+     * Get the error if any
+     * @return error string if any
+     */
+    public String getDownloadError();
 
-	public void setDownloadError(String string);
+    /** Get local path of the downloaded file
+     * @return local path of the file downloaded
+     */
+    public String getDownloadLocalPath();
 
-	public void setResume(boolean resume);
-	
-	public boolean isInited();
-	
-	public long getMaxTemplateSizeInBytes();
+    public void setStatus(TemplateDownloader.Status status);
+
+    public void setDownloadError(String string);
+
+    public void setResume(boolean resume);
+
+    public boolean isInited();
+
+    public long getMaxTemplateSizeInBytes();
 
 }

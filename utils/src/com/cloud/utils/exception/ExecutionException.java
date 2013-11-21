@@ -17,31 +17,30 @@
 package com.cloud.utils.exception;
 
 import com.cloud.utils.SerialVersionUID;
-import com.cloud.utils.exception.CSExceptionErrorCode;
 
 /**
- * a public method.  
+ * a public method.
  *
  */
 public class ExecutionException extends Exception {
     private static final long serialVersionUID = SerialVersionUID.ExecutionException;
-    
-	protected int csErrorCode;
-	
+
+    protected int csErrorCode;
+
     public ExecutionException(String msg, Throwable cause) {
         super(msg, cause);
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
-    
+
     public ExecutionException(String msg) {
         super(msg);
     }
-    
-	public void setCSErrorCode(int cserrcode) {
-		this.csErrorCode = cserrcode;
-	}
-	
-	public int getCSErrorCode() {
-		return this.csErrorCode;
-	}
+
+    public void setCSErrorCode(int cserrcode) {
+        this.csErrorCode = cserrcode;
+    }
+
+    public int getCSErrorCode() {
+        return this.csErrorCode;
+    }
 }

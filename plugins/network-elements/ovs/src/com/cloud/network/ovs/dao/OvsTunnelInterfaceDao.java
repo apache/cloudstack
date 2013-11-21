@@ -21,11 +21,10 @@ import java.util.List;
 
 import com.cloud.utils.db.GenericDao;
 
-public interface OvsTunnelInterfaceDao extends
-		GenericDao<OvsTunnelInterfaceVO, Long> {
-	
-	OvsTunnelInterfaceVO getByHostAndLabel(long hostId, String label);
+public interface OvsTunnelInterfaceDao extends GenericDao<OvsTunnelInterfaceVO, Long> {
 
-	List<OvsTunnelInterfaceVO> listByLabel(String label);
+    OvsTunnelInterfaceVO getByHostAndLabel(long hostId, String label);
+
+    List<OvsTunnelInterfaceVO> listByLabel(String label);
 
 }

@@ -17,11 +17,6 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
@@ -52,8 +47,7 @@ public class KVMHABase {
         String _mountDestPath;
         PoolType _type;
 
-        public NfsStoragePool(String poolUUID, String poolIp,
-                String poolSourcePath, String mountDestPath, PoolType type) {
+        public NfsStoragePool(String poolUUID, String poolIp, String poolSourcePath, String mountDestPath, PoolType type) {
             this._poolUUID = poolUUID;
             this._poolIp = poolIp;
             this._poolMountSourcePath = poolSourcePath;
@@ -64,8 +58,7 @@ public class KVMHABase {
 
     protected String checkingMountPoint(NfsStoragePool pool, String poolName) {
         String mountSource = pool._poolIp + ":" + pool._poolMountSourcePath;
-        String mountPaths = Script
-                .runSimpleBashScript("cat /proc/mounts | grep " + mountSource);
+        String mountPaths = Script.runSimpleBashScript("cat /proc/mounts | grep " + mountSource);
         String destPath = pool._mountDestPath;
 
         if (mountPaths != null) {
@@ -111,8 +104,7 @@ public class KVMHABase {
         StoragePool pool = null;
         String poolName = null;
         try {
-            pool = LibvirtConnection.getConnection()
-                    .storagePoolLookupByUUIDString(storagePool._poolUUID);
+            pool = LibvirtConnection.getConnection().storagePoolLookupByUUIDString(storagePool._poolUUID);
             if (pool != null) {
                 StoragePoolInfo spi = pool.getInfo();
                 if (spi.state != StoragePoolState.VIR_STORAGE_POOL_RUNNING) {
@@ -159,16 +151,14 @@ public class KVMHABase {
     }
 
     protected String getHBFile(String mountPoint, String hostIP) {
-        return mountPoint + File.separator + "KVMHA" + File.separator + "hb-"
-                + hostIP;
+        return mountPoint + File.separator + "KVMHA" + File.separator + "hb-" + hostIP;
     }
 
     protected String getHBFolder(String mountPoint) {
         return mountPoint + File.separator + "KVMHA" + File.separator;
     }
 
-    protected String runScriptRetry(String cmdString,
-            OutputInterpreter interpreter) {
+    protected String runScriptRetry(String cmdString, OutputInterpreter interpreter) {
         String result = null;
         for (int i = 0; i < 3; i++) {
             Script cmd = new Script("/bin/bash", _timeout);

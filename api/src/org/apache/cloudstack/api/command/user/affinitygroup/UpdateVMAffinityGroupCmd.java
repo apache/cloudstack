@@ -20,20 +20,20 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientCapacityException;
@@ -42,9 +42,10 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-
-@APICommand(name = "updateVMAffinityGroup", description = "Updates the affinity/anti-affinity group associations of a virtual machine. The VM has to be stopped and restarted for the "
-        + "new properties to take effect.", responseObject = UserVmResponse.class)
+@APICommand(name = "updateVMAffinityGroup",
+            description = "Updates the affinity/anti-affinity group associations of a virtual machine. The VM has to be stopped and restarted for the "
+                + "new properties to take effect.",
+            responseObject = UserVmResponse.class)
 public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVMAffinityGroupCmd.class.getName());
     private static final String s_name = "updatevirtualmachineresponse";
@@ -53,38 +54,39 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-
     @ACL
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="The ID of the virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
     private Long id;
 
     @ACL
-    @Parameter(name = ApiConstants.AFFINITY_GROUP_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AffinityGroupResponse.class, description = "comma separated list of affinity groups id that are going to be applied to the virtual machine. "
-            + "Should be passed only when vm is created from a zone with Basic Network support."
-            + " Mutually exclusive with securitygroupnames parameter")
+    @Parameter(name = ApiConstants.AFFINITY_GROUP_IDS,
+               type = CommandType.LIST,
+               collectionType = CommandType.UUID,
+               entityType = AffinityGroupResponse.class,
+               description = "comma separated list of affinity groups id that are going to be applied to the virtual machine. "
+                   + "Should be passed only when vm is created from a zone with Basic Network support." + " Mutually exclusive with securitygroupnames parameter")
     private List<Long> affinityGroupIdList;
 
     @ACL
-    @Parameter(name = ApiConstants.AFFINITY_GROUP_NAMES, type = CommandType.LIST, collectionType = CommandType.STRING, entityType = AffinityGroupResponse.class, description = "comma separated list of affinity groups names that are going to be applied to the virtual machine."
-            + " Should be passed only when vm is created from a zone with Basic Network support. "
-            + "Mutually exclusive with securitygroupids parameter")
+    @Parameter(name = ApiConstants.AFFINITY_GROUP_NAMES,
+               type = CommandType.LIST,
+               collectionType = CommandType.STRING,
+               entityType = AffinityGroupResponse.class,
+               description = "comma separated list of affinity groups names that are going to be applied to the virtual machine."
+                   + " Should be passed only when vm is created from a zone with Basic Network support. " + "Mutually exclusive with securitygroupids parameter")
     private List<String> affinityGroupNameList;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-
     public Long getId() {
         return id;
     }
 
-
     public List<Long> getAffinityGroupIdList() {
         if (affinityGroupNameList != null && affinityGroupIdList != null) {
-            throw new InvalidParameterValueException(
-                    "affinitygroupids parameter is mutually exclusive with affinitygroupnames parameter");
+            throw new InvalidParameterValueException("affinitygroupids parameter is mutually exclusive with affinitygroupnames parameter");
         }
 
         // transform group names to ids here
@@ -93,8 +95,7 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
             for (String groupName : affinityGroupNameList) {
                 Long groupId = _responseGenerator.getAffinityGroupId(groupName, getEntityOwnerId());
                 if (groupId == null) {
-                    throw new InvalidParameterValueException("Unable to find group by name " + groupName
-                            + " for account " + getEntityOwnerId());
+                    throw new InvalidParameterValueException("Unable to find group by name " + groupName + " for account " + getEntityOwnerId());
                 } else {
                     affinityGroupIds.add(groupId);
                 }
@@ -108,7 +109,6 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
-
 
     @Override
     public String getCommandName() {
@@ -130,15 +130,14 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException,
-            InsufficientCapacityException, ServerApiException {
-        CallContext.current().setEventDetails("Vm Id: "+getId());
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException {
+        CallContext.current().setEventDetails("Vm Id: " + getId());
         UserVm result = _affinityGroupService.updateVMAffinityGroups(getId(), getAffinityGroupIdList());
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("affgrp"));
         EnumSet<VMDetails> details = EnumSet.copyOf(dc);
 
-        if (result != null){
+        if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", details, result).get(0);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);

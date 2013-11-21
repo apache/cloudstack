@@ -23,24 +23,30 @@ import org.apache.cloudstack.framework.transport.TransportAddressMapper;
 import org.apache.cloudstack.framework.transport.TransportMultiplexier;
 
 public interface RpcProvider extends TransportMultiplexier {
-	final static String RPC_MULTIPLEXIER = "rpc";
-	
-	void setMessageSerializer(MessageSerializer messageSerializer);
-	MessageSerializer getMessageSerializer();
-	boolean initialize();
-	
-	void registerRpcServiceEndpoint(RpcServiceEndpoint rpcEndpoint);
-	void unregisteRpcServiceEndpoint(RpcServiceEndpoint rpcEndpoint);
+    final static String RPC_MULTIPLEXIER = "rpc";
 
-	RpcClientCall newCall();
-	RpcClientCall newCall(String targetAddress);
-	RpcClientCall newCall(TransportAddressMapper targetAddress);
-	
-	//
-	// low-level public API
-	//
-	void registerCall(RpcClientCall call);
-	void cancelCall(RpcClientCall call);
-	
-	void sendRpcPdu(String sourceAddress, String targetAddress, String serializedPdu);
+    void setMessageSerializer(MessageSerializer messageSerializer);
+
+    MessageSerializer getMessageSerializer();
+
+    boolean initialize();
+
+    void registerRpcServiceEndpoint(RpcServiceEndpoint rpcEndpoint);
+
+    void unregisteRpcServiceEndpoint(RpcServiceEndpoint rpcEndpoint);
+
+    RpcClientCall newCall();
+
+    RpcClientCall newCall(String targetAddress);
+
+    RpcClientCall newCall(TransportAddressMapper targetAddress);
+
+    //
+    // low-level public API
+    //
+    void registerCall(RpcClientCall call);
+
+    void cancelCall(RpcClientCall call);
+
+    void sendRpcPdu(String sourceAddress, String targetAddress, String serializedPdu);
 }

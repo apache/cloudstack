@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.host;
 
-
 /**
  *  the networking environment of the host.  The
  *  the environment.

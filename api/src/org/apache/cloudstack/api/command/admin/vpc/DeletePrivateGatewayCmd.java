@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vpc;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -27,8 +29,6 @@ import org.apache.cloudstack.api.response.PrivateGatewayResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -36,7 +36,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.VpcGateway;
 import com.cloud.user.Account;
 
-@APICommand(name = "deletePrivateGateway", description="Deletes a Private gateway", responseObject=SuccessResponse.class)
+@APICommand(name = "deletePrivateGateway", description = "Deletes a Private gateway", responseObject = SuccessResponse.class)
 public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePrivateGatewayCmd.class.getName());
     private static final String s_name = "deleteprivategatewayresponse";
@@ -45,8 +45,7 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = PrivateGatewayResponse.class,
-            required=true, description="the ID of the private gateway")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PrivateGatewayResponse.class, required = true, description = "the ID of the private gateway")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -72,7 +71,7 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  ("Deleting private gateway id=" + id);
+        return ("Deleting private gateway id=" + id);
     }
 
     @Override
@@ -91,7 +90,6 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete private gateway");
         }
     }
-
 
     @Override
     public String getSyncObjType() {

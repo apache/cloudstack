@@ -23,8 +23,7 @@ public class CreateLogicalSwitchCommand extends Command {
     private final String name;
     private final String ownerName;
 
-    public CreateLogicalSwitchCommand(final String transportUuid, final String transportType,
-            final String name, final String ownerName) {
+    public CreateLogicalSwitchCommand(final String transportUuid, final String transportType, final String name, final String ownerName) {
         this.transportUuid = transportUuid;
         this.transportType = transportType;
         this.name = name;

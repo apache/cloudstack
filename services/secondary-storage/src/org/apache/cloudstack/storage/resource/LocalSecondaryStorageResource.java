@@ -21,11 +21,12 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.template.DownloadManager;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
@@ -70,9 +71,8 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
     public void disconnected() {
     }
 
-
     @Override
-    public String getRootDir(String url){
+    public String getRootDir(String url) {
         return getRootDir();
 
     }
@@ -89,13 +89,13 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
             return _dlMgr.handleDownloadCommand(this, (DownloadCommand)cmd);
         } else if (cmd instanceof CheckHealthCommand) {
             return new CheckHealthAnswer((CheckHealthCommand)cmd, true);
-        } else if (cmd instanceof SecStorageSetupCommand){
+        } else if (cmd instanceof SecStorageSetupCommand) {
             return new Answer(cmd, true, "success");
         } else if (cmd instanceof ReadyCommand) {
             return new ReadyAnswer((ReadyCommand)cmd);
-        } else if (cmd instanceof ListTemplateCommand){
+        } else if (cmd instanceof ListTemplateCommand) {
             return execute((ListTemplateCommand)cmd);
-        } else if (cmd instanceof ComputeChecksumCommand){
+        } else if (cmd instanceof ComputeChecksumCommand) {
             return execute((ComputeChecksumCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
@@ -105,7 +105,6 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
     private Answer execute(ComputeChecksumCommand cmd) {
         return new Answer(cmd, false, null);
     }
-
 
     private Answer execute(ListTemplateCommand cmd) {
         String root = getRootDir();
@@ -122,7 +121,6 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
     public PingCommand getCurrentStatus(final long id) {
         return new PingStorageCommand(Host.Type.Storage, id, new HashMap<String, Boolean>());
     }
-
 
     @Override
     @SuppressWarnings("unchecked")
@@ -191,7 +189,8 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
     @Override
     public StartupCommand[] initialize() {
 
-        final StartupStorageCommand cmd = new StartupStorageCommand(_parent, StoragePoolType.Filesystem, 1024l*1024l*1024l*1024l, _dlMgr.gatherTemplateInfo(_parent));
+        final StartupStorageCommand cmd =
+            new StartupStorageCommand(_parent, StoragePoolType.Filesystem, 1024l * 1024l * 1024l * 1024l, _dlMgr.gatherTemplateInfo(_parent));
         cmd.setResourceType(Storage.StorageResourceType.LOCAL_SECONDARY_STORAGE);
         cmd.setIqn("local://");
         fillNetworkInformation(cmd);
@@ -201,7 +200,7 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
         cmd.setName(_guid);
         cmd.setVersion(LocalSecondaryStorageResource.class.getPackage().getImplementationVersion());
 
-        return new StartupCommand [] {cmd};
+        return new StartupCommand[] {cmd};
     }
 
     @Override
@@ -209,38 +208,33 @@ public class LocalSecondaryStorageResource extends ServerResourceBase implements
         return "scripts/storage/secondary";
     }
 
+    @Override
+    public void setName(String name) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public void setName(String name) {
-		// TODO Auto-generated method stub
+    }
 
-	}
+    @Override
+    public void setConfigParams(Map<String, Object> params) {
+        // TODO Auto-generated method stub
 
+    }
 
-	@Override
-	public void setConfigParams(Map<String, Object> params) {
-		// TODO Auto-generated method stub
+    @Override
+    public Map<String, Object> getConfigParams() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	}
+    @Override
+    public int getRunLevel() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
+    @Override
+    public void setRunLevel(int level) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public Map<String, Object> getConfigParams() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-
-	@Override
-	public int getRunLevel() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-
-	@Override
-	public void setRunLevel(int level) {
-		// TODO Auto-generated method stub
-
-	}
+    }
 }

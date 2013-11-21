@@ -20,8 +20,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 
 public abstract class BaseListProjectAndAccountResourcesCmd extends BaseListAccountResourcesCmd {
 
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType=ProjectResponse.class,
-            description="list objects by project")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "list objects by project")
     private Long projectId;
 
     public Long getProjectId() {

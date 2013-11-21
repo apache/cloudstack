@@ -23,7 +23,7 @@ import com.cloud.storage.StoragePool;
  */
 public class CreatePrivateTemplateFromSnapshotCommand extends SnapshotCommand {
     private String origTemplateInstallPath;
-    private Long   newTemplateId;
+    private Long newTemplateId;
     private String templateName;
 
     protected CreatePrivateTemplateFromSnapshotCommand() {
@@ -43,18 +43,8 @@ public class CreatePrivateTemplateFromSnapshotCommand extends SnapshotCommand {
      * @param origTemplateInstallPath  The install path of the original template VHD on the secondary
      */
 
-    public CreatePrivateTemplateFromSnapshotCommand(StoragePool pool,
-                                                    String secondaryStoragePoolURL,
-                                                    Long   dcId,
-                                                    Long   accountId,
-                                                    Long   volumeId,
-                                                    String backedUpSnapshotUuid,
-                                                    String backedUpSnapshotName,
-                                                    String origTemplateInstallPath,
-                                                    Long   newTemplateId,
-                                                    String templateName,
-                                                    int wait)
-    {
+    public CreatePrivateTemplateFromSnapshotCommand(StoragePool pool, String secondaryStoragePoolURL, Long dcId, Long accountId, Long volumeId,
+            String backedUpSnapshotUuid, String backedUpSnapshotName, String origTemplateInstallPath, Long newTemplateId, String templateName, int wait) {
         super(pool, secondaryStoragePoolURL, backedUpSnapshotUuid, backedUpSnapshotName, dcId, accountId, volumeId);
         this.origTemplateInstallPath = origTemplateInstallPath;
         this.newTemplateId = newTemplateId;

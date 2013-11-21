@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,17 +28,14 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "resetPasswordForVirtualMachine", responseObject=UserVmResponse.class, description="Resets the password for virtual machine. " +
-                    "The virtual machine must be in a \"Stopped\" state and the template must already " +
-                    "support this feature for this command to take effect. [async]")
+@APICommand(name = "resetPasswordForVirtualMachine", responseObject = UserVmResponse.class, description = "Resets the password for virtual machine. "
+    + "The virtual machine must be in a \"Stopped\" state and the template must already " + "support this feature for this command to take effect. [async]")
 public class ResetVMPasswordCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ResetVMPasswordCmd.class.getName());
 
@@ -46,12 +45,11 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
-            required=true, description="The ID of the virtual machine")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
     private Long id;
 
     // unexposed parameter needed for serializing/deserializing the command
-    @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, expose=false)
+    @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, expose = false)
     private String password;
 
     /////////////////////////////////////////////////////
@@ -96,23 +94,25 @@ public class ResetVMPasswordCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "resetting password for vm: " + getId();
+        return "resetting password for vm: " + getId();
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.VirtualMachine;
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException {
         password = _mgr.generateRandomPassword();
-        CallContext.current().setEventDetails("Vm Id: "+getId());
+        CallContext.current().setEventDetails("Vm Id: " + getId());
         UserVm result = _userVmService.resetVMPassword(this, password);
-        if (result != null){
+        if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);

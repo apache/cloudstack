@@ -59,7 +59,8 @@ public interface Domain extends OwnedBy, Identity, InternalIdentity {
     void setState(State state);
 
     String getNetworkDomain();
-    
+
+    @Override
     public String getUuid();
-    
+
 }

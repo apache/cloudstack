@@ -32,8 +32,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Answer;
@@ -67,10 +68,9 @@ public abstract class AgentAttache {
     private static final Logger s_logger = Logger.getLogger(AgentAttache.class);
 
     private static final ScheduledExecutorService s_listenerExecutor = Executors.newScheduledThreadPool(10, new NamedThreadFactory("ListenerTimer"));
-    private static final Random                       s_rand                               = new Random(System.currentTimeMillis());
+    private static final Random s_rand = new Random(System.currentTimeMillis());
 
-    protected static final Comparator<Request> s_reqComparator =
-            new Comparator<Request>() {
+    protected static final Comparator<Request> s_reqComparator = new Comparator<Request>() {
         @Override
         public int compare(Request o1, Request o2) {
             long seq1 = o1.getSequence();
@@ -85,12 +85,11 @@ public abstract class AgentAttache {
         }
     };
 
-    protected static final Comparator<Object> s_seqComparator =
-            new Comparator<Object>() {
+    protected static final Comparator<Object> s_seqComparator = new Comparator<Object>() {
         @Override
         public int compare(Object o1, Object o2) {
-            long seq1 = ((Request) o1).getSequence();
-            long seq2 = (Long) o2;
+            long seq1 = ((Request)o1).getSequence();
+            long seq2 = (Long)o2;
             if (seq1 < seq2) {
                 return -1;
             } else if (seq1 > seq2) {
@@ -113,12 +112,11 @@ public abstract class AgentAttache {
 
     protected AgentManagerImpl _agentMgr;
 
-    public final static String[] s_commandsAllowedInMaintenanceMode =
-            new String[] { MaintainCommand.class.toString(), MigrateCommand.class.toString(), StopCommand.class.toString(), CheckVirtualMachineCommand.class.toString(), PingTestCommand.class.toString(),
-    					   CheckHealthCommand.class.toString(), ReadyCommand.class.toString(), ShutdownCommand.class.toString(), SetupCommand.class.toString(), ClusterSyncCommand.class.toString(),
-    					   CleanupNetworkRulesCmd.class.toString(), CheckNetworkCommand.class.toString(), PvlanSetupCommand.class.toString() };
-    protected final static String[] s_commandsNotAllowedInConnectingMode =
-            new String[] { StartCommand.class.toString(), CreateCommand.class.toString() };
+    public final static String[] s_commandsAllowedInMaintenanceMode = new String[] {MaintainCommand.class.toString(), MigrateCommand.class.toString(),
+        StopCommand.class.toString(), CheckVirtualMachineCommand.class.toString(), PingTestCommand.class.toString(), CheckHealthCommand.class.toString(),
+        ReadyCommand.class.toString(), ShutdownCommand.class.toString(), SetupCommand.class.toString(), ClusterSyncCommand.class.toString(),
+        CleanupNetworkRulesCmd.class.toString(), CheckNetworkCommand.class.toString(), PvlanSetupCommand.class.toString()};
+    protected final static String[] s_commandsNotAllowedInConnectingMode = new String[] {StartCommand.class.toString(), CreateCommand.class.toString()};
     static {
         Arrays.sort(s_commandsAllowedInMaintenanceMode);
         Arrays.sort(s_commandsNotAllowedInConnectingMode);
@@ -188,7 +186,6 @@ public abstract class AgentAttache {
         _requests.add(-index - 1, req);
     }
 
-
     protected void cancel(Request req) {
         long seq = req.getSequence();
         cancel(seq);
@@ -215,7 +212,6 @@ public abstract class AgentAttache {
     protected synchronized int findRequest(long seq) {
         return Collections.binarySearch(_requests, seq, s_seqComparator);
     }
-
 
     protected String log(final long seq, final String msg) {
         return "Seq " + _id + "-" + seq + ": " + msg;
@@ -247,7 +243,7 @@ public abstract class AgentAttache {
     }
 
     public String getName() {
-            return _name;
+        return _name;
     }
 
     public int getQueueSize() {
@@ -286,7 +282,7 @@ public abstract class AgentAttache {
             Listener monitor = getListener(seq);
 
             if (monitor == null) {
-                if ( answers[0] != null && answers[0].getResult() ) {
+                if (answers[0] != null && answers[0].getResult()) {
                     processed = true;
                 }
                 if (s_logger.isDebugEnabled()) {
@@ -337,11 +333,11 @@ public abstract class AgentAttache {
     @Override
     public boolean equals(Object obj) {
         try {
-            AgentAttache that = (AgentAttache) obj;
+            AgentAttache that = (AgentAttache)obj;
             return _id == that._id;
         } catch (ClassCastException e) {
             assert false : "Who's sending an " + obj.getClass().getSimpleName() + " to AgentAttache.equals()? ";
-        return false;
+            return false;
         }
     }
 
@@ -355,7 +351,7 @@ public abstract class AgentAttache {
             s_logger.debug(log(seq, "Routed from " + req.getManagementServerId()));
         }
 
-        synchronized(this) {
+        synchronized (this) {
             try {
                 if (isClosed()) {
                     throw new AgentUnavailableException("The link to the agent " + _name + " has been closed", _id);
@@ -488,7 +484,7 @@ public abstract class AgentAttache {
 
     /**
      * sends the request asynchronously.
-     * 
+     *
      * @param req
      * @throws AgentUnavailableException
      */
@@ -508,6 +504,7 @@ public abstract class AgentAttache {
 
     protected class Alarm extends ManagedContextRunnable {
         long _seq;
+
         public Alarm(long seq) {
             _seq = seq;
         }

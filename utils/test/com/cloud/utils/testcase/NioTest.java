@@ -16,69 +16,73 @@
 // under the License.
 package com.cloud.utils.testcase;
 
+import java.nio.channels.ClosedChannelException;
+import java.util.Random;
+
+import junit.framework.TestCase;
+
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+
 import com.cloud.utils.nio.HandlerFactory;
 import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioClient;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.nio.Task.Type;
-import junit.framework.TestCase;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-
-import java.nio.channels.ClosedChannelException;
-import java.util.Random;
 
 /**
- * 
- * 
- * 
- * 
+ *
+ *
+ *
+ *
  */
 
 public class NioTest extends TestCase {
-    
+
     private static final Logger s_logger = Logger.getLogger(NioTest.class);
-    
+
     private NioServer _server;
     private NioClient _client;
-    
+
     private Link _clientLink;
-    
+
     private int _testCount;
     private int _completedCount;
-    
+
     private boolean isTestsDone() {
         boolean result;
-        synchronized(this) {
+        synchronized (this) {
             result = (_testCount == _completedCount);
         }
         return result;
     }
-    
+
     private void getOneMoreTest() {
-        synchronized(this) {
-            _testCount ++;
+        synchronized (this) {
+            _testCount++;
         }
     }
+
     private void oneMoreTestDone() {
-        synchronized(this) {
-            _completedCount ++;
+        synchronized (this) {
+            _completedCount++;
         }
     }
-    
+
+    @Override
     public void setUp() {
         s_logger.info("Test");
-        
+
         _testCount = 0;
         _completedCount = 0;
-        
+
         _server = new NioServer("NioTestServer", 7777, 5, new NioTestServer());
         _server.start();
-        
+
         _client = new NioClient("NioTestServer", "127.0.0.1", 7777, 5, new NioTestClient());
         _client.start();
-        
+
         while (_clientLink == null) {
             try {
                 s_logger.debug("Link is not up! Waiting ...");
@@ -89,7 +93,8 @@ public class NioTest extends TestCase {
             }
         }
     }
-    
+
+    @Override
     public void tearDown() {
         while (!isTestsDone()) {
             try {
@@ -103,26 +108,25 @@ public class NioTest extends TestCase {
         stopClient();
         stopServer();
     }
-    
-    protected void stopClient(){
+
+    protected void stopClient() {
         _client.stop();
         s_logger.info("Client stopped.");
     }
-    
-    protected void stopServer(){
+
+    protected void stopServer() {
         _server.stop();
         s_logger.info("Server stopped.");
     }
-    
-    protected void setClientLink(Link link)
-    {
+
+    protected void setClientLink(Link link) {
         _clientLink = link;
     }
-    
+
     Random randomGenerator = new Random();
-    
+
     byte[] _testBytes;
-    
+
     public void testConnection() {
         _testBytes = new byte[1000000];
         randomGenerator.nextBytes(_testBytes);
@@ -138,26 +142,26 @@ public class NioTest extends TestCase {
             e.printStackTrace();
         }
     }
-    
+
     protected void doServerProcess(byte[] data) {
         oneMoreTestDone();
         Assert.assertArrayEquals(_testBytes, data);
         s_logger.info("Verify done.");
     }
-    
+
     public class NioTestClient implements HandlerFactory {
 
         @Override
         public Task create(Type type, Link link, byte[] data) {
             return new NioTestClientHandler(type, link, data);
         }
-        
+
         public class NioTestClientHandler extends Task {
 
             public NioTestClientHandler(Type type, Link link, byte[] data) {
                 super(type, link, data);
             }
-            
+
             @Override
             public void doTask(final Task task) {
                 if (task.getType() == Task.Type.CONNECT) {
@@ -172,7 +176,7 @@ public class NioTest extends TestCase {
                     s_logger.info("Client: Received OTHER task");
                 }
             }
-            
+
         }
     }
 
@@ -182,13 +186,13 @@ public class NioTest extends TestCase {
         public Task create(Type type, Link link, byte[] data) {
             return new NioTestServerHandler(type, link, data);
         }
-        
+
         public class NioTestServerHandler extends Task {
 
             public NioTestServerHandler(Type type, Link link, byte[] data) {
                 super(type, link, data);
             }
-            
+
             @Override
             public void doTask(final Task task) {
                 if (task.getType() == Task.Type.CONNECT) {
@@ -203,7 +207,7 @@ public class NioTest extends TestCase {
                     s_logger.info("Server: Received OTHER task");
                 }
             }
-            
+
         }
     }
 }

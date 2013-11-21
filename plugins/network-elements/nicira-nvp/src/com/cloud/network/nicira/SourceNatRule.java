@@ -53,16 +53,9 @@ public class SourceNatRule extends NatRule {
     public int hashCode() {
         final int prime = 31;
         int result = super.hashCode();
-        result = prime
-                * result
-                + ((toSourceIpAddressMax == null) ? 0 : toSourceIpAddressMax
-                        .hashCode());
-        result = prime
-                * result
-                + ((toSourceIpAddressMin == null) ? 0 : toSourceIpAddressMin
-                        .hashCode());
-        result = prime * result
-                + ((toSourcePort == null) ? 0 : toSourcePort.hashCode());
+        result = prime * result + ((toSourceIpAddressMax == null) ? 0 : toSourceIpAddressMax.hashCode());
+        result = prime * result + ((toSourceIpAddressMin == null) ? 0 : toSourceIpAddressMin.hashCode());
+        result = prime * result + ((toSourcePort == null) ? 0 : toSourcePort.hashCode());
         return result;
     }
 
@@ -74,7 +67,7 @@ public class SourceNatRule extends NatRule {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        SourceNatRule other = (SourceNatRule) obj;
+        SourceNatRule other = (SourceNatRule)obj;
         if (toSourceIpAddressMax == null) {
             if (other.toSourceIpAddressMax != null)
                 return false;
@@ -101,7 +94,7 @@ public class SourceNatRule extends NatRule {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        SourceNatRule other = (SourceNatRule) obj;
+        SourceNatRule other = (SourceNatRule)obj;
         if (toSourceIpAddressMax == null) {
             if (other.toSourceIpAddressMax != null)
                 return false;

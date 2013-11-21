@@ -42,35 +42,40 @@ public class SecurityGroupManagerImplTest extends TestCase {
     @Inject
     SecurityGroupManagerImpl2 _sgMgr = null;
     Set<String> cidrs;
+
     @Before
     public void setup() throws Exception {
-        cidrs =  new TreeSet<String>(new CidrComparator());
+        cidrs = new TreeSet<String>(new CidrComparator());
     }
-    @Test (expected=NumberFormatException.class)
+
+    @Test(expected = NumberFormatException.class)
     public void emptyCidrCompareTest() {
         cidrs.add("");
         cidrs.add("");
     }
-    @Test (expected=NumberFormatException.class)
+
+    @Test(expected = NumberFormatException.class)
     public void faultyCidrCompareTest() {
         cidrs.add("111.222.333.444");
         cidrs.add("111.222.333.444");
     }
+
     @Test
     public void sameCidrCompareTest() {
         cidrs.add("1.2.3.4/5");
         cidrs.add("1.2.3.4/5");
-        assertEquals("only one element expected",1,cidrs.size());
+        assertEquals("only one element expected", 1, cidrs.size());
         CidrComparator cmp = new CidrComparator();
-        assertEquals("should be 0",0,cmp.compare("1.2.3.4/5","1.2.3.4/5"));
+        assertEquals("should be 0", 0, cmp.compare("1.2.3.4/5", "1.2.3.4/5"));
     }
+
     @Test
     public void CidrCompareTest() {
         cidrs.add("1.2.3.4/5");
         cidrs.add("1.2.3.4/6");
-        assertEquals("two element expected",2,cidrs.size());
+        assertEquals("two element expected", 2, cidrs.size());
         CidrComparator cmp = new CidrComparator();
-        assertEquals("should be 1",1,cmp.compare("1.2.3.4/5","1.2.3.4/6"));
-        assertEquals("should be -2",-2,cmp.compare("1.2.3.4/5","1.2.3.4/3"));
+        assertEquals("should be 1", 1, cmp.compare("1.2.3.4/5", "1.2.3.4/6"));
+        assertEquals("should be -2", -2, cmp.compare("1.2.3.4/5", "1.2.3.4/3"));
     }
 }

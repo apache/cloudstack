@@ -31,10 +31,9 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.fsm.StateObject;
 
@@ -171,9 +170,8 @@ public class TemplatePrimaryDataStoreVO implements StateObject<ObjectInDataStore
         this.markedForGC = false;
     }
 
-    public TemplatePrimaryDataStoreVO(long poolId, long templateId, Date lastUpdated, int downloadPercent,
-            Status downloadState, String localDownloadPath, String errorString, String jobId, String installPath,
-            long templateSize) {
+    public TemplatePrimaryDataStoreVO(long poolId, long templateId, Date lastUpdated, int downloadPercent, Status downloadState, String localDownloadPath,
+            String errorString, String jobId, String installPath, long templateSize) {
         super();
         this.poolId = poolId;
         this.templateId = templateId;
@@ -230,7 +228,7 @@ public class TemplatePrimaryDataStoreVO implements StateObject<ObjectInDataStore
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof TemplatePrimaryDataStoreVO) {
-            TemplatePrimaryDataStoreVO other = (TemplatePrimaryDataStoreVO) obj;
+            TemplatePrimaryDataStoreVO other = (TemplatePrimaryDataStoreVO)obj;
             return (this.templateId == other.getTemplateId() && this.poolId == other.getPoolId());
         }
         return false;
@@ -245,8 +243,15 @@ public class TemplatePrimaryDataStoreVO implements StateObject<ObjectInDataStore
 
     @Override
     public String toString() {
-        return new StringBuilder("TmplPool[").append(id).append("-").append(templateId).append("-").append("poolId")
-                .append("-").append(installPath).append("]").toString();
+        return new StringBuilder("TmplPool[").append(id)
+            .append("-")
+            .append(templateId)
+            .append("-")
+            .append("poolId")
+            .append("-")
+            .append(installPath)
+            .append("]")
+            .toString();
     }
 
     @Override

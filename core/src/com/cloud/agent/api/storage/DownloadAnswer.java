@@ -23,49 +23,52 @@ import com.cloud.agent.api.Command;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 
-public class DownloadAnswer extends Answer  {
-	private String jobId;
-	private int downloadPct;
-	private String errorString;
-	private VMTemplateStorageResourceAssoc.Status downloadStatus;
-	private String downloadPath;
-	private String installPath;
-	private long templateSize = 0L;
-	private long templatePhySicalSize = 0L;
-	private String checkSum;
+public class DownloadAnswer extends Answer {
+    private String jobId;
+    private int downloadPct;
+    private String errorString;
+    private VMTemplateStorageResourceAssoc.Status downloadStatus;
+    private String downloadPath;
+    private String installPath;
+    private long templateSize = 0L;
+    private long templatePhySicalSize = 0L;
+    private String checkSum;
 
-	public String getCheckSum() {
-		return checkSum;
-	}
+    public String getCheckSum() {
+        return checkSum;
+    }
 
-	public int getDownloadPct() {
-		return downloadPct;
-	}
-	public String getErrorString() {
-		return errorString;
-	}
+    public int getDownloadPct() {
+        return downloadPct;
+    }
 
-	public String getDownloadStatusString() {
-		return downloadStatus.toString();
-	}
+    public String getErrorString() {
+        return errorString;
+    }
 
-	public VMTemplateStorageResourceAssoc.Status getDownloadStatus() {
-		return downloadStatus;
-	}
+    public String getDownloadStatusString() {
+        return downloadStatus.toString();
+    }
 
-	public String getDownloadPath() {
-		return downloadPath;
-	}
-	protected DownloadAnswer() {
+    public VMTemplateStorageResourceAssoc.Status getDownloadStatus() {
+        return downloadStatus;
+    }
 
-	}
+    public String getDownloadPath() {
+        return downloadPath;
+    }
 
-	public String getJobId() {
-		return jobId;
-	}
-	public void setJobId(String jobId) {
-		this.jobId = jobId;
-	}
+    protected DownloadAnswer() {
+
+    }
+
+    public String getJobId() {
+        return jobId;
+    }
+
+    public void setJobId(String jobId) {
+        this.jobId = jobId;
+    }
 
     public DownloadAnswer(String errorString, Status status) {
         super();
@@ -75,23 +78,22 @@ public class DownloadAnswer extends Answer  {
         this.details = errorString;
     }
 
-	public DownloadAnswer(String jobId, int downloadPct, String errorString,
-			Status downloadStatus, String fileSystemPath, String installPath, long templateSize, long templatePhySicalSize, String checkSum) {
-		super();
-		this.jobId = jobId;
-		this.downloadPct = downloadPct;
-		this.errorString = errorString;
-		this.details = errorString;
-		this.downloadStatus = downloadStatus;
-		this.downloadPath = fileSystemPath;
-		this.installPath = fixPath(installPath);
-		this.templateSize = templateSize;
-		this.templatePhySicalSize = templatePhySicalSize;
-		this.checkSum = checkSum;
-	}
+    public DownloadAnswer(String jobId, int downloadPct, String errorString, Status downloadStatus, String fileSystemPath, String installPath, long templateSize,
+            long templatePhySicalSize, String checkSum) {
+        super();
+        this.jobId = jobId;
+        this.downloadPct = downloadPct;
+        this.errorString = errorString;
+        this.details = errorString;
+        this.downloadStatus = downloadStatus;
+        this.downloadPath = fileSystemPath;
+        this.installPath = fixPath(installPath);
+        this.templateSize = templateSize;
+        this.templatePhySicalSize = templatePhySicalSize;
+        this.checkSum = checkSum;
+    }
 
-   public DownloadAnswer(String jobId, int downloadPct, Command command,
-            Status downloadStatus, String fileSystemPath, String installPath) {
+    public DownloadAnswer(String jobId, int downloadPct, Command command, Status downloadStatus, String fileSystemPath, String installPath) {
         super(command);
         this.jobId = jobId;
         this.downloadPct = downloadPct;
@@ -100,40 +102,43 @@ public class DownloadAnswer extends Answer  {
         this.installPath = installPath;
     }
 
-	private static String fixPath(String path){
-		if (path == null) {
+    private static String fixPath(String path) {
+        if (path == null) {
             return path;
         }
-		if (path.startsWith(File.separator)) {
-			path=path.substring(File.separator.length());
-		}
-		if (path.endsWith(File.separator)) {
-			path=path.substring(0, path.length()-File.separator.length());
-		}
-		return path;
-	}
+        if (path.startsWith(File.separator)) {
+            path = path.substring(File.separator.length());
+        }
+        if (path.endsWith(File.separator)) {
+            path = path.substring(0, path.length() - File.separator.length());
+        }
+        return path;
+    }
 
-	public void setDownloadStatus(VMTemplateStorageResourceAssoc.Status downloadStatus) {
-		this.downloadStatus = downloadStatus;
-	}
+    public void setDownloadStatus(VMTemplateStorageResourceAssoc.Status downloadStatus) {
+        this.downloadStatus = downloadStatus;
+    }
 
-	public String getInstallPath() {
-		return installPath;
-	}
-	public void setInstallPath(String installPath) {
-		this.installPath = fixPath(installPath);
-	}
+    public String getInstallPath() {
+        return installPath;
+    }
 
-	public void setTemplateSize(long templateSize) {
-		this.templateSize = templateSize;
-	}
+    public void setInstallPath(String installPath) {
+        this.installPath = fixPath(installPath);
+    }
 
-	public Long getTemplateSize() {
-		return templateSize;
-	}
+    public void setTemplateSize(long templateSize) {
+        this.templateSize = templateSize;
+    }
+
+    public Long getTemplateSize() {
+        return templateSize;
+    }
+
     public void setTemplatePhySicalSize(long templatePhySicalSize) {
         this.templatePhySicalSize = templatePhySicalSize;
     }
+
     public long getTemplatePhySicalSize() {
         return templatePhySicalSize;
     }

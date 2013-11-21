@@ -16,15 +16,13 @@
 // under the License.
 package com.cloud.network.rules;
 
-public class StaticNatImpl implements StaticNat{
+public class StaticNatImpl implements StaticNat {
     long accountId;
     long domainId;
     long networkId;
     long sourceIpAddressId;
     String destIpAddress;
     boolean forRevoke;
-
-    
 
     public StaticNatImpl(long accountId, long domainId, long networkId, long sourceIpAddressId, String destIpAddress, boolean forRevoke) {
         super();
@@ -65,5 +63,5 @@ public class StaticNatImpl implements StaticNat{
     public boolean isForRevoke() {
         return forRevoke;
     }
-    
+
 }

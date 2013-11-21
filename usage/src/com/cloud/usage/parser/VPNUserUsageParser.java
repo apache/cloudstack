@@ -26,33 +26,35 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.usage.UsageTypes;
 
-import com.cloud.usage.UsageVPNUserVO;
-import com.cloud.usage.UsageServer;
 import com.cloud.usage.UsageVO;
+import com.cloud.usage.UsageVPNUserVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageVPNUserDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
-import org.springframework.stereotype.Component;
 
 @Component
 public class VPNUserUsageParser {
     public static final Logger s_logger = Logger.getLogger(VPNUserUsageParser.class.getName());
-    
+
     private static UsageDao m_usageDao;
     private static UsageVPNUserDao m_usageVPNUserDao;
 
-    @Inject private UsageDao _usageDao;
-    @Inject private UsageVPNUserDao _usageVPNUserDao;
-    
+    @Inject
+    private UsageDao _usageDao;
+    @Inject
+    private UsageVPNUserDao _usageVPNUserDao;
+
     @PostConstruct
     void init() {
-    	m_usageDao = _usageDao;
-    	m_usageVPNUserDao = _usageVPNUserDao;
+        m_usageDao = _usageDao;
+        m_usageVPNUserDao = _usageVPNUserDao;
     }
-    
+
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Parsing all VPN user usage events for account: " + account.getId());
@@ -62,8 +64,8 @@ public class VPNUserUsageParser {
         }
 
         List<UsageVPNUserVO> usageVUs = m_usageVPNUserDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
-        
-        if(usageVUs.isEmpty()){
+
+        if (usageVUs.isEmpty()) {
             s_logger.debug("No VPN user usage events for this period");
             return true;
         }
@@ -75,11 +77,11 @@ public class VPNUserUsageParser {
         // loop through all the VPN user usage, create a usage record for each
         for (UsageVPNUserVO usageVU : usageVUs) {
             long userId = usageVU.getUserId();
-            String  userName = usageVU.getUsername();
-            String key = ""+userId+"VU"+userName;
-            
+            String userName = usageVU.getUsername();
+            String key = "" + userId + "VU" + userName;
+
             vuMap.put(key, new VUInfo(userId, usageVU.getZoneId(), userName));
-            
+
             Date vuCreateDate = usageVU.getCreated();
             Date vuDeleteDate = usageVU.getDeleted();
 
@@ -93,7 +95,6 @@ public class VPNUserUsageParser {
             }
 
             long currentDuration = (vuDeleteDate.getTime() - vuCreateDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
-
 
             updateVUUsageData(usageMap, key, usageVU.getUserId(), currentDuration);
         }
@@ -136,17 +137,19 @@ public class VPNUserUsageParser {
         String usageDisplay = dFormat.format(usage);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating VPN user:" + userId + " usage record, usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate + ", for account: " + account.getId());
+            s_logger.debug("Creating VPN user:" + userId + " usage record, usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate +
+                ", for account: " + account.getId());
         }
 
         // Create the usage record
-        String usageDesc = "VPN User: " + userName + ", Id: "+ userId + " usage time";
+        String usageDesc = "VPN User: " + userName + ", Id: " + userId + " usage time";
 
-        UsageVO usageRecord = new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type,
-                new Double(usage), null, null, null, null, userId, null, startDate, endDate);
+        UsageVO usageRecord =
+            new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), null, null, null, null, userId, null,
+                startDate, endDate);
         m_usageDao.persist(usageRecord);
     }
-    
+
     private static class VUInfo {
         private long userId;
         private long zoneId;
@@ -157,12 +160,15 @@ public class VPNUserUsageParser {
             this.zoneId = zoneId;
             this.userName = userName;
         }
+
         public long getZoneId() {
             return zoneId;
         }
+
         public long getUserId() {
             return userId;
         }
+
         public String getUserName() {
             return userName;
         }

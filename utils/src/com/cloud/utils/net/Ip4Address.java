@@ -52,7 +52,7 @@ public class Ip4Address {
 
     @Override
     public boolean equals(Object that) {
-        if (that instanceof String) { // Assume that is an ip4 address in String form 
+        if (that instanceof String) { // Assume that is an ip4 address in String form
             return _addr.equals(that);
         } else if (that instanceof Ip4Address) {
             Ip4Address ip4 = (Ip4Address)that;

@@ -31,13 +31,11 @@ public interface NiciraNvpElementService extends PluggableService {
 
     public NiciraNvpDeviceVO addNiciraNvpDevice(AddNiciraNvpDeviceCmd cmd);
 
-    public NiciraNvpDeviceResponse createNiciraNvpDeviceResponse(
-            NiciraNvpDeviceVO niciraDeviceVO);
+    public NiciraNvpDeviceResponse createNiciraNvpDeviceResponse(NiciraNvpDeviceVO niciraDeviceVO);
 
     boolean deleteNiciraNvpDevice(DeleteNiciraNvpDeviceCmd cmd);
 
-    List<? extends Network> listNiciraNvpDeviceNetworks(
-            ListNiciraNvpDeviceNetworksCmd cmd);
+    List<? extends Network> listNiciraNvpDeviceNetworks(ListNiciraNvpDeviceNetworksCmd cmd);
 
     List<NiciraNvpDeviceVO> listNiciraNvpDevices(ListNiciraNvpDevicesCmd cmd);
 

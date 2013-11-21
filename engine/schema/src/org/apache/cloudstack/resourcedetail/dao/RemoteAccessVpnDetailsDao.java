@@ -21,6 +21,6 @@ import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 import com.cloud.utils.db.GenericDao;
 
-public interface RemoteAccessVpnDetailsDao extends GenericDao<RemoteAccessVpnDetailVO, Long>, ResourceDetailsDao<RemoteAccessVpnDetailVO>{
+public interface RemoteAccessVpnDetailsDao extends GenericDao<RemoteAccessVpnDetailVO, Long>, ResourceDetailsDao<RemoteAccessVpnDetailVO> {
 
 }

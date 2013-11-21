@@ -26,11 +26,11 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-import org.apache.cloudstack.usage.UsageTypes;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.usage.UsageTypes;
+
 import com.cloud.usage.UsageLoadBalancerPolicyVO;
-import com.cloud.usage.UsageServer;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageLoadBalancerPolicyDao;
@@ -40,19 +40,21 @@ import com.cloud.utils.Pair;
 @Component
 public class LoadBalancerUsageParser {
     public static final Logger s_logger = Logger.getLogger(LoadBalancerUsageParser.class.getName());
-    
+
     private static UsageDao m_usageDao;
     private static UsageLoadBalancerPolicyDao m_usageLoadBalancerPolicyDao;
-    
-    @Inject private UsageDao _usageDao;
-    @Inject private UsageLoadBalancerPolicyDao _usageLoadBalancerPolicyDao;
-    
+
+    @Inject
+    private UsageDao _usageDao;
+    @Inject
+    private UsageLoadBalancerPolicyDao _usageLoadBalancerPolicyDao;
+
     @PostConstruct
     void init() {
-    	m_usageDao = _usageDao;
-    	m_usageLoadBalancerPolicyDao = _usageLoadBalancerPolicyDao;
+        m_usageDao = _usageDao;
+        m_usageLoadBalancerPolicyDao = _usageLoadBalancerPolicyDao;
     }
-    
+
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Parsing all LoadBalancerPolicy usage events for account: " + account.getId());
@@ -67,8 +69,8 @@ public class LoadBalancerUsageParser {
         //     - look for an entry for accountId with end date null (currently running vm or owned IP)
         //     - look for an entry for accountId with start date before given range *and* end date after given range
         List<UsageLoadBalancerPolicyVO> usageLBs = m_usageLoadBalancerPolicyDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
-        
-        if(usageLBs.isEmpty()){
+
+        if (usageLBs.isEmpty()) {
             s_logger.debug("No load balancer usage events for this period");
             return true;
         }
@@ -80,10 +82,10 @@ public class LoadBalancerUsageParser {
         // loop through all the load balancer policies, create a usage record for each
         for (UsageLoadBalancerPolicyVO usageLB : usageLBs) {
             long lbId = usageLB.getId();
-            String key = ""+lbId;
-            
+            String key = "" + lbId;
+
             lbMap.put(key, new LBInfo(lbId, usageLB.getZoneId()));
-            
+
             Date lbCreateDate = usageLB.getCreated();
             Date lbDeleteDate = usageLB.getDeleted();
 
@@ -98,7 +100,6 @@ public class LoadBalancerUsageParser {
 
             long currentDuration = (lbDeleteDate.getTime() - lbCreateDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
 
-
             updateLBUsageData(usageMap, key, usageLB.getId(), currentDuration);
         }
 
@@ -109,7 +110,7 @@ public class LoadBalancerUsageParser {
             // Only create a usage record if we have a runningTime of bigger than zero.
             if (useTime > 0L) {
                 LBInfo info = lbMap.get(lbIdKey);
-                createUsageRecord(UsageTypes.LOAD_BALANCER_POLICY, useTime, startDate, endDate, account, info.getId(), info.getZoneId() );
+                createUsageRecord(UsageTypes.LOAD_BALANCER_POLICY, useTime, startDate, endDate, account, info.getId(), info.getZoneId());
             }
         }
 
@@ -140,18 +141,20 @@ public class LoadBalancerUsageParser {
         String usageDisplay = dFormat.format(usage);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating Volume usage record for load balancer: " + lbId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate + ", for account: " + account.getId());
+            s_logger.debug("Creating Volume usage record for load balancer: " + lbId + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " +
+                endDate + ", for account: " + account.getId());
         }
 
         // Create the usage record
-        String usageDesc = "Load Balancing Policy: "+lbId+" usage time";
+        String usageDesc = "Load Balancing Policy: " + lbId + " usage time";
 
         //ToDo: get zone id
-        UsageVO usageRecord = new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type,
-                new Double(usage), null, null, null, null, lbId, null, startDate, endDate);
+        UsageVO usageRecord =
+            new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), null, null, null, null, lbId, null,
+                startDate, endDate);
         m_usageDao.persist(usageRecord);
     }
-    
+
     private static class LBInfo {
         private long id;
         private long zoneId;
@@ -160,9 +163,11 @@ public class LoadBalancerUsageParser {
             this.id = id;
             this.zoneId = zoneId;
         }
+
         public long getZoneId() {
             return zoneId;
         }
+
         public long getId() {
             return id;
         }

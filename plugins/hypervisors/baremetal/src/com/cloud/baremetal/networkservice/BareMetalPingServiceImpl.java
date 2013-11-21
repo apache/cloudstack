@@ -62,24 +62,27 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 
-@Local(value=BaremetalPxeService.class)
+@Local(value = BaremetalPxeService.class)
 public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements BaremetalPxeService {
-	private static final Logger s_logger = Logger.getLogger(BareMetalPingServiceImpl.class);
-	@Inject ResourceManager _resourceMgr;
-	@Inject PhysicalNetworkDao _physicalNetworkDao;
-	@Inject PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
-	@Inject HostDetailsDao _hostDetailsDao;
-	@Inject BaremetalPxeDao _pxeDao;
-	
-	
-	@Override
+    private static final Logger s_logger = Logger.getLogger(BareMetalPingServiceImpl.class);
+    @Inject
+    ResourceManager _resourceMgr;
+    @Inject
+    PhysicalNetworkDao _physicalNetworkDao;
+    @Inject
+    PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
+    @Inject
+    HostDetailsDao _hostDetailsDao;
+    @Inject
+    BaremetalPxeDao _pxeDao;
+
+    @Override
     public boolean prepare(VirtualMachineProfile profile, NicProfile pxeNic, DeployDestination dest, ReservationContext context) {
         QueryBuilder<BaremetalPxeVO> sc = QueryBuilder.create(BaremetalPxeVO.class);
         sc.and(sc.entity().getDeviceType(), Op.EQ, BaremetalPxeType.PING.toString());
@@ -89,48 +92,47 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
             throw new CloudRuntimeException("No PING PXE server found in pod: " + dest.getPod().getId() + ", you need to add it before starting VM");
         }
         long pxeServerId = pxeVo.getHostId();
-        
-	    String mac = pxeNic.getMacAddress();
-	    String ip = pxeNic.getIp4Address();
-	    String gateway = pxeNic.getGateway();
-	    String mask = pxeNic.getNetmask();
-	    String dns = pxeNic.getDns1();
-	    if (dns == null) {
-	    	dns = pxeNic.getDns2();
-	    }
 
-		try {
-			String tpl = profile.getTemplate().getUrl();
-			assert tpl != null : "How can a null template get here!!!";
-			PreparePxeServerCommand cmd = new PreparePxeServerCommand(ip, mac, mask, gateway, dns, tpl,
-					profile.getVirtualMachine().getInstanceName(), dest.getHost().getName());
-			PreparePxeServerAnswer ans = (PreparePxeServerAnswer) _agentMgr.send(pxeServerId, cmd);
-			if (!ans.getResult()) {
-				s_logger.warn("Unable tot program PXE server: " + pxeVo.getId() + " because " + ans.getDetails());
-				return false;
-			}
-			
-			IpmISetBootDevCommand bootCmd = new IpmISetBootDevCommand(BootDev.pxe);
-			Answer anw = _agentMgr.send(dest.getHost().getId(), bootCmd);
-			if (!anw.getResult()) {
-				s_logger.warn("Unable to set host: " + dest.getHost().getId() + " to PXE boot because " + anw.getDetails());
-			}
-			
-			return anw.getResult();
-		} catch (Exception e) {
-			s_logger.warn("Cannot prepare PXE server", e);
-			return false;
-		}
-	}
+        String mac = pxeNic.getMacAddress();
+        String ip = pxeNic.getIp4Address();
+        String gateway = pxeNic.getGateway();
+        String mask = pxeNic.getNetmask();
+        String dns = pxeNic.getDns1();
+        if (dns == null) {
+            dns = pxeNic.getDns2();
+        }
 
-	
+        try {
+            String tpl = profile.getTemplate().getUrl();
+            assert tpl != null : "How can a null template get here!!!";
+            PreparePxeServerCommand cmd =
+                new PreparePxeServerCommand(ip, mac, mask, gateway, dns, tpl, profile.getVirtualMachine().getInstanceName(), dest.getHost().getName());
+            PreparePxeServerAnswer ans = (PreparePxeServerAnswer)_agentMgr.send(pxeServerId, cmd);
+            if (!ans.getResult()) {
+                s_logger.warn("Unable tot program PXE server: " + pxeVo.getId() + " because " + ans.getDetails());
+                return false;
+            }
+
+            IpmISetBootDevCommand bootCmd = new IpmISetBootDevCommand(BootDev.pxe);
+            Answer anw = _agentMgr.send(dest.getHost().getId(), bootCmd);
+            if (!anw.getResult()) {
+                s_logger.warn("Unable to set host: " + dest.getHost().getId() + " to PXE boot because " + anw.getDetails());
+            }
+
+            return anw.getResult();
+        } catch (Exception e) {
+            s_logger.warn("Cannot prepare PXE server", e);
+            return false;
+        }
+    }
+
     @Override
     public boolean prepareCreateTemplate(Long pxeServerId, UserVm vm, String templateUrl) {
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         if (nics.size() != 1) {
             throw new CloudRuntimeException("Wrong nic number " + nics.size() + " of vm " + vm.getId());
         }
-        
+
         /* use last host id when VM stopped */
         Long hostId = (vm.getHostId() == null ? vm.getLastHostId() : vm.getHostId());
         HostVO host = _hostDao.findById(hostId);
@@ -144,7 +146,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
         if (dns == null) {
             dns = dc.getDns2();
         }
-        
+
         try {
             prepareCreateTemplateCommand cmd = new prepareCreateTemplateCommand(ip, mac, mask, gateway, dns, templateUrl);
             Answer ans = _agentMgr.send(pxeServerId, cmd);
@@ -155,44 +157,44 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
         }
     }
 
-
     @Override
     @DB
     public BaremetalPxeVO addPxeServer(AddBaremetalPxeCmd cmd) {
         AddBaremetalPxePingServerCmd pcmd = (AddBaremetalPxePingServerCmd)cmd;
-        
+
         PhysicalNetworkVO pNetwork = null;
         long zoneId;
-        
+
         if (cmd.getPhysicalNetworkId() == null || cmd.getUrl() == null || cmd.getUsername() == null || cmd.getPassword() == null) {
             throw new IllegalArgumentException("At least one of the required parameters(physical network id, url, username, password) is null");
         }
-        
+
         pNetwork = _physicalNetworkDao.findById(cmd.getPhysicalNetworkId());
         if (pNetwork == null) {
             throw new IllegalArgumentException("Could not find phyical network with ID: " + cmd.getPhysicalNetworkId());
         }
         zoneId = pNetwork.getDataCenterId();
-        
-        PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), BaremetalPxeManager.BAREMETAL_PXE_SERVICE_PROVIDER.getName());
+
+        PhysicalNetworkServiceProviderVO ntwkSvcProvider =
+            _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), BaremetalPxeManager.BAREMETAL_PXE_SERVICE_PROVIDER.getName());
         if (ntwkSvcProvider == null) {
             throw new CloudRuntimeException("Network Service Provider: " + BaremetalPxeManager.BAREMETAL_PXE_SERVICE_PROVIDER.getName() +
-                    " is not enabled in the physical network: " + cmd.getPhysicalNetworkId() + "to add this device");
+                " is not enabled in the physical network: " + cmd.getPhysicalNetworkId() + "to add this device");
         } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
-            throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() +
-                    " is in shutdown state in the physical network: " + cmd.getPhysicalNetworkId() + "to add this device");
+            throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() + " is in shutdown state in the physical network: " +
+                cmd.getPhysicalNetworkId() + "to add this device");
         }
-        
+
         HostPodVO pod = _podDao.findById(cmd.getPodId());
         if (pod == null) {
             throw new IllegalArgumentException("Could not find pod with ID: " + cmd.getPodId());
         }
-        
+
         List<HostVO> pxes = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.BaremetalPxe, null, cmd.getPodId(), zoneId);
         if (pxes.size() != 0) {
             throw new IllegalArgumentException("Already had a PXE server in Pod: " + cmd.getPodId() + " zone: " + zoneId);
         }
-        
+
         String storageServerIp = pcmd.getPingStorageServerIp();
         if (storageServerIp == null) {
             throw new IllegalArgumentException("No IP for storage server specified");
@@ -205,7 +207,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
         if (tftpDir == null) {
             throw new IllegalArgumentException("No TFTP directory specified");
         }
-        
+
         String cifsUsername = pcmd.getPingStorageServerUserName();
         if (cifsUsername == null || cifsUsername.equalsIgnoreCase("")) {
             cifsUsername = "xxx";
@@ -214,8 +216,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
         if (cifsPassword == null || cifsPassword.equalsIgnoreCase("")) {
             cifsPassword = "xxx";
         }
-        
-        
+
         URI uri;
         try {
             uri = new URI(cmd.getUrl());
@@ -224,9 +225,9 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
             throw new IllegalArgumentException(e.getMessage());
         }
         String ipAddress = uri.getHost();
-        
-        String guid = getPxeServerGuid(Long.toString(zoneId)  + "-" + pod.getId(), BaremetalPxeType.PING.toString(), ipAddress);
-        
+
+        String guid = getPxeServerGuid(Long.toString(zoneId) + "-" + pod.getId(), BaremetalPxeType.PING.toString(), ipAddress);
+
         ServerResource resource = null;
         Map params = new HashMap<String, String>();
         params.put(BaremetalPxeService.PXE_PARAM_ZONE, Long.toString(zoneId));
@@ -240,7 +241,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
         params.put(BaremetalPxeService.PXE_PARAM_PING_STORAGE_SERVER_USERNAME, cifsUsername);
         params.put(BaremetalPxeService.PXE_PARAM_PING_STORAGE_SERVER_PASSWORD, cifsPassword);
         params.put(BaremetalPxeService.PXE_PARAM_GUID, guid);
-        
+
         resource = new BaremetalPingPxeResource();
         try {
             resource.configure("PING PXE resource", params);
@@ -248,12 +249,12 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
             s_logger.debug(e);
             throw new CloudRuntimeException(e.getMessage());
         }
-        
+
         Host pxeServer = _resourceMgr.addHost(zoneId, resource, Host.Type.BaremetalPxe, params);
         if (pxeServer == null) {
             throw new CloudRuntimeException("Cannot add PXE server as a host");
         }
-        
+
         BaremetalPxeVO vo = new BaremetalPxeVO();
         vo.setHostId(pxeServer.getId());
         vo.setNetworkServiceProviderId(ntwkSvcProvider.getId());
@@ -269,12 +270,10 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
         return null;
     }
 
-
     @Override
     public List<BaremetalPxeResponse> listPxeServers(ListBaremetalPxeServersCmd cmd) {
         return null;
     }
-
 
     @Override
     public String getPxeServiceType() {

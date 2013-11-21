@@ -26,6 +26,8 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.usage.UsageNetworkVO;
@@ -33,26 +35,26 @@ import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageNetworkDao;
 import com.cloud.user.AccountVO;
-
 import com.cloud.utils.db.SearchCriteria;
-import org.springframework.stereotype.Component;
 
 @Component
 public class NetworkUsageParser {
-public static final Logger s_logger = Logger.getLogger(NetworkUsageParser.class.getName());
+    public static final Logger s_logger = Logger.getLogger(NetworkUsageParser.class.getName());
 
     private static UsageDao m_usageDao;
     private static UsageNetworkDao m_usageNetworkDao;
 
-    @Inject private UsageDao _usageDao;
-    @Inject private UsageNetworkDao _usageNetworkDao;
+    @Inject
+    private UsageDao _usageDao;
+    @Inject
+    private UsageNetworkDao _usageNetworkDao;
 
     @PostConstruct
     void init() {
-    	m_usageDao = _usageDao;
-    	m_usageNetworkDao = _usageNetworkDao;
+        m_usageDao = _usageDao;
+        m_usageNetworkDao = _usageNetworkDao;
     }
-    
+
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Parsing all Network usage events for account: " + account.getId());
@@ -74,9 +76,9 @@ public static final Logger s_logger = Logger.getLogger(NetworkUsageParser.class.
         // Calculate the total bytes since last parsing
         for (UsageNetworkVO usageNetwork : usageNetworkVOs) {
             long zoneId = usageNetwork.getZoneId();
-            String key = ""+zoneId;
-            if(usageNetwork.getHostId() != 0){
-                key += "-Host"+usageNetwork.getHostId();
+            String key = "" + zoneId;
+            if (usageNetwork.getHostId() != 0) {
+                key += "-Host" + usageNetwork.getHostId();
             }
             NetworkInfo networkInfo = networkUsageByZone.get(key);
 
@@ -87,7 +89,8 @@ public static final Logger s_logger = Logger.getLogger(NetworkUsageParser.class.
                 bytesReceived += networkInfo.getBytesRcvd();
             }
 
-            networkUsageByZone.put(key, new NetworkInfo(zoneId, usageNetwork.getHostId(), usageNetwork.getHostType(), usageNetwork.getNetworkId(), bytesSent, bytesReceived));
+            networkUsageByZone.put(key, new NetworkInfo(zoneId, usageNetwork.getHostId(), usageNetwork.getHostType(), usageNetwork.getNetworkId(), bytesSent,
+                bytesReceived));
         }
 
         List<UsageVO> usageRecords = new ArrayList<UsageVO>();
@@ -98,29 +101,32 @@ public static final Logger s_logger = Logger.getLogger(NetworkUsageParser.class.
 
             if ((totalBytesSent > 0L) || (totalBytesReceived > 0L)) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Creating usage record, total bytes sent:" + totalBytesSent + ", total bytes received: " + totalBytesReceived + " for account: "
-                            + account.getId() + " in availability zone " + networkInfo.getZoneId() + ", start: " + startDate + ", end: " + endDate);
+                    s_logger.debug("Creating usage record, total bytes sent:" + totalBytesSent + ", total bytes received: " + totalBytesReceived + " for account: " +
+                        account.getId() + " in availability zone " + networkInfo.getZoneId() + ", start: " + startDate + ", end: " + endDate);
                 }
 
                 Long hostId = null;
-                
+
                 // Create the usage record for bytes sent
                 String usageDesc = "network bytes sent";
-                if(networkInfo.getHostId() != 0){
+                if (networkInfo.getHostId() != 0) {
                     hostId = networkInfo.getHostId();
-                    usageDesc += " for Host: "+networkInfo.getHostId(); 
+                    usageDesc += " for Host: " + networkInfo.getHostId();
                 }
-                UsageVO usageRecord = new UsageVO(networkInfo.getZoneId(), account.getId(), account.getDomainId(), usageDesc, totalBytesSent + " bytes sent",
+                UsageVO usageRecord =
+                    new UsageVO(networkInfo.getZoneId(), account.getId(), account.getDomainId(), usageDesc, totalBytesSent + " bytes sent",
                         UsageTypes.NETWORK_BYTES_SENT, new Double(totalBytesSent), hostId, networkInfo.getHostType(), networkInfo.getNetworkId(), startDate, endDate);
                 usageRecords.add(usageRecord);
 
                 // Create the usage record for bytes received
                 usageDesc = "network bytes received";
-                if(networkInfo.getHostId() != 0){
-                    usageDesc += " for Host: "+networkInfo.getHostId(); 
+                if (networkInfo.getHostId() != 0) {
+                    usageDesc += " for Host: " + networkInfo.getHostId();
                 }
-                usageRecord = new UsageVO(networkInfo.getZoneId(), account.getId(), account.getDomainId(), usageDesc, totalBytesReceived + " bytes received",
-                        UsageTypes.NETWORK_BYTES_RECEIVED, new Double(totalBytesReceived), hostId, networkInfo.getHostType(), networkInfo.getNetworkId(), startDate, endDate);
+                usageRecord =
+                    new UsageVO(networkInfo.getZoneId(), account.getId(), account.getDomainId(), usageDesc, totalBytesReceived + " bytes received",
+                        UsageTypes.NETWORK_BYTES_RECEIVED, new Double(totalBytesReceived), hostId, networkInfo.getHostType(), networkInfo.getNetworkId(), startDate,
+                        endDate);
                 usageRecords.add(usageRecord);
             } else {
                 // Don't charge anything if there were zero bytes processed
@@ -134,7 +140,7 @@ public static final Logger s_logger = Logger.getLogger(NetworkUsageParser.class.
 
         return true;
     }
-    
+
     private static class NetworkInfo {
         private long zoneId;
         private long hostId;
@@ -159,7 +165,7 @@ public static final Logger s_logger = Logger.getLogger(NetworkUsageParser.class.
         public long getHostId() {
             return hostId;
         }
-        
+
         public Long getNetworkId() {
             return networkId;
         }
@@ -171,10 +177,10 @@ public static final Logger s_logger = Logger.getLogger(NetworkUsageParser.class.
         public long getBytesRcvd() {
             return bytesRcvd;
         }
-        
-        public String getHostType(){
+
+        public String getHostType() {
             return hostType;
         }
-    
+
     }
 }

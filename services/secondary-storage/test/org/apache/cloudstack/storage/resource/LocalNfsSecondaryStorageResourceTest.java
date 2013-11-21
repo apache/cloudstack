@@ -55,10 +55,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class LocalNfsSecondaryStorageResourceTest extends TestCase {
     private static Map<String, Object> testParams;
 
-    private static final Logger s_logger = Logger
-            .getLogger(LocalNfsSecondaryStorageResourceTest.class.getName());
+    private static final Logger s_logger = Logger.getLogger(LocalNfsSecondaryStorageResourceTest.class.getName());
 
     LocalNfsSecondaryStorageResource resource;
+
     @Before
     @Override
     public void setUp() throws ConfigurationException {
@@ -77,6 +77,7 @@ public class LocalNfsSecondaryStorageResourceTest extends TestCase {
         System.setProperty("paths.script", "/Users/edison/develop/asf-master/script");
         //resource.configure("test", new HashMap<String, Object>());
     }
+
     @Test
     public void testExecuteRequest() throws Exception {
         TemplateObjectTO template = Mockito.mock(TemplateObjectTO.class);
@@ -125,8 +126,7 @@ public class LocalNfsSecondaryStorageResourceTest extends TestCase {
         Properties properties = new Properties();
         final File file = PropertiesUtil.findConfigFile("agent.properties");
         if (file == null) {
-            throw new ConfigurationException(
-                    "Unable to find agent.properties.");
+            throw new ConfigurationException("Unable to find agent.properties.");
         }
 
         s_logger.info("agent.properties found at " + file.getAbsolutePath());
@@ -134,11 +134,9 @@ public class LocalNfsSecondaryStorageResourceTest extends TestCase {
         try {
             properties.load(new FileInputStream(file));
         } catch (final FileNotFoundException ex) {
-            throw new CloudRuntimeException("Cannot find the file: "
-                    + file.getAbsolutePath(), ex);
+            throw new CloudRuntimeException("Cannot find the file: " + file.getAbsolutePath(), ex);
         } catch (final IOException ex) {
-            throw new CloudRuntimeException("IOException in reading "
-                    + file.getAbsolutePath(), ex);
+            throw new CloudRuntimeException("IOException in reading " + file.getAbsolutePath(), ex);
         }
         return properties;
     }

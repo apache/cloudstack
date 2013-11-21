@@ -18,48 +18,61 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 public class FirewallResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the ID of the firewall rule")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the ID of the firewall rule")
     private String id;
 
-    @SerializedName(ApiConstants.PROTOCOL) @Param(description="the protocol of the firewall rule")
+    @SerializedName(ApiConstants.PROTOCOL)
+    @Param(description = "the protocol of the firewall rule")
     private String protocol;
 
-    @SerializedName(ApiConstants.START_PORT) @Param(description="the starting port of firewall rule's port range")
+    @SerializedName(ApiConstants.START_PORT)
+    @Param(description = "the starting port of firewall rule's port range")
     private String startPort;
 
-    @SerializedName(ApiConstants.END_PORT)  @Param(description = "the ending port of firewall rule's port range")
+    @SerializedName(ApiConstants.END_PORT)
+    @Param(description = "the ending port of firewall rule's port range")
     private String endPort;
 
-    @SerializedName(ApiConstants.IP_ADDRESS_ID) @Param(description="the public ip address id for the firewall rule")
+    @SerializedName(ApiConstants.IP_ADDRESS_ID)
+    @Param(description = "the public ip address id for the firewall rule")
     private String publicIpAddressId;
 
-    @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the network id of the firewall rule")
+    @SerializedName(ApiConstants.NETWORK_ID)
+    @Param(description = "the network id of the firewall rule")
     private String networkId;
 
-    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the public ip address for the firewall rule")
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "the public ip address for the firewall rule")
     private String publicIpAddress;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="the state of the rule")
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "the state of the rule")
     private String state;
 
-    @SerializedName(ApiConstants.CIDR_LIST) @Param(description="the cidr list to forward traffic from")
+    @SerializedName(ApiConstants.CIDR_LIST)
+    @Param(description = "the cidr list to forward traffic from")
     private String cidrList;
 
-    @SerializedName(ApiConstants.ICMP_TYPE) @Param(description= "type of the icmp message being sent")
+    @SerializedName(ApiConstants.ICMP_TYPE)
+    @Param(description = "type of the icmp message being sent")
     private Integer icmpType;
 
-    @SerializedName(ApiConstants.ICMP_CODE) @Param(description = "error code for this icmp message")
+    @SerializedName(ApiConstants.ICMP_CODE)
+    @Param(description = "error code for this icmp message")
     private Integer icmpCode;
 
-    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
+    @SerializedName(ApiConstants.TAGS)
+    @Param(description = "the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
     public void setId(String id) {

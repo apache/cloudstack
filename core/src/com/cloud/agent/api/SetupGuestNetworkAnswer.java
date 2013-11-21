@@ -16,8 +16,9 @@
 // under the License.
 package com.cloud.agent.api;
 
-public class SetupGuestNetworkAnswer extends Answer{
-    public SetupGuestNetworkAnswer() {}
+public class SetupGuestNetworkAnswer extends Answer {
+    public SetupGuestNetworkAnswer() {
+    }
 
     public SetupGuestNetworkAnswer(SetupGuestNetworkCommand cmd, boolean success, String result) {
         super(cmd, success, result);

@@ -26,30 +26,31 @@ import vncclient.VncMessageHandler;
 
 public class AwtClipboardAdapter extends BaseElement {
 
-  public AwtClipboardAdapter(String id) {
-    super(id);
-    declarePads();
-  }
+    public AwtClipboardAdapter(String id) {
+        super(id);
+        declarePads();
+    }
 
-  private void declarePads() {
-    inputPads.put(STDIN, null);
-  }
+    private void declarePads() {
+        inputPads.put(STDIN, null);
+    }
 
-  @Override
-  public void handleData(ByteBuffer buf, Link link) {
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
+    @Override
+    public void handleData(ByteBuffer buf, Link link) {
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
 
-    if (buf == null)
-      return;
+        if (buf == null)
+            return;
 
-    String content = (String) buf.getMetadata(VncMessageHandler.CLIPBOARD_CONTENT);
-    StringSelection contents = new StringSelection(content);
-    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(contents, null);
-  }
+        String content = (String)buf.getMetadata(VncMessageHandler.CLIPBOARD_CONTENT);
+        StringSelection contents = new StringSelection(content);
+        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(contents, null);
+    }
 
-  public String toString() {
-    return "Clipboard(" + id + ")";
-  }
+    @Override
+    public String toString() {
+        return "Clipboard(" + id + ")";
+    }
 
 }

@@ -22,20 +22,21 @@ import streamer.Order;
 
 public class MouseOrder extends Order {
 
-  public MouseOrder() {
-    type = "mouse order";
-  }
+    public MouseOrder() {
+        type = "mouse order";
+    }
 
-  public MouseOrder(MouseEvent event) {
-    type = "mouse order";
-    this.event = event;
-  }
+    public MouseOrder(MouseEvent event) {
+        type = "mouse order";
+        this.event = event;
+    }
 
-  public MouseEvent event;
-  public boolean pressed;
-  public boolean released;
-  @Override
-  public String toString() {
-    return "MouseOrder [event=" + event + ", pressed=" + pressed + ", released=" + released + "]";
-  }
+    public MouseEvent event;
+    public boolean pressed;
+    public boolean released;
+
+    @Override
+    public String toString() {
+        return "MouseOrder [event=" + event + ", pressed=" + pressed + ", released=" + released + "]";
+    }
 }

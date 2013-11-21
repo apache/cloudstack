@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -30,11 +32,10 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.usage.Usage;
-import org.apache.log4j.Logger;
 
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listUsageRecords", description="Lists usage records for accounts", responseObject=UsageRecordResponse.class)
+@APICommand(name = "listUsageRecords", description = "Lists usage records for accounts", responseObject = UsageRecordResponse.class)
 public class GetUsageRecordsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(GetUsageRecordsCmd.class.getName());
 
@@ -44,28 +45,31 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="List usage records for the specified user.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "List usage records for the specified user.")
     private String accountName;
 
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
-            description="List usage records for the specified domain.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "List usage records for the specified domain.")
     private Long domainId;
 
-    @Parameter(name=ApiConstants.END_DATE, type=CommandType.DATE, required=true, description="End date range for usage record query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
+    @Parameter(name = ApiConstants.END_DATE,
+               type = CommandType.DATE,
+               required = true,
+               description = "End date range for usage record query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
     private Date endDate;
 
-    @Parameter(name=ApiConstants.START_DATE, type=CommandType.DATE, required=true, description="Start date range for usage record query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-01.")
+    @Parameter(name = ApiConstants.START_DATE,
+               type = CommandType.DATE,
+               required = true,
+               description = "Start date range for usage record query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-01.")
     private Date startDate;
 
-    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.UUID, entityType = AccountResponse.class,
-            description="List usage records for the specified account")
+    @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "List usage records for the specified account")
     private Long accountId;
 
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType = ProjectResponse.class,
-            description="List usage records for specified project")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "List usage records for specified project")
     private Long projectId;
 
-    @Parameter(name=ApiConstants.TYPE, type=CommandType.LONG, description="List usage records for the specified usage type")
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.LONG, description = "List usage records for the specified usage type")
     private Long usageType;
 
     /////////////////////////////////////////////////////
@@ -110,19 +114,19 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends Usage>, Integer> usageRecords = _usageService.getUsageRecords(this);
         ListResponse<UsageRecordResponse> response = new ListResponse<UsageRecordResponse>();
         List<UsageRecordResponse> usageResponses = new ArrayList<UsageRecordResponse>();
         if (usageRecords != null) {
-            for(Usage usageRecord: usageRecords.first()){
+            for (Usage usageRecord : usageRecords.first()) {
                 UsageRecordResponse usageResponse = _responseGenerator.createUsageResponse(usageRecord);
                 usageResponse.setObjectName("usagerecord");
                 usageResponses.add(usageResponse);
             }
             response.setResponses(usageResponses, usageRecords.second());
         }
-                
+
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

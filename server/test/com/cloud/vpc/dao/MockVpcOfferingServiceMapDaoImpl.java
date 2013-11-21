@@ -28,7 +28,7 @@ import com.cloud.utils.db.GenericDaoBase;
 
 @Local(value = VpcOfferingServiceMapDao.class)
 @DB()
-public class MockVpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOfferingServiceMapVO, Long> implements VpcOfferingServiceMapDao{
+public class MockVpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOfferingServiceMapVO, Long> implements VpcOfferingServiceMapDao {
 
     /* (non-Javadoc)
      * @see com.cloud.network.vpc.Dao.VpcOfferingServiceMapDao#listByVpcOffId(long)
@@ -64,9 +64,9 @@ public class MockVpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOffering
     public VpcOfferingServiceMapVO findByServiceProviderAndOfferingId(String service, String provider, long vpcOfferingId) {
         return new VpcOfferingServiceMapVO();
     }
-    
+
     @Override
-    public VpcOfferingServiceMapVO persist (VpcOfferingServiceMapVO vo) {
+    public VpcOfferingServiceMapVO persist(VpcOfferingServiceMapVO vo) {
         return vo;
     }
 

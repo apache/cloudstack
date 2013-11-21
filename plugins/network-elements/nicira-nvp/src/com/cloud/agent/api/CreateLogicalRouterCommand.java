@@ -29,10 +29,8 @@ public class CreateLogicalRouterCommand extends Command {
     private String publicNextHop;
     private String internalIpCidr;
 
-    public CreateLogicalRouterCommand(final String gatewayServiceUuid, final long vlanId,
-            final String logicalSwitchUuid, final String name,
-            final String publicIpCidr, final String publicNextHop,
-            final String internalIpCidr, final String ownerName) {
+    public CreateLogicalRouterCommand(final String gatewayServiceUuid, final long vlanId, final String logicalSwitchUuid, final String name, final String publicIpCidr,
+            final String publicNextHop, final String internalIpCidr, final String ownerName) {
         super();
         this.gatewayServiceUuid = gatewayServiceUuid;
         this.logicalSwitchUuid = logicalSwitchUuid;

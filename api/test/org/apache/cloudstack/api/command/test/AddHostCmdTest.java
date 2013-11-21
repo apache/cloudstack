@@ -63,8 +63,7 @@ public class AddHostCmdTest extends TestCase {
         try {
             addHostCmd.execute();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to add host",
-                    exception.getDescription());
+            Assert.assertEquals("Failed to add host", exception.getDescription());
         }
 
     }
@@ -76,8 +75,7 @@ public class AddHostCmdTest extends TestCase {
         addHostCmd._resourceService = resourceService;
 
         try {
-            Mockito.when(resourceService.discoverHosts(addHostCmd)).thenReturn(
-                    null);
+            Mockito.when(resourceService.discoverHosts(addHostCmd)).thenReturn(null);
         } catch (InvalidParameterValueException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -92,15 +90,14 @@ public class AddHostCmdTest extends TestCase {
         try {
             addHostCmd.execute();
         } catch (ServerApiException exception) {
-            Assert.assertEquals("Failed to add host",
-                    exception.getDescription());
+            Assert.assertEquals("Failed to add host", exception.getDescription());
         }
 
     }
 
     /*
      * @Test public void testExecuteForResult() throws Exception {
-     * 
+     *
      * addHostCmd._resourceService = resourceService;
      * addHostCmd._responseGenerator = responseGenerator; MockHost mockInstance
      * = new MockHost(); MockHost[] mockArray = new MockHost[]{mockInstance};
@@ -123,7 +120,7 @@ public class AddHostCmdTest extends TestCase {
         addHostCmd._resourceService = resourceService;
         addHostCmd._responseGenerator = responseGenerator;
         Host host = Mockito.mock(Host.class);
-        Host[] mockArray = new Host[] { host };
+        Host[] mockArray = new Host[] {host};
 
         HostResponse responseHost = new HostResponse();
         responseHost.setName("Test");

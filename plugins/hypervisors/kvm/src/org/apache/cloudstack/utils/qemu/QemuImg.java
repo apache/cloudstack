@@ -16,16 +16,11 @@
 // under the License.
 package org.apache.cloudstack.utils.qemu;
 
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.cloudstack.utils.qemu.QemuImgException;
-
-import com.cloud.utils.script.Script;
-import com.cloud.utils.script.OutputInterpreter;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
+
+import com.cloud.utils.script.OutputInterpreter;
+import com.cloud.utils.script.Script;
 
 public class QemuImg {
 
@@ -42,6 +37,7 @@ public class QemuImg {
             this.format = format;
         }
 
+        @Override
         public String toString() {
             return this.format;
         }
@@ -78,7 +74,7 @@ public class QemuImg {
      * Create a new image
      *
      * This method calls 'qemu-img create'
-     * 
+     *
      * @param file
      *            The file to create
      * @param backingFile
@@ -174,7 +170,7 @@ public class QemuImg {
      *
      * This method calls 'qemu-img convert' and takes two objects
      * as an argument.
-     * 
+     *
      *
      * @param srcFile
      *            The source file
@@ -266,7 +262,7 @@ public class QemuImg {
             throw new QemuImgException(result);
         }
 
-        HashMap<String,String> info = new HashMap<String,String>();
+        HashMap<String, String> info = new HashMap<String, String>();
         String[] outputBuffer = parser.getLines().trim().split("\n");
         for (int i = 0; i < outputBuffer.length; i++) {
             String[] lineBuffer = outputBuffer[i].split(":", 2);

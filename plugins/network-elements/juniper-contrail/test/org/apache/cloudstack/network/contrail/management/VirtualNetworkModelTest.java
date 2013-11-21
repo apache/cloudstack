@@ -19,37 +19,31 @@ package org.apache.cloudstack.network.contrail.management;
 
 import java.util.UUID;
 
-import org.apache.cloudstack.network.contrail.management.ContrailManager;
-import org.apache.cloudstack.network.contrail.management.ModelDatabase;
-import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
+import junit.framework.TestCase;
+
 import org.apache.log4j.Logger;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
+
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkVO;
 
-import junit.framework.TestCase;
-
 public class VirtualNetworkModelTest extends TestCase {
-    private static final Logger s_logger =
-            Logger.getLogger(VirtualNetworkModelTest.class);
+    private static final Logger s_logger = Logger.getLogger(VirtualNetworkModelTest.class);
 
     @Test
     public void testDBLookup() {
         ModelDatabase db = new ModelDatabase();
         NetworkVO network = Mockito.mock(NetworkVO.class);
-        VirtualNetworkModel storageModel = new VirtualNetworkModel(network, null, ContrailManager.managementNetworkName,
-                TrafficType.Storage);
+        VirtualNetworkModel storageModel = new VirtualNetworkModel(network, null, ContrailManager.managementNetworkName, TrafficType.Storage);
         db.getVirtualNetworks().add(storageModel);
-        VirtualNetworkModel mgmtModel = new VirtualNetworkModel(network, null, ContrailManager.managementNetworkName,
-                TrafficType.Management);
+        VirtualNetworkModel mgmtModel = new VirtualNetworkModel(network, null, ContrailManager.managementNetworkName, TrafficType.Management);
         db.getVirtualNetworks().add(mgmtModel);
-        VirtualNetworkModel guestModel1 = new VirtualNetworkModel(network, UUID.randomUUID().toString(), "test",
-                TrafficType.Guest);
+        VirtualNetworkModel guestModel1 = new VirtualNetworkModel(network, UUID.randomUUID().toString(), "test", TrafficType.Guest);
         db.getVirtualNetworks().add(guestModel1);
-        VirtualNetworkModel guestModel2 = new VirtualNetworkModel(network, UUID.randomUUID().toString(), "test",
-                TrafficType.Guest);
+        VirtualNetworkModel guestModel2 = new VirtualNetworkModel(network, UUID.randomUUID().toString(), "test", TrafficType.Guest);
         db.getVirtualNetworks().add(guestModel2);
         s_logger.debug("networks: " + db.getVirtualNetworks().size());
         assertEquals(4, db.getVirtualNetworks().size());

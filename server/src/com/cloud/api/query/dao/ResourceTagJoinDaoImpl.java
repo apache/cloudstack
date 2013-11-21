@@ -22,10 +22,11 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
@@ -37,19 +38,18 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value={ResourceTagJoinDao.class})
+@Local(value = {ResourceTagJoinDao.class})
 public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Long> implements ResourceTagJoinDao {
     public static final Logger s_logger = Logger.getLogger(ResourceTagJoinDaoImpl.class);
 
     @Inject
-    private ConfigurationDao  _configDao;
+    private ConfigurationDao _configDao;
 
     private final SearchBuilder<ResourceTagJoinVO> tagSearch;
 
     private final SearchBuilder<ResourceTagJoinVO> tagIdSearch;
-    
-    private final SearchBuilder<ResourceTagJoinVO> AllFieldsSearch;
 
+    private final SearchBuilder<ResourceTagJoinVO> AllFieldsSearch;
 
     protected ResourceTagJoinDaoImpl() {
 
@@ -62,7 +62,7 @@ public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Lo
         tagIdSearch.done();
 
         this._count = "select count(distinct id) from resource_tag_view WHERE ";
-        
+
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("resourceId", AllFieldsSearch.entity().getResourceId(), Op.EQ);
         AllFieldsSearch.and("uuid", AllFieldsSearch.entity().getResourceUuid(), Op.EQ);
@@ -92,8 +92,7 @@ public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Lo
 
         return response;
     }
-    
-    
+
     @Override
     public List<ResourceTagJoinVO> listBy(String resourceUUID, ResourceObjectType resourceType) {
         SearchCriteria<ResourceTagJoinVO> sc = AllFieldsSearch.create();
@@ -102,21 +101,20 @@ public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Lo
         return listBy(sc);
     }
 
-
     @Override
     public List<ResourceTagJoinVO> searchByIds(Long... tagIds) {
         // set detail batch query size
         int DETAILS_BATCH_SIZE = 2000;
         String batchCfg = _configDao.getValue("detail.batch.query.size");
-        if ( batchCfg != null ){
+        if (batchCfg != null) {
             DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
         }
         // query details by batches
         List<ResourceTagJoinVO> uvList = new ArrayList<ResourceTagJoinVO>();
         // query details by batches
         int curr_index = 0;
-        if ( tagIds.length > DETAILS_BATCH_SIZE ){
-            while ( (curr_index + DETAILS_BATCH_SIZE ) <= tagIds.length ) {
+        if (tagIds.length > DETAILS_BATCH_SIZE) {
+            while ((curr_index + DETAILS_BATCH_SIZE) <= tagIds.length) {
                 Long[] ids = new Long[DETAILS_BATCH_SIZE];
                 for (int k = 0, j = curr_index; j < curr_index + DETAILS_BATCH_SIZE; j++, k++) {
                     ids[k] = tagIds[j];
@@ -146,7 +144,6 @@ public class ResourceTagJoinDaoImpl extends GenericDaoBase<ResourceTagJoinVO, Lo
         }
         return uvList;
     }
-
 
     @Override
     public ResourceTagJoinVO newResourceTagView(ResourceTag vr) {

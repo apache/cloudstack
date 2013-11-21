@@ -27,7 +27,6 @@ public interface PortForwardingRule extends FirewallRule {
      */
     Ip getDestinationIpAddress();
 
-
     /**
      * updates the destination ip address.
      */

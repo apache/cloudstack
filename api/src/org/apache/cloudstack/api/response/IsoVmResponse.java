@@ -16,45 +16,56 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 public class IsoVmResponse extends BaseResponse {
-    @SerializedName("id") @Param(description="the ISO ID")
+    @SerializedName("id")
+    @Param(description = "the ISO ID")
     private String id;
 
-    @SerializedName("name") @Param(description="the ISO name")
+    @SerializedName("name")
+    @Param(description = "the ISO name")
     private String name;
 
-    @SerializedName("displaytext") @Param(description="the ISO display text")
+    @SerializedName("displaytext")
+    @Param(description = "the ISO display text")
     private String displayText;
 
-    @SerializedName("bootable") @Param(description="true if the ISO is bootable, false otherwise")
+    @SerializedName("bootable")
+    @Param(description = "true if the ISO is bootable, false otherwise")
     private Boolean bootable;
 
-    @SerializedName("isfeatured") @Param(description="true if this template is a featured template, false otherwise")
+    @SerializedName("isfeatured")
+    @Param(description = "true if this template is a featured template, false otherwise")
     private Boolean featured;
 
-    @SerializedName("ostypeid") @Param(description="the ID of the OS type for this template.")
+    @SerializedName("ostypeid")
+    @Param(description = "the ID of the OS type for this template.")
     private String osTypeId;
 
-    @SerializedName("ostypename") @Param(description="the name of the OS type for this template.")
+    @SerializedName("ostypename")
+    @Param(description = "the name of the OS type for this template.")
     private String osTypeName;
 
-    @SerializedName("virtualmachineid") @Param(description="id of the virtual machine")
+    @SerializedName("virtualmachineid")
+    @Param(description = "id of the virtual machine")
     private String virtualMachineId;
 
-    @SerializedName("vmname") @Param(description="name of the virtual machine")
+    @SerializedName("vmname")
+    @Param(description = "name of the virtual machine")
     private String virtualMachineName;
 
-    @SerializedName("vmdisplayname") @Param(description="display name of the virtual machine")
+    @SerializedName("vmdisplayname")
+    @Param(description = "display name of the virtual machine")
     private String virtualMachineDisplayName;
 
-    @SerializedName("vmstate") @Param(description="state of the virtual machine")
+    @SerializedName("vmstate")
+    @Param(description = "state of the virtual machine")
     private String virtualMachineState;
-
 
     @Override
     public String getObjectId() {

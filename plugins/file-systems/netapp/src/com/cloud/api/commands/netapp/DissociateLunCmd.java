@@ -20,58 +20,62 @@ import java.rmi.ServerException;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.*;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
-import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DissociateLunCmdResponse;
 
-
-@APICommand(name = "dissociateLun", description="Dissociate a LUN", responseObject = DissociateLunCmdResponse.class)
+@APICommand(name = "dissociateLun", description = "Dissociate a LUN", responseObject = DissociateLunCmdResponse.class)
 public class DissociateLunCmd extends BaseCmd {
-	public static final Logger s_logger = Logger.getLogger(DissociateLunCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(DissociateLunCmd.class.getName());
     private static final String s_name = "dissociatelunresponse";
 
-    @Parameter(name=ApiConstants.PATH, type=CommandType.STRING, required = true, description="LUN path.")
-	private String path;
-    
-    @Parameter(name=ApiConstants.IQN, type=CommandType.STRING, required = true, description="Guest IQN.")
-	private String guestIQN;
-    
-    @Inject NetappManager netappMgr;
-	@Override
-	public void execute() throws ResourceUnavailableException,
-			InsufficientCapacityException, ServerApiException,
-			ConcurrentOperationException, ResourceAllocationException {
-    	try {
-    		netappMgr.disassociateLun(guestIQN, path);
-    		DissociateLunCmdResponse response = new DissociateLunCmdResponse();
-    		response.setResponseName(getCommandName());
-    		this.setResponseObject(response);
-    	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
-    	} catch (ServerException e) {
-    		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
-		}
-	}
+    @Parameter(name = ApiConstants.PATH, type = CommandType.STRING, required = true, description = "LUN path.")
+    private String path;
 
-	@Override
-	public String getCommandName() {
-		// TODO Auto-generated method stub
-		return s_name;
-	}
+    @Parameter(name = ApiConstants.IQN, type = CommandType.STRING, required = true, description = "Guest IQN.")
+    private String guestIQN;
 
-	@Override
-	public long getEntityOwnerId() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Inject
+    NetappManager netappMgr;
+
+    @Override
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
+        try {
+            netappMgr.disassociateLun(guestIQN, path);
+            DissociateLunCmdResponse response = new DissociateLunCmdResponse();
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        } catch (InvalidParameterValueException e) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
+        } catch (ServerException e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
+        }
+    }
+
+    @Override
+    public String getCommandName() {
+        // TODO Auto-generated method stub
+        return s_name;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
 }

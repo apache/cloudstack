@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.dc;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -29,40 +27,42 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 @Entity
-@Table(name="op_dc_ip_address_alloc")
+@Table(name = "op_dc_ip_address_alloc")
 public class DataCenterIpAddressVO implements InternalIdentity {
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     long id;
-    
-    @Column(name="ip_address", updatable=false, nullable=false)
+
+    @Column(name = "ip_address", updatable = false, nullable = false)
     String ipAddress;
-    
-    @Column(name="taken")
-    @Temporal(value=TemporalType.TIMESTAMP)
+
+    @Column(name = "taken")
+    @Temporal(value = TemporalType.TIMESTAMP)
     private Date takenAt;
-    
-    @Column(name="data_center_id", updatable=false, nullable=false)
+
+    @Column(name = "data_center_id", updatable = false, nullable = false)
     private long dataCenterId;
-    
-    @Column(name="pod_id", updatable=false, nullable=false)
+
+    @Column(name = "pod_id", updatable = false, nullable = false)
     private long podId;
-    
-    @Column(name="reservation_id")
+
+    @Column(name = "reservation_id")
     String reservationId;
-    
-    @Column(name="nic_id")
+
+    @Column(name = "nic_id")
     private Long instanceId;
-    
-    @Column(name="mac_address")
+
+    @Column(name = "mac_address")
     long macAddress;
-    
+
     protected DataCenterIpAddressVO() {
     }
-    
+
     public String getReservationId() {
         return reservationId;
     }
@@ -71,22 +71,23 @@ public class DataCenterIpAddressVO implements InternalIdentity {
         this.reservationId = reservationId;
     }
 
-	public DataCenterIpAddressVO(String ipAddress, long dataCenterId, long podId) {
+    public DataCenterIpAddressVO(String ipAddress, long dataCenterId, long podId) {
         this.ipAddress = ipAddress;
         this.dataCenterId = dataCenterId;
         this.podId = podId;
     }
-    
+
+    @Override
     public long getId() {
         return id;
     }
-    
+
     public Long getInstanceId() {
-    	return instanceId;
+        return instanceId;
     }
-    
+
     public void setInstanceId(Long instanceId) {
-    	this.instanceId = instanceId;
+        this.instanceId = instanceId;
     }
 
     public long getPodId() {
@@ -100,7 +101,7 @@ public class DataCenterIpAddressVO implements InternalIdentity {
     public String getIpAddress() {
         return ipAddress;
     }
-    
+
     public long getDataCenterId() {
         return dataCenterId;
     }
@@ -108,7 +109,7 @@ public class DataCenterIpAddressVO implements InternalIdentity {
     public Date getTakenAt() {
         return takenAt;
     }
-    
+
     public long getMacAddress() {
         return macAddress;
     }

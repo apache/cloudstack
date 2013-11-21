@@ -18,19 +18,20 @@ package org.apache.cloudstack.api.command.admin.network;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.user.Account;
 
-@APICommand(name = "updatePhysicalNetwork", description="Updates a physical network", responseObject=PhysicalNetworkResponse.class, since="3.0.0")
+@APICommand(name = "updatePhysicalNetwork", description = "Updates a physical network", responseObject = PhysicalNetworkResponse.class, since = "3.0.0")
 public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdatePhysicalNetworkCmd.class.getName());
 
@@ -39,20 +40,19 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=PhysicalNetworkResponse.class,
-            required=true, description="physical network id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, required = true, description = "physical network id")
     private Long id;
 
-    @Parameter(name=ApiConstants.NETWORK_SPEED, type=CommandType.STRING, description="the speed for the physical network[1G/10G]")
+    @Parameter(name = ApiConstants.NETWORK_SPEED, type = CommandType.STRING, description = "the speed for the physical network[1G/10G]")
     private String speed;
 
-    @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="Tag the physical network")
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "Tag the physical network")
     private List<String> tags;
 
-    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="Enabled/Disabled")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "Enabled/Disabled")
     private String state;
 
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the VLAN for the physical network")
+    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "the VLAN for the physical network")
     private String vlan;
 
     /////////////////////////////////////////////////////
@@ -94,8 +94,8 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
-        PhysicalNetwork result = _networkService.updatePhysicalNetwork(getId(),getNetworkSpeed(), getTags(), getVlan(), getState());
+    public void execute() {
+        PhysicalNetwork result = _networkService.updatePhysicalNetwork(getId(), getNetworkSpeed(), getTags(), getVlan(), getState());
         PhysicalNetworkResponse response = _responseGenerator.createPhysicalNetworkResponse(result);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
@@ -103,7 +103,7 @@ public class UpdatePhysicalNetworkCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Updating Physical network: " + getId();
+        return "Updating Physical network: " + getId();
     }
 
     @Override

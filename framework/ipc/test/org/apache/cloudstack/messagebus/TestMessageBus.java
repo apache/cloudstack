@@ -22,10 +22,6 @@ import javax.inject.Inject;
 
 import junit.framework.TestCase;
 
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.MessageDetector;
-import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
-import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,123 +29,129 @@ import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageDetector;
+import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
+
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations="classpath:/MessageBusTestContext.xml")
+@ContextConfiguration(locations = "classpath:/MessageBusTestContext.xml")
 public class TestMessageBus extends TestCase {
-	
-	@Inject MessageBus _messageBus;
 
-	@Test
-	public void testExactSubjectMatch() {
-		_messageBus.subscribe("Host", new MessageSubscriber() {
+    @Inject
+    MessageBus _messageBus;
 
-			@Override
-			public void onPublishMessage(String senderAddress, String subject, Object args) {
-				Assert.assertEquals(subject, "Host");
-			}
-		});
-		
-		_messageBus.publish(null, "Host", PublishScope.LOCAL, null);
-		_messageBus.publish(null, "VM", PublishScope.LOCAL, null);
-		_messageBus.clearAll();
-	}
+    @Test
+    public void testExactSubjectMatch() {
+        _messageBus.subscribe("Host", new MessageSubscriber() {
 
-	@Test
-	public void testRootSubjectMatch() {
-		_messageBus.subscribe("/", new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
+                Assert.assertEquals(subject, "Host");
+            }
+        });
 
-			@Override
-			public void onPublishMessage(String senderAddress, String subject, Object args) {
-				Assert.assertTrue(subject.equals("Host") || subject.equals("VM"));
-			}
-		});
-		
-		_messageBus.publish(null, "Host", PublishScope.LOCAL, null);
-		_messageBus.publish(null, "VM", PublishScope.LOCAL, null);
-		_messageBus.clearAll();
-	}
-	
-	@Test
-	public void testMiscMatch() {
-		MessageSubscriber subscriberAtParentLevel = new MessageSubscriber() {
-			@Override
-			public void onPublishMessage(String senderAddress, String subject, Object args) {
-				Assert.assertTrue(subject.startsWith(("Host")) || subject.startsWith("VM"));
-			}
-		};
-		
-		MessageSubscriber subscriberAtChildLevel = new MessageSubscriber() {
-			@Override
-			public void onPublishMessage(String senderAddress, String subject, Object args) {
-				Assert.assertTrue(subject.equals("Host.123"));
-			}
-		};
-		
-		subscriberAtParentLevel = Mockito.spy(subscriberAtParentLevel);
-		subscriberAtChildLevel = Mockito.spy(subscriberAtChildLevel);
-		
-		_messageBus.subscribe("Host", subscriberAtParentLevel);
-		_messageBus.subscribe("VM", subscriberAtParentLevel);
-		_messageBus.subscribe("Host.123", subscriberAtChildLevel);
-		
-		_messageBus.publish(null, "Host.123", PublishScope.LOCAL, null);
-		_messageBus.publish(null, "Host.321", PublishScope.LOCAL, null);
-		_messageBus.publish(null, "VM.123", PublishScope.LOCAL, null);
-		
-		Mockito.verify(subscriberAtParentLevel).onPublishMessage(null, "Host.123", null);
-		Mockito.verify(subscriberAtParentLevel).onPublishMessage(null, "Host.321", null);
-		Mockito.verify(subscriberAtParentLevel).onPublishMessage(null, "VM.123", null);
-		Mockito.verify(subscriberAtChildLevel).onPublishMessage(null, "Host.123", null);
+        _messageBus.publish(null, "Host", PublishScope.LOCAL, null);
+        _messageBus.publish(null, "VM", PublishScope.LOCAL, null);
+        _messageBus.clearAll();
+    }
 
-		Mockito.reset(subscriberAtParentLevel);
-		Mockito.reset(subscriberAtChildLevel);
-		
-		_messageBus.unsubscribe(null, subscriberAtParentLevel);
-		_messageBus.publish(null, "Host.123", PublishScope.LOCAL, null);
-		_messageBus.publish(null, "VM.123", PublishScope.LOCAL, null);
-	
-		Mockito.verify(subscriberAtChildLevel).onPublishMessage(null, "Host.123", null);
-		Mockito.verify(subscriberAtParentLevel, Mockito.times(0)).onPublishMessage(null, "Host.123", null);
-		Mockito.verify(subscriberAtParentLevel, Mockito.times(0)).onPublishMessage(null, "VM.123", null);
-		
-		_messageBus.clearAll();
-	}
-	
-	public void testMessageDetector() {
-		MessageDetector detector = new MessageDetector();
-		detector.open(_messageBus, new String[] {"VM", "Host"});
-		
-		Thread thread = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				for(int i = 0; i < 2; i++) {
-					try {
-						Thread.sleep(3000);
-					} catch (InterruptedException e) {
-					}
-					_messageBus.publish(null, "Host", PublishScope.GLOBAL, null);
-				}
-			}
-		});
-		thread.start();
-		
-		try {
-			int count = 0;
-			while(count < 2) {
-				if(detector.waitAny(1000)) {
-					System.out.println("Detected signal on bus");
-					count++;
-				} else {
-					System.out.println("Waiting timed out");
-				}
-			}
-		} finally {
-			detector.close();
-		}
-		
-		try {
-			thread.join();
-		} catch (InterruptedException e) {
-		}
-	}
+    @Test
+    public void testRootSubjectMatch() {
+        _messageBus.subscribe("/", new MessageSubscriber() {
+
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
+                Assert.assertTrue(subject.equals("Host") || subject.equals("VM"));
+            }
+        });
+
+        _messageBus.publish(null, "Host", PublishScope.LOCAL, null);
+        _messageBus.publish(null, "VM", PublishScope.LOCAL, null);
+        _messageBus.clearAll();
+    }
+
+    @Test
+    public void testMiscMatch() {
+        MessageSubscriber subscriberAtParentLevel = new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
+                Assert.assertTrue(subject.startsWith(("Host")) || subject.startsWith("VM"));
+            }
+        };
+
+        MessageSubscriber subscriberAtChildLevel = new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object args) {
+                Assert.assertTrue(subject.equals("Host.123"));
+            }
+        };
+
+        subscriberAtParentLevel = Mockito.spy(subscriberAtParentLevel);
+        subscriberAtChildLevel = Mockito.spy(subscriberAtChildLevel);
+
+        _messageBus.subscribe("Host", subscriberAtParentLevel);
+        _messageBus.subscribe("VM", subscriberAtParentLevel);
+        _messageBus.subscribe("Host.123", subscriberAtChildLevel);
+
+        _messageBus.publish(null, "Host.123", PublishScope.LOCAL, null);
+        _messageBus.publish(null, "Host.321", PublishScope.LOCAL, null);
+        _messageBus.publish(null, "VM.123", PublishScope.LOCAL, null);
+
+        Mockito.verify(subscriberAtParentLevel).onPublishMessage(null, "Host.123", null);
+        Mockito.verify(subscriberAtParentLevel).onPublishMessage(null, "Host.321", null);
+        Mockito.verify(subscriberAtParentLevel).onPublishMessage(null, "VM.123", null);
+        Mockito.verify(subscriberAtChildLevel).onPublishMessage(null, "Host.123", null);
+
+        Mockito.reset(subscriberAtParentLevel);
+        Mockito.reset(subscriberAtChildLevel);
+
+        _messageBus.unsubscribe(null, subscriberAtParentLevel);
+        _messageBus.publish(null, "Host.123", PublishScope.LOCAL, null);
+        _messageBus.publish(null, "VM.123", PublishScope.LOCAL, null);
+
+        Mockito.verify(subscriberAtChildLevel).onPublishMessage(null, "Host.123", null);
+        Mockito.verify(subscriberAtParentLevel, Mockito.times(0)).onPublishMessage(null, "Host.123", null);
+        Mockito.verify(subscriberAtParentLevel, Mockito.times(0)).onPublishMessage(null, "VM.123", null);
+
+        _messageBus.clearAll();
+    }
+
+    public void testMessageDetector() {
+        MessageDetector detector = new MessageDetector();
+        detector.open(_messageBus, new String[] {"VM", "Host"});
+
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i < 2; i++) {
+                    try {
+                        Thread.sleep(3000);
+                    } catch (InterruptedException e) {
+                    }
+                    _messageBus.publish(null, "Host", PublishScope.GLOBAL, null);
+                }
+            }
+        });
+        thread.start();
+
+        try {
+            int count = 0;
+            while (count < 2) {
+                if (detector.waitAny(1000)) {
+                    System.out.println("Detected signal on bus");
+                    count++;
+                } else {
+                    System.out.println("Waiting timed out");
+                }
+            }
+        } finally {
+            detector.close();
+        }
+
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+        }
+    }
 }

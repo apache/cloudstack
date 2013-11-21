@@ -23,8 +23,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 public interface Counter extends InternalIdentity, Identity {
 
     public static enum Source {
-        netscaler,
-        snmp
+        netscaler, snmp
     }
 
     String getName();

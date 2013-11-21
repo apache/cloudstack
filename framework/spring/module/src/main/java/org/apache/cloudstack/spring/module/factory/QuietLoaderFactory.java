@@ -32,8 +32,8 @@ public class QuietLoaderFactory implements FactoryBean<Resource[]> {
     public Resource[] getObject() throws Exception {
         List<Resource> existing = new ArrayList<Resource>();
 
-        for ( Resource resource : resources ) {
-            if ( resource.exists() ) {
+        for (Resource resource : resources) {
+            if (resource.exists()) {
                 existing.add(resource);
             }
         }

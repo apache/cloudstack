@@ -22,33 +22,33 @@ import streamer.Link;
 
 public class ClientTpkt extends BaseElement {
 
-  public ClientTpkt(String id) {
-    super(id);
-  }
+    public ClientTpkt(String id) {
+        super(id);
+    }
 
-  @Override
-  public void handleData(ByteBuffer buf, Link link) {
-    if (buf == null)
-      return;
+    @Override
+    public void handleData(ByteBuffer buf, Link link) {
+        if (buf == null)
+            return;
 
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
 
-    if (buf.length + 4 > 65535)
-      throw new RuntimeException("Packet is too long for TPKT (max length 65535-4): " + buf + ".");
+        if (buf.length + 4 > 65535)
+            throw new RuntimeException("Packet is too long for TPKT (max length 65535-4): " + buf + ".");
 
-    ByteBuffer data = new ByteBuffer(4);
-    // TPKT version
-    data.writeByte(3);
-    // Reserved
-    data.writeByte(0);
-    // Packet length, including length of the header
-    data.writeShort(buf.length + 4);
+        ByteBuffer data = new ByteBuffer(4);
+        // TPKT version
+        data.writeByte(3);
+        // Reserved
+        data.writeByte(0);
+        // Packet length, including length of the header
+        data.writeShort(buf.length + 4);
 
-    buf.prepend(data);
-    data.unref();
+        buf.prepend(data);
+        data.unref();
 
-    pushDataToPad(STDOUT, buf);
-  }
+        pushDataToPad(STDOUT, buf);
+    }
 
 }

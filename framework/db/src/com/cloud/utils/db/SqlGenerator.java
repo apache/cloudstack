@@ -314,8 +314,8 @@ public class SqlGenerator {
             }
             if (attrs.size() != 0) {
                 Pair<StringBuilder, Attribute[]> pair =
-                        new Pair<StringBuilder, Attribute[]>(buildUpdateSql(tableName, attrs), attrs.toArray(new Attribute[attrs.size()]));
-                        sqls.add(pair);
+                    new Pair<StringBuilder, Attribute[]>(buildUpdateSql(tableName, attrs), attrs.toArray(new Attribute[attrs.size()]));
+                sqls.add(pair);
             }
         }
         return sqls;
@@ -556,7 +556,6 @@ public class SqlGenerator {
         }
     }
 
-
     public String buildTableReferences() {
         StringBuilder sql = new StringBuilder();
         sql.append(DbUtil.getTableName(_tables.get(_tables.size() - 1)));
@@ -571,7 +570,7 @@ public class SqlGenerator {
     public Pair<StringBuilder, Attribute[]> buildSelectSql(boolean enable_query_cache) {
         StringBuilder sql = new StringBuilder("SELECT ");
 
-        sql.append(enable_query_cache ? "SQL_CACHE ": "");
+        sql.append(enable_query_cache ? "SQL_CACHE " : "");
 
         ArrayList<Attribute> attrs = new ArrayList<Attribute>();
 
@@ -617,7 +616,7 @@ public class SqlGenerator {
 
     /**
      * buildDiscriminatorClause builds the join clause when there are multiple tables.
-     * 
+     *
      * @return
      */
     public Pair<StringBuilder, Map<String, Object>> buildDiscriminatorClause() {
@@ -630,7 +629,7 @@ public class SqlGenerator {
                 Class<?> parent = table.getSuperclass();
                 String tableName = DbUtil.getTableName(parent);
                 DiscriminatorColumn dc = parent.getAnnotation(DiscriminatorColumn.class);
-                assert(dc != null) : "Parent does not have discrminator column: " + parent.getName();
+                assert (dc != null) : "Parent does not have discrminator column: " + parent.getName();
                 sql.append(tableName);
                 sql.append(".");
                 sql.append(dc.name()).append("=");
@@ -662,7 +661,6 @@ public class SqlGenerator {
     public String buildCountSql() {
         StringBuilder sql = new StringBuilder();
 
-        return sql.append("SELECT COUNT(*) FROM ").append(buildTableReferences()).
-                append(" WHERE ").append(buildDiscriminatorClause().first()).toString();
+        return sql.append("SELECT COUNT(*) FROM ").append(buildTableReferences()).append(" WHERE ").append(buildDiscriminatorClause().first()).toString();
     }
 }

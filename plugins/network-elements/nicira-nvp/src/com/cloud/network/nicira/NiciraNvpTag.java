@@ -24,7 +24,8 @@ public class NiciraNvpTag {
     private String scope;
     private String tag;
 
-    public NiciraNvpTag() {}
+    public NiciraNvpTag() {
+    }
 
     public NiciraNvpTag(String scope, String tag) {
         this.scope = scope;

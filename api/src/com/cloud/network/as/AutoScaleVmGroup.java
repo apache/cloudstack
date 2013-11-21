@@ -20,7 +20,6 @@ package com.cloud.network.as;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-
 public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity {
 
     String State_New = "new";
@@ -28,6 +27,7 @@ public interface AutoScaleVmGroup extends ControlledEntity, InternalIdentity {
     String State_Enabled = "enabled";
     String State_Disabled = "disabled";
 
+    @Override
     long getId();
 
     @Override

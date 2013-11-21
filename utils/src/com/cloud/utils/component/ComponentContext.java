@@ -39,7 +39,7 @@ import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.mgmt.ManagementBean;
 
 /**
- * 
+ *
  * ComponentContext.setApplication() and ComponentContext.getApplication()
  * are not recommended to be used outside, they exist to help wire Spring Framework
  *
@@ -63,7 +63,7 @@ public class ComponentContext implements ApplicationContextAware {
     }
 
     public static void initComponentsLifeCycle() {
-        if ( ! s_initializeBeans )
+        if (!s_initializeBeans)
             return;
 
         AutowireCapableBeanFactory beanFactory = s_appContext.getAutowireCapableBeanFactory();

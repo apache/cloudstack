@@ -32,10 +32,8 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.domain.dao.DomainDaoImpl;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -43,15 +41,17 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={ResourceCountDao.class})
+@Local(value = {ResourceCountDao.class})
 public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> implements ResourceCountDao {
     private final SearchBuilder<ResourceCountVO> TypeSearch;
 
     private final SearchBuilder<ResourceCountVO> AccountSearch;
     private final SearchBuilder<ResourceCountVO> DomainSearch;
 
-    @Inject protected DomainDao _domainDao;
-    @Inject protected AccountDao _accountDao;
+    @Inject
+    protected DomainDao _domainDao;
+    @Inject
+    protected AccountDao _accountDao;
 
     public ResourceCountDaoImpl() {
         TypeSearch = createSearchBuilder();
@@ -69,7 +69,7 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
         DomainSearch.done();
     }
 
-    @Override 
+    @Override
     public ResourceCountVO findByOwnerAndType(long ownerId, ResourceOwnerType ownerType, ResourceType type) {
         SearchCriteria<ResourceCountVO> sc = TypeSearch.create();
         sc.setParameters("type", type);
@@ -95,7 +95,7 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
         }
     }
 
-    @Override 
+    @Override
     public void setResourceCount(long ownerId, ResourceOwnerType ownerType, ResourceType type, long count) {
         ResourceCountVO resourceCountVO = findByOwnerAndType(ownerId, ownerType, type);
         if (resourceCountVO != null && count != resourceCountVO.getCount()) {
@@ -104,13 +104,14 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
         }
     }
 
-    @Override @Deprecated
+    @Override
+    @Deprecated
     public void updateDomainCount(long domainId, ResourceType type, boolean increment, long delta) {
         delta = increment ? delta : delta * -1;
 
         ResourceCountVO resourceCountVO = findByOwnerAndType(domainId, ResourceOwnerType.Domain, type);
         resourceCountVO.setCount(resourceCountVO.getCount() + delta);
-        update(resourceCountVO.getId(), resourceCountVO);	
+        update(resourceCountVO.getId(), resourceCountVO);
     }
 
     @Override
@@ -147,16 +148,17 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
             }
 
             //get records for account's domain and all its parent domains
-            rowIds.addAll(listRowsToUpdateForDomain(_accountDao.findByIdIncludingRemoved(ownerId).getDomainId(),type));
+            rowIds.addAll(listRowsToUpdateForDomain(_accountDao.findByIdIncludingRemoved(ownerId).getDomainId(), type));
         } else if (ownerType == ResourceOwnerType.Domain) {
             return listRowsToUpdateForDomain(ownerId, type);
-        } 
+        }
 
         return rowIds;
     }
 
-    @Override @DB
-    public void createResourceCounts(long ownerId, ResourceLimit.ResourceOwnerType ownerType){
+    @Override
+    @DB
+    public void createResourceCounts(long ownerId, ResourceLimit.ResourceOwnerType ownerType) {
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
@@ -210,7 +212,7 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
     }
 
     @Override
-    public ResourceCountVO persist(ResourceCountVO resourceCountVO){
+    public ResourceCountVO persist(ResourceCountVO resourceCountVO) {
         ResourceOwnerType ownerType = resourceCountVO.getResourceOwnerType();
         ResourceType resourceType = resourceCountVO.getType();
         if (!resourceType.supportsOwner(ownerType)) {
@@ -219,7 +221,6 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 
         return super.persist(resourceCountVO);
     }
-
 
     @Override
     public long removeEntriesByOwner(long ownerId, ResourceOwnerType ownerType) {

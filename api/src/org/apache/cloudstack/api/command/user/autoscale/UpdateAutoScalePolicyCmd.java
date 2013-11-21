@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.user.autoscale;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,8 +31,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.ConditionResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScalePolicy;
@@ -49,15 +49,23 @@ public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.DURATION, type = CommandType.INTEGER, description = "the duration for which the conditions have to be true before action is taken")
     private Integer duration;
 
-    @Parameter(name = ApiConstants.QUIETTIME, type = CommandType.INTEGER, description = "the cool down period for which the policy should not be evaluated after the action has been taken")
+    @Parameter(name = ApiConstants.QUIETTIME,
+               type = CommandType.INTEGER,
+               description = "the cool down period for which the policy should not be evaluated after the action has been taken")
     private Integer quietTime;
 
-    @Parameter(name = ApiConstants.CONDITION_IDS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = ConditionResponse.class,
-            description = "the list of IDs of the conditions that are being evaluated on every interval")
+    @Parameter(name = ApiConstants.CONDITION_IDS,
+               type = CommandType.LIST,
+               collectionType = CommandType.UUID,
+               entityType = ConditionResponse.class,
+               description = "the list of IDs of the conditions that are being evaluated on every interval")
     private List<Long> conditionIds;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AutoScalePolicyResponse.class,
-            required = true, description = "the ID of the autoscale policy")
+    @Parameter(name = ApiConstants.ID,
+               type = CommandType.UUID,
+               entityType = AutoScalePolicyResponse.class,
+               required = true,
+               description = "the ID of the autoscale policy")
     private Long id;
 
     @Override
@@ -88,7 +96,6 @@ public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
     public Integer getQuietTime() {
         return quietTime;
     }
-
 
     public List<Long> getConditionIds() {
         return conditionIds;

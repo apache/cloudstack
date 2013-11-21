@@ -21,679 +21,595 @@
  * This file was auto-generated from WSDL
  * by the Apache Axis2 version: 1.5.6  Built on : Aug 30, 2011 (10:01:01 CEST)
  */
-            
-                package com.amazon.ec2;
-            
 
-            /**
-            *  CreateImageType bean class
+package com.amazon.ec2;
+
+/**
+*  CreateImageType bean class
+*/
+
+public class CreateImageType implements org.apache.axis2.databinding.ADBBean {
+    /* This type was generated from the piece of schema that had
+            name = CreateImageType
+            Namespace URI = http://ec2.amazonaws.com/doc/2012-08-15/
+            Namespace Prefix = ns1
             */
-        
-        public  class CreateImageType
-        implements org.apache.axis2.databinding.ADBBean{
-        /* This type was generated from the piece of schema that had
-                name = CreateImageType
-                Namespace URI = http://ec2.amazonaws.com/doc/2012-08-15/
-                Namespace Prefix = ns1
-                */
-            
 
-        private static java.lang.String generatePrefix(java.lang.String namespace) {
-            if(namespace.equals("http://ec2.amazonaws.com/doc/2012-08-15/")){
-                return "ns1";
-            }
-            return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
+    private static java.lang.String generatePrefix(java.lang.String namespace) {
+        if (namespace.equals("http://ec2.amazonaws.com/doc/2012-08-15/")) {
+            return "ns1";
+        }
+        return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
+    }
+
+    /**
+    * field for InstanceId
+    */
+
+    protected java.lang.String localInstanceId;
+
+    /**
+    * Auto generated getter method
+    * @return java.lang.String
+    */
+    public java.lang.String getInstanceId() {
+        return localInstanceId;
+    }
+
+    /**
+       * Auto generated setter method
+       * @param param InstanceId
+       */
+    public void setInstanceId(java.lang.String param) {
+
+        this.localInstanceId = param;
+
+    }
+
+    /**
+    * field for Name
+    */
+
+    protected java.lang.String localName;
+
+    /**
+    * Auto generated getter method
+    * @return java.lang.String
+    */
+    public java.lang.String getName() {
+        return localName;
+    }
+
+    /**
+       * Auto generated setter method
+       * @param param Name
+       */
+    public void setName(java.lang.String param) {
+
+        this.localName = param;
+
+    }
+
+    /**
+    * field for Description
+    */
+
+    protected java.lang.String localDescription;
+
+    /*  This tracker boolean wil be used to detect whether the user called the set method
+    *   for this attribute. It will be used to determine whether to include this field
+    *   in the serialized XML
+    */
+    protected boolean localDescriptionTracker = false;
+
+    /**
+    * Auto generated getter method
+    * @return java.lang.String
+    */
+    public java.lang.String getDescription() {
+        return localDescription;
+    }
+
+    /**
+       * Auto generated setter method
+       * @param param Description
+       */
+    public void setDescription(java.lang.String param) {
+
+        if (param != null) {
+            //update the setting tracker
+            localDescriptionTracker = true;
+        } else {
+            localDescriptionTracker = false;
+
         }
 
-        
+        this.localDescription = param;
 
-                        /**
-                        * field for InstanceId
-                        */
+    }
 
-                        
-                                    protected java.lang.String localInstanceId ;
-                                
+    /**
+    * field for NoReboot
+    */
 
-                           /**
-                           * Auto generated getter method
-                           * @return java.lang.String
-                           */
-                           public  java.lang.String getInstanceId(){
-                               return localInstanceId;
-                           }
+    protected boolean localNoReboot;
 
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param InstanceId
-                               */
-                               public void setInstanceId(java.lang.String param){
-                            
-                                            this.localInstanceId=param;
-                                    
+    /*  This tracker boolean wil be used to detect whether the user called the set method
+    *   for this attribute. It will be used to determine whether to include this field
+    *   in the serialized XML
+    */
+    protected boolean localNoRebootTracker = false;
 
-                               }
-                            
+    /**
+    * Auto generated getter method
+    * @return boolean
+    */
+    public boolean getNoReboot() {
+        return localNoReboot;
+    }
 
-                        /**
-                        * field for Name
-                        */
+    /**
+       * Auto generated setter method
+       * @param param NoReboot
+       */
+    public void setNoReboot(boolean param) {
 
-                        
-                                    protected java.lang.String localName ;
-                                
+        // setting primitive attribute tracker to true
 
-                           /**
-                           * Auto generated getter method
-                           * @return java.lang.String
-                           */
-                           public  java.lang.String getName(){
-                               return localName;
-                           }
+        if (false) {
+            localNoRebootTracker = false;
 
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param Name
-                               */
-                               public void setName(java.lang.String param){
-                            
-                                            this.localName=param;
-                                    
+        } else {
+            localNoRebootTracker = true;
+        }
 
-                               }
-                            
+        this.localNoReboot = param;
 
-                        /**
-                        * field for Description
-                        */
+    }
 
-                        
-                                    protected java.lang.String localDescription ;
-                                
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localDescriptionTracker = false ;
-                           
+    /**
+    * field for BlockDeviceMapping
+    */
 
-                           /**
-                           * Auto generated getter method
-                           * @return java.lang.String
-                           */
-                           public  java.lang.String getDescription(){
-                               return localDescription;
-                           }
+    protected com.amazon.ec2.BlockDeviceMappingType localBlockDeviceMapping;
 
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param Description
-                               */
-                               public void setDescription(java.lang.String param){
-                            
-                                       if (param != null){
-                                          //update the setting tracker
-                                          localDescriptionTracker = true;
-                                       } else {
-                                          localDescriptionTracker = false;
-                                              
-                                       }
-                                   
-                                            this.localDescription=param;
-                                    
+    /*  This tracker boolean wil be used to detect whether the user called the set method
+    *   for this attribute. It will be used to determine whether to include this field
+    *   in the serialized XML
+    */
+    protected boolean localBlockDeviceMappingTracker = false;
 
-                               }
-                            
+    /**
+    * Auto generated getter method
+    * @return com.amazon.ec2.BlockDeviceMappingType
+    */
+    public com.amazon.ec2.BlockDeviceMappingType getBlockDeviceMapping() {
+        return localBlockDeviceMapping;
+    }
 
-                        /**
-                        * field for NoReboot
-                        */
+    /**
+       * Auto generated setter method
+       * @param param BlockDeviceMapping
+       */
+    public void setBlockDeviceMapping(com.amazon.ec2.BlockDeviceMappingType param) {
 
-                        
-                                    protected boolean localNoReboot ;
-                                
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localNoRebootTracker = false ;
-                           
+        if (param != null) {
+            //update the setting tracker
+            localBlockDeviceMappingTracker = true;
+        } else {
+            localBlockDeviceMappingTracker = false;
 
-                           /**
-                           * Auto generated getter method
-                           * @return boolean
-                           */
-                           public  boolean getNoReboot(){
-                               return localNoReboot;
-                           }
+        }
 
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param NoReboot
-                               */
-                               public void setNoReboot(boolean param){
-                            
-                                       // setting primitive attribute tracker to true
-                                       
-                                               if (false) {
-                                           localNoRebootTracker = false;
-                                              
-                                       } else {
-                                          localNoRebootTracker = true;
-                                       }
-                                   
-                                            this.localNoReboot=param;
-                                    
+        this.localBlockDeviceMapping = param;
 
-                               }
-                            
+    }
 
-                        /**
-                        * field for BlockDeviceMapping
-                        */
-
-                        
-                                    protected com.amazon.ec2.BlockDeviceMappingType localBlockDeviceMapping ;
-                                
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localBlockDeviceMappingTracker = false ;
-                           
-
-                           /**
-                           * Auto generated getter method
-                           * @return com.amazon.ec2.BlockDeviceMappingType
-                           */
-                           public  com.amazon.ec2.BlockDeviceMappingType getBlockDeviceMapping(){
-                               return localBlockDeviceMapping;
-                           }
-
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param BlockDeviceMapping
-                               */
-                               public void setBlockDeviceMapping(com.amazon.ec2.BlockDeviceMappingType param){
-                            
-                                       if (param != null){
-                                          //update the setting tracker
-                                          localBlockDeviceMappingTracker = true;
-                                       } else {
-                                          localBlockDeviceMappingTracker = false;
-                                              
-                                       }
-                                   
-                                            this.localBlockDeviceMapping=param;
-                                    
-
-                               }
-                            
-
-     /**
-     * isReaderMTOMAware
-     * @return true if the reader supports MTOM
-     */
-   public static boolean isReaderMTOMAware(javax.xml.stream.XMLStreamReader reader) {
+    /**
+    * isReaderMTOMAware
+    * @return true if the reader supports MTOM
+    */
+    public static boolean isReaderMTOMAware(javax.xml.stream.XMLStreamReader reader) {
         boolean isReaderMTOMAware = false;
-        
-        try{
-          isReaderMTOMAware = java.lang.Boolean.TRUE.equals(reader.getProperty(org.apache.axiom.om.OMConstants.IS_DATA_HANDLERS_AWARE));
-        }catch(java.lang.IllegalArgumentException e){
-          isReaderMTOMAware = false;
+
+        try {
+            isReaderMTOMAware = java.lang.Boolean.TRUE.equals(reader.getProperty(org.apache.axiom.om.OMConstants.IS_DATA_HANDLERS_AWARE));
+        } catch (java.lang.IllegalArgumentException e) {
+            isReaderMTOMAware = false;
         }
         return isReaderMTOMAware;
-   }
-     
-     
-        /**
-        *
-        * @param parentQName
-        * @param factory
-        * @return org.apache.axiom.om.OMElement
-        */
-       public org.apache.axiom.om.OMElement getOMElement (
-               final javax.xml.namespace.QName parentQName,
-               final org.apache.axiom.om.OMFactory factory) throws org.apache.axis2.databinding.ADBException{
+    }
 
+    /**
+    *
+    * @param parentQName
+    * @param factory
+    * @return org.apache.axiom.om.OMElement
+    */
+    public org.apache.axiom.om.OMElement getOMElement(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory)
+        throws org.apache.axis2.databinding.ADBException {
 
-        
-               org.apache.axiom.om.OMDataSource dataSource =
-                       new org.apache.axis2.databinding.ADBDataSource(this,parentQName){
+        org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
-                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
-                       CreateImageType.this.serialize(parentQName,factory,xmlWriter);
-                 }
-               };
-               return new org.apache.axiom.om.impl.llom.OMSourcedElementImpl(
-               parentQName,factory,dataSource);
-            
-       }
+            public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
+                CreateImageType.this.serialize(parentQName, factory, xmlWriter);
+            }
+        };
+        return new org.apache.axiom.om.impl.llom.OMSourcedElementImpl(parentQName, factory, dataSource);
 
-         public void serialize(final javax.xml.namespace.QName parentQName,
-                                       final org.apache.axiom.om.OMFactory factory,
-                                       org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter)
-                                throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException{
-                           serialize(parentQName,factory,xmlWriter,false);
-         }
+    }
 
-         public void serialize(final javax.xml.namespace.QName parentQName,
-                               final org.apache.axiom.om.OMFactory factory,
-                               org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter,
-                               boolean serializeType)
-            throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException{
-            
-                
+    public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
+        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+        org.apache.axis2.databinding.ADBException {
+        serialize(parentQName, factory, xmlWriter, false);
+    }
 
+    public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
+        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
+        org.apache.axis2.databinding.ADBException {
 
-                java.lang.String prefix = null;
-                java.lang.String namespace = null;
-                
+        java.lang.String prefix = null;
+        java.lang.String namespace = null;
 
-                    prefix = parentQName.getPrefix();
-                    namespace = parentQName.getNamespaceURI();
+        prefix = parentQName.getPrefix();
+        namespace = parentQName.getNamespaceURI();
 
-                    if ((namespace != null) && (namespace.trim().length() > 0)) {
-                        java.lang.String writerPrefix = xmlWriter.getPrefix(namespace);
-                        if (writerPrefix != null) {
-                            xmlWriter.writeStartElement(namespace, parentQName.getLocalPart());
-                        } else {
-                            if (prefix == null) {
-                                prefix = generatePrefix(namespace);
-                            }
+        if ((namespace != null) && (namespace.trim().length() > 0)) {
+            java.lang.String writerPrefix = xmlWriter.getPrefix(namespace);
+            if (writerPrefix != null) {
+                xmlWriter.writeStartElement(namespace, parentQName.getLocalPart());
+            } else {
+                if (prefix == null) {
+                    prefix = generatePrefix(namespace);
+                }
 
-                            xmlWriter.writeStartElement(prefix, parentQName.getLocalPart(), namespace);
-                            xmlWriter.writeNamespace(prefix, namespace);
-                            xmlWriter.setPrefix(prefix, namespace);
-                        }
-                    } else {
-                        xmlWriter.writeStartElement(parentQName.getLocalPart());
-                    }
-                
-                  if (serializeType){
-               
+                xmlWriter.writeStartElement(prefix, parentQName.getLocalPart(), namespace);
+                xmlWriter.writeNamespace(prefix, namespace);
+                xmlWriter.setPrefix(prefix, namespace);
+            }
+        } else {
+            xmlWriter.writeStartElement(parentQName.getLocalPart());
+        }
 
-                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2012-08-15/");
-                   if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)){
-                       writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
-                           namespacePrefix+":CreateImageType",
-                           xmlWriter);
-                   } else {
-                       writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
-                           "CreateImageType",
-                           xmlWriter);
-                   }
+        if (serializeType) {
 
-               
-                   }
-               
-                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
-                                    if (! namespace.equals("")) {
-                                        prefix = xmlWriter.getPrefix(namespace);
-
-                                        if (prefix == null) {
-                                            prefix = generatePrefix(namespace);
-
-                                            xmlWriter.writeStartElement(prefix,"instanceId", namespace);
-                                            xmlWriter.writeNamespace(prefix, namespace);
-                                            xmlWriter.setPrefix(prefix, namespace);
-
-                                        } else {
-                                            xmlWriter.writeStartElement(namespace,"instanceId");
-                                        }
-
-                                    } else {
-                                        xmlWriter.writeStartElement("instanceId");
-                                    }
-                                
-
-                                          if (localInstanceId==null){
-                                              // write the nil attribute
-                                              
-                                                     throw new org.apache.axis2.databinding.ADBException("instanceId cannot be null!!");
-                                                  
-                                          }else{
-
-                                        
-                                                   xmlWriter.writeCharacters(localInstanceId);
-                                            
-                                          }
-                                    
-                                   xmlWriter.writeEndElement();
-                             
-                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
-                                    if (! namespace.equals("")) {
-                                        prefix = xmlWriter.getPrefix(namespace);
-
-                                        if (prefix == null) {
-                                            prefix = generatePrefix(namespace);
-
-                                            xmlWriter.writeStartElement(prefix,"name", namespace);
-                                            xmlWriter.writeNamespace(prefix, namespace);
-                                            xmlWriter.setPrefix(prefix, namespace);
-
-                                        } else {
-                                            xmlWriter.writeStartElement(namespace,"name");
-                                        }
-
-                                    } else {
-                                        xmlWriter.writeStartElement("name");
-                                    }
-                                
-
-                                          if (localName==null){
-                                              // write the nil attribute
-                                              
-                                                     throw new org.apache.axis2.databinding.ADBException("name cannot be null!!");
-                                                  
-                                          }else{
-
-                                        
-                                                   xmlWriter.writeCharacters(localName);
-                                            
-                                          }
-                                    
-                                   xmlWriter.writeEndElement();
-                              if (localDescriptionTracker){
-                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
-                                    if (! namespace.equals("")) {
-                                        prefix = xmlWriter.getPrefix(namespace);
-
-                                        if (prefix == null) {
-                                            prefix = generatePrefix(namespace);
-
-                                            xmlWriter.writeStartElement(prefix,"description", namespace);
-                                            xmlWriter.writeNamespace(prefix, namespace);
-                                            xmlWriter.setPrefix(prefix, namespace);
-
-                                        } else {
-                                            xmlWriter.writeStartElement(namespace,"description");
-                                        }
-
-                                    } else {
-                                        xmlWriter.writeStartElement("description");
-                                    }
-                                
-
-                                          if (localDescription==null){
-                                              // write the nil attribute
-                                              
-                                                     throw new org.apache.axis2.databinding.ADBException("description cannot be null!!");
-                                                  
-                                          }else{
-
-                                        
-                                                   xmlWriter.writeCharacters(localDescription);
-                                            
-                                          }
-                                    
-                                   xmlWriter.writeEndElement();
-                             } if (localNoRebootTracker){
-                                    namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
-                                    if (! namespace.equals("")) {
-                                        prefix = xmlWriter.getPrefix(namespace);
-
-                                        if (prefix == null) {
-                                            prefix = generatePrefix(namespace);
-
-                                            xmlWriter.writeStartElement(prefix,"noReboot", namespace);
-                                            xmlWriter.writeNamespace(prefix, namespace);
-                                            xmlWriter.setPrefix(prefix, namespace);
-
-                                        } else {
-                                            xmlWriter.writeStartElement(namespace,"noReboot");
-                                        }
-
-                                    } else {
-                                        xmlWriter.writeStartElement("noReboot");
-                                    }
-                                
-                                               if (false) {
-                                           
-                                                         throw new org.apache.axis2.databinding.ADBException("noReboot cannot be null!!");
-                                                      
-                                               } else {
-                                                    xmlWriter.writeCharacters(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localNoReboot));
-                                               }
-                                    
-                                   xmlWriter.writeEndElement();
-                             } if (localBlockDeviceMappingTracker){
-                                            if (localBlockDeviceMapping==null){
-                                                 throw new org.apache.axis2.databinding.ADBException("blockDeviceMapping cannot be null!!");
-                                            }
-                                           localBlockDeviceMapping.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","blockDeviceMapping"),
-                                               factory,xmlWriter);
-                                        }
-                    xmlWriter.writeEndElement();
-               
+            java.lang.String namespacePrefix = registerPrefix(xmlWriter, "http://ec2.amazonaws.com/doc/2012-08-15/");
+            if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)) {
+                writeAttribute("xsi", "http://www.w3.org/2001/XMLSchema-instance", "type", namespacePrefix + ":CreateImageType", xmlWriter);
+            } else {
+                writeAttribute("xsi", "http://www.w3.org/2001/XMLSchema-instance", "type", "CreateImageType", xmlWriter);
+            }
 
         }
 
-         /**
-          * Util method to write an attribute with the ns prefix
-          */
-          private void writeAttribute(java.lang.String prefix,java.lang.String namespace,java.lang.String attName,
-                                      java.lang.String attValue,javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException{
-              if (xmlWriter.getPrefix(namespace) == null) {
-                       xmlWriter.writeNamespace(prefix, namespace);
-                       xmlWriter.setPrefix(prefix, namespace);
+        namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
+        if (!namespace.equals("")) {
+            prefix = xmlWriter.getPrefix(namespace);
 
-              }
+            if (prefix == null) {
+                prefix = generatePrefix(namespace);
 
-              xmlWriter.writeAttribute(namespace,attName,attValue);
-
-         }
-
-        /**
-          * Util method to write an attribute without the ns prefix
-          */
-          private void writeAttribute(java.lang.String namespace,java.lang.String attName,
-                                      java.lang.String attValue,javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException{
-                if (namespace.equals(""))
-              {
-                  xmlWriter.writeAttribute(attName,attValue);
-              }
-              else
-              {
-                  registerPrefix(xmlWriter, namespace);
-                  xmlWriter.writeAttribute(namespace,attName,attValue);
-              }
-          }
-
-
-           /**
-             * Util method to write an attribute without the ns prefix
-             */
-            private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName,
-                                             javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
-
-                java.lang.String attributeNamespace = qname.getNamespaceURI();
-                java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
-                if (attributePrefix == null) {
-                    attributePrefix = registerPrefix(xmlWriter, attributeNamespace);
-                }
-                java.lang.String attributeValue;
-                if (attributePrefix.trim().length() > 0) {
-                    attributeValue = attributePrefix + ":" + qname.getLocalPart();
-                } else {
-                    attributeValue = qname.getLocalPart();
-                }
-
-                if (namespace.equals("")) {
-                    xmlWriter.writeAttribute(attName, attributeValue);
-                } else {
-                    registerPrefix(xmlWriter, namespace);
-                    xmlWriter.writeAttribute(namespace, attName, attributeValue);
-                }
-            }
-        /**
-         *  method to handle Qnames
-         */
-
-        private void writeQName(javax.xml.namespace.QName qname,
-                                javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
-            java.lang.String namespaceURI = qname.getNamespaceURI();
-            if (namespaceURI != null) {
-                java.lang.String prefix = xmlWriter.getPrefix(namespaceURI);
-                if (prefix == null) {
-                    prefix = generatePrefix(namespaceURI);
-                    xmlWriter.writeNamespace(prefix, namespaceURI);
-                    xmlWriter.setPrefix(prefix,namespaceURI);
-                }
-
-                if (prefix.trim().length() > 0){
-                    xmlWriter.writeCharacters(prefix + ":" + org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qname));
-                } else {
-                    // i.e this is the default namespace
-                    xmlWriter.writeCharacters(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qname));
-                }
+                xmlWriter.writeStartElement(prefix, "instanceId", namespace);
+                xmlWriter.writeNamespace(prefix, namespace);
+                xmlWriter.setPrefix(prefix, namespace);
 
             } else {
-                xmlWriter.writeCharacters(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qname));
+                xmlWriter.writeStartElement(namespace, "instanceId");
             }
+
+        } else {
+            xmlWriter.writeStartElement("instanceId");
         }
 
-        private void writeQNames(javax.xml.namespace.QName[] qnames,
-                                 javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
+        if (localInstanceId == null) {
+            // write the nil attribute
 
-            if (qnames != null) {
-                // we have to store this data until last moment since it is not possible to write any
-                // namespace data after writing the charactor data
-                java.lang.StringBuffer stringToWrite = new java.lang.StringBuffer();
-                java.lang.String namespaceURI = null;
-                java.lang.String prefix = null;
+            throw new org.apache.axis2.databinding.ADBException("instanceId cannot be null!!");
 
-                for (int i = 0; i < qnames.length; i++) {
-                    if (i > 0) {
-                        stringToWrite.append(" ");
-                    }
-                    namespaceURI = qnames[i].getNamespaceURI();
-                    if (namespaceURI != null) {
-                        prefix = xmlWriter.getPrefix(namespaceURI);
-                        if ((prefix == null) || (prefix.length() == 0)) {
-                            prefix = generatePrefix(namespaceURI);
-                            xmlWriter.writeNamespace(prefix, namespaceURI);
-                            xmlWriter.setPrefix(prefix,namespaceURI);
-                        }
+        } else {
 
-                        if (prefix.trim().length() > 0){
-                            stringToWrite.append(prefix).append(":").append(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qnames[i]));
-                        } else {
-                            stringToWrite.append(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qnames[i]));
-                        }
-                    } else {
-                        stringToWrite.append(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qnames[i]));
-                    }
-                }
-                xmlWriter.writeCharacters(stringToWrite.toString());
-            }
+            xmlWriter.writeCharacters(localInstanceId);
 
         }
 
+        xmlWriter.writeEndElement();
 
-         /**
-         * Register a namespace prefix
-         */
-         private java.lang.String registerPrefix(javax.xml.stream.XMLStreamWriter xmlWriter, java.lang.String namespace) throws javax.xml.stream.XMLStreamException {
-                java.lang.String prefix = xmlWriter.getPrefix(namespace);
+        namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
+        if (!namespace.equals("")) {
+            prefix = xmlWriter.getPrefix(namespace);
+
+            if (prefix == null) {
+                prefix = generatePrefix(namespace);
+
+                xmlWriter.writeStartElement(prefix, "name", namespace);
+                xmlWriter.writeNamespace(prefix, namespace);
+                xmlWriter.setPrefix(prefix, namespace);
+
+            } else {
+                xmlWriter.writeStartElement(namespace, "name");
+            }
+
+        } else {
+            xmlWriter.writeStartElement("name");
+        }
+
+        if (localName == null) {
+            // write the nil attribute
+
+            throw new org.apache.axis2.databinding.ADBException("name cannot be null!!");
+
+        } else {
+
+            xmlWriter.writeCharacters(localName);
+
+        }
+
+        xmlWriter.writeEndElement();
+        if (localDescriptionTracker) {
+            namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
+            if (!namespace.equals("")) {
+                prefix = xmlWriter.getPrefix(namespace);
 
                 if (prefix == null) {
                     prefix = generatePrefix(namespace);
 
-                    while (xmlWriter.getNamespaceContext().getNamespaceURI(prefix) != null) {
-                        prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
-                    }
-
+                    xmlWriter.writeStartElement(prefix, "description", namespace);
                     xmlWriter.writeNamespace(prefix, namespace);
                     xmlWriter.setPrefix(prefix, namespace);
+
+                } else {
+                    xmlWriter.writeStartElement(namespace, "description");
                 }
 
-                return prefix;
+            } else {
+                xmlWriter.writeStartElement("description");
             }
 
+            if (localDescription == null) {
+                // write the nil attribute
 
-  
-        /**
-        * databinding method to get an XML representation of this object
-        *
-        */
-        public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName)
-                    throws org.apache.axis2.databinding.ADBException{
+                throw new org.apache.axis2.databinding.ADBException("description cannot be null!!");
 
+            } else {
 
-        
-                 java.util.ArrayList elementList = new java.util.ArrayList();
-                 java.util.ArrayList attribList = new java.util.ArrayList();
+                xmlWriter.writeCharacters(localDescription);
 
-                
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
-                                                                      "instanceId"));
-                                 
-                                        if (localInstanceId != null){
-                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localInstanceId));
-                                        } else {
-                                           throw new org.apache.axis2.databinding.ADBException("instanceId cannot be null!!");
-                                        }
-                                    
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
-                                                                      "name"));
-                                 
-                                        if (localName != null){
-                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localName));
-                                        } else {
-                                           throw new org.apache.axis2.databinding.ADBException("name cannot be null!!");
-                                        }
-                                     if (localDescriptionTracker){
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
-                                                                      "description"));
-                                 
-                                        if (localDescription != null){
-                                            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localDescription));
-                                        } else {
-                                           throw new org.apache.axis2.databinding.ADBException("description cannot be null!!");
-                                        }
-                                    } if (localNoRebootTracker){
-                                      elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
-                                                                      "noReboot"));
-                                 
-                                elementList.add(
-                                   org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localNoReboot));
-                            } if (localBlockDeviceMappingTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
-                                                                      "blockDeviceMapping"));
-                            
-                            
-                                    if (localBlockDeviceMapping==null){
-                                         throw new org.apache.axis2.databinding.ADBException("blockDeviceMapping cannot be null!!");
-                                    }
-                                    elementList.add(localBlockDeviceMapping);
-                                }
+            }
 
-                return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
-            
-            
+            xmlWriter.writeEndElement();
+        }
+        if (localNoRebootTracker) {
+            namespace = "http://ec2.amazonaws.com/doc/2012-08-15/";
+            if (!namespace.equals("")) {
+                prefix = xmlWriter.getPrefix(namespace);
+
+                if (prefix == null) {
+                    prefix = generatePrefix(namespace);
+
+                    xmlWriter.writeStartElement(prefix, "noReboot", namespace);
+                    xmlWriter.writeNamespace(prefix, namespace);
+                    xmlWriter.setPrefix(prefix, namespace);
+
+                } else {
+                    xmlWriter.writeStartElement(namespace, "noReboot");
+                }
+
+            } else {
+                xmlWriter.writeStartElement("noReboot");
+            }
+
+            if (false) {
+
+                throw new org.apache.axis2.databinding.ADBException("noReboot cannot be null!!");
+
+            } else {
+                xmlWriter.writeCharacters(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localNoReboot));
+            }
+
+            xmlWriter.writeEndElement();
+        }
+        if (localBlockDeviceMappingTracker) {
+            if (localBlockDeviceMapping == null) {
+                throw new org.apache.axis2.databinding.ADBException("blockDeviceMapping cannot be null!!");
+            }
+            localBlockDeviceMapping.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "blockDeviceMapping"), factory, xmlWriter);
+        }
+        xmlWriter.writeEndElement();
+
+    }
+
+    /**
+     * Util method to write an attribute with the ns prefix
+     */
+    private void writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue,
+        javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
+        if (xmlWriter.getPrefix(namespace) == null) {
+            xmlWriter.writeNamespace(prefix, namespace);
+            xmlWriter.setPrefix(prefix, namespace);
 
         }
 
-  
+        xmlWriter.writeAttribute(namespace, attName, attValue);
 
-     /**
-      *  Factory class that keeps the parse method
+    }
+
+    /**
+      * Util method to write an attribute without the ns prefix
       */
-    public static class Factory{
+    private void writeAttribute(java.lang.String namespace, java.lang.String attName, java.lang.String attValue, javax.xml.stream.XMLStreamWriter xmlWriter)
+        throws javax.xml.stream.XMLStreamException {
+        if (namespace.equals("")) {
+            xmlWriter.writeAttribute(attName, attValue);
+        } else {
+            registerPrefix(xmlWriter, namespace);
+            xmlWriter.writeAttribute(namespace, attName, attValue);
+        }
+    }
 
-        
-        
+    /**
+      * Util method to write an attribute without the ns prefix
+      */
+    private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+        throws javax.xml.stream.XMLStreamException {
+
+        java.lang.String attributeNamespace = qname.getNamespaceURI();
+        java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
+        if (attributePrefix == null) {
+            attributePrefix = registerPrefix(xmlWriter, attributeNamespace);
+        }
+        java.lang.String attributeValue;
+        if (attributePrefix.trim().length() > 0) {
+            attributeValue = attributePrefix + ":" + qname.getLocalPart();
+        } else {
+            attributeValue = qname.getLocalPart();
+        }
+
+        if (namespace.equals("")) {
+            xmlWriter.writeAttribute(attName, attributeValue);
+        } else {
+            registerPrefix(xmlWriter, namespace);
+            xmlWriter.writeAttribute(namespace, attName, attributeValue);
+        }
+    }
+
+    /**
+     *  method to handle Qnames
+     */
+
+    private void writeQName(javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
+        java.lang.String namespaceURI = qname.getNamespaceURI();
+        if (namespaceURI != null) {
+            java.lang.String prefix = xmlWriter.getPrefix(namespaceURI);
+            if (prefix == null) {
+                prefix = generatePrefix(namespaceURI);
+                xmlWriter.writeNamespace(prefix, namespaceURI);
+                xmlWriter.setPrefix(prefix, namespaceURI);
+            }
+
+            if (prefix.trim().length() > 0) {
+                xmlWriter.writeCharacters(prefix + ":" + org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qname));
+            } else {
+                // i.e this is the default namespace
+                xmlWriter.writeCharacters(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qname));
+            }
+
+        } else {
+            xmlWriter.writeCharacters(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qname));
+        }
+    }
+
+    private void writeQNames(javax.xml.namespace.QName[] qnames, javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
+
+        if (qnames != null) {
+            // we have to store this data until last moment since it is not possible to write any
+            // namespace data after writing the charactor data
+            java.lang.StringBuffer stringToWrite = new java.lang.StringBuffer();
+            java.lang.String namespaceURI = null;
+            java.lang.String prefix = null;
+
+            for (int i = 0; i < qnames.length; i++) {
+                if (i > 0) {
+                    stringToWrite.append(" ");
+                }
+                namespaceURI = qnames[i].getNamespaceURI();
+                if (namespaceURI != null) {
+                    prefix = xmlWriter.getPrefix(namespaceURI);
+                    if ((prefix == null) || (prefix.length() == 0)) {
+                        prefix = generatePrefix(namespaceURI);
+                        xmlWriter.writeNamespace(prefix, namespaceURI);
+                        xmlWriter.setPrefix(prefix, namespaceURI);
+                    }
+
+                    if (prefix.trim().length() > 0) {
+                        stringToWrite.append(prefix).append(":").append(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qnames[i]));
+                    } else {
+                        stringToWrite.append(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qnames[i]));
+                    }
+                } else {
+                    stringToWrite.append(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qnames[i]));
+                }
+            }
+            xmlWriter.writeCharacters(stringToWrite.toString());
+        }
+
+    }
+
+    /**
+    * Register a namespace prefix
+    */
+    private java.lang.String registerPrefix(javax.xml.stream.XMLStreamWriter xmlWriter, java.lang.String namespace) throws javax.xml.stream.XMLStreamException {
+        java.lang.String prefix = xmlWriter.getPrefix(namespace);
+
+        if (prefix == null) {
+            prefix = generatePrefix(namespace);
+
+            while (xmlWriter.getNamespaceContext().getNamespaceURI(prefix) != null) {
+                prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
+            }
+
+            xmlWriter.writeNamespace(prefix, namespace);
+            xmlWriter.setPrefix(prefix, namespace);
+        }
+
+        return prefix;
+    }
+
+    /**
+    * databinding method to get an XML representation of this object
+    *
+    */
+    public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
+
+        java.util.ArrayList elementList = new java.util.ArrayList();
+        java.util.ArrayList attribList = new java.util.ArrayList();
+
+        elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "instanceId"));
+
+        if (localInstanceId != null) {
+            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localInstanceId));
+        } else {
+            throw new org.apache.axis2.databinding.ADBException("instanceId cannot be null!!");
+        }
+
+        elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "name"));
+
+        if (localName != null) {
+            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localName));
+        } else {
+            throw new org.apache.axis2.databinding.ADBException("name cannot be null!!");
+        }
+        if (localDescriptionTracker) {
+            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "description"));
+
+            if (localDescription != null) {
+                elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localDescription));
+            } else {
+                throw new org.apache.axis2.databinding.ADBException("description cannot be null!!");
+            }
+        }
+        if (localNoRebootTracker) {
+            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "noReboot"));
+
+            elementList.add(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(localNoReboot));
+        }
+        if (localBlockDeviceMappingTracker) {
+            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "blockDeviceMapping"));
+
+            if (localBlockDeviceMapping == null) {
+                throw new org.apache.axis2.databinding.ADBException("blockDeviceMapping cannot be null!!");
+            }
+            elementList.add(localBlockDeviceMapping);
+        }
+
+        return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
+
+    }
+
+    /**
+     *  Factory class that keeps the parse method
+     */
+    public static class Factory {
 
         /**
         * static method to create the object
@@ -702,155 +618,136 @@
         * Postcondition: If this object is an element, the reader is positioned at its end element
         *                If this object is a complex type, the reader is positioned at the end element of its outer element
         */
-        public static CreateImageType parse(javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception{
-            CreateImageType object =
-                new CreateImageType();
+        public static CreateImageType parse(javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception {
+            CreateImageType object = new CreateImageType();
 
             int event;
             java.lang.String nillableValue = null;
-            java.lang.String prefix ="";
-            java.lang.String namespaceuri ="";
+            java.lang.String prefix = "";
+            java.lang.String namespaceuri = "";
             try {
-                
+
                 while (!reader.isStartElement() && !reader.isEndElement())
                     reader.next();
 
-                
-                if (reader.getAttributeValue("http://www.w3.org/2001/XMLSchema-instance","type")!=null){
-                  java.lang.String fullTypeName = reader.getAttributeValue("http://www.w3.org/2001/XMLSchema-instance",
-                        "type");
-                  if (fullTypeName!=null){
-                    java.lang.String nsPrefix = null;
-                    if (fullTypeName.indexOf(":") > -1){
-                        nsPrefix = fullTypeName.substring(0,fullTypeName.indexOf(":"));
+                if (reader.getAttributeValue("http://www.w3.org/2001/XMLSchema-instance", "type") != null) {
+                    java.lang.String fullTypeName = reader.getAttributeValue("http://www.w3.org/2001/XMLSchema-instance", "type");
+                    if (fullTypeName != null) {
+                        java.lang.String nsPrefix = null;
+                        if (fullTypeName.indexOf(":") > -1) {
+                            nsPrefix = fullTypeName.substring(0, fullTypeName.indexOf(":"));
+                        }
+                        nsPrefix = nsPrefix == null ? "" : nsPrefix;
+
+                        java.lang.String type = fullTypeName.substring(fullTypeName.indexOf(":") + 1);
+
+                        if (!"CreateImageType".equals(type)) {
+                            //find namespace for the prefix
+                            java.lang.String nsUri = reader.getNamespaceContext().getNamespaceURI(nsPrefix);
+                            return (CreateImageType)com.amazon.ec2.ExtensionMapper.getTypeObject(nsUri, type, reader);
+                        }
+
                     }
-                    nsPrefix = nsPrefix==null?"":nsPrefix;
-
-                    java.lang.String type = fullTypeName.substring(fullTypeName.indexOf(":")+1);
-                    
-                            if (!"CreateImageType".equals(type)){
-                                //find namespace for the prefix
-                                java.lang.String nsUri = reader.getNamespaceContext().getNamespaceURI(nsPrefix);
-                                return (CreateImageType)com.amazon.ec2.ExtensionMapper.getTypeObject(
-                                     nsUri,type,reader);
-                              }
-                        
-
-                  }
-                
 
                 }
 
-                
-
-                
                 // Note all attributes that were handled. Used to differ normal attributes
                 // from anyAttributes.
                 java.util.Vector handledAttributes = new java.util.Vector();
-                
 
-                 
-                    
+                reader.next();
+
+                while (!reader.isStartElement() && !reader.isEndElement())
                     reader.next();
-                
-                                    
-                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
-                                
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","instanceId").equals(reader.getName())){
-                                
-                                    java.lang.String content = reader.getElementText();
-                                    
-                                              object.setInstanceId(
-                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new org.apache.axis2.databinding.ADBException("Unexpected subelement " + reader.getLocalName());
-                                }
-                            
-                                    
-                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
-                                
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","name").equals(reader.getName())){
-                                
-                                    java.lang.String content = reader.getElementText();
-                                    
-                                              object.setName(
-                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                else{
-                                    // A start element we are not expecting indicates an invalid parameter was passed
-                                    throw new org.apache.axis2.databinding.ADBException("Unexpected subelement " + reader.getLocalName());
-                                }
-                            
-                                    
-                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
-                                
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","description").equals(reader.getName())){
-                                
-                                    java.lang.String content = reader.getElementText();
-                                    
-                                              object.setDescription(
-                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                    else {
-                                        
-                                    }
-                                
-                                    
-                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
-                                
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","noReboot").equals(reader.getName())){
-                                
-                                    java.lang.String content = reader.getElementText();
-                                    
-                                              object.setNoReboot(
-                                                    org.apache.axis2.databinding.utils.ConverterUtil.convertToBoolean(content));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                    else {
-                                        
-                                    }
-                                
-                                    
-                                    while (!reader.isStartElement() && !reader.isEndElement()) reader.next();
-                                
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","blockDeviceMapping").equals(reader.getName())){
-                                
-                                                object.setBlockDeviceMapping(com.amazon.ec2.BlockDeviceMappingType.Factory.parse(reader));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                    else {
-                                        
-                                    }
-                                  
-                            while (!reader.isStartElement() && !reader.isEndElement())
-                                reader.next();
-                            
-                                if (reader.isStartElement())
-                                // A start element we are not expecting indicates a trailing invalid property
-                                throw new org.apache.axis2.databinding.ADBException("Unexpected subelement " + reader.getLocalName());
-                            
 
+                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "instanceId").equals(reader.getName())) {
 
+                    java.lang.String content = reader.getElementText();
+
+                    object.setInstanceId(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
+
+                    reader.next();
+
+                }  // End of if for expected property start element
+
+                else {
+                    // A start element we are not expecting indicates an invalid parameter was passed
+                    throw new org.apache.axis2.databinding.ADBException("Unexpected subelement " + reader.getLocalName());
+                }
+
+                while (!reader.isStartElement() && !reader.isEndElement())
+                    reader.next();
+
+                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "name").equals(reader.getName())) {
+
+                    java.lang.String content = reader.getElementText();
+
+                    object.setName(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
+
+                    reader.next();
+
+                }  // End of if for expected property start element
+
+                else {
+                    // A start element we are not expecting indicates an invalid parameter was passed
+                    throw new org.apache.axis2.databinding.ADBException("Unexpected subelement " + reader.getLocalName());
+                }
+
+                while (!reader.isStartElement() && !reader.isEndElement())
+                    reader.next();
+
+                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "description").equals(reader.getName())) {
+
+                    java.lang.String content = reader.getElementText();
+
+                    object.setDescription(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(content));
+
+                    reader.next();
+
+                }  // End of if for expected property start element
+
+                else {
+
+                }
+
+                while (!reader.isStartElement() && !reader.isEndElement())
+                    reader.next();
+
+                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "noReboot").equals(reader.getName())) {
+
+                    java.lang.String content = reader.getElementText();
+
+                    object.setNoReboot(org.apache.axis2.databinding.utils.ConverterUtil.convertToBoolean(content));
+
+                    reader.next();
+
+                }  // End of if for expected property start element
+
+                else {
+
+                }
+
+                while (!reader.isStartElement() && !reader.isEndElement())
+                    reader.next();
+
+                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "blockDeviceMapping").equals(reader.getName())) {
+
+                    object.setBlockDeviceMapping(com.amazon.ec2.BlockDeviceMappingType.Factory.parse(reader));
+
+                    reader.next();
+
+                }  // End of if for expected property start element
+
+                else {
+
+                }
+
+                while (!reader.isStartElement() && !reader.isEndElement())
+                    reader.next();
+
+                if (reader.isStartElement())
+                    // A start element we are not expecting indicates a trailing invalid property
+                    throw new org.apache.axis2.databinding.ADBException("Unexpected subelement " + reader.getLocalName());
 
             } catch (javax.xml.stream.XMLStreamException e) {
                 throw new java.lang.Exception(e);
@@ -859,10 +756,6 @@
             return object;
         }
 
-        }//end of factory class
+    }//end of factory class
 
-        
-
-        }
-           
-          
+}

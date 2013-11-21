@@ -18,15 +18,16 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=AutoScaleVmGroup.class)
+@EntityReference(value = AutoScaleVmGroup.class)
 public class AutoScaleVmGroupResponse extends BaseResponse implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
@@ -65,31 +66,34 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
     @Param(description = "list of scaledown autoscale policies")
     private List<AutoScalePolicyResponse> scaleDownPolicies;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account owning the instance group")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account owning the instance group")
     private String accountName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id vm profile")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id vm profile")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the vm profile")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the vm profile")
     private String projectName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the vm profile")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain ID of the vm profile")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the vm profile")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain name of the vm profile")
     private String domainName;
 
     public AutoScaleVmGroupResponse() {
 
     }
 
-
     @Override
     public String getObjectId() {
         return this.id;
     }
-
 
     public void setId(String id) {
         this.id = id;
@@ -131,7 +135,6 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
-
 
     @Override
     public void setDomainId(String domainId) {

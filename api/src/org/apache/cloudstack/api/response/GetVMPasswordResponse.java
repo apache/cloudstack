@@ -16,17 +16,20 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 public class GetVMPasswordResponse extends BaseResponse {
 
-    @SerializedName("encryptedpassword") @Param(description="The encrypted password of the VM")
+    @SerializedName("encryptedpassword")
+    @Param(description = "The encrypted password of the VM")
     private String encryptedPassword;
 
-    public GetVMPasswordResponse() {}
+    public GetVMPasswordResponse() {
+    }
 
     public GetVMPasswordResponse(String responseName, String encryptedPassword) {
         setResponseName(responseName);

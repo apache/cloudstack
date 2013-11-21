@@ -33,24 +33,24 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.component.AdapterBase;
 
 @Component
-@Local(value=Discoverer.class)
+@Local(value = Discoverer.class)
 public class DummyHostDiscoverer extends AdapterBase implements Discoverer {
     private static final Logger s_logger = Logger.getLogger(DummyHostDiscoverer.class);
-    
+
     @Override
     public Map<ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, String username, String password, List<String> hostTags) {
         if (!url.getScheme().equals("dummy")) {
             return null;
         }
-        
+
         Map<ServerResource, Map<String, String>> resources = new HashMap<ServerResource, Map<String, String>>();
         Map<String, Object> params = new HashMap<String, Object>();
         Map<String, String> details = new HashMap<String, String>();
-        
+
         details.put("url", url.toString());
         details.put("username", username);
         details.put("password", password);
-        
+
         params.put("url", url.toString());
         params.put("username", username);
         params.put("password", password);
@@ -68,27 +68,27 @@ public class DummyHostDiscoverer extends AdapterBase implements Discoverer {
         resources.put(resource, details);
         return resources;
     }
-    
-    @Override
-	public boolean matchHypervisor(String hypervisor) {
-    	return false;
-    }
-    
-    @Override
-	public Hypervisor.HypervisorType getHypervisorType() {
-    	return Hypervisor.HypervisorType.None;
-    }
-    
-	@Override
-	public void postDiscovery(List<HostVO> hosts, long msId) {
-		//do nothing
-	}
 
-	@Override
-	public void putParam(Map<String, String> params) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public boolean matchHypervisor(String hypervisor) {
+        return false;
+    }
+
+    @Override
+    public Hypervisor.HypervisorType getHypervisorType() {
+        return Hypervisor.HypervisorType.None;
+    }
+
+    @Override
+    public void postDiscovery(List<HostVO> hosts, long msId) {
+        //do nothing
+    }
+
+    @Override
+    public void putParam(Map<String, String> params) {
+        // TODO Auto-generated method stub
+
+    }
 
     @Override
     public ServerResource reloadResource(HostVO host) {

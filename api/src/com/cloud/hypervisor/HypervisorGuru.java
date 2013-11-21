@@ -72,7 +72,7 @@ public interface HypervisorGuru extends Adapter {
     /**
      * Give the hypervisor guru the opportinity to decide if additional clean is
      * required for nics before expunging the VM
-     * 
+     *
      */
     List<Command> finalizeExpungeNics(VirtualMachine vm, List<NicProfile> nics);
 }

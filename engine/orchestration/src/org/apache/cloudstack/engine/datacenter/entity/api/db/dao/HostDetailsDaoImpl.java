@@ -34,8 +34,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Component(value="EngineHostDetailsDao")
-@Local(value=HostDetailsDao.class)
+@Component(value = "EngineHostDetailsDao")
+@Local(value = HostDetailsDao.class)
 public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implements HostDetailsDao {
     protected final SearchBuilder<DetailVO> HostSearch;
     protected final SearchBuilder<DetailVO> DetailSearch;
@@ -58,8 +58,8 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
         sc.setParameters("name", name);
 
         DetailVO detail = findOneIncludingRemovedBy(sc);
-        if("password".equals(name) && detail != null){
-        	detail.setValue(DBEncryptionUtil.decrypt(detail.getValue()));
+        if ("password".equals(name) && detail != null) {
+            detail.setValue(DBEncryptionUtil.decrypt(detail.getValue()));
         }
         return detail;
     }
@@ -72,11 +72,11 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
         List<DetailVO> results = search(sc, null);
         Map<String, String> details = new HashMap<String, String>(results.size());
         for (DetailVO result : results) {
-        	if("password".equals(result.getName())){
-        		details.put(result.getName(), DBEncryptionUtil.decrypt(result.getValue()));
-        	} else {
-        		details.put(result.getName(), result.getValue());
-        	}
+            if ("password".equals(result.getName())) {
+                details.put(result.getName(), DBEncryptionUtil.decrypt(result.getValue()));
+            } else {
+                details.put(result.getName(), result.getValue());
+            }
         }
         return details;
     }
@@ -88,7 +88,7 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
 
         List<DetailVO> results = search(sc, null);
         for (DetailVO result : results) {
-        	remove(result.getId());
+            remove(result.getId());
         }
     }
 
@@ -112,8 +112,7 @@ public class HostDetailsDaoImpl extends GenericDaoBase<DetailVO, Long> implement
                 pstmt.setString(4, value);
                 pstmt.executeUpdate();
             } catch (SQLException e) {
-                throw new CloudRuntimeException("Unable to persist the host_details key: " + detail.getKey()
-                        + " for host id: " + hostId, e);
+                throw new CloudRuntimeException("Unable to persist the host_details key: " + detail.getKey() + " for host id: " + hostId, e);
             }
         }
         txn.commit();

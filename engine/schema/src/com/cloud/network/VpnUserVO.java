@@ -27,36 +27,34 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.Encrypt;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name=("vpn_users"))
+@Table(name = ("vpn_users"))
 public class VpnUserVO implements VpnUser {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="owner_id")
+    @Column(name = "owner_id")
     private long accountId;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="username")
+    @Column(name = "username")
     private String username;
 
     @Encrypt
-    @Column(name="password")
+    @Column(name = "password")
     private String password;
 
-    @Column(name="state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
     private State state;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
     public VpnUserVO() {
@@ -113,7 +111,6 @@ public class VpnUserVO implements VpnUser {
     public long getDomainId() {
         return domainId;
     }
-
 
     @Override
     public String toString() {

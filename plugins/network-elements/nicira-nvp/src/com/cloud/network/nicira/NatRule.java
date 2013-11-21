@@ -81,7 +81,7 @@ public abstract class NatRule {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        NatRule other = (NatRule) obj;
+        NatRule other = (NatRule)obj;
         if (match == null) {
             if (other.match != null)
                 return false;
@@ -109,7 +109,7 @@ public abstract class NatRule {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        NatRule other = (NatRule) obj;
+        NatRule other = (NatRule)obj;
         if (match == null) {
             if (other.match != null)
                 return false;

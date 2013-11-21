@@ -22,58 +22,58 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.netapp.NetappManager;
-import com.cloud.server.ManagementService;
 import com.cloud.server.api.response.netapp.DeleteLUNCmdResponse;
 
-
-@APICommand(name = "destroyLunOnFiler", description="Destroy a LUN", responseObject = DeleteLUNCmdResponse.class)
+@APICommand(name = "destroyLunOnFiler", description = "Destroy a LUN", responseObject = DeleteLUNCmdResponse.class)
 public class DestroyLunCmd extends BaseCmd {
-    
-	public static final Logger s_logger = Logger.getLogger(DestroyLunCmd.class.getName());
+
+    public static final Logger s_logger = Logger.getLogger(DestroyLunCmd.class.getName());
     private static final String s_name = "destroylunresponse";
 
-    @Parameter(name=ApiConstants.PATH, type=CommandType.STRING, required = true, description="LUN path.")
-	private String path;
+    @Parameter(name = ApiConstants.PATH, type = CommandType.STRING, required = true, description = "LUN path.")
+    private String path;
 
-    @Inject NetappManager netappMgr;
+    @Inject
+    NetappManager netappMgr;
+
     @Override
-    public void execute() throws ResourceUnavailableException,
-    InsufficientCapacityException, ServerApiException,
-    ConcurrentOperationException, ResourceAllocationException {
-    	try {
-			netappMgr.destroyLunOnFiler(path);
-    		DeleteLUNCmdResponse response = new DeleteLUNCmdResponse();
-    		response.setResponseName(getCommandName());
-    		this.setResponseObject(response);
-    	} catch (InvalidParameterValueException e) {
-    		throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
-    	} catch (ServerException e) {
-    		throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, e.toString());
-    	}
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
+        try {
+            netappMgr.destroyLunOnFiler(path);
+            DeleteLUNCmdResponse response = new DeleteLUNCmdResponse();
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        } catch (InvalidParameterValueException e) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.toString());
+        } catch (ServerException e) {
+            throw new ServerApiException(ApiErrorCode.RESOURCE_IN_USE_ERROR, e.toString());
+        }
     }
 
     @Override
-	public String getCommandName() {
-		// TODO Auto-generated method stub
-		return s_name;
-	}
+    public String getCommandName() {
+        // TODO Auto-generated method stub
+        return s_name;
+    }
 
-	@Override
-	public long getEntityOwnerId() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-    
+    @Override
+    public long getEntityOwnerId() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
 }

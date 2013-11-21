@@ -26,16 +26,16 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.usage.UsageTypes;
 
-import com.cloud.usage.UsageServer;
 import com.cloud.usage.UsageVMInstanceVO;
 import com.cloud.usage.UsageVO;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageVMInstanceDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
-import org.springframework.stereotype.Component;
 
 @Component
 public class VMInstanceUsageParser {
@@ -44,15 +44,17 @@ public class VMInstanceUsageParser {
     private static UsageDao m_usageDao;
     private static UsageVMInstanceDao m_usageInstanceDao;
 
-    @Inject private UsageDao _usageDao;;
-    @Inject private UsageVMInstanceDao _usageInstanceDao;
-    
+    @Inject
+    private UsageDao _usageDao;;
+    @Inject
+    private UsageVMInstanceDao _usageInstanceDao;
+
     @PostConstruct
     void init() {
-    	m_usageDao = _usageDao;
-    	m_usageInstanceDao = _usageInstanceDao;
+        m_usageDao = _usageDao;
+        m_usageInstanceDao = _usageInstanceDao;
     }
-    
+
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Parsing all VMInstance usage events for account: " + account.getId());
@@ -68,7 +70,7 @@ public class VMInstanceUsageParser {
         //     - look for an entry for accountId with start date before given range *and* end date after given range
         List<UsageVMInstanceVO> usageInstances = m_usageInstanceDao.getUsageRecords(account.getId(), startDate, endDate);
 //ToDo: Add domainID for getting usage records
-        
+
         // This map has both the running time *and* the usage amount.
         Map<String, Pair<String, Long>> usageVMUptimeMap = new HashMap<String, Pair<String, Long>>();
         Map<String, Pair<String, Long>> allocatedVMMap = new HashMap<String, Pair<String, Long>>();
@@ -102,12 +104,12 @@ public class VMInstanceUsageParser {
             long currentDuration = (vmEndDate.getTime() - vmStartDate.getTime()) + 1; // make sure this is an inclusive check for milliseconds (i.e. use n - m + 1 to find total number of millis to charge)
 
             switch (usageType) {
-            case UsageTypes.ALLOCATED_VM:
-                updateVmUsageData(allocatedVMMap, key, usageInstance.getVmName(), currentDuration);
-                break;
-            case UsageTypes.RUNNING_VM:
-                updateVmUsageData(usageVMUptimeMap, key, usageInstance.getVmName(), currentDuration);
-                break;
+                case UsageTypes.ALLOCATED_VM:
+                    updateVmUsageData(allocatedVMMap, key, usageInstance.getVmName(), currentDuration);
+                    break;
+                case UsageTypes.RUNNING_VM:
+                    updateVmUsageData(usageVMUptimeMap, key, usageInstance.getVmName(), currentDuration);
+                    break;
             }
         }
 
@@ -118,8 +120,8 @@ public class VMInstanceUsageParser {
             // Only create a usage record if we have a runningTime of bigger than zero.
             if (runningTime > 0L) {
                 VMInfo info = vmServiceOfferingMap.get(vmIdKey);
-                createUsageRecord(UsageTypes.RUNNING_VM, runningTime, startDate, endDate, account, info.getVirtualMachineId(), vmUptimeInfo.first(), info.getZoneId(), 
-                        info.getServiceOfferingId(), info.getTemplateId(), info.getHypervisorType());
+                createUsageRecord(UsageTypes.RUNNING_VM, runningTime, startDate, endDate, account, info.getVirtualMachineId(), vmUptimeInfo.first(), info.getZoneId(),
+                    info.getServiceOfferingId(), info.getTemplateId(), info.getHypervisorType());
             }
         }
 
@@ -130,8 +132,8 @@ public class VMInstanceUsageParser {
             // Only create a usage record if we have a runningTime of bigger than zero.
             if (allocatedTime > 0L) {
                 VMInfo info = vmServiceOfferingMap.get(vmIdKey);
-                createUsageRecord(UsageTypes.ALLOCATED_VM, allocatedTime, startDate, endDate, account, info.getVirtualMachineId(), vmAllocInfo.first(), info.getZoneId(), 
-                        info.getServiceOfferingId(), info.getTemplateId(), info.getHypervisorType());
+                createUsageRecord(UsageTypes.ALLOCATED_VM, allocatedTime, startDate, endDate, account, info.getVirtualMachineId(), vmAllocInfo.first(), info.getZoneId(),
+                    info.getServiceOfferingId(), info.getTemplateId(), info.getHypervisorType());
             }
         }
 
@@ -150,7 +152,8 @@ public class VMInstanceUsageParser {
         usageDataMap.put(key, vmUsageInfo);
     }
 
-    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, String vmName, long zoneId, long serviceOfferingId, long templateId, String hypervisorType) {
+    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, String vmName, long zoneId,
+        long serviceOfferingId, long templateId, String hypervisorType) {
         // Our smallest increment is hourly for now
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Total running time " + runningTime + "ms");
@@ -162,7 +165,8 @@ public class VMInstanceUsageParser {
         String usageDisplay = dFormat.format(usage);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Creating VM usage record for vm: " + vmName + ", type: " + type + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " + endDate + ", for account: " + account.getId());
+            s_logger.debug("Creating VM usage record for vm: " + vmName + ", type: " + type + ", usage: " + usageDisplay + ", startDate: " + startDate + ", endDate: " +
+                endDate + ", for account: " + account.getId());
         }
 
         // Create the usage record
@@ -173,8 +177,9 @@ public class VMInstanceUsageParser {
             usageDesc += " running time";
         }
         usageDesc += " (ServiceOffering: " + serviceOfferingId + ") (Template: " + templateId + ")";
-        UsageVO usageRecord = new UsageVO(Long.valueOf(zoneId), account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type,
-                new Double(usage), Long.valueOf(vmId), vmName, Long.valueOf(serviceOfferingId), Long.valueOf(templateId), Long.valueOf(vmId), startDate, endDate, hypervisorType);
+        UsageVO usageRecord =
+            new UsageVO(Long.valueOf(zoneId), account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), Long.valueOf(vmId),
+                vmName, Long.valueOf(serviceOfferingId), Long.valueOf(templateId), Long.valueOf(vmId), startDate, endDate, hypervisorType);
         m_usageDao.persist(usageRecord);
     }
 
@@ -196,16 +201,20 @@ public class VMInstanceUsageParser {
         public long getZoneId() {
             return zoneId;
         }
+
         public long getVirtualMachineId() {
             return virtualMachineId;
         }
+
         public long getServiceOfferingId() {
             return serviceOfferingId;
         }
+
         public long getTemplateId() {
             return templateId;
         }
-        private String getHypervisorType(){
+
+        private String getHypervisorType() {
             return hypervisorType;
         }
     }

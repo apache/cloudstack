@@ -117,8 +117,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         private final long id;
         private final ResourceType resourceType;
 
-        public DownloadJob(TemplateDownloader td, String jobId, long id, String tmpltName, ImageFormat format, boolean hvm, Long accountId,
-                String descr, String cksum, String installPathPrefix, ResourceType resourceType) {
+        public DownloadJob(TemplateDownloader td, String jobId, long id, String tmpltName, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
+                String installPathPrefix, ResourceType resourceType) {
             super();
             this.td = td;
             this.jobId = jobId;
@@ -266,56 +266,56 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
         TemplateDownloader td = dj.getTemplateDownloader();
         s_logger.info("Download Completion for jobId: " + jobId + ", status=" + status);
-        s_logger.info("local: " + td.getDownloadLocalPath() + ", bytes=" + td.getDownloadedBytes() + ", error=" + td.getDownloadError() + ", pct="
-                + td.getDownloadPercent());
+        s_logger.info("local: " + td.getDownloadLocalPath() + ", bytes=" + td.getDownloadedBytes() + ", error=" + td.getDownloadError() + ", pct=" +
+            td.getDownloadPercent());
 
         switch (status) {
-        case ABORTED:
-        case NOT_STARTED:
-        case UNRECOVERABLE_ERROR:
-            // TODO
-            dj.cleanup();
-            break;
-        case UNKNOWN:
-            return;
-        case IN_PROGRESS:
-            s_logger.info("Resuming jobId: " + jobId + ", status=" + status);
-            td.setResume(true);
-            threadPool.execute(td);
-            break;
-        case RECOVERABLE_ERROR:
-            threadPool.execute(td);
-            break;
-        case DOWNLOAD_FINISHED:
-            if (!(td instanceof S3TemplateDownloader)) {
-                // we currently only create template.properties for NFS by
-                // running some post download script
-                td.setDownloadError("Download success, starting install ");
-                String result = postDownload(jobId);
-                if (result != null) {
-                    s_logger.error("Failed post download script: " + result);
-                    td.setStatus(Status.UNRECOVERABLE_ERROR);
-                    td.setDownloadError("Failed post download script: " + result);
+            case ABORTED:
+            case NOT_STARTED:
+            case UNRECOVERABLE_ERROR:
+                // TODO
+                dj.cleanup();
+                break;
+            case UNKNOWN:
+                return;
+            case IN_PROGRESS:
+                s_logger.info("Resuming jobId: " + jobId + ", status=" + status);
+                td.setResume(true);
+                threadPool.execute(td);
+                break;
+            case RECOVERABLE_ERROR:
+                threadPool.execute(td);
+                break;
+            case DOWNLOAD_FINISHED:
+                if (!(td instanceof S3TemplateDownloader)) {
+                    // we currently only create template.properties for NFS by
+                    // running some post download script
+                    td.setDownloadError("Download success, starting install ");
+                    String result = postDownload(jobId);
+                    if (result != null) {
+                        s_logger.error("Failed post download script: " + result);
+                        td.setStatus(Status.UNRECOVERABLE_ERROR);
+                        td.setDownloadError("Failed post download script: " + result);
+                    } else {
+                        td.setStatus(Status.POST_DOWNLOAD_FINISHED);
+                        td.setDownloadError("Install completed successfully at " + new SimpleDateFormat().format(new Date()));
+                    }
                 } else {
+                    // for s3 and swift, we skip post download step and just set
+                    // status to trigger callback.
                     td.setStatus(Status.POST_DOWNLOAD_FINISHED);
-                    td.setDownloadError("Install completed successfully at " + new SimpleDateFormat().format(new Date()));
+                    // set template size for S3
+                    S3TemplateDownloader std = (S3TemplateDownloader)td;
+                    long size = std.totalBytes;
+                    DownloadJob dnld = jobs.get(jobId);
+                    dnld.setTemplatesize(size);
+                    dnld.setTemplatePhysicalSize(size);
+                    dnld.setTmpltPath(std.getDownloadLocalPath()); // update template path to include file name.
                 }
-            } else {
-                // for s3 and swift, we skip post download step and just set
-                // status to trigger callback.
-                td.setStatus(Status.POST_DOWNLOAD_FINISHED);
-                // set template size for S3
-                S3TemplateDownloader std = (S3TemplateDownloader) td;
-                long size = std.totalBytes;
-                DownloadJob dnld = jobs.get(jobId);
-                dnld.setTemplatesize(size);
-                dnld.setTemplatePhysicalSize(size);
-                dnld.setTmpltPath(std.getDownloadLocalPath()); // update template path to include file name.
-            }
-            dj.cleanup();
-            break;
-        default:
-            break;
+                dj.cleanup();
+                break;
+            default:
+                break;
         }
     }
 
@@ -388,7 +388,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
         dnld.setCheckSum(checkSum);
 
-        int imgSizeGigs = (int) Math.ceil(_storage.getSize(td.getDownloadLocalPath()) * 1.0d / (1024 * 1024 * 1024));
+        int imgSizeGigs = (int)Math.ceil(_storage.getSize(td.getDownloadLocalPath()) * 1.0d / (1024 * 1024 * 1024));
         imgSizeGigs++; // add one just in case
         long timeout = imgSizeGigs * installTimeoutPerGig;
         Script scr = null;
@@ -495,8 +495,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     @Override
-    public String downloadS3Template(S3TO s3, long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr,
-            String cksum, String installPathPrefix, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType) {
+    public String downloadS3Template(S3TO s3, long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
+        String installPathPrefix, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType) {
         UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
 
@@ -509,8 +509,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         TemplateDownloader td;
         if ((uri != null) && (uri.getScheme() != null)) {
             if (uri.getScheme().equalsIgnoreCase("http") || uri.getScheme().equalsIgnoreCase("https")) {
-                td = new S3TemplateDownloader(s3, url, installPathPrefix, new Completion(jobId), maxTemplateSizeInBytes, user, password, proxy,
-                        resourceType);
+                td = new S3TemplateDownloader(s3, url, installPathPrefix, new Completion(jobId), maxTemplateSizeInBytes, user, password, proxy, resourceType);
             } else {
                 throw new CloudRuntimeException("Scheme is not supported " + url);
             }
@@ -526,9 +525,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     @Override
-    public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr,
-            String cksum, String installPathPrefix, String templatePath, String user, String password, long maxTemplateSizeInBytes, Proxy proxy,
-            ResourceType resourceType) {
+    public String downloadPublicTemplate(long id, String url, String name, ImageFormat format, boolean hvm, Long accountId, String descr, String cksum,
+        String installPathPrefix, String templatePath, String user, String password, long maxTemplateSizeInBytes, Proxy proxy, ResourceType resourceType) {
         UUID uuid = UUID.randomUUID();
         String jobId = uuid.toString();
         String tmpDir = installPathPrefix;
@@ -540,8 +538,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 return "Unable to create " + tmpDir;
             }
             // TO DO - define constant for volume properties.
-            File file = ResourceType.TEMPLATE == resourceType ? _storage.getFile(tmpDir + File.separator + TemplateLocation.Filename) : _storage
-                    .getFile(tmpDir + File.separator + "volume.properties");
+            File file =
+                ResourceType.TEMPLATE == resourceType ? _storage.getFile(tmpDir + File.separator + TemplateLocation.Filename) : _storage.getFile(tmpDir + File.separator +
+                    "volume.properties");
             if (file.exists()) {
                 file.delete();
             }
@@ -560,8 +559,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             TemplateDownloader td;
             if ((uri != null) && (uri.getScheme() != null)) {
                 if (uri.getScheme().equalsIgnoreCase("http") || uri.getScheme().equalsIgnoreCase("https")) {
-                    td = new HttpTemplateDownloader(_storage, url, tmpDir, new Completion(jobId), maxTemplateSizeInBytes, user, password, proxy,
-                            resourceType);
+                    td = new HttpTemplateDownloader(_storage, url, tmpDir, new Completion(jobId), maxTemplateSizeInBytes, user, password, proxy, resourceType);
                 } else if (uri.getScheme().equalsIgnoreCase("file")) {
                     td = new LocalTemplateDownloader(_storage, url, tmpDir, maxTemplateSizeInBytes, new Completion(jobId));
                 } else if (uri.getScheme().equalsIgnoreCase("scp")) {
@@ -646,24 +644,24 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
     public static VMTemplateHostVO.Status convertStatus(Status tds) {
         switch (tds) {
-        case ABORTED:
-            return VMTemplateHostVO.Status.NOT_DOWNLOADED;
-        case DOWNLOAD_FINISHED:
-            return VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS;
-        case IN_PROGRESS:
-            return VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS;
-        case NOT_STARTED:
-            return VMTemplateHostVO.Status.NOT_DOWNLOADED;
-        case RECOVERABLE_ERROR:
-            return VMTemplateHostVO.Status.NOT_DOWNLOADED;
-        case UNKNOWN:
-            return VMTemplateHostVO.Status.UNKNOWN;
-        case UNRECOVERABLE_ERROR:
-            return VMTemplateHostVO.Status.DOWNLOAD_ERROR;
-        case POST_DOWNLOAD_FINISHED:
-            return VMTemplateHostVO.Status.DOWNLOADED;
-        default:
-            return VMTemplateHostVO.Status.UNKNOWN;
+            case ABORTED:
+                return VMTemplateHostVO.Status.NOT_DOWNLOADED;
+            case DOWNLOAD_FINISHED:
+                return VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS;
+            case IN_PROGRESS:
+                return VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS;
+            case NOT_STARTED:
+                return VMTemplateHostVO.Status.NOT_DOWNLOADED;
+            case RECOVERABLE_ERROR:
+                return VMTemplateHostVO.Status.NOT_DOWNLOADED;
+            case UNKNOWN:
+                return VMTemplateHostVO.Status.UNKNOWN;
+            case UNRECOVERABLE_ERROR:
+                return VMTemplateHostVO.Status.DOWNLOAD_ERROR;
+            case POST_DOWNLOAD_FINISHED:
+                return VMTemplateHostVO.Status.DOWNLOADED;
+            default:
+                return VMTemplateHostVO.Status.UNKNOWN;
         }
     }
 
@@ -676,12 +674,12 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     public DownloadAnswer handleDownloadCommand(SecondaryStorageResource resource, DownloadCommand cmd) {
         ResourceType resourceType = cmd.getResourceType();
         if (cmd instanceof DownloadProgressCommand) {
-            return handleDownloadProgressCmd(resource, (DownloadProgressCommand) cmd);
+            return handleDownloadProgressCmd(resource, (DownloadProgressCommand)cmd);
         }
 
         if (cmd.getUrl() == null) {
             return new DownloadAnswer(resourceType.toString() + " is corrupted on storage due to an invalid url , cannot download",
-                    VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
+                VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
         }
 
         if (cmd.getName() == null) {
@@ -692,7 +690,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         String installPathPrefix = cmd.getInstallPath();
         // for NFS, we need to get mounted path
         if (dstore instanceof NfsTO) {
-        	installPathPrefix = resource.getRootDir(((NfsTO) dstore).getUrl()) + File.separator + installPathPrefix;
+            installPathPrefix = resource.getRootDir(((NfsTO)dstore).getUrl()) + File.separator + installPathPrefix;
         }
         String user = null;
         String password = null;
@@ -701,23 +699,24 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             password = new String(cmd.getAuth().getPassword());
         }
         // TO DO - Define Volume max size as well
-        long maxDownloadSizeInBytes = (cmd.getMaxDownloadSizeInBytes() == null) ? TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES : (cmd
-                .getMaxDownloadSizeInBytes());
+        long maxDownloadSizeInBytes =
+            (cmd.getMaxDownloadSizeInBytes() == null) ? TemplateDownloader.DEFAULT_MAX_TEMPLATE_SIZE_IN_BYTES : (cmd.getMaxDownloadSizeInBytes());
         String jobId = null;
         if (dstore instanceof S3TO) {
-            jobId = downloadS3Template((S3TO) dstore, cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(),
-                    cmd.getDescription(), cmd.getChecksum(), installPathPrefix, user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType);
+            jobId =
+                downloadS3Template((S3TO)dstore, cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(),
+                    cmd.getChecksum(), installPathPrefix, user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType);
         } else {
-            jobId = downloadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(),
-                    cmd.getDescription(), cmd.getChecksum(), installPathPrefix, cmd.getInstallPath(), user, password, maxDownloadSizeInBytes,
-                    cmd.getProxy(), resourceType);
+            jobId =
+                downloadPublicTemplate(cmd.getId(), cmd.getUrl(), cmd.getName(), cmd.getFormat(), cmd.isHvm(), cmd.getAccountId(), cmd.getDescription(),
+                    cmd.getChecksum(), installPathPrefix, cmd.getInstallPath(), user, password, maxDownloadSizeInBytes, cmd.getProxy(), resourceType);
         }
         sleep();
         if (jobId == null) {
             return new DownloadAnswer("Internal Error", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
         }
-        return new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId), getDownloadLocalPath(jobId),
-                getInstallPath(jobId), getDownloadTemplateSize(jobId), getDownloadTemplateSize(jobId), getDownloadCheckSum(jobId));
+        return new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId), getDownloadLocalPath(jobId), getInstallPath(jobId),
+            getDownloadTemplateSize(jobId), getDownloadTemplateSize(jobId), getDownloadCheckSum(jobId));
     }
 
     private void sleep() {
@@ -740,34 +739,34 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 DownloadCommand dcmd = new DownloadCommand(cmd);
                 return handleDownloadCommand(resource, dcmd);
             } else {
-                return new DownloadAnswer("Cannot find job", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR.UNKNOWN);
+                return new DownloadAnswer("Cannot find job", com.cloud.storage.VMTemplateStorageResourceAssoc.Status.UNKNOWN);
             }
         }
         TemplateDownloader td = dj.getTemplateDownloader();
         switch (cmd.getRequest()) {
-        case GET_STATUS:
-            break;
-        case ABORT:
-            td.stopDownload();
-            sleep();
-            break;
-        case RESTART:
-            td.stopDownload();
-            sleep();
-            threadPool.execute(td);
-            break;
-        case PURGE:
-            td.stopDownload();
-            answer = new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId),
-                    getDownloadLocalPath(jobId), getInstallPath(jobId), getDownloadTemplateSize(jobId), getDownloadTemplatePhysicalSize(jobId),
-                    getDownloadCheckSum(jobId));
-            jobs.remove(jobId);
-            return answer;
-        default:
-            break; // TODO
+            case GET_STATUS:
+                break;
+            case ABORT:
+                td.stopDownload();
+                sleep();
+                break;
+            case RESTART:
+                td.stopDownload();
+                sleep();
+                threadPool.execute(td);
+                break;
+            case PURGE:
+                td.stopDownload();
+                answer =
+                    new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId), getDownloadLocalPath(jobId),
+                        getInstallPath(jobId), getDownloadTemplateSize(jobId), getDownloadTemplatePhysicalSize(jobId), getDownloadCheckSum(jobId));
+                jobs.remove(jobId);
+                return answer;
+            default:
+                break; // TODO
         }
-        return new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId), getDownloadLocalPath(jobId),
-                getInstallPath(jobId), getDownloadTemplateSize(jobId), getDownloadTemplatePhysicalSize(jobId), getDownloadCheckSum(jobId));
+        return new DownloadAnswer(jobId, getDownloadPct(jobId), getDownloadError(jobId), getDownloadStatus2(jobId), getDownloadLocalPath(jobId), getInstallPath(jobId),
+            getDownloadTemplateSize(jobId), getDownloadTemplatePhysicalSize(jobId), getDownloadCheckSum(jobId));
     }
 
     private String getInstallPath(String jobId) {
@@ -839,27 +838,21 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
             TemplateProp tInfo = loc.getTemplateInfo();
 
-			if ((tInfo.getSize() == tInfo.getPhysicalSize())
-					&& (tInfo.getInstallPath().endsWith(ImageFormat.OVA.getFileExtension()))) {
+            if ((tInfo.getSize() == tInfo.getPhysicalSize()) && (tInfo.getInstallPath().endsWith(ImageFormat.OVA.getFileExtension()))) {
                 try {
                     Processor processor = _processors.get("VMDK Processor");
-                    VmdkProcessor vmdkProcessor = (VmdkProcessor) processor;
-                    long vSize =
-                            vmdkProcessor.getTemplateVirtualSize(
-                                    path,
-                                    tInfo.getInstallPath().substring(
-                                            tInfo.getInstallPath().lastIndexOf(File.separator) + 1));
+                    VmdkProcessor vmdkProcessor = (VmdkProcessor)processor;
+                    long vSize = vmdkProcessor.getTemplateVirtualSize(path, tInfo.getInstallPath().substring(tInfo.getInstallPath().lastIndexOf(File.separator) + 1));
                     tInfo.setSize(vSize);
                     loc.updateVirtualSize(vSize);
                     loc.save();
                 } catch (Exception e) {
-					s_logger.error("Unable to get the virtual size of the template: " + tInfo.getInstallPath()
-							+ " due to " + e.getMessage());
+                    s_logger.error("Unable to get the virtual size of the template: " + tInfo.getInstallPath() + " due to " + e.getMessage());
                 }
             }
 
-			result.put(tInfo.getTemplateName(), tInfo);
-			s_logger.debug("Added template name: " + tInfo.getTemplateName() + ", path: " + tmplt);
+            result.put(tInfo.getTemplateName(), tInfo);
+            s_logger.debug("Added template name: " + tInfo.getTemplateName() + ", path: " + tmplt);
         }
         /*
         for (String tmplt : isoTmplts) {
@@ -902,27 +895,21 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
             TemplateProp vInfo = loc.getTemplateInfo();
 
-			if ((vInfo.getSize() == vInfo.getPhysicalSize())
-					&& (vInfo.getInstallPath().endsWith(ImageFormat.OVA.getFileExtension()))) {
+            if ((vInfo.getSize() == vInfo.getPhysicalSize()) && (vInfo.getInstallPath().endsWith(ImageFormat.OVA.getFileExtension()))) {
                 try {
                     Processor processor = _processors.get("VMDK Processor");
                     VmdkProcessor vmdkProcessor = (VmdkProcessor)processor;
-					long vSize =
-							vmdkProcessor.getTemplateVirtualSize(
-									path,
-									vInfo.getInstallPath().substring(
-											vInfo.getInstallPath().lastIndexOf(File.separator) + 1));
-					vInfo.setSize(vSize);
+                    long vSize = vmdkProcessor.getTemplateVirtualSize(path, vInfo.getInstallPath().substring(vInfo.getInstallPath().lastIndexOf(File.separator) + 1));
+                    vInfo.setSize(vSize);
                     loc.updateVirtualSize(vSize);
                     loc.save();
                 } catch (Exception e) {
-					s_logger.error("Unable to get the virtual size of the volume: " + vInfo.getInstallPath()
-							+ " due to " + e.getMessage());
+                    s_logger.error("Unable to get the virtual size of the volume: " + vInfo.getInstallPath() + " due to " + e.getMessage());
                 }
             }
 
             result.put(vInfo.getId(), vInfo);
-			s_logger.debug("Added volume name: " + vInfo.getTemplateName() + ", path: " + vol);
+            s_logger.debug("Added volume name: " + vInfo.getTemplateName() + ", path: " + vol);
         }
         return result;
     }
@@ -985,16 +972,16 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         String value = null;
 
-        _storage = (StorageLayer) params.get(StorageLayer.InstanceConfigKey);
+        _storage = (StorageLayer)params.get(StorageLayer.InstanceConfigKey);
         if (_storage == null) {
-            value = (String) params.get(StorageLayer.ClassConfigKey);
+            value = (String)params.get(StorageLayer.ClassConfigKey);
             if (value == null) {
                 throw new ConfigurationException("Unable to find the storage layer");
             }
 
             Class<StorageLayer> clazz;
             try {
-                clazz = (Class<StorageLayer>) Class.forName(value);
+                clazz = (Class<StorageLayer>)Class.forName(value);
                 _storage = clazz.newInstance();
             } catch (ClassNotFoundException e) {
                 throw new ConfigurationException("Unable to instantiate " + value);
@@ -1004,25 +991,25 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                 throw new ConfigurationException("Unable to instantiate " + value);
             }
         }
-        String useSsl = (String) params.get("sslcopy");
+        String useSsl = (String)params.get("sslcopy");
         if (useSsl != null) {
             _sslCopy = Boolean.parseBoolean(useSsl);
 
         }
-        String inSystemVM = (String) params.get("secondary.storage.vm");
+        String inSystemVM = (String)params.get("secondary.storage.vm");
         if (inSystemVM != null && "true".equalsIgnoreCase(inSystemVM)) {
             s_logger.info("DownloadManager: starting additional services since we are inside system vm");
             startAdditionalServices();
             blockOutgoingOnPrivate();
         }
 
-        value = (String) params.get("install.timeout.pergig");
+        value = (String)params.get("install.timeout.pergig");
         installTimeoutPerGig = NumbersUtil.parseInt(value, 15 * 60) * 1000;
 
-        value = (String) params.get("install.numthreads");
+        value = (String)params.get("install.numthreads");
         final int numInstallThreads = NumbersUtil.parseInt(value, 10);
 
-        String scriptsDir = (String) params.get("template.scripts.dir");
+        String scriptsDir = (String)params.get("template.scripts.dir");
         if (scriptsDir == null) {
             scriptsDir = "scripts/storage/secondary";
         }
@@ -1073,7 +1060,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         processor.configure("Raw Image Processor", params);
         _processors.put("Raw Image Processor", processor);
 
-        _templateDir = (String) params.get("public.templates.root.dir");
+        _templateDir = (String)params.get("public.templates.root.dir");
         if (_templateDir == null) {
             _templateDir = TemplateConstants.DEFAULT_TMPLT_ROOT_DIR;
         }
@@ -1088,8 +1075,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         Script command = new Script("/bin/bash", s_logger);
         String intf = "eth1";
         command.add("-c");
-        command.add("iptables -A OUTPUT -o " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "80" + " -j REJECT;"
-                + "iptables -A OUTPUT -o " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j REJECT;");
+        command.add("iptables -A OUTPUT -o " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "80" + " -j REJECT;" + "iptables -A OUTPUT -o " + intf +
+            " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j REJECT;");
 
         String result = command.execute();
         if (result != null) {
@@ -1127,8 +1114,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         command = new Script("/bin/bash", s_logger);
         command.add("-c");
-        command.add("iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j ACCEPT;" + "iptables -I INPUT -i "
-                + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j ACCEPT;");
+        command.add("iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j ACCEPT;" + "iptables -I INPUT -i " + intf +
+            " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j ACCEPT;");
 
         result = command.execute();
         if (result != null) {

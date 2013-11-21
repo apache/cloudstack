@@ -46,7 +46,8 @@ public class DiskProfile {
     protected DiskProfile() {
     }
 
-    public DiskProfile(long volumeId, Volume.Type type, String name, long diskOfferingId, long size, String[] tags, boolean useLocalStorage, boolean recreatable, Long templateId) {
+    public DiskProfile(long volumeId, Volume.Type type, String name, long diskOfferingId, long size, String[] tags, boolean useLocalStorage, boolean recreatable,
+            Long templateId) {
         this.type = type;
         this.name = name;
         this.size = size;
@@ -59,7 +60,15 @@ public class DiskProfile {
     }
 
     public DiskProfile(Volume vol, DiskOffering offering, HypervisorType hyperType) {
-        this(vol.getId(), vol.getVolumeType(), vol.getName(), offering.getId(), vol.getSize(), offering.getTagsArray(), offering.getUseLocalStorage(), offering.isCustomized(), null);
+        this(vol.getId(),
+            vol.getVolumeType(),
+            vol.getName(),
+            offering.getId(),
+            vol.getSize(),
+            offering.getTagsArray(),
+            offering.getUseLocalStorage(),
+            offering.isCustomized(),
+            null);
         this.hyperType = hyperType;
     }
     

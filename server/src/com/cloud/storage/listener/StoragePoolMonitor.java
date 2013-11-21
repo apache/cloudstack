@@ -20,9 +20,10 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -36,24 +37,23 @@ import com.cloud.host.Host;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.OCFS2Manager;
-import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.StoragePoolStatus;
-
 
 public class StoragePoolMonitor implements Listener {
     private static final Logger s_logger = Logger.getLogger(StoragePoolMonitor.class);
     private final StorageManagerImpl _storageManager;
     private final PrimaryDataStoreDao _poolDao;
-    @Inject OCFS2Manager _ocfs2Mgr;
+    @Inject
+    OCFS2Manager _ocfs2Mgr;
 
     public StoragePoolMonitor(StorageManagerImpl mgr, PrimaryDataStoreDao poolDao) {
         this._storageManager = mgr;
         this._poolDao = poolDao;
 
     }
-
 
     @Override
     public boolean isRecurring() {
@@ -74,8 +74,9 @@ public class StoragePoolMonitor implements Listener {
     public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (cmd instanceof StartupRoutingCommand) {
             StartupRoutingCommand scCmd = (StartupRoutingCommand)cmd;
-            if (scCmd.getHypervisorType() == HypervisorType.XenServer || scCmd.getHypervisorType() ==  HypervisorType.KVM ||
-                    scCmd.getHypervisorType() == HypervisorType.VMware || scCmd.getHypervisorType() ==  HypervisorType.Simulator || scCmd.getHypervisorType() == HypervisorType.Ovm) {
+            if (scCmd.getHypervisorType() == HypervisorType.XenServer || scCmd.getHypervisorType() == HypervisorType.KVM ||
+                scCmd.getHypervisorType() == HypervisorType.VMware || scCmd.getHypervisorType() == HypervisorType.Simulator ||
+                scCmd.getHypervisorType() == HypervisorType.Ovm) {
                 List<StoragePoolVO> pools = _poolDao.listBy(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER);
                 List<StoragePoolVO> zoneStoragePoolsByTags = _poolDao.findZoneWideStoragePoolsByTags(host.getDataCenterId(), null);
                 List<StoragePoolVO> zoneStoragePoolsByHypervisor = _poolDao.findZoneWideStoragePoolsByHypervisor(host.getDataCenterId(), scCmd.getHypervisorType());
@@ -108,7 +109,6 @@ public class StoragePoolMonitor implements Listener {
             }
         }
     }
-
 
     @Override
     public boolean processCommands(long agentId, long seq, Command[] req) {

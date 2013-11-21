@@ -32,26 +32,25 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 
-
 /**
  *
  *
  *
  *
  *
- * 
- * 
- * 
- * 
+ *
+ *
+ *
+ *
  */
 
 /**
  * Sample CloudStack Management User API Executor.
- * 
+ *
  * Prerequisites: - Edit usercloud.properties to include your host, apiUrl, apiKey, and secretKey - Use ./executeUserAPI.sh to
  * execute this test class
- * 
- * 
+ *
+ *
  */
 public class UserCloudAPIExecutor {
     public static void main(String[] args) {
@@ -97,7 +96,8 @@ public class UserCloudAPIExecutor {
                 return;
             }
 
-            System.out.println("Constructing API call to host = '" + host + "' with API command = '" + apiUrl + "' using apiKey = '" + apiKey + "' and secretKey = '" + secretKey + "'");
+            System.out.println("Constructing API call to host = '" + host + "' with API command = '" + apiUrl + "' using apiKey = '" + apiKey + "' and secretKey = '" +
+                secretKey + "'");
 
             // Step 1: Make sure your APIKey is URL encoded
             String encodedApiKey = URLEncoder.encode(apiKey, "UTF-8");
@@ -167,7 +167,7 @@ public class UserCloudAPIExecutor {
 
     /**
      * 1. Signs a string with a secret key using SHA-1 2. Base64 encode the result 3. URL encode the final result
-     * 
+     *
      * @param request
      * @param key
      * @return

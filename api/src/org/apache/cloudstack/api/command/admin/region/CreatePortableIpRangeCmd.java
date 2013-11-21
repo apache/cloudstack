@@ -17,13 +17,8 @@
 
 package org.apache.cloudstack.api.command.admin.region;
 
-import javax.inject.Inject;
+import org.apache.log4j.Logger;
 
-import com.cloud.dc.Vlan;
-import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,15 +28,17 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.PortableIpRangeResponse;
 import org.apache.cloudstack.api.response.RegionResponse;
-import org.apache.cloudstack.api.response.VlanIpRangeResponse;
 import org.apache.cloudstack.region.PortableIpRange;
-import org.apache.cloudstack.region.Region;
-import org.apache.cloudstack.region.RegionService;
-import org.apache.log4j.Logger;
 
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 
-@APICommand(name = "createPortableIpRange", responseObject=PortableIpRangeResponse.class, description="adds a range of portable public IP's to a region", since="4.2.0")
+@APICommand(name = "createPortableIpRange",
+            responseObject = PortableIpRangeResponse.class,
+            description = "adds a range of portable public IP's to a region",
+            since = "4.2.0")
 public class CreatePortableIpRangeCmd extends BaseAsyncCreateCmd {
 
     public static final Logger s_logger = Logger.getLogger(CreatePortableIpRangeCmd.class.getName());
@@ -52,22 +49,22 @@ public class CreatePortableIpRangeCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.REGION_ID, type=CommandType.INTEGER, entityType = RegionResponse.class, required=true, description="Id of the Region")
+    @Parameter(name = ApiConstants.REGION_ID, type = CommandType.INTEGER, entityType = RegionResponse.class, required = true, description = "Id of the Region")
     private Integer regionId;
 
-    @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, required=true, description="the beginning IP address in the portable IP range")
+    @Parameter(name = ApiConstants.START_IP, type = CommandType.STRING, required = true, description = "the beginning IP address in the portable IP range")
     private String startIp;
 
-    @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, required=true, description="the ending IP address in the portable IP range")
+    @Parameter(name = ApiConstants.END_IP, type = CommandType.STRING, required = true, description = "the ending IP address in the portable IP range")
     private String endIp;
 
-    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, required=true, description="the gateway for the portable IP range")
+    @Parameter(name = ApiConstants.GATEWAY, type = CommandType.STRING, required = true, description = "the gateway for the portable IP range")
     private String gateway;
 
-    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, required=true, description="the netmask of the portable IP range")
+    @Parameter(name = ApiConstants.NETMASK, type = CommandType.STRING, required = true, description = "the netmask of the portable IP range")
     private String netmask;
 
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="VLAN id, if not specified defaulted to untagged")
+    @Parameter(name = ApiConstants.VLAN, type = CommandType.STRING, description = "VLAN id, if not specified defaulted to untagged")
     private String vlan;
 
     /////////////////////////////////////////////////////
@@ -113,7 +110,7 @@ public class CreatePortableIpRangeCmd extends BaseAsyncCreateCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         PortableIpRange portableIpRange = _entityMgr.findById(PortableIpRange.class, getEntityId());
         PortableIpRangeResponse response = null;
         if (portableIpRange != null) {

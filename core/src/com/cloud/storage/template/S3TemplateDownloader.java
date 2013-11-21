@@ -85,9 +85,8 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
     private ResourceType resourceType = ResourceType.TEMPLATE;
     private final HttpMethodRetryHandler myretryhandler;
 
-    public S3TemplateDownloader(S3TO storageLayer, String downloadUrl, String installPath,
-            DownloadCompleteCallback callback, long maxTemplateSizeInBytes, String user, String password, Proxy proxy,
-            ResourceType resourceType) {
+    public S3TemplateDownloader(S3TO storageLayer, String downloadUrl, String installPath, DownloadCompleteCallback callback, long maxTemplateSizeInBytes, String user,
+            String password, Proxy proxy, ResourceType resourceType) {
         s3 = storageLayer;
         this.downloadUrl = downloadUrl;
         this.installPath = installPath;
@@ -137,10 +136,8 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
             if ((user != null) && (password != null)) {
                 client.getParams().setAuthenticationPreemptive(true);
                 Credentials defaultcreds = new UsernamePasswordCredentials(user, password);
-                client.getState().setCredentials(
-                        new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
-                s_logger.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first()
-                        + ":" + hostAndPort.second());
+                client.getState().setCredentials(new AuthScope(hostAndPort.first(), hostAndPort.second(), AuthScope.ANY_REALM), defaultcreds);
+                s_logger.info("Added username=" + user + ", password=" + password + "for host " + hostAndPort.first() + ":" + hostAndPort.second());
             } else {
                 s_logger.info("No credentials configured for host=" + hostAndPort.first() + ":" + hostAndPort.second());
             }
@@ -160,11 +157,11 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
     @Override
     public long download(boolean resume, DownloadCompleteCallback callback) {
         switch (status) {
-        case ABORTED:
-        case UNRECOVERABLE_ERROR:
-        case DOWNLOAD_FINISHED:
-            return 0;
-        default:
+            case ABORTED:
+            case UNRECOVERABLE_ERROR:
+            case DOWNLOAD_FINISHED:
+                return 0;
+            default:
 
         }
 
@@ -211,15 +208,14 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
             // get content type
             String contentType = null;
             Header contentTypeHeader = request.getResponseHeader("Content-Type");
-            if ( contentTypeHeader != null ){
+            if (contentTypeHeader != null) {
                 contentType = contentTypeHeader.getValue();
             }
 
-            InputStream in = !chunked ? new BufferedInputStream(request.getResponseBodyAsStream())
-                    : new ChunkedInputStream(request.getResponseBodyAsStream());
+            InputStream in = !chunked ? new BufferedInputStream(request.getResponseBodyAsStream()) : new ChunkedInputStream(request.getResponseBodyAsStream());
 
-            s_logger.info("Starting download from " + getDownloadUrl() + " to s3 bucket " + s3.getBucketName()
-                    + " remoteSize=" + remoteSize + " , max size=" + maxTemplateSizeInByte);
+            s_logger.info("Starting download from " + getDownloadUrl() + " to s3 bucket " + s3.getBucketName() + " remoteSize=" + remoteSize + " , max size=" +
+                maxTemplateSizeInByte);
 
             Date start = new Date();
             // compute s3 key
@@ -228,12 +224,12 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
             // download using S3 API
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(remoteSize);
-            if ( contentType != null ){
+            if (contentType != null) {
                 metadata.setContentType(contentType);
             }
             PutObjectRequest putObjectRequest = new PutObjectRequest(s3.getBucketName(), s3Key, in, metadata);
             // check if RRS is enabled
-            if (s3.getEnableRRS()){
+            if (s3.getEnableRRS()) {
                 putObjectRequest = putObjectRequest.withStorageClass(StorageClass.ReducedRedundancy);
             }
             // register progress listenser
@@ -257,17 +253,15 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
                 }
 
             });
-            
 
-            if ( !s3.getSingleUpload(remoteSize) ){
+            if (!s3.getSingleUpload(remoteSize)) {
                 // use TransferManager to do multipart upload
                 S3Utils.mputObject(s3, putObjectRequest);
-            } else{
+            } else {
                 // single part upload, with 5GB limit in Amazon
                 S3Utils.putObject(s3, putObjectRequest);
-                while (status != TemplateDownloader.Status.DOWNLOAD_FINISHED &&
-                        status != TemplateDownloader.Status.UNRECOVERABLE_ERROR &&
-                        status != TemplateDownloader.Status.ABORTED) {
+                while (status != TemplateDownloader.Status.DOWNLOAD_FINISHED && status != TemplateDownloader.Status.UNRECOVERABLE_ERROR &&
+                    status != TemplateDownloader.Status.ABORTED) {
                     // wait for completion
                 }
             }
@@ -331,28 +325,28 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
     @SuppressWarnings("fallthrough")
     public boolean stopDownload() {
         switch (getStatus()) {
-        case IN_PROGRESS:
-            if (request != null) {
-                request.abort();
-            }
-            status = TemplateDownloader.Status.ABORTED;
-            return true;
-        case UNKNOWN:
-        case NOT_STARTED:
-        case RECOVERABLE_ERROR:
-        case UNRECOVERABLE_ERROR:
-        case ABORTED:
-            status = TemplateDownloader.Status.ABORTED;
-        case DOWNLOAD_FINISHED:
-            try {
-                S3Utils.deleteObject(s3, s3.getBucketName(), s3Key);
-            } catch (Exception ex) {
-                // ignore delete exception if it is not there
-            }
-            return true;
+            case IN_PROGRESS:
+                if (request != null) {
+                    request.abort();
+                }
+                status = TemplateDownloader.Status.ABORTED;
+                return true;
+            case UNKNOWN:
+            case NOT_STARTED:
+            case RECOVERABLE_ERROR:
+            case UNRECOVERABLE_ERROR:
+            case ABORTED:
+                status = TemplateDownloader.Status.ABORTED;
+            case DOWNLOAD_FINISHED:
+                try {
+                    S3Utils.deleteObject(s3, s3.getBucketName(), s3Key);
+                } catch (Exception ex) {
+                    // ignore delete exception if it is not there
+                }
+                return true;
 
-        default:
-            return true;
+            default:
+                return true;
         }
     }
 
@@ -362,7 +356,7 @@ public class S3TemplateDownloader extends ManagedContextRunnable implements Temp
             return 0;
         }
 
-        return (int) (100.0 * totalBytes / remoteSize);
+        return (int)(100.0 * totalBytes / remoteSize);
     }
 
     @Override

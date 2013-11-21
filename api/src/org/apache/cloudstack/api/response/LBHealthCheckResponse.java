@@ -16,22 +16,22 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.network.rules.HealthCheckPolicy;
-import org.apache.cloudstack.api.ApiConstants;
-import com.cloud.serializer.Param;
+import java.util.List;
+
 import com.google.gson.annotations.SerializedName;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
-import java.util.List;
-import java.util.UUID;
+import com.cloud.network.rules.HealthCheckPolicy;
+import com.cloud.serializer.Param;
 
-@EntityReference(value=HealthCheckPolicy.class)
+@EntityReference(value = HealthCheckPolicy.class)
 public class LBHealthCheckResponse extends BaseResponse {
-@SerializedName("lbruleid")
+    @SerializedName("lbruleid")
     @Param(description = "the LB rule ID")
     private String lbRuleId;
-
 
     @SerializedName("account")
     @Param(description = "the account of the HealthCheck policy")

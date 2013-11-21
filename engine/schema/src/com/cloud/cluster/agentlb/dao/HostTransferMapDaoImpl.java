@@ -33,40 +33,40 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = { HostTransferMapDao.class })
+@Local(value = {HostTransferMapDao.class})
 @DB
 public class HostTransferMapDaoImpl extends GenericDaoBase<HostTransferMapVO, Long> implements HostTransferMapDao {
     private static final Logger s_logger = Logger.getLogger(HostTransferMapDaoImpl.class);
 
-    protected  SearchBuilder<HostTransferMapVO> AllFieldsSearch;
-    protected  SearchBuilder<HostTransferMapVO> IntermediateStateSearch;
-    protected  SearchBuilder<HostTransferMapVO> ActiveSearch;
+    protected SearchBuilder<HostTransferMapVO> AllFieldsSearch;
+    protected SearchBuilder<HostTransferMapVO> IntermediateStateSearch;
+    protected SearchBuilder<HostTransferMapVO> ActiveSearch;
 
     public HostTransferMapDaoImpl() {
-       super();
+        super();
     }
-    
+
     @PostConstruct
     public void init() {
-    	 AllFieldsSearch = createSearchBuilder();
-         AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
-         AllFieldsSearch.and("initialOwner", AllFieldsSearch.entity().getInitialOwner(), SearchCriteria.Op.EQ);
-         AllFieldsSearch.and("futureOwner", AllFieldsSearch.entity().getFutureOwner(), SearchCriteria.Op.EQ);
-         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
-         AllFieldsSearch.done();
-         
-         IntermediateStateSearch = createSearchBuilder();
-         IntermediateStateSearch.and("futureOwner", IntermediateStateSearch.entity().getFutureOwner(), SearchCriteria.Op.EQ);
-         IntermediateStateSearch.and("initialOwner", IntermediateStateSearch.entity().getInitialOwner(), SearchCriteria.Op.EQ);
-         IntermediateStateSearch.and("state", IntermediateStateSearch.entity().getState(), SearchCriteria.Op.IN);
-         IntermediateStateSearch.done();
-         
-         ActiveSearch = createSearchBuilder();
-         ActiveSearch.and("created", ActiveSearch.entity().getCreated(),  SearchCriteria.Op.GT);
-         ActiveSearch.and("id", ActiveSearch.entity().getId(), SearchCriteria.Op.EQ);
-         ActiveSearch.and("state", ActiveSearch.entity().getState(), SearchCriteria.Op.EQ);
-         ActiveSearch.done();
-         
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("initialOwner", AllFieldsSearch.entity().getInitialOwner(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("futureOwner", AllFieldsSearch.entity().getFutureOwner(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.done();
+
+        IntermediateStateSearch = createSearchBuilder();
+        IntermediateStateSearch.and("futureOwner", IntermediateStateSearch.entity().getFutureOwner(), SearchCriteria.Op.EQ);
+        IntermediateStateSearch.and("initialOwner", IntermediateStateSearch.entity().getInitialOwner(), SearchCriteria.Op.EQ);
+        IntermediateStateSearch.and("state", IntermediateStateSearch.entity().getState(), SearchCriteria.Op.IN);
+        IntermediateStateSearch.done();
+
+        ActiveSearch = createSearchBuilder();
+        ActiveSearch.and("created", ActiveSearch.entity().getCreated(), SearchCriteria.Op.GT);
+        ActiveSearch.and("id", ActiveSearch.entity().getId(), SearchCriteria.Op.EQ);
+        ActiveSearch.and("state", ActiveSearch.entity().getState(), SearchCriteria.Op.EQ);
+        ActiveSearch.done();
+
     }
 
     @Override
@@ -84,18 +84,18 @@ public class HostTransferMapDaoImpl extends GenericDaoBase<HostTransferMapVO, Lo
 
         return listBy(sc);
     }
-    
+
     @Override
     public HostTransferMapVO startAgentTransfering(long hostId, long initialOwner, long futureOwner) {
         HostTransferMapVO transfer = new HostTransferMapVO(hostId, initialOwner, futureOwner);
-        return persist(transfer); 
+        return persist(transfer);
     }
 
     @Override
     public boolean completeAgentTransfer(long hostId) {
         return remove(hostId);
     }
-    
+
     @Override
     public List<HostTransferMapVO> listBy(long futureOwnerId, HostTransferState state) {
         SearchCriteria<HostTransferMapVO> sc = AllFieldsSearch.create();
@@ -104,26 +104,25 @@ public class HostTransferMapDaoImpl extends GenericDaoBase<HostTransferMapVO, Lo
 
         return listBy(sc);
     }
-    
+
     @Override
     public HostTransferMapVO findActiveHostTransferMapByHostId(long hostId, Date cutTime) {
         SearchCriteria<HostTransferMapVO> sc = ActiveSearch.create();
         sc.setParameters("id", hostId);
         sc.setParameters("state", HostTransferState.TransferRequested);
         sc.setParameters("created", cutTime);
-        
+
         return findOneBy(sc);
-        
+
     }
-    
+
     @Override
     public boolean startAgentTransfer(long hostId) {
         HostTransferMapVO transfer = findById(hostId);
         transfer.setState(HostTransferState.TransferStarted);
         return update(hostId, transfer);
     }
-    
-    
+
     @Override
     public HostTransferMapVO findByIdAndFutureOwnerId(long id, long futureOwnerId) {
         SearchCriteria<HostTransferMapVO> sc = AllFieldsSearch.create();
@@ -132,8 +131,7 @@ public class HostTransferMapDaoImpl extends GenericDaoBase<HostTransferMapVO, Lo
 
         return findOneBy(sc);
     }
-    
-    
+
     @Override
     public HostTransferMapVO findByIdAndCurrentOwnerId(long id, long currentOwnerId) {
         SearchCriteria<HostTransferMapVO> sc = AllFieldsSearch.create();
@@ -142,5 +140,5 @@ public class HostTransferMapDaoImpl extends GenericDaoBase<HostTransferMapVO, Lo
 
         return findOneBy(sc);
     }
-    
+
 }

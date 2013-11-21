@@ -29,8 +29,7 @@ import org.apache.cloudstack.api.InternalIdentity;
  */
 public interface DiskOffering extends InfrastructureEntity, Identity, InternalIdentity {
     enum State {
-        Inactive,
-        Active,
+        Inactive, Active,
     }
 
     State getState();

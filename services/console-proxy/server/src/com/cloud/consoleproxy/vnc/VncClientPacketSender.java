@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.consoleproxy.vnc;
 
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -79,7 +80,7 @@ public class VncClientPacketSender implements Runnable, PaintNotificationListene
                 closeConnection();
             }
         } finally {
-        	s_logger.info("Sending thread exit processing, shutdown connection");
+            s_logger.info("Sending thread exit processing, shutdown connection");
             vncConnection.shutdown();
         }
     }
@@ -106,7 +107,8 @@ public class VncClientPacketSender implements Runnable, PaintNotificationListene
     @Override
     public void imagePaintedOnScreen() {
         if (!updateRequestSent) {
-            queue.add(new FramebufferUpdateRequestPacket(RfbConstants.FRAMEBUFFER_INCREMENTAL_UPDATE_REQUEST, 0, 0, screen.getFramebufferWidth(), screen.getFramebufferHeight()));
+            queue.add(new FramebufferUpdateRequestPacket(RfbConstants.FRAMEBUFFER_INCREMENTAL_UPDATE_REQUEST, 0, 0, screen.getFramebufferWidth(),
+                screen.getFramebufferHeight()));
             updateRequestSent = true;
         }
     }
@@ -158,14 +160,15 @@ public class VncClientPacketSender implements Runnable, PaintNotificationListene
      * right buttons on the mouse. On a wheel mouse, each step of the wheel
      * upwards is represented by a press and release of button 4, and each step
      * downwards is represented by a press and release of button 5.
-     * 
+     *
      * @param modifiers
      *            extended modifiers from AWT mouse event
      * @return VNC mouse button mask
      */
     public static int mapAwtModifiersToVncButtonMask(int modifiers) {
-        int mask = (((modifiers & MouseEvent.BUTTON1_DOWN_MASK) != 0) ? 0x1 : 0) | (((modifiers & MouseEvent.BUTTON2_DOWN_MASK) != 0) ? 0x2 : 0)
-                | (((modifiers & MouseEvent.BUTTON3_DOWN_MASK) != 0) ? 0x4 : 0);
+        int mask =
+            (((modifiers & InputEvent.BUTTON1_DOWN_MASK) != 0) ? 0x1 : 0) | (((modifiers & InputEvent.BUTTON2_DOWN_MASK) != 0) ? 0x2 : 0) |
+                (((modifiers & InputEvent.BUTTON3_DOWN_MASK) != 0) ? 0x4 : 0);
         return mask;
     }
 
@@ -188,70 +191,70 @@ public class VncClientPacketSender implements Runnable, PaintNotificationListene
 
     private int mapAwtKeyToVncKey(int key) {
         switch (key) {
-        case KeyEvent.VK_BACK_SPACE:
-            return 0xff08;
-        case KeyEvent.VK_TAB:
-            return 0xff09;
-        case KeyEvent.VK_ENTER:
-            return 0xff0d;
-        case KeyEvent.VK_ESCAPE:
-            return 0xff1b;
-        case KeyEvent.VK_INSERT:
-            return 0xff63;
-        case KeyEvent.VK_DELETE:
-            return 0xffff;
-        case KeyEvent.VK_HOME:
-            return 0xff50;
-        case KeyEvent.VK_END:
-            return 0xff57;
-        case KeyEvent.VK_PAGE_UP:
-            return 0xff55;
-        case KeyEvent.VK_PAGE_DOWN:
-            return 0xff56;
-        case KeyEvent.VK_LEFT:
-            return 0xff51;
-        case KeyEvent.VK_UP:
-            return 0xff52;
-        case KeyEvent.VK_RIGHT:
-            return 0xff53;
-        case KeyEvent.VK_DOWN:
-            return 0xff54;
-        case KeyEvent.VK_F1:
-            return 0xffbe;
-        case KeyEvent.VK_F2:
-            return 0xffbf;
-        case KeyEvent.VK_F3:
-            return 0xffc0;
-        case KeyEvent.VK_F4:
-            return 0xffc1;
-        case KeyEvent.VK_F5:
-            return 0xffc2;
-        case KeyEvent.VK_F6:
-            return 0xffc3;
-        case KeyEvent.VK_F7:
-            return 0xffc4;
-        case KeyEvent.VK_F8:
-            return 0xffc5;
-        case KeyEvent.VK_F9:
-            return 0xffc6;
-        case KeyEvent.VK_F10:
-            return 0xffc7;
-        case KeyEvent.VK_F11:
-            return 0xffc8;
-        case KeyEvent.VK_F12:
-            return 0xffc9;
-        case KeyEvent.VK_SHIFT:
-            return 0xffe1;
-        case KeyEvent.VK_CONTROL:
-            return 0xffe3;
-        case KeyEvent.VK_META:
-            return 0xffe7;
-        case KeyEvent.VK_ALT:
-            return 0xffe9;
-        case KeyEvent.VK_ALT_GRAPH:
-            return 0xffea;
-        case KeyEvent.VK_BACK_QUOTE:
-            return 0x0060;
+            case KeyEvent.VK_BACK_SPACE:
+                return 0xff08;
+            case KeyEvent.VK_TAB:
+                return 0xff09;
+            case KeyEvent.VK_ENTER:
+                return 0xff0d;
+            case KeyEvent.VK_ESCAPE:
+                return 0xff1b;
+            case KeyEvent.VK_INSERT:
+                return 0xff63;
+            case KeyEvent.VK_DELETE:
+                return 0xffff;
+            case KeyEvent.VK_HOME:
+                return 0xff50;
+            case KeyEvent.VK_END:
+                return 0xff57;
+            case KeyEvent.VK_PAGE_UP:
+                return 0xff55;
+            case KeyEvent.VK_PAGE_DOWN:
+                return 0xff56;
+            case KeyEvent.VK_LEFT:
+                return 0xff51;
+            case KeyEvent.VK_UP:
+                return 0xff52;
+            case KeyEvent.VK_RIGHT:
+                return 0xff53;
+            case KeyEvent.VK_DOWN:
+                return 0xff54;
+            case KeyEvent.VK_F1:
+                return 0xffbe;
+            case KeyEvent.VK_F2:
+                return 0xffbf;
+            case KeyEvent.VK_F3:
+                return 0xffc0;
+            case KeyEvent.VK_F4:
+                return 0xffc1;
+            case KeyEvent.VK_F5:
+                return 0xffc2;
+            case KeyEvent.VK_F6:
+                return 0xffc3;
+            case KeyEvent.VK_F7:
+                return 0xffc4;
+            case KeyEvent.VK_F8:
+                return 0xffc5;
+            case KeyEvent.VK_F9:
+                return 0xffc6;
+            case KeyEvent.VK_F10:
+                return 0xffc7;
+            case KeyEvent.VK_F11:
+                return 0xffc8;
+            case KeyEvent.VK_F12:
+                return 0xffc9;
+            case KeyEvent.VK_SHIFT:
+                return 0xffe1;
+            case KeyEvent.VK_CONTROL:
+                return 0xffe3;
+            case KeyEvent.VK_META:
+                return 0xffe7;
+            case KeyEvent.VK_ALT:
+                return 0xffe9;
+            case KeyEvent.VK_ALT_GRAPH:
+                return 0xffea;
+            case KeyEvent.VK_BACK_QUOTE:
+                return 0x0060;
         }
 
         return key;

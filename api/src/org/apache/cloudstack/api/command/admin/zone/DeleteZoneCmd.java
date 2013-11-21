@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.zone;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -26,11 +28,9 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteZone", description="Deletes a Zone.", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteZone", description = "Deletes a Zone.", responseObject = SuccessResponse.class)
 public class DeleteZoneCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteZoneCmd.class.getName());
 
@@ -40,10 +40,8 @@ public class DeleteZoneCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=ZoneResponse.class,
-            required=true, description="the ID of the Zone")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of the Zone")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -52,7 +50,6 @@ public class DeleteZoneCmd extends BaseCmd {
     public Long getId() {
         return id;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -69,8 +66,8 @@ public class DeleteZoneCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
-        CallContext.current().setEventDetails("Zone Id: "+getId());
+    public void execute() {
+        CallContext.current().setEventDetails("Zone Id: " + getId());
         boolean result = _configService.deleteZone(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

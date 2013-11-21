@@ -25,7 +25,6 @@ public final class CopyCommand extends Command implements StorageSubSystemComman
     private DataTO cacheTO;
     boolean executeInSequence = false;
 
-
     public CopyCommand(DataTO srcData, DataTO destData, int timeout, boolean executeInSequence) {
         super();
         this.srcTO = srcData;

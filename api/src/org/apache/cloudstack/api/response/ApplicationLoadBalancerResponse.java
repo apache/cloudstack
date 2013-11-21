@@ -17,66 +17,78 @@
 
 package org.apache.cloudstack.api.response;
 
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
+
+import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
-public class ApplicationLoadBalancerResponse extends BaseResponse implements ControlledEntityResponse{
-    @SerializedName(ApiConstants.ID) @Param(description = "the Load Balancer ID")
+public class ApplicationLoadBalancerResponse extends BaseResponse implements ControlledEntityResponse {
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "the Load Balancer ID")
     private String id;
 
-    @SerializedName(ApiConstants.NAME) @Param(description = "the name of the Load Balancer")
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "the name of the Load Balancer")
     private String name;
 
-    @SerializedName(ApiConstants.DESCRIPTION) @Param(description = "the description of the Load Balancer")
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "the description of the Load Balancer")
     private String description;
-    
-    @SerializedName(ApiConstants.ALGORITHM) @Param(description = "the load balancer algorithm (source, roundrobin, leastconn)")
+
+    @SerializedName(ApiConstants.ALGORITHM)
+    @Param(description = "the load balancer algorithm (source, roundrobin, leastconn)")
     private String algorithm;
-    
-    @SerializedName(ApiConstants.NETWORK_ID) @Param(description="Load Balancer network id")
+
+    @SerializedName(ApiConstants.NETWORK_ID)
+    @Param(description = "Load Balancer network id")
     private String networkId;
-    
-    @SerializedName(ApiConstants.SOURCE_IP) @Param(description="Load Balancer source ip")
+
+    @SerializedName(ApiConstants.SOURCE_IP)
+    @Param(description = "Load Balancer source ip")
     private String sourceIp;
-    
-    @SerializedName(ApiConstants.SOURCE_IP_NETWORK_ID) @Param(description="Load Balancer source ip network id")
+
+    @SerializedName(ApiConstants.SOURCE_IP_NETWORK_ID)
+    @Param(description = "Load Balancer source ip network id")
     private String sourceIpNetworkId;
-    
+
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account of the Load Balancer")
     private String accountName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the Load Balancer")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the Load Balancer")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the Load Balancer")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the Load Balancer")
     private String projectName;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "the domain ID of the Load Balancer")
     private String domainId;
-    
+
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain of the Load Balancer")
     private String domainName;
-    
-    @SerializedName("loadbalancerrule")  @Param(description="the list of rules associated with the Load Balancer", responseObject = ApplicationLoadBalancerRuleResponse.class)
+
+    @SerializedName("loadbalancerrule")
+    @Param(description = "the list of rules associated with the Load Balancer", responseObject = ApplicationLoadBalancerRuleResponse.class)
     private List<ApplicationLoadBalancerRuleResponse> lbRules;
-    
-    @SerializedName("loadbalancerinstance")  @Param(description="the list of instances associated with the Load Balancer", responseObject = ApplicationLoadBalancerInstanceResponse.class)
+
+    @SerializedName("loadbalancerinstance")
+    @Param(description = "the list of instances associated with the Load Balancer", responseObject = ApplicationLoadBalancerInstanceResponse.class)
     private List<ApplicationLoadBalancerInstanceResponse> lbInstances;
-    
-    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the Load Balancer", responseObject = ResourceTagResponse.class)
+
+    @SerializedName(ApiConstants.TAGS)
+    @Param(description = "the list of resource tags associated with the Load Balancer", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
+    @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
@@ -86,10 +98,11 @@ public class ApplicationLoadBalancerResponse extends BaseResponse implements Con
         this.domainId = domainId;
     }
 
+    @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
     }
-    
+
     @Override
     public void setProjectId(String projectId) {
         this.projectId = projectId;

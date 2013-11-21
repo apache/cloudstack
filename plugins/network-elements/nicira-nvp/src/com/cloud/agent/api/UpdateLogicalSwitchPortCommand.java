@@ -23,8 +23,8 @@ public class UpdateLogicalSwitchPortCommand extends Command {
     private final String ownerName;
     private final String nicName;
 
-    public UpdateLogicalSwitchPortCommand(final String logicalSwitchPortUuid, final String logicalSwitchUuid,
-            final String attachmentUuid, final String ownerName, final String nicName) {
+    public UpdateLogicalSwitchPortCommand(final String logicalSwitchPortUuid, final String logicalSwitchUuid, final String attachmentUuid, final String ownerName,
+            final String nicName) {
         this.logicalSwitchUuid = logicalSwitchUuid;
         this.logicalSwitchPortUuid = logicalSwitchPortUuid;
         this.attachmentUuid = attachmentUuid;
@@ -32,31 +32,25 @@ public class UpdateLogicalSwitchPortCommand extends Command {
         this.nicName = nicName;
     }
 
-
     public String getLogicalSwitchUuid() {
         return logicalSwitchUuid;
     }
-
 
     public String getLogicalSwitchPortUuid() {
         return logicalSwitchPortUuid;
     }
 
-
     public String getAttachmentUuid() {
         return attachmentUuid;
     }
-
 
     public String getOwnerName() {
         return ownerName;
     }
 
-
     public String getNicName() {
         return nicName;
     }
-
 
     @Override
     public boolean executeInSequence() {

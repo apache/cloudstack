@@ -58,8 +58,8 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Component(value="EngineHostDao")
-@Local(value = { EngineHostDao.class })
+@Component(value = "EngineHostDao")
+@Local(value = {EngineHostDao.class})
 @DB
 @TableGenerator(name = "host_req_sq", table = "op_host", pkColumnName = "id", valueColumnName = "sequence", allocationSize = 1)
 public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implements EngineHostDao {
@@ -111,10 +111,12 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
     protected final Attribute _msIdAttr;
     protected final Attribute _pingTimeAttr;
 
-    @Inject protected HostDetailsDao _detailsDao;
-    @Inject protected HostTagsDao _hostTagsDao;
-    @Inject protected EngineClusterDao _clusterDao;
-
+    @Inject
+    protected HostDetailsDao _detailsDao;
+    @Inject
+    protected HostTagsDao _hostTagsDao;
+    @Inject
+    protected EngineClusterDao _clusterDao;
 
     public EngineHostDaoImpl() {
 
@@ -320,13 +322,12 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
     public long countBy(long clusterId, ResourceState... states) {
         SearchCriteria<EngineHostVO> sc = MaintenanceCountSearch.create();
 
-        sc.setParameters("resourceState", (Object[]) states);
+        sc.setParameters("resourceState", (Object[])states);
         sc.setParameters("cluster", clusterId);
 
         List<EngineHostVO> hosts = listBy(sc);
         return hosts.size();
     }
-
 
     @Override
     public EngineHostVO findByGuid(String guid) {
@@ -334,7 +335,8 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
         return findOneBy(sc);
     }
 
-    @Override @DB
+    @Override
+    @DB
     public List<EngineHostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
@@ -354,7 +356,8 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
         return hosts;
     }
 
-    @Override @DB
+    @Override
+    @DB
     public List<EngineHostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
 
@@ -431,7 +434,6 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
         return listBy(sc);
     }
 
-
     @Override
     public List<EngineHostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId, String haTag) {
         SearchBuilder<HostTagVO> hostTagSearch = null;
@@ -500,7 +502,8 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
         List<EngineHostVO> result = new ArrayList<EngineHostVO>();
         ResultSet rs = null;
         try {
-            String sql = "select h.id from host h left join  cluster c on h.cluster_id=c.id where h.mgmt_server_id is not null and h.last_ping < ? and h.status in ('Up', 'Updating', 'Disconnected', 'Connecting') and h.type not in ('ExternalFirewall', 'ExternalLoadBalancer', 'TrafficMonitor', 'SecondaryStorage', 'LocalSecondaryStorage', 'L2Networking') and (h.cluster_id is null or c.managed_state = 'Managed') ;" ;
+            String sql =
+                "select h.id from host h left join  cluster c on h.cluster_id=c.id where h.mgmt_server_id is not null and h.last_ping < ? and h.status in ('Up', 'Updating', 'Disconnected', 'Connecting') and h.type not in ('ExternalFirewall', 'ExternalLoadBalancer', 'TrafficMonitor', 'SecondaryStorage', 'LocalSecondaryStorage', 'L2Networking') and (h.cluster_id is null or c.managed_state = 'Managed') ;";
             pstmt = txn.prepareStatement(sql);
             pstmt.setLong(1, timeout);
             rs = pstmt.executeQuery();
@@ -591,7 +594,8 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
     @Override
     @DB
     public List<RunningHostCountInfo> getRunningHostCounts(Date cutTime) {
-        String sql = "select * from (" + "select h.data_center_id, h.type, count(*) as count from host as h INNER JOIN mshost as m ON h.mgmt_server_id=m.msid "
+        String sql =
+            "select * from (" + "select h.data_center_id, h.type, count(*) as count from host as h INNER JOIN mshost as m ON h.mgmt_server_id=m.msid "
                 + "where h.status='Up' and h.type='SecondaryStorage' and m.last_update > ? " + "group by h.data_center_id, h.type " + "UNION ALL "
                 + "select h.data_center_id, h.type, count(*) as count from host as h INNER JOIN mshost as m ON h.mgmt_server_id=m.msid "
                 + "where h.status='Up' and h.type='Routing' and m.last_update > ? " + "group by h.data_center_id, h.type) as t " + "ORDER by t.data_center_id, t.type";
@@ -644,7 +648,6 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
         return customSearch(sc, null).get(0);
     }
 
-
     @Override
     public boolean updateState(State currentState, DataCenterResourceEntity.State.Event event, State nextState, DataCenterResourceEntity hostEntity, Object data) {
         EngineHostVO vo = findById(hostEntity.getId());
@@ -664,10 +667,23 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
             EngineHostVO dbHost = findByIdIncludingRemoved(vo.getId());
             if (dbHost != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(vo.toString());
-                str.append(": DB Data={id=").append(dbHost.getId()).append("; state=").append(dbHost.getState()).append(";updatedTime=")
-                .append(dbHost.getLastUpdated());
-                str.append(": New Data={id=").append(vo.getId()).append("; state=").append(nextState).append("; event=").append(event).append("; updatedTime=").append(vo.getLastUpdated());
-                str.append(": stale Data={id=").append(vo.getId()).append("; state=").append(currentState).append("; event=").append(event).append("; updatedTime=").append(oldUpdatedTime);
+                str.append(": DB Data={id=").append(dbHost.getId()).append("; state=").append(dbHost.getState()).append(";updatedTime=").append(dbHost.getLastUpdated());
+                str.append(": New Data={id=")
+                    .append(vo.getId())
+                    .append("; state=")
+                    .append(nextState)
+                    .append("; event=")
+                    .append(event)
+                    .append("; updatedTime=")
+                    .append(vo.getLastUpdated());
+                str.append(": stale Data={id=")
+                    .append(vo.getId())
+                    .append("; state=")
+                    .append(currentState)
+                    .append("; event=")
+                    .append(event)
+                    .append("; updatedTime=")
+                    .append(oldUpdatedTime);
             } else {
                 s_logger.debug("Unable to update dataCenter: id=" + vo.getId() + ", as there is no such dataCenter exists in the database anymore");
             }
@@ -726,85 +742,74 @@ public class EngineHostDaoImpl extends GenericDaoBase<EngineHostVO, Long> implem
         return findOneBy(sc);
     }
 
-	@Override
-	public List<EngineHostVO> findHypervisorHostInCluster(long clusterId) {
-		 SearchCriteria<EngineHostVO> sc = TypeClusterStatusSearch.create();
-		 sc.setParameters("type", Host.Type.Routing);
-		 sc.setParameters("cluster", clusterId);
-		 sc.setParameters("status", Status.Up);
-		 sc.setParameters("resourceState", ResourceState.Enabled);
-		
-		return listBy(sc);
-	}
+    @Override
+    public List<EngineHostVO> findHypervisorHostInCluster(long clusterId) {
+        SearchCriteria<EngineHostVO> sc = TypeClusterStatusSearch.create();
+        sc.setParameters("type", Host.Type.Routing);
+        sc.setParameters("cluster", clusterId);
+        sc.setParameters("status", Status.Up);
+        sc.setParameters("resourceState", ResourceState.Enabled);
 
-	@Override
-	public List<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> lockRows(
-			SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc,
-			Filter filter, boolean exclusive) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+        return listBy(sc);
+    }
 
-	@Override
-	public org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO lockOneRandomRow(
-			SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc,
-			boolean exclusive) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public List<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> lockRows(
+        SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc, Filter filter, boolean exclusive) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
+    @Override
+    public org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO lockOneRandomRow(
+        SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc, boolean exclusive) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public List<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> search(
-			SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc,
-			Filter filter) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public List<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> search(
+        SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc, Filter filter) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public List<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> search(
-			SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc,
-			Filter filter, boolean enable_query_cache) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public List<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> search(
+        SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc, Filter filter, boolean enable_query_cache) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public List<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> searchIncludingRemoved(
-			SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc,
-			Filter filter, Boolean lock, boolean cache) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public List<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> searchIncludingRemoved(
+        SearchCriteria<org.apache.cloudstack.engine.datacenter.entity.api.db.EngineHostVO> sc, Filter filter, Boolean lock, boolean cache) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
-	@Override
-	public List<EngineHostVO> searchIncludingRemoved(
-			SearchCriteria<EngineHostVO> sc,
-			Filter filter, Boolean lock, boolean cache,
-			boolean enable_query_cache) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public List<EngineHostVO> searchIncludingRemoved(SearchCriteria<EngineHostVO> sc, Filter filter, Boolean lock, boolean cache, boolean enable_query_cache) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
+    @Override
+    public int remove(SearchCriteria<EngineHostVO> sc) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
-	@Override
-	public int remove(
-			SearchCriteria<EngineHostVO> sc) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public int expunge(SearchCriteria<EngineHostVO> sc) {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
-	@Override
-	public int expunge(SearchCriteria<EngineHostVO> sc) {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	@Override
-	public EngineHostVO findOneBy(SearchCriteria<EngineHostVO> sc) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public EngineHostVO findOneBy(SearchCriteria<EngineHostVO> sc) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

@@ -40,14 +40,17 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
-@Local(value=FenceBuilder.class)
+@Local(value = FenceBuilder.class)
 public class XenServerFencer extends AdapterBase implements FenceBuilder {
     private static final Logger s_logger = Logger.getLogger(XenServerFencer.class);
     String _name;
 
-    @Inject HostDao _hostDao;
-    @Inject AgentManager _agentMgr;
-    @Inject ResourceManager _resourceMgr;
+    @Inject
+    HostDao _hostDao;
+    @Inject
+    AgentManager _agentMgr;
+    @Inject
+    ResourceManager _resourceMgr;
 
     @Override
     public Boolean fenceOff(VirtualMachine vm, Host host) {
@@ -61,12 +64,12 @@ public class XenServerFencer extends AdapterBase implements FenceBuilder {
 
         for (HostVO h : hosts) {
             if (h.getHypervisorType() == HypervisorType.XenServer) {
-            	if( h.getStatus() != Status.Up ) {
-            		continue;
-            	}
-            	if( h.getId() == host.getId() ) {
-            		continue;
-            	}
+                if (h.getStatus() != Status.Up) {
+                    continue;
+                }
+                if (h.getId() == host.getId()) {
+                    continue;
+                }
                 FenceAnswer answer;
                 try {
                     Answer ans = _agentMgr.send(h.getId(), fence);
@@ -74,7 +77,7 @@ public class XenServerFencer extends AdapterBase implements FenceBuilder {
                         s_logger.debug("Answer is not fenceanswer.  Result = " + ans.getResult() + "; Details = " + ans.getDetails());
                         continue;
                     }
-                    answer = (FenceAnswer) ans;
+                    answer = (FenceAnswer)ans;
                 } catch (AgentUnavailableException e) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Moving on to the next host because " + h.toString() + " is unavailable");

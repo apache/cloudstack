@@ -33,8 +33,7 @@ import com.cloud.vm.NicSecondaryIp;
 @Table(name = "nic_secondary_ips")
 public class NicSecondaryIpVO implements NicSecondaryIp {
 
-    public NicSecondaryIpVO(Long nicId, String ipaddr, Long vmId,
-            Long accountId, Long domainId, Long networkId) {
+    public NicSecondaryIpVO(Long nicId, String ipaddr, Long vmId, Long accountId, Long domainId, Long networkId) {
         this.nicId = nicId;
         this.vmId = vmId;
         this.ip4Address = ipaddr;
@@ -54,10 +53,10 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
     @Column(name = "nicId")
     long nicId;
 
-    @Column(name="domain_id", updatable=false)
+    @Column(name = "domain_id", updatable = false)
     long domainId;
 
-    @Column(name="account_id", updatable=false)
+    @Column(name = "account_id", updatable = false)
     private Long accountId;
 
     @Column(name = "ip4_address")
@@ -78,6 +77,7 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
     @Column(name = "vmId")
     Long vmId;
 
+    @Override
     public long getId() {
         return id;
     }
@@ -86,6 +86,7 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
         this.id = id;
     }
 
+    @Override
     public long getNicId() {
         return nicId;
     }
@@ -94,6 +95,7 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
         this.nicId = nicId;
     }
 
+    @Override
     public long getDomainId() {
         return domainId;
     }
@@ -102,6 +104,7 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
         this.domainId = domainId;
     }
 
+    @Override
     public long getAccountId() {
         return accountId;
     }
@@ -110,6 +113,7 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
         this.accountId = accountId;
     }
 
+    @Override
     public String getIp4Address() {
         return ip4Address;
     }
@@ -126,6 +130,7 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
         this.ip6Address = ip6Address;
     }
 
+    @Override
     public long getNetworkId() {
         return networkId;
     }
@@ -142,6 +147,7 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
         this.created = created;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }
@@ -150,6 +156,7 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
         this.uuid = uuid;
     }
 
+    @Override
     public long getVmId() {
         return vmId;
     }

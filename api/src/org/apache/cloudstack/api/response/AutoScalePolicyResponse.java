@@ -18,15 +18,16 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=AutoScalePolicy.class)
+@EntityReference(value = AutoScalePolicy.class)
 public class AutoScalePolicyResponse extends BaseResponse implements ControlledEntityResponse {
 
     @SerializedName(ApiConstants.ID)
@@ -49,21 +50,25 @@ public class AutoScalePolicyResponse extends BaseResponse implements ControlledE
     @Param(description = "the list of IDs of the conditions that are being evaluated on every interval")
     private List<ConditionResponse> conditions;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account owning the autoscale policy")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account owning the autoscale policy")
     private String accountName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id autoscale policy")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id autoscale policy")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the autoscale policy")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the autoscale policy")
     private String projectName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID of the autoscale policy")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain ID of the autoscale policy")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the autoscale policy")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain name of the autoscale policy")
     private String domainName;
-
 
     @Override
     public String getObjectId() {
@@ -94,8 +99,6 @@ public class AutoScalePolicyResponse extends BaseResponse implements ControlledE
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
-
-
 
     @Override
     public void setDomainId(String domainId) {

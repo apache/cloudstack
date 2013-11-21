@@ -36,14 +36,14 @@ public interface HypervisorResource extends ServerResource {
      * @return Start2Answer answer.
      */
     StartAnswer execute(StartCommand cmd);
-    
+
     /**
      * Stops a VM.  Must return true as long as the VM does not exist.
      * @param cmd information necessary to identify the VM to stop.
-     * @return StopAnswer 
+     * @return StopAnswer
      */
     StopAnswer execute(StopCommand cmd);
-    
+
     /**
      * Reboots a VM.
      * @param cmd information necessary to identify the VM to reboot.

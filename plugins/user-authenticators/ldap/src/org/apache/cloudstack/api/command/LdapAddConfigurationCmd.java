@@ -33,8 +33,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "addLdapConfiguration", description = "Add a new Ldap Configuration", responseObject = LdapConfigurationResponse.class, since = "4.2.0")
 public class LdapAddConfigurationCmd extends BaseCmd {
-    public static final Logger s_logger = Logger
-                                          .getLogger(LdapAddConfigurationCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(LdapAddConfigurationCmd.class.getName());
     private static final String s_name = "ldapconfigurationresponse";
 
     @Inject
@@ -58,14 +57,12 @@ public class LdapAddConfigurationCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException {
         try {
-            final LdapConfigurationResponse response = _ldapManager
-                    .addConfiguration(hostname, port);
+            final LdapConfigurationResponse response = _ldapManager.addConfiguration(hostname, port);
             response.setObjectName("LdapAddConfiguration");
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (final InvalidParameterValueException e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
-                                         e.toString());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.toString());
         }
 
     }

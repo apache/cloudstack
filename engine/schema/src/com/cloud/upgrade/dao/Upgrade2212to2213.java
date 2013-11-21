@@ -34,7 +34,7 @@ public class Upgrade2212to2213 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] { "2.2.12", "2.2.13"};
+        return new String[] {"2.2.12", "2.2.13"};
     }
 
     @Override
@@ -53,8 +53,8 @@ public class Upgrade2212to2213 implements DbUpgrade {
         if (script == null) {
             throw new CloudRuntimeException("Unable to find db/schema-2212to2213.sql");
         }
-        
-        return new File[] { new File(script) };
+
+        return new File[] {new File(script)};
     }
 
     @Override
@@ -66,7 +66,6 @@ public class Upgrade2212to2213 implements DbUpgrade {
     public File[] getCleanupScripts() {
         return null;
     }
- 
 
     private void fixForeignKeys(Connection conn) {
         HashMap<String, List<String>> foreignKeys = new HashMap<String, List<String>>();
@@ -81,17 +80,17 @@ public class Upgrade2212to2213 implements DbUpgrade {
         }
 
         try {
-            PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE");
+            PreparedStatement pstmt =
+                conn.prepareStatement("ALTER TABLE `cloud`.`networks` ADD CONSTRAINT `fk_networks__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE");
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to reinsert data center key for the network", e);
         }
-        
-        
+
         // drop primary keys
         DbUpgradeUtils.dropPrimaryKeyIfExists(conn, "cloud_usage.usage_load_balancer_policy");
         DbUpgradeUtils.dropPrimaryKeyIfExists(conn, "cloud_usage.usage_port_forwarding");
-        
+
         //Drop usage_network_offering unique key
         try {
             PreparedStatement pstmt = conn.prepareStatement("drop index network_offering_id on cloud_usage.usage_network_offering");

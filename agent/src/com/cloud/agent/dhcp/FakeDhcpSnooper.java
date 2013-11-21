@@ -32,18 +32,16 @@ import org.apache.log4j.Logger;
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
 
-@Local(value = { DhcpSnooper.class })
+@Local(value = {DhcpSnooper.class})
 public class FakeDhcpSnooper implements DhcpSnooper {
-    private static final Logger s_logger = Logger
-            .getLogger(FakeDhcpSnooper.class);
+    private static final Logger s_logger = Logger.getLogger(FakeDhcpSnooper.class);
     private Queue<String> _ipAddresses = new ConcurrentLinkedQueue<String>();
     private Map<String, String> _macIpMap = new ConcurrentHashMap<String, String>();
     private Map<String, InetAddress> _vmIpMap = new ConcurrentHashMap<String, InetAddress>();
 
     @Override
-    public boolean configure(String name, Map<String, Object> params)
-            throws ConfigurationException {
-        String guestIpRange = (String) params.get("guest.ip.range");
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        String guestIpRange = (String)params.get("guest.ip.range");
         if (guestIpRange != null) {
             String[] guestIps = guestIpRange.split("-");
             if (guestIps.length == 2) {
@@ -78,8 +76,7 @@ public class FakeDhcpSnooper implements DhcpSnooper {
             InetAddress inetAddr = InetAddress.getByName(ipAddr);
             _macIpMap.put(macAddr.toLowerCase(), ipAddr);
             _vmIpMap.put(vmName, inetAddr);
-            s_logger.info("Got ip address " + ipAddr + " for vm " + vmName
-                    + " mac=" + macAddr.toLowerCase());
+            s_logger.info("Got ip address " + ipAddr + " for vm " + vmName + " mac=" + macAddr.toLowerCase());
             return inetAddr;
         } catch (UnknownHostException e) {
             s_logger.warn("Failed to get InetAddress for " + ipAddr);
@@ -103,8 +100,7 @@ public class FakeDhcpSnooper implements DhcpSnooper {
             }
             ipAddr = _macIpMap.remove(macAddr);
 
-            s_logger.info("Cleaning up for mac address: " + macAddr + " ip="
-                    + ipAddr + " inetAddr=" + inetAddr);
+            s_logger.info("Cleaning up for mac address: " + macAddr + " ip=" + ipAddr + " inetAddr=" + inetAddr);
             if (ipAddr != null) {
                 _ipAddresses.offer(ipAddr);
             }
@@ -134,34 +130,34 @@ public class FakeDhcpSnooper implements DhcpSnooper {
         return null;
     }
 
-	@Override
-	public void setName(String name) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void setName(String name) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public void setConfigParams(Map<String, Object> params) {
-		// TODO Auto-generated method stub
-		
-	}
+    }
 
-	@Override
-	public Map<String, Object> getConfigParams() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public void setConfigParams(Map<String, Object> params) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public int getRunLevel() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    }
 
-	@Override
-	public void setRunLevel(int level) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public Map<String, Object> getConfigParams() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public int getRunLevel() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public void setRunLevel(int level) {
+        // TODO Auto-generated method stub
+
+    }
 
 }

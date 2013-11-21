@@ -18,8 +18,8 @@ package com.cloud.simulator;
 
 public interface MockHost {
     public long getCpuSpeed();
-    public long getCpuCount();
 
+    public long getCpuCount();
 
     public long getMemorySize();
 
@@ -30,7 +30,6 @@ public interface MockHost {
     public String getName();
 
     public String getGuid();
-
 
     public String getVersion();
 
@@ -45,7 +44,6 @@ public interface MockHost {
     public String getPrivateNetMask();
 
     public String getPrivateMacAddress();
-
 
     public String getPublicIpAddress();
 

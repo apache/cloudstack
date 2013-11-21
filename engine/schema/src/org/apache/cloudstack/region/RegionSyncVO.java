@@ -25,69 +25,72 @@ import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
 
-
 @Entity
-@Table(name="region_sync")
+@Table(name = "region_sync")
 public class RegionSyncVO implements RegionSync {
 
-	@Id
-	@Column(name="id")
-	private long id;
+    @Id
+    @Column(name = "id")
+    private long id;
 
-	@Column(name="region_id")
-	private int regionId;
+    @Column(name = "region_id")
+    private int regionId;
 
-	@Column(name="api")
-	private String api;
+    @Column(name = "api")
+    private String api;
 
-	@Column(name=GenericDao.CREATED_COLUMN)
-	private Date createDate;
+    @Column(name = GenericDao.CREATED_COLUMN)
+    private Date createDate;
 
-	@Column(name="processed")
-	boolean processed;
+    @Column(name = "processed")
+    boolean processed;
 
-	public RegionSyncVO() {
-	}
+    public RegionSyncVO() {
+    }
 
-	public RegionSyncVO(int regionId, String api) {
-		this.regionId = regionId;
-		this.api = api;
-	}
+    public RegionSyncVO(int regionId, String api) {
+        this.regionId = regionId;
+        this.api = api;
+    }
 
-	public int getRegionId() {
-		return regionId;
-	}
+    @Override
+    public int getRegionId() {
+        return regionId;
+    }
 
-	public void setRegionId(int regionId) {
-		this.regionId = regionId;
-	}
+    public void setRegionId(int regionId) {
+        this.regionId = regionId;
+    }
 
-	public String getApi() {
-		return api;
-	}
+    @Override
+    public String getApi() {
+        return api;
+    }
 
-	public void setApi(String api) {
-		this.api = api;
-	}
+    public void setApi(String api) {
+        this.api = api;
+    }
 
-	public Date getCreateDate() {
-		return createDate;
-	}
+    @Override
+    public Date getCreateDate() {
+        return createDate;
+    }
 
-	public void setCreateDate(Date createDate) {
-		this.createDate = createDate;
-	}
+    public void setCreateDate(Date createDate) {
+        this.createDate = createDate;
+    }
 
-	public boolean isProcessed() {
-		return processed;
-	}
+    public boolean isProcessed() {
+        return processed;
+    }
 
-	public void setProcessed(boolean processed) {
-		this.processed = processed;
-	}
+    public void setProcessed(boolean processed) {
+        this.processed = processed;
+    }
 
-	public long getId() {
-		return id;
-	}
-		
+    @Override
+    public long getId() {
+        return id;
+    }
+
 }

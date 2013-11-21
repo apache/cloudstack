@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.agent.api;
 
-
 public class StartupAnswer extends Answer {
     long hostId;
     int pingInterval;

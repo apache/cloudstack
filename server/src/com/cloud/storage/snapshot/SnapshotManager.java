@@ -16,22 +16,15 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
-import java.util.List;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.host.HostVO;
 import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.fsm.NoTransitionException;
 
 /**
  *
@@ -59,16 +52,15 @@ public interface SnapshotManager {
 
     String getSecondaryStorageURL(SnapshotVO snapshot);
 
-   //void deleteSnapshotsDirForVolume(String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId);
+    //void deleteSnapshotsDirForVolume(String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId);
 
-	boolean canOperateOnVolume(Volume volume);
+    boolean canOperateOnVolume(Volume volume);
 
-	Answer sendToPool(Volume vol, Command cmd);
+    Answer sendToPool(Volume vol, Command cmd);
 
-	SnapshotVO getParentSnapshot(VolumeInfo volume);
+    SnapshotVO getParentSnapshot(VolumeInfo volume);
 
-	Snapshot backupSnapshot(Long snapshotId);
+    Snapshot backupSnapshot(Long snapshotId);
 
-	SnapshotInfo takeSnapshot(VolumeInfo volume)
-			throws ResourceAllocationException;
+    SnapshotInfo takeSnapshot(VolumeInfo volume) throws ResourceAllocationException;
 }

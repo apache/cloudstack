@@ -16,8 +16,6 @@
 // under the License.
 package vncclient;
 
-import common.ScreenDescription;
-
 import streamer.BaseElement;
 import streamer.ByteBuffer;
 import streamer.Element;
@@ -26,102 +24,103 @@ import streamer.MockSink;
 import streamer.MockSource;
 import streamer.Pipeline;
 import streamer.PipelineImpl;
+import common.ScreenDescription;
 
 public class FrameBufferUpdateRequest extends BaseElement {
-  // TODO: use object with fields instead of raw values in map
-  public static final String INCREMENTAL_UPDATE = "incremental";
-  public static final String TARGET_X = "x";
-  public static final String TARGET_Y = "y";
-  public static final String WIDTH = "width";
-  public static final String HEIGHT = "height";
+    // TODO: use object with fields instead of raw values in map
+    public static final String INCREMENTAL_UPDATE = "incremental";
+    public static final String TARGET_X = "x";
+    public static final String TARGET_Y = "y";
+    public static final String WIDTH = "width";
+    public static final String HEIGHT = "height";
 
-  protected ScreenDescription screen;
+    protected ScreenDescription screen;
 
-  public FrameBufferUpdateRequest(String id, ScreenDescription screen) {
-    super(id);
-    this.screen = screen;
-  }
-
-  @Override
-  public void handleData(ByteBuffer buf, Link link) {
-    if (buf == null)
-      return;
-
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
-
-    Boolean incremental = (Boolean) buf.getMetadata(INCREMENTAL_UPDATE);
-    Integer x = (Integer) buf.getMetadata(TARGET_X);
-    Integer y = (Integer) buf.getMetadata(TARGET_Y);
-    Integer width = (Integer) buf.getMetadata(WIDTH);
-    Integer height = (Integer) buf.getMetadata(HEIGHT);
-    buf.unref();
-
-    // Set default values when parameters are not set
-    if (incremental == null)
-      incremental = false;
-
-    if (x == null)
-      x = 0;
-    if (y == null)
-      y = 0;
-
-    if (width == null)
-      width = screen.getFramebufferWidth();
-    if (height == null)
-      height = screen.getFramebufferHeight();
-
-    ByteBuffer outBuf = new ByteBuffer(10);
-
-    outBuf.writeByte(RfbConstants.CLIENT_FRAMEBUFFER_UPDATE_REQUEST);
-    outBuf.writeByte((incremental) ? RfbConstants.FRAMEBUFFER_INCREMENTAL_UPDATE_REQUEST : RfbConstants.FRAMEBUFFER_FULL_UPDATE_REQUEST);
-    outBuf.writeShort(x);
-    outBuf.writeShort(y);
-    outBuf.writeShort(width);
-    outBuf.writeShort(height);
-
-    if (verbose) {
-      outBuf.putMetadata("sender", this);
-      outBuf.putMetadata("dimensions", width + "x" + height + "@" + x + "x" + y);
+    public FrameBufferUpdateRequest(String id, ScreenDescription screen) {
+        super(id);
+        this.screen = screen;
     }
 
-    pushDataToAllOuts(outBuf);
-  }
+    @Override
+    public void handleData(ByteBuffer buf, Link link) {
+        if (buf == null)
+            return;
 
-  public static void main(String args[]) {
-    System.setProperty("streamer.Element.debug", "true");
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
 
-    ScreenDescription screen = new ScreenDescription();
-    screen.setFramebufferSize(120, 80);
-    Element adapter = new FrameBufferUpdateRequest("renderer", screen);
+        Boolean incremental = (Boolean)buf.getMetadata(INCREMENTAL_UPDATE);
+        Integer x = (Integer)buf.getMetadata(TARGET_X);
+        Integer y = (Integer)buf.getMetadata(TARGET_Y);
+        Integer width = (Integer)buf.getMetadata(WIDTH);
+        Integer height = (Integer)buf.getMetadata(HEIGHT);
+        buf.unref();
 
-    Element sink = new MockSink("sink", ByteBuffer.convertByteArraysToByteBuffers(new byte[] {
-        // Request
-        RfbConstants.CLIENT_FRAMEBUFFER_UPDATE_REQUEST,
-        // Full update (redraw area)
-        RfbConstants.FRAMEBUFFER_FULL_UPDATE_REQUEST,
-        // X
-        0, 1,
-        // Y
-        0, 2,
-        // Width
-        0, 3,
-        // Height
-        0, 4 }));
+        // Set default values when parameters are not set
+        if (incremental == null)
+            incremental = false;
 
-    ByteBuffer buf = new ByteBuffer(new byte[0]);
-    buf.putMetadata(TARGET_X, 1);
-    buf.putMetadata(TARGET_Y, 2);
-    buf.putMetadata(WIDTH, 3);
-    buf.putMetadata(HEIGHT, 4);
+        if (x == null)
+            x = 0;
+        if (y == null)
+            y = 0;
 
-    Element source = new MockSource("source", new ByteBuffer[] { buf });
+        if (width == null)
+            width = screen.getFramebufferWidth();
+        if (height == null)
+            height = screen.getFramebufferHeight();
 
-    Pipeline pipeline = new PipelineImpl("test");
+        ByteBuffer outBuf = new ByteBuffer(10);
 
-    pipeline.addAndLink(source, adapter, sink);
-    pipeline.runMainLoop("source", STDOUT, false, false);
+        outBuf.writeByte(RfbConstants.CLIENT_FRAMEBUFFER_UPDATE_REQUEST);
+        outBuf.writeByte((incremental) ? RfbConstants.FRAMEBUFFER_INCREMENTAL_UPDATE_REQUEST : RfbConstants.FRAMEBUFFER_FULL_UPDATE_REQUEST);
+        outBuf.writeShort(x);
+        outBuf.writeShort(y);
+        outBuf.writeShort(width);
+        outBuf.writeShort(height);
 
-  }
+        if (verbose) {
+            outBuf.putMetadata("sender", this);
+            outBuf.putMetadata("dimensions", width + "x" + height + "@" + x + "x" + y);
+        }
+
+        pushDataToAllOuts(outBuf);
+    }
+
+    public static void main(String args[]) {
+        System.setProperty("streamer.Element.debug", "true");
+
+        ScreenDescription screen = new ScreenDescription();
+        screen.setFramebufferSize(120, 80);
+        Element adapter = new FrameBufferUpdateRequest("renderer", screen);
+
+        Element sink = new MockSink("sink", ByteBuffer.convertByteArraysToByteBuffers(new byte[] {
+            // Request
+            RfbConstants.CLIENT_FRAMEBUFFER_UPDATE_REQUEST,
+            // Full update (redraw area)
+            RfbConstants.FRAMEBUFFER_FULL_UPDATE_REQUEST,
+            // X
+            0, 1,
+            // Y
+            0, 2,
+            // Width
+            0, 3,
+            // Height
+            0, 4}));
+
+        ByteBuffer buf = new ByteBuffer(new byte[0]);
+        buf.putMetadata(TARGET_X, 1);
+        buf.putMetadata(TARGET_Y, 2);
+        buf.putMetadata(WIDTH, 3);
+        buf.putMetadata(HEIGHT, 4);
+
+        Element source = new MockSource("source", new ByteBuffer[] {buf});
+
+        Pipeline pipeline = new PipelineImpl("test");
+
+        pipeline.addAndLink(source, adapter, sink);
+        pipeline.runMainLoop("source", STDOUT, false, false);
+
+    }
 
 }

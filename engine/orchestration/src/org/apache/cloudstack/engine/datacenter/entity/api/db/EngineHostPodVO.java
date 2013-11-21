@@ -64,28 +64,28 @@ public class EngineHostPodVO implements EnginePod, Identity {
     @Column(name = "description")
     private String description;
 
-    @Column(name="allocation_state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "allocation_state")
+    @Enumerated(value = EnumType.STRING)
     AllocationState allocationState;
 
     @Column(name = "external_dhcp")
     private Boolean externalDhcp;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
     @Column(name = "uuid")
     private String uuid;
 
     //orchestration
-    @Column(name="owner")
+    @Column(name = "owner")
     private String owner = null;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     protected Date created;
 
-    @Column(name="lastUpdated", updatable=true)
-    @Temporal(value=TemporalType.TIMESTAMP)
+    @Column(name = "lastUpdated", updatable = true)
+    @Temporal(value = TemporalType.TIMESTAMP)
     protected Date lastUpdated;
 
     /**
@@ -93,9 +93,9 @@ public class EngineHostPodVO implements EnginePod, Identity {
      * the state machine needs to go through the DAO object because someone
      * else could be updating it as well.
      */
-    @Enumerated(value=EnumType.STRING)
-    @StateMachine(state=State.class, event=Event.class)
-    @Column(name="engine_state", updatable=true, nullable=false, length=32)
+    @Enumerated(value = EnumType.STRING)
+    @StateMachine(state = State.class, event = Event.class)
+    @Column(name = "engine_state", updatable = true, nullable = false, length = 32)
     protected State state = null;
 
     public EngineHostPodVO(String name, long dcId, String gateway, String cidrAddress, int cidrSize, String description) {
@@ -193,7 +193,7 @@ public class EngineHostPodVO implements EnginePod, Identity {
 
     @Override
     public int hashCode() {
-        return  NumbersUtil.hash(id);
+        return NumbersUtil.hash(id);
     }
 
     @Override

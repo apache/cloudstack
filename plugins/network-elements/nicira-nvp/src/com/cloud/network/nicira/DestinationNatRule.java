@@ -28,16 +28,13 @@ public class DestinationNatRule extends NatRule {
         return toDestinationIpAddress;
     }
 
-
     public void setToDestinationIpAddress(final String toDestinationIpAddress) {
         this.toDestinationIpAddress = toDestinationIpAddress;
     }
 
-
     public Integer getToDestinationPort() {
         return toDestinationPort;
     }
-
 
     public void setToDestinationPort(final Integer toDestinationPort) {
         this.toDestinationPort = toDestinationPort;
@@ -47,14 +44,8 @@ public class DestinationNatRule extends NatRule {
     public int hashCode() {
         final int prime = 31;
         int result = super.hashCode();
-        result = prime
-                * result
-                + ((toDestinationIpAddress == null) ? 0
-                        : toDestinationIpAddress.hashCode());
-        result = prime
-                * result
-                + ((toDestinationPort == null) ? 0 : toDestinationPort
-                        .hashCode());
+        result = prime * result + ((toDestinationIpAddress == null) ? 0 : toDestinationIpAddress.hashCode());
+        result = prime * result + ((toDestinationPort == null) ? 0 : toDestinationPort.hashCode());
         return result;
     }
 
@@ -69,7 +60,7 @@ public class DestinationNatRule extends NatRule {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        DestinationNatRule other = (DestinationNatRule) obj;
+        DestinationNatRule other = (DestinationNatRule)obj;
         if (toDestinationIpAddress == null) {
             if (other.toDestinationIpAddress != null) {
                 return false;
@@ -98,7 +89,7 @@ public class DestinationNatRule extends NatRule {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        DestinationNatRule other = (DestinationNatRule) obj;
+        DestinationNatRule other = (DestinationNatRule)obj;
         if (toDestinationIpAddress == null) {
             if (other.toDestinationIpAddress != null) {
                 return false;

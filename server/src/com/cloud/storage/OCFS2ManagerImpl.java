@@ -53,17 +53,24 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value ={OCFS2Manager.class})
+@Local(value = {OCFS2Manager.class})
 public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, ResourceListener {
     private static final Logger s_logger = Logger.getLogger(OCFS2ManagerImpl.class);
 
-    @Inject ClusterDetailsDao _clusterDetailsDao;
-    @Inject AgentManager _agentMgr;
-    @Inject HostDao _hostDao;
-    @Inject ClusterDao _clusterDao;
-    @Inject ResourceManager _resourceMgr;
-    @Inject StoragePoolHostDao _poolHostDao;
-    @Inject PrimaryDataStoreDao _poolDao;
+    @Inject
+    ClusterDetailsDao _clusterDetailsDao;
+    @Inject
+    AgentManager _agentMgr;
+    @Inject
+    HostDao _hostDao;
+    @Inject
+    ClusterDao _clusterDao;
+    @Inject
+    ResourceManager _resourceMgr;
+    @Inject
+    StoragePoolHostDao _poolHostDao;
+    @Inject
+    PrimaryDataStoreDao _poolDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -92,11 +99,10 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
             String nodeName = "ovm_" + h.getPrivateIpAddress().replace(".", "_");
             Ternary<Integer, String, String> node = new Ternary<Integer, String, String>(i, h.getPrivateIpAddress(), nodeName);
             lst.add(node);
-            i ++;
+            i++;
         }
         return lst;
     }
-
 
     private boolean prepareNodes(String clusterName, List<HostVO> hosts) {
         PrepareOCFS2NodesCommand cmd = new PrepareOCFS2NodesCommand(clusterName, marshalNodes(hosts));
@@ -121,7 +127,7 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
             throw new CloudRuntimeException("Cannot get cluster for id " + clusterId);
         }
 
-		String clusterName = "OvmCluster" + cluster.getId();
+        String clusterName = "OvmCluster" + cluster.getId();
         return clusterName;
     }
 
@@ -175,7 +181,9 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
 
     @Override
     public void processDeletHostEventAfter(Host host) {
-        String errMsg = String.format("Prepare OCFS2 nodes failed after delete host %1$s (zone:%2$s, pod:%3$s, cluster:%4$s", host.getId(), host.getDataCenterId(), host.getPodId(), host.getClusterId());
+        String errMsg =
+            String.format("Prepare OCFS2 nodes failed after delete host %1$s (zone:%2$s, pod:%3$s, cluster:%4$s", host.getId(), host.getDataCenterId(), host.getPodId(),
+                host.getClusterId());
 
         if (host.getHypervisorType() != HypervisorType.Ovm) {
             return;

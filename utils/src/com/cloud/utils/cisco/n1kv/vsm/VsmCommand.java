@@ -17,6 +17,7 @@
 package com.cloud.utils.cisco.n1kv.vsm;
 
 import java.util.List;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -44,33 +45,22 @@ public class VsmCommand {
     private static final String s_paramvalue = "__XML__PARAM_value";
 
     public enum PortProfileType {
-        none,
-        vethernet,
-        ethernet;
+        none, vethernet, ethernet;
     }
 
     public enum BindingType {
-        none,
-        portbindingstatic,
-        portbindingdynamic,
-        portbindingephermal;
+        none, portbindingstatic, portbindingdynamic, portbindingephermal;
     }
 
     public enum SwitchPortMode {
-        none,
-        access,
-        trunk,
-        privatevlanhost,
-        privatevlanpromiscuous
+        none, access, trunk, privatevlanhost, privatevlanpromiscuous
     }
 
     public enum OperationType {
-        addvlanid,
-        removevlanid
+        addvlanid, removevlanid
     }
 
-    public static String getAddPortProfile(String name, PortProfileType type,
-            BindingType binding, SwitchPortMode mode, int vlanid, String vdc, String espName) {
+    public static String getAddPortProfile(String name, PortProfileType type, BindingType binding, SwitchPortMode mode, int vlanid, String vdc, String espName) {
         try {
             // Create the document and root element.
             DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
@@ -103,8 +93,7 @@ public class VsmCommand {
         }
     }
 
-    public static String getAddPortProfile(String name, PortProfileType type,
-            BindingType binding, SwitchPortMode mode, int vlanid) {
+    public static String getAddPortProfile(String name, PortProfileType type, BindingType binding, SwitchPortMode mode, int vlanid) {
         try {
             // Create the document and root element.
             DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
@@ -137,8 +126,7 @@ public class VsmCommand {
         }
     }
 
-    public static String getUpdatePortProfile(String name, SwitchPortMode mode,
-            List<Pair<VsmCommand.OperationType, String>> params) {
+    public static String getUpdatePortProfile(String name, SwitchPortMode mode, List<Pair<VsmCommand.OperationType, String>> params) {
         try {
             // Create the document and root element.
             DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
@@ -442,9 +430,9 @@ public class VsmCommand {
         // vservice node %name% type asa
         Element vservice = doc.createElement("vservice");
         vservice.appendChild(doc.createElement("node"))
-                .appendChild(doc.createElement("ASA_" + vlanId))
-                .appendChild(doc.createElement("type"))
-                .appendChild(doc.createElement("asa"));
+            .appendChild(doc.createElement("ASA_" + vlanId))
+            .appendChild(doc.createElement("type"))
+            .appendChild(doc.createElement("asa"));
         modeConfigure.appendChild(vservice);
 
         Element address = doc.createElement(s_paramvalue);
@@ -452,10 +440,7 @@ public class VsmCommand {
         address.setTextContent(ipAddr);
 
         // ip address %ipAddr%
-        modeConfigure.appendChild(doc.createElement("ip"))
-        		.appendChild(doc.createElement("address"))
-                .appendChild(doc.createElement("value"))
-        		.appendChild(address);
+        modeConfigure.appendChild(doc.createElement("ip")).appendChild(doc.createElement("address")).appendChild(doc.createElement("value")).appendChild(address);
 
         Element vlan = doc.createElement(s_paramvalue);
         vlan.setAttribute("isKey", "true");
@@ -463,14 +448,13 @@ public class VsmCommand {
 
         // adjacency l2 vlan %vlanId%
         modeConfigure.appendChild(doc.createElement("adjacency"))
-                .appendChild(doc.createElement("l2"))
-                .appendChild(doc.createElement("vlan"))
-                .appendChild(doc.createElement("value"))
-                .appendChild(vlan);
+            .appendChild(doc.createElement("l2"))
+            .appendChild(doc.createElement("vlan"))
+            .appendChild(doc.createElement("value"))
+            .appendChild(vlan);
 
         // fail-mode close
-        modeConfigure.appendChild(doc.createElement("fail-mode"))
-                .appendChild(doc.createElement("close"));
+        modeConfigure.appendChild(doc.createElement("fail-mode")).appendChild(doc.createElement("close"));
 
         // Persist the configuration across reboots.
         modeConfigure.appendChild(persistConfiguration(doc));
@@ -478,8 +462,8 @@ public class VsmCommand {
         return configure;
     }
 
-    private static Element configPortProfileDetails(Document doc, String name, PortProfileType type,
-            BindingType binding, SwitchPortMode mode, int vlanid, String vdc, String espName) {
+    private static Element configPortProfileDetails(Document doc, String name, PortProfileType type, BindingType binding, SwitchPortMode mode, int vlanid, String vdc,
+        String espName) {
 
         // In mode, exec_configure.
         Element configure = doc.createElementNS(s_ciscons, "nxos:configure");
@@ -493,27 +477,25 @@ public class VsmCommand {
         // Port profile type.
         Element portDetails = doc.createElement("name");
         switch (type) {
-        case none:
-            portProfile.appendChild(portDetails);
-            break;
-        case ethernet:
-            {
+            case none:
+                portProfile.appendChild(portDetails);
+                break;
+            case ethernet: {
                 Element typetag = doc.createElement("type");
                 Element ethernettype = doc.createElement("ethernet");
                 portProfile.appendChild(typetag);
                 typetag.appendChild(ethernettype);
                 ethernettype.appendChild(portDetails);
             }
-            break;
-        case vethernet:
-            {
+                break;
+            case vethernet: {
                 Element typetag = doc.createElement("type");
                 Element ethernettype = doc.createElement("vethernet");
                 portProfile.appendChild(typetag);
                 typetag.appendChild(ethernettype);
                 ethernettype.appendChild(portDetails);
             }
-            break;
+                break;
         }
 
         // Port profile name.
@@ -553,16 +535,15 @@ public class VsmCommand {
         vdcValue.setTextContent(vdc);
 
         Element org = doc.createElement("org");
-        org.appendChild(doc.createElement("orgname"))
-                .appendChild(vdcValue);
+        org.appendChild(doc.createElement("orgname")).appendChild(vdcValue);
         portProf.appendChild(org);
 
         String asaNodeName = "ASA_" + vlanid;
         Element vservice = doc.createElement("vservice");
         vservice.appendChild(doc.createElement("node"))
-                .appendChild(doc.createElement(asaNodeName))
-                .appendChild(doc.createElement("profile"))
-                .appendChild(doc.createElement(espName));
+            .appendChild(doc.createElement(asaNodeName))
+            .appendChild(doc.createElement("profile"))
+            .appendChild(doc.createElement(espName));
         portProf.appendChild(vservice);
 
         // no shutdown.
@@ -582,9 +563,8 @@ public class VsmCommand {
 
         return configure;
     }
-    
-    private static Element configPortProfileDetails(Document doc, String name, PortProfileType type,
-            BindingType binding, SwitchPortMode mode, int vlanid) {
+
+    private static Element configPortProfileDetails(Document doc, String name, PortProfileType type, BindingType binding, SwitchPortMode mode, int vlanid) {
 
         // In mode, exec_configure.
         Element configure = doc.createElementNS(s_ciscons, "nxos:configure");
@@ -598,27 +578,25 @@ public class VsmCommand {
         // Port profile type.
         Element portDetails = doc.createElement("name");
         switch (type) {
-        case none:
-            portProfile.appendChild(portDetails);
-            break;
-        case ethernet:
-            {
+            case none:
+                portProfile.appendChild(portDetails);
+                break;
+            case ethernet: {
                 Element typetag = doc.createElement("type");
                 Element ethernettype = doc.createElement("ethernet");
                 portProfile.appendChild(typetag);
                 typetag.appendChild(ethernettype);
                 ethernettype.appendChild(portDetails);
             }
-            break;
-        case vethernet:
-            {
+                break;
+            case vethernet: {
                 Element typetag = doc.createElement("type");
                 Element ethernettype = doc.createElement("vethernet");
                 portProfile.appendChild(typetag);
                 typetag.appendChild(ethernettype);
                 ethernettype.appendChild(portDetails);
             }
-            break;
+                break;
         }
 
         // Port profile name.
@@ -650,7 +628,6 @@ public class VsmCommand {
         Element portgroup = doc.createElement("port-group");
         vmware.appendChild(portgroup);
         portProf.appendChild(vmware);
-        
 
         // no shutdown.
         Element no = doc.createElement("no");
@@ -670,8 +647,7 @@ public class VsmCommand {
         return configure;
     }
 
-    private static Element configPortProfileDetails(Document doc, String name, SwitchPortMode mode,
-            List<Pair<VsmCommand.OperationType, String>> params) {
+    private static Element configPortProfileDetails(Document doc, String name, SwitchPortMode mode, List<Pair<VsmCommand.OperationType, String>> params) {
 
         // In mode, exec_configure.
         Element configure = doc.createElementNS(s_ciscons, "nxos:configure");
@@ -739,8 +715,7 @@ public class VsmCommand {
         return configure;
     }
 
-    private static Element policyMapDetails(Document doc, String name,
-            int averageRate, int maxRate, int burstRate) {
+    private static Element policyMapDetails(Document doc, String name, int averageRate, int maxRate, int burstRate) {
         Element configure = doc.createElementNS(s_ciscons, "nxos:configure");
         Element modeConfigure = doc.createElement("nxos:" + s_configuremode);
         configure.appendChild(modeConfigure);
@@ -818,8 +793,7 @@ public class VsmCommand {
         return configure;
     }
 
-    private static Element serviceDetails(Document doc, String policyMap,
-            String portProfile, boolean attach) {
+    private static Element serviceDetails(Document doc, String policyMap, String portProfile, boolean attach) {
         // In mode, exec_configure.
         Element configure = doc.createElementNS(s_ciscons, "nxos:configure");
         Element modeConfigure = doc.createElement("nxos:" + s_configuremode);
@@ -1009,13 +983,13 @@ public class VsmCommand {
 
     private static Document createDocument(DOMImplementation dom) {
         Document doc = dom.createDocument(s_namespace, "nf:rpc", null);
-        doc.getDocumentElement().setAttribute( "message-id", "101" );
+        doc.getDocumentElement().setAttribute("message-id", "101");
         doc.getDocumentElement().setAttributeNS(s_ciscons, "portprofile", "true");
         return doc;
     }
 
     private static String serialize(DOMImplementation domImpl, Document document) {
-        DOMImplementationLS ls = (DOMImplementationLS) domImpl;
+        DOMImplementationLS ls = (DOMImplementationLS)domImpl;
         LSSerializer lss = ls.createLSSerializer();
         return lss.writeToString(document);
     }

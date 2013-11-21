@@ -19,18 +19,19 @@ package org.apache.cloudstack.api.command.admin.domain;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.domain.Domain;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listDomains", description="Lists domains and provides detailed information for listed domains", responseObject=DomainResponse.class)
+@APICommand(name = "listDomains", description = "Lists domains and provides detailed information for listed domains", responseObject = DomainResponse.class)
 public class ListDomainsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListDomainsCmd.class.getName());
 
@@ -40,17 +41,18 @@ public class ListDomainsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            description="List domain by domain ID.")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "List domain by domain ID.")
     private Long id;
 
-    @Parameter(name=ApiConstants.LEVEL, type=CommandType.INTEGER, description="List domains by domain level.")
+    @Parameter(name = ApiConstants.LEVEL, type = CommandType.INTEGER, description = "List domains by domain level.")
     private Integer level;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="List domain by domain name.")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List domain by domain name.")
     private String domainName;
 
-    @Parameter(name=ApiConstants.LIST_ALL, type=CommandType.BOOLEAN, description="If set to false, list only resources belonging to the command's caller; if set to true - list resources that the caller is authorized to see. Default value is false")
+    @Parameter(name = ApiConstants.LIST_ALL,
+               type = CommandType.BOOLEAN,
+               description = "If set to false, list only resources belonging to the command's caller; if set to true - list resources that the caller is authorized to see. Default value is false")
     private Boolean listAll;
 
     /////////////////////////////////////////////////////
@@ -83,7 +85,7 @@ public class ListDomainsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends Domain>, Integer> result = _domainService.searchForDomains(this);
         ListResponse<DomainResponse> response = new ListResponse<DomainResponse>();
         List<DomainResponse> domainResponses = new ArrayList<DomainResponse>();

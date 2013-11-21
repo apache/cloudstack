@@ -16,12 +16,12 @@
 // under the License.
 package com.cloud.server;
 
+import java.io.File;
+import java.io.IOException;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.junit.Test;
-
-import java.io.File;
-import java.io.IOException;
 
 public class ConfigurationServerImplTest {
     final static String TEST = "the quick brown fox jumped over the lazy dog";

@@ -56,8 +56,7 @@ public class LibvirtStoragePoolDef {
     private authType _authType;
     private String _secretUuid;
 
-    public LibvirtStoragePoolDef(poolType type, String poolName, String uuid,
-            String host, int port, String dir, String targetPath) {
+    public LibvirtStoragePoolDef(poolType type, String poolName, String uuid, String host, int port, String dir, String targetPath) {
         _poolType = type;
         _poolName = poolName;
         _uuid = uuid;
@@ -67,8 +66,7 @@ public class LibvirtStoragePoolDef {
         _targetPath = targetPath;
     }
 
-    public LibvirtStoragePoolDef(poolType type, String poolName, String uuid,
-            String host, String dir, String targetPath) {
+    public LibvirtStoragePoolDef(poolType type, String poolName, String uuid, String host, String dir, String targetPath) {
         _poolType = type;
         _poolName = poolName;
         _uuid = uuid;
@@ -77,9 +75,8 @@ public class LibvirtStoragePoolDef {
         _targetPath = targetPath;
     }
 
-    public LibvirtStoragePoolDef(poolType type, String poolName, String uuid,
-            String sourceHost, int sourcePort, String dir, String authUsername,
-            authType authType, String secretUuid) {
+    public LibvirtStoragePoolDef(poolType type, String poolName, String uuid, String sourceHost, int sourcePort, String dir, String authUsername, authType authType,
+            String secretUuid) {
         _poolType = type;
         _poolName = poolName;
         _uuid = uuid;

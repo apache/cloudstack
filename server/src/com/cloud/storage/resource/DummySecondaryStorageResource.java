@@ -24,9 +24,10 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
@@ -46,12 +47,11 @@ import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.Storage;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateProp;
-
 
 public class DummySecondaryStorageResource extends ServerResourceBase implements ServerResource {
     private static final Logger s_logger = Logger.getLogger(DummySecondaryStorageResource.class);
@@ -60,13 +60,14 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
     String _pod;
     String _guid;
     String _dummyPath;
-    @Inject VMTemplateDao _tmpltDao;
+    @Inject
+    VMTemplateDao _tmpltDao;
     private boolean _useServiceVm;
 
     public DummySecondaryStorageResource() {
         setUseServiceVm(true);
     }
-    
+
     public DummySecondaryStorageResource(boolean useServiceVM) {
         setUseServiceVm(useServiceVM);
     }
@@ -79,15 +80,9 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
     @Override
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof DownloadProgressCommand) {
-            return new DownloadAnswer(null, 100, cmd,
-                    com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
-                    "dummyFS",
-                    "/dummy");
+            return new DownloadAnswer(null, 100, cmd, com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED, "dummyFS", "/dummy");
         } else if (cmd instanceof DownloadCommand) {
-            return new DownloadAnswer(null, 100, cmd,
-                    com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
-                    "dummyFS",
-                    "/dummy");
+            return new DownloadAnswer(null, 100, cmd, com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED, "dummyFS", "/dummy");
         } else if (cmd instanceof GetStorageStatsCommand) {
             return execute((GetStorageStatsCommand)cmd);
         } else if (cmd instanceof CheckHealthCommand) {
@@ -111,9 +106,8 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
 
     @Override
     public StartupCommand[] initialize() {
-        final StartupStorageCommand cmd = new StartupStorageCommand("dummy",
-                StoragePoolType.NetworkFilesystem, 1024*1024*1024*100L,
-                new HashMap<String, TemplateProp>());
+        final StartupStorageCommand cmd =
+            new StartupStorageCommand("dummy", StoragePoolType.NetworkFilesystem, 1024 * 1024 * 1024 * 100L, new HashMap<String, TemplateProp>());
 
         cmd.setResourceType(Storage.StorageResourceType.SECONDARY_STORAGE);
         cmd.setIqn(null);
@@ -134,11 +128,11 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
 
         String tok[] = _dummyPath.split(":");
         cmd.setPrivateIpAddress(tok[0]);
-        return new StartupCommand [] {cmd};
+        return new StartupCommand[] {cmd};
     }
 
     protected GetStorageStatsAnswer execute(GetStorageStatsCommand cmd) {
-        long size = 1024*1024*1024*100L;
+        long size = 1024 * 1024 * 1024 * 100L;
         return new GetStorageStatsAnswer(cmd, 0, size);
     }
 
@@ -173,45 +167,46 @@ public class DummySecondaryStorageResource extends ServerResourceBase implements
         return _useServiceVm;
     }
 
-    public Map<String, TemplateProp> getDefaultSystemVmTemplateInfo() {	        
+    public Map<String, TemplateProp> getDefaultSystemVmTemplateInfo() {
         List<VMTemplateVO> tmplts = _tmpltDao.listAllSystemVMTemplates();
         Map<String, TemplateProp> tmpltInfo = new HashMap<String, TemplateProp>();
         if (tmplts != null) {
             for (VMTemplateVO tmplt : tmplts) {
-                TemplateProp routingInfo = new TemplateProp(tmplt.getUniqueName(), TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + File.separator, false, false);
+                TemplateProp routingInfo =
+                    new TemplateProp(tmplt.getUniqueName(), TemplateConstants.DEFAULT_SYSTEM_VM_TEMPLATE_PATH + tmplt.getId() + File.separator, false, false);
                 tmpltInfo.put(tmplt.getUniqueName(), routingInfo);
             }
         }
         return tmpltInfo;
     }
 
-	@Override
-	public void setName(String name) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public void setName(String name) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public void setConfigParams(Map<String, Object> params) {
-		// TODO Auto-generated method stub
-		
-	}
+    }
 
-	@Override
-	public Map<String, Object> getConfigParams() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    @Override
+    public void setConfigParams(Map<String, Object> params) {
+        // TODO Auto-generated method stub
 
-	@Override
-	public int getRunLevel() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    }
 
-	@Override
-	public void setRunLevel(int level) {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    public Map<String, Object> getConfigParams() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public int getRunLevel() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public void setRunLevel(int level) {
+        // TODO Auto-generated method stub
+
+    }
 }

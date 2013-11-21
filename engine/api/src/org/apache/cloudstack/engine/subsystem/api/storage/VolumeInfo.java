@@ -43,8 +43,11 @@ public interface VolumeInfo extends DataObject, Volume {
     boolean stateTransit(Volume.Event event);
 
     Long getBytesReadRate();
+
     Long getBytesWriteRate();
+
     Long getIopsReadRate();
+
     Long getIopsWriteRate();
 
     DiskCacheMode getCacheMode();

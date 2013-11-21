@@ -29,15 +29,15 @@ import com.cloud.host.Status;
 
 public class StorageSyncListener implements Listener {
     private static final Logger s_logger = Logger.getLogger(StorageSyncListener.class);
-    
+
     public StorageSyncListener() {
     }
-    
+
     @Override
     public boolean isRecurring() {
         return false;
     }
-    
+
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
         for (Answer answer : answers) {
@@ -49,17 +49,17 @@ public class StorageSyncListener implements Listener {
         }
         return true;
     }
-    
+
     @Override
     public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) {
     }
-    
+
     @Override
     public boolean processDisconnect(long agentId, Status state) {
         s_logger.debug("Disconnecting");
         return true;
     }
-    
+
     @Override
     public boolean processCommands(long agentId, long seq, Command[] request) {
         return false;
@@ -67,16 +67,16 @@ public class StorageSyncListener implements Listener {
 
     @Override
     public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
-    	return null;
+        return null;
     }
-    
+
     @Override
     public boolean processTimeout(long agentId, long seq) {
-    	return true;
+        return true;
     }
-    
+
     @Override
     public int getTimeout() {
-    	return -1;
-    }    
+        return -1;
+    }
 }

@@ -18,12 +18,13 @@ package org.apache.cloudstack.api.command.admin.usage;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.APICommand;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
+
 import com.cloud.user.Account;
 
 @APICommand(name = "listUsageTypes", description = "List Usage Types", responseObject = UsageTypeResponse.class)
@@ -36,6 +37,7 @@ public class ListUsageTypesCmd extends BaseCmd {
         return s_name;
     }
 
+    @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }

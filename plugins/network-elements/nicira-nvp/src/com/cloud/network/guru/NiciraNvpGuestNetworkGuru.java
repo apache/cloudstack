@@ -101,11 +101,8 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     protected boolean canHandle(final NetworkOffering offering, final NetworkType networkType, final PhysicalNetwork physicalNetwork) {
         // This guru handles only Guest Isolated network that supports Source nat service
-        if (networkType == NetworkType.Advanced
-                && isMyTrafficType(offering.getTrafficType())
-                && offering.getGuestType() == Network.GuestType.Isolated
-                && isMyIsolationMethod(physicalNetwork)
-                && ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(offering.getId(), Service.Connectivity)) {
+        if (networkType == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && offering.getGuestType() == Network.GuestType.Isolated &&
+            isMyIsolationMethod(physicalNetwork) && ntwkOfferingSrvcDao.areServicesSupportedByNetworkOffering(offering.getId(), Service.Connectivity)) {
             return true;
         } else {
             s_logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
@@ -114,8 +111,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public Network design(final NetworkOffering offering, final DeploymentPlan plan,
-            final Network userSpecified, final Account owner) {
+    public Network design(final NetworkOffering offering, final DeploymentPlan plan, final Network userSpecified, final Account owner) {
         // Check of the isolation type of the related physical network is STT
         PhysicalNetworkVO physnet = physicalNetworkDao.findById(plan.getPhysicalNetworkId());
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
@@ -143,9 +139,8 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public Network implement(final Network network, final NetworkOffering offering,
-            final DeployDestination dest, final ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException {
+    public Network implement(final Network network, final NetworkOffering offering, final DeployDestination dest, final ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException {
         assert (network.getState() == State.Implementing) : "Why are we implementing " + network;
 
         long dcId = dest.getDataCenter().getId();
@@ -158,7 +153,8 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
             physicalNetworkId = networkModel.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
         }
 
-        NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
+        NetworkVO implemented =
+            new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
                 network.getDataCenterId(), physicalNetworkId);
 
         if (network.getGateway() != null) {
@@ -189,8 +185,8 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
         String transportzoneuuid = niciraNvpHost.getDetail("transportzoneuuid");
         String transportzoneisotype = niciraNvpHost.getDetail("transportzoneisotype");
 
-        CreateLogicalSwitchCommand cmd = new CreateLogicalSwitchCommand(transportzoneuuid, transportzoneisotype, name,
-                context.getDomain().getName() + "-" + context.getAccount().getAccountName());
+        CreateLogicalSwitchCommand cmd =
+            new CreateLogicalSwitchCommand(transportzoneuuid, transportzoneisotype, name, context.getDomain().getName() + "-" + context.getAccount().getAccountName());
         CreateLogicalSwitchAnswer answer = (CreateLogicalSwitchAnswer)agentMgr.easySend(niciraNvpHost.getId(), cmd);
 
         if (answer == null || !answer.getResult()) {
@@ -211,10 +207,8 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     @Override
-    public void reserve(final NicProfile nic, final Network network, final VirtualMachineProfile vm,
-            final DeployDestination dest, final ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException {
+    public void reserve(final NicProfile nic, final Network network, final VirtualMachineProfile vm, final DeployDestination dest, final ReservationContext context)
+        throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
         super.reserve(nic, network, vm, dest, context);
     }
@@ -228,8 +222,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
     @Override
     public void shutdown(final NetworkProfile profile, final NetworkOffering offering) {
         NetworkVO networkObject = networkDao.findById(profile.getId());
-        if (networkObject.getBroadcastDomainType() != BroadcastDomainType.Lswitch ||
-                networkObject.getBroadcastUri() == null) {
+        if (networkObject.getBroadcastDomainType() != BroadcastDomainType.Lswitch || networkObject.getBroadcastUri() == null) {
             s_logger.warn("BroadcastUri is empty or incorrect for guestnetwork " + networkObject.getDisplayText());
             return;
         }
@@ -243,7 +236,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
         HostVO niciraNvpHost = hostDao.findById(niciraNvpDevice.getHostId());
 
         DeleteLogicalSwitchCommand cmd = new DeleteLogicalSwitchCommand(BroadcastDomainType.getValue(networkObject.getBroadcastUri()));
-        DeleteLogicalSwitchAnswer answer = (DeleteLogicalSwitchAnswer) agentMgr.easySend(niciraNvpHost.getId(), cmd);
+        DeleteLogicalSwitchAnswer answer = (DeleteLogicalSwitchAnswer)agentMgr.easySend(niciraNvpHost.getId(), cmd);
 
         if (answer == null || !answer.getResult()) {
             s_logger.error("DeleteLogicalSwitchCommand failed");

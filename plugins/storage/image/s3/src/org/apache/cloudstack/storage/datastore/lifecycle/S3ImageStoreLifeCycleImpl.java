@@ -71,13 +71,13 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
     @Override
     public DataStore initialize(Map<String, Object> dsInfos) {
 
-        Long dcId = (Long) dsInfos.get("zoneId");
-        String url = (String) dsInfos.get("url");
-        String name = (String) dsInfos.get("name");
-        String providerName = (String) dsInfos.get("providerName");
-        ScopeType scope = (ScopeType) dsInfos.get("scope");
-        DataStoreRole role = (DataStoreRole) dsInfos.get("role");
-        Map<String, String> details = (Map<String, String>) dsInfos.get("details");
+        Long dcId = (Long)dsInfos.get("zoneId");
+        String url = (String)dsInfos.get("url");
+        String name = (String)dsInfos.get("name");
+        String providerName = (String)dsInfos.get("providerName");
+        ScopeType scope = (ScopeType)dsInfos.get("scope");
+        DataStoreRole role = (DataStoreRole)dsInfos.get("role");
+        Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
         s_logger.info("Trying to add a S3 store in data center " + dcId);
 

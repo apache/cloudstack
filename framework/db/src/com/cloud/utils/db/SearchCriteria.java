@@ -32,27 +32,11 @@ import com.cloud.utils.db.SearchBase.Select;
  */
 public class SearchCriteria<K> {
     public enum Op {
-        GT(" > ? ", 1),
-        GTEQ(" >= ? ", 1),
-        LT(" < ? ", 1),
-        LTEQ(" <= ? ", 1),
-        EQ(" = ? ", 1),
-        NEQ(" != ? ", 1),
-        BETWEEN(" BETWEEN ? AND ? ", 2),
-        NBETWEEN(" NOT BETWEEN ? AND ? ", 2),
-        IN(" IN () ", -1),
-        NOTIN(" NOT IN () ", -1),
-        LIKE(" LIKE ? ", 1),
-        NLIKE(" NOT LIKE ? ", 1),
-        NIN(" NOT IN () ", -1),
-        NULL(" IS NULL ", 0),
-        NNULL(" IS NOT NULL ", 0),
-        SC(" () ", 1),
-        TEXT("  () ", 1),
-        RP("", 0),
-        AND(" AND ", 0),
-        OR(" OR ", 0),
-        NOT(" NOT ", 0);
+        GT(" > ? ", 1), GTEQ(" >= ? ", 1), LT(" < ? ", 1), LTEQ(" <= ? ", 1), EQ(" = ? ", 1), NEQ(" != ? ", 1), BETWEEN(" BETWEEN ? AND ? ", 2), NBETWEEN(
+                " NOT BETWEEN ? AND ? ",
+                2), IN(" IN () ", -1), NOTIN(" NOT IN () ", -1), LIKE(" LIKE ? ", 1), NLIKE(" NOT LIKE ? ", 1), NIN(" NOT IN () ", -1), NULL(" IS NULL ", 0), NNULL(
+                " IS NOT NULL ",
+                0), SC(" () ", 1), TEXT("  () ", 1), RP("", 0), AND(" AND ", 0), OR(" OR ", 0), NOT(" NOT ", 0);
 
         private final String op;
         int params;
@@ -73,14 +57,7 @@ public class SearchCriteria<K> {
     }
 
     public enum Func {
-        NATIVE("@", 1),
-        MAX("MAX(@)", 1),
-        MIN("MIN(@)", 1),
-        FIRST("FIRST(@)", 1),
-        LAST("LAST(@)", 1),
-        SUM("SUM(@)", 1),
-        COUNT("COUNT(@)", 1),
-        DISTINCT("DISTINCT(@)", 1);
+        NATIVE("@", 1), MAX("MAX(@)", 1), MIN("MIN(@)", 1), FIRST("FIRST(@)", 1), LAST("LAST(@)", 1), SUM("SUM(@)", 1), COUNT("COUNT(@)", 1), DISTINCT("DISTINCT(@)", 1);
 
         private String func;
         private int count;
@@ -101,10 +78,7 @@ public class SearchCriteria<K> {
     }
 
     public enum SelectType {
-        Fields,
-        Entity,
-        Single,
-        Result
+        Fields, Entity, Single, Result
     }
 
     private final Map<String, Attribute> _attrs;
@@ -129,7 +103,8 @@ public class SearchCriteria<K> {
             _joins = new HashMap<String, JoinBuilder<SearchCriteria<?>>>(sb._joins.size());
             for (Map.Entry<String, JoinBuilder<SearchBase<?, ?, ?>>> entry : sb._joins.entrySet()) {
                 JoinBuilder<SearchBase<?, ?, ?>> value = entry.getValue();
-                _joins.put(entry.getKey(), new JoinBuilder<SearchCriteria<?>>(value.getT().create(), value.getFirstAttribute(), value.getSecondAttribute(), value.getType()));
+                _joins.put(entry.getKey(),
+                    new JoinBuilder<SearchCriteria<?>>(value.getT().create(), value.getFirstAttribute(), value.getSecondAttribute(), value.getType()));
             }
         }
         _selects = sb._selects;

@@ -23,9 +23,9 @@ import com.cloud.utils.component.Named;
 public class RegistryUtils {
 
     public static String getName(Object object) {
-        if ( object instanceof Named ) {
+        if (object instanceof Named) {
             String name = ((Named)object).getName();
-            if ( name != null )
+            if (name != null)
                 return name;
         }
 

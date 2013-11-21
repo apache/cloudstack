@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vmgroup;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -24,9 +26,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
-import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.vm.InstanceGroup;
 
@@ -43,16 +44,18 @@ public class CreateVMGroupCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the instance group")
     private String groupName;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING,
-            description = "the account of the instance group. The account parameter must be used with the domainId parameter.")
+    @Parameter(name = ApiConstants.ACCOUNT,
+               type = CommandType.STRING,
+               description = "the account of the instance group. The account parameter must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType=DomainResponse.class,
-            description = "the domain ID of account owning the instance group")
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               entityType = DomainResponse.class,
+               description = "the domain ID of account owning the instance group")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type=CommandType.UUID, entityType=ProjectResponse.class,
-            description = "The project of the instance group")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "The project of the instance group")
     private Long projectId;
 
     // ///////////////////////////////////////////////////

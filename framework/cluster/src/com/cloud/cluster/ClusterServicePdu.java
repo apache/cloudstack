@@ -17,31 +17,31 @@
 package com.cloud.cluster;
 
 public class ClusterServicePdu {
-	public final static int PDU_TYPE_MESSAGE = 0;
-	public final static int PDU_TYPE_REQUEST = 1;
-	public final static int PDU_TYPE_RESPONSE = 2;
-	
+    public final static int PDU_TYPE_MESSAGE = 0;
+    public final static int PDU_TYPE_REQUEST = 1;
+    public final static int PDU_TYPE_RESPONSE = 2;
+
     private long sequenceId;
     private long ackSequenceId;
-    
+
     private String sourcePeer;
     private String destPeer;
-    
+
     private long agentId;
     private boolean stopOnError;
     private String jsonPackage;
-    
+
     private int pduType = PDU_TYPE_MESSAGE;
-    
+
     private static long s_nextPduSequenceId = 1;
-    
+
     public ClusterServicePdu() {
         sequenceId = getNextPduSequenceId();
         ackSequenceId = 0;
         agentId = 0;
         stopOnError = false;
     }
-    
+
     public synchronized long getNextPduSequenceId() {
         return s_nextPduSequenceId++;
     }
@@ -101,12 +101,12 @@ public class ClusterServicePdu {
     public void setJsonPackage(String jsonPackage) {
         this.jsonPackage = jsonPackage;
     }
-    
+
     public int getPduType() {
-    	return pduType;
+        return pduType;
     }
-    
+
     public void setPduType(int pduType) {
-    	this.pduType = pduType;
+        this.pduType = pduType;
     }
 }

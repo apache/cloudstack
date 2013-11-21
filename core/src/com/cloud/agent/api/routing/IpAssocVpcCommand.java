@@ -18,7 +18,7 @@ package com.cloud.agent.api.routing;
 
 import com.cloud.agent.api.to.IpAddressTO;
 
-public class IpAssocVpcCommand extends IpAssocCommand{
+public class IpAssocVpcCommand extends IpAssocCommand {
     protected IpAssocVpcCommand() {
         super();
     }

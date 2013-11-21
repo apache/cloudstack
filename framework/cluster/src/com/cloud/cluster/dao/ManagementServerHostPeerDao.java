@@ -22,6 +22,8 @@ import com.cloud.utils.db.GenericDao;
 
 public interface ManagementServerHostPeerDao extends GenericDao<ManagementServerHostPeerVO, Long> {
     void clearPeerInfo(long ownerMshost);
+
     void updatePeerInfo(long ownerMshost, long peerMshost, long peerRunid, ManagementServerHost.State peerState);
+
     int countStateSeenInPeers(long mshost, long runid, ManagementServerHost.State state);
 }

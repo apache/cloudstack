@@ -25,7 +25,7 @@ import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.utils.net.NetUtils;
 
-public class SetStaticRouteCommand extends NetworkElementCommand{
+public class SetStaticRouteCommand extends NetworkElementCommand {
     StaticRouteProfile[] staticRoutes;
 
     protected SetStaticRouteCommand() {
@@ -40,9 +40,9 @@ public class SetStaticRouteCommand extends NetworkElementCommand{
     }
 
     public String[][] generateSRouteRules() {
-        String [][] result = new String [2][];
+        String[][] result = new String[2][];
         Set<String> toAdd = new HashSet<String>();
-        for (StaticRouteProfile route: staticRoutes) {
+        for (StaticRouteProfile route : staticRoutes) {
             /*  example  :  ip:gateway:cidr,
              */
             String cidr = route.getCidr();

@@ -74,21 +74,12 @@ public interface VirtualMachineManager extends Manager {
      * @param hyperType Hypervisor type
      * @throws InsufficientCapacityException If there are insufficient capacity to deploy this vm.
      */
-    void allocate(String vmInstanceName,
-        VirtualMachineTemplate template,
-        ServiceOffering serviceOffering,
-        Pair<? extends DiskOffering, Long> rootDiskOffering,
-        LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferings,
-        LinkedHashMap<? extends Network, ? extends NicProfile> auxiliaryNetworks,
-        DeploymentPlan plan,
+    void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering, Pair<? extends DiskOffering, Long> rootDiskOffering,
+        LinkedHashMap<? extends DiskOffering, Long> dataDiskOfferings, LinkedHashMap<? extends Network, ? extends NicProfile> auxiliaryNetworks, DeploymentPlan plan,
         HypervisorType hyperType) throws InsufficientCapacityException;
 
-    void allocate(String vmInstanceName,
-        VirtualMachineTemplate template,
-        ServiceOffering serviceOffering,
-        LinkedHashMap<? extends Network, ? extends NicProfile> networkProfiles,
-        DeploymentPlan plan,
-        HypervisorType hyperType) throws InsufficientCapacityException;
+    void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering,
+        LinkedHashMap<? extends Network, ? extends NicProfile> networkProfiles, DeploymentPlan plan, HypervisorType hyperType) throws InsufficientCapacityException;
 
     void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params);
 
@@ -125,7 +116,8 @@ public interface VirtualMachineManager extends Manager {
     
     void orchestrateMigrate(String vmUuid, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException;
 
-    void migrateWithStorage(String vmUuid, long srcId, long destId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException, ConcurrentOperationException;
+    void migrateWithStorage(String vmUuid, long srcId, long destId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException,
+        ConcurrentOperationException;
     
     void orchestrateMigrateWithStorage(String vmUuid, long srcId, long destId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException, ConcurrentOperationException;
     
@@ -173,8 +165,8 @@ public interface VirtualMachineManager extends Manager {
      * @throws ResourceUnavailableException
      * @throws InsufficientCapacityException
      */
-    NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException,
-        ResourceUnavailableException, InsufficientCapacityException;
+    NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException, ResourceUnavailableException,
+        InsufficientCapacityException;
     
     NicProfile orchestrateAddVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException,
     	ResourceUnavailableException, InsufficientCapacityException;

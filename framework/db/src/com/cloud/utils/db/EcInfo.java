@@ -50,7 +50,8 @@ public class EcInfo {
             Type rawType = pType.getRawType();
             Class<?> rawClazz = (Class<?>)rawType;
             try {
-                if (!Modifier.isAbstract(rawClazz.getModifiers()) && !rawClazz.isInterface() && rawClazz.getConstructors().length != 0 && rawClazz.getConstructor() != null) {
+                if (!Modifier.isAbstract(rawClazz.getModifiers()) && !rawClazz.isInterface() && rawClazz.getConstructors().length != 0 &&
+                    rawClazz.getConstructor() != null) {
                     rawClass = rawClazz;
                 } else if (Set.class == rawClazz) {
                     rawClass = HashSet.class;

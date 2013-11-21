@@ -33,6 +33,7 @@ public interface DhcpSnooper extends Adapter {
 
     public Map<String, InetAddress> syncIpAddr();
 
+    @Override
     public boolean stop();
 
     public void initializeMacTable(List<Pair<String, String>> macVmNameList);

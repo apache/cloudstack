@@ -23,7 +23,8 @@ import com.cloud.vm.VirtualMachine.State;
 public class CheckStateAnswer extends Answer {
     State state;
 
-    public CheckStateAnswer() {}
+    public CheckStateAnswer() {
+    }
 
     public CheckStateAnswer(CheckStateCommand cmd, State state) {
         this(cmd, state, null);

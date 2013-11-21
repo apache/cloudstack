@@ -44,15 +44,13 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
         List<Boolean> results = new ArrayList<Boolean>();
         for (NfsStoragePool pool : _pools) {
 
-            Script cmd = new Script(_heartBeatPath, _heartBeatCheckerTimeout,
-                    s_logger);
+            Script cmd = new Script(_heartBeatPath, _heartBeatCheckerTimeout, s_logger);
             cmd.add("-i", pool._poolIp);
             cmd.add("-p", pool._poolMountSourcePath);
             cmd.add("-m", pool._mountDestPath);
             cmd.add("-h", _hostIP);
             cmd.add("-r");
-            cmd.add("-t",
-                    String.valueOf(_heartBeatUpdateFreq/1000));
+            cmd.add("-t", String.valueOf(_heartBeatUpdateFreq / 1000));
             OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
             String result = cmd.execute(parser);
             s_logger.debug("pool: " + pool._poolIp);

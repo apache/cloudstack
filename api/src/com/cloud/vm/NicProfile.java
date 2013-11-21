@@ -162,6 +162,7 @@ public class NicProfile implements InternalIdentity {
         return vmId;
     }
 
+    @Override
     public long getId() {
         return id;
     }
@@ -214,8 +215,7 @@ public class NicProfile implements InternalIdentity {
         return strategy;
     }
 
-    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri, Integer networkRate,
-            boolean isSecurityGroupEnabled, String name) {
+    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri, Integer networkRate, boolean isSecurityGroupEnabled, String name) {
         this.id = nic.getId();
         this.networkId = network.getId();
         this.gateway = nic.getGateway();
@@ -306,48 +306,56 @@ public class NicProfile implements InternalIdentity {
 
     @Override
     public String toString() {
-        return new StringBuilder("NicProfile[").append(id).append("-").append(vmId).append("-").
-                append(reservationId).append("-").append(ip4Address).append("-").append(broadcastUri).toString();
+        return new StringBuilder("NicProfile[").append(id)
+            .append("-")
+            .append(vmId)
+            .append("-")
+            .append(reservationId)
+            .append("-")
+            .append(ip4Address)
+            .append("-")
+            .append(broadcastUri)
+            .toString();
     }
 
-	public String getIp6Gateway() {
-		return ip6Gateway;
-	}
+    public String getIp6Gateway() {
+        return ip6Gateway;
+    }
 
-	public void setIp6Gateway(String ip6Gateway) {
-		this.ip6Gateway = ip6Gateway;
-	}
+    public void setIp6Gateway(String ip6Gateway) {
+        this.ip6Gateway = ip6Gateway;
+    }
 
-	public String getIp6Cidr() {
-		return ip6Cidr;
-	}
+    public String getIp6Cidr() {
+        return ip6Cidr;
+    }
 
-	public void setIp6Cidr(String ip6Cidr) {
-		this.ip6Cidr = ip6Cidr;
-	}
+    public void setIp6Cidr(String ip6Cidr) {
+        this.ip6Cidr = ip6Cidr;
+    }
 
-	public String getRequestedIpv6() {
-		return requestedIpv6;
-	}
+    public String getRequestedIpv6() {
+        return requestedIpv6;
+    }
 
-	public void setRequestedIpv6(String requestedIpv6) {
-		this.requestedIpv6 = requestedIpv6;
-	}
+    public void setRequestedIpv6(String requestedIpv6) {
+        this.requestedIpv6 = requestedIpv6;
+    }
 
-	public String getIp6Dns1() {
-		return ip6Dns1;
-	}
+    public String getIp6Dns1() {
+        return ip6Dns1;
+    }
 
-	public void setIp6Dns1(String ip6Dns1) {
-		this.ip6Dns1 = ip6Dns1;
-	}
+    public void setIp6Dns1(String ip6Dns1) {
+        this.ip6Dns1 = ip6Dns1;
+    }
 
-	public String getIp6Dns2() {
-		return ip6Dns2;
-	}
+    public String getIp6Dns2() {
+        return ip6Dns2;
+    }
 
-	public void setIp6Dns2(String ip6Dns2) {
-		this.ip6Dns2 = ip6Dns2;
-	}
+    public void setIp6Dns2(String ip6Dns2) {
+        this.ip6Dns2 = ip6Dns2;
+    }
 
 }

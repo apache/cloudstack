@@ -19,110 +19,137 @@ package org.apache.cloudstack.api.response;
 import java.util.Date;
 import java.util.List;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.IpAddress;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
-@EntityReference(value=IpAddress.class)
+@EntityReference(value = IpAddress.class)
 @SuppressWarnings("unused")
 public class IPAddressResponse extends BaseResponse implements ControlledEntityResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="public IP address id")
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "public IP address id")
     private String id;
 
-    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="public IP address")
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "public IP address")
     private String ipAddress;
 
-    @SerializedName("allocated") @Param(description="date the public IP address was acquired")
+    @SerializedName("allocated")
+    @Param(description = "date the public IP address was acquired")
     private Date allocated;
 
-    @SerializedName(ApiConstants.ZONE_ID) @Param(description="the ID of the zone the public IP address belongs to")
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "the ID of the zone the public IP address belongs to")
     private String zoneId;
 
-    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone the public IP address belongs to")
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "the name of the zone the public IP address belongs to")
     private String zoneName;
 
-    @SerializedName("issourcenat") @Param(description="true if the IP address is a source nat address, false otherwise")
+    @SerializedName("issourcenat")
+    @Param(description = "true if the IP address is a source nat address, false otherwise")
     private Boolean sourceNat;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account the public IP address is associated with")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account the public IP address is associated with")
     private String accountName;
 
-    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the ipaddress")
+    @SerializedName(ApiConstants.PROJECT_ID)
+    @Param(description = "the project id of the ipaddress")
     private String projectId;
 
-    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the address")
+    @SerializedName(ApiConstants.PROJECT)
+    @Param(description = "the project name of the address")
     private String projectName;
 
-    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain ID the public IP address is associated with")
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the domain ID the public IP address is associated with")
     private String domainId;
 
-    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain the public IP address is associated with")
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain the public IP address is associated with")
     private String domainName;
 
-    @SerializedName(ApiConstants.FOR_VIRTUAL_NETWORK) @Param(description="the virtual network for the IP address")
+    @SerializedName(ApiConstants.FOR_VIRTUAL_NETWORK)
+    @Param(description = "the virtual network for the IP address")
     private Boolean forVirtualNetwork;
 
-    @SerializedName(ApiConstants.VLAN_ID) @Param(description="the ID of the VLAN associated with the IP address." +
-            " This parameter is visible to ROOT admins only")
+    @SerializedName(ApiConstants.VLAN_ID)
+    @Param(description = "the ID of the VLAN associated with the IP address." + " This parameter is visible to ROOT admins only")
     private String vlanId;
 
-    @SerializedName("vlanname") @Param(description="the VLAN associated with the IP address")
+    @SerializedName("vlanname")
+    @Param(description = "the VLAN associated with the IP address")
     private String vlanName;
 
-    @SerializedName("isstaticnat") @Param(description="true if this ip is for static nat, false otherwise")
+    @SerializedName("isstaticnat")
+    @Param(description = "true if this ip is for static nat, false otherwise")
     private Boolean staticNat;
 
-    @SerializedName(ApiConstants.IS_SYSTEM) @Param(description="true if this ip is system ip (was allocated as a part of deployVm or createLbRule)")
+    @SerializedName(ApiConstants.IS_SYSTEM)
+    @Param(description = "true if this ip is system ip (was allocated as a part of deployVm or createLbRule)")
     private Boolean isSystem;
 
-    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID) @Param(description="virutal machine id the ip address is assigned to (not null only for static nat Ip)")
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
+    @Param(description = "virutal machine id the ip address is assigned to (not null only for static nat Ip)")
     private String virtualMachineId;
 
-    @SerializedName("vmipaddress") @Param(description="virutal machine (dnat) ip address (not null only for static nat Ip)")
+    @SerializedName("vmipaddress")
+    @Param(description = "virutal machine (dnat) ip address (not null only for static nat Ip)")
     private String virtualMachineIp;
 
-
-    @SerializedName("virtualmachinename") @Param(description="virutal machine name the ip address is assigned to (not null only for static nat Ip)")
+    @SerializedName("virtualmachinename")
+    @Param(description = "virutal machine name the ip address is assigned to (not null only for static nat Ip)")
     private String virtualMachineName;
 
-    @SerializedName("virtualmachinedisplayname") @Param(description="virutal machine display name the ip address is assigned to (not null only for static nat Ip)")
+    @SerializedName("virtualmachinedisplayname")
+    @Param(description = "virutal machine display name the ip address is assigned to (not null only for static nat Ip)")
     private String virtualMachineDisplayName;
 
-    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_ID) @Param(description="the ID of the Network associated with the IP address")
+    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_ID)
+    @Param(description = "the ID of the Network associated with the IP address")
     private String associatedNetworkId;
 
-    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_NAME) @Param(description="the name of the Network associated with the IP address")
+    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_NAME)
+    @Param(description = "the name of the Network associated with the IP address")
     private String associatedNetworkName;
 
-    @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the ID of the Network where ip belongs to")
+    @SerializedName(ApiConstants.NETWORK_ID)
+    @Param(description = "the ID of the Network where ip belongs to")
     private String networkId;
 
-    @SerializedName(ApiConstants.STATE) @Param(description="State of the ip address. Can be: Allocatin, Allocated and Releasing")
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "State of the ip address. Can be: Allocatin, Allocated and Releasing")
     private String state;
 
-    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network this belongs to")
+    @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID)
+    @Param(description = "the physical network this belongs to")
     private String physicalNetworkId;
 
-    @SerializedName(ApiConstants.PURPOSE) @Param(description="purpose of the IP address. In Acton this value is not null for Ips with isSystem=true, and can have either StaticNat or LB value")
+    @SerializedName(ApiConstants.PURPOSE)
+    @Param(description = "purpose of the IP address. In Acton this value is not null for Ips with isSystem=true, and can have either StaticNat or LB value")
     private String purpose;
 
-    @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the ip belongs to")
+    @SerializedName(ApiConstants.VPC_ID)
+    @Param(description = "VPC the ip belongs to")
     private String vpcId;
-    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with ip address", responseObject = ResourceTagResponse.class)
+    @SerializedName(ApiConstants.TAGS)
+    @Param(description = "the list of resource tags associated with ip address", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
-    @SerializedName(ApiConstants.IS_PORTABLE) @Param(description = "is public IP portable across the zones")
+    @SerializedName(ApiConstants.IS_PORTABLE)
+    @Param(description = "is public IP portable across the zones")
     private Boolean isPortable;
 
-/*
-    @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
-    private IdentityProxy jobId = new IdentityProxy("async_job");
-*/
-
+    /*
+        @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
+        private IdentityProxy jobId = new IdentityProxy("async_job");
+    */
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
@@ -215,7 +242,6 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     public void setState(String state) {
         this.state = state;
     }
-
 
     @Override
     public void setProjectId(String projectId) {

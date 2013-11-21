@@ -19,12 +19,14 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.exception.InternalErrorException;
-import org.libvirt.LibvirtException;
+import java.util.Map;
 
 import javax.naming.ConfigurationException;
-import java.util.Map;
+
+import org.libvirt.LibvirtException;
+
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.exception.InternalErrorException;
 
 public abstract class VifDriverBase implements VifDriver {
 
@@ -33,16 +35,16 @@ public abstract class VifDriverBase implements VifDriver {
     protected Map<String, String> _bridges;
 
     @Override
-    public void configure(Map<String, Object> params)
-            throws ConfigurationException {
-        _libvirtComputingResource = (LibvirtComputingResource) params.get("libvirt.computing.resource");
-        _bridges = (Map<String, String>) params.get("libvirt.host.bridges");
-        _pifs = (Map<String, String>) params.get("libvirt.host.pifs");
+    public void configure(Map<String, Object> params) throws ConfigurationException {
+        _libvirtComputingResource = (LibvirtComputingResource)params.get("libvirt.computing.resource");
+        _bridges = (Map<String, String>)params.get("libvirt.host.bridges");
+        _pifs = (Map<String, String>)params.get("libvirt.host.pifs");
     }
 
-    public abstract LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType) throws InternalErrorException,
-                                                                                         LibvirtException;
+    @Override
+    public abstract LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType) throws InternalErrorException, LibvirtException;
 
+    @Override
     public abstract void unplug(LibvirtVMDef.InterfaceDef iface);
 
     protected LibvirtVMDef.InterfaceDef.nicModel getGuestNicModel(String guestOSType) {

@@ -34,10 +34,11 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
+
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "autoscale_vmprofiles")
@@ -88,8 +89,8 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
     public AutoScaleVmProfileVO() {
     }
 
-    public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId, String otherDeployParams, Map counterParamList, Integer destroyVmGraceperiod,
-            long autoscaleUserId) {
+    public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId, String otherDeployParams, Map counterParamList,
+            Integer destroyVmGraceperiod, long autoscaleUserId) {
         this.uuid = UUID.randomUUID().toString();
         this.zoneId = zoneId;
         this.domainId = domainId;

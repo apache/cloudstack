@@ -33,79 +33,79 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="data_center_view")
+@Table(name = "data_center_view")
 public class DataCenterJoinVO extends BaseViewVO implements InternalIdentity, Identity {
 
     @Id
-    @Column(name="id")
+    @Column(name = "id")
     private long id;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name;
 
-    @Column(name="description")
+    @Column(name = "description")
     private String description = null;
 
-    @Column(name="dns1")
+    @Column(name = "dns1")
     private String dns1 = null;
 
-    @Column(name="dns2")
+    @Column(name = "dns2")
     private String dns2 = null;
 
-    @Column(name="ip6_dns1")
+    @Column(name = "ip6_dns1")
     private String ip6Dns1 = null;
 
-    @Column(name="ip6_dns2")
+    @Column(name = "ip6_dns2")
     private String ip6Dns2 = null;
 
-    @Column(name="internal_dns1")
+    @Column(name = "internal_dns1")
     private String internalDns1 = null;
 
-    @Column(name="internal_dns2")
+    @Column(name = "internal_dns2")
     private String internalDns2 = null;
 
-    @Column(name="guest_network_cidr")
+    @Column(name = "guest_network_cidr")
     private String guestNetworkCidr = null;
 
-    @Column(name="domain")
+    @Column(name = "domain")
     private String domain;
 
-    @Column(name="networktype")
+    @Column(name = "networktype")
     @Enumerated(EnumType.STRING)
     NetworkType networkType;
 
-    @Column(name="dhcp_provider")
+    @Column(name = "dhcp_provider")
     private String dhcpProvider;
 
-    @Column(name="zone_token")
+    @Column(name = "zone_token")
     private String zoneToken;
 
-    @Column(name="allocation_state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "allocation_state")
+    @Enumerated(value = EnumType.STRING)
     AllocationState allocationState;
 
-    @Column(name="is_security_group_enabled")
+    @Column(name = "is_security_group_enabled")
     boolean securityGroupEnabled;
 
-    @Column(name="is_local_storage_enabled")
+    @Column(name = "is_local_storage_enabled")
     boolean localStorageEnabled;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    @Column(name="domain_id")
+    @Column(name = "domain_id")
     private long domainId;
 
-    @Column(name="domain_uuid")
+    @Column(name = "domain_uuid")
     private String domainUuid;
 
-    @Column(name="domain_name")
+    @Column(name = "domain_name")
     private String domainName;
 
-    @Column(name="domain_path")
+    @Column(name = "domain_path")
     private String domainPath;
 
     @Column(name = "affinity_group_id")

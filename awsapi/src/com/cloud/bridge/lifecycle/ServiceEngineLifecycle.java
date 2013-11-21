@@ -22,33 +22,31 @@ import org.apache.axis2.engine.ServiceLifeCycle;
 import org.apache.log4j.Logger;
 
 import com.cloud.bridge.service.controller.s3.ServiceProvider;
-import com.cloud.utils.db.Transaction;
-
 
 /**
  * ServiceEngineLifecycle is used to participate Axis service life cycle management
- * so that we can inject proper initialization and cleanup procedure into the 
+ * so that we can inject proper initialization and cleanup procedure into the
  * process
  */
 public class ServiceEngineLifecycle implements ServiceLifeCycle {
-	private static final long serialVersionUID = -249114759030608486L;
-	public static final Logger logger = Logger.getLogger(ServiceEngineLifecycle.class);
-	private static boolean initialized = false;
+    private static final long serialVersionUID = -249114759030608486L;
+    public static final Logger logger = Logger.getLogger(ServiceEngineLifecycle.class);
+    private static boolean initialized = false;
 
-	public void startUp(ConfigurationContext config, AxisService service) {
-		// initialize service provider during Axis engine startup
-	    try{
-	        //UserCredentialsDao.preCheckTableExistence();
-	        ServiceProvider.getInstance();
-	        ServiceEngineLifecycle.initialized = true;
-	    }catch(Exception e){
-	        logger.error("Error initializing awsapi: "+ e.getMessage());
-	    }
-	}
-	
-	public void shutDown(ConfigurationContext config, AxisService service) {
-	    if(ServiceEngineLifecycle.initialized){
-	        ServiceProvider.getInstance().shutdown();
-	    }
-	}
+    public void startUp(ConfigurationContext config, AxisService service) {
+        // initialize service provider during Axis engine startup
+        try {
+            //UserCredentialsDao.preCheckTableExistence();
+            ServiceProvider.getInstance();
+            ServiceEngineLifecycle.initialized = true;
+        } catch (Exception e) {
+            logger.error("Error initializing awsapi: " + e.getMessage());
+        }
+    }
+
+    public void shutDown(ConfigurationContext config, AxisService service) {
+        if (ServiceEngineLifecycle.initialized) {
+            ServiceProvider.getInstance().shutdown();
+        }
+    }
 };

@@ -27,35 +27,35 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={AutoScalePolicyConditionMapDao.class})
+@Local(value = {AutoScalePolicyConditionMapDao.class})
 public class AutoScalePolicyConditionMapDaoImpl extends GenericDaoBase<AutoScalePolicyConditionMapVO, Long> implements AutoScalePolicyConditionMapDao {
 
-	private SearchCriteria<AutoScalePolicyConditionMapVO> getSearchCriteria(Long policyId, Long conditionId)
-	{
+    private SearchCriteria<AutoScalePolicyConditionMapVO> getSearchCriteria(Long policyId, Long conditionId) {
         SearchCriteria<AutoScalePolicyConditionMapVO> sc = createSearchCriteria();
 
-        if(policyId != null)
+        if (policyId != null)
             sc.addAnd("policyId", SearchCriteria.Op.EQ, policyId);
 
-        if(conditionId != null)
+        if (conditionId != null)
             sc.addAnd("conditionId", SearchCriteria.Op.EQ, conditionId);
 
         return sc;
-	}
-	
+    }
+
     @Override
     public List<AutoScalePolicyConditionMapVO> listByAll(Long policyId, Long conditionId) {
         return listBy(getSearchCriteria(policyId, conditionId));
     }
-    
+
+    @Override
     public boolean isConditionInUse(Long conditionId) {
         return findOneBy(getSearchCriteria(null, conditionId)) != null;
     }
 
-	@Override
-	public boolean removeByAutoScalePolicyId(long policyId) {
+    @Override
+    public boolean removeByAutoScalePolicyId(long policyId) {
         SearchCriteria<AutoScalePolicyConditionMapVO> sc = createSearchCriteria();
         sc.addAnd("policyId", SearchCriteria.Op.EQ, policyId);
-		return expunge(sc) > 0;
-	}
+        return expunge(sc) > 0;
+    }
 }

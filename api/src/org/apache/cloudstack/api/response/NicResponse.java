@@ -18,67 +18,81 @@ package org.apache.cloudstack.api.response;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import com.google.gson.annotations.SerializedName;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
-import com.cloud.vm.Nic;
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
+import com.cloud.serializer.Param;
+import com.cloud.vm.Nic;
+
 @SuppressWarnings("unused")
-@EntityReference(value=Nic.class)
+@EntityReference(value = Nic.class)
 public class NicResponse extends BaseResponse {
 
-    @SerializedName("id") @Param(description="the ID of the nic")
+    @SerializedName("id")
+    @Param(description = "the ID of the nic")
     private String id;
 
-    @SerializedName("networkid") @Param(description="the ID of the corresponding network")
+    @SerializedName("networkid")
+    @Param(description = "the ID of the corresponding network")
     private String networkId;
 
-    @SerializedName("networkname") @Param(description="the name of the corresponding network")
-    private String  networkName ;
+    @SerializedName("networkname")
+    @Param(description = "the name of the corresponding network")
+    private String networkName;
 
-    @SerializedName(ApiConstants.NETMASK) @Param(description="the netmask of the nic")
+    @SerializedName(ApiConstants.NETMASK)
+    @Param(description = "the netmask of the nic")
     private String netmask;
 
-    @SerializedName(ApiConstants.GATEWAY) @Param(description="the gateway of the nic")
+    @SerializedName(ApiConstants.GATEWAY)
+    @Param(description = "the gateway of the nic")
     private String gateway;
 
-    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the ip address of the nic")
+    @SerializedName(ApiConstants.IP_ADDRESS)
+    @Param(description = "the ip address of the nic")
     private String ipaddress;
 
-    @SerializedName("isolationuri") @Param(description="the isolation uri of the nic")
+    @SerializedName("isolationuri")
+    @Param(description = "the isolation uri of the nic")
     private String isolationUri;
 
-    @SerializedName("broadcasturi") @Param(description="the broadcast uri of the nic")
+    @SerializedName("broadcasturi")
+    @Param(description = "the broadcast uri of the nic")
     private String broadcastUri;
 
-    @SerializedName(ApiConstants.TRAFFIC_TYPE) @Param(description="the traffic type of the nic")
+    @SerializedName(ApiConstants.TRAFFIC_TYPE)
+    @Param(description = "the traffic type of the nic")
     private String trafficType;
 
-    @SerializedName(ApiConstants.TYPE) @Param(description="the type of the nic")
+    @SerializedName(ApiConstants.TYPE)
+    @Param(description = "the type of the nic")
     private String type;
 
-    @SerializedName(ApiConstants.IS_DEFAULT) @Param(description="true if nic is default, false otherwise")
+    @SerializedName(ApiConstants.IS_DEFAULT)
+    @Param(description = "true if nic is default, false otherwise")
     private Boolean isDefault;
 
-    @SerializedName("macaddress") @Param(description="true if nic is default, false otherwise")
+    @SerializedName("macaddress")
+    @Param(description = "true if nic is default, false otherwise")
     private String macAddress;
 
-    @SerializedName(ApiConstants.IP6_GATEWAY) @Param(description="the gateway of IPv6 network")
+    @SerializedName(ApiConstants.IP6_GATEWAY)
+    @Param(description = "the gateway of IPv6 network")
     private String ip6Gateway;
-    
-    @SerializedName(ApiConstants.IP6_CIDR) @Param(description="the cidr of IPv6 network")
+
+    @SerializedName(ApiConstants.IP6_CIDR)
+    @Param(description = "the cidr of IPv6 network")
     private String ip6Cidr;
-    
-    @SerializedName(ApiConstants.IP6_ADDRESS) @Param(description="the IPv6 address of network")
+
+    @SerializedName(ApiConstants.IP6_ADDRESS)
+    @Param(description = "the IPv6 address of network")
     private String ip6Address;
 
-    @SerializedName("secondaryip") @Param(description="the Secondary ipv4 addr of nic")
+    @SerializedName("secondaryip")
+    @Param(description = "the Secondary ipv4 addr of nic")
     private List<NicSecondaryIpResponse> secondaryIps;
 
     public String getId() {
@@ -89,13 +103,12 @@ public class NicResponse extends BaseResponse {
         this.id = id;
     }
 
-
     public void setNetworkid(String networkid) {
         this.networkId = networkid;
     }
 
     public void setNetworkName(String networkname) {
-       this.networkName = networkname;
+        this.networkName = networkname;
     }
 
     public void setNetmask(String netmask) {
@@ -134,24 +147,24 @@ public class NicResponse extends BaseResponse {
         this.macAddress = macAddress;
     }
 
-	public void setIp6Gateway(String ip6Gateway) {
-		this.ip6Gateway = ip6Gateway;
-	}
+    public void setIp6Gateway(String ip6Gateway) {
+        this.ip6Gateway = ip6Gateway;
+    }
 
-	public void setIp6Cidr(String ip6Cidr) {
-		this.ip6Cidr = ip6Cidr;
-	}
+    public void setIp6Cidr(String ip6Cidr) {
+        this.ip6Cidr = ip6Cidr;
+    }
 
-	public void setIp6Address(String ip6Address) {
-		this.ip6Address = ip6Address;
-	}
+    public void setIp6Address(String ip6Address) {
+        this.ip6Address = ip6Address;
+    }
 
     @Override
     public int hashCode() {
         final int prime = 31;
         int result = 1;
         String oid = this.getId();
-        result = prime * result + ((oid== null) ? 0 : oid.hashCode());
+        result = prime * result + ((oid == null) ? 0 : oid.hashCode());
         return result;
     }
 
@@ -163,7 +176,7 @@ public class NicResponse extends BaseResponse {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        NicResponse other = (NicResponse) obj;
+        NicResponse other = (NicResponse)obj;
         String oid = this.getId();
         if (oid == null) {
             if (other.getId() != null)

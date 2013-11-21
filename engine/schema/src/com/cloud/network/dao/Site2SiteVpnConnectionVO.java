@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -28,48 +28,49 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.network.Site2SiteVpnConnection.State;
-import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.utils.db.GenericDao;
+
 @Entity
-@Table(name=("s2s_vpn_connection"))
+@Table(name = ("s2s_vpn_connection"))
 public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, InternalIdentity {
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
-    
-	@Column(name="uuid")
-	private String uuid;    
-    
-    @Column(name="vpn_gateway_id")
+
+    @Column(name = "uuid")
+    private String uuid;
+
+    @Column(name = "vpn_gateway_id")
     private long vpnGatewayId;
-    
-    @Column(name="customer_gateway_id")
+
+    @Column(name = "customer_gateway_id")
     private long customerGatewayId;
 
-    @Column(name="state")
-    @Enumerated(value=EnumType.STRING)
+    @Column(name = "state")
+    @Enumerated(value = EnumType.STRING)
     private State state;
-    
-    @Column(name="domain_id")
+
+    @Column(name = "domain_id")
     private Long domainId;
-    
-    @Column(name="account_id")
+
+    @Column(name = "account_id")
     private Long accountId;
 
-    @Column(name=GenericDao.CREATED_COLUMN)
+    @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
-    
-    @Column(name=GenericDao.REMOVED_COLUMN)
+
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
-    
-    @Column(name="passive")
+
+    @Column(name = "passive")
     private boolean passive;
 
-    public Site2SiteVpnConnectionVO() { }
+    public Site2SiteVpnConnectionVO() {
+    }
 
     public Site2SiteVpnConnectionVO(long accountId, long domainId, long vpnGatewayId, long customerGatewayId, boolean passive) {
         this.uuid = UUID.randomUUID().toString();
@@ -80,12 +81,12 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
         this.domainId = domainId;
         this.passive = passive;
     }
-    
+
     @Override
     public long getId() {
         return id;
     }
-    
+
     @Override
     public State getState() {
         return state;
@@ -130,11 +131,12 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
     public void setRemoved(Date removed) {
         this.removed = removed;
     }
-    
+
+    @Override
     public String getUuid() {
         return uuid;
     }
-    
+
     @Override
     public long getDomainId() {
         return domainId;
@@ -145,11 +147,12 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection, Interna
         return accountId;
     }
 
-	public boolean isPassive() {
-		return passive;
-	}
+    @Override
+    public boolean isPassive() {
+        return passive;
+    }
 
-	public void setPassive(boolean passive) {
-		this.passive = passive;
-	}
+    public void setPassive(boolean passive) {
+        this.passive = passive;
+    }
 }

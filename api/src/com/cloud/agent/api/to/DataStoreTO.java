@@ -22,6 +22,8 @@ import com.cloud.storage.DataStoreRole;
 
 public interface DataStoreTO {
     DataStoreRole getRole();
+
     String getUuid();
+
     String getUrl();
 }

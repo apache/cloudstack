@@ -23,6 +23,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.configuration.ConfigurationManager;
@@ -51,9 +52,8 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-
-@Local(value = { NetworkACLManager.class})
-public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLManager{
+@Local(value = {NetworkACLManager.class})
+public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLManager {
     private static final Logger s_logger = Logger.getLogger(NetworkACLManagerImpl.class);
 
     @Inject
@@ -96,8 +96,8 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(aclId);
         //Find all networks using this ACL and apply the ACL
         List<NetworkVO> networks = _networkDao.listByAclId(aclId);
-        for(NetworkVO network : networks){
-            if(!applyACLItemsToNetwork(network.getId(), rules)) {
+        for (NetworkVO network : networks) {
+            if (!applyACLItemsToNetwork(network.getId(), rules)) {
                 handled = false;
                 break;
             }
@@ -113,7 +113,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             }
         }
 
-        if(handled && aclApplyStatus){
+        if (handled && aclApplyStatus) {
             for (NetworkACLItem rule : rules) {
                 if (rule.getState() == NetworkACLItem.State.Revoke) {
                     removeRule(rule);
@@ -135,19 +135,19 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     @Override
     public boolean deleteNetworkACL(NetworkACL acl) {
         List<NetworkACLItemVO> aclItems = _networkACLItemDao.listByACL(acl.getId());
-        if(aclItems.size() > 0){
-            throw new CloudRuntimeException("ACL is not empty. Cannot delete network ACL: "+acl.getUuid());
+        if (aclItems.size() > 0) {
+            throw new CloudRuntimeException("ACL is not empty. Cannot delete network ACL: " + acl.getUuid());
         }
 
         List<NetworkVO> networks = _networkDao.listByAclId(acl.getId());
-        if(networks != null && networks.size() > 0){
-            throw new CloudRuntimeException("ACL is still associated with "+networks.size()+" tier(s). Cannot delete network ACL: "+acl.getUuid());
+        if (networks != null && networks.size() > 0) {
+            throw new CloudRuntimeException("ACL is still associated with " + networks.size() + " tier(s). Cannot delete network ACL: " + acl.getUuid());
         }
 
         List<VpcGatewayVO> pvtGateways = _vpcGatewayDao.listByAclIdAndType(acl.getId(), VpcGateway.Type.Private);
 
-        if(pvtGateways != null && pvtGateways.size() > 0){
-            throw new CloudRuntimeException("ACL is still associated with "+pvtGateways.size()+" private gateway(s). Cannot delete network ACL: "+acl.getUuid());
+        if (pvtGateways != null && pvtGateways.size() > 0) {
+            throw new CloudRuntimeException("ACL is still associated with " + pvtGateways.size() + " private gateway(s). Cannot delete network ACL: " + acl.getUuid());
         }
 
         return _networkACLDao.remove(acl.getId());
@@ -161,14 +161,13 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             //Revoke ACL Items of the existing ACL if the new network acl is empty
             //Other wise existing rules will not be removed on the router elelment
             s_logger.debug("New network ACL is empty. Revoke existing rules before applying ACL");
-            if(!revokeACLItemsForPrivateGw (gateway)){
-                throw new CloudRuntimeException("Failed to replace network ACL. Error while removing existing ACL " +
-                        "items for privatewa gateway: "+ gateway.getId());
+            if (!revokeACLItemsForPrivateGw(gateway)) {
+                throw new CloudRuntimeException("Failed to replace network ACL. Error while removing existing ACL " + "items for privatewa gateway: " + gateway.getId());
             }
         }
 
         vpcGatewayVo.setNetworkACLId(acl.getId());
-        if (_vpcGatewayDao.update(vpcGatewayVo.getId(),vpcGatewayVo)) {
+        if (_vpcGatewayDao.update(vpcGatewayVo.getId(), vpcGatewayVo)) {
             return applyACLToPrivateGw(gateway);
 
         }
@@ -181,30 +180,30 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         NetworkOffering guestNtwkOff = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
 
         if (guestNtwkOff == null) {
-            throw new InvalidParameterValueException("Can't find network offering associated with network: "+network.getUuid());
+            throw new InvalidParameterValueException("Can't find network offering associated with network: " + network.getUuid());
         }
 
         //verify that ACLProvider is supported by network offering
-        if(!_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.NetworkACL)){
+        if (!_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.NetworkACL)) {
             throw new InvalidParameterValueException("Cannot apply NetworkACL. Network Offering does not support NetworkACL service");
         }
 
-        if(network.getNetworkACLId() != null){
+        if (network.getNetworkACLId() != null) {
             //Revoke ACL Items of the existing ACL if the new ACL is empty
             //Existing rules won't be removed otherwise
             List<NetworkACLItemVO> aclItems = _networkACLItemDao.listByACL(acl.getId());
-            if(aclItems == null || aclItems.isEmpty()){
+            if (aclItems == null || aclItems.isEmpty()) {
                 s_logger.debug("New network ACL is empty. Revoke existing rules before applying ACL");
-               if(!revokeACLItemsForNetwork(network.getId())){
-                   throw new CloudRuntimeException("Failed to replace network ACL. Error while removing existing ACL items for network: "+network.getId());
-               }
+                if (!revokeACLItemsForNetwork(network.getId())) {
+                    throw new CloudRuntimeException("Failed to replace network ACL. Error while removing existing ACL items for network: " + network.getId());
+                }
             }
         }
 
         network.setNetworkACLId(acl.getId());
         //Update Network ACL
-        if(_networkDao.update(network.getId(), network)){
-            s_logger.debug("Updated network: "+network.getId()+ " with Network ACL Id: "+acl.getId()+", Applying ACL items");
+        if (_networkDao.update(network.getId(), network)) {
+            s_logger.debug("Updated network: " + network.getId() + " with Network ACL Id: " + acl.getId() + ", Applying ACL items");
             //Apply ACL to network
             return applyACLToNetwork(network.getId());
         }
@@ -215,10 +214,9 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_ITEM_CREATE, eventDescription = "creating network ACL Item", create = true)
     public NetworkACLItem createNetworkACLItem(final Integer portStart, final Integer portEnd, final String protocol, final List<String> sourceCidrList,
-                                                  final Integer icmpCode, final Integer icmpType, final NetworkACLItem.TrafficType trafficType, final Long aclId,
-                                                  final String action, Integer number) {
+        final Integer icmpCode, final Integer icmpType, final NetworkACLItem.TrafficType trafficType, final Long aclId, final String action, Integer number) {
         // If number is null, set it to currentMax + 1 (for backward compatibility)
-        if(number == null){
+        if (number == null) {
             number = _networkACLItemDao.getMaxNumberByACL(aclId) + 1;
         }
 
@@ -227,11 +225,12 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             @Override
             public NetworkACLItemVO doInTransaction(TransactionStatus status) {
                 NetworkACLItem.Action ruleAction = NetworkACLItem.Action.Allow;
-                if("deny".equalsIgnoreCase(action)){
+                if ("deny".equalsIgnoreCase(action)) {
                     ruleAction = NetworkACLItem.Action.Deny;
                 }
 
-                NetworkACLItemVO newRule = new NetworkACLItemVO(portStart, portEnd, protocol.toLowerCase(), aclId, sourceCidrList, icmpCode, icmpType, trafficType, ruleAction, numberFinal);
+                NetworkACLItemVO newRule =
+                    new NetworkACLItemVO(portStart, portEnd, protocol.toLowerCase(), aclId, sourceCidrList, icmpCode, icmpType, trafficType, ruleAction, numberFinal);
                 newRule = _networkACLItemDao.persist(newRule);
 
                 if (!_networkACLItemDao.setStateToAdd(newRule)) {
@@ -242,7 +241,6 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
                 return newRule;
             }
         });
-
 
         return getNetworkACLItem(newRule.getId());
     }
@@ -288,7 +286,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     @Override
     public boolean revokeACLItemsForNetwork(long networkId) throws ResourceUnavailableException {
         Network network = _networkDao.findById(networkId);
-        if(network.getNetworkACLId() == null){
+        if (network.getNetworkACLId() == null) {
             return true;
         }
         List<NetworkACLItemVO> aclItems = _networkACLItemDao.listByACL(network.getNetworkACLId());
@@ -311,8 +309,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         boolean success = applyACLItemsToNetwork(network.getId(), aclItems);
 
         if (s_logger.isDebugEnabled() && success) {
-            s_logger.debug("Successfully released Network ACLs for network id=" + networkId + " and # of rules now = "
-                    + aclItems.size());
+            s_logger.debug("Successfully released Network ACLs for network id=" + networkId + " and # of rules now = " + aclItems.size());
         }
 
         return success;
@@ -341,8 +338,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         boolean success = applyACLToPrivateGw(gateway, aclItems);
 
         if (s_logger.isDebugEnabled() && success) {
-            s_logger.debug("Successfully released Network ACLs for private gateway id=" + gateway.getId() + " and # of rules now = "
-                    + aclItems.size());
+            s_logger.debug("Successfully released Network ACLs for private gateway id=" + gateway.getId() + " and # of rules now = " + aclItems.size());
         }
 
         return success;
@@ -351,7 +347,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     @Override
     public List<NetworkACLItemVO> listNetworkACLItems(long guestNtwkId) {
         Network network = _networkMgr.getNetwork(guestNtwkId);
-        if(network.getNetworkACLId() == null){
+        if (network.getNetworkACLId() == null) {
             return null;
         }
         return _networkACLItemDao.listByACL(network.getNetworkACLId());
@@ -378,16 +374,16 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             throw new CloudRuntimeException("Failed to initialize vpc elements");
         }
 
-        for (VpcProvider provider: vpcElements){
+        for (VpcProvider provider : vpcElements) {
             return provider.applyACLItemsToPrivateGw(gateway, rules);
-            }
+        }
         return false;
     }
 
     @Override
     public boolean applyACLToNetwork(long networkId) throws ResourceUnavailableException {
         Network network = _networkDao.findById(networkId);
-        if(network.getNetworkACLId() == null){
+        if (network.getNetworkACLId() == null) {
             return true;
         }
         List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(network.getNetworkACLId());
@@ -395,57 +391,56 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     }
 
     @Override
-    public NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType,
-                                               String action, Integer number, Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode,
-                                               Integer icmpType) throws ResourceUnavailableException {
+    public NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType, String action,
+        Integer number, Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType) throws ResourceUnavailableException {
         NetworkACLItemVO aclItem = _networkACLItemDao.findById(id);
         aclItem.setState(State.Add);
 
-        if(protocol != null){
+        if (protocol != null) {
             aclItem.setProtocol(protocol);
         }
 
-        if(sourceCidrList != null){
+        if (sourceCidrList != null) {
             aclItem.setSourceCidrList(sourceCidrList);
         }
 
-        if(trafficType != null){
+        if (trafficType != null) {
             aclItem.setTrafficType(trafficType);
         }
 
-        if(action != null){
+        if (action != null) {
             NetworkACLItem.Action ruleAction = NetworkACLItem.Action.Allow;
-            if("deny".equalsIgnoreCase(action)){
+            if ("deny".equalsIgnoreCase(action)) {
                 ruleAction = NetworkACLItem.Action.Deny;
             }
             aclItem.setAction(ruleAction);
         }
 
-        if(number != null){
+        if (number != null) {
             aclItem.setNumber(number);
         }
 
-        if(sourcePortStart != null){
+        if (sourcePortStart != null) {
             aclItem.setSourcePortStart(sourcePortStart);
         }
 
-        if(sourcePortEnd != null){
+        if (sourcePortEnd != null) {
             aclItem.setSourcePortEnd(sourcePortEnd);
         }
 
-        if(icmpCode != null){
+        if (icmpCode != null) {
             aclItem.setIcmpCode(icmpCode);
         }
 
-        if(icmpType != null){
+        if (icmpType != null) {
             aclItem.setIcmpType(icmpType);
         }
 
-        if(_networkACLItemDao.update(id, aclItem)){
-            if(applyNetworkACL(aclItem.getAclId())){
+        if (_networkACLItemDao.update(id, aclItem)) {
+            if (applyNetworkACL(aclItem.getAclId())) {
                 return aclItem;
             } else {
-                throw new CloudRuntimeException("Failed to apply Network ACL Item: "+aclItem.getUuid());
+                throw new CloudRuntimeException("Failed to apply Network ACL Item: " + aclItem.getUuid());
             }
         }
         return null;
@@ -455,20 +450,20 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         Network network = _networkDao.findById(networkId);
         boolean handled = false;
         boolean foundProvider = false;
-        for (NetworkACLServiceProvider element: _networkAclElements) {
+        for (NetworkACLServiceProvider element : _networkAclElements) {
             Network.Provider provider = element.getProvider();
-            boolean  isAclProvider = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.NetworkACL, provider);
+            boolean isAclProvider = _networkModel.isProviderSupportServiceInNetwork(network.getId(), Service.NetworkACL, provider);
             if (!isAclProvider) {
                 continue;
             }
             foundProvider = true;
-            s_logger.debug("Applying NetworkACL for network: "+network.getId()+" with Network ACL service provider");
+            s_logger.debug("Applying NetworkACL for network: " + network.getId() + " with Network ACL service provider");
             handled = element.applyNetworkACLs(network, rules);
             if (handled)
                 break;
         }
-        if(!foundProvider){
-            s_logger.debug("Unable to find NetworkACL service provider for network: "+network.getId());
+        if (!foundProvider) {
+            s_logger.debug("Unable to find NetworkACL service provider for network: " + network.getId());
         }
         return handled;
     }

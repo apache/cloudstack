@@ -17,13 +17,12 @@
 package com.cloud.utils.cisco.n1kv.vsm;
 
 import org.apache.log4j.Logger;
-
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class VsmPolicyMapResponse extends VsmResponse{
+public class VsmPolicyMapResponse extends VsmResponse {
     private static final Logger s_logger = Logger.getLogger(VsmPolicyMapResponse.class);
     private static final String s_policyMapDetails = "__XML__OPT_Cmd_show_policy-map___readonly__";
 
@@ -38,6 +37,7 @@ public class VsmPolicyMapResponse extends VsmResponse{
         return _policyMap;
     }
 
+    @Override
     protected void parse(Element root) {
         NodeList list = root.getElementsByTagName("nf:rpc-error");
         if (list.getLength() == 0) {
@@ -60,8 +60,7 @@ public class VsmPolicyMapResponse extends VsmResponse{
                 NodeList readOnlyList = ((Element)list.item(0)).getElementsByTagName("__readonly__");
                 Element readOnly = (Element)readOnlyList.item(0);
 
-                for (Node node = readOnly.getFirstChild();
-                        node != null; node = node.getNextSibling()) {
+                for (Node node = readOnly.getFirstChild(); node != null; node = node.getNextSibling()) {
                     String currentNode = node.getNodeName();
                     String value = node.getTextContent();
                     if ("pmap-name-out".equalsIgnoreCase(currentNode)) {

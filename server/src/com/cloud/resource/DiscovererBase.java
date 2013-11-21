@@ -41,10 +41,14 @@ import com.cloud.utils.net.UrlUtil;
 public abstract class DiscovererBase extends AdapterBase implements Discoverer {
     protected Map<String, String> _params;
     private static final Logger s_logger = Logger.getLogger(DiscovererBase.class);
-    @Inject protected ClusterDao _clusterDao;
-    @Inject protected ConfigurationDao _configDao;
-    @Inject protected NetworkModel _networkMgr;
-    @Inject protected HostDao _hostDao;
+    @Inject
+    protected ClusterDao _clusterDao;
+    @Inject
+    protected ConfigurationDao _configDao;
+    @Inject
+    protected NetworkModel _networkMgr;
+    @Inject
+    protected HostDao _hostDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -77,12 +81,12 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
         return true;
     }
 
-    protected ServerResource getResource(String resourceName){
+    protected ServerResource getResource(String resourceName) {
         ServerResource resource = null;
         try {
             Class<?> clazz = Class.forName(resourceName);
             Constructor constructor = clazz.getConstructor();
-            resource = (ServerResource) constructor.newInstance();
+            resource = (ServerResource)constructor.newInstance();
         } catch (ClassNotFoundException e) {
             s_logger.warn("Unable to find class " + resourceName, e);
         } catch (InstantiationException e) {
@@ -102,7 +106,7 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
         return resource;
     }
 
-    protected HashMap<String, Object> buildConfigParams(HostVO host){
+    protected HashMap<String, Object> buildConfigParams(HostVO host) {
         HashMap<String, Object> params = new HashMap<String, Object>(host.getDetails().size() + 5);
         params.putAll(host.getDetails());
 
@@ -140,7 +144,7 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
         String resourceName = host.getResource();
         ServerResource resource = getResource(resourceName);
 
-        if(resource != null){
+        if (resource != null) {
             _hostDao.loadDetails(host);
             updateNetworkLabels(host);
 
@@ -159,7 +163,7 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
         return resource;
     }
 
-    private void updateNetworkLabels(HostVO host){
+    private void updateNetworkLabels(HostVO host) {
         //check if networkLabels need to be updated in details
         //we send only private and storage network label to the resource.
         String privateNetworkLabel = _networkMgr.getDefaultManagementTrafficLabel(host.getDataCenterId(), host.getHypervisorType());
@@ -170,15 +174,15 @@ public abstract class DiscovererBase extends AdapterBase implements Discoverer {
 
         boolean update = false;
 
-        if(privateNetworkLabel != null && !privateNetworkLabel.equalsIgnoreCase(privateDevice)){
+        if (privateNetworkLabel != null && !privateNetworkLabel.equalsIgnoreCase(privateDevice)) {
             host.setDetail("private.network.device", privateNetworkLabel);
             update = true;
         }
-        if(storageNetworkLabel != null && !storageNetworkLabel.equalsIgnoreCase(storageDevice)){
+        if (storageNetworkLabel != null && !storageNetworkLabel.equalsIgnoreCase(storageDevice)) {
             host.setDetail("storage.network.device1", storageNetworkLabel);
             update = true;
         }
-        if(update){
+        if (update) {
             _hostDao.saveDetails(host);
         }
     }

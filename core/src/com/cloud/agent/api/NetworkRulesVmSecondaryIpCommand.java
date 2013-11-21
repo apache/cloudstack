@@ -31,9 +31,7 @@ public class NetworkRulesVmSecondaryIpCommand extends Command {
         this.type = type;
     }
 
-
-    public NetworkRulesVmSecondaryIpCommand(String vmName, String vmMac,
-            String secondaryIp, boolean action) {
+    public NetworkRulesVmSecondaryIpCommand(String vmName, String vmMac, String secondaryIp, boolean action) {
         this.vmName = vmName;
         this.vmMac = vmMac;
         this.vmSecIp = secondaryIp;

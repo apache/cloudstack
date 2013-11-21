@@ -28,29 +28,30 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.consoleproxy.util.Logger;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
+import com.cloud.consoleproxy.util.Logger;
+
 public class ConsoleProxyThumbnailHandler implements HttpHandler {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyThumbnailHandler.class);
-    
+
     public ConsoleProxyThumbnailHandler() {
     }
 
+    @Override
     public void handle(HttpExchange t) throws IOException {
         try {
-            Thread.currentThread().setName("JPG Thread " + 
-                    Thread.currentThread().getId() + " " + t.getRemoteAddress());
-            
-            if(s_logger.isDebugEnabled())
+            Thread.currentThread().setName("JPG Thread " + Thread.currentThread().getId() + " " + t.getRemoteAddress());
+
+            if (s_logger.isDebugEnabled())
                 s_logger.debug("ScreenHandler " + t.getRequestURI());
-            
+
             long startTick = System.currentTimeMillis();
             doHandle(t);
-            
-            if(s_logger.isDebugEnabled())
+
+            if (s_logger.isDebugEnabled())
                 s_logger.debug(t.getRequestURI() + "Process time " + (System.currentTimeMillis() - startTick) + " ms");
         } catch (IllegalArgumentException e) {
             String response = "Bad query string";
@@ -59,12 +60,12 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
             OutputStream os = t.getResponseBody();
             os.write(response.getBytes());
             os.close();
-        } catch(OutOfMemoryError e) {
+        } catch (OutOfMemoryError e) {
             s_logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
             System.exit(1);
         } catch (Throwable e) {
             s_logger.error("Unexpected exception while handing thumbnail request, ", e);
-            
+
             String queries = t.getRequestURI().getQuery();
             Map<String, String> queryMap = getQueryMap(queries);
             int width = 0;
@@ -78,7 +79,7 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
             }
             width = Math.min(width, 800);
             height = Math.min(height, 600);
-            
+
             BufferedImage img = generateTextImage(width, height, "Cannot Connect");
             ByteArrayOutputStream bos = new ByteArrayOutputStream(8196);
             javax.imageio.ImageIO.write(img, "jpg", bos);
@@ -97,7 +98,7 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
             t.close();
         }
     }
-    
+
     private void doHandle(HttpExchange t) throws Exception, IllegalArgumentException {
         String queries = t.getRequestURI().getQuery();
         Map<String, String> queryMap = getQueryMap(queries);
@@ -114,10 +115,10 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
         String console_url = queryMap.get("consoleurl");
         String console_host_session = queryMap.get("sessionref");
 
-        if(tag == null)
+        if (tag == null)
             tag = "";
-        
-        if (ws == null || hs == null || host == null || portStr == null || sid == null ) {
+
+        if (ws == null || hs == null || host == null || portStr == null || sid == null) {
             throw new IllegalArgumentException();
         }
         try {
@@ -136,9 +137,9 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
         param.setTicket(ticket);
         param.setClientTunnelUrl(console_url);
         param.setClientTunnelSession(console_host_session);
-        
+
         ConsoleProxyClient viewer = ConsoleProxy.getVncViewer(param);
-        
+
         if (!viewer.isHostConnected()) {
             // use generated image instead of static
             BufferedImage img = generateTextImage(width, height, "Connecting");
@@ -153,16 +154,15 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
             OutputStream os = t.getResponseBody();
             os.write(bs);
             os.close();
-            
-            if(s_logger.isInfoEnabled())
+
+            if (s_logger.isInfoEnabled())
                 s_logger.info("Console not ready, sent dummy JPG response");
             return;
         }
-        
+
         {
             Image scaledImage = viewer.getClientScaledImage(width, height);
-            BufferedImage bufferedImage = new BufferedImage(width, height,
-                    BufferedImage.TYPE_3BYTE_BGR);
+            BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
             Graphics2D bufImageGraphics = bufferedImage.createGraphics();
             bufImageGraphics.drawImage(scaledImage, 0, 0, null);
             ByteArrayOutputStream bos = new ByteArrayOutputStream(8196);
@@ -178,7 +178,7 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
             os.close();
         }
     }
-    
+
     public static BufferedImage generateTextImage(int w, int h, String text) {
         BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_3BYTE_BGR);
         Graphics2D g = img.createGraphics();
@@ -189,10 +189,10 @@ public class ConsoleProxyThumbnailHandler implements HttpHandler {
             g.setFont(new Font(null, Font.PLAIN, 12));
             FontMetrics fm = g.getFontMetrics();
             int textWidth = fm.stringWidth(text);
-            int startx = (w-textWidth) / 2;
-            if(startx < 0)
+            int startx = (w - textWidth) / 2;
+            if (startx < 0)
                 startx = 0;
-            g.drawString(text, startx, h/2);
+            g.drawString(text, startx, h / 2);
         } catch (Throwable e) {
             s_logger.warn("Problem in generating text to thumnail image, return blank image");
         }

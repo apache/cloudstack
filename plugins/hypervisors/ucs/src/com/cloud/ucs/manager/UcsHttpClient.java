@@ -53,8 +53,7 @@ public class UcsHttpClient {
                 Header locationHeader = post.getResponseHeader("location");
                 if (locationHeader != null) {
                     redirectLocation = locationHeader.getValue();
-                }
-                else {
+                } else {
                     throw new CloudRuntimeException("Call failed: Bad redirect from UCS Manager");
                 }
                 post.setURI(new URI(redirectLocation));
@@ -62,7 +61,7 @@ public class UcsHttpClient {
             }
             // Check for errors
             if (result != 200) {
-               throw new CloudRuntimeException("Call failed: " + post.getResponseBodyAsString());
+                throw new CloudRuntimeException("Call failed: " + post.getResponseBodyAsString());
             }
             String res = post.getResponseBodyAsString();
             if (res.contains("errorCode")) {

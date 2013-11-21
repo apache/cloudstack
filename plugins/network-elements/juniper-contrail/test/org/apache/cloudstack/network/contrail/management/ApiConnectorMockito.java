@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.network.contrail.management;
 
+import static org.mockito.Mockito.spy;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
@@ -29,17 +31,14 @@ import net.juniper.contrail.api.ObjectReference;
 import net.juniper.contrail.api.types.NetworkIpam;
 
 import org.apache.log4j.Logger;
-import static org.mockito.Mockito.*;
 
 import com.google.common.collect.ImmutableMap;
 
 public class ApiConnectorMockito implements ApiConnector {
-    private static final Logger s_logger =
-            Logger.getLogger(ApiConnectorMockito.class);
+    private static final Logger s_logger = Logger.getLogger(ApiConnectorMockito.class);
 
-    static final Map<String, ApiObjectBase> object_map = new ImmutableMap.Builder<String, ApiObjectBase>().
-            put("network-ipam:default-network-ipam", new NetworkIpam()).
-            build();
+    static final Map<String, ApiObjectBase> object_map = new ImmutableMap.Builder<String, ApiObjectBase>().put("network-ipam:default-network-ipam", new NetworkIpam())
+        .build();
     private ApiConnectorMock _mock;
     private ApiConnector _spy;
 
@@ -65,15 +64,13 @@ public class ApiConnectorMockito implements ApiConnector {
     }
 
     @Override
-    public void delete(Class<? extends ApiObjectBase> arg0, String arg1)
-            throws IOException {
+    public void delete(Class<? extends ApiObjectBase> arg0, String arg1) throws IOException {
         s_logger.debug("create " + arg0.getName() + " id: " + arg1);
         _spy.delete(arg0, arg1);
     }
 
     @Override
-    public ApiObjectBase find(Class<? extends ApiObjectBase> arg0,
-            ApiObjectBase arg1, String arg2) throws IOException {
+    public ApiObjectBase find(Class<? extends ApiObjectBase> arg0, ApiObjectBase arg1, String arg2) throws IOException {
         StringBuilder msg = new StringBuilder();
         msg.append("find " + arg0.getName());
         if (arg1 != null) {
@@ -85,29 +82,25 @@ public class ApiConnectorMockito implements ApiConnector {
     }
 
     @Override
-    public ApiObjectBase findByFQN(Class<? extends ApiObjectBase> arg0,
-            String arg1) throws IOException {
+    public ApiObjectBase findByFQN(Class<? extends ApiObjectBase> arg0, String arg1) throws IOException {
         s_logger.debug("find " + arg0.getName() + " name: " + arg1);
         return _mock.findByFQN(arg0, arg1);
     }
 
     @Override
-    public ApiObjectBase findById(Class<? extends ApiObjectBase> arg0,
-            String arg1) throws IOException {
+    public ApiObjectBase findById(Class<? extends ApiObjectBase> arg0, String arg1) throws IOException {
         s_logger.debug("find " + arg0.getName() + " id: " + arg1);
         return _mock.findById(arg0, arg1);
     }
 
     @Override
-    public String findByName(Class<? extends ApiObjectBase> arg0,
-            List<String> arg1) throws IOException {
+    public String findByName(Class<? extends ApiObjectBase> arg0, List<String> arg1) throws IOException {
         s_logger.debug("find " + arg0.getName() + " name: " + arg1);
         return _mock.findByName(arg0, arg1);
     }
 
     @Override
-    public String findByName(Class<? extends ApiObjectBase> arg0,
-            ApiObjectBase arg1, String arg2) throws IOException {
+    public String findByName(Class<? extends ApiObjectBase> arg0, ApiObjectBase arg1, String arg2) throws IOException {
         StringBuilder msg = new StringBuilder();
         msg.append("findByName " + arg0.getName());
         if (arg1 != null) {
@@ -119,17 +112,13 @@ public class ApiConnectorMockito implements ApiConnector {
     }
 
     @Override
-    public <T extends ApiPropertyBase> List<? extends ApiObjectBase> getObjects(
-            Class<? extends ApiObjectBase> arg0, List<ObjectReference<T>> arg1)
-                    throws IOException {
+    public <T extends ApiPropertyBase> List<? extends ApiObjectBase> getObjects(Class<? extends ApiObjectBase> arg0, List<ObjectReference<T>> arg1) throws IOException {
         s_logger.debug("getObjects" + arg0.getName());
         return _mock.getObjects(arg0, arg1);
     }
 
     @Override
-    public List<? extends ApiObjectBase> list(
-            Class<? extends ApiObjectBase> arg0, List<String> arg1)
-                    throws IOException {
+    public List<? extends ApiObjectBase> list(Class<? extends ApiObjectBase> arg0, List<String> arg1) throws IOException {
         s_logger.debug("list" + arg0.getName());
         return _mock.list(arg0, arg1);
     }

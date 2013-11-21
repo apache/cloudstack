@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.vmware.mo;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 
@@ -24,7 +25,6 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.PerfCompositeMetric;
 import com.vmware.vim25.PerfCounterInfo;
@@ -34,7 +34,7 @@ import com.vmware.vim25.PerfMetricId;
 import com.vmware.vim25.PerfProviderSummary;
 import com.vmware.vim25.PerfQuerySpec;
 
-import java.util.Arrays;
+import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class PerfManagerMO extends BaseMO {
     public PerfManagerMO(VmwareContext context, ManagedObjectReference mor) {
@@ -73,11 +73,10 @@ public class PerfManagerMO extends BaseMO {
         return xgc;
     }
 
-    public List<PerfMetricId> queryAvailablePerfMetric(ManagedObjectReference morEntity, Calendar beginTime,
-        Calendar endTime, Integer intervalId) throws Exception {
+    public List<PerfMetricId> queryAvailablePerfMetric(ManagedObjectReference morEntity, Calendar beginTime, Calendar endTime, Integer intervalId) throws Exception {
 
-        return _context.getService().queryAvailablePerfMetric(_mor, morEntity, calendarToXMLGregorianCalendar(beginTime),
-                calendarToXMLGregorianCalendar(endTime), intervalId);
+        return _context.getService().queryAvailablePerfMetric(_mor, morEntity, calendarToXMLGregorianCalendar(beginTime), calendarToXMLGregorianCalendar(endTime),
+            intervalId);
     }
 
     public PerfCompositeMetric queryPerfComposite(PerfQuerySpec spec) throws Exception {
@@ -86,8 +85,8 @@ public class PerfManagerMO extends BaseMO {
 
     public List<PerfCounterInfo> queryPerfCounter(int[] counterId) throws Exception {
         List<Integer> counterArr = new ArrayList<Integer>();
-        if ( counterId != null){
-            for (int i = 0; i < counterId.length; i++ ){
+        if (counterId != null) {
+            for (int i = 0; i < counterId.length; i++) {
                 counterArr.add(counterId[i]);
             }
         }

@@ -31,23 +31,20 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listStaticRoutes", description="Lists all static routes", responseObject=StaticRouteResponse.class)
+@APICommand(name = "listStaticRoutes", description = "Lists all static routes", responseObject = StaticRouteResponse.class)
 public class ListStaticRoutesCmd extends BaseListTaggedResourcesCmd {
     private static final String s_name = "liststaticroutesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=StaticRouteResponse.class,
-            description="list static route by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StaticRouteResponse.class, description = "list static route by id")
     private Long id;
 
-    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.UUID, entityType=VpcResponse.class,
-            description="list static routes by vpc id")
+    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "list static routes by vpc id")
     private Long vpcId;
 
-    @Parameter(name=ApiConstants.GATEWAY_ID, type=CommandType.UUID, entityType=PrivateGatewayResponse.class,
-            description="list static routes by gateway id")
+    @Parameter(name = ApiConstants.GATEWAY_ID, type = CommandType.UUID, entityType = PrivateGatewayResponse.class, description = "list static routes by gateway id")
     private Long gatewayId;
 
     public Long getId() {
@@ -71,7 +68,7 @@ public class ListStaticRoutesCmd extends BaseListTaggedResourcesCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         Pair<List<? extends StaticRoute>, Integer> result = _vpcService.listStaticRoutes(this);
         ListResponse<StaticRouteResponse> response = new ListResponse<StaticRouteResponse>();
         List<StaticRouteResponse> routeResponses = new ArrayList<StaticRouteResponse>();
@@ -84,6 +81,5 @@ public class ListStaticRoutesCmd extends BaseListTaggedResourcesCmd {
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
-
 
 }

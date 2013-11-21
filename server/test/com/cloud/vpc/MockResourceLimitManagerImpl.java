@@ -34,7 +34,7 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.component.ManagerBase;
 
 @Component
-@Local(value = { ResourceLimitService.class })
+@Local(value = {ResourceLimitService.class})
 public class MockResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService {
 
     /* (non-Javadoc)
@@ -72,7 +72,6 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
         // TODO Auto-generated method stub
         return 0;
     }
-
 
     @Override
     public long findCorrectResourceLimitForAccount(short accountType, Long limit, ResourceType type) {

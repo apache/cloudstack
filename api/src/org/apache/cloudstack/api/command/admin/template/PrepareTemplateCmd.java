@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.admin.template;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -25,12 +27,11 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-@APICommand(name = "prepareTemplate", responseObject=TemplateResponse.class, description="load template into primary storage")
+@APICommand(name = "prepareTemplate", responseObject = TemplateResponse.class, description = "load template into primary storage")
 public class PrepareTemplateCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(PrepareTemplateCmd.class.getName());
 
@@ -40,14 +41,19 @@ public class PrepareTemplateCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            required=true, description="zone ID of the template to be prepared in primary storage(s).")
+    @Parameter(name = ApiConstants.ZONE_ID,
+               type = CommandType.UUID,
+               entityType = ZoneResponse.class,
+               required = true,
+               description = "zone ID of the template to be prepared in primary storage(s).")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.TEMPLATE_ID, type=CommandType.UUID, entityType = TemplateResponse.class,
-            required=true, description="template ID of the template to be prepared in primary storage(s).")
+    @Parameter(name = ApiConstants.TEMPLATE_ID,
+               type = CommandType.UUID,
+               entityType = TemplateResponse.class,
+               required = true,
+               description = "template ID of the template to be prepared in primary storage(s).")
     private Long templateId;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -86,4 +92,3 @@ public class PrepareTemplateCmd extends BaseCmd {
         this.setResponseObject(response);
     }
 }
-

@@ -22,7 +22,7 @@ import java.util.TimerTask;
 
 /**
  * A test clock which is also a TimerTask. The task calls a Scheduler's poll method
- * 
+ *
  */
 public class TestClock extends TimerTask {
     private int _minute = 0;
@@ -31,7 +31,7 @@ public class TestClock extends TimerTask {
     private int _week = 0;
     private int _month = 0;
     private int _year = 0;
-    private Calendar _cal = null; 
+    private Calendar _cal = null;
     private final int _minutesPerHour;
     private final int _hoursPerDay;
     private final int _daysPerWeek;
@@ -60,18 +60,23 @@ public class TestClock extends TimerTask {
     public int getMinute() {
         return _minute;
     }
+
     public int getHour() {
         return _hour;
     }
+
     public int getDay() {
         return _day;
     }
+
     public int getWeek() {
         return _week;
     }
+
     public int getMonth() {
         return _month;
     }
+
     public int getYear() {
         return _year;
     }
@@ -79,25 +84,30 @@ public class TestClock extends TimerTask {
     public int getMinutesPerHour() {
         return _minutesPerHour;
     }
+
     public int getHoursPerDay() {
         return _hoursPerDay;
     }
+
     public int getDaysPerMonth() {
         return _daysPerMonth;
     }
+
     public int getDaysPerWeek() {
         return _daysPerWeek;
     }
+
     public int getWeeksPerMonth() {
         return _weeksPerMonth;
     }
+
     public int getMonthsPerYear() {
         return _monthsPerYear;
     }
 
     @Override
     public void run() {
-        synchronized(this) {
+        synchronized (this) {
             _minute++;
             if ((_minute > 0) && ((_minute % _minutesPerHour) == 0)) {
                 _minute = 0;
@@ -124,7 +134,7 @@ public class TestClock extends TimerTask {
                 _year++;
             }
             if (_scheduler != null) {
-                // XXX: Creating new date is hugely inefficient for every minute. 
+                // XXX: Creating new date is hugely inefficient for every minute.
                 // Later the time in the database will be changed to currentTimeInMillis.
                 // Then we can use System.getCurrentTimeInMillis() which is damn cheap.
                 _cal.set(_year, _month, _day, _hour, _minute);

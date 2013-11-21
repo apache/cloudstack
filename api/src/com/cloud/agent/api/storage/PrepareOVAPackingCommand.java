@@ -19,30 +19,28 @@ package com.cloud.agent.api.storage;
 import com.cloud.agent.api.Command;
 
 public class PrepareOVAPackingCommand extends Command {
-        private String templatePath;
-        private String secUrl;
+    private String templatePath;
+    private String secUrl;
 
-        public PrepareOVAPackingCommand() {
-        }
+    public PrepareOVAPackingCommand() {
+    }
 
-        public PrepareOVAPackingCommand(String secUrl, String templatePath) {
-            this.secUrl = secUrl;
-            this.templatePath = templatePath;
-        }
+    public PrepareOVAPackingCommand(String secUrl, String templatePath) {
+        this.secUrl = secUrl;
+        this.templatePath = templatePath;
+    }
 
-        @Override
-        public boolean executeInSequence() {
-                return true;
-        }
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 
-        public String getTemplatePath() {
-                return this.templatePath;
-        }
+    public String getTemplatePath() {
+        return this.templatePath;
+    }
 
-        public String getSecondaryStorageUrl() {
-                return this.secUrl;
-        }
+    public String getSecondaryStorageUrl() {
+        return this.secUrl;
+    }
 
 }
-
- 

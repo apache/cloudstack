@@ -23,9 +23,6 @@ import com.cloud.consoleproxy.ConsoleProxyClientListener;
 import com.cloud.consoleproxy.vnc.BufferedImageCanvas;
 import com.cloud.consoleproxy.vnc.RfbConstants;
 import com.cloud.consoleproxy.vnc.VncScreenDescription;
-import com.cloud.consoleproxy.vnc.packet.server.CopyRect;
-import com.cloud.consoleproxy.vnc.packet.server.RawRect;
-import com.cloud.consoleproxy.vnc.packet.server.Rect;
 
 public class FramebufferUpdatePacket {
 
@@ -33,7 +30,8 @@ public class FramebufferUpdatePacket {
     private final BufferedImageCanvas canvas;
     private final ConsoleProxyClientListener clientListener;
 
-    public FramebufferUpdatePacket(BufferedImageCanvas canvas, VncScreenDescription screen, DataInputStream is, ConsoleProxyClientListener clientListener) throws IOException {
+    public FramebufferUpdatePacket(BufferedImageCanvas canvas, VncScreenDescription screen, DataInputStream is, ConsoleProxyClientListener clientListener)
+            throws IOException {
 
         this.screen = screen;
         this.canvas = canvas;
@@ -62,25 +60,25 @@ public class FramebufferUpdatePacket {
             Rect rect;
             switch (encodingType) {
 
-            case RfbConstants.ENCODING_RAW: {
-                rect = new RawRect(screen, x, y, width, height, is);
-                break;
-            }
+                case RfbConstants.ENCODING_RAW: {
+                    rect = new RawRect(screen, x, y, width, height, is);
+                    break;
+                }
 
-            case RfbConstants.ENCODING_COPY_RECT: {
-                rect = new CopyRect(x, y, width, height, is);
-                break;
-            }
+                case RfbConstants.ENCODING_COPY_RECT: {
+                    rect = new CopyRect(x, y, width, height, is);
+                    break;
+                }
 
-            case RfbConstants.ENCODING_DESKTOP_SIZE: {
-                rect = new FrameBufferSizeChangeRequest(canvas, width, height);
-                if (this.clientListener != null)
-                    this.clientListener.onFramebufferSizeChange(width, height);
-                break;
-            }
+                case RfbConstants.ENCODING_DESKTOP_SIZE: {
+                    rect = new FrameBufferSizeChangeRequest(canvas, width, height);
+                    if (this.clientListener != null)
+                        this.clientListener.onFramebufferSizeChange(width, height);
+                    break;
+                }
 
-            default:
-                throw new RuntimeException("Unsupported ecnoding: " + encodingType);
+                default:
+                    throw new RuntimeException("Unsupported ecnoding: " + encodingType);
             }
 
             paint(rect, canvas);

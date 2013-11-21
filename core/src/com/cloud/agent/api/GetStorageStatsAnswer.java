@@ -38,7 +38,6 @@ public class GetStorageStatsAnswer extends Answer implements StorageStats {
         return capacity;
     }
 
-
     public GetStorageStatsAnswer(GetStorageStatsCommand cmd, long capacity, long used) {
         super(cmd, true, null);
         this.capacity = capacity;

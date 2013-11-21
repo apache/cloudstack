@@ -16,41 +16,51 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.network.security.SecurityRule;
 import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = SecurityRule.class)
 public class SecurityGroupRuleResponse extends BaseResponse {
-    @SerializedName("ruleid") @Param(description="the id of the security group rule")
+    @SerializedName("ruleid")
+    @Param(description = "the id of the security group rule")
     private String ruleId;
 
-    @SerializedName("protocol") @Param(description="the protocol of the security group rule")
+    @SerializedName("protocol")
+    @Param(description = "the protocol of the security group rule")
     private String protocol;
 
-    @SerializedName(ApiConstants.ICMP_TYPE) @Param(description="the type of the ICMP message response")
+    @SerializedName(ApiConstants.ICMP_TYPE)
+    @Param(description = "the type of the ICMP message response")
     private Integer icmpType;
 
-    @SerializedName(ApiConstants.ICMP_CODE) @Param(description="the code for the ICMP message response")
+    @SerializedName(ApiConstants.ICMP_CODE)
+    @Param(description = "the code for the ICMP message response")
     private Integer icmpCode;
 
-    @SerializedName(ApiConstants.START_PORT) @Param(description="the starting IP of the security group rule")
+    @SerializedName(ApiConstants.START_PORT)
+    @Param(description = "the starting IP of the security group rule")
     private Integer startPort;
 
-    @SerializedName(ApiConstants.END_PORT) @Param(description="the ending IP of the security group rule ")
+    @SerializedName(ApiConstants.END_PORT)
+    @Param(description = "the ending IP of the security group rule ")
     private Integer endPort;
 
-    @SerializedName(ApiConstants.SECURITY_GROUP_NAME) @Param(description="security group name")
+    @SerializedName(ApiConstants.SECURITY_GROUP_NAME)
+    @Param(description = "security group name")
     private String securityGroupName;
 
-    @SerializedName(ApiConstants.ACCOUNT) @Param(description="account owning the security group rule")
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "account owning the security group rule")
     private String accountName;
 
-    @SerializedName(ApiConstants.CIDR) @Param(description="the CIDR notation for the base IP address of the security group rule")
+    @SerializedName(ApiConstants.CIDR)
+    @Param(description = "the CIDR notation for the base IP address of the security group rule")
     private String cidr;
 
     public String getRuleId() {
@@ -130,7 +140,7 @@ public class SecurityGroupRuleResponse extends BaseResponse {
         final int prime = 31;
         int result = 1;
         String oid = this.getRuleId();
-        result = prime * result + ((oid== null) ? 0 : oid.hashCode());
+        result = prime * result + ((oid == null) ? 0 : oid.hashCode());
         return result;
     }
 
@@ -142,7 +152,7 @@ public class SecurityGroupRuleResponse extends BaseResponse {
             return false;
         if (getClass() != obj.getClass())
             return false;
-        SecurityGroupRuleResponse other = (SecurityGroupRuleResponse) obj;
+        SecurityGroupRuleResponse other = (SecurityGroupRuleResponse)obj;
         String oid = this.getRuleId();
         if (oid == null) {
             if (other.getRuleId() != null)

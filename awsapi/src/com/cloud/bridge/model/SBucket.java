@@ -16,112 +16,107 @@
 // under the License.
 package com.cloud.bridge.model;
 
-import java.io.Serializable;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
-
 /**
  * Holds the relation
  *  Id,
- *  Name, 
+ *  Name,
  *  OwnerCanonicalId,
- *  SHost, 
- *  CreateTime, 
+ *  SHost,
+ *  CreateTime,
  *  VersioningStatus
  * For ORM see "com/cloud/bridge/model/SHost.hbm.xml"
  */
 public interface SBucket {
 
-    public static final int VERSIONING_NULL = 0;   
-	public static final int VERSIONING_ENABLED = 1;
-	public static final int VERSIONING_SUSPENDED = 2;
+    public static final int VERSIONING_NULL = 0;
+    public static final int VERSIONING_ENABLED = 1;
+    public static final int VERSIONING_SUSPENDED = 2;
 
-/*	private Long id;
-	
-	private String name;
-	private String ownerCanonicalId;
-	
-	private SHost shost;
-	private Date createTime;
-	
-	private int versioningStatus;
-	
-	private Set<SObject> objectsInBucket = new HashSet<SObject>();
-	
-	public SBucket() {
-		versioningStatus = VERSIONING_NULL;
-	}
-	
-	public Long getId() {
-		return id;
-	}
+    /*    private Long id;
 
-	private void setId(Long id) {
-		this.id = id;
-	}
-	
-	public String getName() {
-		return name;
-	}
-	
-	public void setName(String name) {
-		this.name = name;
-	}
-	
-	public String getOwnerCanonicalId() {
-		return ownerCanonicalId;
-	}
-	
-	public void setOwnerCanonicalId(String ownerCanonicalId) {
-		this.ownerCanonicalId = ownerCanonicalId;
-	}
-	
-	public SHost getShost() {
-		return shost;
-	}
-	
-	public void setShost(SHost shost) {
-		this.shost = shost;
-	}
-	
-	public Date getCreateTime() {
-		return createTime;
-	}
-	
-	public void setCreateTime(Date createTime) {
-		this.createTime = createTime;
-	}
-	
-	public int getVersioningStatus() {
-		return versioningStatus;
-	}
-	
-	public void setVersioningStatus( int versioningStatus ) {
-		this.versioningStatus = versioningStatus;
-	}
-	
-	public Set<SObject> getObjectsInBucket() {
-		return objectsInBucket;
-	}
+        private String name;
+        private String ownerCanonicalId;
 
-	public void setObjectsInBucket(Set<SObject> objectsInBucket) {
-		this.objectsInBucket = objectsInBucket;
-	}
-	
-	@Override
-	public boolean equals(Object other) {
-		if(this == other)
-			return true;
-		
-		if(!(other instanceof SBucket))
-			return false;
-		
-		return getName().equals(((SBucket)other).getName());
-	}
-	
-	@Override
-	public int hashCode() {
-		return getName().hashCode();
-	}*/
+        private SHost shost;
+        private Date createTime;
+
+        private int versioningStatus;
+
+        private Set<SObject> objectsInBucket = new HashSet<SObject>();
+
+        public SBucket() {
+            versioningStatus = VERSIONING_NULL;
+        }
+
+        public Long getId() {
+            return id;
+        }
+
+        private void setId(Long id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public String getOwnerCanonicalId() {
+            return ownerCanonicalId;
+        }
+
+        public void setOwnerCanonicalId(String ownerCanonicalId) {
+            this.ownerCanonicalId = ownerCanonicalId;
+        }
+
+        public SHost getShost() {
+            return shost;
+        }
+
+        public void setShost(SHost shost) {
+            this.shost = shost;
+        }
+
+        public Date getCreateTime() {
+            return createTime;
+        }
+
+        public void setCreateTime(Date createTime) {
+            this.createTime = createTime;
+        }
+
+        public int getVersioningStatus() {
+            return versioningStatus;
+        }
+
+        public void setVersioningStatus( int versioningStatus ) {
+            this.versioningStatus = versioningStatus;
+        }
+
+        public Set<SObject> getObjectsInBucket() {
+            return objectsInBucket;
+        }
+
+        public void setObjectsInBucket(Set<SObject> objectsInBucket) {
+            this.objectsInBucket = objectsInBucket;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if(this == other)
+                return true;
+
+            if(!(other instanceof SBucket))
+                return false;
+
+            return getName().equals(((SBucket)other).getName());
+        }
+
+        @Override
+        public int hashCode() {
+            return getName().hashCode();
+        }*/
 }

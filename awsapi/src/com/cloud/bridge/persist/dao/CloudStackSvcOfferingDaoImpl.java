@@ -22,25 +22,22 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.bridge.model.CloudStackServiceOfferingVO;
-import com.cloud.bridge.model.SHostVO;
-import com.cloud.stack.models.CloudStackConfiguration;
-import com.cloud.stack.models.CloudStackServiceOffering;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value={CloudStackSvcOfferingDao.class})
+@Local(value = {CloudStackSvcOfferingDao.class})
 public class CloudStackSvcOfferingDaoImpl extends GenericDaoBase<CloudStackServiceOfferingVO, String> implements CloudStackSvcOfferingDao {
-	public static final Logger logger = Logger.getLogger(CloudStackSvcOfferingDaoImpl.class);
+    public static final Logger logger = Logger.getLogger(CloudStackSvcOfferingDaoImpl.class);
 
-	public CloudStackSvcOfferingDaoImpl() {	}
+    public CloudStackSvcOfferingDaoImpl() {
+    }
 
-	@Override
-	public CloudStackServiceOfferingVO getSvcOfferingByName( String name ){
-        SearchBuilder <CloudStackServiceOfferingVO> searchByName = createSearchBuilder();
+    @Override
+    public CloudStackServiceOfferingVO getSvcOfferingByName(String name) {
+        SearchBuilder<CloudStackServiceOfferingVO> searchByName = createSearchBuilder();
         searchByName.and("name", searchByName.entity().getName(), SearchCriteria.Op.EQ);
         searchByName.done();
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -49,17 +46,17 @@ public class CloudStackSvcOfferingDaoImpl extends GenericDaoBase<CloudStackServi
             SearchCriteria<CloudStackServiceOfferingVO> sc = searchByName.create();
             sc.setParameters("name", name);
             return findOneBy(sc);
-        
-        }finally {
+
+        } finally {
             txn.commit();
             txn.close();
         }
 
-		
-	}
-	@Override
-    public CloudStackServiceOfferingVO getSvcOfferingById( String id ){
-        SearchBuilder <CloudStackServiceOfferingVO> searchByID = createSearchBuilder();
+    }
+
+    @Override
+    public CloudStackServiceOfferingVO getSvcOfferingById(String id) {
+        SearchBuilder<CloudStackServiceOfferingVO> searchByID = createSearchBuilder();
         searchByID.and("uuid", searchByID.entity().getUuid(), SearchCriteria.Op.EQ);
         searchByID.done();
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
@@ -68,13 +65,12 @@ public class CloudStackSvcOfferingDaoImpl extends GenericDaoBase<CloudStackServi
             SearchCriteria<CloudStackServiceOfferingVO> sc = searchByID.create();
             sc.setParameters("uuid", id);
             return findOneBy(sc);
-        
-        }finally {
+
+        } finally {
             txn.commit();
             txn.close();
         }
 
-        
     }
 
 }

@@ -18,8 +18,6 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
-import java.util.List;
-
 import com.cloud.storage.DataStoreProviderApiService;
 import com.cloud.utils.component.Manager;
 

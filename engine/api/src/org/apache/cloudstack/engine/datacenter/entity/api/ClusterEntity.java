@@ -24,7 +24,7 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.org.Managed.ManagedState;
 
 public interface ClusterEntity extends DataCenterResourceEntity, OrganizationScope {
-	
+
     long getDataCenterId();
 
     long getPodId();

@@ -17,28 +17,28 @@
 package com.cloud.bridge.service.core.ec2;
 
 public class EC2DisassociateAddress {
-	
-	private String publicIp;
 
-	/**
-	 * 
-	 */
-	public EC2DisassociateAddress() {
-		setPublicIp(null);
-	}
+    private String publicIp;
 
-	/**
-	 * @return the publicIp
-	 */
-	public String getPublicIp() {
-		return publicIp;
-	}
+    /**
+     *
+     */
+    public EC2DisassociateAddress() {
+        setPublicIp(null);
+    }
 
-	/**
-	 * @param publicIp the publicIp to set
-	 */
-	public void setPublicIp(String publicIp) {
-		this.publicIp = publicIp;
-	}
+    /**
+     * @return the publicIp
+     */
+    public String getPublicIp() {
+        return publicIp;
+    }
+
+    /**
+     * @param publicIp the publicIp to set
+     */
+    public void setPublicIp(String publicIp) {
+        this.publicIp = publicIp;
+    }
 
 }

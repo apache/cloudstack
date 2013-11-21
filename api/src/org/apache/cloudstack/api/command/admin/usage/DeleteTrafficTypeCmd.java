@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.usage;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -25,12 +27,11 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.TrafficTypeResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteTrafficType", description="Deletes traffic type of a physical network", responseObject=SuccessResponse.class, since="3.0.0")
+@APICommand(name = "deleteTrafficType", description = "Deletes traffic type of a physical network", responseObject = SuccessResponse.class, since = "3.0.0")
 public class DeleteTrafficTypeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteTrafficTypeCmd.class.getName());
 
@@ -39,10 +40,8 @@ public class DeleteTrafficTypeCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = TrafficTypeResponse.class,
-            required=true, description="traffic type id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TrafficTypeResponse.class, required = true, description = "traffic type id")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -67,19 +66,19 @@ public class DeleteTrafficTypeCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         boolean result = _networkService.deletePhysicalNetworkTrafficType(getId());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
-        }else {
+        } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete traffic type");
         }
     }
 
     @Override
     public String getEventDescription() {
-        return  "Deleting Traffic Type: " + getId();
+        return "Deleting Traffic Type: " + getId();
     }
 
     @Override

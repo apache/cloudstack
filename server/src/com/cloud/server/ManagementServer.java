@@ -28,36 +28,36 @@ import com.cloud.vm.VirtualMachine;
 
 /**
  */
-public interface ManagementServer extends ManagementService, PluggableService  {
-    
+public interface ManagementServer extends ManagementService, PluggableService {
+
     /**
      * returns the instance id of this management server.
-     * 
+     *
      * @return id of the management server
      */
     long getId();
-    
+
     /**
      * Fetches the version of cloud stack
     */
     @Override
     String getVersion();
-    
+
     /**
      * Retrieves a host by id
-     * 
+     *
      * @param hostId
      * @return Host
      */
     HostVO getHostBy(long hostId);
 
     String getConsoleAccessUrlRoot(long vmId);
-    
+
     GuestOSVO getGuestOs(Long guestOsId);
 
     /**
      * Returns the vnc port of the vm.
-     * 
+     *
      * @param VirtualMachine vm
      * @return the vnc port if found; -1 if unable to find.
      */
@@ -68,8 +68,11 @@ public interface ManagementServer extends ManagementService, PluggableService  {
     Pair<List<StoragePoolVO>, Integer> searchForStoragePools(Criteria c);
 
     String getHashKey();
+
     String getEncryptionKey();
+
     String getEncryptionIV();
+
     void resetEncryptionKeyIV();
 
 }

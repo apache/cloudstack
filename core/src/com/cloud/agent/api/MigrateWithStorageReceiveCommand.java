@@ -17,9 +17,10 @@
 package com.cloud.agent.api;
 
 import java.util.Map;
+
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.agent.api.to.StorageFilerTO;
 
 public class MigrateWithStorageReceiveCommand extends Command {
     VirtualMachineTO vm;

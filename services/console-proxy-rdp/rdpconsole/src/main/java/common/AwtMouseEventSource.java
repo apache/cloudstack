@@ -25,47 +25,47 @@ import streamer.ByteBuffer;
 
 public class AwtMouseEventSource extends BaseElement implements MouseListener, MouseMotionListener {
 
-  public AwtMouseEventSource(String id) {
-    super(id);
-  }
+    public AwtMouseEventSource(String id) {
+        super(id);
+    }
 
-  @Override
-  public void mouseClicked(MouseEvent e) {
-    // Nothing to do
-  }
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        // Nothing to do
+    }
 
-  @Override
-  public void mousePressed(MouseEvent e) {
-    MouseOrder order = new MouseOrder(e);
-    order.pressed = true;
-    pushDataToAllOuts(new ByteBuffer(order));
-  }
+    @Override
+    public void mousePressed(MouseEvent e) {
+        MouseOrder order = new MouseOrder(e);
+        order.pressed = true;
+        pushDataToAllOuts(new ByteBuffer(order));
+    }
 
-  @Override
-  public void mouseReleased(MouseEvent e) {
-    MouseOrder order = new MouseOrder(e);
-    order.released = true;
-    pushDataToAllOuts(new ByteBuffer(order));
-  }
+    @Override
+    public void mouseReleased(MouseEvent e) {
+        MouseOrder order = new MouseOrder(e);
+        order.released = true;
+        pushDataToAllOuts(new ByteBuffer(order));
+    }
 
-  @Override
-  public void mouseEntered(MouseEvent e) {
-    // Nothing to do
-  }
+    @Override
+    public void mouseEntered(MouseEvent e) {
+        // Nothing to do
+    }
 
-  @Override
-  public void mouseExited(MouseEvent e) {
-    // Nothing to do
-  }
+    @Override
+    public void mouseExited(MouseEvent e) {
+        // Nothing to do
+    }
 
-  @Override
-  public void mouseDragged(MouseEvent e) {
-    pushDataToAllOuts(new ByteBuffer(new MouseOrder(e)));
-  }
+    @Override
+    public void mouseDragged(MouseEvent e) {
+        pushDataToAllOuts(new ByteBuffer(new MouseOrder(e)));
+    }
 
-  @Override
-  public void mouseMoved(MouseEvent e) {
-    pushDataToAllOuts(new ByteBuffer(new MouseOrder(e)));
-  }
+    @Override
+    public void mouseMoved(MouseEvent e) {
+        pushDataToAllOuts(new ByteBuffer(new MouseOrder(e)));
+    }
 
 }

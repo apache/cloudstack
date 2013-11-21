@@ -27,9 +27,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value=NiciraNvpNicMappingDao.class)
-public class NiciraNvpNicMappingDaoImpl extends
-        GenericDaoBase<NiciraNvpNicMappingVO, Long> implements NiciraNvpNicMappingDao {
+@Local(value = NiciraNvpNicMappingDao.class)
+public class NiciraNvpNicMappingDaoImpl extends GenericDaoBase<NiciraNvpNicMappingVO, Long> implements NiciraNvpNicMappingDao {
 
     protected final SearchBuilder<NiciraNvpNicMappingVO> nicSearch;
 

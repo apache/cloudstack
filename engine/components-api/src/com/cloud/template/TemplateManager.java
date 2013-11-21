@@ -113,7 +113,4 @@ public interface TemplateManager {
 
     TemplateInfo prepareIso(long isoId, long dcId);
 
-
-
-
 }

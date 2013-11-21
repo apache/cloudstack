@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.mockito.Matchers;
 import org.mockito.Mockito;
 
 import com.cloud.utils.script.OutputInterpreter;
@@ -44,7 +45,7 @@ public class ScriptTest {
     public void testLogger() {
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
         Logger mock = Mockito.mock(Logger.class);
-        Mockito.doNothing().when(mock).debug(Mockito.any());
+        Mockito.doNothing().when(mock).debug(Matchers.any());
         Script script = new Script("/bin/echo", mock);
         script.execute();
     }
@@ -72,7 +73,7 @@ public class ScriptTest {
     public void testExecute() {
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
         Logger mock = Mockito.mock(Logger.class);
-        Mockito.doNothing().when(mock).debug(Mockito.any());
+        Mockito.doNothing().when(mock).debug(Matchers.any());
         for (int i = 0; i < 100000; i++) {
             Script script = new Script("/bin/false", mock);
             script.execute();
@@ -95,6 +96,6 @@ public class ScriptTest {
     public void testFindScript() {
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
         String script = Script.findScript("/bin", "pwd");
-        Assert.assertNotNull("/bin/pwd shoud be there on linux",script);
+        Assert.assertNotNull("/bin/pwd shoud be there on linux", script);
     }
 }

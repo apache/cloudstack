@@ -16,19 +16,19 @@
 // under the License.
 package com.cloud.agent.api;
 
-
-public class RecurringNetworkUsageCommand extends Command implements CronCommand{
+public class RecurringNetworkUsageCommand extends Command implements CronCommand {
     int interval;
-    
-	public RecurringNetworkUsageCommand(int interval) {
+
+    public RecurringNetworkUsageCommand(int interval) {
         this.interval = interval;
     }
-	
-	public int getInterval() {
+
+    @Override
+    public int getInterval() {
         return interval;
     }
-	
-	@Override
+
+    @Override
     public boolean executeInSequence() {
         return false;
     }

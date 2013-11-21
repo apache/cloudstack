@@ -28,8 +28,9 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
-import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "autoscale_policies")
@@ -87,6 +88,7 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
         return id;
     }
 
+    @Override
     public String getUuid() {
         return uuid;
     }

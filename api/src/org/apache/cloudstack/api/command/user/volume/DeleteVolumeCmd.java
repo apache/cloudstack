@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -26,13 +28,11 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteVolume", description="Deletes a detached disk volume.", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteVolume", description = "Deletes a detached disk volume.", responseObject = SuccessResponse.class)
 public class DeleteVolumeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVolumeCmd.class.getName());
     private static final String s_name = "deletevolumeresponse";
@@ -41,10 +41,8 @@ public class DeleteVolumeCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class,
-            required=true, description="The ID of the disk volume")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "The ID of the disk volume")
     private Long id;
-
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -53,7 +51,6 @@ public class DeleteVolumeCmd extends BaseCmd {
     public Long getId() {
         return id;
     }
-
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -80,7 +77,7 @@ public class DeleteVolumeCmd extends BaseCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException {
-        CallContext.current().setEventDetails("Volume Id: "+getId());
+        CallContext.current().setEventDetails("Volume Id: " + getId());
         boolean result = this._volumeService.deleteVolume(id, CallContext.current().getCallingAccount());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());

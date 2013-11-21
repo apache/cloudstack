@@ -16,11 +16,11 @@
 // under the License.
 package com.cloud.network.dao;
 
+import java.util.List;
+
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO.LBDeviceAllocationState;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.utils.db.GenericDao;
-
-import java.util.List;
 
 public interface ExternalLoadBalancerDeviceDao extends GenericDao<ExternalLoadBalancerDeviceVO, Long> {
 

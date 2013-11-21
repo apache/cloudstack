@@ -24,7 +24,7 @@ import com.cloud.vm.VirtualMachine;
 public interface Investigator extends Adapter {
     /**
      * Returns if the vm is still alive.
-     * 
+     *
      * @param vm to work on.
      */
     public Boolean isVmAlive(VirtualMachine vm, Host host);

@@ -56,8 +56,8 @@ public class AuthenticatorTest {
     @InjectMocks
     SHA256SaltedUserAuthenticator authenticator;
 
-	@Before
-	public void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         try {
             authenticator.configure("SHA256", Collections.<String, Object> emptyMap());
         } catch (ConfigurationException e) {
@@ -72,22 +72,22 @@ public class AuthenticatorTest {
         //20 byte salt, and password="password"
         when(adminAccount20Byte.getPassword()).thenReturn("QL2NsxVEmRuDaNRkvIyADny7C5w=:JoegiytiWnoBAxmSD/PwBZZYqkr746x2KzPrZNw4NgI=");
 
-	}
+    }
 
-	@Test
-	public void testEncode() throws UnsupportedEncodingException, NoSuchAlgorithmException {
-		
-		String encodedPassword = authenticator.encode("password");
-        
-		String storedPassword[] = encodedPassword.split(":");
-        assertEquals ("hash must consist of two components", storedPassword.length, 2);
+    @Test
+    public void testEncode() throws UnsupportedEncodingException, NoSuchAlgorithmException {
+
+        String encodedPassword = authenticator.encode("password");
+
+        String storedPassword[] = encodedPassword.split(":");
+        assertEquals("hash must consist of two components", storedPassword.length, 2);
 
         byte salt[] = Base64.decode(storedPassword[0]);
         String hashedPassword = authenticator.encode("password", salt);
-        
+
         assertEquals("compare hashes", storedPassword[1], hashedPassword);
 
-	}
+    }
 
     @Test
     public void testAuthentication() throws UnsupportedEncodingException, NoSuchAlgorithmException {

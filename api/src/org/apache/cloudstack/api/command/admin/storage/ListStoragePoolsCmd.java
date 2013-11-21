@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.storage;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,10 +28,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
-
-@APICommand(name = "listStoragePools", description="Lists storage pools.", responseObject=StoragePoolResponse.class)
+@APICommand(name = "listStoragePools", description = "Lists storage pools.", responseObject = StoragePoolResponse.class)
 public class ListStoragePoolsCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListStoragePoolsCmd.class.getName());
 
@@ -39,33 +39,31 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.UUID, entityType = ClusterResponse.class,
-            description="list storage pools belongig to the specific cluster")
+    @Parameter(name = ApiConstants.CLUSTER_ID,
+               type = CommandType.UUID,
+               entityType = ClusterResponse.class,
+               description = "list storage pools belongig to the specific cluster")
     private Long clusterId;
 
-    @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="the IP address for the storage pool")
+    @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "the IP address for the storage pool")
     private String ipAddress;
 
-    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the name of the storage pool")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the storage pool")
     private String storagePoolName;
 
-    @Parameter(name=ApiConstants.PATH, type=CommandType.STRING, description="the storage pool path")
+    @Parameter(name = ApiConstants.PATH, type = CommandType.STRING, description = "the storage pool path")
     private String path;
 
-    @Parameter(name=ApiConstants.POD_ID, type=CommandType.UUID, entityType = PodResponse.class,
-            description="the Pod ID for the storage pool")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.UUID, entityType = PodResponse.class, description = "the Pod ID for the storage pool")
     private Long podId;
 
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            description="the Zone ID for the storage pool")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "the Zone ID for the storage pool")
     private Long zoneId;
 
-    @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = StoragePoolResponse.class,
-            description="the ID of the storage pool")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, description = "the ID of the storage pool")
     private Long id;
 
-    @Parameter(name=ApiConstants.SCOPE, type=CommandType.STRING, entityType = StoragePoolResponse.class,
-            description="the ID of the storage pool")
+    @Parameter(name = ApiConstants.SCOPE, type = CommandType.STRING, entityType = StoragePoolResponse.class, description = "the ID of the storage pool")
     private String scope;
 
     /////////////////////////////////////////////////////
@@ -115,7 +113,7 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         ListResponse<StoragePoolResponse> response = _queryService.searchForStoragePools(this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

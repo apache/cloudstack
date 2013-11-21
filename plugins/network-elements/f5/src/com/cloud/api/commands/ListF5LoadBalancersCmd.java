@@ -22,13 +22,18 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import com.cloud.api.response.F5LoadBalancerResponse;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+
+import com.cloud.api.response.F5LoadBalancerResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -38,22 +43,24 @@ import com.cloud.network.dao.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "listF5LoadBalancers", responseObject=F5LoadBalancerResponse.class, description="lists F5 load balancer devices")
+@APICommand(name = "listF5LoadBalancers", responseObject = F5LoadBalancerResponse.class, description = "lists F5 load balancer devices")
 public class ListF5LoadBalancersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListF5LoadBalancersCmd.class.getName());
     private static final String s_name = "listf5loadbalancerresponse";
-    @Inject F5ExternalLoadBalancerElementService _f5DeviceManagerService;
+    @Inject
+    F5ExternalLoadBalancerElementService _f5DeviceManagerService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
-            description="the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.LOAD_BALANCER_DEVICE_ID, type=CommandType.UUID, entityType = F5LoadBalancerResponse.class,
-            description="f5 load balancer device ID")
+    @Parameter(name = ApiConstants.LOAD_BALANCER_DEVICE_ID,
+               type = CommandType.UUID,
+               entityType = F5LoadBalancerResponse.class,
+               description = "f5 load balancer device ID")
     private Long lbDeviceId;
 
     /////////////////////////////////////////////////////
@@ -73,7 +80,8 @@ public class ListF5LoadBalancersCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             List<ExternalLoadBalancerDeviceVO> lbDevices = _f5DeviceManagerService.listF5LoadBalancers(this);
             ListResponse<F5LoadBalancerResponse> response = new ListResponse<F5LoadBalancerResponse>();
@@ -89,7 +97,7 @@ public class ListF5LoadBalancersCmd extends BaseListCmd {
             response.setResponses(lbDevicesResponse);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

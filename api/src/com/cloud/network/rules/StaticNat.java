@@ -16,8 +16,7 @@
 // under the License.
 package com.cloud.network.rules;
 
-
-public interface StaticNat{
+public interface StaticNat {
 
     long getAccountId();
 

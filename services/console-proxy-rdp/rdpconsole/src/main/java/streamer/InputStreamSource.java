@@ -25,170 +25,170 @@ import java.io.InputStream;
  */
 public class InputStreamSource extends BaseElement {
 
-  protected InputStream is;
-  protected SocketWrapper socketWrapper;
+    protected InputStream is;
+    protected SocketWrapper socketWrapper;
 
-  public InputStreamSource(String id) {
-    super(id);
-  }
-
-  public InputStreamSource(String id, InputStream is) {
-    super(id);
-    this.is = is;
-  }
-
-  public InputStreamSource(String id, SocketWrapper socketWrapper) {
-    super(id);
-    this.socketWrapper = socketWrapper;
-  }
-
-  @Override
-  public void handleEvent(Event event, Direction direction) {
-    switch (event) {
-    case SOCKET_UPGRADE_TO_SSL:
-      socketWrapper.upgradeToSsl();
-      break;
-    default:
-      super.handleEvent(event, direction);
+    public InputStreamSource(String id) {
+        super(id);
     }
-  }
 
-  @Override
-  public void setLink(String padName, Link link, Direction direction) {
-    switch (direction) {
-    case OUT:
-      super.setLink(padName, link, direction);
-
-      if (is == null) {
-        // Pause links until data stream will be ready
-        link.pause();
-      }
-      break;
-    case IN:
-      throw new RuntimeException("Cannot assign link to input pad in source element. Element: " + this + ", pad: " + padName + ", link: " + link + ".");
+    public InputStreamSource(String id, InputStream is) {
+        super(id);
+        this.is = is;
     }
-  }
 
-  public void setInputStream(InputStream is) {
-    this.is = is;
+    public InputStreamSource(String id, SocketWrapper socketWrapper) {
+        super(id);
+        this.socketWrapper = socketWrapper;
+    }
 
-    // Resume links
-    resumeLinks();
-  }
+    @Override
+    public void handleEvent(Event event, Direction direction) {
+        switch (event) {
+            case SOCKET_UPGRADE_TO_SSL:
+                socketWrapper.upgradeToSsl();
+                break;
+            default:
+                super.handleEvent(event, direction);
+        }
+    }
 
-  private void resumeLinks() {
-    for (DataSink sink : outputPads.values())
-      ((Link) sink).resume();
-  }
+    @Override
+    public void setLink(String padName, Link link, Direction direction) {
+        switch (direction) {
+            case OUT:
+                super.setLink(padName, link, direction);
 
-  /**
-   * Read data from input stream.
-   */
-  @Override
-  public void poll(boolean block) {
-    try {
-      if (!block && is.available() == 0) {
+                if (is == null) {
+                    // Pause links until data stream will be ready
+                    link.pause();
+                }
+                break;
+            case IN:
+                throw new RuntimeException("Cannot assign link to input pad in source element. Element: " + this + ", pad: " + padName + ", link: " + link + ".");
+        }
+    }
 
-        if (verbose)
-          System.out.println("[" + this + "] INFO: No data in stream is available now, returning.");
+    public void setInputStream(InputStream is) {
+        this.is = is;
 
-        return;
-      }
+        // Resume links
+        resumeLinks();
+    }
 
-      // Create buffer of recommended size and with default offset
-      ByteBuffer buf = new ByteBuffer(incommingBufLength);
+    private void resumeLinks() {
+        for (DataSink sink : outputPads.values())
+            ((Link)sink).resume();
+    }
 
-      if (verbose)
-        System.out.println("[" + this + "] INFO: Reading data from stream.");
+    /**
+     * Read data from input stream.
+     */
+    @Override
+    public void poll(boolean block) {
+        try {
+            if (!block && is.available() == 0) {
 
-      int actualLength = is.read(buf.data, buf.offset, buf.data.length - buf.offset);
+                if (verbose)
+                    System.out.println("[" + this + "] INFO: No data in stream is available now, returning.");
 
-      if (actualLength < 0) {
-        if (verbose)
-          System.out.println("[" + this + "] INFO: End of stream.");
+                return;
+            }
 
-        buf.unref();
+            // Create buffer of recommended size and with default offset
+            ByteBuffer buf = new ByteBuffer(incommingBufLength);
+
+            if (verbose)
+                System.out.println("[" + this + "] INFO: Reading data from stream.");
+
+            int actualLength = is.read(buf.data, buf.offset, buf.data.length - buf.offset);
+
+            if (actualLength < 0) {
+                if (verbose)
+                    System.out.println("[" + this + "] INFO: End of stream.");
+
+                buf.unref();
+                closeStream();
+                sendEventToAllPads(Event.STREAM_CLOSE, Direction.OUT);
+                return;
+            }
+
+            if (actualLength == 0) {
+                if (verbose)
+                    System.out.println("[" + this + "] INFO: Empty buffer is read from stream.");
+
+                buf.unref();
+                return;
+            }
+
+            buf.length = actualLength;
+
+            if (verbose)
+                System.out.println("[" + this + "] INFO: Data read from stream: " + buf + ".");
+
+            pushDataToAllOuts(buf);
+
+        } catch (IOException e) {
+            System.err.println("[" + this + "] ERROR: " + e.getMessage());
+            closeStream();
+        }
+    }
+
+    @Override
+    protected void onClose() {
         closeStream();
-        sendEventToAllPads(Event.STREAM_CLOSE, Direction.OUT);
-        return;
-      }
+    }
 
-      if (actualLength == 0) {
+    private void closeStream() {
         if (verbose)
-          System.out.println("[" + this + "] INFO: Empty buffer is read from stream.");
+            System.out.println("[" + this + "] INFO: Closing stream.");
 
-        buf.unref();
-        return;
-      }
-
-      buf.length = actualLength;
-
-      if (verbose)
-        System.out.println("[" + this + "] INFO: Data read from stream: " + buf + ".");
-
-      pushDataToAllOuts(buf);
-
-    } catch (IOException e) {
-      System.err.println("[" + this + "] ERROR: " + e.getMessage());
-      closeStream();
+        try {
+            is.close();
+        } catch (IOException e) {
+        }
+        try {
+            sendEventToAllPads(Event.STREAM_CLOSE, Direction.OUT);
+        } catch (Exception e) {
+        }
     }
-  }
 
-  @Override
-  protected void onClose() {
-    closeStream();
-  }
-
-  private void closeStream() {
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Closing stream.");
-
-    try {
-      is.close();
-    } catch (IOException e) {
+    @Override
+    public String toString() {
+        return "InputStreamSource(" + id + ")";
     }
-    try {
-      sendEventToAllPads(Event.STREAM_CLOSE, Direction.OUT);
-    } catch (Exception e) {
+
+    /**
+     * Example.
+     */
+    public static void main(String args[]) {
+        InputStream is = new ByteArrayInputStream(new byte[] {1, 2, 3});
+
+        InputStreamSource source = new InputStreamSource("source") {
+            {
+                verbose = true;
+            }
+        };
+        Element fakeSink = new FakeSink("sink") {
+            {
+                verbose = true;
+            }
+        };
+
+        Link link = new SyncLink() {
+            {
+                verbose = true;
+            }
+        };
+
+        source.setLink(STDOUT, link, Direction.OUT);
+        fakeSink.setLink(STDIN, link, Direction.IN);
+
+        source.setInputStream(is);
+
+        link.sendEvent(Event.STREAM_START, Direction.OUT);
+        link.run();
+
     }
-  }
-
-  @Override
-  public String toString() {
-    return "InputStreamSource(" + id + ")";
-  }
-
-  /**
-   * Example.
-   */
-  public static void main(String args[]) {
-    InputStream is = new ByteArrayInputStream(new byte[] { 1, 2, 3 });
-
-    InputStreamSource source = new InputStreamSource("source") {
-      {
-        verbose = true;
-      }
-    };
-    Element fakeSink = new FakeSink("sink") {
-      {
-        verbose = true;
-      }
-    };
-
-    Link link = new SyncLink() {
-      {
-        verbose = true;
-      }
-    };
-
-    source.setLink(STDOUT, link, Direction.OUT);
-    fakeSink.setLink(STDIN, link, Direction.IN);
-
-    source.setInputStream(is);
-
-    link.sendEvent(Event.STREAM_START, Direction.OUT);
-    link.run();
-
-  }
 
 }

@@ -22,9 +22,11 @@ import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface AccountVlanMapDao extends GenericDao<AccountVlanMapVO, Long> {
-		
-	public List<AccountVlanMapVO> listAccountVlanMapsByAccount(long accountId);
-	public List<AccountVlanMapVO> listAccountVlanMapsByVlan(long vlanDbId);
-	public AccountVlanMapVO findAccountVlanMap(long accountId, long vlanDbId);
-	
+
+    public List<AccountVlanMapVO> listAccountVlanMapsByAccount(long accountId);
+
+    public List<AccountVlanMapVO> listAccountVlanMapsByVlan(long vlanDbId);
+
+    public AccountVlanMapVO findAccountVlanMap(long accountId, long vlanDbId);
+
 }

@@ -21,26 +21,25 @@ import com.cloud.storage.Upload.Status;
 
 public class UploadCompleteState extends UploadInactiveState {
 
-	public UploadCompleteState(UploadListener ul) {
-		super(ul);
-	}
+    public UploadCompleteState(UploadListener ul) {
+        super(ul);
+    }
 
-	@Override
-	public String getName() {
-		return Status.UPLOADED.toString();
+    @Override
+    public String getName() {
+        return Status.UPLOADED.toString();
 
-	}
+    }
 
+    @Override
+    public void onEntry(String prevState, UploadEvent event, Object evtObj) {
+        super.onEntry(prevState, event, evtObj);
+        if (!prevState.equals(getName())) {
+            if (event == UploadEvent.UPLOAD_ANSWER) {
+                getUploadListener().scheduleImmediateStatusCheck(RequestType.PURGE);
+            }
+            getUploadListener().setUploadInactive(Status.UPLOADED);
+        }
 
-	@Override
-	public void onEntry(String prevState, UploadEvent event, Object evtObj) {
-		super.onEntry(prevState, event, evtObj);
-		if (! prevState.equals(getName())) {
-			if (event == UploadEvent.UPLOAD_ANSWER){
-				getUploadListener().scheduleImmediateStatusCheck(RequestType.PURGE);
-			}
-			getUploadListener().setUploadInactive(Status.UPLOADED);
-		}
-		
-	}
+    }
 }

@@ -21,921 +21,809 @@
  * This file was auto-generated from WSDL
  * by the Apache Axis2 version: 1.5.6  Built on : Aug 30, 2011 (10:01:01 CEST)
  */
-            
-                package com.amazon.ec2;
-            
 
-            /**
-            *  ModifyInstanceAttributeTypeChoice_type0 bean class
+package com.amazon.ec2;
+
+/**
+*  ModifyInstanceAttributeTypeChoice_type0 bean class
+*/
+
+public class ModifyInstanceAttributeTypeChoice_type0 implements org.apache.axis2.databinding.ADBBean {
+    /* This type was generated from the piece of schema that had
+            name = ModifyInstanceAttributeTypeChoice_type0
+            Namespace URI = http://ec2.amazonaws.com/doc/2012-08-15/
+            Namespace Prefix = ns1
             */
-        
-        public  class ModifyInstanceAttributeTypeChoice_type0
-        implements org.apache.axis2.databinding.ADBBean{
-        /* This type was generated from the piece of schema that had
-                name = ModifyInstanceAttributeTypeChoice_type0
-                Namespace URI = http://ec2.amazonaws.com/doc/2012-08-15/
-                Namespace Prefix = ns1
-                */
-            
 
-        private static java.lang.String generatePrefix(java.lang.String namespace) {
-            if(namespace.equals("http://ec2.amazonaws.com/doc/2012-08-15/")){
-                return "ns1";
-            }
-            return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
+    private static java.lang.String generatePrefix(java.lang.String namespace) {
+        if (namespace.equals("http://ec2.amazonaws.com/doc/2012-08-15/")) {
+            return "ns1";
+        }
+        return org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
+    }
+
+    /** Whenever a new property is set ensure all others are unset
+     *  There can be only one choice and the last one wins
+     */
+    private void clearAllSettingTrackers() {
+
+        localInstanceTypeTracker = false;
+
+        localKernelTracker = false;
+
+        localRamdiskTracker = false;
+
+        localUserDataTracker = false;
+
+        localDisableApiTerminationTracker = false;
+
+        localInstanceInitiatedShutdownBehaviorTracker = false;
+
+        localBlockDeviceMappingTracker = false;
+
+        localSourceDestCheckTracker = false;
+
+        localGroupSetTracker = false;
+
+        localEbsOptimizedTracker = false;
+
+    }
+
+    /**
+    * field for InstanceType
+    */
+
+    protected com.amazon.ec2.AttributeValueType localInstanceType;
+
+    /*  This tracker boolean wil be used to detect whether the user called the set method
+    *   for this attribute. It will be used to determine whether to include this field
+    *   in the serialized XML
+    */
+    protected boolean localInstanceTypeTracker = false;
+
+    /**
+    * Auto generated getter method
+    * @return com.amazon.ec2.AttributeValueType
+    */
+    public com.amazon.ec2.AttributeValueType getInstanceType() {
+        return localInstanceType;
+    }
+
+    /**
+       * Auto generated setter method
+       * @param param InstanceType
+       */
+    public void setInstanceType(com.amazon.ec2.AttributeValueType param) {
+
+        clearAllSettingTrackers();
+
+        if (param != null) {
+            //update the setting tracker
+            localInstanceTypeTracker = true;
+        } else {
+            localInstanceTypeTracker = false;
+
         }
 
-        
-            /** Whenever a new property is set ensure all others are unset
-             *  There can be only one choice and the last one wins
-             */
-            private void clearAllSettingTrackers() {
-            
-                   localInstanceTypeTracker = false;
-                
-                   localKernelTracker = false;
-                
-                   localRamdiskTracker = false;
-                
-                   localUserDataTracker = false;
-                
-                   localDisableApiTerminationTracker = false;
-                
-                   localInstanceInitiatedShutdownBehaviorTracker = false;
-                
-                   localBlockDeviceMappingTracker = false;
-                
-                   localSourceDestCheckTracker = false;
-                
-                   localGroupSetTracker = false;
-                
-                   localEbsOptimizedTracker = false;
-                
-            }
-        
+        this.localInstanceType = param;
 
-                        /**
-                        * field for InstanceType
-                        */
+    }
 
-                        
-                                    protected com.amazon.ec2.AttributeValueType localInstanceType ;
-                                
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localInstanceTypeTracker = false ;
-                           
+    /**
+    * field for Kernel
+    */
 
-                           /**
-                           * Auto generated getter method
-                           * @return com.amazon.ec2.AttributeValueType
-                           */
-                           public  com.amazon.ec2.AttributeValueType getInstanceType(){
-                               return localInstanceType;
-                           }
+    protected com.amazon.ec2.AttributeValueType localKernel;
 
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param InstanceType
-                               */
-                               public void setInstanceType(com.amazon.ec2.AttributeValueType param){
-                            
-                                clearAllSettingTrackers();
-                            
-                                       if (param != null){
-                                          //update the setting tracker
-                                          localInstanceTypeTracker = true;
-                                       } else {
-                                          localInstanceTypeTracker = false;
-                                              
-                                       }
-                                   
-                                            this.localInstanceType=param;
-                                    
+    /*  This tracker boolean wil be used to detect whether the user called the set method
+    *   for this attribute. It will be used to determine whether to include this field
+    *   in the serialized XML
+    */
+    protected boolean localKernelTracker = false;
 
-                               }
-                            
+    /**
+    * Auto generated getter method
+    * @return com.amazon.ec2.AttributeValueType
+    */
+    public com.amazon.ec2.AttributeValueType getKernel() {
+        return localKernel;
+    }
 
-                        /**
-                        * field for Kernel
-                        */
+    /**
+       * Auto generated setter method
+       * @param param Kernel
+       */
+    public void setKernel(com.amazon.ec2.AttributeValueType param) {
 
-                        
-                                    protected com.amazon.ec2.AttributeValueType localKernel ;
-                                
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localKernelTracker = false ;
-                           
+        clearAllSettingTrackers();
 
-                           /**
-                           * Auto generated getter method
-                           * @return com.amazon.ec2.AttributeValueType
-                           */
-                           public  com.amazon.ec2.AttributeValueType getKernel(){
-                               return localKernel;
-                           }
+        if (param != null) {
+            //update the setting tracker
+            localKernelTracker = true;
+        } else {
+            localKernelTracker = false;
 
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param Kernel
-                               */
-                               public void setKernel(com.amazon.ec2.AttributeValueType param){
-                            
-                                clearAllSettingTrackers();
-                            
-                                       if (param != null){
-                                          //update the setting tracker
-                                          localKernelTracker = true;
-                                       } else {
-                                          localKernelTracker = false;
-                                              
-                                       }
-                                   
-                                            this.localKernel=param;
-                                    
+        }
 
-                               }
-                            
+        this.localKernel = param;
 
-                        /**
-                        * field for Ramdisk
-                        */
+    }
 
-                        
-                                    protected com.amazon.ec2.AttributeValueType localRamdisk ;
-                                
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localRamdiskTracker = false ;
-                           
+    /**
+    * field for Ramdisk
+    */
 
-                           /**
-                           * Auto generated getter method
-                           * @return com.amazon.ec2.AttributeValueType
-                           */
-                           public  com.amazon.ec2.AttributeValueType getRamdisk(){
-                               return localRamdisk;
-                           }
+    protected com.amazon.ec2.AttributeValueType localRamdisk;
 
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param Ramdisk
-                               */
-                               public void setRamdisk(com.amazon.ec2.AttributeValueType param){
-                            
-                                clearAllSettingTrackers();
-                            
-                                       if (param != null){
-                                          //update the setting tracker
-                                          localRamdiskTracker = true;
-                                       } else {
-                                          localRamdiskTracker = false;
-                                              
-                                       }
-                                   
-                                            this.localRamdisk=param;
-                                    
+    /*  This tracker boolean wil be used to detect whether the user called the set method
+    *   for this attribute. It will be used to determine whether to include this field
+    *   in the serialized XML
+    */
+    protected boolean localRamdiskTracker = false;
 
-                               }
-                            
+    /**
+    * Auto generated getter method
+    * @return com.amazon.ec2.AttributeValueType
+    */
+    public com.amazon.ec2.AttributeValueType getRamdisk() {
+        return localRamdisk;
+    }
 
-                        /**
-                        * field for UserData
-                        */
+    /**
+       * Auto generated setter method
+       * @param param Ramdisk
+       */
+    public void setRamdisk(com.amazon.ec2.AttributeValueType param) {
 
-                        
-                                    protected com.amazon.ec2.AttributeValueType localUserData ;
-                                
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localUserDataTracker = false ;
-                           
+        clearAllSettingTrackers();
 
-                           /**
-                           * Auto generated getter method
-                           * @return com.amazon.ec2.AttributeValueType
-                           */
-                           public  com.amazon.ec2.AttributeValueType getUserData(){
-                               return localUserData;
-                           }
+        if (param != null) {
+            //update the setting tracker
+            localRamdiskTracker = true;
+        } else {
+            localRamdiskTracker = false;
 
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param UserData
-                               */
-                               public void setUserData(com.amazon.ec2.AttributeValueType param){
-                            
-                                clearAllSettingTrackers();
-                            
-                                       if (param != null){
-                                          //update the setting tracker
-                                          localUserDataTracker = true;
-                                       } else {
-                                          localUserDataTracker = false;
-                                              
-                                       }
-                                   
-                                            this.localUserData=param;
-                                    
+        }
 
-                               }
-                            
+        this.localRamdisk = param;
 
-                        /**
-                        * field for DisableApiTermination
-                        */
+    }
 
-                        
-                                    protected com.amazon.ec2.AttributeBooleanValueType localDisableApiTermination ;
-                                
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localDisableApiTerminationTracker = false ;
-                           
+    /**
+    * field for UserData
+    */
 
-                           /**
-                           * Auto generated getter method
-                           * @return com.amazon.ec2.AttributeBooleanValueType
-                           */
-                           public  com.amazon.ec2.AttributeBooleanValueType getDisableApiTermination(){
-                               return localDisableApiTermination;
-                           }
+    protected com.amazon.ec2.AttributeValueType localUserData;
 
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param DisableApiTermination
-                               */
-                               public void setDisableApiTermination(com.amazon.ec2.AttributeBooleanValueType param){
-                            
-                                clearAllSettingTrackers();
-                            
-                                       if (param != null){
-                                          //update the setting tracker
-                                          localDisableApiTerminationTracker = true;
-                                       } else {
-                                          localDisableApiTerminationTracker = false;
-                                              
-                                       }
-                                   
-                                            this.localDisableApiTermination=param;
-                                    
+    /*  This tracker boolean wil be used to detect whether the user called the set method
+    *   for this attribute. It will be used to determine whether to include this field
+    *   in the serialized XML
+    */
+    protected boolean localUserDataTracker = false;
 
-                               }
-                            
+    /**
+    * Auto generated getter method
+    * @return com.amazon.ec2.AttributeValueType
+    */
+    public com.amazon.ec2.AttributeValueType getUserData() {
+        return localUserData;
+    }
 
-                        /**
-                        * field for InstanceInitiatedShutdownBehavior
-                        */
+    /**
+       * Auto generated setter method
+       * @param param UserData
+       */
+    public void setUserData(com.amazon.ec2.AttributeValueType param) {
 
-                        
-                                    protected com.amazon.ec2.AttributeValueType localInstanceInitiatedShutdownBehavior ;
-                                
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localInstanceInitiatedShutdownBehaviorTracker = false ;
-                           
+        clearAllSettingTrackers();
 
-                           /**
-                           * Auto generated getter method
-                           * @return com.amazon.ec2.AttributeValueType
-                           */
-                           public  com.amazon.ec2.AttributeValueType getInstanceInitiatedShutdownBehavior(){
-                               return localInstanceInitiatedShutdownBehavior;
-                           }
+        if (param != null) {
+            //update the setting tracker
+            localUserDataTracker = true;
+        } else {
+            localUserDataTracker = false;
 
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param InstanceInitiatedShutdownBehavior
-                               */
-                               public void setInstanceInitiatedShutdownBehavior(com.amazon.ec2.AttributeValueType param){
-                            
-                                clearAllSettingTrackers();
-                            
-                                       if (param != null){
-                                          //update the setting tracker
-                                          localInstanceInitiatedShutdownBehaviorTracker = true;
-                                       } else {
-                                          localInstanceInitiatedShutdownBehaviorTracker = false;
-                                              
-                                       }
-                                   
-                                            this.localInstanceInitiatedShutdownBehavior=param;
-                                    
+        }
 
-                               }
-                            
+        this.localUserData = param;
 
-                        /**
-                        * field for BlockDeviceMapping
-                        */
+    }
 
-                        
-                                    protected com.amazon.ec2.InstanceBlockDeviceMappingType localBlockDeviceMapping ;
-                                
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localBlockDeviceMappingTracker = false ;
-                           
+    /**
+    * field for DisableApiTermination
+    */
 
-                           /**
-                           * Auto generated getter method
-                           * @return com.amazon.ec2.InstanceBlockDeviceMappingType
-                           */
-                           public  com.amazon.ec2.InstanceBlockDeviceMappingType getBlockDeviceMapping(){
-                               return localBlockDeviceMapping;
-                           }
+    protected com.amazon.ec2.AttributeBooleanValueType localDisableApiTermination;
 
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param BlockDeviceMapping
-                               */
-                               public void setBlockDeviceMapping(com.amazon.ec2.InstanceBlockDeviceMappingType param){
-                            
-                                clearAllSettingTrackers();
-                            
-                                       if (param != null){
-                                          //update the setting tracker
-                                          localBlockDeviceMappingTracker = true;
-                                       } else {
-                                          localBlockDeviceMappingTracker = false;
-                                              
-                                       }
-                                   
-                                            this.localBlockDeviceMapping=param;
-                                    
+    /*  This tracker boolean wil be used to detect whether the user called the set method
+    *   for this attribute. It will be used to determine whether to include this field
+    *   in the serialized XML
+    */
+    protected boolean localDisableApiTerminationTracker = false;
 
-                               }
-                            
+    /**
+    * Auto generated getter method
+    * @return com.amazon.ec2.AttributeBooleanValueType
+    */
+    public com.amazon.ec2.AttributeBooleanValueType getDisableApiTermination() {
+        return localDisableApiTermination;
+    }
 
-                        /**
-                        * field for SourceDestCheck
-                        */
+    /**
+       * Auto generated setter method
+       * @param param DisableApiTermination
+       */
+    public void setDisableApiTermination(com.amazon.ec2.AttributeBooleanValueType param) {
 
-                        
-                                    protected com.amazon.ec2.AttributeBooleanValueType localSourceDestCheck ;
-                                
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localSourceDestCheckTracker = false ;
-                           
+        clearAllSettingTrackers();
 
-                           /**
-                           * Auto generated getter method
-                           * @return com.amazon.ec2.AttributeBooleanValueType
-                           */
-                           public  com.amazon.ec2.AttributeBooleanValueType getSourceDestCheck(){
-                               return localSourceDestCheck;
-                           }
+        if (param != null) {
+            //update the setting tracker
+            localDisableApiTerminationTracker = true;
+        } else {
+            localDisableApiTerminationTracker = false;
 
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param SourceDestCheck
-                               */
-                               public void setSourceDestCheck(com.amazon.ec2.AttributeBooleanValueType param){
-                            
-                                clearAllSettingTrackers();
-                            
-                                       if (param != null){
-                                          //update the setting tracker
-                                          localSourceDestCheckTracker = true;
-                                       } else {
-                                          localSourceDestCheckTracker = false;
-                                              
-                                       }
-                                   
-                                            this.localSourceDestCheck=param;
-                                    
+        }
 
-                               }
-                            
+        this.localDisableApiTermination = param;
 
-                        /**
-                        * field for GroupSet
-                        */
+    }
 
-                        
-                                    protected com.amazon.ec2.SecurityGroupIdSetType localGroupSet ;
-                                
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localGroupSetTracker = false ;
-                           
+    /**
+    * field for InstanceInitiatedShutdownBehavior
+    */
 
-                           /**
-                           * Auto generated getter method
-                           * @return com.amazon.ec2.SecurityGroupIdSetType
-                           */
-                           public  com.amazon.ec2.SecurityGroupIdSetType getGroupSet(){
-                               return localGroupSet;
-                           }
+    protected com.amazon.ec2.AttributeValueType localInstanceInitiatedShutdownBehavior;
 
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param GroupSet
-                               */
-                               public void setGroupSet(com.amazon.ec2.SecurityGroupIdSetType param){
-                            
-                                clearAllSettingTrackers();
-                            
-                                       if (param != null){
-                                          //update the setting tracker
-                                          localGroupSetTracker = true;
-                                       } else {
-                                          localGroupSetTracker = false;
-                                              
-                                       }
-                                   
-                                            this.localGroupSet=param;
-                                    
+    /*  This tracker boolean wil be used to detect whether the user called the set method
+    *   for this attribute. It will be used to determine whether to include this field
+    *   in the serialized XML
+    */
+    protected boolean localInstanceInitiatedShutdownBehaviorTracker = false;
 
-                               }
-                            
+    /**
+    * Auto generated getter method
+    * @return com.amazon.ec2.AttributeValueType
+    */
+    public com.amazon.ec2.AttributeValueType getInstanceInitiatedShutdownBehavior() {
+        return localInstanceInitiatedShutdownBehavior;
+    }
 
-                        /**
-                        * field for EbsOptimized
-                        */
+    /**
+       * Auto generated setter method
+       * @param param InstanceInitiatedShutdownBehavior
+       */
+    public void setInstanceInitiatedShutdownBehavior(com.amazon.ec2.AttributeValueType param) {
 
-                        
-                                    protected com.amazon.ec2.AttributeBooleanValueType localEbsOptimized ;
-                                
-                           /*  This tracker boolean wil be used to detect whether the user called the set method
-                          *   for this attribute. It will be used to determine whether to include this field
-                           *   in the serialized XML
-                           */
-                           protected boolean localEbsOptimizedTracker = false ;
-                           
+        clearAllSettingTrackers();
 
-                           /**
-                           * Auto generated getter method
-                           * @return com.amazon.ec2.AttributeBooleanValueType
-                           */
-                           public  com.amazon.ec2.AttributeBooleanValueType getEbsOptimized(){
-                               return localEbsOptimized;
-                           }
+        if (param != null) {
+            //update the setting tracker
+            localInstanceInitiatedShutdownBehaviorTracker = true;
+        } else {
+            localInstanceInitiatedShutdownBehaviorTracker = false;
 
-                           
-                        
-                            /**
-                               * Auto generated setter method
-                               * @param param EbsOptimized
-                               */
-                               public void setEbsOptimized(com.amazon.ec2.AttributeBooleanValueType param){
-                            
-                                clearAllSettingTrackers();
-                            
-                                       if (param != null){
-                                          //update the setting tracker
-                                          localEbsOptimizedTracker = true;
-                                       } else {
-                                          localEbsOptimizedTracker = false;
-                                              
-                                       }
-                                   
-                                            this.localEbsOptimized=param;
-                                    
+        }
 
-                               }
-                            
+        this.localInstanceInitiatedShutdownBehavior = param;
 
-     /**
-     * isReaderMTOMAware
-     * @return true if the reader supports MTOM
-     */
-   public static boolean isReaderMTOMAware(javax.xml.stream.XMLStreamReader reader) {
+    }
+
+    /**
+    * field for BlockDeviceMapping
+    */
+
+    protected com.amazon.ec2.InstanceBlockDeviceMappingType localBlockDeviceMapping;
+
+    /*  This tracker boolean wil be used to detect whether the user called the set method
+    *   for this attribute. It will be used to determine whether to include this field
+    *   in the serialized XML
+    */
+    protected boolean localBlockDeviceMappingTracker = false;
+
+    /**
+    * Auto generated getter method
+    * @return com.amazon.ec2.InstanceBlockDeviceMappingType
+    */
+    public com.amazon.ec2.InstanceBlockDeviceMappingType getBlockDeviceMapping() {
+        return localBlockDeviceMapping;
+    }
+
+    /**
+       * Auto generated setter method
+       * @param param BlockDeviceMapping
+       */
+    public void setBlockDeviceMapping(com.amazon.ec2.InstanceBlockDeviceMappingType param) {
+
+        clearAllSettingTrackers();
+
+        if (param != null) {
+            //update the setting tracker
+            localBlockDeviceMappingTracker = true;
+        } else {
+            localBlockDeviceMappingTracker = false;
+
+        }
+
+        this.localBlockDeviceMapping = param;
+
+    }
+
+    /**
+    * field for SourceDestCheck
+    */
+
+    protected com.amazon.ec2.AttributeBooleanValueType localSourceDestCheck;
+
+    /*  This tracker boolean wil be used to detect whether the user called the set method
+    *   for this attribute. It will be used to determine whether to include this field
+    *   in the serialized XML
+    */
+    protected boolean localSourceDestCheckTracker = false;
+
+    /**
+    * Auto generated getter method
+    * @return com.amazon.ec2.AttributeBooleanValueType
+    */
+    public com.amazon.ec2.AttributeBooleanValueType getSourceDestCheck() {
+        return localSourceDestCheck;
+    }
+
+    /**
+       * Auto generated setter method
+       * @param param SourceDestCheck
+       */
+    public void setSourceDestCheck(com.amazon.ec2.AttributeBooleanValueType param) {
+
+        clearAllSettingTrackers();
+
+        if (param != null) {
+            //update the setting tracker
+            localSourceDestCheckTracker = true;
+        } else {
+            localSourceDestCheckTracker = false;
+
+        }
+
+        this.localSourceDestCheck = param;
+
+    }
+
+    /**
+    * field for GroupSet
+    */
+
+    protected com.amazon.ec2.SecurityGroupIdSetType localGroupSet;
+
+    /*  This tracker boolean wil be used to detect whether the user called the set method
+    *   for this attribute. It will be used to determine whether to include this field
+    *   in the serialized XML
+    */
+    protected boolean localGroupSetTracker = false;
+
+    /**
+    * Auto generated getter method
+    * @return com.amazon.ec2.SecurityGroupIdSetType
+    */
+    public com.amazon.ec2.SecurityGroupIdSetType getGroupSet() {
+        return localGroupSet;
+    }
+
+    /**
+       * Auto generated setter method
+       * @param param GroupSet
+       */
+    public void setGroupSet(com.amazon.ec2.SecurityGroupIdSetType param) {
+
+        clearAllSettingTrackers();
+
+        if (param != null) {
+            //update the setting tracker
+            localGroupSetTracker = true;
+        } else {
+            localGroupSetTracker = false;
+
+        }
+
+        this.localGroupSet = param;
+
+    }
+
+    /**
+    * field for EbsOptimized
+    */
+
+    protected com.amazon.ec2.AttributeBooleanValueType localEbsOptimized;
+
+    /*  This tracker boolean wil be used to detect whether the user called the set method
+    *   for this attribute. It will be used to determine whether to include this field
+    *   in the serialized XML
+    */
+    protected boolean localEbsOptimizedTracker = false;
+
+    /**
+    * Auto generated getter method
+    * @return com.amazon.ec2.AttributeBooleanValueType
+    */
+    public com.amazon.ec2.AttributeBooleanValueType getEbsOptimized() {
+        return localEbsOptimized;
+    }
+
+    /**
+       * Auto generated setter method
+       * @param param EbsOptimized
+       */
+    public void setEbsOptimized(com.amazon.ec2.AttributeBooleanValueType param) {
+
+        clearAllSettingTrackers();
+
+        if (param != null) {
+            //update the setting tracker
+            localEbsOptimizedTracker = true;
+        } else {
+            localEbsOptimizedTracker = false;
+
+        }
+
+        this.localEbsOptimized = param;
+
+    }
+
+    /**
+    * isReaderMTOMAware
+    * @return true if the reader supports MTOM
+    */
+    public static boolean isReaderMTOMAware(javax.xml.stream.XMLStreamReader reader) {
         boolean isReaderMTOMAware = false;
-        
-        try{
-          isReaderMTOMAware = java.lang.Boolean.TRUE.equals(reader.getProperty(org.apache.axiom.om.OMConstants.IS_DATA_HANDLERS_AWARE));
-        }catch(java.lang.IllegalArgumentException e){
-          isReaderMTOMAware = false;
+
+        try {
+            isReaderMTOMAware = java.lang.Boolean.TRUE.equals(reader.getProperty(org.apache.axiom.om.OMConstants.IS_DATA_HANDLERS_AWARE));
+        } catch (java.lang.IllegalArgumentException e) {
+            isReaderMTOMAware = false;
         }
         return isReaderMTOMAware;
-   }
-     
-     
-        /**
-        *
-        * @param parentQName
-        * @param factory
-        * @return org.apache.axiom.om.OMElement
-        */
-       public org.apache.axiom.om.OMElement getOMElement (
-               final javax.xml.namespace.QName parentQName,
-               final org.apache.axiom.om.OMFactory factory) throws org.apache.axis2.databinding.ADBException{
+    }
 
+    /**
+    *
+    * @param parentQName
+    * @param factory
+    * @return org.apache.axiom.om.OMElement
+    */
+    public org.apache.axiom.om.OMElement getOMElement(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory)
+        throws org.apache.axis2.databinding.ADBException {
 
-        
-               org.apache.axiom.om.OMDataSource dataSource =
-                       new org.apache.axis2.databinding.ADBDataSource(this,parentQName){
+        org.apache.axiom.om.OMDataSource dataSource = new org.apache.axis2.databinding.ADBDataSource(this, parentQName) {
 
-                 public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
-                       ModifyInstanceAttributeTypeChoice_type0.this.serialize(parentQName,factory,xmlWriter);
-                 }
-               };
-               return new org.apache.axiom.om.impl.llom.OMSourcedElementImpl(
-               parentQName,factory,dataSource);
-            
-       }
+            public void serialize(org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
+                ModifyInstanceAttributeTypeChoice_type0.this.serialize(parentQName, factory, xmlWriter);
+            }
+        };
+        return new org.apache.axiom.om.impl.llom.OMSourcedElementImpl(parentQName, factory, dataSource);
 
-         public void serialize(final javax.xml.namespace.QName parentQName,
-                                       final org.apache.axiom.om.OMFactory factory,
-                                       org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter)
-                                throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException{
-                           serialize(parentQName,factory,xmlWriter,false);
-         }
+    }
 
-         public void serialize(final javax.xml.namespace.QName parentQName,
-                               final org.apache.axiom.om.OMFactory factory,
-                               org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter,
-                               boolean serializeType)
-            throws javax.xml.stream.XMLStreamException, org.apache.axis2.databinding.ADBException{
-            
-                
+    public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
+        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException,
+        org.apache.axis2.databinding.ADBException {
+        serialize(parentQName, factory, xmlWriter, false);
+    }
 
+    public void serialize(final javax.xml.namespace.QName parentQName, final org.apache.axiom.om.OMFactory factory,
+        org.apache.axis2.databinding.utils.writer.MTOMAwareXMLStreamWriter xmlWriter, boolean serializeType) throws javax.xml.stream.XMLStreamException,
+        org.apache.axis2.databinding.ADBException {
 
-                java.lang.String prefix = null;
-                java.lang.String namespace = null;
-                
-                  if (serializeType){
-               
+        java.lang.String prefix = null;
+        java.lang.String namespace = null;
 
-                   java.lang.String namespacePrefix = registerPrefix(xmlWriter,"http://ec2.amazonaws.com/doc/2012-08-15/");
-                   if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)){
-                       writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
-                           namespacePrefix+":ModifyInstanceAttributeTypeChoice_type0",
-                           xmlWriter);
-                   } else {
-                       writeAttribute("xsi","http://www.w3.org/2001/XMLSchema-instance","type",
-                           "ModifyInstanceAttributeTypeChoice_type0",
-                           xmlWriter);
-                   }
+        if (serializeType) {
 
-               
-                   }
-                if (localInstanceTypeTracker){
-                                            if (localInstanceType==null){
-                                                 throw new org.apache.axis2.databinding.ADBException("instanceType cannot be null!!");
-                                            }
-                                           localInstanceType.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","instanceType"),
-                                               factory,xmlWriter);
-                                        } if (localKernelTracker){
-                                            if (localKernel==null){
-                                                 throw new org.apache.axis2.databinding.ADBException("kernel cannot be null!!");
-                                            }
-                                           localKernel.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","kernel"),
-                                               factory,xmlWriter);
-                                        } if (localRamdiskTracker){
-                                            if (localRamdisk==null){
-                                                 throw new org.apache.axis2.databinding.ADBException("ramdisk cannot be null!!");
-                                            }
-                                           localRamdisk.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","ramdisk"),
-                                               factory,xmlWriter);
-                                        } if (localUserDataTracker){
-                                            if (localUserData==null){
-                                                 throw new org.apache.axis2.databinding.ADBException("userData cannot be null!!");
-                                            }
-                                           localUserData.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","userData"),
-                                               factory,xmlWriter);
-                                        } if (localDisableApiTerminationTracker){
-                                            if (localDisableApiTermination==null){
-                                                 throw new org.apache.axis2.databinding.ADBException("disableApiTermination cannot be null!!");
-                                            }
-                                           localDisableApiTermination.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","disableApiTermination"),
-                                               factory,xmlWriter);
-                                        } if (localInstanceInitiatedShutdownBehaviorTracker){
-                                            if (localInstanceInitiatedShutdownBehavior==null){
-                                                 throw new org.apache.axis2.databinding.ADBException("instanceInitiatedShutdownBehavior cannot be null!!");
-                                            }
-                                           localInstanceInitiatedShutdownBehavior.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","instanceInitiatedShutdownBehavior"),
-                                               factory,xmlWriter);
-                                        } if (localBlockDeviceMappingTracker){
-                                            if (localBlockDeviceMapping==null){
-                                                 throw new org.apache.axis2.databinding.ADBException("blockDeviceMapping cannot be null!!");
-                                            }
-                                           localBlockDeviceMapping.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","blockDeviceMapping"),
-                                               factory,xmlWriter);
-                                        } if (localSourceDestCheckTracker){
-                                            if (localSourceDestCheck==null){
-                                                 throw new org.apache.axis2.databinding.ADBException("sourceDestCheck cannot be null!!");
-                                            }
-                                           localSourceDestCheck.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","sourceDestCheck"),
-                                               factory,xmlWriter);
-                                        } if (localGroupSetTracker){
-                                            if (localGroupSet==null){
-                                                 throw new org.apache.axis2.databinding.ADBException("groupSet cannot be null!!");
-                                            }
-                                           localGroupSet.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","groupSet"),
-                                               factory,xmlWriter);
-                                        } if (localEbsOptimizedTracker){
-                                            if (localEbsOptimized==null){
-                                                 throw new org.apache.axis2.databinding.ADBException("ebsOptimized cannot be null!!");
-                                            }
-                                           localEbsOptimized.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","ebsOptimized"),
-                                               factory,xmlWriter);
-                                        }
+            java.lang.String namespacePrefix = registerPrefix(xmlWriter, "http://ec2.amazonaws.com/doc/2012-08-15/");
+            if ((namespacePrefix != null) && (namespacePrefix.trim().length() > 0)) {
+                writeAttribute("xsi", "http://www.w3.org/2001/XMLSchema-instance", "type", namespacePrefix + ":ModifyInstanceAttributeTypeChoice_type0", xmlWriter);
+            } else {
+                writeAttribute("xsi", "http://www.w3.org/2001/XMLSchema-instance", "type", "ModifyInstanceAttributeTypeChoice_type0", xmlWriter);
+            }
+
+        }
+        if (localInstanceTypeTracker) {
+            if (localInstanceType == null) {
+                throw new org.apache.axis2.databinding.ADBException("instanceType cannot be null!!");
+            }
+            localInstanceType.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "instanceType"), factory, xmlWriter);
+        }
+        if (localKernelTracker) {
+            if (localKernel == null) {
+                throw new org.apache.axis2.databinding.ADBException("kernel cannot be null!!");
+            }
+            localKernel.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "kernel"), factory, xmlWriter);
+        }
+        if (localRamdiskTracker) {
+            if (localRamdisk == null) {
+                throw new org.apache.axis2.databinding.ADBException("ramdisk cannot be null!!");
+            }
+            localRamdisk.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "ramdisk"), factory, xmlWriter);
+        }
+        if (localUserDataTracker) {
+            if (localUserData == null) {
+                throw new org.apache.axis2.databinding.ADBException("userData cannot be null!!");
+            }
+            localUserData.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "userData"), factory, xmlWriter);
+        }
+        if (localDisableApiTerminationTracker) {
+            if (localDisableApiTermination == null) {
+                throw new org.apache.axis2.databinding.ADBException("disableApiTermination cannot be null!!");
+            }
+            localDisableApiTermination.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "disableApiTermination"), factory, xmlWriter);
+        }
+        if (localInstanceInitiatedShutdownBehaviorTracker) {
+            if (localInstanceInitiatedShutdownBehavior == null) {
+                throw new org.apache.axis2.databinding.ADBException("instanceInitiatedShutdownBehavior cannot be null!!");
+            }
+            localInstanceInitiatedShutdownBehavior.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
+                "instanceInitiatedShutdownBehavior"), factory, xmlWriter);
+        }
+        if (localBlockDeviceMappingTracker) {
+            if (localBlockDeviceMapping == null) {
+                throw new org.apache.axis2.databinding.ADBException("blockDeviceMapping cannot be null!!");
+            }
+            localBlockDeviceMapping.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "blockDeviceMapping"), factory, xmlWriter);
+        }
+        if (localSourceDestCheckTracker) {
+            if (localSourceDestCheck == null) {
+                throw new org.apache.axis2.databinding.ADBException("sourceDestCheck cannot be null!!");
+            }
+            localSourceDestCheck.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "sourceDestCheck"), factory, xmlWriter);
+        }
+        if (localGroupSetTracker) {
+            if (localGroupSet == null) {
+                throw new org.apache.axis2.databinding.ADBException("groupSet cannot be null!!");
+            }
+            localGroupSet.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "groupSet"), factory, xmlWriter);
+        }
+        if (localEbsOptimizedTracker) {
+            if (localEbsOptimized == null) {
+                throw new org.apache.axis2.databinding.ADBException("ebsOptimized cannot be null!!");
+            }
+            localEbsOptimized.serialize(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "ebsOptimized"), factory, xmlWriter);
+        }
+
+    }
+
+    /**
+     * Util method to write an attribute with the ns prefix
+     */
+    private void writeAttribute(java.lang.String prefix, java.lang.String namespace, java.lang.String attName, java.lang.String attValue,
+        javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
+        if (xmlWriter.getPrefix(namespace) == null) {
+            xmlWriter.writeNamespace(prefix, namespace);
+            xmlWriter.setPrefix(prefix, namespace);
 
         }
 
-         /**
-          * Util method to write an attribute with the ns prefix
-          */
-          private void writeAttribute(java.lang.String prefix,java.lang.String namespace,java.lang.String attName,
-                                      java.lang.String attValue,javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException{
-              if (xmlWriter.getPrefix(namespace) == null) {
-                       xmlWriter.writeNamespace(prefix, namespace);
-                       xmlWriter.setPrefix(prefix, namespace);
+        xmlWriter.writeAttribute(namespace, attName, attValue);
 
-              }
+    }
 
-              xmlWriter.writeAttribute(namespace,attName,attValue);
+    /**
+      * Util method to write an attribute without the ns prefix
+      */
+    private void writeAttribute(java.lang.String namespace, java.lang.String attName, java.lang.String attValue, javax.xml.stream.XMLStreamWriter xmlWriter)
+        throws javax.xml.stream.XMLStreamException {
+        if (namespace.equals("")) {
+            xmlWriter.writeAttribute(attName, attValue);
+        } else {
+            registerPrefix(xmlWriter, namespace);
+            xmlWriter.writeAttribute(namespace, attName, attValue);
+        }
+    }
 
-         }
+    /**
+      * Util method to write an attribute without the ns prefix
+      */
+    private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName, javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter)
+        throws javax.xml.stream.XMLStreamException {
 
-        /**
-          * Util method to write an attribute without the ns prefix
-          */
-          private void writeAttribute(java.lang.String namespace,java.lang.String attName,
-                                      java.lang.String attValue,javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException{
-                if (namespace.equals(""))
-              {
-                  xmlWriter.writeAttribute(attName,attValue);
-              }
-              else
-              {
-                  registerPrefix(xmlWriter, namespace);
-                  xmlWriter.writeAttribute(namespace,attName,attValue);
-              }
-          }
+        java.lang.String attributeNamespace = qname.getNamespaceURI();
+        java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
+        if (attributePrefix == null) {
+            attributePrefix = registerPrefix(xmlWriter, attributeNamespace);
+        }
+        java.lang.String attributeValue;
+        if (attributePrefix.trim().length() > 0) {
+            attributeValue = attributePrefix + ":" + qname.getLocalPart();
+        } else {
+            attributeValue = qname.getLocalPart();
+        }
 
+        if (namespace.equals("")) {
+            xmlWriter.writeAttribute(attName, attributeValue);
+        } else {
+            registerPrefix(xmlWriter, namespace);
+            xmlWriter.writeAttribute(namespace, attName, attributeValue);
+        }
+    }
 
-           /**
-             * Util method to write an attribute without the ns prefix
-             */
-            private void writeQNameAttribute(java.lang.String namespace, java.lang.String attName,
-                                             javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
+    /**
+     *  method to handle Qnames
+     */
 
-                java.lang.String attributeNamespace = qname.getNamespaceURI();
-                java.lang.String attributePrefix = xmlWriter.getPrefix(attributeNamespace);
-                if (attributePrefix == null) {
-                    attributePrefix = registerPrefix(xmlWriter, attributeNamespace);
-                }
-                java.lang.String attributeValue;
-                if (attributePrefix.trim().length() > 0) {
-                    attributeValue = attributePrefix + ":" + qname.getLocalPart();
-                } else {
-                    attributeValue = qname.getLocalPart();
-                }
-
-                if (namespace.equals("")) {
-                    xmlWriter.writeAttribute(attName, attributeValue);
-                } else {
-                    registerPrefix(xmlWriter, namespace);
-                    xmlWriter.writeAttribute(namespace, attName, attributeValue);
-                }
+    private void writeQName(javax.xml.namespace.QName qname, javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
+        java.lang.String namespaceURI = qname.getNamespaceURI();
+        if (namespaceURI != null) {
+            java.lang.String prefix = xmlWriter.getPrefix(namespaceURI);
+            if (prefix == null) {
+                prefix = generatePrefix(namespaceURI);
+                xmlWriter.writeNamespace(prefix, namespaceURI);
+                xmlWriter.setPrefix(prefix, namespaceURI);
             }
-        /**
-         *  method to handle Qnames
-         */
 
-        private void writeQName(javax.xml.namespace.QName qname,
-                                javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
-            java.lang.String namespaceURI = qname.getNamespaceURI();
-            if (namespaceURI != null) {
-                java.lang.String prefix = xmlWriter.getPrefix(namespaceURI);
-                if (prefix == null) {
-                    prefix = generatePrefix(namespaceURI);
-                    xmlWriter.writeNamespace(prefix, namespaceURI);
-                    xmlWriter.setPrefix(prefix,namespaceURI);
-                }
-
-                if (prefix.trim().length() > 0){
-                    xmlWriter.writeCharacters(prefix + ":" + org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qname));
-                } else {
-                    // i.e this is the default namespace
-                    xmlWriter.writeCharacters(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qname));
-                }
-
+            if (prefix.trim().length() > 0) {
+                xmlWriter.writeCharacters(prefix + ":" + org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qname));
             } else {
+                // i.e this is the default namespace
                 xmlWriter.writeCharacters(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qname));
             }
+
+        } else {
+            xmlWriter.writeCharacters(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qname));
         }
+    }
 
-        private void writeQNames(javax.xml.namespace.QName[] qnames,
-                                 javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
+    private void writeQNames(javax.xml.namespace.QName[] qnames, javax.xml.stream.XMLStreamWriter xmlWriter) throws javax.xml.stream.XMLStreamException {
 
-            if (qnames != null) {
-                // we have to store this data until last moment since it is not possible to write any
-                // namespace data after writing the charactor data
-                java.lang.StringBuffer stringToWrite = new java.lang.StringBuffer();
-                java.lang.String namespaceURI = null;
-                java.lang.String prefix = null;
+        if (qnames != null) {
+            // we have to store this data until last moment since it is not possible to write any
+            // namespace data after writing the charactor data
+            java.lang.StringBuffer stringToWrite = new java.lang.StringBuffer();
+            java.lang.String namespaceURI = null;
+            java.lang.String prefix = null;
 
-                for (int i = 0; i < qnames.length; i++) {
-                    if (i > 0) {
-                        stringToWrite.append(" ");
+            for (int i = 0; i < qnames.length; i++) {
+                if (i > 0) {
+                    stringToWrite.append(" ");
+                }
+                namespaceURI = qnames[i].getNamespaceURI();
+                if (namespaceURI != null) {
+                    prefix = xmlWriter.getPrefix(namespaceURI);
+                    if ((prefix == null) || (prefix.length() == 0)) {
+                        prefix = generatePrefix(namespaceURI);
+                        xmlWriter.writeNamespace(prefix, namespaceURI);
+                        xmlWriter.setPrefix(prefix, namespaceURI);
                     }
-                    namespaceURI = qnames[i].getNamespaceURI();
-                    if (namespaceURI != null) {
-                        prefix = xmlWriter.getPrefix(namespaceURI);
-                        if ((prefix == null) || (prefix.length() == 0)) {
-                            prefix = generatePrefix(namespaceURI);
-                            xmlWriter.writeNamespace(prefix, namespaceURI);
-                            xmlWriter.setPrefix(prefix,namespaceURI);
-                        }
 
-                        if (prefix.trim().length() > 0){
-                            stringToWrite.append(prefix).append(":").append(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qnames[i]));
-                        } else {
-                            stringToWrite.append(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qnames[i]));
-                        }
+                    if (prefix.trim().length() > 0) {
+                        stringToWrite.append(prefix).append(":").append(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qnames[i]));
                     } else {
                         stringToWrite.append(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qnames[i]));
                     }
+                } else {
+                    stringToWrite.append(org.apache.axis2.databinding.utils.ConverterUtil.convertToString(qnames[i]));
                 }
-                xmlWriter.writeCharacters(stringToWrite.toString());
             }
-
+            xmlWriter.writeCharacters(stringToWrite.toString());
         }
 
+    }
 
-         /**
-         * Register a namespace prefix
-         */
-         private java.lang.String registerPrefix(javax.xml.stream.XMLStreamWriter xmlWriter, java.lang.String namespace) throws javax.xml.stream.XMLStreamException {
-                java.lang.String prefix = xmlWriter.getPrefix(namespace);
+    /**
+    * Register a namespace prefix
+    */
+    private java.lang.String registerPrefix(javax.xml.stream.XMLStreamWriter xmlWriter, java.lang.String namespace) throws javax.xml.stream.XMLStreamException {
+        java.lang.String prefix = xmlWriter.getPrefix(namespace);
 
-                if (prefix == null) {
-                    prefix = generatePrefix(namespace);
+        if (prefix == null) {
+            prefix = generatePrefix(namespace);
 
-                    while (xmlWriter.getNamespaceContext().getNamespaceURI(prefix) != null) {
-                        prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
-                    }
-
-                    xmlWriter.writeNamespace(prefix, namespace);
-                    xmlWriter.setPrefix(prefix, namespace);
-                }
-
-                return prefix;
+            while (xmlWriter.getNamespaceContext().getNamespaceURI(prefix) != null) {
+                prefix = org.apache.axis2.databinding.utils.BeanUtil.getUniquePrefix();
             }
 
-
-  
-        /**
-        * databinding method to get an XML representation of this object
-        *
-        */
-        public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName)
-                    throws org.apache.axis2.databinding.ADBException{
-
-
-        
-                 java.util.ArrayList elementList = new java.util.ArrayList();
-                 java.util.ArrayList attribList = new java.util.ArrayList();
-
-                 if (localInstanceTypeTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
-                                                                      "instanceType"));
-                            
-                            
-                                    if (localInstanceType==null){
-                                         throw new org.apache.axis2.databinding.ADBException("instanceType cannot be null!!");
-                                    }
-                                    elementList.add(localInstanceType);
-                                } if (localKernelTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
-                                                                      "kernel"));
-                            
-                            
-                                    if (localKernel==null){
-                                         throw new org.apache.axis2.databinding.ADBException("kernel cannot be null!!");
-                                    }
-                                    elementList.add(localKernel);
-                                } if (localRamdiskTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
-                                                                      "ramdisk"));
-                            
-                            
-                                    if (localRamdisk==null){
-                                         throw new org.apache.axis2.databinding.ADBException("ramdisk cannot be null!!");
-                                    }
-                                    elementList.add(localRamdisk);
-                                } if (localUserDataTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
-                                                                      "userData"));
-                            
-                            
-                                    if (localUserData==null){
-                                         throw new org.apache.axis2.databinding.ADBException("userData cannot be null!!");
-                                    }
-                                    elementList.add(localUserData);
-                                } if (localDisableApiTerminationTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
-                                                                      "disableApiTermination"));
-                            
-                            
-                                    if (localDisableApiTermination==null){
-                                         throw new org.apache.axis2.databinding.ADBException("disableApiTermination cannot be null!!");
-                                    }
-                                    elementList.add(localDisableApiTermination);
-                                } if (localInstanceInitiatedShutdownBehaviorTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
-                                                                      "instanceInitiatedShutdownBehavior"));
-                            
-                            
-                                    if (localInstanceInitiatedShutdownBehavior==null){
-                                         throw new org.apache.axis2.databinding.ADBException("instanceInitiatedShutdownBehavior cannot be null!!");
-                                    }
-                                    elementList.add(localInstanceInitiatedShutdownBehavior);
-                                } if (localBlockDeviceMappingTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
-                                                                      "blockDeviceMapping"));
-                            
-                            
-                                    if (localBlockDeviceMapping==null){
-                                         throw new org.apache.axis2.databinding.ADBException("blockDeviceMapping cannot be null!!");
-                                    }
-                                    elementList.add(localBlockDeviceMapping);
-                                } if (localSourceDestCheckTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
-                                                                      "sourceDestCheck"));
-                            
-                            
-                                    if (localSourceDestCheck==null){
-                                         throw new org.apache.axis2.databinding.ADBException("sourceDestCheck cannot be null!!");
-                                    }
-                                    elementList.add(localSourceDestCheck);
-                                } if (localGroupSetTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
-                                                                      "groupSet"));
-                            
-                            
-                                    if (localGroupSet==null){
-                                         throw new org.apache.axis2.databinding.ADBException("groupSet cannot be null!!");
-                                    }
-                                    elementList.add(localGroupSet);
-                                } if (localEbsOptimizedTracker){
-                            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/",
-                                                                      "ebsOptimized"));
-                            
-                            
-                                    if (localEbsOptimized==null){
-                                         throw new org.apache.axis2.databinding.ADBException("ebsOptimized cannot be null!!");
-                                    }
-                                    elementList.add(localEbsOptimized);
-                                }
-
-                return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
-            
-            
-
+            xmlWriter.writeNamespace(prefix, namespace);
+            xmlWriter.setPrefix(prefix, namespace);
         }
 
-  
+        return prefix;
+    }
 
-     /**
-      *  Factory class that keeps the parse method
-      */
-    public static class Factory{
+    /**
+    * databinding method to get an XML representation of this object
+    *
+    */
+    public javax.xml.stream.XMLStreamReader getPullParser(javax.xml.namespace.QName qName) throws org.apache.axis2.databinding.ADBException {
 
-        
-        
+        java.util.ArrayList elementList = new java.util.ArrayList();
+        java.util.ArrayList attribList = new java.util.ArrayList();
+
+        if (localInstanceTypeTracker) {
+            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "instanceType"));
+
+            if (localInstanceType == null) {
+                throw new org.apache.axis2.databinding.ADBException("instanceType cannot be null!!");
+            }
+            elementList.add(localInstanceType);
+        }
+        if (localKernelTracker) {
+            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "kernel"));
+
+            if (localKernel == null) {
+                throw new org.apache.axis2.databinding.ADBException("kernel cannot be null!!");
+            }
+            elementList.add(localKernel);
+        }
+        if (localRamdiskTracker) {
+            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "ramdisk"));
+
+            if (localRamdisk == null) {
+                throw new org.apache.axis2.databinding.ADBException("ramdisk cannot be null!!");
+            }
+            elementList.add(localRamdisk);
+        }
+        if (localUserDataTracker) {
+            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "userData"));
+
+            if (localUserData == null) {
+                throw new org.apache.axis2.databinding.ADBException("userData cannot be null!!");
+            }
+            elementList.add(localUserData);
+        }
+        if (localDisableApiTerminationTracker) {
+            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "disableApiTermination"));
+
+            if (localDisableApiTermination == null) {
+                throw new org.apache.axis2.databinding.ADBException("disableApiTermination cannot be null!!");
+            }
+            elementList.add(localDisableApiTermination);
+        }
+        if (localInstanceInitiatedShutdownBehaviorTracker) {
+            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "instanceInitiatedShutdownBehavior"));
+
+            if (localInstanceInitiatedShutdownBehavior == null) {
+                throw new org.apache.axis2.databinding.ADBException("instanceInitiatedShutdownBehavior cannot be null!!");
+            }
+            elementList.add(localInstanceInitiatedShutdownBehavior);
+        }
+        if (localBlockDeviceMappingTracker) {
+            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "blockDeviceMapping"));
+
+            if (localBlockDeviceMapping == null) {
+                throw new org.apache.axis2.databinding.ADBException("blockDeviceMapping cannot be null!!");
+            }
+            elementList.add(localBlockDeviceMapping);
+        }
+        if (localSourceDestCheckTracker) {
+            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "sourceDestCheck"));
+
+            if (localSourceDestCheck == null) {
+                throw new org.apache.axis2.databinding.ADBException("sourceDestCheck cannot be null!!");
+            }
+            elementList.add(localSourceDestCheck);
+        }
+        if (localGroupSetTracker) {
+            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "groupSet"));
+
+            if (localGroupSet == null) {
+                throw new org.apache.axis2.databinding.ADBException("groupSet cannot be null!!");
+            }
+            elementList.add(localGroupSet);
+        }
+        if (localEbsOptimizedTracker) {
+            elementList.add(new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "ebsOptimized"));
+
+            if (localEbsOptimized == null) {
+                throw new org.apache.axis2.databinding.ADBException("ebsOptimized cannot be null!!");
+            }
+            elementList.add(localEbsOptimized);
+        }
+
+        return new org.apache.axis2.databinding.utils.reader.ADBXMLStreamReaderImpl(qName, elementList.toArray(), attribList.toArray());
+
+    }
+
+    /**
+     *  Factory class that keeps the parse method
+     */
+    public static class Factory {
 
         /**
         * static method to create the object
@@ -944,128 +832,121 @@
         * Postcondition: If this object is an element, the reader is positioned at its end element
         *                If this object is a complex type, the reader is positioned at the end element of its outer element
         */
-        public static ModifyInstanceAttributeTypeChoice_type0 parse(javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception{
-            ModifyInstanceAttributeTypeChoice_type0 object =
-                new ModifyInstanceAttributeTypeChoice_type0();
+        public static ModifyInstanceAttributeTypeChoice_type0 parse(javax.xml.stream.XMLStreamReader reader) throws java.lang.Exception {
+            ModifyInstanceAttributeTypeChoice_type0 object = new ModifyInstanceAttributeTypeChoice_type0();
 
             int event;
             java.lang.String nillableValue = null;
-            java.lang.String prefix ="";
-            java.lang.String namespaceuri ="";
+            java.lang.String prefix = "";
+            java.lang.String namespaceuri = "";
             try {
-                
+
                 while (!reader.isStartElement() && !reader.isEndElement())
                     reader.next();
 
-                
-
-                
                 // Note all attributes that were handled. Used to differ normal attributes
                 // from anyAttributes.
                 java.util.Vector handledAttributes = new java.util.Vector();
-                
 
-                 
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","instanceType").equals(reader.getName())){
-                                
-                                                object.setInstanceType(com.amazon.ec2.AttributeValueType.Factory.parse(reader));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                        else
-                                    
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","kernel").equals(reader.getName())){
-                                
-                                                object.setKernel(com.amazon.ec2.AttributeValueType.Factory.parse(reader));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                        else
-                                    
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","ramdisk").equals(reader.getName())){
-                                
-                                                object.setRamdisk(com.amazon.ec2.AttributeValueType.Factory.parse(reader));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                        else
-                                    
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","userData").equals(reader.getName())){
-                                
-                                                object.setUserData(com.amazon.ec2.AttributeValueType.Factory.parse(reader));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                        else
-                                    
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","disableApiTermination").equals(reader.getName())){
-                                
-                                                object.setDisableApiTermination(com.amazon.ec2.AttributeBooleanValueType.Factory.parse(reader));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                        else
-                                    
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","instanceInitiatedShutdownBehavior").equals(reader.getName())){
-                                
-                                                object.setInstanceInitiatedShutdownBehavior(com.amazon.ec2.AttributeValueType.Factory.parse(reader));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                        else
-                                    
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","blockDeviceMapping").equals(reader.getName())){
-                                
-                                                object.setBlockDeviceMapping(com.amazon.ec2.InstanceBlockDeviceMappingType.Factory.parse(reader));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                        else
-                                    
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","sourceDestCheck").equals(reader.getName())){
-                                
-                                                object.setSourceDestCheck(com.amazon.ec2.AttributeBooleanValueType.Factory.parse(reader));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                        else
-                                    
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","groupSet").equals(reader.getName())){
-                                
-                                                object.setGroupSet(com.amazon.ec2.SecurityGroupIdSetType.Factory.parse(reader));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
-                                        else
-                                    
-                                    if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/","ebsOptimized").equals(reader.getName())){
-                                
-                                                object.setEbsOptimized(com.amazon.ec2.AttributeBooleanValueType.Factory.parse(reader));
-                                              
-                                        reader.next();
-                                    
-                              }  // End of if for expected property start element
-                                
+                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "instanceType").equals(reader.getName())) {
 
+                    object.setInstanceType(com.amazon.ec2.AttributeValueType.Factory.parse(reader));
 
+                    reader.next();
+
+                }  // End of if for expected property start element
+
+                else
+
+                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "kernel").equals(reader.getName())) {
+
+                    object.setKernel(com.amazon.ec2.AttributeValueType.Factory.parse(reader));
+
+                    reader.next();
+
+                }  // End of if for expected property start element
+
+                else
+
+                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "ramdisk").equals(reader.getName())) {
+
+                    object.setRamdisk(com.amazon.ec2.AttributeValueType.Factory.parse(reader));
+
+                    reader.next();
+
+                }  // End of if for expected property start element
+
+                else
+
+                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "userData").equals(reader.getName())) {
+
+                    object.setUserData(com.amazon.ec2.AttributeValueType.Factory.parse(reader));
+
+                    reader.next();
+
+                }  // End of if for expected property start element
+
+                else
+
+                if (reader.isStartElement() &&
+                    new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "disableApiTermination").equals(reader.getName())) {
+
+                    object.setDisableApiTermination(com.amazon.ec2.AttributeBooleanValueType.Factory.parse(reader));
+
+                    reader.next();
+
+                }  // End of if for expected property start element
+
+                else
+
+                if (reader.isStartElement() &&
+                    new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "instanceInitiatedShutdownBehavior").equals(reader.getName())) {
+
+                    object.setInstanceInitiatedShutdownBehavior(com.amazon.ec2.AttributeValueType.Factory.parse(reader));
+
+                    reader.next();
+
+                }  // End of if for expected property start element
+
+                else
+
+                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "blockDeviceMapping").equals(reader.getName())) {
+
+                    object.setBlockDeviceMapping(com.amazon.ec2.InstanceBlockDeviceMappingType.Factory.parse(reader));
+
+                    reader.next();
+
+                }  // End of if for expected property start element
+
+                else
+
+                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "sourceDestCheck").equals(reader.getName())) {
+
+                    object.setSourceDestCheck(com.amazon.ec2.AttributeBooleanValueType.Factory.parse(reader));
+
+                    reader.next();
+
+                }  // End of if for expected property start element
+
+                else
+
+                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "groupSet").equals(reader.getName())) {
+
+                    object.setGroupSet(com.amazon.ec2.SecurityGroupIdSetType.Factory.parse(reader));
+
+                    reader.next();
+
+                }  // End of if for expected property start element
+
+                else
+
+                if (reader.isStartElement() && new javax.xml.namespace.QName("http://ec2.amazonaws.com/doc/2012-08-15/", "ebsOptimized").equals(reader.getName())) {
+
+                    object.setEbsOptimized(com.amazon.ec2.AttributeBooleanValueType.Factory.parse(reader));
+
+                    reader.next();
+
+                }  // End of if for expected property start element
 
             } catch (javax.xml.stream.XMLStreamException e) {
                 throw new java.lang.Exception(e);
@@ -1074,10 +955,6 @@
             return object;
         }
 
-        }//end of factory class
+    }//end of factory class
 
-        
-
-        }
-           
-          
+}

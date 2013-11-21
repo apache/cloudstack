@@ -20,7 +20,8 @@ import org.apache.cloudstack.framework.jobs.impl.SyncQueueVO;
 
 import com.cloud.utils.db.GenericDao;
 
-public interface SyncQueueDao extends GenericDao<SyncQueueVO, Long>{
-	public void ensureQueue(String syncObjType, long syncObjId);
-	public SyncQueueVO find(String syncObjType, long syncObjId);
+public interface SyncQueueDao extends GenericDao<SyncQueueVO, Long> {
+    public void ensureQueue(String syncObjType, long syncObjId);
+
+    public SyncQueueVO find(String syncObjType, long syncObjId);
 }

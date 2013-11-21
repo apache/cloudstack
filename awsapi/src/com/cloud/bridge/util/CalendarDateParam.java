@@ -19,14 +19,13 @@ package com.cloud.bridge.util;
 import java.util.Calendar;
 
 public class CalendarDateParam {
-	private Calendar dateValue;
-	
-	public CalendarDateParam(Calendar dateValue) {
-		this.dateValue = dateValue;
-	}
-	
-	public Calendar dateValue() {
-		return dateValue;
-	}
-}
+    private Calendar dateValue;
 
+    public CalendarDateParam(Calendar dateValue) {
+        this.dateValue = dateValue;
+    }
+
+    public Calendar dateValue() {
+        return dateValue;
+    }
+}

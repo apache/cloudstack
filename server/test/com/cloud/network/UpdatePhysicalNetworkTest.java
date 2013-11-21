@@ -15,30 +15,26 @@
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network;
-import com.cloud.capacity.CapacityManagerImpl;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.DataCenterVnetDao;
-import com.cloud.network.NetworkServiceImpl;
-import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionLegacy;
-
-import org.junit.*;
-import org.mockito.ArgumentCaptor;
-import org.mockito.MockitoAnnotations.*;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DataCenterVnetDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.utils.db.TransactionLegacy;
 
 public class UpdatePhysicalNetworkTest {
     private PhysicalNetworkDao _physicalNetworkDao = mock(PhysicalNetworkDao.class);
@@ -47,18 +43,18 @@ public class UpdatePhysicalNetworkTest {
     private DataCenterVO datacentervo = mock(DataCenterVO.class);
     private PhysicalNetworkVO physicalNetworkVO = mock(PhysicalNetworkVO.class);
     List<String> existingRange = new ArrayList<String>();
-    ArgumentCaptor<String> argumentCaptor =  ArgumentCaptor.forClass(String.class);
+    ArgumentCaptor<String> argumentCaptor = ArgumentCaptor.forClass(String.class);
 
     public NetworkServiceImpl setUp() {
         NetworkServiceImpl networkService = new NetworkServiceImpl();
-        ((NetworkServiceImpl)networkService)._dcDao= _datacenterDao;
+        networkService._dcDao = _datacenterDao;
         networkService._physicalNetworkDao = _physicalNetworkDao;
         networkService._datacneter_vnet = _DatacenterVnetDao;
         return networkService;
     }
 
     @Test
-    public void updatePhysicalNetworkTest(){
+    public void updatePhysicalNetworkTest() {
         TransactionLegacy txn = TransactionLegacy.open("updatePhysicalNetworkTest");
         NetworkServiceImpl networkService = setUp();
         existingRange.add("524");

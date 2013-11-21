@@ -16,17 +16,15 @@
 // under the License.
 package org.apache.cloudstack.engine.cloud.entity.api.db.dao;
 
-
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.ejb.Local;
 
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMComputeTagVO;
-
-import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -34,7 +32,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 @Component
-@Local(value = { VMComputeTagDao.class })
+@Local(value = {VMComputeTagDao.class})
 public class VMComputeTagDaoImpl extends GenericDaoBase<VMComputeTagVO, Long> implements VMComputeTagDao {
 
     protected SearchBuilder<VMComputeTagVO> VmIdSearch;
@@ -60,9 +58,9 @@ public class VMComputeTagDaoImpl extends GenericDaoBase<VMComputeTagVO, Long> im
         expunge(sc);
 
         for (String tag : computeTags) {
-            if(tag != null){
+            if (tag != null) {
                 tag = tag.trim();
-                if(tag.length() > 0) {
+                if (tag.length() > 0) {
                     VMComputeTagVO vo = new VMComputeTagVO(vmId, tag);
                     persist(vo);
                 }

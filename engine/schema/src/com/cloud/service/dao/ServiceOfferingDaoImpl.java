@@ -25,9 +25,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -37,14 +34,19 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.dao.UserVmDetailsDao;
 
 @Component
-@Local(value={ServiceOfferingDao.class}) @DB()
+@Local(value = {ServiceOfferingDao.class})
+@DB()
 public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Long> implements ServiceOfferingDao {
     protected static final Logger s_logger = Logger.getLogger(ServiceOfferingDaoImpl.class);
 
-    @Inject protected ServiceOfferingDetailsDao detailsDao;
-    @Inject protected UserVmDetailsDao userVmDetailsDao;
+    @Inject
+    protected ServiceOfferingDetailsDao detailsDao;
+    @Inject
+    protected UserVmDetailsDao userVmDetailsDao;
 
     protected final SearchBuilder<ServiceOfferingVO> UniqueNameSearch;
     protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByDomainIdSearch;
@@ -54,36 +56,35 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
 
     public ServiceOfferingDaoImpl() {
         super();
-        
+
         UniqueNameSearch = createSearchBuilder();
         UniqueNameSearch.and("name", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
         UniqueNameSearch.and("system", UniqueNameSearch.entity().getSystemUse(), SearchCriteria.Op.EQ);
         UniqueNameSearch.done();
-        
+
         ServiceOfferingsByDomainIdSearch = createSearchBuilder();
         ServiceOfferingsByDomainIdSearch.and("domainId", ServiceOfferingsByDomainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         ServiceOfferingsByDomainIdSearch.done();
-        
+
         SystemServiceOffering = createSearchBuilder();
         SystemServiceOffering.and("domainId", SystemServiceOffering.entity().getDomainId(), SearchCriteria.Op.EQ);
         SystemServiceOffering.and("system", SystemServiceOffering.entity().getSystemUse(), SearchCriteria.Op.EQ);
         SystemServiceOffering.and("vm_type", SystemServiceOffering.entity().getSpeed(), SearchCriteria.Op.EQ);
         SystemServiceOffering.and("removed", SystemServiceOffering.entity().getRemoved(), SearchCriteria.Op.NULL);
         SystemServiceOffering.done();
-        
-        
+
         PublicServiceOfferingSearch = createSearchBuilder();
         PublicServiceOfferingSearch.and("domainId", PublicServiceOfferingSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
         PublicServiceOfferingSearch.and("system", PublicServiceOfferingSearch.entity().getSystemUse(), SearchCriteria.Op.EQ);
         PublicServiceOfferingSearch.and("removed", PublicServiceOfferingSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         PublicServiceOfferingSearch.done();
-        
+
         ServiceOfferingsByKeywordSearch = createSearchBuilder();
-        ServiceOfferingsByKeywordSearch.or("name", ServiceOfferingsByKeywordSearch.entity().getName(), SearchCriteria.Op.EQ);        
+        ServiceOfferingsByKeywordSearch.or("name", ServiceOfferingsByKeywordSearch.entity().getName(), SearchCriteria.Op.EQ);
         ServiceOfferingsByKeywordSearch.or("displayText", ServiceOfferingsByKeywordSearch.entity().getDisplayText(), SearchCriteria.Op.EQ);
         ServiceOfferingsByKeywordSearch.done();
     }
-    
+
     @Override
     public ServiceOfferingVO findByName(String name) {
         SearchCriteria<ServiceOfferingVO> sc = UniqueNameSearch.create();
@@ -93,20 +94,21 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         if (vos.size() == 0) {
             return null;
         }
-        
+
         return vos.get(0);
     }
-    
-    @Override @DB
+
+    @Override
+    @DB
     public ServiceOfferingVO persistSystemServiceOffering(ServiceOfferingVO offering) {
         assert offering.getUniqueName() != null : "how are you going to find this later if you don't set it?";
         ServiceOfferingVO vo = findByName(offering.getUniqueName());
         if (vo != null) {
-        	// check invalid CPU speed in system service offering, set it to default value of 500 Mhz if 0 CPU speed is found
-        	if(vo.getSpeed() <= 0) {
-        		vo.setSpeed(500);
-        		update(vo.getId(), vo);
-        	}
+            // check invalid CPU speed in system service offering, set it to default value of 500 Mhz if 0 CPU speed is found
+            if (vo.getSpeed() <= 0) {
+                vo.setSpeed(500);
+                update(vo.getId(), vo);
+            }
             return vo;
         }
         try {
@@ -116,32 +118,32 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
             return findByName(offering.getUniqueName());
         }
     }
-    
-    @Override
-    public List<ServiceOfferingVO> findServiceOfferingByDomainId(Long domainId){
-    	SearchCriteria<ServiceOfferingVO> sc = ServiceOfferingsByDomainIdSearch.create();
-    	sc.setParameters("domainId", domainId);
-        return listBy(sc);    	
-    }
-    
 
     @Override
-    public List<ServiceOfferingVO> findSystemOffering(Long domainId, Boolean isSystem, String vm_type){
+    public List<ServiceOfferingVO> findServiceOfferingByDomainId(Long domainId) {
+        SearchCriteria<ServiceOfferingVO> sc = ServiceOfferingsByDomainIdSearch.create();
+        sc.setParameters("domainId", domainId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<ServiceOfferingVO> findSystemOffering(Long domainId, Boolean isSystem, String vm_type) {
         SearchCriteria<ServiceOfferingVO> sc = SystemServiceOffering.create();
         sc.setParameters("domainId", domainId);
         sc.setParameters("system", isSystem);
         sc.setParameters("vm_type", vm_type);
-        return listBy(sc);      
-    }
-    
-    @Override
-    public List<ServiceOfferingVO> findPublicServiceOfferings(){
-    	SearchCriteria<ServiceOfferingVO> sc = PublicServiceOfferingSearch.create();
-    	sc.setParameters("system", false);
         return listBy(sc);
     }
-    
-    @Override @DB
+
+    @Override
+    public List<ServiceOfferingVO> findPublicServiceOfferings() {
+        SearchCriteria<ServiceOfferingVO> sc = PublicServiceOfferingSearch.create();
+        sc.setParameters("system", false);
+        return listBy(sc);
+    }
+
+    @Override
+    @DB
     public ServiceOfferingVO persistDeafultServiceOffering(ServiceOfferingVO offering) {
         assert offering.getUniqueName() != null : "unique name should be set for the service offering";
         ServiceOfferingVO vo = findByName(offering.getUniqueName());
@@ -155,7 +157,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
             return findByName(offering.getUniqueName());
         }
     }
-    
+
     @Override
     public boolean remove(Long id) {
         ServiceOfferingVO offering = createForUpdate();
@@ -176,15 +178,16 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         if (details == null) {
             return;
         }
-        
+
         List<ServiceOfferingDetailsVO> resourceDetails = new ArrayList<ServiceOfferingDetailsVO>();
         for (String key : details.keySet()) {
             resourceDetails.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), key, details.get(key)));
         }
-        
+
         detailsDao.saveDetails(resourceDetails);
     }
 
+    @Override
     public ServiceOfferingVO findById(Long vmId, long serviceOfferingId) {
         ServiceOfferingVO offering = super.findById(serviceOfferingId);
         if (offering.isDynamic()) {
@@ -200,6 +203,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         return offering;
     }
 
+    @Override
     public ServiceOfferingVO findByIdIncludingRemoved(Long vmId, long serviceOfferingId) {
         ServiceOfferingVO offering = super.findByIdIncludingRemoved(serviceOfferingId);
         if (offering.isDynamic()) {
@@ -216,11 +220,13 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         return offering;
     }
 
+    @Override
     public boolean isDynamic(long serviceOfferingId) {
         ServiceOfferingVO offering = super.findById(serviceOfferingId);
         return offering.getCpu() == null || offering.getSpeed() == null || offering.getRamSize() == null;
     }
 
+    @Override
     public ServiceOfferingVO getcomputeOffering(long serviceOfferingId, Integer cpuCores, Integer cpuSpeed, Integer memory) {
         ServiceOfferingVO offering = super.findById(serviceOfferingId);
         offering.setCpu(cpuCores);

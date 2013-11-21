@@ -20,8 +20,9 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.ldap.LdapConfigurationVO;
 import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.ldap.LdapConfigurationVO;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDaoBase;
@@ -30,25 +31,20 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 @Component
-@Local(value = { LdapConfigurationDao.class })
-public class LdapConfigurationDaoImpl extends
-    GenericDaoBase<LdapConfigurationVO, Long> implements
-    LdapConfigurationDao {
+@Local(value = {LdapConfigurationDao.class})
+public class LdapConfigurationDaoImpl extends GenericDaoBase<LdapConfigurationVO, Long> implements LdapConfigurationDao {
     private final SearchBuilder<LdapConfigurationVO> hostnameSearch;
     private final SearchBuilder<LdapConfigurationVO> listAllConfigurationsSearch;
 
     public LdapConfigurationDaoImpl() {
         super();
         hostnameSearch = createSearchBuilder();
-        hostnameSearch.and("hostname", hostnameSearch.entity().getHostname(),
-                           SearchCriteria.Op.EQ);
+        hostnameSearch.and("hostname", hostnameSearch.entity().getHostname(), SearchCriteria.Op.EQ);
         hostnameSearch.done();
 
         listAllConfigurationsSearch = createSearchBuilder();
-        listAllConfigurationsSearch.and("hostname", listAllConfigurationsSearch
-                                        .entity().getHostname(), Op.EQ);
-        listAllConfigurationsSearch.and("port", listAllConfigurationsSearch
-                                        .entity().getPort(), Op.EQ);
+        listAllConfigurationsSearch.and("hostname", listAllConfigurationsSearch.entity().getHostname(), Op.EQ);
+        listAllConfigurationsSearch.and("port", listAllConfigurationsSearch.entity().getPort(), Op.EQ);
         listAllConfigurationsSearch.done();
     }
 
@@ -60,10 +56,8 @@ public class LdapConfigurationDaoImpl extends
     }
 
     @Override
-    public Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(
-        final String hostname, final int port) {
-        final SearchCriteria<LdapConfigurationVO> sc = listAllConfigurationsSearch
-                .create();
+    public Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(final String hostname, final int port) {
+        final SearchCriteria<LdapConfigurationVO> sc = listAllConfigurationsSearch.create();
         if (hostname != null) {
             sc.setParameters("hostname", hostname);
         }

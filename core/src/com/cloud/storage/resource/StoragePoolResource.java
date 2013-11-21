@@ -27,11 +27,11 @@ import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 
 public interface StoragePoolResource {
     // FIXME: Should have a PrimaryStorageDownloadAnswer
-	PrimaryStorageDownloadAnswer execute(PrimaryStorageDownloadCommand cmd);
-    
+    PrimaryStorageDownloadAnswer execute(PrimaryStorageDownloadCommand cmd);
+
     // FIXME: Should have an DestroyAnswer
     Answer execute(DestroyCommand cmd);
-    
+
     CopyVolumeAnswer execute(CopyVolumeCommand cmd);
 
     CreateAnswer execute(CreateCommand cmd);

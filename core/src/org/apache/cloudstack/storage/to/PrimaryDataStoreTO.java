@@ -17,7 +17,6 @@
 package org.apache.cloudstack.storage.to;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.storage.DataStoreRole;
@@ -106,7 +105,14 @@ public class PrimaryDataStoreTO implements DataStoreTO {
 
     @Override
     public String toString() {
-        return new StringBuilder("PrimaryDataStoreTO[uuid=").append(uuid).append("|name=").append(name)
-                .append("|id=").append(id).append("|pooltype=").append(poolType).append("]").toString();
+        return new StringBuilder("PrimaryDataStoreTO[uuid=").append(uuid)
+            .append("|name=")
+            .append(name)
+            .append("|id=")
+            .append(id)
+            .append("|pooltype=")
+            .append(poolType)
+            .append("]")
+            .toString();
     }
 }

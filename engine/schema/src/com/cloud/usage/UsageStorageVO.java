@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.usage;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -26,58 +24,60 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 @Entity
-@Table(name="usage_storage")
+@Table(name = "usage_storage")
 public class UsageStorageVO implements InternalIdentity {
-	
-	@Column(name="zone_id")
+
+    @Column(name = "zone_id")
     private long zoneId;
-	
-	@Column(name="account_id")
+
+    @Column(name = "account_id")
     private long accountId;
 
-    @Column(name="domain_id")
-	private long domainId;
+    @Column(name = "domain_id")
+    private long domainId;
 
-	@Column(name="id")
+    @Column(name = "id")
     private long id;
 
-	@Column(name="storage_type")
+    @Column(name = "storage_type")
     private int storageType;
-	
-	@Column(name="source_id")
+
+    @Column(name = "source_id")
     private Long sourceId;
-	
-	@Column(name="size")
+
+    @Column(name = "size")
     private long size;
-	
-	@Column(name="created")
-	@Temporal(value=TemporalType.TIMESTAMP)
-	private Date created = null;
 
-	@Column(name="deleted")
-	@Temporal(value=TemporalType.TIMESTAMP)
-	private Date deleted = null;
+    @Column(name = "created")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date created = null;
 
-	@Column(name="virtual_size")
-	private Long virtualSize;
+    @Column(name = "deleted")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date deleted = null;
 
-	protected UsageStorageVO() {
-	}
+    @Column(name = "virtual_size")
+    private Long virtualSize;
 
-	public UsageStorageVO(long id, long zoneId, long accountId, long domainId, int storageType, Long sourceId, long size, Date created, Date deleted) {
-		this.zoneId = zoneId;
-		this.accountId = accountId;
-		this.domainId = domainId;
-		this.id = id;
-		this.storageType = storageType;
-		this.sourceId = sourceId;
-		this.size = size;
-		this.created = created;
-		this.deleted = deleted;
-	}
+    protected UsageStorageVO() {
+    }
 
-	public UsageStorageVO(long id, long zoneId, long accountId, long domainId, int storageType, Long sourceId, long size, Long virtualSize, Date created, Date deleted) {
+    public UsageStorageVO(long id, long zoneId, long accountId, long domainId, int storageType, Long sourceId, long size, Date created, Date deleted) {
+        this.zoneId = zoneId;
+        this.accountId = accountId;
+        this.domainId = domainId;
+        this.id = id;
+        this.storageType = storageType;
+        this.sourceId = sourceId;
+        this.size = size;
+        this.created = created;
+        this.deleted = deleted;
+    }
+
+    public UsageStorageVO(long id, long zoneId, long accountId, long domainId, int storageType, Long sourceId, long size, Long virtualSize, Date created, Date deleted) {
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -88,48 +88,50 @@ public class UsageStorageVO implements InternalIdentity {
         this.virtualSize = virtualSize;
         this.created = created;
         this.deleted = deleted;
-	}
+    }
 
-	public long getZoneId() {
-		return zoneId;
-	}
-	
-	public long getAccountId() {
-		return accountId;
-	}
+    public long getZoneId() {
+        return zoneId;
+    }
 
-	public long getDomainId() {
-	    return domainId;
-	}
+    public long getAccountId() {
+        return accountId;
+    }
 
-	public long getId() {
-	    return id;
-	}
-	
-	public int getStorageType(){
-		return storageType;
-	}
+    public long getDomainId() {
+        return domainId;
+    }
 
-	public Long getSourceId(){
+    @Override
+    public long getId() {
+        return id;
+    }
+
+    public int getStorageType() {
+        return storageType;
+    }
+
+    public Long getSourceId() {
         return sourceId;
     }
-	
-	public long getSize(){
-		return size;
-	}
+
+    public long getSize() {
+        return size;
+    }
 
     public Long getVirtualSize() {
         return virtualSize;
     }
 
-	public Date getCreated() {
-		return created;
-	}
+    public Date getCreated() {
+        return created;
+    }
 
-	public Date getDeleted() {
-		return deleted;
-	}
-	public void setDeleted(Date deleted) {
-	    this.deleted = deleted;
-	}
+    public Date getDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(Date deleted) {
+        this.deleted = deleted;
+    }
 }

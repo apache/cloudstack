@@ -37,21 +37,24 @@ import com.cloud.network.BigSwitchVnsDeviceVO;
 import com.cloud.network.element.BigSwitchVnsElementService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "addBigSwitchVnsDevice", responseObject=BigSwitchVnsDeviceResponse.class, description="Adds a BigSwitch VNS device", since = "4.1.0")
+@APICommand(name = "addBigSwitchVnsDevice", responseObject = BigSwitchVnsDeviceResponse.class, description = "Adds a BigSwitch VNS device", since = "4.1.0")
 public class AddBigSwitchVnsDeviceCmd extends BaseAsyncCmd {
     private static final String s_name = "addbigswitchvnsdeviceresponse";
-    @Inject BigSwitchVnsElementService _bigswitchVnsElementService;
+    @Inject
+    BigSwitchVnsElementService _bigswitchVnsElementService;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.UUID, entityType = PhysicalNetworkResponse.class,
-            required=true, description="the Physical Network ID")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = PhysicalNetworkResponse.class,
+               required = true,
+               description = "the Physical Network ID")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.HOST_NAME, type=CommandType.STRING, required=true,
-		description="Hostname of ip address of the BigSwitch VNS Controller.")
+    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, required = true, description = "Hostname of ip address of the BigSwitch VNS Controller.")
     private String host;
 
     /////////////////////////////////////////////////////
@@ -71,7 +74,8 @@ public class AddBigSwitchVnsDeviceCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException {
         try {
             BigSwitchVnsDeviceVO bigswitchVnsDeviceVO = _bigswitchVnsElementService.addBigSwitchVnsDevice(this);
             if (bigswitchVnsDeviceVO != null) {
@@ -82,7 +86,7 @@ public class AddBigSwitchVnsDeviceCmd extends BaseAsyncCmd {
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add BigSwitch VNS device due to internal error.");
             }
-        }  catch (InvalidParameterValueException invalidParamExcp) {
+        } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());

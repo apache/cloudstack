@@ -26,62 +26,61 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name="domain")
+@Table(name = "domain")
 public class DomainVO implements Domain {
-	public static final Logger s_logger = Logger.getLogger(DomainVO.class.getName());
+    public static final Logger s_logger = Logger.getLogger(DomainVO.class.getName());
 
     @Id
-    @GeneratedValue(strategy=GenerationType.IDENTITY)
-    @Column(name="id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
-    @Column(name="parent")
+    @Column(name = "parent")
     private Long parent = null;
 
-    @Column(name="name")
+    @Column(name = "name")
     private String name = null;
 
-    @Column(name="owner")
+    @Column(name = "owner")
     private long accountId;
 
-    @Column(name="path")
+    @Column(name = "path")
     private String path = null;
 
-    @Column(name="level")
+    @Column(name = "level")
     private int level;
 
-    @Column(name=GenericDao.REMOVED_COLUMN)
+    @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    @Column(name="child_count")
+    @Column(name = "child_count")
     private int childCount = 0;
 
-    @Column(name="next_child_seq")
+    @Column(name = "next_child_seq")
     private long nextChildSeq = 1L;
 
-    @Column(name="state")
+    @Column(name = "state")
     private Domain.State state;
 
-    @Column(name="network_domain")
+    @Column(name = "network_domain")
     private String networkDomain;
 
-    @Column(name="uuid")
+    @Column(name = "uuid")
     private String uuid;
 
-    public DomainVO() {}
-    
+    public DomainVO() {
+    }
+
     public DomainVO(String name, long owner, Long parentId, String networkDomain) {
-    	this.parent = parentId;
+        this.parent = parentId;
         this.name = name;
         this.accountId = owner;
-        this.path ="";
+        this.path = "";
         this.level = 0;
         this.state = Domain.State.Active;
         this.networkDomain = networkDomain;
@@ -89,16 +88,16 @@ public class DomainVO implements Domain {
     }
 
     public DomainVO(String name, long owner, Long parentId, String networkDomain, String uuid) {
-    	this.parent = parentId;
+        this.parent = parentId;
         this.name = name;
         this.accountId = owner;
-        this.path ="";
+        this.path = "";
         this.level = 0;
         this.state = Domain.State.Active;
         this.networkDomain = networkDomain;
         this.uuid = uuid;
     }
-    
+
     @Override
     public long getId() {
         return id;
@@ -111,14 +110,14 @@ public class DomainVO implements Domain {
 
     @Override
     public void setParent(Long parent) {
-    	if(parent == null) {
-    		this.parent = DomainVO.ROOT_DOMAIN;
-    	} else {
-    		if(parent.longValue() <= DomainVO.ROOT_DOMAIN)
-    			this.parent = DomainVO.ROOT_DOMAIN;
-    		else
-    			this.parent = parent;
-    	}
+        if (parent == null) {
+            this.parent = Domain.ROOT_DOMAIN;
+        } else {
+            if (parent.longValue() <= Domain.ROOT_DOMAIN)
+                this.parent = Domain.ROOT_DOMAIN;
+            else
+                this.parent = parent;
+        }
     }
 
     @Override
@@ -143,39 +142,39 @@ public class DomainVO implements Domain {
 
     @Override
     public String getPath() {
-    	return path;
+        return path;
     }
 
     @Override
     public void setPath(String path) {
-    	this.path = path;
+        this.path = path;
     }
 
     @Override
     public int getLevel() {
-    	return level;
+        return level;
     }
 
     public void setLevel(int level) {
-    	this.level = level;
+        this.level = level;
     }
 
     @Override
     public int getChildCount() {
-    	return childCount;
+        return childCount;
     }
 
     public void setChildCount(int count) {
-    	childCount = count;
+        childCount = count;
     }
 
     @Override
     public long getNextChildSeq() {
-    	return nextChildSeq;
+        return nextChildSeq;
     }
 
     public void setNextChildSeq(long seq) {
-    	nextChildSeq = seq;
+        nextChildSeq = seq;
     }
 
     @Override
@@ -204,12 +203,11 @@ public class DomainVO implements Domain {
 
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return this.uuid;
     }
 
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
-    
-}
 
+}

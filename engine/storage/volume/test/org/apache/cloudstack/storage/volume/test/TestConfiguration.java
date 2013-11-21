@@ -18,11 +18,11 @@
  */
 package org.apache.cloudstack.storage.volume.test;
 
-import org.apache.cloudstack.storage.image.motion.ImageMotionService;
-
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import org.apache.cloudstack.storage.image.motion.ImageMotionService;
 
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterDaoImpl;

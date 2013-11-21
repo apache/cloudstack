@@ -39,7 +39,7 @@ import com.cloud.utils.fsm.StateObject;
 
 /**
  * Join table for image_data_store and volumes
- * 
+ *
  */
 @Entity
 @Table(name = "volume_store_ref")
@@ -198,9 +198,8 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
         refCnt = 0L;
     }
 
-    public VolumeDataStoreVO(long hostId, long volumeId, Date lastUpdated, int downloadPercent, Status downloadState,
-            String localDownloadPath, String errorString, String jobId, String installPath, String downloadUrl,
-            String checksum) {
+    public VolumeDataStoreVO(long hostId, long volumeId, Date lastUpdated, int downloadPercent, Status downloadState, String localDownloadPath, String errorString,
+            String jobId, String installPath, String downloadUrl, String checksum) {
         // super();
         dataStoreId = hostId;
         this.volumeId = volumeId;
@@ -248,7 +247,7 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof VolumeDataStoreVO) {
-            VolumeDataStoreVO other = (VolumeDataStoreVO) obj;
+            VolumeDataStoreVO other = (VolumeDataStoreVO)obj;
             return (volumeId == other.getVolumeId() && dataStoreId == other.getDataStoreId());
         }
         return false;
@@ -299,8 +298,7 @@ public class VolumeDataStoreVO implements StateObject<ObjectInDataStoreStateMach
 
     @Override
     public String toString() {
-        return new StringBuilder("VolumeDataStore[").append(id).append("-").append(volumeId).append("-").append(dataStoreId)
-                .append(installPath).append("]").toString();
+        return new StringBuilder("VolumeDataStore[").append(id).append("-").append(volumeId).append("-").append(dataStoreId).append(installPath).append("]").toString();
     }
 
     public long getUpdatedCount() {

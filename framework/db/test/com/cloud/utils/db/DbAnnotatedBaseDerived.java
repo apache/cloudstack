@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class DbAnnotatedBaseDerived extends DbAnnotatedBase {
 
-	@DB
-	public void DbAnnotatedMethod() {
-	}
+    @DB
+    public void DbAnnotatedMethod() {
+    }
 }

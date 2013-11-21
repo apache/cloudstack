@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.engine.subsystem.api.hypervisor;
 
-
 public interface ComputeSubsystem {
 
     void start(String vm, String reservationId);

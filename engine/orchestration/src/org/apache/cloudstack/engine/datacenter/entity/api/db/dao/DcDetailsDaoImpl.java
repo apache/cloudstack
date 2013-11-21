@@ -22,17 +22,17 @@ import java.util.Map;
 
 import javax.ejb.Local;
 
-import org.apache.cloudstack.engine.datacenter.entity.api.db.DcDetailVO;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.engine.datacenter.entity.api.db.DcDetailVO;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
-@Component(value="EngineDcDetailsDao")
-@Local(value=DcDetailsDao.class)
+@Component(value = "EngineDcDetailsDao")
+@Local(value = DcDetailsDao.class)
 public class DcDetailsDaoImpl extends GenericDaoBase<DcDetailVO, Long> implements DcDetailsDao {
     protected final SearchBuilder<DcDetailVO> DcSearch;
     protected final SearchBuilder<DcDetailVO> DetailSearch;
@@ -77,7 +77,7 @@ public class DcDetailsDaoImpl extends GenericDaoBase<DcDetailVO, Long> implement
 
         List<DcDetailVO> results = search(sc, null);
         for (DcDetailVO result : results) {
-        	remove(result.getId());
+            remove(result.getId());
         }
     }
 

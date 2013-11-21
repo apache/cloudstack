@@ -34,11 +34,12 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={SecurityGroupRuleDao.class})
+@Local(value = {SecurityGroupRuleDao.class})
 public class SecurityGroupRuleDaoImpl extends GenericDaoBase<SecurityGroupRuleVO, Long> implements SecurityGroupRuleDao {
-	
-	@Inject SecurityGroupDao _securityGroupDao;
-	
+
+    @Inject
+    SecurityGroupDao _securityGroupDao;
+
     protected SearchBuilder<SecurityGroupRuleVO> securityGroupIdSearch;
     protected SearchBuilder<SecurityGroupRuleVO> securityGroupIdAndTypeSearch;
     protected SearchBuilder<SecurityGroupRuleVO> allowedSecurityGroupIdSearch;
@@ -46,22 +47,20 @@ public class SecurityGroupRuleDaoImpl extends GenericDaoBase<SecurityGroupRuleVO
     protected SearchBuilder<SecurityGroupRuleVO> protoPortsAndSecurityGroupNameSearch;
     protected SearchBuilder<SecurityGroupRuleVO> protoPortsAndSecurityGroupIdSearch;
 
-
-
     protected SecurityGroupRuleDaoImpl() {
-        securityGroupIdSearch  = createSearchBuilder();
+        securityGroupIdSearch = createSearchBuilder();
         securityGroupIdSearch.and("securityGroupId", securityGroupIdSearch.entity().getSecurityGroupId(), SearchCriteria.Op.EQ);
         securityGroupIdSearch.done();
-        
-        securityGroupIdAndTypeSearch  = createSearchBuilder();
+
+        securityGroupIdAndTypeSearch = createSearchBuilder();
         securityGroupIdAndTypeSearch.and("securityGroupId", securityGroupIdAndTypeSearch.entity().getSecurityGroupId(), SearchCriteria.Op.EQ);
         securityGroupIdAndTypeSearch.and("type", securityGroupIdAndTypeSearch.entity().getType(), SearchCriteria.Op.EQ);
         securityGroupIdAndTypeSearch.done();
-        
-        allowedSecurityGroupIdSearch  = createSearchBuilder();
+
+        allowedSecurityGroupIdSearch = createSearchBuilder();
         allowedSecurityGroupIdSearch.and("allowedNetworkId", allowedSecurityGroupIdSearch.entity().getAllowedNetworkId(), SearchCriteria.Op.EQ);
         allowedSecurityGroupIdSearch.done();
-        
+
         protoPortsAndCidrSearch = createSearchBuilder();
         protoPortsAndCidrSearch.and("securityGroupId", protoPortsAndCidrSearch.entity().getSecurityGroupId(), SearchCriteria.Op.EQ);
         protoPortsAndCidrSearch.and("proto", protoPortsAndCidrSearch.entity().getProtocol(), SearchCriteria.Op.EQ);
@@ -69,30 +68,32 @@ public class SecurityGroupRuleDaoImpl extends GenericDaoBase<SecurityGroupRuleVO
         protoPortsAndCidrSearch.and("endPort", protoPortsAndCidrSearch.entity().getEndPort(), SearchCriteria.Op.EQ);
         protoPortsAndCidrSearch.and("cidr", protoPortsAndCidrSearch.entity().getAllowedSourceIpCidr(), SearchCriteria.Op.EQ);
         protoPortsAndCidrSearch.done();
-        
+
         protoPortsAndSecurityGroupIdSearch = createSearchBuilder();
         protoPortsAndSecurityGroupIdSearch.and("securityGroupId", protoPortsAndSecurityGroupIdSearch.entity().getSecurityGroupId(), SearchCriteria.Op.EQ);
         protoPortsAndSecurityGroupIdSearch.and("proto", protoPortsAndSecurityGroupIdSearch.entity().getProtocol(), SearchCriteria.Op.EQ);
         protoPortsAndSecurityGroupIdSearch.and("startPort", protoPortsAndSecurityGroupIdSearch.entity().getStartPort(), SearchCriteria.Op.EQ);
-        protoPortsAndSecurityGroupIdSearch.and("endPort", protoPortsAndSecurityGroupIdSearch.entity().getEndPort(), SearchCriteria.Op.EQ);        
+        protoPortsAndSecurityGroupIdSearch.and("endPort", protoPortsAndSecurityGroupIdSearch.entity().getEndPort(), SearchCriteria.Op.EQ);
         protoPortsAndSecurityGroupIdSearch.and("allowedNetworkId", protoPortsAndSecurityGroupIdSearch.entity().getAllowedNetworkId(), SearchCriteria.Op.EQ);
 
     }
 
+    @Override
     public List<SecurityGroupRuleVO> listBySecurityGroupId(long securityGroupId, SecurityRuleType type) {
         SearchCriteria<SecurityGroupRuleVO> sc = securityGroupIdAndTypeSearch.create();
         sc.setParameters("securityGroupId", securityGroupId);
-        String dbType; 
+        String dbType;
         if (type == SecurityRuleType.EgressRule) {
-            dbType = SecurityRuleType.EgressRule.getType();     
-        }else {
+            dbType = SecurityRuleType.EgressRule.getType();
+        } else {
             dbType = SecurityRuleType.IngressRule.getType();
         }
-        
+
         sc.setParameters("type", dbType);
         return listBy(sc);
     }
 
+    @Override
     public int deleteBySecurityGroup(long securityGroupId) {
         SearchCriteria<SecurityGroupRuleVO> sc = securityGroupIdSearch.create();
         sc.setParameters("securityGroupId", securityGroupId);
@@ -107,8 +108,7 @@ public class SecurityGroupRuleDaoImpl extends GenericDaoBase<SecurityGroupRuleVO
     }
 
     @Override
-    public SecurityGroupRuleVO findByProtoPortsAndCidr(long securityGroupId,
-            String proto, int startPort, int endPort, String cidr) {
+    public SecurityGroupRuleVO findByProtoPortsAndCidr(long securityGroupId, String proto, int startPort, int endPort, String cidr) {
         SearchCriteria<SecurityGroupRuleVO> sc = protoPortsAndCidrSearch.create();
         sc.setParameters("securityGroupId", securityGroupId);
         sc.setParameters("proto", proto);
@@ -128,15 +128,16 @@ public class SecurityGroupRuleDaoImpl extends GenericDaoBase<SecurityGroupRuleVO
         return findOneIncludingRemovedBy(sc);
     }
 
-	@Override
-	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         protoPortsAndSecurityGroupNameSearch = createSearchBuilder();
         protoPortsAndSecurityGroupNameSearch.and("proto", protoPortsAndSecurityGroupNameSearch.entity().getProtocol(), SearchCriteria.Op.EQ);
         protoPortsAndSecurityGroupNameSearch.and("startPort", protoPortsAndSecurityGroupNameSearch.entity().getStartPort(), SearchCriteria.Op.EQ);
         protoPortsAndSecurityGroupNameSearch.and("endPort", protoPortsAndSecurityGroupNameSearch.entity().getEndPort(), SearchCriteria.Op.EQ);
         SearchBuilder<SecurityGroupVO> ngSb = _securityGroupDao.createSearchBuilder();
         ngSb.and("groupName", ngSb.entity().getName(), SearchCriteria.Op.EQ);
-        protoPortsAndSecurityGroupNameSearch.join("groupName", ngSb, protoPortsAndSecurityGroupNameSearch.entity().getAllowedNetworkId(), ngSb.entity().getId(), JoinBuilder.JoinType.INNER);
+        protoPortsAndSecurityGroupNameSearch.join("groupName", ngSb, protoPortsAndSecurityGroupNameSearch.entity().getAllowedNetworkId(), ngSb.entity().getId(),
+            JoinBuilder.JoinType.INNER);
         protoPortsAndSecurityGroupNameSearch.done();
         return super.configure(name, params);
     }

@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.admin.swift;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -27,13 +29,12 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.DiscoveryException;
 import com.cloud.storage.ImageStore;
 import com.cloud.user.Account;
 
-@APICommand(name = "addSwift", description = "Adds Swift.", responseObject = ImageStoreResponse.class, since="3.0.0")
+@APICommand(name = "addSwift", description = "Adds Swift.", responseObject = ImageStoreResponse.class, since = "3.0.0")
 public class AddSwiftCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(AddSwiftCmd.class.getName());
     private static final String s_name = "addswiftresponse";
@@ -89,7 +90,7 @@ public class AddSwiftCmd extends BaseCmd {
     }
 
     @Override
-    public void execute(){
+    public void execute() {
         AddImageStoreCmd cmd = new AddImageStoreCmd() {
             @Override
             public Map<String, String> getDetails() {
@@ -103,10 +104,10 @@ public class AddSwiftCmd extends BaseCmd {
         cmd.setProviderName("Swift");
         cmd.setUrl(this.getUrl());
 
-        try{
+        try {
             ImageStore result = _storageService.discoverImageStore(cmd);
             ImageStoreResponse storeResponse = null;
-            if (result != null ) {
+            if (result != null) {
                 storeResponse = _responseGenerator.createImageStoreResponse(result);
                 storeResponse.setResponseName(getCommandName());
                 storeResponse.setObjectName("secondarystorage");

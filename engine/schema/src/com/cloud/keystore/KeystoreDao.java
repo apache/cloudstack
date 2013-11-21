@@ -21,9 +21,11 @@ import java.util.List;
 import com.cloud.utils.db.GenericDao;
 
 public interface KeystoreDao extends GenericDao<KeystoreVO, Long> {
-	KeystoreVO findByName(String name);
-	void save(String name, String certificate, String key, String domainSuffix);
-	void save(String alias, String certificate, Integer index,
-			String domainSuffix);
-	List<KeystoreVO> findCertChain();
+    KeystoreVO findByName(String name);
+
+    void save(String name, String certificate, String key, String domainSuffix);
+
+    void save(String alias, String certificate, Integer index, String domainSuffix);
+
+    List<KeystoreVO> findCertChain();
 }

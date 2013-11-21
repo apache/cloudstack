@@ -28,11 +28,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import com.google.gson.Gson;
+
 import org.apache.cloudstack.api.response.SuccessResponse;
 
 import com.cloud.api.ApiGsonHelper;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.gson.Gson;
 
 /**
  * Base class for API Test
@@ -44,22 +45,21 @@ public abstract class APITest {
     protected String sessionKey = null;
     protected String cookieToSent = null;
 
-
     /**
      * Sending an api request through Http GET
      * @param command command name
      * @param params command query parameters in a HashMap
      * @return http request response string
      */
-    protected String sendRequest(String command, HashMap<String, String> params){
+    protected String sendRequest(String command, HashMap<String, String> params) {
         try {
             // Construct query string
             StringBuilder sBuilder = new StringBuilder();
             sBuilder.append("command=");
             sBuilder.append(command);
-            if ( params != null && params.size() > 0){
+            if (params != null && params.size() > 0) {
                 Iterator<String> keys = params.keySet().iterator();
-                while (keys.hasNext()){
+                while (keys.hasNext()) {
                     String key = keys.next();
                     sBuilder.append("&");
                     sBuilder.append(key);
@@ -73,20 +73,19 @@ public abstract class APITest {
 
             // Send Http GET request
             URL url = new URL(reqUrl);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            HttpURLConnection conn = (HttpURLConnection)url.openConnection();
             conn.setRequestMethod("GET");
 
-            if ( !command.equals("login") && cookieToSent != null){
+            if (!command.equals("login") && cookieToSent != null) {
                 // add the cookie to a request
                 conn.setRequestProperty("Cookie", cookieToSent);
             }
             conn.connect();
 
-
-            if ( command.equals("login")){
+            if (command.equals("login")) {
                 // if it is login call, store cookie
-                String headerName=null;
-                for (int i=1; (headerName = conn.getHeaderFieldKey(i))!=null; i++) {
+                String headerName = null;
+                for (int i = 1; (headerName = conn.getHeaderFieldKey(i)) != null; i++) {
                     if (headerName.equals("Set-Cookie")) {
                         String cookie = conn.getHeaderField(i);
                         cookie = cookie.substring(0, cookie.indexOf(";"));
@@ -110,8 +109,6 @@ public abstract class APITest {
                 System.out.println("EOF exception due to java bug");
             }
             rd.close();
-
-
 
             return response.toString();
 
@@ -141,7 +138,6 @@ public abstract class APITest {
         sb.append(pwStr);
         return sb.toString();
     }
-
 
     protected Object fromSerializedString(String result, Class<?> repCls) {
         try {
@@ -193,8 +189,7 @@ public abstract class APITest {
      * @param password password (plain password, we will do MD5 hash here for you)
      * @return login response string
      */
-    protected void login(String username, String password)
-    {
+    protected void login(String username, String password) {
         //String md5Psw = createMD5String(password);
         // send login request
         HashMap<String, String> params = new HashMap<String, String>();

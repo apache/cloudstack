@@ -18,6 +18,6 @@ package streamer;
 
 public class Order {
 
-  public Object type;
+    public Object type;
 
 }

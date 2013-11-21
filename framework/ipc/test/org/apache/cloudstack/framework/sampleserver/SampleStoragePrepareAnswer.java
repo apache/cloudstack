@@ -20,18 +20,18 @@ package org.apache.cloudstack.framework.sampleserver;
 
 import org.apache.cloudstack.framework.serializer.OnwireName;
 
-@OnwireName(name="SampleStoragePrepareAnswer")
+@OnwireName(name = "SampleStoragePrepareAnswer")
 public class SampleStoragePrepareAnswer {
-	String result;
-	
-	public SampleStoragePrepareAnswer() {
-	}
+    String result;
 
-	public String getResult() {
-		return result;
-	}
+    public SampleStoragePrepareAnswer() {
+    }
 
-	public void setResult(String result) {
-		this.result = result;
-	}
+    public String getResult() {
+        return result;
+    }
+
+    public void setResult(String result) {
+        this.result = result;
+    }
 }

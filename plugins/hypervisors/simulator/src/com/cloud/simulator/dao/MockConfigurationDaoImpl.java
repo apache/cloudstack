@@ -16,27 +16,28 @@
 // under the License.
 package com.cloud.simulator.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Formatter;
+
+import javax.ejb.Local;
+
+import org.springframework.stereotype.Component;
+
 import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.Formatter;
 
 @Component
-@Local(value={MockConfigurationDao.class})
+@Local(value = {MockConfigurationDao.class})
 public class MockConfigurationDaoImpl extends GenericDaoBase<MockConfigurationVO, Long> implements MockConfigurationDao {
     private SearchBuilder<MockConfigurationVO> _searchByDcIdName;
     private SearchBuilder<MockConfigurationVO> _searchByDcIDPodIdName;
     private SearchBuilder<MockConfigurationVO> _searchByDcIDPodIdClusterIdName;
     private SearchBuilder<MockConfigurationVO> _searchByDcIDPodIdClusterIdHostIdName;
     private SearchBuilder<MockConfigurationVO> _searchByGlobalName;
-
 
     public MockConfigurationDaoImpl() {
         _searchByGlobalName = createSearchBuilder();
@@ -79,6 +80,7 @@ public class MockConfigurationDaoImpl extends GenericDaoBase<MockConfigurationVO
         _searchByDcIDPodIdClusterIdHostIdName.and("name", _searchByDcIDPodIdClusterIdHostIdName.entity().getName(), SearchCriteria.Op.EQ);
         _searchByDcIDPodIdClusterIdHostIdName.done();
     }
+
     @Override
     public MockConfigurationVO findByCommand(Long dcId, Long podId, Long clusterId, Long hostId, String name) {
 
@@ -117,27 +119,28 @@ public class MockConfigurationDaoImpl extends GenericDaoBase<MockConfigurationVO
 
     @Override
     public MockConfigurationVO findByNameBottomUP(Long dcId, Long podId, Long clusterId, Long hostId, String name) {
-	 TransactionLegacy txn = TransactionLegacy.currentTxn();
-	StringBuilder search = new StringBuilder();
-	Formatter formatter = new Formatter(search);
-	formatter.format("select * from mockconfiguration where (name='%s') and ((data_center_id = %d and pod_id = %d and cluster_id = %d and host_id = %d)", name, dcId, podId, clusterId, hostId);
-	formatter.format(" or (data_center_id = %d and pod_id = %d and cluster_id = %d and host_id is null)", dcId, podId, clusterId);
-	formatter.format(" or (data_center_id = %d and pod_id = %d and cluster_id is null and host_id is null)", dcId, podId);
-	formatter.format(" or (data_center_id = %d and pod_id is null and cluster_id is null and host_id is null)", dcId);
-	formatter.format(" or (data_center_id is null and pod_id is null and cluster_id is null and host_id is null)) LIMIT 1");
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        StringBuilder search = new StringBuilder();
+        Formatter formatter = new Formatter(search);
+        formatter.format("select * from mockconfiguration where (name='%s') and ((data_center_id = %d and pod_id = %d and cluster_id = %d and host_id = %d)", name, dcId,
+            podId, clusterId, hostId);
+        formatter.format(" or (data_center_id = %d and pod_id = %d and cluster_id = %d and host_id is null)", dcId, podId, clusterId);
+        formatter.format(" or (data_center_id = %d and pod_id = %d and cluster_id is null and host_id is null)", dcId, podId);
+        formatter.format(" or (data_center_id = %d and pod_id is null and cluster_id is null and host_id is null)", dcId);
+        formatter.format(" or (data_center_id is null and pod_id is null and cluster_id is null and host_id is null)) LIMIT 1");
 
-	PreparedStatement pstmt = null;
-		try {
-			String sql = search.toString();
-			pstmt = txn.prepareAutoCloseStatement(sql);
-			ResultSet rs = pstmt.executeQuery();
-			if (rs.next()) {
+        PreparedStatement pstmt = null;
+        try {
+            String sql = search.toString();
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
                 return toEntityBean(rs, false);
             }
-		} catch (Exception e) {
+        } catch (Exception e) {
 
-		}
-		return null;
+        }
+        return null;
     }
 
 }

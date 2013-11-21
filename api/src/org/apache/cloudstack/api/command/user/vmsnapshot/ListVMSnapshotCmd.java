@@ -30,19 +30,18 @@ import org.apache.cloudstack.api.response.VMSnapshotResponse;
 
 import com.cloud.vm.snapshot.VMSnapshot;
 
-@APICommand(name="listVMSnapshot", description = "List virtual machine snapshot by conditions", responseObject = VMSnapshotResponse.class, since="4.2.0")
+@APICommand(name = "listVMSnapshot", description = "List virtual machine snapshot by conditions", responseObject = VMSnapshotResponse.class, since = "4.2.0")
 public class ListVMSnapshotCmd extends BaseListTaggedResourcesCmd {
 
     private static final String s_name = "listvmsnapshotresponse";
 
-    @Parameter(name=ApiConstants.VM_SNAPSHOT_ID, type=CommandType.UUID, entityType=VMSnapshotResponse.class,
-             description="The ID of the VM snapshot")
+    @Parameter(name = ApiConstants.VM_SNAPSHOT_ID, type = CommandType.UUID, entityType = VMSnapshotResponse.class, description = "The ID of the VM snapshot")
     private Long id;
 
-    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="state of the virtual machine snapshot")
+    @Parameter(name = ApiConstants.STATE, type = CommandType.STRING, description = "state of the virtual machine snapshot")
     private String state;
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType=UserVmResponse.class, description = "the ID of the vm")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "the ID of the vm")
     private Long vmId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "lists snapshot by snapshot name or display name")
@@ -66,13 +65,11 @@ public class ListVMSnapshotCmd extends BaseListTaggedResourcesCmd {
 
     @Override
     public void execute() {
-        List<? extends VMSnapshot> result = _vmSnapshotService
-                .listVMSnapshots(this);
+        List<? extends VMSnapshot> result = _vmSnapshotService.listVMSnapshots(this);
         ListResponse<VMSnapshotResponse> response = new ListResponse<VMSnapshotResponse>();
         List<VMSnapshotResponse> snapshotResponses = new ArrayList<VMSnapshotResponse>();
         for (VMSnapshot r : result) {
-            VMSnapshotResponse vmSnapshotResponse = _responseGenerator
-                    .createVMSnapshotResponse(r);
+            VMSnapshotResponse vmSnapshotResponse = _responseGenerator.createVMSnapshotResponse(r);
             vmSnapshotResponse.setObjectName("vmSnapshot");
             snapshotResponses.add(vmSnapshotResponse);
         }

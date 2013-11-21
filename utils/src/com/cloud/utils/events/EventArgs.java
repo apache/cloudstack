@@ -19,23 +19,23 @@ package com.cloud.utils.events;
 import java.io.Serializable;
 
 public class EventArgs implements Serializable {
-	private static final long serialVersionUID = 30659016120504139L;
-	public static EventArgs Empty = new EventArgs();
-	
-	private String subject;
-	
-	public EventArgs() {
-	}
-	
-	public EventArgs(String subject) {
-		this.subject = subject;
-	}
-	
-	public String getSubject() {
-		return subject;
-	}
+    private static final long serialVersionUID = 30659016120504139L;
+    public static EventArgs Empty = new EventArgs();
 
-	public void setSubject(String subject) {
-		this.subject = subject;
-	}
+    private String subject;
+
+    public EventArgs() {
+    }
+
+    public EventArgs(String subject) {
+        this.subject = subject;
+    }
+
+    public String getSubject() {
+        return subject;
+    }
+
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
 }

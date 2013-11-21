@@ -28,6 +28,7 @@ import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 
 import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.command.admin.ratelimit.ResetApiLimitCmd;
@@ -43,44 +44,42 @@ import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.utils.component.AdapterBase;
 
-import org.springframework.stereotype.Component;
-
 @Component
 @Local(value = APIChecker.class)
 public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, ApiRateLimitService {
-	private static final Logger s_logger = Logger.getLogger(ApiRateLimitServiceImpl.class);
+    private static final Logger s_logger = Logger.getLogger(ApiRateLimitServiceImpl.class);
 
-	/**
-	 * True if api rate limiting is enabled
-	 */
-	private boolean enabled = false;
+    /**
+     * True if api rate limiting is enabled
+     */
+    private boolean enabled = false;
 
-	/**
-	 * Fixed time duration where api rate limit is set, in seconds
-	 */
-	private int timeToLive = 1;
+    /**
+     * Fixed time duration where api rate limit is set, in seconds
+     */
+    private int timeToLive = 1;
 
-	/**
-	 * Max number of api requests during timeToLive duration.
-	 */
-	private int maxAllowed = 30;
+    /**
+     * Max number of api requests during timeToLive duration.
+     */
+    private int maxAllowed = 30;
 
-	private LimitStore _store = null;
+    private LimitStore _store = null;
 
-	@Inject
-	AccountService _accountService;
+    @Inject
+    AccountService _accountService;
 
     @Inject
     ConfigurationDao _configDao;
 
-	@Override
+    @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
         if (_store == null) {
             // get global configured duration and max values
             String isEnabled = _configDao.getValue(Config.ApiLimitEnabled.key());
-            if ( isEnabled != null ){
+            if (isEnabled != null) {
                 enabled = Boolean.parseBoolean(isEnabled);
             }
             String duration = _configDao.getValue(Config.ApiLimitInterval.key());
@@ -95,13 +94,13 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
             EhcacheLimitStore cacheStore = new EhcacheLimitStore();
             int maxElements = 10000;
             String cachesize = _configDao.getValue(Config.ApiLimitCacheSize.key());
-            if ( cachesize != null ){
+            if (cachesize != null) {
                 maxElements = Integer.parseInt(cachesize);
             }
             CacheManager cm = CacheManager.create();
             Cache cache = new Cache("api-limit-cache", maxElements, false, false, timeToLive, timeToLive);
             cm.addCache(cache);
-            s_logger.info("Limit Cache created with timeToLive=" + timeToLive + ", maxAllowed=" + maxAllowed + ", maxElements=" + maxElements );
+            s_logger.info("Limit Cache created with timeToLive=" + timeToLive + ", maxAllowed=" + maxAllowed + ", maxElements=" + maxElements);
             cacheStore.setCache(cache);
             _store = cacheStore;
 
@@ -123,8 +122,7 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
             response.setApiIssued(0);
             response.setApiAllowed(maxAllowed);
             response.setExpireAfter(timeToLive);
-        }
-        else{
+        } else {
             response.setApiIssued(entry.getCounter());
             response.setApiAllowed(maxAllowed - entry.getCounter());
             response.setExpireAfter(entry.getExpireDuration());
@@ -133,30 +131,25 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
         return response;
     }
 
-
-
     @Override
     public boolean resetApiLimit(Long accountId) {
-        if ( accountId != null ){
+        if (accountId != null) {
             _store.create(accountId, timeToLive);
-        }
-        else{
+        } else {
             _store.resetCounters();
         }
         return true;
     }
 
-
-
     @Override
     public boolean checkAccess(User user, String apiCommandName) throws PermissionDeniedException {
         // check if api rate limiting is enabled or not
-        if (!enabled){
+        if (!enabled) {
             return true;
         }
         Long accountId = user.getAccountId();
         Account account = _accountService.getAccount(accountId);
-        if ( _accountService.isRootAdmin(account.getType())){
+        if (_accountService.isRootAdmin(account.getType())) {
             // no API throttling on root admin
             return true;
         }
@@ -183,7 +176,6 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
         }
     }
 
-
     @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
@@ -192,13 +184,10 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
         return cmdList;
     }
 
-
     @Override
     public void setTimeToLive(int timeToLive) {
         this.timeToLive = timeToLive;
     }
-
-
 
     @Override
     public void setMaxAllowed(int max) {
@@ -211,6 +200,5 @@ public class ApiRateLimitServiceImpl extends AdapterBase implements APIChecker, 
         this.enabled = enabled;
 
     }
-
 
 }

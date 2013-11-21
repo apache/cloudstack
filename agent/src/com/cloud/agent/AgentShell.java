@@ -55,8 +55,7 @@ import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class AgentShell implements IAgentShell, Daemon {
-    private static final Logger s_logger = Logger.getLogger(AgentShell.class
-            .getName());
+    private static final Logger s_logger = Logger.getLogger(AgentShell.class.getName());
 
     private final Properties _properties = new Properties();
     private final Map<String, Object> _cmdLineProperties = new HashMap<String, Object>();
@@ -75,7 +74,6 @@ public class AgentShell implements IAgentShell, Daemon {
     private volatile boolean _exit = false;
     private int _pingRetries;
     private final List<Agent> _agents = new ArrayList<Agent>();
-
 
     public AgentShell() {
     }
@@ -180,18 +178,15 @@ public class AgentShell implements IAgentShell, Daemon {
             propertiesStream = new FileInputStream(file);
             _properties.load(propertiesStream);
         } catch (final FileNotFoundException ex) {
-            throw new CloudRuntimeException("Cannot find the file: "
-                    + file.getAbsolutePath(), ex);
+            throw new CloudRuntimeException("Cannot find the file: " + file.getAbsolutePath(), ex);
         } catch (final IOException ex) {
-            throw new CloudRuntimeException("IOException in reading "
-                    + file.getAbsolutePath(), ex);
+            throw new CloudRuntimeException("IOException in reading " + file.getAbsolutePath(), ex);
         } finally {
             IOUtils.closeQuietly(propertiesStream);
         }
     }
 
-    protected boolean parseCommand(final String[] args)
-            throws ConfigurationException {
+    protected boolean parseCommand(final String[] args) throws ConfigurationException {
         String host = null;
         String workers = null;
         String port = null;
@@ -233,8 +228,7 @@ public class AgentShell implements IAgentShell, Daemon {
 
         _port = NumberUtils.toInt(port, 8250);
 
-        _proxyPort = NumberUtils.toInt(
-                getProperty(null, "consoleproxy.httpListenPort"), 443);
+        _proxyPort = NumberUtils.toInt(getProperty(null, "consoleproxy.httpListenPort"), 443);
 
         if (workers == null) {
             workers = getProperty(null, "workers");
@@ -268,8 +262,7 @@ public class AgentShell implements IAgentShell, Daemon {
         }
 
         if (_host == null || (_host.startsWith("@") && _host.endsWith("@"))) {
-            throw new ConfigurationException(
-                    "Host is not configured correctly: " + _host);
+            throw new ConfigurationException("Host is not configured correctly: " + _host);
         }
 
         final String retries = getProperty(null, "ping.retries");
@@ -292,7 +285,7 @@ public class AgentShell implements IAgentShell, Daemon {
 
         return true;
     }
-    
+
     @Override
     public void init(DaemonContext dc) throws DaemonInitException {
         s_logger.debug("Initializing AgentShell from JSVC");
@@ -302,26 +295,25 @@ public class AgentShell implements IAgentShell, Daemon {
             throw new DaemonInitException("Initialization failed", ex);
         }
     }
-    
+
     public void init(String[] args) throws ConfigurationException {
 
-    	// PropertiesUtil is used both in management server and agent packages,
-    	// it searches path under class path and common J2EE containers
-    	// For KVM agent, do it specially here
-    	
-    	File file = new File("/etc/cloudstack/agent/log4j-cloud.xml");
-    	if(!file.exists()) {
-    		file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
-    	}
-    	DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+        // PropertiesUtil is used both in management server and agent packages,
+        // it searches path under class path and common J2EE containers
+        // For KVM agent, do it specially here
 
-    	s_logger.info("Agent started");
-    	
+        File file = new File("/etc/cloudstack/agent/log4j-cloud.xml");
+        if (!file.exists()) {
+            file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
+        }
+        DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+
+        s_logger.info("Agent started");
+
         final Class<?> c = this.getClass();
         _version = c.getPackage().getImplementationVersion();
         if (_version == null) {
-            throw new CloudRuntimeException(
-                    "Unable to find the implementation version of this agent");
+            throw new CloudRuntimeException("Unable to find the implementation version of this agent");
         }
         s_logger.info("Implementation Version is " + _version);
 
@@ -330,19 +322,18 @@ public class AgentShell implements IAgentShell, Daemon {
 
         if (s_logger.isDebugEnabled()) {
             List<String> properties = Collections.list((Enumeration<String>)_properties.propertyNames());
-            for (String property:properties){
+            for (String property : properties) {
                 s_logger.debug("Found property: " + property);
             }
         }
-            
+
         s_logger.info("Defaulting to using properties file for storage");
         _storage = new PropertiesStorage();
         _storage.configure("Storage", new HashMap<String, Object>());
 
         // merge with properties from command line to let resource access
         // command line parameters
-        for (Map.Entry<String, Object> cmdLineProp : getCmdLineProperties()
-                .entrySet()) {
+        for (Map.Entry<String, Object> cmdLineProp : getCmdLineProperties().entrySet()) {
             _properties.put(cmdLineProp.getKey(), cmdLineProp.getValue());
         }
 
@@ -362,46 +353,30 @@ public class AgentShell implements IAgentShell, Daemon {
         launchAgentFromTypeInfo();
     }
 
-    private void launchAgentFromClassInfo(String resourceClassNames)
-            throws ConfigurationException {
+    private void launchAgentFromClassInfo(String resourceClassNames) throws ConfigurationException {
         String[] names = resourceClassNames.split("\\|");
         for (String name : names) {
             Class<?> impl;
             try {
                 impl = Class.forName(name);
-                final Constructor<?> constructor = impl
-                        .getDeclaredConstructor();
+                final Constructor<?> constructor = impl.getDeclaredConstructor();
                 constructor.setAccessible(true);
-                ServerResource resource = (ServerResource) constructor
-                        .newInstance();
+                ServerResource resource = (ServerResource)constructor.newInstance();
                 launchAgent(getNextAgentId(), resource);
             } catch (final ClassNotFoundException e) {
-                throw new ConfigurationException("Resource class not found: "
-                        + name + " due to: " + e.toString());
+                throw new ConfigurationException("Resource class not found: " + name + " due to: " + e.toString());
             } catch (final SecurityException e) {
-                throw new ConfigurationException(
-                        "Security excetion when loading resource: " + name
-                        + " due to: " + e.toString());
+                throw new ConfigurationException("Security excetion when loading resource: " + name + " due to: " + e.toString());
             } catch (final NoSuchMethodException e) {
-                throw new ConfigurationException(
-                        "Method not found excetion when loading resource: "
-                                + name + " due to: " + e.toString());
+                throw new ConfigurationException("Method not found excetion when loading resource: " + name + " due to: " + e.toString());
             } catch (final IllegalArgumentException e) {
-                throw new ConfigurationException(
-                        "Illegal argument excetion when loading resource: "
-                                + name + " due to: " + e.toString());
+                throw new ConfigurationException("Illegal argument excetion when loading resource: " + name + " due to: " + e.toString());
             } catch (final InstantiationException e) {
-                throw new ConfigurationException(
-                        "Instantiation excetion when loading resource: " + name
-                        + " due to: " + e.toString());
+                throw new ConfigurationException("Instantiation excetion when loading resource: " + name + " due to: " + e.toString());
             } catch (final IllegalAccessException e) {
-                throw new ConfigurationException(
-                        "Illegal access exception when loading resource: "
-                                + name + " due to: " + e.toString());
+                throw new ConfigurationException("Illegal access exception when loading resource: " + name + " due to: " + e.toString());
             } catch (final InvocationTargetException e) {
-                throw new ConfigurationException(
-                        "Invocation target exception when loading resource: "
-                                + name + " due to: " + e.toString());
+                throw new ConfigurationException("Invocation target exception when loading resource: " + name + " due to: " + e.toString());
             }
         }
     }
@@ -410,14 +385,12 @@ public class AgentShell implements IAgentShell, Daemon {
         String typeInfo = getProperty(null, "type");
         if (typeInfo == null) {
             s_logger.error("Unable to retrieve the type");
-            throw new ConfigurationException(
-                    "Unable to retrieve the type of this agent.");
+            throw new ConfigurationException("Unable to retrieve the type of this agent.");
         }
         s_logger.trace("Launching agent based on type=" + typeInfo);
     }
 
-    private void launchAgent(int localAgentId, ServerResource resource)
-            throws ConfigurationException {
+    private void launchAgent(int localAgentId, ServerResource resource) throws ConfigurationException {
         // we don't track agent after it is launched for now
         Agent agent = new Agent(this, localAgentId, resource);
         _agents.add(agent);
@@ -428,6 +401,7 @@ public class AgentShell implements IAgentShell, Daemon {
         return _nextAgentId++;
     }
 
+    @Override
     public void start() {
         try {
             /* By default we only search for log4j.xml */
@@ -471,10 +445,12 @@ public class AgentShell implements IAgentShell, Daemon {
         }
     }
 
+    @Override
     public void stop() {
         _exit = true;
     }
 
+    @Override
     public void destroy() {
 
     }

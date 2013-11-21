@@ -16,9 +16,8 @@
 // under the License.
 package com.cloud.agent.api.routing;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+
 import com.cloud.agent.api.to.MonitorServiceTO;
 
 /**
@@ -43,7 +42,7 @@ public class SetMonitorServiceCommand extends NetworkElementCommand {
     public String getConfiguration() {
 
         StringBuilder sb = new StringBuilder();
-        for (MonitorServiceTO service: services) {
+        for (MonitorServiceTO service : services) {
             sb.append("[").append(service.getService()).append("]").append(":");
             sb.append("processname=").append(service.getProcessname()).append(":");
             sb.append("servicename=").append(service.getServiceName()).append(":");

@@ -23,23 +23,23 @@ public class OvsDestroyBridgeCommand extends Command {
 
     Long networkId;
     Integer key;
-    
+
     public OvsDestroyBridgeCommand(Long networkId, Integer key) {
         this.networkId = networkId;
         this.key = key;
     }
-    
+
     public Long getNetworkId() {
         return networkId;
     }
-    
+
     public Integer getKey() {
-    	return key;
+        return key;
     }
-    
-	@Override
-	public boolean executeInSequence() {
-		return true;
-	}
+
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 
 }

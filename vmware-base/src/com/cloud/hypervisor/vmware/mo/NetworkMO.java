@@ -18,8 +18,9 @@ package com.cloud.hypervisor.vmware.mo;
 
 import java.util.List;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.vmware.vim25.ManagedObjectReference;
+
+import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class NetworkMO extends BaseMO {
     public NetworkMO(VmwareContext context, ManagedObjectReference morCluster) {

@@ -23,25 +23,25 @@ import org.apache.cloudstack.framework.transport.TransportEndpointSite;
 import org.apache.cloudstack.framework.transport.TransportProvider;
 
 public class ClientTransportEndpointSite extends TransportEndpointSite {
-	private String _predefinedAddress;
-	private int _providerKey;
-	
-	public ClientTransportEndpointSite(TransportProvider provider, TransportEndpoint endpoint, String predefinedAddress, int providerKey) {
-		super(provider, endpoint);
-		
-		_predefinedAddress = predefinedAddress;
-		_providerKey = providerKey;
-	}
-	
-	public String getPredefinedAddress() {
-		return _predefinedAddress;
-	}
-	
-	public int getProviderKey() {
-		return _providerKey;
-	}
-	
-	public void setProviderKey(int providerKey) {
-		_providerKey = providerKey;
-	}
+    private String _predefinedAddress;
+    private int _providerKey;
+
+    public ClientTransportEndpointSite(TransportProvider provider, TransportEndpoint endpoint, String predefinedAddress, int providerKey) {
+        super(provider, endpoint);
+
+        _predefinedAddress = predefinedAddress;
+        _providerKey = providerKey;
+    }
+
+    public String getPredefinedAddress() {
+        return _predefinedAddress;
+    }
+
+    public int getProviderKey() {
+        return _providerKey;
+    }
+
+    public void setProviderKey(int providerKey) {
+        _providerKey = providerKey;
+    }
 }

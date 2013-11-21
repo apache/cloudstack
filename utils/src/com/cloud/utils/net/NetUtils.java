@@ -38,6 +38,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.net.util.SubnetUtils;
 import org.apache.log4j.Logger;
 
 import com.googlecode.ipv6.IPv6Address;
@@ -46,7 +47,6 @@ import com.googlecode.ipv6.IPv6Network;
 
 import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.Pair;
-import org.apache.commons.net.util.SubnetUtils;
 import com.cloud.utils.script.Script;
 
 public class NetUtils {
@@ -168,8 +168,7 @@ public class NetUtils {
             Pattern pattern = Pattern.compile("\\s*0.0.0.0\\s*0.0.0.0\\s*(\\S*)\\s*(\\S*)\\s*");
             try {
                 Process result = Runtime.getRuntime().exec("route print -4");
-                BufferedReader output = new BufferedReader
-                        (new InputStreamReader(result.getInputStream()));
+                BufferedReader output = new BufferedReader(new InputStreamReader(result.getInputStream()));
 
                 String line = output.readLine();
                 while (line != null) {
@@ -459,8 +458,7 @@ public class NetUtils {
         StringBuilder result = new StringBuilder(17);
         Formatter formatter = new Formatter(result);
         formatter.format("%02x:%02x:%02x:%02x:%02x:%02x", (macAddress >> 40) & 0xff, (macAddress >> 32) & 0xff, (macAddress >> 24) & 0xff, (macAddress >> 16) & 0xff,
-                (macAddress >> 8) & 0xff,
-                (macAddress & 0xff));
+            (macAddress >> 8) & 0xff, (macAddress & 0xff));
 
         return result.toString();
     }
@@ -667,7 +665,7 @@ public class NetUtils {
     /**
      * Given a cidr, this method returns an ip address within the range but
      * is not in the avoid list.
-     * 
+     *
      * @param startIp ip that the cidr starts with
      * @param size size of the cidr
      * @param avoid set of ips to avoid
@@ -680,9 +678,9 @@ public class NetUtils {
 
     /**
      * Given a cidr, this method returns an ip address within the range but
-     * is not in the avoid list. 
+     * is not in the avoid list.
      * Note: the gateway address has to be specified in the avoid list
-     * 
+     *
      * @param cidr ip that the cidr starts with
      * @param size size of the cidr
      * @param avoid set of ips to avoid
@@ -806,11 +804,7 @@ public class NetUtils {
     }
 
     public static enum supersetOrSubset {
-        isSuperset,
-        isSubset,
-        neitherSubetNorSuperset,
-        sameSubnet,
-        errorInCidrFormat
+        isSuperset, isSubset, neitherSubetNorSuperset, sameSubnet, errorInCidrFormat
     }
 
     public static supersetOrSubset isNetowrkASubsetOrSupersetOfNetworkB(String cidrA, String cidrB) {
@@ -823,8 +817,7 @@ public class NetUtils {
         }
         if (cidrALong[1] >= cidrBLong[1]) {
             shift = 32 - cidrBLong[1];
-        }
-        else {
+        } else {
             shift = 32 - cidrALong[1];
         }
         long result = (cidrALong[0] >> shift) - (cidrBLong[0] >> shift);
@@ -832,8 +825,7 @@ public class NetUtils {
             if (cidrALong[1] < cidrBLong[1]) {
                 //this implies cidrA is super set of cidrB
                 return supersetOrSubset.isSuperset;
-            }
-            else if (cidrALong[1] == cidrBLong[1]) {
+            } else if (cidrALong[1] == cidrBLong[1]) {
                 //this implies both the cidrs are equal
                 return supersetOrSubset.sameSubnet;
             }
@@ -1390,7 +1382,7 @@ public class NetUtils {
     // Attention maintainers: these pvlan functions should take into account code
     // in Networks.BroadcastDomainType, where URI construction is done for other
     // types of BroadcastDomainTypes
-	public static URI generateUriForPvlan(String primaryVlan, String isolatedPvlan) {
+    public static URI generateUriForPvlan(String primaryVlan, String isolatedPvlan) {
         return URI.create("pvlan://" + primaryVlan + "-i" + isolatedPvlan);
     }
 

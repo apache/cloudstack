@@ -22,11 +22,11 @@ import com.cloud.utils.mgmt.ManagementBean;
 
 public interface ConstantTimeBackoffMBean extends ManagementBean {
     public long getTimeToWait();
-    
+
     public void setTimeToWait(long seconds);
-    
+
     Collection<String> getWaiters();
-    
+
     boolean wakeup(String threadName);
 
 }

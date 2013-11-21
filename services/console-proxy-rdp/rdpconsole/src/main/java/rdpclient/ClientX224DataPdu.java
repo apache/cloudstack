@@ -22,33 +22,31 @@ import streamer.Link;
 
 public class ClientX224DataPdu extends BaseElement {
 
-  public static final int X224_TPDU_DATA = 0xF0;
-  public static final int X224_TPDU_LAST_DATA_UNIT = 0x80;
+    public static final int X224_TPDU_DATA = 0xF0;
+    public static final int X224_TPDU_LAST_DATA_UNIT = 0x80;
 
-  public ClientX224DataPdu(String id) {
-    super(id);
-  }
-  
-  @Override
-  public void handleData(ByteBuffer buf, Link link) {
-    if (buf == null)
-      return;
+    public ClientX224DataPdu(String id) {
+        super(id);
+    }
 
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
+    @Override
+    public void handleData(ByteBuffer buf, Link link) {
+        if (buf == null)
+            return;
 
-    ByteBuffer data = new ByteBuffer(3);
-    // X224 header
-    data.writeByte(2); // Header length indicator
-    data.writeByte(X224_TPDU_DATA);
-    data.writeByte(X224_TPDU_LAST_DATA_UNIT);
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
 
-    buf.prepend(data);
-    data.unref();
+        ByteBuffer data = new ByteBuffer(3);
+        // X224 header
+        data.writeByte(2); // Header length indicator
+        data.writeByte(X224_TPDU_DATA);
+        data.writeByte(X224_TPDU_LAST_DATA_UNIT);
 
-    pushDataToPad(STDOUT, buf);
-  }
+        buf.prepend(data);
+        data.unref();
 
-
+        pushDataToPad(STDOUT, buf);
+    }
 
 }

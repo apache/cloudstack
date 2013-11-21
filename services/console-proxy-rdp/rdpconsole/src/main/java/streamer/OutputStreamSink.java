@@ -22,132 +22,132 @@ import java.io.OutputStream;
 
 public class OutputStreamSink extends BaseElement {
 
-  protected OutputStream os;
-  protected SocketWrapper socketWrapper;
+    protected OutputStream os;
+    protected SocketWrapper socketWrapper;
 
-  public OutputStreamSink(String id) {
-    super(id);
-  }
-
-  public OutputStreamSink(String id, OutputStream os) {
-    super(id);
-    this.os = os;
-  }
-
-  public OutputStreamSink(String id, SocketWrapper socketWrapper) {
-    super(id);
-    this.socketWrapper = socketWrapper;
-  }
-
-  public void setOutputStream(OutputStream os) {
-    this.os = os;
-    // Resume links
-    resumeLinks();
-  }
-
-  /**
-   * Send incoming data to stream.
-   */
-  @Override
-  public void handleData(ByteBuffer buf, Link link) {
-    if (buf == null)
-      return;
-
-    try {
-      if (verbose)
-        System.out.println("[" + this + "] INFO: Writing data to stream: " + buf + ".");
-
-      os.write(buf.data, buf.offset, buf.length);
-      os.flush();
-    } catch (IOException e) {
-      System.err.println("[" + this + "] ERROR: " + e.getMessage());
-      closeStream();
+    public OutputStreamSink(String id) {
+        super(id);
     }
-  }
 
-  @Override
-  public void handleEvent(Event event, Direction direction) {
-    switch (event) {
-    case SOCKET_UPGRADE_TO_SSL:
-      socketWrapper.upgradeToSsl();
-      break;
-    default:
-      super.handleEvent(event, direction);
+    public OutputStreamSink(String id, OutputStream os) {
+        super(id);
+        this.os = os;
     }
-  }
 
-  @Override
-  public void setLink(String padName, Link link, Direction direction) {
-    switch (direction) {
-    case IN:
-      super.setLink(padName, link, direction);
-
-      if (os == null)
-        // Pause links until data stream will be ready
-        link.pause();
-      break;
-    case OUT:
-      throw new RuntimeException("Cannot assign link to output pad in sink element. Element: " + this + ", pad: " + padName + ", link: " + link + ".");
+    public OutputStreamSink(String id, SocketWrapper socketWrapper) {
+        super(id);
+        this.socketWrapper = socketWrapper;
     }
-  }
 
-  private void resumeLinks() {
-    for (DataSource source : inputPads.values())
-      ((Link) source).resume();
-  }
-
-  @Override
-  protected void onClose() {
-    closeStream();
-  }
-
-  private void closeStream() {
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Closing stream.");
-
-    try {
-      os.close();
-    } catch (IOException e) {
+    public void setOutputStream(OutputStream os) {
+        this.os = os;
+        // Resume links
+        resumeLinks();
     }
-    try {
-      sendEventToAllPads(Event.STREAM_CLOSE, Direction.IN);
-    } catch (Exception e) {
+
+    /**
+     * Send incoming data to stream.
+     */
+    @Override
+    public void handleData(ByteBuffer buf, Link link) {
+        if (buf == null)
+            return;
+
+        try {
+            if (verbose)
+                System.out.println("[" + this + "] INFO: Writing data to stream: " + buf + ".");
+
+            os.write(buf.data, buf.offset, buf.length);
+            os.flush();
+        } catch (IOException e) {
+            System.err.println("[" + this + "] ERROR: " + e.getMessage());
+            closeStream();
+        }
     }
-  }
 
-  @Override
-  public String toString() {
-    return "OutputStreamSink(" + id + ")";
-  }
+    @Override
+    public void handleEvent(Event event, Direction direction) {
+        switch (event) {
+            case SOCKET_UPGRADE_TO_SSL:
+                socketWrapper.upgradeToSsl();
+                break;
+            default:
+                super.handleEvent(event, direction);
+        }
+    }
 
-  /**
-   * Example.
-   */
-  public static void main(String args[]) {
-    Element source = new FakeSource("source") {
-      {
-        this.verbose = true;
-        this.numBuffers = 3;
-        this.incommingBufLength = 5;
-        this.delay = 100;
-      }
-    };
+    @Override
+    public void setLink(String padName, Link link, Direction direction) {
+        switch (direction) {
+            case IN:
+                super.setLink(padName, link, direction);
 
-    OutputStreamSink sink = new OutputStreamSink("sink") {
-      {
-        verbose = true;
-      }
-    };
+                if (os == null)
+                    // Pause links until data stream will be ready
+                    link.pause();
+                break;
+            case OUT:
+                throw new RuntimeException("Cannot assign link to output pad in sink element. Element: " + this + ", pad: " + padName + ", link: " + link + ".");
+        }
+    }
 
-    Link link = new SyncLink();
+    private void resumeLinks() {
+        for (DataSource source : inputPads.values())
+            ((Link)source).resume();
+    }
 
-    source.setLink(STDOUT, link, Direction.OUT);
-    sink.setLink(STDIN, link, Direction.IN);
+    @Override
+    protected void onClose() {
+        closeStream();
+    }
 
-    sink.setOutputStream(new ByteArrayOutputStream());
+    private void closeStream() {
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Closing stream.");
 
-    link.sendEvent(Event.STREAM_START, Direction.IN);
-    link.run();
+        try {
+            os.close();
+        } catch (IOException e) {
+        }
+        try {
+            sendEventToAllPads(Event.STREAM_CLOSE, Direction.IN);
+        } catch (Exception e) {
+        }
+    }
 
-  }
+    @Override
+    public String toString() {
+        return "OutputStreamSink(" + id + ")";
+    }
+
+    /**
+     * Example.
+     */
+    public static void main(String args[]) {
+        Element source = new FakeSource("source") {
+            {
+                this.verbose = true;
+                this.numBuffers = 3;
+                this.incommingBufLength = 5;
+                this.delay = 100;
+            }
+        };
+
+        OutputStreamSink sink = new OutputStreamSink("sink") {
+            {
+                verbose = true;
+            }
+        };
+
+        Link link = new SyncLink();
+
+        source.setLink(STDOUT, link, Direction.OUT);
+        sink.setLink(STDIN, link, Direction.IN);
+
+        sink.setOutputStream(new ByteArrayOutputStream());
+
+        link.sendEvent(Event.STREAM_START, Direction.IN);
+        link.run();
+
+    }
 }

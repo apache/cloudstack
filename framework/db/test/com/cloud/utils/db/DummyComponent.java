@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class DummyComponent {
 
-	public void sayHello() {
-		System.out.println("Hello, world");
-	}
+    public void sayHello() {
+        System.out.println("Hello, world");
+    }
 }

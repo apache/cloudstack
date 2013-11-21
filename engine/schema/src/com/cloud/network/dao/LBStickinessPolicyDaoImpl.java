@@ -26,10 +26,8 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = { LBStickinessPolicyDao.class })
-public class LBStickinessPolicyDaoImpl extends
-        GenericDaoBase<LBStickinessPolicyVO, Long> implements
-        LBStickinessPolicyDao {
+@Local(value = {LBStickinessPolicyDao.class})
+public class LBStickinessPolicyDaoImpl extends GenericDaoBase<LBStickinessPolicyVO, Long> implements LBStickinessPolicyDao {
 
     @Override
     public void remove(long loadBalancerId) {
@@ -57,8 +55,7 @@ public class LBStickinessPolicyDaoImpl extends
     }
 
     @Override
-    public List<LBStickinessPolicyVO> listByLoadBalancerId(long loadBalancerId,
-            boolean pending) {
+    public List<LBStickinessPolicyVO> listByLoadBalancerId(long loadBalancerId, boolean pending) {
         SearchCriteria<LBStickinessPolicyVO> sc = createSearchCriteria();
         sc.addAnd("loadBalancerId", SearchCriteria.Op.EQ, loadBalancerId);
         sc.addAnd("revoke", SearchCriteria.Op.EQ, pending);

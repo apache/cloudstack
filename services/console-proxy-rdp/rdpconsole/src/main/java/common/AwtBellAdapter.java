@@ -28,49 +28,50 @@ import streamer.PipelineImpl;
 
 public class AwtBellAdapter extends BaseElement {
 
-  public AwtBellAdapter(String id) {
-    super(id);
-    declarePads();
-  }
+    public AwtBellAdapter(String id) {
+        super(id);
+        declarePads();
+    }
 
-  private void declarePads() {
-    inputPads.put(STDIN, null);
-  }
+    private void declarePads() {
+        inputPads.put(STDIN, null);
+    }
 
-  @Override
-  public void handleData(ByteBuffer buf, Link link) {
-    if (verbose)
-      System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
+    @Override
+    public void handleData(ByteBuffer buf, Link link) {
+        if (verbose)
+            System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
 
-    if (buf == null)
-      return;
+        if (buf == null)
+            return;
 
-    Toolkit.getDefaultToolkit().beep();
-  }
+        Toolkit.getDefaultToolkit().beep();
+    }
 
-  public String toString() {
-    return "Bell(" + id + ")";
-  }
+    @Override
+    public String toString() {
+        return "Bell(" + id + ")";
+    }
 
-  /**
-   * Example.
-   */
-  public static void main(String args[]) {
-    System.setProperty("streamer.Element.debug", "true");
+    /**
+     * Example.
+     */
+    public static void main(String args[]) {
+        System.setProperty("streamer.Element.debug", "true");
 
-    Element source = new FakeSource("source") {
-      {
-        this.incommingBufLength = 0;
-        this.delay = 1000;
-        this.numBuffers = 3;
-      }
-    };
+        Element source = new FakeSource("source") {
+            {
+                this.incommingBufLength = 0;
+                this.delay = 1000;
+                this.numBuffers = 3;
+            }
+        };
 
-    Element sink = new AwtBellAdapter("sink");
+        Element sink = new AwtBellAdapter("sink");
 
-    Pipeline pipeline = new PipelineImpl("test");
-    pipeline.addAndLink(source, sink);
-    pipeline.runMainLoop("source", STDOUT, false, false);
-  }
+        Pipeline pipeline = new PipelineImpl("test");
+        pipeline.addAndLink(source, sink);
+        pipeline.runMainLoop("source", STDOUT, false, false);
+    }
 
 }

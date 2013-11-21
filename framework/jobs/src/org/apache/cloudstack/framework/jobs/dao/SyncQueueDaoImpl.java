@@ -34,23 +34,22 @@ import com.cloud.utils.db.TransactionLegacy;
 
 public class SyncQueueDaoImpl extends GenericDaoBase<SyncQueueVO, Long> implements SyncQueueDao {
     private static final Logger s_logger = Logger.getLogger(SyncQueueDaoImpl.class.getName());
-    
+
     SearchBuilder<SyncQueueVO> TypeIdSearch = createSearchBuilder();
 
     public SyncQueueDaoImpl() {
-	    super();
-	    TypeIdSearch = createSearchBuilder();
+        super();
+        TypeIdSearch = createSearchBuilder();
         TypeIdSearch.and("syncObjType", TypeIdSearch.entity().getSyncObjType(), SearchCriteria.Op.EQ);
         TypeIdSearch.and("syncObjId", TypeIdSearch.entity().getSyncObjId(), SearchCriteria.Op.EQ);
         TypeIdSearch.done();
-	}
-	
-	@Override
-	public void ensureQueue(String syncObjType, long syncObjId) {
-		Date dt = DateUtil.currentGMTTime();
-        String sql = "INSERT IGNORE INTO sync_queue(sync_objtype, sync_objid, created, last_updated)" +
-                " values(?, ?, ?, ?)";
-		
+    }
+
+    @Override
+    public void ensureQueue(String syncObjType, long syncObjId) {
+        Date dt = DateUtil.currentGMTTime();
+        String sql = "INSERT IGNORE INTO sync_queue(sync_objtype, sync_objid, created, last_updated)" + " values(?, ?, ?, ?)";
+
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
@@ -61,18 +60,18 @@ public class SyncQueueDaoImpl extends GenericDaoBase<SyncQueueVO, Long> implemen
             pstmt.setString(4, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), dt));
             pstmt.execute();
         } catch (SQLException e) {
-        	s_logger.warn("Unable to create sync queue " + syncObjType + "-" + syncObjId + ":" + e.getMessage(), e);
+            s_logger.warn("Unable to create sync queue " + syncObjType + "-" + syncObjId + ":" + e.getMessage(), e);
         } catch (Throwable e) {
-        	s_logger.warn("Unable to create sync queue " + syncObjType + "-" + syncObjId + ":" + e.getMessage(), e);
+            s_logger.warn("Unable to create sync queue " + syncObjType + "-" + syncObjId + ":" + e.getMessage(), e);
         }
-	}
-	
-	@Override
-	public SyncQueueVO find(String syncObjType, long syncObjId) {
-    	SearchCriteria<SyncQueueVO> sc = TypeIdSearch.create();
-    	sc.setParameters("syncObjType", syncObjType);
-    	sc.setParameters("syncObjId", syncObjId);
+    }
+
+    @Override
+    public SyncQueueVO find(String syncObjType, long syncObjId) {
+        SearchCriteria<SyncQueueVO> sc = TypeIdSearch.create();
+        sc.setParameters("syncObjType", syncObjType);
+        sc.setParameters("syncObjId", syncObjId);
         return findOneBy(sc);
-	}
+    }
 
 }

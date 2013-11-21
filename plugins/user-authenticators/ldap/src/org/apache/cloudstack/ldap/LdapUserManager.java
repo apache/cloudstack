@@ -23,7 +23,11 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
-import javax.naming.directory.*;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.SearchControls;
+import javax.naming.directory.SearchResult;
 
 public class LdapUserManager {
 
@@ -46,9 +50,9 @@ public class LdapUserManager {
         final String lastname = LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getLastnameAttribute());
         final String principal = result.getNameInNamespace();
 
-        String domain = principal.replace("cn="+LdapUtils.getAttributeValue(attributes,_ldapConfiguration.getCommonNameAttribute())+",", "");
-        domain = domain.replace(","+_ldapConfiguration.getBaseDn(), "");
-        domain = domain.replace("ou=","");
+        String domain = principal.replace("cn=" + LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getCommonNameAttribute()) + ",", "");
+        domain = domain.replace("," + _ldapConfiguration.getBaseDn(), "");
+        domain = domain.replace("ou=", "");
 
         return new LdapUser(username, email, firstname, lastname, principal, domain);
     }
@@ -149,7 +153,7 @@ public class LdapUserManager {
 
             while (values.hasMoreElements()) {
                 String userdn = String.valueOf(values.nextElement());
-                users.add(getUserForDn(userdn,context));
+                users.add(getUserForDn(userdn, context));
             }
         }
 
@@ -163,7 +167,7 @@ public class LdapUserManager {
         controls.setSearchScope(_ldapConfiguration.getScope());
         controls.setReturningAttributes(_ldapConfiguration.getReturnAttributes());
 
-        NamingEnumeration<SearchResult> result = context.search(userdn, "(objectClass="+_ldapConfiguration.getUserObject()+")", controls);
+        NamingEnumeration<SearchResult> result = context.search(userdn, "(objectClass=" + _ldapConfiguration.getUserObject() + ")", controls);
         if (result.hasMoreElements()) {
             return createUser(result.nextElement());
         } else {

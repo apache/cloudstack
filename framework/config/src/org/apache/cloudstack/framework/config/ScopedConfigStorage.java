@@ -19,7 +19,7 @@ package org.apache.cloudstack.framework.config;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 
 /**
- * 
+ *
  * This method is used by individual storage for configuration
  *
  */

@@ -16,11 +16,6 @@
 // under the License.
 package com.cloud.network;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -32,7 +27,6 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 
 import com.cloud.network.rules.HealthCheckPolicy;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = ("load_balancer_healthcheck_policies"))
@@ -74,8 +68,8 @@ public class LBHealthCheckPolicyVO implements HealthCheckPolicy {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public LBHealthCheckPolicyVO(long loadBalancerId, String pingPath, String description, int responseTime,
-            int healthcheckInterval, int healthcheckThresshold, int unhealthThresshold) {
+    public LBHealthCheckPolicyVO(long loadBalancerId, String pingPath, String description, int responseTime, int healthcheckInterval, int healthcheckThresshold,
+            int unhealthThresshold) {
         this.loadBalancerId = loadBalancerId;
 
         if (pingPath == null || pingPath.isEmpty())
@@ -106,38 +100,47 @@ public class LBHealthCheckPolicyVO implements HealthCheckPolicy {
 
     }
 
+    @Override
     public int getResponseTime() {
         return responseTime;
     }
 
+    @Override
     public int getHealthcheckInterval() {
         return healthcheckInterval;
     }
 
+    @Override
     public int getHealthcheckThresshold() {
         return healthcheckThresshold;
     }
 
+    @Override
     public int getUnhealthThresshold() {
         return unhealthThresshold;
     }
 
+    @Override
     public long getId() {
         return id;
     }
 
+    @Override
     public long getLoadBalancerId() {
         return loadBalancerId;
     }
 
+    @Override
     public String getpingpath() {
         return pingPath;
     }
 
+    @Override
     public String getDescription() {
         return description;
     }
 
+    @Override
     public boolean isRevoke() {
         return revoke;
     }

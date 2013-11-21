@@ -20,28 +20,28 @@ package org.apache.cloudstack.framework.transport;
 
 import org.apache.cloudstack.framework.serializer.OnwireName;
 
-@OnwireName(name="TransportDataPdu")
+@OnwireName(name = "TransportDataPdu")
 public class TransportDataPdu extends TransportPdu {
 
-	private String _multiplexier;
-	private String _content;
-	
-	public TransportDataPdu() {
-	}
-	
-	public String getMultiplexier() {
-		return _multiplexier;
-	}
-	
-	public void setMultiplexier(String multiplexier) {
-		_multiplexier = multiplexier;
-	}
-	
-	public String getContent() {
-		return _content;
-	}
-	
-	public void setContent(String content) {
-		_content = content;
-	}
+    private String _multiplexier;
+    private String _content;
+
+    public TransportDataPdu() {
+    }
+
+    public String getMultiplexier() {
+        return _multiplexier;
+    }
+
+    public void setMultiplexier(String multiplexier) {
+        _multiplexier = multiplexier;
+    }
+
+    public String getContent() {
+        return _content;
+    }
+
+    public void setContent(String content) {
+        _content = content;
+    }
 }
