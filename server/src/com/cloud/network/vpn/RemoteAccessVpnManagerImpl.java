@@ -217,7 +217,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                 throw new InvalidParameterValueException("Vpn service is not supported in network id=" + ipAddr.getAssociatedWithNetworkId());
             }
             cidr = NetUtils.getCidr(network.getCidr());
-        } else { // Don't need to check VPC because there is only one IP(source NAT IP) available for VPN 
+        } else { // Don't need to check VPC because there is only one IP(source NAT IP) available for VPN
             Vpc vpc = _vpcDao.findById(vpcId);
             cidr = NetUtils.getCidr(vpc.getCidr());
         }

@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.resource;
@@ -366,10 +366,10 @@ public class F5BigIpResource implements ServerResource {
                 // Delete the virtual server with this protocol, source IP, and source port, along with its default pool and all pool members
                 deleteVirtualServerAndDefaultPool(virtualServerName);
                 if (!loadBalancer.isRevoked() && destinationsToAdd) {
-                    // Add the pool 
+                    // Add the pool
                     addPool(virtualServerName, lbAlgorithm);
 
-                    // Add pool members  
+                    // Add pool members
                     List<String> activePoolMembers = new ArrayList<String>();
                     for (DestinationTO destination : loadBalancer.getDestinations()) {
                         if (!destination.isRevoked()) {
@@ -379,7 +379,7 @@ public class F5BigIpResource implements ServerResource {
                         }
                     }
 
-                    // Add the virtual server 
+                    // Add the virtual server
                     addVirtualServer(virtualServerName, lbProtocol, srcIp, srcPort, loadBalancer.getStickinessPolicies());
                 }
             }
@@ -591,7 +591,7 @@ public class F5BigIpResource implements ServerResource {
         }
     }
 
-    // Login    
+    // Login
 
     private void login() throws ExecutionException {
         try {
@@ -1011,7 +1011,7 @@ public class F5BigIpResource implements ServerResource {
         rollOver = new Double(rollOver.doubleValue() + 1.0);
 
         if (high >= 0) {
-            // shift left 32 bits and mask off new bits to 0's 
+            // shift left 32 bits and mask off new bits to 0's
             full = new Double((high << 32 & 0xffff0000));
         } else {
             // mask off sign bits + shift left by 32 bits then add the sign bit back

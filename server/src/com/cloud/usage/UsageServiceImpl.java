@@ -163,7 +163,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         //If accountId couldn't be found using accountName and domainId, get it from userContext
         if (accountId == null) {
             accountId = caller.getId();
-            //List records for all the accounts if the caller account is of type admin. 
+            //List records for all the accounts if the caller account is of type admin.
             //If account_id or account_name is explicitly mentioned, list records for the specified account only even if the caller is of type admin
             if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {
                 isAdmin = true;

@@ -39,19 +39,19 @@ import org.apache.commons.httpclient.methods.GetMethod;
  *
  *
  *
- * 
- * 
- * 
- * 
+ *
+ *
+ *
+ *
  */
 
 /**
  * Sample CloudStack Management User API Executor.
- * 
+ *
  * Prerequisites: - Edit usercloud.properties to include your host, apiUrl, apiKey, and secretKey - Use ./executeUserAPI.sh to
  * execute this test class
- * 
- * 
+ *
+ *
  */
 public class UserCloudAPIExecutor {
     public static void main(String[] args) {
@@ -167,7 +167,7 @@ public class UserCloudAPIExecutor {
 
     /**
      * 1. Signs a string with a secret key using SHA-1 2. Base64 encode the result 3. URL encode the final result
-     * 
+     *
      * @param request
      * @param key
      * @return

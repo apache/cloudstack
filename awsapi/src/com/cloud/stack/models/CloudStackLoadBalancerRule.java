@@ -48,7 +48,7 @@ public class CloudStackLoadBalancerRule {
     private String zoneId;
 
     /**
-     * 
+     *
      */
     public CloudStackLoadBalancerRule() {
         // TODO Auto-generated constructor stub

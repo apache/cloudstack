@@ -54,9 +54,9 @@ public class S3PolicyArnCondition extends S3PolicyCondition {
         return keys.get(key);
     }
 
-    /** 
+    /**
      * Convert the key's values into the type depending on the what the condition expects.
-     * @throws ParseException 
+     * @throws ParseException
      */
     public void setKey(ConditionKeys key, String[] values) throws ParseException {
         if (PolicyConditions.ArnLike == condition || PolicyConditions.ArnNotLike == condition) {

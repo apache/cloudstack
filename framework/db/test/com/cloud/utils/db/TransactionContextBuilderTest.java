@@ -49,7 +49,7 @@ public class TransactionContextBuilderTest {
         DbAnnotatedBase base = ComponentContext.inject(new DbAnnotatedBase());
         base.MethodWithClassDbAnnotated();
 
-        /*        
+        /*
                 Map<String, DbAnnotatedBase> components = ComponentContext.getApplicationContext().getBeansOfType(DbAnnotatedBase.class);
                 for(Map.Entry<String, DbAnnotatedBase> entry : components.entrySet()) {
                     System.out.println(entry.getKey());

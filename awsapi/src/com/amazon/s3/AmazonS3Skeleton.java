@@ -30,7 +30,7 @@ public class AmazonS3Skeleton implements AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                  * @param getBucketLoggingStatus0
      */
 
@@ -41,7 +41,7 @@ public class AmazonS3Skeleton implements AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                  * @param copyObject2
      */
 
@@ -52,7 +52,7 @@ public class AmazonS3Skeleton implements AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                  * @param getBucketAccessControlPolicy4
      */
 
@@ -63,7 +63,7 @@ public class AmazonS3Skeleton implements AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                  * @param listBucket6
      */
 
@@ -74,7 +74,7 @@ public class AmazonS3Skeleton implements AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                  * @param putObject8
      */
 
@@ -85,7 +85,7 @@ public class AmazonS3Skeleton implements AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                  * @param createBucket10
      */
 
@@ -96,7 +96,7 @@ public class AmazonS3Skeleton implements AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                  * @param listAllMyBuckets12
      */
 
@@ -107,7 +107,7 @@ public class AmazonS3Skeleton implements AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                  * @param getObject14
      */
 
@@ -118,7 +118,7 @@ public class AmazonS3Skeleton implements AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                  * @param deleteBucket16
      */
 
@@ -129,7 +129,7 @@ public class AmazonS3Skeleton implements AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                  * @param setBucketLoggingStatus18
      */
 
@@ -140,7 +140,7 @@ public class AmazonS3Skeleton implements AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                  * @param getObjectAccessControlPolicy20
      */
 
@@ -151,7 +151,7 @@ public class AmazonS3Skeleton implements AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                  * @param deleteObject22
      */
 
@@ -162,7 +162,7 @@ public class AmazonS3Skeleton implements AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                  * @param setBucketAccessControlPolicy24
      */
 
@@ -173,7 +173,7 @@ public class AmazonS3Skeleton implements AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                  * @param setObjectAccessControlPolicy26
      */
 
@@ -184,7 +184,7 @@ public class AmazonS3Skeleton implements AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                  * @param putObjectInline28
      */
 
@@ -195,7 +195,7 @@ public class AmazonS3Skeleton implements AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                  * @param getObjectExtended30
      */
 

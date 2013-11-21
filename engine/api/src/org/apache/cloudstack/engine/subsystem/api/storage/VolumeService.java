@@ -46,16 +46,16 @@ public interface VolumeService {
 
     /**
      * Creates the volume based on the given criteria
-     * 
+     *
      * @param cmd
-     * 
+     *
      * @return the volume object
      */
     AsyncCallFuture<VolumeApiResult> createVolumeAsync(VolumeInfo volume, DataStore store);
 
     /**
      * Delete volume
-     * 
+     *
      * @param volumeId
      * @return
      * @throws ConcurrentOperationException

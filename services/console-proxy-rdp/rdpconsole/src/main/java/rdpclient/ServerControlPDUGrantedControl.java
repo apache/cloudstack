@@ -33,7 +33,7 @@ public class ServerControlPDUGrantedControl  extends OneTimeSwitch {
 
     if (verbose)
       System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
-    
+
     // Ignore packet
     buf.unref();
     switchOff();
@@ -42,7 +42,7 @@ public class ServerControlPDUGrantedControl  extends OneTimeSwitch {
 }
 /* @formatter:off */
 /*
-03 00 00 28 02 F0 80 68 00 01 03 EB 70 1A 1A 00 17 00 EA 03 EA 03 01 00 50 02 1A 00 14 00 00 00 02 00 EC 03 EA 03 00 00 
+03 00 00 28 02 F0 80 68 00 01 03 EB 70 1A 1A 00 17 00 EA 03 EA 03 01 00 50 02 1A 00 14 00 00 00 02 00 EC 03 EA 03 00 00
 
   Frame: Number = 45, Captured Frame Length = 97, MediaType = DecryptedPayloadHeader
 + DecryptedPayloadHeader: FrameCount = 1, ErrorStatus = SUCCESS
@@ -85,7 +85,7 @@ public class ServerControlPDUGrantedControl  extends OneTimeSwitch {
       Length: 26
     RDP: RDPBCGR
 - RDPBCGR: TsControlPDU
-  - SlowPathPacket: TsControlPDU 
+  - SlowPathPacket: TsControlPDU
    - SlowPath: Type = TS_PDUTYPE_DATAPDU
     - TsShareControlHeader: Type = TS_PDUTYPE_DATAPDU
        TotalLength: 26 (0x1A)

@@ -56,7 +56,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * NetworkManager manages the network for the different end users.
- * 
+ *
  */
 public interface NetworkOrchestrationService {
     static final String NetworkLockTimeoutCK = "network.lock.timeout";
@@ -94,7 +94,7 @@ public interface NetworkOrchestrationService {
 
     /**
      * prepares vm nic change for migration
-     * 
+     *
      * This method will be called in migration transaction before the vm migration.
      * @param vm
      * @param dest
@@ -103,7 +103,7 @@ public interface NetworkOrchestrationService {
 
     /**
      * commit vm nic change for migration
-     * 
+     *
      * This method will be called in migration transaction after the successful
      * vm migration.
      * @param src
@@ -113,7 +113,7 @@ public interface NetworkOrchestrationService {
 
     /**
      * rollback vm nic change for migration
-     * 
+     *
      * This method will be called in migaration transaction after vm migration
      * failure.
      * @param src

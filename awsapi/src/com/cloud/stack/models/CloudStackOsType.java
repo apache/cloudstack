@@ -28,7 +28,7 @@ public class CloudStackOsType {
     private String description;
 
     /**
-     *  
+     *
      */
     public CloudStackOsType() {
     }

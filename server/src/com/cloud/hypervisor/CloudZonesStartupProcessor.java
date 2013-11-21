@@ -342,7 +342,7 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
 
     private void updatePodNetmaskIfNeeded(HostPodVO pod, String agentNetmask) {
         // If the server's private netmask is less inclusive than the pod's CIDR
-        // netmask, update cidrSize of the default POD 
+        // netmask, update cidrSize of the default POD
         //(reason: we are maintaining pods only for internal accounting.)
         long cidrSize = pod.getCidrSize();
         String cidrNetmask = NetUtils.getCidrSubNet("255.255.255.255", cidrSize);

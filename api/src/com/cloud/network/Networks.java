@@ -23,7 +23,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
  * Network includes all of the enums used within networking.
- * 
+ *
  */
 public class Networks {
 

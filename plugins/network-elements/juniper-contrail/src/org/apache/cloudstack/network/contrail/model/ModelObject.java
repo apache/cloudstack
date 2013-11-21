@@ -26,16 +26,16 @@ import com.cloud.exception.InternalErrorException;
 
 /**
  * ModelObject
- * 
+ *
  * A model object represents the desired state of the system.
- * 
+ *
  * The object constructor should set the uuid and the internal id of the cloudstack objects.
- * 
+ *
  * The build method reads the master database (typically cloudstack mysql) and derives the state that
  * we wish to reflect in the contrail API. This method should not modify the Contrail API state.
- * 
+ *
  * The verify method reads the API server state and compares with cached properties.
- * 
+ *
  * The update method pushes updates to the contrail API server.
  */
 public interface ModelObject {
@@ -55,7 +55,7 @@ public interface ModelObject {
                 }
                 return -1;
             }
-            
+
             return lhs.compareTo(rhs);
         }
 
@@ -84,12 +84,12 @@ public interface ModelObject {
         public ModelObject get() {
             return reference.get();
         }
-        
-        
+
+
     };
-    
+
     public void addSuccessor(ModelObject child);
-    
+
     public TreeSet<ModelReference> ancestors();
     public void clearSuccessors();
     public int compareTo(ModelObject o);
@@ -103,31 +103,31 @@ public interface ModelObject {
 
     /**
      * Deletes the object from the data model graph.
-     * 
+     *
      * @param controller
      * @throws IOException
      */
     public void destroy(ModelController controller) throws IOException;
-    
+
     public void removeSuccessor(ModelObject child);
-    
+
     public TreeSet<ModelObject> successors();
-    
+
     /**
      * Push updates to Contrail API server. This API is only valid for objects in the database.
      * @param controller
-     * @throws IOException 
-     * @throws InternalErrorException 
+     * @throws IOException
+     * @throws InternalErrorException
      */
     public void update(ModelController controller) throws InternalErrorException, IOException;
-    
+
     /**
      * Check that the state of the current object matches the state of the API server.
      * @param controller
      * @return
      */
     public boolean verify(ModelController controller);
-    
+
     /*
      * Compare the state of existing model object with latest model object
      */

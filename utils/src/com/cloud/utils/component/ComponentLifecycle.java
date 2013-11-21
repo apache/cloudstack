@@ -47,14 +47,14 @@ public interface ComponentLifecycle extends Named {
 
     /**
      * Start any background tasks.
-     * 
+     *
      * @return true if the tasks were started, false otherwise.
      */
     public boolean start();
 
     /**
      * Stop any background tasks.
-     * 
+     *
      * @return true background tasks were stopped, false otherwise.
      */
     public boolean stop();

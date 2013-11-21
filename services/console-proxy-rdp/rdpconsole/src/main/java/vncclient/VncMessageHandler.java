@@ -304,7 +304,7 @@ public class VncMessageHandler extends BaseElement {
 
     BitmapOrder order = new BitmapOrder();
     order.rectangles = new BitmapRectangle[] { rectangle };
-    
+
     pushDataToPad(PIXEL_ADAPTER_PAD, new ByteBuffer(order));
     return true;
   }

@@ -78,7 +78,7 @@ public interface AffinityGroupProcessor extends Adapter {
      * subDomainAccess() should return true if the affinity/anti-affinity group
      * can be created for a domain and used by the sub-domains. If true, all
      * accounts under the sub-domains can see this group and use it.
-     * 
+     *
      * @return boolean true/false
      */
     boolean subDomainAccess();

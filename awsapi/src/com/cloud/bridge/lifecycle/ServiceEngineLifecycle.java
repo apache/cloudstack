@@ -26,7 +26,7 @@ import com.cloud.utils.db.Transaction;
 
 /**
  * ServiceEngineLifecycle is used to participate Axis service life cycle management
- * so that we can inject proper initialization and cleanup procedure into the 
+ * so that we can inject proper initialization and cleanup procedure into the
  * process
  */
 public class ServiceEngineLifecycle implements ServiceLifeCycle {

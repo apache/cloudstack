@@ -54,10 +54,10 @@ public class S3PolicyIPAddressCondition extends S3PolicyCondition {
         return keys.get(key);
     }
 
-    /** 
+    /**
      * Convert the key's values into the type depending on the what the condition expects.
-     * @throws ParseException 
-     * @throws IOException 
+     * @throws ParseException
+     * @throws IOException
      */
     public void setKey(ConditionKeys key, String[] values) throws ParseException, Exception {
         IpAddressRange[] addresses = new IpAddressRange[values.length];
@@ -77,8 +77,8 @@ public class S3PolicyIPAddressCondition extends S3PolicyCondition {
         if (!itr.hasNext())
             return false;
 
-        // -> returns the Internet Protocol (IP) address of the client or last proxy that sent the request. 
-        //    For HTTP servlets, same as the value of the CGI variable REMOTE_ADDR. 
+        // -> returns the Internet Protocol (IP) address of the client or last proxy that sent the request.
+        //    For HTTP servlets, same as the value of the CGI variable REMOTE_ADDR.
         IpAddressRange toCompareWith = IpAddressRange.parseRange(context.getRemoveAddr());
         if (null == toCompareWith)
             return false;

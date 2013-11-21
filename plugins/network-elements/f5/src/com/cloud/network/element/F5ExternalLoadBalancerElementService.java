@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.element;
@@ -39,14 +39,14 @@ public interface F5ExternalLoadBalancerElementService extends PluggableService {
 
     /**
      * adds a F5 load balancer device in to a physical network
-     * @param AddF5LoadBalancerCmd 
+     * @param AddF5LoadBalancerCmd
      * @return ExternalLoadBalancerDeviceVO object for the device added
      */
     public ExternalLoadBalancerDeviceVO addF5LoadBalancer(AddF5LoadBalancerCmd cmd);
 
     /**
      * removes a F5 load balancer device from a physical network
-     * @param DeleteF5LoadBalancerCmd 
+     * @param DeleteF5LoadBalancerCmd
      * @return true if F5 load balancer device is successfully deleted
      */
     public boolean deleteF5LoadBalancer(DeleteF5LoadBalancerCmd cmd);

@@ -31,11 +31,11 @@ public interface StoragePoolAllocator extends Adapter {
     /**
      * Determines which storage pools are suitable for the guest virtual machine
      * and returns a list of pools suitable.
-     * 
+     *
      * Allocators must set any other pools not considered for allocation in the
      * ExcludeList avoid. Thus the avoid set and the list of pools suitable,
      * together must cover the entire pool set in the cluster.
-     * 
+     *
      * @param DiskProfile
      *            dskCh
      * @param VirtualMachineProfile

@@ -33,7 +33,7 @@ import com.cloud.utils.PropertiesUtil;
 
 /**
  * Uses Properties to implement storage.
- * 
+ *
  * @config {@table || Param Name | Description | Values | Default || || path |
  *         path to the properties _file | String | db/db.properties || * }
  **/

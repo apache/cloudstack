@@ -33,7 +33,7 @@ import com.cloud.test.stress.TestClientWithAPI;
 
 public class User {
     public static final Logger s_logger= Logger.getLogger(User.class.getClass());
-    
+
     private ArrayList<VirtualMachine> virtualMachines;
     private ArrayList<String> publicIp;
     private String server;
@@ -44,7 +44,7 @@ public class User {
     private String secretKey;
     private String password;
     private String encryptedPassword;
-    
+
 
     public User(String userName, String password, String server, String developerServer)
     {
@@ -55,7 +55,7 @@ public class User {
         this.virtualMachines = new ArrayList<VirtualMachine>();
         this.publicIp = new ArrayList<String>();
     }
-    
+
     public ArrayList<VirtualMachine> getVirtualMachines() {
         return virtualMachines;
     }
@@ -74,7 +74,7 @@ public class User {
     public void setUserId(String userId) {
         this.userId = userId;
     }
-    
+
 
     public ArrayList<String> getPublicIp() {
         return publicIp;
@@ -125,7 +125,7 @@ public class User {
     public void setPassword(String password) {
         this.password = password;
     }
-    
+
     public String getSecretKey() {
         return secretKey;
     }
@@ -133,8 +133,8 @@ public class User {
     public void setSecretKey(String secretKey) {
         this.secretKey = secretKey;
     }
-    
-    
+
+
 
     public String getDeveloperServer() {
         return developerServer;
@@ -166,9 +166,9 @@ public class User {
             }
         }
     }
-    
+
     public void retrievePublicIp(long zoneId) throws IOException{
-        
+
         String encodedApiKey = URLEncoder.encode(this.apiKey, "UTF-8");
         String encodedZoneId=URLEncoder.encode(""+zoneId,"UTF-8");
         String requestToSign = "apiKey=" + encodedApiKey
@@ -201,11 +201,11 @@ public class User {
             s_logger.error("internal error processing request: "
                     + method.getStatusText());
         }
-        
+
     }
-    
+
         public void registerUser()throws HttpException, IOException{
-     
+
             String encodedUsername = URLEncoder.encode(this.userName, "UTF-8");
             String encodedPassword = URLEncoder.encode(this.password, "UTF-8");
             String url = server + "?command=register&username=" + encodedUsername
@@ -232,7 +232,7 @@ public class User {
                         + method.getStatusText());
             }
         }
-        
+
 }
 
 

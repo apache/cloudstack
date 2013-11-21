@@ -18,11 +18,11 @@ package streamer;
 
 /**
  * One time switch for handshake and initialization stages.
- * 
+ *
  * At beginning, element handles data internally, sending output to "otout" pad.
  * After switchOff() method is called, element drops its links, so packets from
  * "stdin" pad are forwarded directly to "stdout" pad, without processing.
- * 
+ *
  * Event STREAM_START is captured by this element and not propagated further.
  * When switchOff() method is called, event STREAM_START is generated and sent
  * to "stdout".

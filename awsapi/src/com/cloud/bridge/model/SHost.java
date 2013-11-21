@@ -32,20 +32,20 @@ public interface SHost {
         STORAGE_HOST_TYPE_CASTOR //2
     }
     /*    private Long id;
-        
+
         private String host;
         private int hostType;
         private MHostVO mhost;
         private String exportRoot;
         private String userOnHost;
         private String userPassword;
-        
-        private Set<SBucket> buckets = new HashSet<SBucket>();  
+
+        private Set<SBucket> buckets = new HashSet<SBucket>();
         private Set<MHostMount> mounts = new HashSet<MHostMount>();
-        
+
         public SHost() {
         }
-        
+
         public Long getId() {
             return id;
         }
@@ -53,15 +53,15 @@ public interface SHost {
         private void setId(Long id) {
             this.id = id;
         }
-        
+
         public String getHost() {
             return host;
         }
-        
+
         public void setHost(String host) {
             this.host = host;
         }
-        
+
         public int getHostType() {
             return hostType;
         }
@@ -81,19 +81,19 @@ public interface SHost {
         public String getUserOnHost() {
             return userOnHost;
         }
-        
+
         public void setUserOnHost(String userOnHost) {
             this.userOnHost = userOnHost;
         }
-        
+
         public String getUserPassword() {
             return userPassword;
         }
-        
+
         public void setUserPassword(String userPassword) {
             this.userPassword = userPassword;
         }
-        
+
         public MHostVO getMhost() {
             return mhost;
         }
@@ -109,7 +109,7 @@ public interface SHost {
         public void setBuckets(Set<SBucket> buckets) {
             this.buckets = buckets;
         }
-        
+
         public Set<MHostMount> getMounts() {
             return mounts;
         }

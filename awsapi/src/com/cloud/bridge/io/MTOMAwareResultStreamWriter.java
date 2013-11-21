@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 /**
- * 
+ *
  */
 package com.cloud.bridge.io;
 
@@ -35,11 +35,11 @@ import org.apache.axis2.databinding.ADBBean;
 import org.apache.axis2.databinding.ADBException;
 
 /**
- * Provide an MTOM aware serializable output stream writer to be consumed by implementors of the 
+ * Provide an MTOM aware serializable output stream writer to be consumed by implementors of the
  * com.amazon.s3 Response ADB bean classes.
  * This writer enables participation is StaX based builders and AXIOM om xml stream processing
  * An instance of a MTOMAwareResultStreamWriter is a convenient argument to a com.amazon.s3 Response bean, as generated
- * from the Amazon S3 WSDL using 
+ * from the Amazon S3 WSDL using
  * wsdl2java.sh -ss -sd -ssi -g -p com.amazon.s3 -ns2p "http://s3.amazonaws.com/doc/2006-03-01/"=com.amazon.s3 -uri cloud-AmazonS3.wsdl
  * Such a bean implements a serialize method of the form
  *          public void serialize(qualifiedName,omfactory, xmlWriter)
@@ -55,8 +55,8 @@ import org.apache.axis2.databinding.ADBException;
  * Addtionally, as a side effect, ensure that the org.apache.axis2.databinding classes which serialize the
  * output of each fields have been initialized to be aware of any custom classes which override the default
  * output xsd converter methods of Axis2's databinding.  Such a custom class is notified to the ADB framework
- * (via its org.apache.axis2.databinding.utils.ConverterUtil class) by setting a System property, 
- * SYSTEM_PROPERTY_ADB_CONVERTERUTIL to name the custom class. 
+ * (via its org.apache.axis2.databinding.utils.ConverterUtil class) by setting a System property,
+ * SYSTEM_PROPERTY_ADB_CONVERTERUTIL to name the custom class.
  */
 public class MTOMAwareResultStreamWriter {
 
@@ -88,7 +88,7 @@ public class MTOMAwareResultStreamWriter {
         System.setProperty(org.apache.axis2.databinding.utils.ConverterUtil.SYSTEM_PROPERTY_ADB_CONVERTERUTIL, "com.cloud.bridge.util.DatabindingConverterUtil");
     }
 
-    /* 
+    /*
      * @params
      * @param nameOfResult Used as the tag description of the result written out when the requester serializes
      * @param outputStream  The stream capable of sinking bytes written at the time the requester is ready to serialize,
@@ -107,7 +107,7 @@ public class MTOMAwareResultStreamWriter {
         qualifiedName = new QName(S3XMLNS, nameOfResult, DEFAULT_NS_PREFIX);
     }
 
-    /* 
+    /*
      * @params
      * @param nameOfResult Used as the tag description of the result written out when the requester serializes
      * @param outputStream  The stream capable of sinking bytes written at the time the requester is ready to serialize,

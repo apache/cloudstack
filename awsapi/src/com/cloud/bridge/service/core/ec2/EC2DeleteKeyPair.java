@@ -22,7 +22,7 @@ public class EC2DeleteKeyPair {
     private String keyName;
 
     /**
-     * 
+     *
      */
     public EC2DeleteKeyPair() {
         // TODO Auto-generated constructor stub

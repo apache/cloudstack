@@ -57,34 +57,34 @@ public class XmlToHtmlConverter extends XmlToHtmlConverterData {
               tFactory.newTransformer
                  (new javax.xml.transform.stream.StreamSource
                     ("generatetocfordomainadmin.xsl"));
-            
+
             // The XML to be transformed must be at the location below.
-            // Modify this path to match your own setup.    
+            // Modify this path to match your own setup.
             transformer2.transform
               (new javax.xml.transform.stream.StreamSource
                     ("domain_admin/domainAdminSummary.xml"),
             // Modify this path to your own desired output location.
                new javax.xml.transform.stream.StreamResult
                     ( new FileOutputStream("html/TOC_Domain_Admin.html")));
-            
+
         }
         catch (Exception e) {
             e.printStackTrace( );
         }
     }
-    
+
     // Create man pages
     public void generateIndividualCommandPages() {
         for(String commandName : rootAdminCommandNames) {
-        
+
                 try {
-            
+
                     TransformerFactory tFactory = TransformerFactory.newInstance();
                     Transformer transformer =
                       tFactory.newTransformer
                          (new javax.xml.transform.stream.StreamSource
                             ("generateadmincommands.xsl"));
-                
+
                     transformer.transform
                     // Modify this path to the location of the input files on your system.
                       (new javax.xml.transform.stream.StreamSource
@@ -96,17 +96,17 @@ public class XmlToHtmlConverter extends XmlToHtmlConverterData {
                     e.printStackTrace( );
                 }
         }
-        
+
         for(String commandName : domainAdminCommandNames) {
-            
+
             try {
-        
+
                 TransformerFactory tFactory = TransformerFactory.newInstance();
                 Transformer transformer =
                   tFactory.newTransformer
                      (new javax.xml.transform.stream.StreamSource
                         ("generatedomainadmincommands.xsl"));
-            
+
                 transformer.transform
                 // Modify this path with the location of the input files on your system.
                   (new javax.xml.transform.stream.StreamSource
@@ -118,18 +118,18 @@ public class XmlToHtmlConverter extends XmlToHtmlConverterData {
                 e.printStackTrace( );
             }
         }
-        
+
         for(String commandName : userCommandNames) {
-            
+
             try {
-        
+
                 TransformerFactory tFactory = TransformerFactory.newInstance();
-            
+
                 Transformer transformer =
                   tFactory.newTransformer
                      (new javax.xml.transform.stream.StreamSource
                         ("generateusercommands.xsl"));
-            
+
                 transformer.transform
                   (new javax.xml.transform.stream.StreamSource
                         ("regular_user/"+commandName+".xml"),

@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.element;
@@ -31,14 +31,14 @@ public interface NetscalerLoadBalancerElementService extends PluggableService {
 
     /**
      * adds a Netscaler load balancer device in to a physical network
-     * @param AddNetscalerLoadBalancerCmd 
+     * @param AddNetscalerLoadBalancerCmd
      * @return ExternalLoadBalancerDeviceVO object for the device added
      */
     public ExternalLoadBalancerDeviceVO addNetscalerLoadBalancer(AddNetscalerLoadBalancerCmd cmd);
 
     /**
      * removes a Netscaler load balancer device from a physical network
-     * @param DeleteNetscalerLoadBalancerCmd 
+     * @param DeleteNetscalerLoadBalancerCmd
      * @return true if Netscaler device is deleted successfully
      */
     public boolean deleteNetscalerLoadBalancer(DeleteNetscalerLoadBalancerCmd cmd);

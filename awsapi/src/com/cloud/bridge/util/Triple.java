@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.bridge.util;
 
-/** 
+/**
  * Reusable class whose instances encode any triple (or 3-tuple) of values of types T1, T2 and T3
  * Provide getters: getFirst(), getSecond(), getThird()
  * Provide setters: setFirst(val), setSecond(val), setThird(val)

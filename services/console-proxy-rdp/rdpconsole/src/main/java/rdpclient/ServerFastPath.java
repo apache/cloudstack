@@ -29,13 +29,13 @@ public class ServerFastPath extends BaseElement {
    * TPKT protocol version (first byte).
    */
   public static final int PROTOCOL_TPKT = 3;
-  
+
   /**
    * Fast path protocol version (first two bits of first byte).
    */
   public static final int PROTOCOL_FASTPATH = 0;
-  
-  
+
+
   /**
    * TPKT packets will be pushed to that pad.
    */

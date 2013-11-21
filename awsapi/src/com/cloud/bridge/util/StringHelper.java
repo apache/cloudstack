@@ -77,7 +77,7 @@ public class StringHelper {
 
     /**
      * Convert the string into a regex to allow easy matching.  In both S3 and EC2 regex strings
-     * are used for matching.  We must remember to quote all special regex characters that appear 
+     * are used for matching.  We must remember to quote all special regex characters that appear
      * in the string.
      */
     public static String toRegex(String param) {

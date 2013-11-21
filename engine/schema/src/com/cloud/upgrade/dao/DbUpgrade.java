@@ -27,7 +27,7 @@ public interface DbUpgrade {
     boolean supportsRollingUpgrade();
 
     /**
-     * @return the script to prepare the database schema for the 
+     * @return the script to prepare the database schema for the
      * data migration step.
      */
     File[] getPrepareScripts();
@@ -38,7 +38,7 @@ public interface DbUpgrade {
     void performDataMigration(Connection conn);
 
     /**
-     * 
+     *
      * @return
      */
     File[] getCleanupScripts();

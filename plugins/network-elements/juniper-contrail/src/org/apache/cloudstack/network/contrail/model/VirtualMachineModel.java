@@ -46,22 +46,22 @@ public class VirtualMachineModel extends ModelObjectBase {
 
     private String _uuid;
     private long _instanceId;
-    
+
     /*
-     * current state for object properties 
+     * current state for object properties
      */
     private boolean _initialized;
     private boolean _active;
     private String _serviceUuid;
     private String _instanceName;
     private String _projectId;
-    
+
     /*
      * cached API server objects
      */
     private VirtualMachine _vm;
     private ServiceInstanceModel _serviceModel;
-    
+
     public VirtualMachineModel(VMInstanceVO vm, String uuid) {
         _uuid = uuid;
         if (vm != null) {
@@ -69,7 +69,7 @@ public class VirtualMachineModel extends ModelObjectBase {
             _instanceName = vm.getInstanceName();
         }
     }
-    
+
     /**
      * Resynchronize internal state from the cloudstack DB object.
      * @param instance
@@ -92,7 +92,7 @@ public class VirtualMachineModel extends ModelObjectBase {
 
     /**
      * Link the virtual machine with the service instance when recovering state from database.
-     * 
+     *
      * @param controller
      * @param serviceUuid
      */
@@ -100,7 +100,7 @@ public class VirtualMachineModel extends ModelObjectBase {
         ContrailManager manager = controller.getManager();
         ApiConnector api = controller.getApiAccessor();
         _serviceUuid = serviceUuid;
-        
+
         ServiceInstanceModel siModel = manager.getDatabase().lookupServiceInstance(serviceUuid);
         if (siModel == null) {
             ServiceInstance siObj;
@@ -129,14 +129,14 @@ public class VirtualMachineModel extends ModelObjectBase {
         }
         return _uuid.compareTo(other._uuid);
     }
-    
+
     @Override
     public void delete(ModelController controller) throws IOException {
         ApiConnector api = controller.getApiAccessor();
         for (ModelObject successor: successors()) {
             successor.delete(controller);
         }
-        
+
         try {
             api.delete(VirtualMachine.class, _uuid);
         } catch (IOException ex) {
@@ -158,7 +158,7 @@ public class VirtualMachineModel extends ModelObjectBase {
         }
 
         clearSuccessors();
-        
+
         if (_serviceModel != null) {
             _serviceModel.removeSuccessor(this);
             _serviceModel.destroy(controller);
@@ -171,16 +171,16 @@ public class VirtualMachineModel extends ModelObjectBase {
     public String getInstanceName() {
         return _instanceName;
     }
-    
+
     public String getUuid() {
         return _uuid;
     }
 
-    
+
     public VirtualMachine getVirtualMachine() {
         return _vm;
     }
-    
+
     public VMInterfaceModel getVMInterface(String uuid) {
         TreeSet<ModelObject> tree = successors();
         VMInterfaceModel vmiKey = new VMInterfaceModel(uuid);
@@ -190,11 +190,11 @@ public class VirtualMachineModel extends ModelObjectBase {
         }
         return null;
     }
-    
+
     public boolean isActive() {
         return _active;
     }
-    
+
     boolean isActiveInstance(VMInstanceVO instance) {
         switch (instance.getState()) {
         case Migrating:
@@ -204,18 +204,18 @@ public class VirtualMachineModel extends ModelObjectBase {
         case Stopped:
         case Stopping:
             return true;
-            
+
         case Destroyed:
         case Error:
         case Expunging:
             return false;
-            
+
         default:
             s_logger.warn("Unknown VMInstance state " + instance.getState().getDescription());
         }
         return true;
     }
-    
+
     /**
      * Initialize the object properties based on the DB object.
      * Common code between plugin calls and DBSync.
@@ -224,7 +224,7 @@ public class VirtualMachineModel extends ModelObjectBase {
         ContrailManager manager = controller.getManager();
         _instanceName = instance.getInstanceName();
         _active = isActiveInstance(instance);
-        
+
         try {
             _projectId = manager.getProjectId(instance.getDomainId(), instance.getAccountId());
         } catch (IOException ex) {
@@ -236,7 +236,7 @@ public class VirtualMachineModel extends ModelObjectBase {
 
     /**
      * Link the virtual machine with a service instance via programmatic API call.
-     * @throws IOException 
+     * @throws IOException
      */
     public void setServiceInstance(ModelController controller, VMInstanceVO instance,
             ServiceInstanceModel serviceModel) throws IOException {
@@ -245,16 +245,16 @@ public class VirtualMachineModel extends ModelObjectBase {
         serviceModel.addSuccessor(this);
         setServiceInstanceNics(controller, instance);
     }
-    
+
     private void setServiceInstanceNics(ModelController controller, VMInstanceVO instance) throws IOException {
         NicDao nicDao = controller.getNicDao();
         ContrailManager manager = controller.getManager();
         NetworkDao networkDao = controller.getNetworkDao();
-        
+
         List<NicVO> nics = nicDao.listByVmId(_instanceId);
         for (NicVO nic : nics) {
             String tag;
-            
+
             switch (nic.getDeviceId()) {
             case 0:
                 tag = "management";
@@ -283,7 +283,7 @@ public class VirtualMachineModel extends ModelObjectBase {
             vmiModel.setServiceTag(tag);
         }
     }
-    
+
     @Override
     public void update(ModelController controller) throws InternalErrorException, IOException {
         assert _initialized;
@@ -300,7 +300,7 @@ public class VirtualMachineModel extends ModelObjectBase {
                         project = (Project) api.findById(Project.class, _projectId);
                     } catch (IOException ex) {
                         s_logger.debug("project read", ex);
-                        throw new CloudRuntimeException("Failed to read project", ex);                    
+                        throw new CloudRuntimeException("Failed to read project", ex);
                     }
                     vm.setParent(project);
                 }
@@ -309,7 +309,7 @@ public class VirtualMachineModel extends ModelObjectBase {
             }
         }
 
-        if (_serviceModel != null) { 
+        if (_serviceModel != null) {
             vm.setServiceInstance(_serviceModel.getServiceInstance());
         }
 
@@ -327,14 +327,14 @@ public class VirtualMachineModel extends ModelObjectBase {
             } catch (IOException ex) {
                 s_logger.warn("virtual-machine update", ex);
                 throw new CloudRuntimeException("Unable to update virtual-machine object", ex);
-            }            
+            }
         }
 
         for (ModelObject successor: successors()) {
             successor.update(controller);
         }
     }
-    
+
     @Override
     public boolean verify(ModelController controller) {
         // TODO Auto-generated method stub

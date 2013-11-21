@@ -26,7 +26,7 @@ public interface HighAvailabilityDao extends GenericDao<HaWorkVO, Long> {
 
     /**
      * Takes an available HA work item.
-     * 
+     *
      * @param serverId server that is taking this.
      * @return WorkVO if there's one to work on; null if none.
      */
@@ -34,7 +34,7 @@ public interface HighAvailabilityDao extends GenericDao<HaWorkVO, Long> {
 
     /**
      * Finds all the work items related to this instance.
-     * 
+     *
      * @param instanceId
      * @return list of WorkVO or empty list.
      */
@@ -44,7 +44,7 @@ public interface HighAvailabilityDao extends GenericDao<HaWorkVO, Long> {
 
     /**
      * Finds all the work items that were successful and is now ready to be purged.
-     * 
+     *
      * @param time that the work item must be successful before.
      * @return list of WorkVO or empty list.
      */
@@ -56,7 +56,7 @@ public interface HighAvailabilityDao extends GenericDao<HaWorkVO, Long> {
 
     /**
      * finds out if a work item has been scheduled for this work type but has not been taken yet.
-     * 
+     *
      * @param instanceId vm instance id
      * @param type type of work scheduled for it.
      * @return true if it has been scheduled and false if it hasn't.
@@ -67,7 +67,7 @@ public interface HighAvailabilityDao extends GenericDao<HaWorkVO, Long> {
 
     /**
      * Look for HA work that has been scheduled for a vm since a certain work id.
-     * 
+     *
      * @param vmId virtual machine id.
      * @param workId work item id.
      * @return List of work items.
@@ -76,7 +76,7 @@ public interface HighAvailabilityDao extends GenericDao<HaWorkVO, Long> {
 
     /**
      * Look for HA work that is being run right now for a VM.
-     * 
+     *
      * @param vmId virtual machine id
      * @return List of work items
      */

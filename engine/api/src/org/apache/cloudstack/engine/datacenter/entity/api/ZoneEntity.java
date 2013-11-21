@@ -29,7 +29,7 @@ import org.apache.cloudstack.engine.service.api.ProvisioningService;
 import org.apache.cloudstack.framework.ws.jackson.Url;
 
 /**
- * Describes a zone and operations that can be done in a zone. 
+ * Describes a zone and operations that can be done in a zone.
  */
 @Path("/zone/{zoneid}")
 @Produces({"application/json"})

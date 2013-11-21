@@ -73,7 +73,7 @@ public class SocketWrapper extends PipelineImpl {
    * Connect this socket wrapper to remote server and start main loop on
    * IputStreamSource stdout link, to watch for incoming data, and
    * OutputStreamSink stdin link, to pull for outgoing data.
-   * 
+   *
    * @param address
    * @throws IOException
    */

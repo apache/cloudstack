@@ -47,7 +47,7 @@ public interface AsyncJobManager extends Manager {
     /**
      * A running thread inside management server can have a 1:1 linked pseudo job.
      * This is to help make some legacy code work without too dramatic changes.
-     * 
+     *
      * All pseudo jobs should be expunged upon management start event
      *
      * @return pseudo job for the thread
@@ -58,11 +58,11 @@ public interface AsyncJobManager extends Manager {
      * Used by upper level job to wait for completion of a down-level job (usually VmWork jobs)
      * in synchronous way. Caller needs to use waitAndCheck() to check the completion status
      * of the down-level job
-     * 
+     *
      * Due to the amount of legacy code that relies on synchronous-call semantics, this form of joinJob
      * is used mostly
-     * 
-     * 
+     *
+     *
      * @param jobId upper job that is going to wait the completion of a down-level job
      * @param joinJobId down-level job
      */
@@ -72,7 +72,7 @@ public interface AsyncJobManager extends Manager {
      * Used by upper level job to wait for completion of a down-level job (usually VmWork jobs)
      * in asynchronous way, it will cause upper job to cease current execution, upper job will be
      * rescheduled to execute periodically or on wakeup events detected from message bus
-     * 
+     *
      * @param jobId upper job that is going to wait the completion of a down-level job
      * @param joinJobId down-level job
      * @Param wakeupHandler    wake-up handler
@@ -86,7 +86,7 @@ public interface AsyncJobManager extends Manager {
 
     /**
      * Dis-join two related jobs
-     * 
+     *
      * @param jobId
      * @param joinedJobId
      */
@@ -94,7 +94,7 @@ public interface AsyncJobManager extends Manager {
 
     /**
      * Used by down-level job to notify its completion to upper level jobs
-     * 
+     *
      * @param joinJobId down-level job for upper level job to join with
      * @param joinStatus AsyncJobConstants status code to indicate success or failure of the
      *                     down-level job
@@ -112,7 +112,7 @@ public interface AsyncJobManager extends Manager {
     /**
      * This method will be deprecated after all code has been migrated to fully-asynchronous mode
      * that uses async-feature of joinJob/disjoinJob
-     * 
+     *
      * @param wakupTopicsOnMessageBus topic on message bus to wakeup the wait
      * @param checkIntervalInMilliSeconds time to break out wait for checking predicate condition
      * @param timeoutInMiliseconds time out to break out the whole wait process

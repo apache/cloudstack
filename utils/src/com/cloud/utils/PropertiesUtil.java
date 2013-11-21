@@ -105,7 +105,7 @@ public class PropertiesUtil {
     }
 
     /*
-     * Returns an InputStream for the given resource 
+     * Returns an InputStream for the given resource
      * This is needed to read the files within a jar in classpath.
      */
     public static InputStream openStreamFromURL(String path) {
@@ -163,7 +163,7 @@ public class PropertiesUtil {
      * Load a Properties object with contents from a File.
      * @param properties the properties object to be loaded
      * @param file  the file to load from
-     * @throws IOException 
+     * @throws IOException
      */
     public static void loadFromFile(Properties properties, File file) throws IOException {
         InputStream stream = new FileInputStream(file);

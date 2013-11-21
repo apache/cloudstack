@@ -86,7 +86,7 @@ public class CloudStackNetwork {
     private List<CloudStackNetworkService> services;
 
     /**
-     * 
+     *
      */
     public CloudStackNetwork() {
         // TODO Auto-generated constructor stub

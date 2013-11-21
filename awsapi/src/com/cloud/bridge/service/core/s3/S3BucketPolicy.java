@@ -27,7 +27,7 @@ public class S3BucketPolicy {
     /**
      * 'NORESULT' is returned when no applicable statement can be found to evaluate
      * for the S3 access request.  If no evaluated statement results to true then the
-     * default deny result is returned (allow ACL definitions to override it).  
+     * default deny result is returned (allow ACL definitions to override it).
      */
     public enum PolicyAccess {
         ALLOW, DEFAULT_DENY, DENY
@@ -68,13 +68,13 @@ public class S3BucketPolicy {
     /**
      * This function evaluates all applicable policy statements.  Following the "evaluation logic"
      * as defined by Amazon the type of access derived from the policy is returned.
-     * 
-     * @param context - parameters from either the REST or SOAP request 
+     *
+     * @param context - parameters from either the REST or SOAP request
      * @param objectToAccess - key to the S3 object in the bucket associated by this policy, should be
      *                         null if access is just to the bucket.
      * @param userAccount - the user performing the access request
      * @return PolicyAccess type
-     * @throws Exception 
+     * @throws Exception
      */
     public PolicyAccess eval(S3PolicyContext context, String userAccount) throws Exception {
         PolicyAccess result = PolicyAccess.DEFAULT_DENY;
@@ -83,7 +83,7 @@ public class S3BucketPolicy {
         while (itr.hasNext()) {
             S3PolicyStatement oneStatement = itr.next();
             if (statementIsRelevant(oneStatement, context.getKeyName(), userAccount, context.getRequestedAction())) {
-                // -> a missing condition block means the statement is true 
+                // -> a missing condition block means the statement is true
                 S3PolicyConditionBlock block = oneStatement.getConditionBlock();
                 if (null == block || block.isTrue(context, oneStatement.getSid())) {
                     result = oneStatement.getEffect();
@@ -118,7 +118,7 @@ public class S3BucketPolicy {
 
     /**
      * Does the Policy Statement have anything to do with the requested access by the user?
-     * 
+     *
      * @return true - statement is relevant, false it is not
      */
     private boolean statementIsRelevant(S3PolicyStatement oneStatement, String objectToAccess, String userAccount, PolicyActions operationRequested) {

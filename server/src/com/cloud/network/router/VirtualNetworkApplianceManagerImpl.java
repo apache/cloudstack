@@ -2190,7 +2190,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
 
         // TODO : This is a hacking fix
-        // at VR startup time, information in VirtualMachineProfile may not updated to DB yet, 
+        // at VR startup time, information in VirtualMachineProfile may not updated to DB yet,
         // getRouterControlIp() may give wrong IP under basic network mode in VMware environment
         NicProfile controlNic = getControlNic(profile);
         SetMonitorServiceCommand command = new SetMonitorServiceCommand(servicesTO);

@@ -19,7 +19,7 @@ package com.cloud.bridge.service.core.s3;
 import java.util.Calendar;
 
 public class S3CopyObjectResponse extends S3Response {
-    // -> 2 versions are important here: 
+    // -> 2 versions are important here:
     // (1) copyVersion: the version of the object's copy
     // (2) putVersion: the version assigned to the copy after it is put
     protected String copyVersion;

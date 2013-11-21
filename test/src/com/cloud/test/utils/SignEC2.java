@@ -39,8 +39,8 @@ public class SignEC2 {
     public static String accessPoint;
     public static final Logger s_logger = Logger
     .getLogger(SignRequest.class.getName());
-    
-    
+
+
     public static void main (String[] args) {
         // Parameters
         List<String> argsList = Arrays.asList(args);
@@ -52,7 +52,7 @@ public class SignEC2 {
                 url = iter.next();
             }
         }
-        
+
         Properties prop = new Properties();
         try {
             prop.load(new FileInputStream("../conf/tool.properties"));
@@ -60,46 +60,46 @@ public class SignEC2 {
             s_logger.error("Error reading from ../conf/tool.properties", ex);
             System.exit(2);
         }
-        
+
         host = prop.getProperty("host");
         secretkey = prop.getProperty("secretkey");
         port = prop.getProperty("port");
-        
-        
+
+
         if (host == null) {
             s_logger.info("Please set host in tool.properties file");
             System.exit(1);
         }
-        
+
         if (port == null) {
             s_logger.info("Please set port in tool.properties file");
             System.exit(1);
         }
-        
+
         if (url == null) {
             s_logger.info("Please specify url with -u option");
             System.exit(1);
         }
-        
+
         if (secretkey == null) {
             s_logger.info("Please set secretkey in tool.properties file");
             System.exit(1);
         }
-        
+
         if (prop.get("apikey") == null) {
             s_logger.info("Please set apikey in tool.properties file");
             System.exit(1);
         }
-        
+
         if (prop.get("accesspoint") == null) {
             s_logger.info("Please set apikey in tool.properties file");
             System.exit(1);
         }
-        
-        
-        
+
+
+
         TreeMap<String, String> param = new TreeMap<String, String>();
-        
+
         String req = "GET\n" + host + ":" + prop.getProperty("port") + "\n/" + prop.getProperty("accesspoint") + "\n";
         String temp = "";
         param.put("AWSAccessKeyId", prop.getProperty("apikey"));
@@ -108,7 +108,7 @@ public class SignEC2 {
         param.put("SignatureVersion", "2");
         param.put("Version", prop.getProperty("version"));
         param.put("id", "1");
-        
+
         StringTokenizer str1 = new StringTokenizer (url, "&");
         while(str1.hasMoreTokens()) {
             String newEl = str1.nextToken();
@@ -117,7 +117,7 @@ public class SignEC2 {
             String value= str2.nextToken();
             param.put(name, value);
         }
-        
+
         //sort url hash map by key
         Set c = param.entrySet();
         Iterator it = c.iterator();
@@ -130,7 +130,7 @@ public class SignEC2 {
             } catch (Exception ex) {
                 s_logger.error("Unable to set parameter " + value + " for the command " + param.get("command"));
             }
-            
+
         }
         temp = temp.substring(0, temp.length()-1 );
         String requestToSign = req + temp;
@@ -143,6 +143,6 @@ public class SignEC2 {
         }
         String url = "http://" + host + ":" + prop.getProperty("port") + "/" + prop.getProperty("accesspoint") + "?" + temp + "&Signature=" + encodedSignature;
         s_logger.info("Url is " + url);
-        
+
     }
 }

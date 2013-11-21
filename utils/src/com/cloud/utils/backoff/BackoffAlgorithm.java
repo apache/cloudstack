@@ -19,7 +19,7 @@ package com.cloud.utils.backoff;
 import com.cloud.utils.component.Adapter;
 
 /**
- * BackoffAlgorithm implements multiple BackoffAlgorithm. 
+ * BackoffAlgorithm implements multiple BackoffAlgorithm.
  */
 public interface BackoffAlgorithm extends Adapter {
 

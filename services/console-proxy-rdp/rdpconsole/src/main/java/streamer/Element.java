@@ -38,7 +38,7 @@ public interface Element {
 
   /**
    * Get link connected to given pad.
-   * 
+   *
    * @param padName
    *          Standard pads are "stdin" and "stdout".
    */
@@ -51,7 +51,7 @@ public interface Element {
 
   /**
    * Connect link to given pad.
-   * 
+   *
    * @param padName
    *          a pad name. Standard pads are "stdin" and "stdout".
    */
@@ -59,7 +59,7 @@ public interface Element {
 
   /**
    * Disconnect link from given pad.
-   * 
+   *
    * @param padName
    *          Standard pads are "stdin" and "stdout".
    */
@@ -68,7 +68,7 @@ public interface Element {
   /**
    * Pull data from element and handle it. Element should ask one of it input
    * pads for data, handle data and push result to it sink(s), if any.
-   * 
+   *
    * @param block
    *          block until data will be available, or do a slight delay at least,
    *          when data is not available
@@ -77,7 +77,7 @@ public interface Element {
 
   /**
    * Handle incoming data.
-   * 
+   *
    * @param buf
    *          a data
    * @param link
@@ -87,7 +87,7 @@ public interface Element {
 
   /**
    * Handle event.
-   * 
+   *
    * @param event
    *          an event
    * @param direction
@@ -108,7 +108,7 @@ public interface Element {
 
   /**
    * Drop link.
-   * 
+   *
    * @param link a link to drop
    */
   void dropLink(Link link);

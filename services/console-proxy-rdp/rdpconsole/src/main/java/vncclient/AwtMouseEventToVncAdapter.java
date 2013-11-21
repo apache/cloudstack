@@ -46,7 +46,7 @@ public class AwtMouseEventToVncAdapter extends BaseElement {
     outBuf.writeByte(buttonMask);
     outBuf.writeShort(order.event.getX());
     outBuf.writeShort(order.event.getY());
-    
+
     pushDataToAllOuts(outBuf);
   }
 
@@ -57,7 +57,7 @@ public class AwtMouseEventToVncAdapter extends BaseElement {
    * right buttons on the mouse. On a wheel mouse, each step of the wheel
    * upwards is represented by a press and release of button 4, and each step
    * downwards is represented by a press and release of button 5.
-   * 
+   *
    * @param modifiers
    *          extended modifiers from AWT mouse event
    * @return VNC mouse button mask

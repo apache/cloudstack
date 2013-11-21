@@ -32,7 +32,7 @@ public interface Processor extends Adapter {
 
     /**
      * Returns image format if it was able to process the original file and
-     * 
+     *
      * @param templatePath path to the templates to process.
      * @param format Format of the original file.  If null, it means unknown.  If not null,
      *        there is already a file with thte template name and image format extension

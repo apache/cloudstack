@@ -64,7 +64,7 @@ public class PacketSniffer  extends BaseElement {
     }
 
     private static String replaceShortcuts(String regexp) {
-      String result = regexp; 
+      String result = regexp;
       result = result.replaceAll("XX\\*", "([0-9a-fA-F]{2} )*?");
       result = result.replaceAll("XX\\?", "([0-9a-fA-F]{2} )?");
       result = result.replaceAll("XX", "[0-9a-fA-F]{2}");

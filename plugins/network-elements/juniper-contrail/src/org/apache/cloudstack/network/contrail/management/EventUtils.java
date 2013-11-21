@@ -96,7 +96,7 @@ public class EventUtils {
             if (actionEvent != null) {
                 CallContext ctx = CallContext.current();
                 if (!actionEvent.create()) {
-                    publishOnMessageBus(EventCategory.ACTION_EVENT.getName(), 
+                    publishOnMessageBus(EventCategory.ACTION_EVENT.getName(),
                             actionEvent.eventType(), ctx.getEventDetails(), com.cloud.event.Event.State.Completed);
                 }
             }

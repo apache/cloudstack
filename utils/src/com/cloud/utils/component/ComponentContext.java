@@ -39,7 +39,7 @@ import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.mgmt.ManagementBean;
 
 /**
- * 
+ *
  * ComponentContext.setApplication() and ComponentContext.getApplication()
  * are not recommended to be used outside, they exist to help wire Spring Framework
  *

@@ -27,20 +27,20 @@ import java.util.Calendar;
 import java.util.TimeZone;
 
 /**
- * Format and parse a date string which is expected to be in ISO 8601 DateTimeFormat especially for 
+ * Format and parse a date string which is expected to be in ISO 8601 DateTimeFormat especially for
  * use in XML documents.
- * An example is for use with GMTDateTimeUserType to provide parsing of DateTime format strings into 
+ * An example is for use with GMTDateTimeUserType to provide parsing of DateTime format strings into
  * accurate Java Date representations based on UTC.
  * The purpose of this class is to allow the creation of accurate date time representations following
  * the ISO 8601 format YYYY-MM-DDThh:MM:ss
  * using the letter "T" as the date/time separator
- * This representation may be immediately followed by a "Z" (Zulu i.e. at zero offset from GMT) to indicate UTC 
- * or, otherwise, to a specific time zone.  If a time zone (tz) is encoded then this is held as the difference 
- * between the local time in the tz and UCT, expressed as a positive(+) or negative(-) offset (hhMM) appended 
+ * This representation may be immediately followed by a "Z" (Zulu i.e. at zero offset from GMT) to indicate UTC
+ * or, otherwise, to a specific time zone.  If a time zone (tz) is encoded then this is held as the difference
+ * between the local time in the tz and UCT, expressed as a positive(+) or negative(-) offset (hhMM) appended
  * to the format.
  * The default case holds no tz information and assumes that a date time representation referenced to Zulu
  * (i.e. zero offset from GMT) is required.  When formatting an existing Date transform it into the Zulu timezone
- * so that it is explicitly at GMT with zero offset.  This provides the default representation for the encoding 
+ * so that it is explicitly at GMT with zero offset.  This provides the default representation for the encoding
  * of AWS datetime values.
  * For testing, it may be useful to note that, as at 2012, a city whose time is always in the Zulu timezone is
  * Reykjavik, Iceland.

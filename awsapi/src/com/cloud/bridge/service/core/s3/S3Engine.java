@@ -137,7 +137,7 @@ public class S3Engine {
 
     /**
      * Return a S3CopyObjectResponse which represents an object being copied from source
-     * to destination bucket.    
+     * to destination bucket.
      * Called from S3ObjectAction when copying an object.
      * This can be treated as first a GET followed by a PUT of the object the user wants to copy.
      */
@@ -188,7 +188,7 @@ public class S3Engine {
         else
             putRequest.setMetaEntries(request.getMetaEntries());
         putRequest.setAcl(request.getAcl());                    // -> if via a SOAP call
-        putRequest.setCannedAccess(request.getCannedAccess());  // -> if via a REST call 
+        putRequest.setCannedAccess(request.getCannedAccess());  // -> if via a REST call
         putRequest.setContentLength(originalObject.getContentLength());
         putRequest.setData(originalObject.getData());
 
@@ -250,7 +250,7 @@ public class S3Engine {
     }
 
     /**
-     * Return a S3Response which represents the effect of an object being deleted from its bucket.    
+     * Return a S3Response which represents the effect of an object being deleted from its bucket.
      * Called from S3BucketAction when deleting an object.
      */
 
@@ -291,9 +291,9 @@ public class S3Engine {
             bucketAdapter.deleteContainer(host_storagelocation_pair.getSecond(), request.getBucketName());
 
             // Cascade-deleting can delete related SObject/SObjectItem objects, but not SAcl, SMeta and policy objects.
-            // To delete SMeta & SAcl objects: 
-            // (1)Get all the objects in the bucket, 
-            // (2)then all the items in each object, 
+            // To delete SMeta & SAcl objects:
+            // (1)Get all the objects in the bucket,
+            // (2)then all the items in each object,
             // (3) then all meta & acl data for each item
             Set<SObjectVO> objectsInBucket = sbucket.getObjectsInBucket();
             Iterator<SObjectVO> it = objectsInBucket.iterator();
@@ -331,7 +331,7 @@ public class S3Engine {
     }
 
     /**
-     * Return a S3ListBucketResponse which represents a list of up to 1000 objects contained ins  the bucket.    
+     * Return a S3ListBucketResponse which represents a list of up to 1000 objects contained ins  the bucket.
      * Called from S3BucketAction for GETting objects and for GETting object versions.
      */
 
@@ -362,7 +362,7 @@ public class S3Engine {
         context.setEvalParam(ConditionKeys.Delimiter, delimiter);
         verifyAccess(context, "SBucket", sbucket.getId(), SAcl.PERMISSION_READ);
 
-        // Wen execting the query, request one more item so that we know how to set isTruncated flag 
+        // Wen execting the query, request one more item so that we know how to set isTruncated flag
         List<SObjectVO> l = null;
 
         if (includeVersions)
@@ -388,7 +388,7 @@ public class S3Engine {
     }
 
     /**
-     * Return a S3ListAllMyBucketResponse which represents a list of all buckets owned by the requester.    
+     * Return a S3ListAllMyBucketResponse which represents a list of all buckets owned by the requester.
      * Called from S3BucketAction for GETting all buckets.
      * To check on bucket policies defined we have to (look for and) evaluate the policy on each
      * bucket the user owns.
@@ -535,7 +535,7 @@ public class S3Engine {
 
     /**
      * The initiator must have permission to write to the bucket in question in order to initiate
-     * a multipart upload.  Also check to make sure the special folder used to store parts of 
+     * a multipart upload.  Also check to make sure the special folder used to store parts of
      * a multipart exists for this bucket.
      * Called from S3ObjectAction during many stages of multipart upload.
      */
@@ -573,7 +573,7 @@ public class S3Engine {
     }
 
     /**
-     * Save the object fragment in a special (i.e., hidden) directory inside the same mount point as 
+     * Save the object fragment in a special (i.e., hidden) directory inside the same mount point as
      * the bucket location that the final object will be stored in.
      * Called from S3ObjectAction during many stages of multipart upload.
      * @param request
@@ -632,13 +632,13 @@ public class S3Engine {
     }
 
     /**
-     * Create the real object represented by all the parts of the multipart upload.       
+     * Create the real object represented by all the parts of the multipart upload.
      * Called from S3ObjectAction at completion of multipart upload.
-     * @param httpResp - Servlet response handle to return the headers of the response (including version header) 
+     * @param httpResp - Servlet response handle to return the headers of the response (including version header)
      * @param request - Normal parameters needed to create a new object (including metadata)
      * @param parts - List of files that make up the multipart
      * @param outputStream - Response output stream
-     * N.B. - This method can be long-lasting 
+     * N.B. - This method can be long-lasting
      * We are required to keep the connection alive by returning whitespace characters back periodically.
      */
 
@@ -698,7 +698,7 @@ public class S3Engine {
     }
 
     /**
-     * Return a S3PutObjectInlineResponse which represents an object being created into a bucket      
+     * Return a S3PutObjectInlineResponse which represents an object being created into a bucket
      * Called from S3ObjectAction when PUTting or POTing an object.
      */
     @DB
@@ -759,7 +759,7 @@ public class S3Engine {
     }
 
     /**
-     * Return a S3PutObjectResponse which represents an object being created into a bucket      
+     * Return a S3PutObjectResponse which represents an object being created into a bucket
      * Called from S3RestServlet when processing a DIME request.
      */
 
@@ -775,7 +775,7 @@ public class S3Engine {
         if (bucket == null)
             throw new NoSuchObjectException("Bucket " + bucketName + " does not exist");
 
-        // Is the caller allowed to write the object?    
+        // Is the caller allowed to write the object?
         // The allocObjectItem checks for the bucket policy PutObject permissions
         OrderedPair<SObjectVO, SObjectItemVO> object_objectitem_pair = allocObjectItem(bucket, key, meta, acl, null);
         OrderedPair<SHostVO, String> host_storagelocation_pair = getBucketStorageHost(bucket);
@@ -818,8 +818,8 @@ public class S3Engine {
     }
 
     /**
-     * The ACL of an object is set at the object version level. By default, PUT sets the ACL of the latest 
-     * version of an object. To set the ACL of a different version, using the versionId subresource. 
+     * The ACL of an object is set at the object version level. By default, PUT sets the ACL of the latest
+     * version of an object. To set the ACL of a different version, using the versionId subresource.
      * Called from S3ObjectAction to PUT an object's ACL.
      */
 
@@ -884,7 +884,7 @@ public class S3Engine {
     }
 
     /**
-     * By default, GET returns ACL information about the latest version of an object. To return ACL 
+     * By default, GET returns ACL information about the latest version of an object. To return ACL
      * information about a different version, use the versionId subresource
      * Called from S3ObjectAction to get an object's ACL.
      */
@@ -1028,8 +1028,8 @@ public class S3Engine {
             return response;
         }
 
-        // [D] Return the contents of the object inline    
-        // -> extract the meta data that corresponds the specific versioned item 
+        // [D] Return the contents of the object inline
+        // -> extract the meta data that corresponds the specific versioned item
 
         List<SMetaVO> itemMetaData = metaDao.getByTarget("SObjectItem", item.getId());
         if (null != itemMetaData) {
@@ -1149,7 +1149,7 @@ public class S3Engine {
             } else {
                 // If there is no item with a null version then we are done
                 if (null == item.getVersion()) {
-                    // Otherwiswe remove the entire object 
+                    // Otherwiswe remove the entire object
                     // Cascade-deleting can delete related SObject/SObjectItem objects, but not SAcl and SMeta objects.
                     storedPath = item.getStoredPath();
                     deleteMetaData(item.getId());
@@ -1230,11 +1230,11 @@ public class S3Engine {
     }
 
     /**
-     * The 'versionIdMarker' parameter only makes sense if enableVersion is true.   
+     * The 'versionIdMarker' parameter only makes sense if enableVersion is true.
      * versionIdMarker is the starting point to return information back.  So for example if an
      * object has versions 1,2,3,4,5 and the versionIdMarker is '3', then 3,4,5 will be returned
      * by this function.   If the versionIdMarker is null then all versions are returned.
-     * 
+     *
      * TODO - how does the versionIdMarker work when there is a deletion marker in the object?
      */
     private S3ListBucketObjectEntry[]
@@ -1357,7 +1357,7 @@ public class S3Engine {
     /**
      * Locate the folder to hold upload parts at the same mount point as the upload's final bucket
      * location.   Create the upload folder dynamically.
-     * 
+     *
      * @param bucketName
      */
     private void createUploadFolder(String bucketName) {
@@ -1372,7 +1372,7 @@ public class S3Engine {
      * The overrideName is used to create a hidden storage bucket (folder) in the same location
      * as the given bucketName.   This can be used to create a folder for parts of a multipart
      * upload for the associated bucket.
-     * 
+     *
      * @param bucketName
      * @param overrideName
      * @return
@@ -1417,12 +1417,12 @@ public class S3Engine {
     }
 
     /**
-     * If acl is set then the cannedAccessPolicy parameter should be null and is ignored.   
+     * If acl is set then the cannedAccessPolicy parameter should be null and is ignored.
      * The cannedAccessPolicy parameter is for REST Put requests only where a simple set of ACLs can be
-     * created with a single header value.  Note that we do not currently support "anonymous" un-authenticated 
+     * created with a single header value.  Note that we do not currently support "anonymous" un-authenticated
      * access in our implementation.
-     * 
-     * @throws IOException 
+     *
+     * @throws IOException
      */
     @SuppressWarnings("deprecation")
     public OrderedPair<SObjectVO, SObjectItemVO> allocObjectItem(SBucketVO bucket, String nameKey, S3MetaDataEntry[] meta, S3AccessControlList acl, String cannedAccessPolicy) {
@@ -1540,7 +1540,7 @@ public class S3Engine {
      * Note that canned policies can be set when the object's contents are set
      */
     public void setCannedAccessControls(String cannedAccessPolicy, String target, long objectId, SBucketVO bucket) {
-        // Find the permission and symbol for the principal corresponding to the requested cannedAccessPolicy    
+        // Find the permission and symbol for the principal corresponding to the requested cannedAccessPolicy
         Triple<Integer, Integer, String> permission_permission_symbol_triple = SAclVO.getCannedAccessControls(cannedAccessPolicy, target, bucket.getOwnerCanonicalId());
         if (null == permission_permission_symbol_triple.getThird())
             setSingleAcl(target, objectId, permission_permission_symbol_triple.getFirst());
@@ -1568,8 +1568,8 @@ public class S3Engine {
     }
 
     /**
-     * The Cloud Stack API Access key is used for for the Canonical User Id everywhere (buckets and objects).   
-     * 
+     * The Cloud Stack API Access key is used for for the Canonical User Id everywhere (buckets and objects).
+     *
      * @param owner - this can be the Cloud Access Key for a bucket owner or one of the
      *                following special symbols:
      *                (a) '*' - any principal authenticated user (i.e., any user with a registered Cloud Access Key)
@@ -1585,7 +1585,7 @@ public class S3Engine {
         defaultGrant.setPermission(permission1);
         defaultAcl.addGrant(defaultGrant);
 
-        // -> bucket owner 
+        // -> bucket owner
         defaultGrant = new S3Grant();
         defaultGrant.setGrantee(SAcl.GRANTEE_USER);
         defaultGrant.setCanonicalUserID(owner);
@@ -1622,13 +1622,13 @@ public class S3Engine {
     /**
      * To determine access to a bucket or an object in a bucket evaluate first a define
      * bucket policy and then any defined ACLs.
-     * 
+     *
      * @param context - all data needed for bucket policies
      * @param target - used for ACL evaluation, object identifier
      * @param targetId - used for ACL evaluation
      * @param requestedPermission - ACL type access requested
-     * 
-     * @throws ParseException, SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException 
+     *
+     * @throws ParseException, SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException
      */
     public static void verifyAccess(S3PolicyContext context, String target, long targetId, int requestedPermission) {
         switch (verifyPolicy(context)) {
@@ -1648,12 +1648,12 @@ public class S3Engine {
     /**
      * This method verifies that the accessing client has the requested
      * permission on the object/bucket/Acl represented by the tuple: <target, targetId>
-     * 
+     *
      * For cases where an ACL is meant for any authenticated user we place a "*" for the
-     * Canonical User Id.  N.B. - "*" is not a legal Cloud (Bridge) Access key.   
-     * 
-     * For cases where an ACL is meant for any anonymous user (or 'AllUsers') we place a "A" for the 
-     * Canonical User Id.  N.B. - "A" is not a legal Cloud (Bridge) Access key. 
+     * Canonical User Id.  N.B. - "*" is not a legal Cloud (Bridge) Access key.
+     *
+     * For cases where an ACL is meant for any anonymous user (or 'AllUsers') we place a "A" for the
+     * Canonical User Id.  N.B. - "A" is not a legal Cloud (Bridge) Access key.
      */
     public static void accessAllowed(String target, long targetId, int requestedPermission) {
         if (SAcl.PERMISSION_PASS == requestedPermission)
@@ -1679,10 +1679,10 @@ public class S3Engine {
     /**
      * This method assumes that the bucket has been tested to make sure it exists before
      * it is called.
-     * 
-     * @param context 
+     *
+     * @param context
      * @return S3BucketPolicy
-     * @throws SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException, ParseException 
+     * @throws SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException, ParseException
      */
     public static S3BucketPolicy loadPolicy(S3PolicyContext context) throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException, ParseException {
         OrderedPair<S3BucketPolicy, Integer> result = ServiceProvider.getInstance().getBucketPolicy(context.getBucketName());
@@ -1795,11 +1795,11 @@ public class S3Engine {
     /**
      * ifRange is true and ifUnmodifiedSince or IfMatch fails then we return the entire object (indicated by
      * returning a -1 as the function result.
-     * 
+     *
      * @param ifCond - conditional get defined by these tests
      * @param lastModified - value used on ifModifiedSince or ifUnmodifiedSince
      * @param ETag - value used on ifMatch and ifNoneMatch
-     * @param ifRange - using an if-Range HTTP functionality 
+     * @param ifRange - using an if-Range HTTP functionality
      * @return -1 means return the entire object with an HTTP 200 (not a subrange)
      */
     private int conditionPassed(S3ConditionalHeaders ifCond, Date lastModified, String ETag, boolean ifRange) {

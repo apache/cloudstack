@@ -47,7 +47,7 @@ public class S3SoapAuth {
     /**
      * Create a signature by the following method:
      *     new String( Base64( SHA1( key, byte array )))
-     * 
+     *
      * @param signIt    - the data to generate a keyed HMAC over
      * @param secretKey - the user's unique key for the HMAC operation
      * @return String   - the recalculated string

@@ -174,7 +174,7 @@ public class StressTestDirectAttach {
                                 username = Math.abs(ran.nextInt())+ "-user";
                                 NDC.push(username);
 
-                                s_logger.info("Starting test for the user " + username); 
+                                s_logger.info("Starting test for the user " + username);
                                 int response = executeDeployment(server,
                                         developerServer, username);
                                 boolean success = false;
@@ -228,7 +228,7 @@ public class StressTestDirectAttach {
                                             usageIterator = 1;
 
                                         }
-                                        else {    
+                                        else {
                                             s_logger.info("Skipping events and usage records for this user: usageIterator " + usageIterator+ " and number of Threads " + numThreads);
                                             usageIterator++;
                                         }
@@ -490,7 +490,7 @@ public class StressTestDirectAttach {
             returnValue = requestKeyValues.get("secretkey");
         } else  {
             s_logger.error("registration failed with error code: " + responseCode);
-        } 
+        }
         return returnValue;
     }
 
@@ -515,7 +515,7 @@ public class StressTestDirectAttach {
 
         String url = server + "?command=createUser&username=" + encodedUsername
                 + "&password=" + encodedPassword
-                + "&firstname=Test&lastname=Test&email=test@vmops.com&domainId=1&accounttype=0"; 
+                + "&firstname=Test&lastname=Test&email=test@vmops.com&domainId=1&accounttype=0";
         if (accountName != null ) {
             url = server + "?command=createUser&username=" + encodedUsername
                     + "&password=" + encodedPassword
@@ -544,7 +544,7 @@ public class StressTestDirectAttach {
         } else  {
             s_logger.error("create user test failed for user " + username + " with error code :" + responseCode);
             return responseCode;
-        } 
+        }
 
         _secretKey.set(executeRegistration(server, username, username));
 
@@ -594,7 +594,7 @@ public class StressTestDirectAttach {
         } else  {
             s_logger.error("Create security group failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
-        } 
+        }
 
 
         String encodedCidr = URLEncoder.encode("192.168.1.143/32", "UTF-8");
@@ -619,7 +619,7 @@ public class StressTestDirectAttach {
         } else  {
             s_logger.error("Authorise security group ingress failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
-        } 
+        }
 
 
 
@@ -670,7 +670,7 @@ public class StressTestDirectAttach {
             } else  {
                 s_logger.error("deploy linux vm failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
-            } 
+            }
         }
 
 
@@ -701,7 +701,7 @@ public class StressTestDirectAttach {
             } else  {
                 s_logger.error("create volume failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
-            } 
+            }
         }
 
         //attach a new volume to the vm
@@ -728,7 +728,7 @@ public class StressTestDirectAttach {
             } else  {
                 s_logger.error("Attach volume failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
-            } 
+            }
         }
 
         //DEPLOY SECOND VM, ADD VOLUME TO IT
@@ -778,7 +778,7 @@ public class StressTestDirectAttach {
             } else  {
                 s_logger.error("deploy linux vm failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
-            } 
+            }
         }
 
 
@@ -809,7 +809,7 @@ public class StressTestDirectAttach {
             } else  {
                 s_logger.error("create volume failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
-            } 
+            }
         }
 
         //attach a new volume to the vm
@@ -836,10 +836,10 @@ public class StressTestDirectAttach {
             } else  {
                 s_logger.error("Attach volume failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
-            } 
+            }
         }
         return 200;
-    }            
+    }
 
 
 
@@ -874,7 +874,7 @@ public class StressTestDirectAttach {
         } else  {
             s_logger.error("get user failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
-        } 
+        }
 
         // -----------------------------
         // UPDATE USER
@@ -895,7 +895,7 @@ public class StressTestDirectAttach {
             } else  {
                 s_logger.error("update user failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
-            } 
+            }
         }
 
         // -----------------------------
@@ -926,7 +926,7 @@ public class StressTestDirectAttach {
         } else  {
             s_logger.error(" VM test failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
-        } 
+        }
 
         //Stop centos VM
         requestToSign = "apikey=" + encodedApiKey + "&command=stopVirtualMachine&id=" + _linuxVmId.get();
@@ -951,7 +951,7 @@ public class StressTestDirectAttach {
         } else  {
             s_logger.error("Stop VM test failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
-        } 
+        }
 
         //Start centos VM
         requestToSign = "apikey=" + encodedApiKey + "&command=startVirtualMachine&id=" + _linuxVmId.get();
@@ -986,7 +986,7 @@ public class StressTestDirectAttach {
         } else  {
             s_logger.error("Start VM test failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
-        } 
+        }
 
 ////        // -----------------------------
 ////        // DISABLE USER
@@ -1005,7 +1005,7 @@ public class StressTestDirectAttach {
 //            } else  {
 //                s_logger.error("disable user failed with error code: " + responseCode + ". Following URL was sent: " + url);
 //                return responseCode;
-//            } 
+//            }
 //        }
 
         // -----------------------------
@@ -1025,7 +1025,7 @@ public class StressTestDirectAttach {
             } else  {
                 s_logger.error("delete user failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
-            } 
+            }
         }
         return responseCode;
     }
@@ -1063,7 +1063,7 @@ public class StressTestDirectAttach {
             s_logger.error("list events failed with error code: " + responseCode + ". Following URL was sent: " + url);
 
             return responseCode;
-        } 
+        }
         return responseCode;
     }
 
@@ -1105,7 +1105,7 @@ public class StressTestDirectAttach {
         } else  {
             s_logger.error("get user failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
-        } 
+        }
 
         {
             // ----------------------------------
@@ -1152,7 +1152,7 @@ public class StressTestDirectAttach {
             } else  {
                 s_logger.error("list virtual machines test failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
-            } 
+            }
 
 
             // ----------------------------------
@@ -1182,7 +1182,7 @@ public class StressTestDirectAttach {
                     } else  {
                         s_logger.error("Stop virtual machine test failed with error code: " + responseCode + ". Following URL was sent: " + url);
                         return responseCode;
-                    } 
+                    }
                 }
             }
 
@@ -1200,7 +1200,7 @@ public class StressTestDirectAttach {
 //                } else  {
 //                    s_logger.error("delete user failed with error code: " + responseCode + ". Following URL was sent: " + url);
 //                    return responseCode;
-//                } 
+//                }
 //            }
 
 
@@ -1388,9 +1388,9 @@ public class StressTestDirectAttach {
                 boolean success = false;
                 String linuxCommand = null;
 
-                if (i % 10 == 0) 
+                if (i % 10 == 0)
                     linuxCommand = "rm -rf *; wget http://192.168.1.250/dump.bin && ls -al dump.bin";
-                else 
+                else
                     linuxCommand = "wget http://192.168.1.250/dump.bin && ls -al dump.bin";
 
                 Session sess = conn.openSession();
@@ -1493,7 +1493,7 @@ public class StressTestDirectAttach {
             return null;
         }
 
-        //s_logger.info("Job id is " + jobId); 
+        //s_logger.info("Job id is " + jobId);
         String resultUrl = host + "?command=queryAsyncJobResult&jobid=" + jobId;
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(resultUrl);
@@ -1523,6 +1523,6 @@ public class StressTestDirectAttach {
             }
         }
         return returnBody;
-    } 
+    }
 
 }

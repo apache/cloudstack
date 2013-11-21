@@ -111,7 +111,7 @@ public class NetworkProviderTest extends TestCase {
     @Inject public DomainDao _domainDao;
     @Inject public ProjectDao _projectDao;
     @Inject public AgentManager _agentMgr;
-    
+
     private ManagementServerMock _server;
     private ApiConnector _api;
     private static int _mysql_server_port;
@@ -127,22 +127,22 @@ public class NetworkProviderTest extends TestCase {
         s_logger.info("mysql server launched on port " + _mysql_server_port);
 
         _msId = ManagementServerNode.getManagementServerId();
-        _lockMaster = Merovingian2.createLockMaster(_msId);        
+        _lockMaster = Merovingian2.createLockMaster(_msId);
     }
- 
+
     @AfterClass
     public static void globalTearDown() throws Exception {
         _lockMaster.cleanupForServer(_msId);
         JmxUtil.unregisterMBean("Locks", "Locks");
         _lockMaster = null;
-        
+
         AbstractApplicationContext ctx = (AbstractApplicationContext) ComponentContext.getApplicationContext();
         Map<String, ComponentLifecycle> lifecycleComponents = ctx.getBeansOfType(ComponentLifecycle.class);
         for (ComponentLifecycle bean: lifecycleComponents.values()) {
             bean.stop();
         }
         ctx.close();
-        
+
         s_logger.info("destroying mysql server instance running at port <" + _mysql_server_port + ">");
         TestDbSetup.destroy(_mysql_server_port, null);
     }
@@ -227,7 +227,7 @@ public class NetworkProviderTest extends TestCase {
         purgeTestNetwork();
         createTestNetwork("test");
     }
- 
+
     @Test
     public void testConnectivity() {
         Network network = lookupTestNetwork("test");
@@ -383,7 +383,7 @@ public class NetworkProviderTest extends TestCase {
             fail("unable to create floating ip");
         }
 
-        /* reset ApiServer objects to default config only, so above created objects 
+        /* reset ApiServer objects to default config only, so above created objects
          * exists only in cludstack db but not in api server
          */
         ((ApiConnectorMock)_api).initConfig();
@@ -414,7 +414,7 @@ public class NetworkProviderTest extends TestCase {
         net.setName("test-vnc-only-net-1");
         net.setUuid(UUID.randomUUID().toString());
         net.setParent(project);
-        
+
         NetworkIpam ipam = null;
         try {
             // Find default-network-ipam
@@ -462,16 +462,16 @@ public class NetworkProviderTest extends TestCase {
         } catch (IOException ex) {
             fail(ex.getMessage());
         }
-        
+
         //now db sync
         if (_dbSync.syncAll(DBSyncGeneric.SYNC_MODE_UPDATE) == ServerDBSync.SYNC_STATE_OUT_OF_SYNC) {
             s_logger.info("# Cloudstack DB & VNC are out of sync - resync done");
         }
-        
+
         if (_dbSync.syncAll(DBSyncGeneric.SYNC_MODE_CHECK) == ServerDBSync.SYNC_STATE_OUT_OF_SYNC) {
             s_logger.info("# Cloudstack DB & VNC are still out of sync");
-            fail("DB Sync failed"); 
+            fail("DB Sync failed");
         }
     }
-    
+
 }

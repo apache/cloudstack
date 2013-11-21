@@ -79,20 +79,20 @@ public class ServiceManagerImpl implements ServiceManager {
     @Inject NetworkModel _networkModel;
     @Inject AccountService _accountService;
     @Inject ContrailManager _manager;
-    
+
     /**
      * In the case of service instance the master object is in the contrail API server. This object stores the
      * service instance parameters in the database.
-     * 
+     *
      * @param owner     Used to determine the project.
      * @param name      Service instance name (user specified).
      * @param template  Image to execute.
-     * @param serviceOffering 
+     * @param serviceOffering
      * @param left      Inside network.
      * @param right     Outside network.
      * @return
      */
-        
+
 
     /**
      * create a new ServiceVM object.
@@ -102,21 +102,21 @@ public class ServiceManagerImpl implements ServiceManager {
     private ServiceVirtualMachine createServiceVM(DataCenter zone, Account owner, VirtualMachineTemplate template,
             ServiceOffering serviceOffering, String name, ServiceInstance siObj, Network left, Network right) {
         long id = _vmDao.getNextInSequence(Long.class, "id");
-        
+
         DataCenterDeployment plan = new DataCenterDeployment(zone.getId());
-        
+
         LinkedHashMap<NetworkVO, NicProfile> networks = new LinkedHashMap<NetworkVO, NicProfile>();
         NetworkVO linklocal = (NetworkVO) _networkModel.getSystemNetworkByZoneAndTrafficType(zone.getId(),
                 TrafficType.Management);
         networks.put(linklocal, null);
         networks.put((NetworkVO) left, null);
         networks.put((NetworkVO) right, null);
-        
+
         String instanceName = VirtualMachineName.getVmName(id, owner.getId(), "SRV");
         ServiceVirtualMachine svm = new ServiceVirtualMachine(id, instanceName, name, template.getId(),
                 serviceOffering.getId(), template.getHypervisorType(), template.getGuestOSId(), zone.getId(), owner.getDomainId(),
                 owner.getAccountId(), false);
-  
+
         // database synchronization code must be able to distinguish service instance VMs.
         Map<String, String> kvmap = new HashMap<String, String>();
         kvmap.put("service-instance", siObj.getUuid());
@@ -133,7 +133,7 @@ public class ServiceManagerImpl implements ServiceManager {
         CallContext.current().setEventDetails("Vm Id: " + svm.getId());
         return svm;
     }
-    
+
     @Override
     public ServiceVirtualMachine createServiceInstance(DataCenter zone, Account owner, VirtualMachineTemplate template,
             ServiceOffering serviceOffering, String name, Network left, Network right) {
@@ -146,7 +146,7 @@ public class ServiceManagerImpl implements ServiceManager {
         if (right.getTrafficType() == TrafficType.Guest) {
             _networkModel.checkNetworkPermissions(owner, right);
         }
-        
+
         final ApiConnector api = _manager.getApiConnector();
         final VirtualNetwork netLeft;
         try {
@@ -168,7 +168,7 @@ public class ServiceManagerImpl implements ServiceManager {
             s_logger.warn("read project", ex);
             throw new CloudRuntimeException(ex);
         }
-        
+
         try {
             final String srvid = api.findByName(ServiceInstance.class, project, name);
             if (srvid != null) {
@@ -178,7 +178,7 @@ public class ServiceManagerImpl implements ServiceManager {
             s_logger.warn("service-instance lookup", ex);
             throw new CloudRuntimeException(ex);
         }
-        
+
         // 1. Create service-instance.
         ServiceInstanceModel serviceModel = new ServiceInstanceModel(project, name, template, serviceOffering,
                 netLeft, netRight);
@@ -189,9 +189,9 @@ public class ServiceManagerImpl implements ServiceManager {
             s_logger.warn("service-instance update", ex);
             throw new CloudRuntimeException(ex);
         }
-        
+
         s_logger.debug("service-instance object created");
-        
+
         ServiceInstance siObj;
         try {
             _manager.getDatabase().getServiceInstances().add(serviceModel);
@@ -200,11 +200,11 @@ public class ServiceManagerImpl implements ServiceManager {
             s_logger.warn("DB add", ex);
             throw new CloudRuntimeException(ex);
         }
-        
+
         // 2. Create one virtual-machine.
         String svmName = name.replace(" ", "_") + "-1";
         ServiceVirtualMachine svm = createServiceVM(zone, owner, template, serviceOffering, svmName, siObj, left, right);
- 
+
         s_logger.debug("created VMInstance " + svm.getUuid());
 
         // 3. Create the virtual-machine model and push the update.
@@ -217,7 +217,7 @@ public class ServiceManagerImpl implements ServiceManager {
             s_logger.warn("service virtual-machine update", ex);
             throw new CloudRuntimeException(ex);
         }
-        
+
         return svm;
     }
 

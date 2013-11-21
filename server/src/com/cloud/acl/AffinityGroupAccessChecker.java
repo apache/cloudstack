@@ -61,7 +61,7 @@ public class AffinityGroupAccessChecker extends DomainChecker {
                     return true;
                 }
             } else {
-                //acl_type account 
+                //acl_type account
                 if (caller.getId() != group.getAccountId()) {
                     throw new PermissionDeniedException(caller + " does not have permission to operate with resource " + entity);
                 } else {

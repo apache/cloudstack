@@ -623,7 +623,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             return true;
         }
         boolean result = true;
-        // NOTE that we need to pass caller account to destroyRouter, otherwise it will fail permission check there. Context passed in from deleteNetwork is the network account, 
+        // NOTE that we need to pass caller account to destroyRouter, otherwise it will fail permission check there. Context passed in from deleteNetwork is the network account,
         // not caller account
         Account callerAccount = _accountMgr.getAccount(context.getCaller().getAccountId());
         for (DomainRouterVO router : routers) {

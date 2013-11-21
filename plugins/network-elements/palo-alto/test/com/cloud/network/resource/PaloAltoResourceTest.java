@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.resource;
@@ -121,7 +121,7 @@ public class PaloAltoResourceTest {
     MockablePaloAltoResource _resource;
     Map<String, Object> _resource_params;
     HashMap<String, String> _context;
-    
+
     @Before
     public void setUp() {
         _resource = new MockablePaloAltoResource();
@@ -161,8 +161,8 @@ public class PaloAltoResourceTest {
     public void resourceConfigureFailure() throws ConfigurationException {
         _resource.configure("PaloAltoResource", new HashMap<String, Object>());
     }
-    
-    @Test 
+
+    @Test
     public void resourceConfigureWithoutManagementProfile() throws ConfigurationException {
         if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
             System.out.println("\nTEST: resourceConfigureWithoutManagementProfile");
@@ -173,7 +173,7 @@ public class PaloAltoResourceTest {
         _resource.configure("PaloAltoResource", _resource_params);
     }
 
-    @Test 
+    @Test
     public void resourceConfigureWithManagementProfile() throws ConfigurationException {
         if (_context.containsKey("enable_console_output") && _context.get("enable_console_output").equals("true")) {
             System.out.println("\nTEST: resourceConfigureWithManagementProfile");
@@ -345,7 +345,7 @@ public class PaloAltoResourceTest {
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
         List<String> cidrList = new ArrayList<String>();
         cidrList.add("0.0.0.0/0");
-        FirewallRuleVO activeVO = new FirewallRuleVO(null, null, 80, 80, "tcp", 
+        FirewallRuleVO activeVO = new FirewallRuleVO(null, null, 80, 80, "tcp",
             1, 1, 1, Purpose.Firewall, cidrList, null,
             null, null, FirewallRule.TrafficType.Egress);
         FirewallRuleTO active = new FirewallRuleTO(activeVO, Long.toString(vlanId), null, Purpose.Firewall, FirewallRule.TrafficType.Egress);
@@ -376,7 +376,7 @@ public class PaloAltoResourceTest {
 
         long vlanId = 3954;
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
-        FirewallRuleVO revokedVO = new FirewallRuleVO(null, null, 80, 80, "tcp", 
+        FirewallRuleVO revokedVO = new FirewallRuleVO(null, null, 80, 80, "tcp",
             1, 1, 1, Purpose.Firewall, null, null, null, null, FirewallRule.TrafficType.Egress);
         revokedVO.setState(State.Revoke);
         FirewallRuleTO revoked = new FirewallRuleTO(revokedVO, Long.toString(vlanId), null, Purpose.Firewall, FirewallRule.TrafficType.Egress);

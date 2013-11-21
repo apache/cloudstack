@@ -97,7 +97,7 @@ public class AddHostCmdTest extends TestCase {
 
     /*
      * @Test public void testExecuteForResult() throws Exception {
-     * 
+     *
      * addHostCmd._resourceService = resourceService;
      * addHostCmd._responseGenerator = responseGenerator; MockHost mockInstance
      * = new MockHost(); MockHost[] mockArray = new MockHost[]{mockInstance};

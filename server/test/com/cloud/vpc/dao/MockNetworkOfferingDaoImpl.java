@@ -118,7 +118,7 @@ public class MockNetworkOfferingDaoImpl extends NetworkOfferingDaoImpl implement
                 false, false, false);
             vo.setRedundantRouter(true);
         } else if (id.longValue() == 6) {
-            //network offering invalid for vpc (has lb service)   
+            //network offering invalid for vpc (has lb service)
             vo = new NetworkOfferingVO("vpc", "vpc", TrafficType.Guest, false, true, null, null, false, Availability.Optional, null, Network.GuestType.Isolated, false, false,
                 false, false, false);
         }

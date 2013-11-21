@@ -2131,7 +2131,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
              *
              * These bindings will read the snapshot and write the contents to
              * the secondary storage directly
-             * 
+             *
              * It will stop doing so if the amount of time spend is longer then
              * cmds.timeout
              */

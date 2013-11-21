@@ -57,7 +57,7 @@ import com.google.gson.reflect.TypeToken;
 
 /**
  * The goal here is to wrap the actual CloudStack API calls...
- * 
+ *
  *
  */
 public class CloudStackApi {
@@ -69,7 +69,7 @@ public class CloudStackApi {
     private String secretKey;
 
     /**
-     * 
+     *
      */
     public CloudStackApi(String cloudStackServiceHost, String port, Boolean bSslEnabled) {
         if (port != null) {
@@ -117,7 +117,7 @@ public class CloudStackApi {
 
     /**
      * deploy a virtual machine
-     * 
+     *
      * @param serviceOfferingId
      * @param templateId
      * @param zoneId
@@ -183,7 +183,7 @@ public class CloudStackApi {
 
     /**
      * destroy's a virtual machine
-     * 
+     *
      * @param id
      * @return
      * @throws Exception
@@ -198,7 +198,7 @@ public class CloudStackApi {
 
     /**
      * reboot a virtual machine
-     * 
+     *
      * @param id
      * @return
      * @throws Exception
@@ -213,7 +213,7 @@ public class CloudStackApi {
 
     /**
      * start a virtual machine
-     * 
+     *
      * @param id
      * @return
      * @throws Exception
@@ -228,7 +228,7 @@ public class CloudStackApi {
 
     /**
      * stop a virtual machine
-     * 
+     *
      * @param id
      * @param forced
      * @return
@@ -246,7 +246,7 @@ public class CloudStackApi {
 
     /**
      * reset password for virtual machine
-     * 
+     *
      * @param id
      * @return
      * @throws Exception
@@ -261,7 +261,7 @@ public class CloudStackApi {
 
     /**
      * change service for virtual machine
-     * 
+     *
      * @param id
      * @param serviceOfferingId
      * @return
@@ -278,7 +278,7 @@ public class CloudStackApi {
 
     /**
      * update a virtual machine
-     * 
+     *
      * @param id
      * @param displayName
      * @param group
@@ -309,7 +309,7 @@ public class CloudStackApi {
 
     /**
      * list virtual machines
-     * 
+     *
      * @param account
      * @param accountId
      * @param forVirtualNetwork
@@ -374,7 +374,7 @@ public class CloudStackApi {
 
     /**
      * get password from virtual machine
-     * 
+     *
      * @param id
      * @return
      * @throws Exception
@@ -383,7 +383,7 @@ public class CloudStackApi {
         CloudStackCommand cmd = new CloudStackCommand(ApiConstants.GET_VM_PASSWORD);
         if (cmd != null)
             cmd.setParam(ApiConstants.ID, id);
-        // TODO: This probably isn't right.  Need to test with an instance that has a VM Password  
+        // TODO: This probably isn't right.  Need to test with an instance that has a VM Password
         return _client.call(cmd, apiKey, secretKey, true, ApiConstants.GET_VM_PASSWORD_RESPONSE, ApiConstants.PASSWORD, CloudStackPasswordData.class);
     }
 
@@ -391,7 +391,7 @@ public class CloudStackApi {
 //<a href="user/createTemplate.html">createTemplate (A)</a>
     /**
      * create a Template
-     * 
+     *
      * @param displayText
      * @param name
      * @param osTypeId
@@ -432,7 +432,7 @@ public class CloudStackApi {
 
     /**
      * register a template
-     * 
+     *
      * @param displayText
      * @param format
      * @param hypervisor
@@ -488,7 +488,7 @@ public class CloudStackApi {
 
     /**
      * update's a template
-     * 
+     *
      * @param id
      * @param bootable
      * @param displayText
@@ -522,7 +522,7 @@ public class CloudStackApi {
 
     /**
      * copy a template
-     * 
+     *
      * @param id (required)
      * @param destZoneId (required)
      * @param sourceZoneId (required)
@@ -541,7 +541,7 @@ public class CloudStackApi {
 
     /**
      * Deletes a template from the system. All virtual machines using the deleted template will not be affected.
-     * 
+     *
      * @param id (required)
      * @param zoneId
      * @return
@@ -559,7 +559,7 @@ public class CloudStackApi {
 
     /**
      * List all public, private, and privileged templates
-     * 
+     *
      * @param templateFilter (required)
      * @param account
      * @param domainId
@@ -596,10 +596,10 @@ public class CloudStackApi {
     }
 
     /**
-     * Updates a template visibility permissions. A public template is visible to all accounts within the same domain. 
-     * A private template is visible only to the owner of the template. A priviledged template is a private template with account 
+     * Updates a template visibility permissions. A public template is visible to all accounts within the same domain.
+     * A private template is visible only to the owner of the template. A priviledged template is a private template with account
      * permissions added. Only accounts specified under the template permissions are visible to them.
-     * 
+     *
      * @param id
      * @param accounts
      * @param isExtractable
@@ -629,7 +629,7 @@ public class CloudStackApi {
 
     /**
      * List template visibility and all accounts that have permissions to view this template.
-     * 
+     *
      * @param id
      * @param account
      * @param domainId
@@ -650,7 +650,7 @@ public class CloudStackApi {
 
     /**
      * Extracts a template
-     * 
+     *
      * @param id
      * @param mode
      * @param zoneId
@@ -670,10 +670,10 @@ public class CloudStackApi {
         return _client.call(cmd, apiKey, secretKey, true, ApiConstants.EXTRACT_TEMPLATE_RESPONSE, null, CloudStackExtractTemplate.class);
     }
 
-    // ISO's 
+    // ISO's
     /**
      * Attaches an ISO to a virtual machine
-     * 
+     *
      * @param id
      * @param virtualMachineId
      * @return
@@ -690,7 +690,7 @@ public class CloudStackApi {
 
     /**
      * Detaches any ISO file (if any) currently attached to a virtual machine.
-     * 
+     *
      * @param virtualMachineId
      * @return
      * @throws Exception
@@ -705,7 +705,7 @@ public class CloudStackApi {
 
     /**
      * Lists all available ISO files.
-     * 
+     *
      * @param account
      * @param bootable
      * @param domainId
@@ -753,7 +753,7 @@ public class CloudStackApi {
 
     /**
      * Registers an existing ISO into the Cloud.com Cloud.
-     * 
+     *
      * @param displayText
      * @param name
      * @param url
@@ -796,7 +796,7 @@ public class CloudStackApi {
 
     /**
      * Updates an ISO
-     * 
+     *
      * @param id
      * @param bootable
      * @param displayText
@@ -829,7 +829,7 @@ public class CloudStackApi {
 
     /**
      * Deletes an ISO
-     * 
+     *
      * @param id
      * @param zoneId
      * @return
@@ -846,7 +846,7 @@ public class CloudStackApi {
 
     /**
      * Copies a template from one zone to another
-     * 
+     *
      * @param id
      * @param destZoneId
      * @param sourceZoneId
@@ -865,7 +865,7 @@ public class CloudStackApi {
 
     /**
      * Updates ISO permissions
-     * 
+     *
      * @param id
      * @param accounts
      * @param isExtractable
@@ -915,8 +915,8 @@ public class CloudStackApi {
     }
 
     /**
-     * Extracts an iso 
-     * 
+     * Extracts an iso
+     *
      * @param id
      * @param mode
      * @param zoneId
@@ -939,7 +939,7 @@ public class CloudStackApi {
     // Volumes
     /**
      * Attaches a disk volume to a virtual machine
-     * 
+     *
      * @param id
      * @param virtualMachineId
      * @param deviceId
@@ -959,7 +959,7 @@ public class CloudStackApi {
 
     /**
      * Detaches a disk volume from a virtual machine
-     * 
+     *
      * @param deviceId
      * @param id
      * @param virtualMachineId
@@ -981,7 +981,7 @@ public class CloudStackApi {
 
     /**
      * Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it
-     * 
+     *
      * @param name
      * @param account
      * @param diskOfferingId
@@ -1014,7 +1014,7 @@ public class CloudStackApi {
 
     /**
      * Deletes a detached disk volume
-     * 
+     *
      * @param id
      * @return
      * @throws Exception
@@ -1028,7 +1028,7 @@ public class CloudStackApi {
 
     /**
      * Lists all volumes
-     * 
+     *
      * @param account
      * @param domainId
      * @param hostId
@@ -1078,7 +1078,7 @@ public class CloudStackApi {
 
     /**
      * Extracts volume
-     * 
+     *
      * @param id
      * @param mode
      * @param zoneId
@@ -1175,7 +1175,7 @@ public class CloudStackApi {
     // Security Groups
     /**
      * Creates a security group
-     * 
+     *
      * @param name
      * @param account
      * @param description
@@ -1200,10 +1200,10 @@ public class CloudStackApi {
 
     /**
      * Deletes a security group
-     * 
+     *
      * @param account
      * @param domainId
-     * @param id 
+     * @param id
      * @param name
      * @return
      * @throws Exception
@@ -1225,7 +1225,7 @@ public class CloudStackApi {
 
     /**
      * Authorizes a particular ingress rule for this security group
-     * 
+     *
      * @param account
      * @param cidrList
      * @param domainId
@@ -1278,7 +1278,7 @@ public class CloudStackApi {
 
     /**
      * Deletes a particular ingress rule from this security group.
-     * 
+     *
      * @param id
      * @return
      * @throws Exception
@@ -1292,7 +1292,7 @@ public class CloudStackApi {
 
     /**
      * Lists security groups
-     * 
+     *
      * @param account
      * @param domainId
      * @param id
@@ -1325,10 +1325,10 @@ public class CloudStackApi {
         }.getType());
     }
 
-    // Accounts 
+    // Accounts
     /**
      * Lists accounts and provides detailed account information for listed accounts
-     * 
+     *
      * @param accountType
      * @param domainId
      * @param id
@@ -1368,7 +1368,7 @@ public class CloudStackApi {
     // Snapshots
     /**
      * Creates an instant snapshot of a volume
-     * 
+     *
      * @param volumeId
      * @param account
      * @param domainId
@@ -1392,7 +1392,7 @@ public class CloudStackApi {
 
     /**
      * list Snapshots
-     * 
+     *
      * @param volumeId
      * @param account
      * @param domainId
@@ -1431,7 +1431,7 @@ public class CloudStackApi {
 
     /**
      * Deletes a snapshot of a disk volume
-     * 
+     *
      * @param id
      * @return
      * @throws Exception
@@ -1445,7 +1445,7 @@ public class CloudStackApi {
 
     /**
      * Creates a snapshot policy for the account
-     *  
+     *
      * @param intervalType
      * @param maxSnaps
      * @param schedule
@@ -1468,7 +1468,7 @@ public class CloudStackApi {
 
     /**
      * Delete's snapshot policies for the account
-     * 
+     *
      * @param id
      * @param ids
      * @return
@@ -1487,7 +1487,7 @@ public class CloudStackApi {
 
     /**
      * List snapshot policies for the account
-     * 
+     *
      * @param volumeId
      * @param account
      * @param domainId
@@ -1513,7 +1513,7 @@ public class CloudStackApi {
     // Events
     /**
      * List events
-     * 
+     *
      * @param account
      * @param domainId
      * @param duration
@@ -1558,7 +1558,7 @@ public class CloudStackApi {
 
     /**
      * List event types
-     * 
+     *
      * @return
      * @throws Exception
      */
@@ -1571,7 +1571,7 @@ public class CloudStackApi {
     // Guest OS
     /**
      * list OS Types
-     * 
+     *
      * @param id
      * @param keyWord
      * @param osCategoryId
@@ -1594,7 +1594,7 @@ public class CloudStackApi {
 
     /**
      * list OS Categories
-     * 
+     *
      * @param id
      * @param keyWord
      * @return
@@ -1615,7 +1615,7 @@ public class CloudStackApi {
     // Service Offering
     /**
      * list available Service offerings
-     * 
+     *
      * @param domainId
      * @param id
      * @param isSystem
@@ -1653,7 +1653,7 @@ public class CloudStackApi {
     // Disk Offerings
     /**
      * list available disk offerings
-     * 
+     *
      * @param domainId
      * @param id
      * @param keyWord
@@ -1680,7 +1680,7 @@ public class CloudStackApi {
     // SSH keys
     /**
      * register an SSH Key Pair
-     * 
+     *
      * @param name
      * @param publicKey
      * @return
@@ -1697,7 +1697,7 @@ public class CloudStackApi {
 
     /**
      * Create an SSH Key Pair
-     * 
+     *
      * @param name
      * @param account
      * @param domainId
@@ -1718,7 +1718,7 @@ public class CloudStackApi {
 
     /**
      * delete an SSH Key Pair
-     * 
+     *
      * @param name
      * @param account
      * @param domainId
@@ -1739,7 +1739,7 @@ public class CloudStackApi {
 
     /**
      * return list of SSH Key Pairs
-     * 
+     *
      * @param fingerprint
      * @param keyWord
      * @param name
@@ -1762,8 +1762,8 @@ public class CloudStackApi {
 
     // IpAddresses
     /**
-     * associate an ip address 
-     * 
+     * associate an ip address
+     *
      * @param zoneId
      * @param account
      * @param domainId
@@ -1789,7 +1789,7 @@ public class CloudStackApi {
 
     /**
      * disassociate an ipaddress from an instance
-     * 
+     *
      * @param id
      * @return
      * @throws Exception
@@ -1803,7 +1803,7 @@ public class CloudStackApi {
 
     /**
      * lists of allocate public ip addresses
-     * 
+     *
      * @param account
      * @param allocatedOnly
      * @param domainId
@@ -1841,7 +1841,7 @@ public class CloudStackApi {
     // Firewall
     /**
      * list port forwarding rules
-     * 
+     *
      * @param account
      * @param domainId
      * @param id
@@ -1871,7 +1871,7 @@ public class CloudStackApi {
 
     /**
      * Create a Port Forwarding Rule
-     * 
+     *
      * @param ipAddressId
      * @param privatePort
      * @param protocol
@@ -1904,7 +1904,7 @@ public class CloudStackApi {
 
     /**
      * Delete a Port Forwarding Rule
-     * 
+     *
      * @param id
      * @return
      * @throws Exception
@@ -1919,7 +1919,7 @@ public class CloudStackApi {
     // NAT
     /**
      * enable Static Nat
-     * 
+     *
      * @param ipAddressId
      * @param virtualMachineId
      * @return
@@ -1936,7 +1936,7 @@ public class CloudStackApi {
 
     /**
      * Creates an ip forwarding rule
-     * 
+     *
      * @param ipAddressId
      * @param protocol
      * @param startPort
@@ -1958,7 +1958,7 @@ public class CloudStackApi {
 
     /**
      * Deletes an ip forwarding rule
-     * 
+     *
      * @param id
      * @return
      * @throws Exception
@@ -1973,7 +1973,7 @@ public class CloudStackApi {
 
     /**
      * List the ip forwarding rules
-     * 
+     *
      * @param account
      * @param domainId
      * @param id
@@ -2007,7 +2007,7 @@ public class CloudStackApi {
 
     /**
      * Disables static rule for given ip address
-     * 
+     *
      * @param ipAddressId
      * @return
      * @throws Exception
@@ -2022,7 +2022,7 @@ public class CloudStackApi {
     // Load Balancer
     /**
      * Creates a load balancer rule
-     * 
+     *
      * @param algorithm
      * @param name
      * @param privatePort
@@ -2049,7 +2049,7 @@ public class CloudStackApi {
 
     /**
      * Deletes a load balancer rule
-     * 
+     *
      * @param id
      * @return
      * @throws Exception
@@ -2064,7 +2064,7 @@ public class CloudStackApi {
 
     /**
      * Removes a virtual machine or a list of virtual machines from a load balancer rule
-     * 
+     *
      * @param id
      * @param virtualMachineIds
      * @return
@@ -2081,7 +2081,7 @@ public class CloudStackApi {
 
     /**
      * Assigns virtual machine or a list of virtual machines to a load balancer rule.
-     * 
+     *
      * @param id
      * @param virtualMachineIds
      * @return
@@ -2098,7 +2098,7 @@ public class CloudStackApi {
 
     /**
      * Lists load balancer rules
-     * 
+     *
      * @param account
      * @param domainId
      * @param id
@@ -2138,7 +2138,7 @@ public class CloudStackApi {
 
     /**
      * List all virtual machine instances that are assigned a load balancer rule
-     * 
+     *
      * @param id
      * @param applied
      * @param keyWord
@@ -2161,7 +2161,7 @@ public class CloudStackApi {
 
     /**
      * Updates load balancer
-     * 
+     *
      * @param id
      * @param algorithm
      * @param description
@@ -2187,7 +2187,7 @@ public class CloudStackApi {
 
     /**
      * create an instance group
-     * 
+     *
      * @param name
      * @param account
      * @param domainId
@@ -2209,7 +2209,7 @@ public class CloudStackApi {
 
     /**
      * delete an instance group
-     * 
+     *
      * @param id
      * @return
      * @throws Exception
@@ -2224,7 +2224,7 @@ public class CloudStackApi {
 
     /**
      * Update an instance group
-     * 
+     *
      * @param id
      * @param name
      * @return
@@ -2242,7 +2242,7 @@ public class CloudStackApi {
 
     /**
      * List instance groups
-     * 
+     *
      * @param account
      * @param domainId
      * @param id
@@ -2273,7 +2273,7 @@ public class CloudStackApi {
     // Networks
     /**
      * Creates a network
-     * 
+     *
      * @param displayText
      * @param name
      * @param networkOfferingId
@@ -2330,7 +2330,7 @@ public class CloudStackApi {
 
     /**
      * delete a network
-     * 
+     *
      * @param id
      * @return
      * @throws Exception
@@ -2345,7 +2345,7 @@ public class CloudStackApi {
 
     /**
      * list Networks
-     * 
+     *
      * @param account
      * @param domainId
      * @param id
@@ -2391,7 +2391,7 @@ public class CloudStackApi {
 
     /**
      * Reapplies all ip addresses for the particular network
-     * 
+     *
      * @param id
      * @return
      * @throws Exception
@@ -2405,7 +2405,7 @@ public class CloudStackApi {
 
     /**
      * update a network
-     * 
+     *
      * @param id
      * @param displayText
      * @param name
@@ -2433,7 +2433,7 @@ public class CloudStackApi {
     // Hypervisor
     /**
      * list Hypervisors
-     * 
+     *
      * @param zoneId
      * @return
      * @throws Exception
@@ -2449,7 +2449,7 @@ public class CloudStackApi {
     // Zones
     /**
      * list Zones
-     * 
+     *
      * @param available
      * @param domainId
      * @param id
@@ -2477,7 +2477,7 @@ public class CloudStackApi {
     // Network Offerings
     /**
      * List available network offerings
-     * 
+     *
      * @param availability
      * @param displayText
      * @param guestIpType
@@ -2527,7 +2527,7 @@ public class CloudStackApi {
     // Configuration
     /**
      * list Capaibilities
-     * 
+     *
      * @return
      * @throws Exception
      */
@@ -2539,7 +2539,7 @@ public class CloudStackApi {
     // Limits
     /**
      * list resource limits
-     * 
+     *
      * @param account
      * @param domainId
      * @param id
@@ -2570,7 +2570,7 @@ public class CloudStackApi {
     // Cloud Identifier
     /**
      * Returns a cloud identifier
-     * 
+     *
      * @param userId
      * @return
      * @throws Exception

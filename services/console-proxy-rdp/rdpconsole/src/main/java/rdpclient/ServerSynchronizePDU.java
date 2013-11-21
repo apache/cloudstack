@@ -33,7 +33,7 @@ public class ServerSynchronizePDU  extends OneTimeSwitch {
 
     if (verbose)
       System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
-    
+
     // Ignore packet
     buf.unref();
     switchOff();
@@ -44,7 +44,7 @@ public class ServerSynchronizePDU  extends OneTimeSwitch {
 /* @formatter:off */
 /*
 
- * 03 00 00 24 02 F0 80 68 00 01 03 EB 70 16 16 00 17 00 EA 03 EA 03 01 00 08 00 16 00 1F 00 00 00 01 00 86 A4 
+ * 03 00 00 24 02 F0 80 68 00 01 03 EB 70 16 16 00 17 00 EA 03 EA 03 01 00 08 00 16 00 1F 00 00 00 01 00 86 A4
 
   Frame: Number = 36, Captured Frame Length = 93, MediaType = DecryptedPayloadHeader
 + DecryptedPayloadHeader: FrameCount = 1, ErrorStatus = SUCCESS
@@ -87,7 +87,7 @@ public class ServerSynchronizePDU  extends OneTimeSwitch {
       Length: 22
     RDP: RDPBCGR
 - RDPBCGR: SynchronizePDU
-  - SlowPathPacket: SynchronizePDU 
+  - SlowPathPacket: SynchronizePDU
    - SlowPath: Type = TS_PDUTYPE_DATAPDU
     - TsShareControlHeader: Type = TS_PDUTYPE_DATAPDU
        TotalLength: 22 (0x16)

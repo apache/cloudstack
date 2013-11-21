@@ -53,7 +53,7 @@ public class DatabindingConverterUtil extends ConverterUtil {
     }
 
     // Otherwise String convertToString(Object any) is handled by invoker (which happens to be superclass).
-    // No need to reference super explicitly because it is the invoker of static methods 
+    // No need to reference super explicitly because it is the invoker of static methods
     // @see org.apache.axis2.databinding.utils.ConverterUtil
 
 }

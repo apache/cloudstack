@@ -133,12 +133,12 @@ public class TemplateObject implements TemplateInfo {
         }
 
         /*
-         * 
+         *
          * // If the template that was passed into this allocator is not
          * installed in the storage pool, // add 3 * (template size on secondary
          * storage) to the running total VMTemplateHostVO templateHostVO =
          * _storageMgr.findVmTemplateHost(templateForVmCreation.getId(), null);
-         * 
+         *
          * if (templateHostVO == null) { VMTemplateSwiftVO templateSwiftVO =
          * _swiftMgr.findByTmpltId(templateForVmCreation.getId()); if
          * (templateSwiftVO != null) { long templateSize =

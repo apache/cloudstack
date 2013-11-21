@@ -23,7 +23,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * 
+ *
  * Load Balancer instance is the User Vm instance participating in the Load Balancer
  *
  */

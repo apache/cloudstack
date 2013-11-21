@@ -52,7 +52,7 @@ public class MultipartLoadDao {
     /**
      * If a multipart upload exists with the uploadId value then return the non-null creators
      * accessKey.
-     * 
+     *
      * @param uploadId
      * @return creator of the multipart upload, and NameKey of upload
      */
@@ -65,9 +65,9 @@ public class MultipartLoadDao {
      * The multipart upload was either successfully completed or was aborted.   In either case, we need
      * to remove all of its state from the tables.   Note that we have cascade deletes so all tables with
      * uploadId as a foreign key are automatically cleaned.
-     * 
+     *
      * @param uploadId
-     * 
+     *
      */
     public void deleteUpload(int uploadId) {
         mpartUploadDao.deleteUpload(uploadId);
@@ -75,7 +75,7 @@ public class MultipartLoadDao {
 
     /**
      * The caller needs to know who initiated the multipart upload.
-     * 
+     *
      * @param uploadId
      * @return the access key value defining the initiator
      */
@@ -85,12 +85,12 @@ public class MultipartLoadDao {
 
     /**
      * Create a new "in-process" multipart upload entry to keep track of its state.
-     * 
+     *
      * @param accessKey
      * @param bucketName
      * @param key
      * @param cannedAccess
-     * 
+     *
      * @return if positive its the uploadId to be returned to the client
      *
      */
@@ -126,9 +126,9 @@ public class MultipartLoadDao {
 
     /**
      * Remember all the individual parts that make up the entire multipart upload so that once
-     * the upload is complete all the parts can be glued together into a single object.  Note, 
+     * the upload is complete all the parts can be glued together into a single object.  Note,
      * the caller can over write an existing part.
-     * 
+     *
      * @param uploadId
      * @param partNumber
      * @param md5
@@ -172,7 +172,7 @@ public class MultipartLoadDao {
     /**
      * When the multipart are being composed into one object we need any meta data to be saved with
      * the new re-constituted object.
-     * 
+     *
      * @param uploadId
      * @return an array of S3MetaDataEntry (will be null if no meta values exist)
      * @throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException
@@ -202,10 +202,10 @@ public class MultipartLoadDao {
         }
     }
 
-    /** 
-     * The result has to be ordered by key and if there is more than one identical key then all the 
+    /**
+     * The result has to be ordered by key and if there is more than one identical key then all the
      * identical keys are ordered by create time.
-     * 
+     *
      * @param bucketName
      * @param maxParts
      * @param prefix - can be null
@@ -251,7 +251,7 @@ public class MultipartLoadDao {
      * Return info on a range of upload parts that have already been stored in disk.
      * Note that parts can be uploaded in any order yet we must returned an ordered list
      * of parts thus we use the "ORDERED BY" clause to sort the list.
-     * 
+     *
      * @param uploadId
      * @param maxParts
      * @param startAt
@@ -290,7 +290,7 @@ public class MultipartLoadDao {
 
     /**
      * How many parts exist after the endMarker part number?
-     * 
+     *
      * @param uploadId
      * @param endMarker - can be used to see if getUploadedParts was truncated
      * @return number of parts with partNumber greater than endMarker
@@ -303,10 +303,10 @@ public class MultipartLoadDao {
     /**
      * A multipart upload request can have zero to many meta data entries to be applied to the
      * final object.   We need to remember all of the objects meta data until the multipart is complete.
-     * 
+     *
      * @param uploadId - defines an in-process multipart upload
      * @param meta - an array of meta data to be assocated with the uploadId value
-     * 
+     *
      */
     private void saveMultipartMeta(int uploadId, S3MetaDataEntry[] meta) {
         if (null == meta)
@@ -332,7 +332,7 @@ public class MultipartLoadDao {
     /**
      * Reallocates an array with a new size, and copies the contents
      * of the old array to the new array.
-     * 
+     *
      * @param oldArray  the old array, to be reallocated.
      * @param newSize   the new array size.
      * @return          A new array with the same contents.

@@ -472,7 +472,7 @@ public class TestClientWithAPI {
                 for (int j = 0; j < childNodes.getLength(); j++) {
                     Node n = childNodes.item(j);
                     //Id is being used instead of ipaddress. Changes need to done later to ipaddress variable
-                    if ("id".equals(n.getNodeName())) 
+                    if ("id".equals(n.getNodeName()))
                     {
                         ipAddressId = n.getTextContent();
                     }
@@ -703,14 +703,14 @@ public class TestClientWithAPI {
                 if ((values.get("ipaddress") == null)|| (values.get("id") == null)) {
                     s_logger.info("associate ip for Windows response code: 401, the command was sent with url " + url);
                     return 401;
-                } 
+                }
                 else
                 {
                     s_logger.info("Associate IP Address response code: " + responseCode);
                     long publicIpId = Long.parseLong(values.get("id"));
                     s_logger.info("Associate IP's Id: " + publicIpId);
-                    _publicIpId.set(values.get("id"));         
-                }    
+                    _publicIpId.set(values.get("id"));
+                }
             } else {
                 s_logger.error("associate ip address for windows vm failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
@@ -801,7 +801,7 @@ public class TestClientWithAPI {
                 s_logger.error("Enable Static NAT failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
-             */          
+             */
             // -------------------------------------------------------------
             // CREATE IP FORWARDING RULE -- Linux VM
             // -------------------------------------------------------------
@@ -939,7 +939,7 @@ public class TestClientWithAPI {
                 } else {
                     s_logger.error("Enable Static NAT failed with error code: " + responseCode + ". Following URL was sent: " + url);
                     return responseCode;
-                }                                            
+                }
 
 
                 // -------------------------------------------------------------
@@ -1895,7 +1895,7 @@ public class TestClientWithAPI {
             if (responseCode == 200) {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
-                s_logger.info("IP forwarding rule was successfully deleted");        
+                s_logger.info("IP forwarding rule was successfully deleted");
 
             } else {
                 s_logger.error("IP forwarding rule creation failed with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -1906,7 +1906,7 @@ public class TestClientWithAPI {
             // Disable Static NAT for the Source NAT Ip
             //--------------------------------------------
             encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
-            String encodedPublicIpId = URLEncoder.encode(_publicIpId.get(), "UTF-8");       
+            String encodedPublicIpId = URLEncoder.encode(_publicIpId.get(), "UTF-8");
             requestToSign = "apikey=" + encodedApiKey + "&command=disableStaticNat"+"&id=" + encodedPublicIpId;
             requestToSign = requestToSign.toLowerCase();
             signature = signRequest(requestToSign, _secretKey.get());

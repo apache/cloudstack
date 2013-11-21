@@ -73,13 +73,13 @@ public class AuthenticationHandler implements Handler {
     }
 
     /**
-     * Verify the request's authentication signature by extracting all the 
+     * Verify the request's authentication signature by extracting all the
      * necessary parts of the request, obtaining the requestor's secret key, and
      * recalculating the signature.
-     * 
-     * On Signature mismatch raise an AxisFault (i.e., a SoapFault) with what Amazon S3 
+     *
+     * On Signature mismatch raise an AxisFault (i.e., a SoapFault) with what Amazon S3
      * defines as a "Client.SignatureMismatch" error.
-     * 
+     *
      * Special case: need to deal with anonymous requests where no AWSAccessKeyId is
      * given.   In this case just pass the request on.
      */
@@ -92,7 +92,7 @@ public class AuthenticationHandler implements Handler {
         String secretKey = null;
         String temp = null;
 
-        // [A] Obtain the HttpServletRequest object 
+        // [A] Obtain the HttpServletRequest object
         HttpServletRequest httpObj = (HttpServletRequest)msgContext.getProperty("transport.http.servletRequest");
         if (null != httpObj)
             System.out.println("S3 SOAP auth test header access - acceptable Encoding type: " + httpObj.getHeader("Accept-Encoding"));
@@ -175,7 +175,7 @@ public class AuthenticationHandler implements Handler {
 
     /**
      * Given the user's access key, then obtain his secret key in the user database.
-     * 
+     *
      * @param accessKey - a unique string allocated for each registered user
      * @return the secret key or null of no matching user found
      */

@@ -37,7 +37,7 @@ import com.cloud.utils.db.GenericDao;
 
 /**
  * A bean representing a user
- * 
+ *
  */
 @Entity
 @Table(name = "user")

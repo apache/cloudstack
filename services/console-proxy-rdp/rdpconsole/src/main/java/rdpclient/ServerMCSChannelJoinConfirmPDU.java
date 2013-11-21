@@ -36,7 +36,7 @@ public class ServerMCSChannelJoinConfirmPDU  extends OneTimeSwitch {
 
     if (verbose)
       System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
-    
+
     // Ignore packet
     buf.unref();
     switchOff();
@@ -45,7 +45,7 @@ public class ServerMCSChannelJoinConfirmPDU  extends OneTimeSwitch {
 }
 
 /*
- * 03 00 00 0F 02 F0 80 3E 00 00 03 03 EC 03 EC 
+ * 03 00 00 0F 02 F0 80 3E 00 00 03 03 EC 03 EC
 
   Frame: Number = 22, Captured Frame Length = 72, MediaType = DecryptedPayloadHeader
 + DecryptedPayloadHeader: FrameCount = 1, ErrorStatus = SUCCESS
@@ -85,5 +85,5 @@ public class ServerMCSChannelJoinConfirmPDU  extends OneTimeSwitch {
     - ChannelId: 1004
        Align: No Padding
        Value: 1004 (0x3EC)
- 
+
  */

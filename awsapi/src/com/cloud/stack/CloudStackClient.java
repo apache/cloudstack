@@ -33,9 +33,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
 /**
- * CloudStackClient implements a simple CloudStack client object, it can be used to execute CloudStack commands 
+ * CloudStackClient implements a simple CloudStack client object, it can be used to execute CloudStack commands
  * with JSON response
- * 
+ *
  */
 public class CloudStackClient {
     protected final static Logger logger = Logger.getLogger(CloudStackClient.class);

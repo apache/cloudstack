@@ -56,7 +56,7 @@ public class CloudStackServiceOffering {
     private String tags;
 
     /**
-     * 
+     *
      */
     public CloudStackServiceOffering() {
         // TODO Auto-generated constructor stub

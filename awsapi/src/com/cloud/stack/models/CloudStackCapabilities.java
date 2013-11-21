@@ -28,7 +28,7 @@ public class CloudStackCapabilities {
     private Boolean userPublicTemplateEnabled;
 
     /**
-     * 
+     *
      */
     public CloudStackCapabilities() {
         // TODO Auto-generated constructor stub

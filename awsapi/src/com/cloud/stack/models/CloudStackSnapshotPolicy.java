@@ -35,7 +35,7 @@ public class CloudStackSnapshotPolicy {
     private String volumeId;
 
     /**
-     * 
+     *
      */
     public CloudStackSnapshotPolicy() {
     }

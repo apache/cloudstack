@@ -33,16 +33,16 @@ import java.io.IOException;
 
 public class VirtualMachine {
     public static final Logger s_logger= Logger.getLogger(VirtualMachine.class.getClass());
-    
+
     private String privateIp;
     private String userId;
-    
-    
+
+
     public VirtualMachine(String userId){
         this.userId=userId;
     }
-    
-    
+
+
     public String getPrivateIp() {
         return privateIp;
     }
@@ -75,7 +75,7 @@ public class VirtualMachine {
         + "&command=deployVirtualMachine&serviceOfferingId="
         + encodedServiceOfferingId + "&templateId="
         + encodedTemplateId + "&zoneId=" + encodedZoneId;
-        
+
         requestToSign = requestToSign.toLowerCase();
         String signature = TestClientWithAPI.signRequest(requestToSign, secretKey);
         String encodedSignature = URLEncoder.encode(signature, "UTF-8");
@@ -84,7 +84,7 @@ public class VirtualMachine {
         + encodedServiceOfferingId + "&templateId="
         + encodedTemplateId + "&apiKey=" + encodedApiKey
         + "&signature=" + encodedSignature;
-        
+
         s_logger.info("Sending this request to deploy a VM: "+url);
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(url);
@@ -110,7 +110,7 @@ public class VirtualMachine {
                     + method.getStatusText());
         }
     }
-    
-        
+
+
 
 }

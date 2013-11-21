@@ -206,7 +206,7 @@ public class MacAddress {
      *
      * This is copied from the author below.  The author encouraged copying
      * it.
-     * 
+     *
      */
     static String parse(String in) {
 
@@ -261,7 +261,7 @@ public class MacAddress {
      * Parses a <code>long</code> from a hex encoded number. This method will skip
      * all characters that are not 0-9 and a-f (the String is lower cased first).
      * Returns 0 if the String does not contain any interesting characters.
-     * 
+     *
      * @param s the String to extract a <code>long</code> from, may not be <code>null</code>
      * @return a <code>long</code>
      * @throws NullPointerException if the String is <code>null</code>
@@ -290,7 +290,7 @@ public class MacAddress {
      * Parses an <code>int</code> from a hex encoded number. This method will skip
      * all characters that are not 0-9 and a-f (the String is lower cased first).
      * Returns 0 if the String does not contain any interesting characters.
-     * 
+     *
      * @param s the String to extract an <code>int</code> from, may not be <code>null</code>
      * @return an <code>int</code>
      * @throws NullPointerException if the String is <code>null</code>
@@ -319,7 +319,7 @@ public class MacAddress {
      * Parses a <code>short</code> from a hex encoded number. This method will skip
      * all characters that are not 0-9 and a-f (the String is lower cased first).
      * Returns 0 if the String does not contain any interesting characters.
-     * 
+     *
      * @param s the String to extract a <code>short</code> from, may not be <code>null</code>
      * @return a <code>short</code>
      * @throws NullPointerException if the String is <code>null</code>
@@ -348,7 +348,7 @@ public class MacAddress {
      * Parses a <code>byte</code> from a hex encoded number. This method will skip
      * all characters that are not 0-9 and a-f (the String is lower cased first).
      * Returns 0 if the String does not contain any interesting characters.
-     * 
+     *
      * @param s the String to extract a <code>byte</code> from, may not be <code>null</code>
      * @return a <code>byte</code>
      * @throws NullPointerException if the String is <code>null</code>

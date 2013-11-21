@@ -88,7 +88,7 @@ import com.cloud.utils.net.NetUtils;
  *  GenericDaoBase is completely at the mercy of the annotations you add
  *  to your entity bean.  If GenericDaoBase does not fit your needs, then
  *  don't extend from it.
- * 
+ *
  *  GenericDaoBase attempts to achieve the following:
  *    1. If you use _allFieldsStr in your SQL statement and use to() to convert
  *       the result to the entity bean, you don't ever have to worry about
@@ -98,7 +98,7 @@ import com.cloud.utils.net.NetUtils;
  *       in all of your DAOs.
  *    3. You don't have to match the '?' (you know what I'm talking about) to
  *       the fields in the insert statement as that's taken care of for you.
- * 
+ *
  *  GenericDaoBase looks at the following annotations:
  *    1. Table - just name
  *    2. Column - just name
@@ -106,12 +106,12 @@ import com.cloud.utils.net.NetUtils;
  *    4. SequenceGenerator - sequence generator
  *    5. Id
  *    6. SecondaryTable
- * 
+ *
  *  Sometime later, I might look into injecting the SQLs as needed but right
  *  now we have to construct them at construction time.  The good thing is that
  *  the DAOs are suppose to be one per jvm so the time is all during the
  *  initial load.
- * 
+ *
  **/
 @DB
 public abstract class GenericDaoBase<T, ID extends Serializable> extends ComponentLifecycleBase implements GenericDao<T, ID>, ComponentMethodInterceptable {

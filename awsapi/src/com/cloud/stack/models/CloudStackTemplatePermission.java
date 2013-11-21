@@ -32,7 +32,7 @@ public class CloudStackTemplatePermission {
     private List<String> accounts;
 
     /**
-     * 
+     *
      */
     public CloudStackTemplatePermission() {
     }

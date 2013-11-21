@@ -40,7 +40,7 @@ import com.cloud.utils.fsm.StateObject;
 
 /**
  * Join table for image_data_store and templates
- * 
+ *
  */
 @Entity
 @Table(name = "template_store_ref")

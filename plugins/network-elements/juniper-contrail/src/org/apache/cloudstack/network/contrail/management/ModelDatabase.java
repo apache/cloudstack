@@ -30,7 +30,7 @@ public class ModelDatabase {
     TreeSet<ServiceInstanceModel> _serviceInstanceTable;
     TreeSet<VirtualMachineModel> _vmTable;
     TreeSet<VirtualNetworkModel> _vnTable;
-    
+
     ModelDatabase() {
         initDb();
     }
@@ -40,11 +40,11 @@ public class ModelDatabase {
         _vmTable = new TreeSet<VirtualMachineModel>(new ModelObjectBase.UuidComparator());
         _vnTable = new TreeSet<VirtualNetworkModel>(new ModelObjectBase.UuidComparator());
     }
-    
+
     public TreeSet<ServiceInstanceModel> getServiceInstances() {
         return _serviceInstanceTable;
     }
-    
+
     public ServiceInstanceModel lookupServiceInstance(String uuid) {
         ServiceInstanceModel siKey = new ServiceInstanceModel(uuid);
         ServiceInstanceModel current = _serviceInstanceTable.ceiling(siKey);
@@ -53,11 +53,11 @@ public class ModelDatabase {
         }
         return null;
     }
-    
+
     public TreeSet<VirtualMachineModel> getVirtualMachines() {
         return _vmTable;
     }
-    
+
     public VirtualMachineModel lookupVirtualMachine(String uuid) {
         VirtualMachineModel vmKey = new VirtualMachineModel(null, uuid);
         VirtualMachineModel current = _vmTable.ceiling(vmKey);
@@ -66,11 +66,11 @@ public class ModelDatabase {
         }
         return null;
     }
-    
+
     public TreeSet<VirtualNetworkModel> getVirtualNetworks() {
         return _vnTable;
     }
-    
+
     public VirtualNetworkModel lookupVirtualNetwork(String uuid, String name, TrafficType ttype) {
         VirtualNetworkModel vnKey = new VirtualNetworkModel(null, uuid, name, ttype);
         VirtualNetworkModel current = _vnTable.ceiling(vnKey);
@@ -82,7 +82,7 @@ public class ModelDatabase {
                 }
             } else if (current.getUuid().equals(uuid)) {
                 return current;
-            } 
+            }
         }
         return null;
     }

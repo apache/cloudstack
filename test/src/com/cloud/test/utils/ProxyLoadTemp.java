@@ -32,16 +32,16 @@ public class ProxyLoadTemp {
     public static long begin;
     public static long end;
     public static long sum=0;
-    
-    public ProxyLoadTemp(){        
+
+    public ProxyLoadTemp(){
     }
-    
+
     public static void main (String[] args){
         begin= System.currentTimeMillis();
         Runtime.getRuntime().addShutdownHook(new ShutdownThread(new ProxyLoadTemp()));
         ConsoleProxy.proxyIp="172-16-1-101";
-        
-        try 
+
+        try
         {
         BufferedReader consoleInput = new BufferedReader(new FileReader("console.input"));
         boolean eof = false;
@@ -55,7 +55,7 @@ public class ProxyLoadTemp {
             }
             else{
                 String[] result=null;
-                try 
+                try
                 {
                     s_logger.info("Starting parsing line "+line);
                    result= parseLine(line, "[,]");
@@ -63,21 +63,21 @@ public class ProxyLoadTemp {
                    ConsoleProxy proxy = new ConsoleProxy(result[0], result[1], result[2]);
                    proxyList.add(proxy);
                    new Thread(proxy).start();
-                   numThreads++;           
-                   
+                   numThreads++;
+
                 }
                 catch (Exception ex){
                     s_logger.warn(ex);
                 }
             }
-            
+
         }
         }catch(Exception e){
             s_logger.warn(e);
         }
-        
+
     }
-    
+
     public static class ShutdownThread extends Thread {
         ProxyLoadTemp temp;
         public ShutdownThread(ProxyLoadTemp temp) {
@@ -85,7 +85,7 @@ public class ProxyLoadTemp {
         }
         public void run() {
             s_logger.info("Program was running in "+numThreads+" threads");
-            
+
             for (int j=0; j<proxyList.size(); j++){
                 long av=0;
                 if (proxyList.get(j).getConnectionsMade()!=0){
@@ -100,8 +100,8 @@ public class ProxyLoadTemp {
             s_logger.info("Test was running for "+(ProxyLoadTemp.end-ProxyLoadTemp.begin)/1000+" seconds");
         }
     }
-    
-    
+
+
     public static String[] parseLine(String line, String del) throws Exception
     {
         String del1=del.substring(1, del.length()-1);
@@ -112,10 +112,10 @@ public class ProxyLoadTemp {
         else
         {
         String[] token = line.split(del);
-        return token;  
+        return token;
         }
 
     }
-    
+
 
 }

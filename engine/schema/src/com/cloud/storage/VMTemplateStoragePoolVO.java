@@ -37,7 +37,7 @@ import com.cloud.utils.db.GenericDaoBase;
 
 /**
  * Join table for storage pools and templates
- * 
+ *
  */
 @Entity
 @Table(name = "template_spool_ref")

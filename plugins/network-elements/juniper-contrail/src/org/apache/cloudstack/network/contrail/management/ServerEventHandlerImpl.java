@@ -39,11 +39,11 @@ import org.apache.cloudstack.framework.messagebus.MessageHandler;
 /*
  * When an Object is created/deleted in cloudstack DB, it has to be reflected in VNC.
  * This class handles create, delete and update events of cloudstack db objects.
- * 
- * - subscribe for interested events 
+ *
+ * - subscribe for interested events
  * - create events will have db id of the object and hence db object and its parameters can be retrieved
- * - delete events will have db id but the object no longer exists in db and hence complete class needs to be synchronized 
- * 
+ * - delete events will have db id but the object no longer exists in db and hence complete class needs to be synchronized
+ *
  */
 @Component
 public class ServerEventHandlerImpl implements ServerEventHandler {
@@ -57,7 +57,7 @@ public class ServerEventHandlerImpl implements ServerEventHandler {
     private HashMap<String, Class<?>> _classMap;
 
     private static final Logger s_logger = Logger.getLogger(MessageHandler.class);
- 
+
     ServerEventHandlerImpl() {
         setMethodMap();
         setClassMap();
@@ -67,20 +67,20 @@ public class ServerEventHandlerImpl implements ServerEventHandler {
         _methodMap = new HashMap<String, Method>();
         Method methods[] = this.getClass().getMethods();
         for (int i = 0; i < methods.length; i++) {
-            _methodMap.put(methods[i].getName(),  methods[i]); 
+            _methodMap.put(methods[i].getName(),  methods[i]);
         }
     }
-    
+
     private void setClassMap() {
-        _classMap = new HashMap<String, Class<?>>();        
+        _classMap = new HashMap<String, Class<?>>();
         _classMap.put("Domain", net.juniper.contrail.api.types.Domain.class);
         _classMap.put("Project", net.juniper.contrail.api.types.Project.class);
     }
-    
+
     @MessageHandler(topic=".*")
     public void defaultMessageHandler(String subject, String topic, Object args) {
         s_logger.info("DB Event Received - topic: " + topic + "; subject: " + subject);
-        
+
         if (subject.equals("VLAN.IP.RANGE.CREATE")) {
             _manager.createPublicNetworks();
             return;
@@ -90,10 +90,10 @@ public class ServerEventHandlerImpl implements ServerEventHandler {
         }
 
         org.apache.cloudstack.framework.events.Event event = (org.apache.cloudstack.framework.events.Event)args;
-        
+
         /* Method name should be on<ClassName><Operation> for example: onDomainCreate */
         Method method = null;
-       
+
         try {
             /* Only create event needs special implementation */
             if (event.getEventType().contains("CREATE")) {
@@ -113,28 +113,28 @@ public class ServerEventHandlerImpl implements ServerEventHandler {
             s_logger.debug(e);
         }
     }
-    
+
     /* Default create handler */
     void defaultCreateHandler(String subject, String topic, org.apache.cloudstack.framework.events.Event event ) {
-        
+
         s_logger.debug("Default handler is invoked for subject: " + subject + "; topic: " + topic);
         s_logger.debug("description: " + event.getDescription());
         s_logger.debug("category: " + event.getEventCategory());
         s_logger.debug("type: " + event.getResourceType());
         s_logger.debug("event-type: " + event.getEventType());
-        
+
         Class<?> cls = _classMap.get(event.getResourceType());
-           
+
         if ( cls != null ) {
             _dbSync.syncClass(cls);
         }
-        
+
         return;
     }
-    
+
     /* Default handler */
     void defaultDeleteHandler(String subject, String topic, org.apache.cloudstack.framework.events.Event event ) {
-        
+
         s_logger.debug("Default handler is invoked for subject: " + subject + "; topic: " + topic);
 
         s_logger.debug("description: " + event.getDescription());
@@ -144,13 +144,13 @@ public class ServerEventHandlerImpl implements ServerEventHandler {
         Class<?> cls = _classMap.get(event.getResourceType());
         if ( cls != null ) {
             _dbSync.syncClass(cls);
-        }         
+        }
         return;
     }
-    
+
     /* Default handler */
     void defaultHandler(String subject, String topic, org.apache.cloudstack.framework.events.Event event ) {
-        
+
         s_logger.debug("Default handler is invoked for subject: " + subject + "; topic: " + topic);
 
         s_logger.debug("description: " + event.getDescription());
@@ -160,15 +160,15 @@ public class ServerEventHandlerImpl implements ServerEventHandler {
         Class<?> cls = _classMap.get(event.getResourceType());
         if ( cls != null ) {
             _dbSync.syncClass(cls);
-        }         
+        }
         return;
     }
-    
+
     /* Description string contains substring of format "resourceType Id: <int>" for example: "Project id: 35"
-     * 
-     * example: 
+     *
+     * example:
      *  description: {"details":"Successfully completed deleting project. Project Id: 39","status":"Completed","event":"PROJECT.DELETE","account":"3afca502-d83c-11e2-b748-52540076b7ca","user":"3b111406-d83c-11e2-b748-52540076b7ca"}
-     *  
+     *
      * If the description string format is changed, this code has to be modified
      */
     private long parseForId(String resourceType, String description) {
@@ -177,14 +177,14 @@ public class ServerEventHandlerImpl implements ServerEventHandler {
         String idStr = description.substring(idIdx, description.indexOf('"', idIdx));
         long id = 0;
         try {
-            id = Long.parseLong(idStr.trim());            
+            id = Long.parseLong(idStr.trim());
         } catch (Exception e) {
             s_logger.debug("Unable to parse id string<" + idStr.trim() + "> for long value, ignored");
-        }        
+        }
         return id;
     }
-    
-    
+
+
     public void onDomainCreate(String subject, String topic, org.apache.cloudstack.framework.events.Event event) {
         s_logger.info("onDomainCreate; topic: " + topic + "; subject: " + subject);
         try {
@@ -198,16 +198,16 @@ public class ServerEventHandlerImpl implements ServerEventHandler {
                 } else {
                     /* could not find db record, resync complete class */
                     _dbSync.syncClass(net.juniper.contrail.api.types.Domain.class);
-                } 
+                }
             } else {
                 /* Unknown id, resync complete class */
                 _dbSync.syncClass(net.juniper.contrail.api.types.Domain.class);
             }
         } catch (Exception e) {
-            s_logger.debug(e);  
+            s_logger.debug(e);
         }
     }
-             
+
     public void onProjectCreate(String subject, String topic, org.apache.cloudstack.framework.events.Event event) {
         s_logger.info("onProjectCreate; topic: " + topic + "; subject: " + subject);
         try {
@@ -220,8 +220,8 @@ public class ServerEventHandlerImpl implements ServerEventHandler {
                     _dbSync.createProject(project, logMesg);
                 } else {
                     /* could not find db record, resync complete class */
-                    _dbSync.syncClass(net.juniper.contrail.api.types.Project.class);        
-                } 
+                    _dbSync.syncClass(net.juniper.contrail.api.types.Project.class);
+                }
             } else {
                 /* Unknown id, resync complete class */
                 _dbSync.syncClass(net.juniper.contrail.api.types.Project.class);
@@ -229,10 +229,10 @@ public class ServerEventHandlerImpl implements ServerEventHandler {
         } catch (Exception e) {
             s_logger.info(e);
         }
-        
+
     }
-    
-       
+
+
     @Override
     public void subscribe() {
         /* subscribe to DB events */

@@ -45,7 +45,7 @@ public class TestDbSetup {
             Runtime r = Runtime.getRuntime();
             String script = startMysqlScript;
             if (script == null) {
-                script = "test/resources/mysql_db_start.sh "  + port; 
+                script = "test/resources/mysql_db_start.sh "  + port;
             }
             Process process = r.exec("sh " + cwd + "/" + script);
             process.waitFor();
@@ -65,7 +65,7 @@ public class TestDbSetup {
             Runtime r = Runtime.getRuntime();
             String script = stopMysqlScript;
             if (script == null) {
-                script = "test/resources/mysql_db_stop.sh "  + port; 
+                script = "test/resources/mysql_db_stop.sh "  + port;
             }
             Process process = r.exec("sh " + script);
             process.waitFor();
@@ -87,7 +87,7 @@ public class TestDbSetup {
     public static void updateSqlPort(int port, String propertyFileOverride) throws Exception {
 
        PropertiesConfiguration config = new PropertiesConfiguration(propertyFileOverride);
-       System.out.println("File: " + propertyFileOverride + "; old: db.properties port: " + 
+       System.out.println("File: " + propertyFileOverride + "; old: db.properties port: " +
                             config.getProperty("db.cloud.port") + ", new port: " + port);
        config.setProperty("db.cloud.port", "" + port);
        config.setProperty("db.cloud.username", System.getProperty("user.name"));
@@ -107,7 +107,7 @@ public class TestDbSetup {
 
        config.save();
     }
-    
+
     public static void initCloudstackDb() throws Exception {
         try {
             File dir = new File("../../../");
@@ -136,16 +136,16 @@ public class TestDbSetup {
     public static int init(String startScript) throws Exception {
         int port = TestDbSetup.findFreePort();
         TestDbSetup.startMysqlServer(port, startScript);
-        copyDbPropertiesFile();  
+        copyDbPropertiesFile();
         /* both of these files needs to have mysql port, username password details */
         TestDbSetup.updateSqlPort(port, "db.properties");  /* for cloudstack runtime */
         TestDbSetup.updateSqlPort(port, "../../../utils/conf/db.properties.override"); /* for deploying db */
         TestDbSetup.initCloudstackDb();
         return port;
-    } 
+    }
 
     public static void destroy(int port, String stopScript) throws Exception {
         TestDbSetup.stopMysqlServer(port, stopScript);
-    } 
+    }
 }
 

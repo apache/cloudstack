@@ -25,7 +25,7 @@ import com.cloud.bridge.service.exception.UnsupportedException;
 
 /**
  * Each relation holds
- * a grantee - which is one of SAcl.GRANTEE_USER, SAcl.GRANTEE_ALLUSERS, SAcl.GRANTEE_AUTHENTICATED 
+ * a grantee - which is one of SAcl.GRANTEE_USER, SAcl.GRANTEE_ALLUSERS, SAcl.GRANTEE_AUTHENTICATED
  * a permission - which is one of SAcl.PERMISSION_PASS, SAcl.PERMISSION_NONE, SAcl.PERMISSION_READ,
  *     SAcl.PERMISSION_WRITE, SAcl.PERMISSION_READ_ACL, SAcl.PERMISSION_WRITE_ACL, SAcl.PERMISSION_FULL
  * canonicalUserID

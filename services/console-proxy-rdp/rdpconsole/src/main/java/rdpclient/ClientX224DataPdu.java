@@ -28,7 +28,7 @@ public class ClientX224DataPdu extends BaseElement {
   public ClientX224DataPdu(String id) {
     super(id);
   }
-  
+
   @Override
   public void handleData(ByteBuffer buf, Link link) {
     if (buf == null)

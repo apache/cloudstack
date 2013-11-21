@@ -212,7 +212,7 @@ public class S3RestServlet extends HttpServlet {
 
     /**
      * Provide an easy way to determine the version of the implementation running.
-     * 
+     *
      * This is an unauthenticated REST call.
      */
     private void cloudS3Version(HttpServletRequest request, HttpServletResponse response) {
@@ -223,20 +223,20 @@ public class S3RestServlet extends HttpServlet {
 
     /**
      * This request registers the user Cloud.com account holder to the S3 service.   The Cloud.com
-     * account holder saves his API access and secret keys with the S3 service so that 
+     * account holder saves his API access and secret keys with the S3 service so that
      * each rest call he makes can be verified was originated from him.   The given API access
-     * and secret key are saved into the "usercredentials" database table.   
-     * 
+     * and secret key are saved into the "usercredentials" database table.
+     *
      * This is an unauthenticated REST call.   The only required parameters are 'accesskey' and
-     * 'secretkey'. 
-     * 
+     * 'secretkey'.
+     *
      * To verify that the given keys represent an existing account they are used to execute the
      * Cloud.com's listAccounts API function.   If the keys do not represent a valid account the
      * listAccounts function will fail.
-     * 
+     *
      * A user can call this REST function any number of times, on each call the Cloud.com secret
      * key is simply over writes any previously stored value.
-     * 
+     *
      * As with all REST calls HTTPS should be used to ensure their security.
      */
     @DB
@@ -274,7 +274,7 @@ public class S3RestServlet extends HttpServlet {
             user = ucDao.persist(user);
             txn.commit();
             txn.close();
-            //credentialDao.setUserKeys( accessKey[0], secretKey[0] ); 
+            //credentialDao.setUserKeys( accessKey[0], secretKey[0] );
 
         } catch (Exception e) {
             logger.error("SetUserKeys " + e.getMessage(), e);
@@ -392,7 +392,7 @@ public class S3RestServlet extends HttpServlet {
             return new S3BucketAction();   // for ListAllMyBuckets
         }
 
-        // Because there is a leading / at position 0 of pathInfo, now subtract this to process the remainder    
+        // Because there is a leading / at position 0 of pathInfo, now subtract this to process the remainder
         pathInfo = pathInfo.substring(1);
 
         if (ServiceProvider.getInstance().getUseSubDomain())
@@ -476,7 +476,7 @@ public class S3RestServlet extends HttpServlet {
     // The purpose of the plain POST operation is to add an object to a specified bucket using HTML forms.
 
     private S3ObjectAction routePlainPostRequest(HttpServletRequest request) {
-        // TODO - Remove the unnecessary fields below    
+        // TODO - Remove the unnecessary fields below
         // Obtain the mandatory fields from the HTML form or otherwise fail with a logger message
         String keyString = request.getParameter("key");
         String metatagString = request.getParameter("x-amz-meta-tag");
@@ -487,7 +487,7 @@ public class S3RestServlet extends HttpServlet {
         String accessKeyString = request.getParameter("AWSAccessKeyId");
         String signatureString = request.getParameter("Signature");
 
-        // Obtain the discretionary fields from the HTML form 
+        // Obtain the discretionary fields from the HTML form
         String policyKeyString = request.getParameter("Policy");
         String metauuidString = request.getParameter("x-amz-meta-uuid");
         String redirectString = request.getParameter("redirect");
@@ -519,7 +519,7 @@ public class S3RestServlet extends HttpServlet {
      * A DIME request is really a SOAP request that we are dealing with, and so its
      * authentication is the SOAP authentication approach.   Since Axis2 does not handle
      * DIME messages we deal with them here.
-     * 
+     *
      * @param request
      * @param response
      */
@@ -606,10 +606,10 @@ public class S3RestServlet extends HttpServlet {
      * Convert the SOAP XML we extract from the DIME message into our local object.
      * Here Axis2 is not parsing the SOAP for us.   I tried to use the Amazon PutObject
      * parser but it keep throwing exceptions.
-     * 
+     *
      * @param putObjectInline
-     * @return 
-     * @throws Exception 
+     * @return
+     * @throws Exception
      */
     public static S3PutObjectRequest toEnginePutObjectRequest(InputStream is) throws Exception {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -770,7 +770,7 @@ public class S3RestServlet extends HttpServlet {
 
     /**
      * Looking for the value of a specific child of the given parent node.
-     * 
+     *
      * @param parent
      * @param childName
      * @return

@@ -54,11 +54,11 @@ public class S3PolicyStringCondition extends S3PolicyCondition {
         return keys.get(key);
     }
 
-    /** 
+    /**
      * Convert the key's values into the type depending on the what the condition expects.
      * To implement "like" tests we use regexes.
-     * 
-     * @throws ParseException 
+     *
+     * @throws ParseException
      */
     public void setKey(ConditionKeys key, String[] values) throws ParseException {
 

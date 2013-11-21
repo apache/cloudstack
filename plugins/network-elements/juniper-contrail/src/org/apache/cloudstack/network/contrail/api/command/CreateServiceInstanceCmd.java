@@ -54,7 +54,7 @@ import com.cloud.user.Account;
     responseObject=ServiceInstanceResponse.class)
 public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
     private static final String s_name = "createserviceinstanceresponse";
-    
+
     /// API parameters
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
             required = true, description = "Availability zone for the service instance")
@@ -72,19 +72,19 @@ public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class,
             description = "Project ID for the service instance")
     private Long projectId;
-    
+
     @Parameter(name = "leftnetworkid", type = CommandType.UUID, entityType = NetworkResponse.class,
             required = true, description = "The left (inside) network for service instance")
     private Long leftNetworkId;
-    
+
     @Parameter(name = "rightnetworkid", type = CommandType.UUID, entityType = NetworkResponse.class,
             required = true, description = "The right (outside) network ID for the service instance")
     private Long rightNetworkId;
-    
+
     @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class,
             required = true, description = "The template ID that specifies the image for the service appliance")
     private Long templateId;
-    
+
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID,
             entityType = ServiceOfferingResponse.class, required = true,
             description = "The service offering ID that defines the resources consumed by the service appliance")
@@ -92,7 +92,7 @@ public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING)
     private String name;
-    
+
     /// Implementation
     @Inject ServiceManager _vrouterService;
     @Override
@@ -103,24 +103,24 @@ public class CreateServiceInstanceCmd extends BaseAsyncCreateCmd {
             if (zone == null) {
                 throw new InvalidParameterValueException("Unable to find zone ID " + zoneId);
             }
-            
+
             Account owner = _accountService.getActiveAccountById(getEntityOwnerId());
 
             VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
             if (template == null) {
                 throw new InvalidParameterValueException("Invalid template ID " + templateId);
             }
-            
+
             ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
             if (serviceOffering == null) {
                 throw new InvalidParameterValueException("Invalid service offering ID " + serviceOfferingId);
             }
-            
+
             Network left = _networkService.getNetwork(leftNetworkId);
             if (left == null) {
                 throw new InvalidParameterValueException("Invalid ID for left network " + leftNetworkId);
             }
-            
+
             Network right = _networkService.getNetwork(rightNetworkId);
             if (right == null) {
                 throw new InvalidParameterValueException("Invalid ID for right network " + rightNetworkId);

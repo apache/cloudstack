@@ -23,16 +23,16 @@ public class VmwareMOTest {
 
     public static void main(String args[]) {
         try {
-            /*            
+            /*
                         VmwareContext context = TestVmwareContextFactory.create("10.223.80.29", "Administrator", "Suite219");
-                        
+
                         DatacenterMO dcMo = new DatacenterMO(context, "vsphere5");
                         HostMO hostMo = new HostMO(context, dcMo.findHost("10.223.80.27"));
 
                         DatastoreMO dsMo = new DatastoreMO(context, dcMo.findDatastore("Storage1"));
                         hostMo.importVmFromOVF("/tmp/ubuntu-12.04.1-desktop-i386-nest-13.02.04.ovf", "Test123", dsMo, "thin");
 
-                        
+
                         VirtualMachineMO vmMo = dcMo.findVm("i-2-3-VM");
                         Thread.sleep(10*60000);
                         vmMo.removeAllSnapshots();

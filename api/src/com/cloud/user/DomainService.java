@@ -49,7 +49,7 @@ public interface DomainService {
 
     /**
      * find the domain by its path
-     * 
+     *
      * @param domainPath
      *            the path to use to lookup a domain
      * @return domainVO the domain with the matching path, or null if no domain with the given path exists

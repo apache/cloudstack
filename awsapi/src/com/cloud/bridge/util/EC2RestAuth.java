@@ -68,7 +68,7 @@ public class EC2RestAuth {
         } catch (Exception e) {
         }
 
-        // -> the time zone is GMT if not defined    
+        // -> the time zone is GMT if not defined
         try {
             formatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
             cal.setTime(formatter.parse(created));
@@ -108,8 +108,8 @@ public class EC2RestAuth {
 
     /**
      * Assuming that a port number is to be included.
-     * 
-     * @param header - contents of the "Host:" header, skipping the 'Host:' preamble. 
+     *
+     * @param header - contents of the "Host:" header, skipping the 'Host:' preamble.
      */
     public void setHostHeader(String hostHeader) {
         if (null == hostHeader)
@@ -128,7 +128,7 @@ public class EC2RestAuth {
     /**
      * The given query string needs to be pulled apart, sorted by paramter name, and reconstructed.
      * We sort the query string values via a TreeMap.
-     * 
+     *
      * @param query - this string still has all URL encoding in place.
      */
     public void setQueryString(String query) {
@@ -177,19 +177,19 @@ public class EC2RestAuth {
     }
 
     /**
-     * The request is authenticated if we can regenerate the same signature given 
+     * The request is authenticated if we can regenerate the same signature given
      * on the request.  Before calling this function make sure to set the header values
      * defined by the public values above.
-     * 
+     *
      * @param httpVerb  - the type of HTTP request (e.g., GET, PUT)
      * @param secretKey - value obtained from the AWSAccessKeyId
      * @param signature - the signature we are trying to recreate, note can be URL-encoded
      * @param method    - { "HmacSHA1", "HmacSHA256" }
-     * 
-     * @throws SignatureException 
-     * 
+     *
+     * @throws SignatureException
+     *
      * @return true if request has been authenticated, false otherwise
-     * @throws UnsupportedEncodingException 
+     * @throws UnsupportedEncodingException
      */
     public boolean verifySignature(String httpVerb, String secretKey, String signature, String method) throws SignatureException, UnsupportedEncodingException {
 
@@ -218,12 +218,12 @@ public class EC2RestAuth {
     /**
      * This function generates the single string that will be used to sign with a users
      * secret key.
-     * 
+     *
      * StringToSign = HTTP-Verb + "\n" +
      * ValueOfHostHeaderInLowercase + "\n" +
-     * HTTPRequestURI + "\n" +  
+     * HTTPRequestURI + "\n" +
      * CanonicalizedQueryString
-     * 
+     *
      * @return The single StringToSign or null.
      */
     private String genStringToSign(String httpVerb) {
@@ -251,7 +251,7 @@ public class EC2RestAuth {
     /**
      * Create a signature by the following method:
      *     new String( Base64( SHA1 or SHA256 ( key, byte array )))
-     * 
+     *
      * @param signIt    - the data to generate a keyed HMAC over
      * @param secretKey - the user's unique key for the HMAC operation
      * @param useSHA1   - if false use SHA256

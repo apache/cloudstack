@@ -53,11 +53,11 @@ public class S3PolicyBoolCondition extends S3PolicyCondition {
         return keys.get(key);
     }
 
-    /** 
+    /**
      * Documentation on Bool conditions is nearly non-existent.   Only found that
-     * the 'SecureTransport' key is relvant and have not found any examples.   
-     * 
-     * @throws ParseException 
+     * the 'SecureTransport' key is relvant and have not found any examples.
+     *
+     * @throws ParseException
      */
     public void setKey(ConditionKeys key, String[] values) throws ParseException {
         keys.put(key, values);

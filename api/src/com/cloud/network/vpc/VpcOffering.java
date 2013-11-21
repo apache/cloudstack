@@ -28,7 +28,7 @@ public interface VpcOffering extends InternalIdentity, Identity {
     public static final String defaultVPCNSOfferingName = "Default VPC  offering with Netscaler";
 
     /**
-     * 
+     *
      * @return VPC offering name
      */
     String getName();
@@ -39,13 +39,13 @@ public interface VpcOffering extends InternalIdentity, Identity {
     String getDisplayText();
 
     /**
-     * 
+     *
      * @return VPC offering state
      */
     State getState();
 
     /**
-     * 
+     *
      * @return true if offering is default - came with the cloudStack fresh install; false otherwise
      */
     boolean isDefault();

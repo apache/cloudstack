@@ -227,10 +227,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
      * Auto generated method signature
-     * 
+     *
      * @see com.amazon.s3.client.AmazonS3#getBucketLoggingStatus
      * @param getBucketLoggingStatus0
-    
+
      */
 
     public com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatusResponse getBucketLoggingStatus(
@@ -326,10 +326,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
     * Auto generated method signature for Asynchronous Invocations
-    * 
+    *
     * @see com.amazon.s3.client.AmazonS3#startgetBucketLoggingStatus
         * @param getBucketLoggingStatus0
-    
+
     */
     public void startgetBucketLoggingStatus(
 
@@ -455,10 +455,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
      * Auto generated method signature
-     * 
+     *
      * @see com.amazon.s3.client.AmazonS3#copyObject
      * @param copyObject2
-    
+
      */
 
     public com.amazon.s3.client.AmazonS3Stub.CopyObjectResponse copyObject(
@@ -553,10 +553,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
     * Auto generated method signature for Asynchronous Invocations
-    * 
+    *
     * @see com.amazon.s3.client.AmazonS3#startcopyObject
         * @param copyObject2
-    
+
     */
     public void startcopyObject(
 
@@ -682,10 +682,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
      * Auto generated method signature
-     * 
+     *
      * @see com.amazon.s3.client.AmazonS3#getBucketAccessControlPolicy
      * @param getBucketAccessControlPolicy4
-    
+
      */
 
     public com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicyResponse getBucketAccessControlPolicy(
@@ -781,10 +781,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
     * Auto generated method signature for Asynchronous Invocations
-    * 
+    *
     * @see com.amazon.s3.client.AmazonS3#startgetBucketAccessControlPolicy
         * @param getBucketAccessControlPolicy4
-    
+
     */
     public void startgetBucketAccessControlPolicy(
 
@@ -910,10 +910,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
      * Auto generated method signature
-     * 
+     *
      * @see com.amazon.s3.client.AmazonS3#listBucket
      * @param listBucket6
-    
+
      */
 
     public com.amazon.s3.client.AmazonS3Stub.ListBucketResponse listBucket(
@@ -1008,10 +1008,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
     * Auto generated method signature for Asynchronous Invocations
-    * 
+    *
     * @see com.amazon.s3.client.AmazonS3#startlistBucket
         * @param listBucket6
-    
+
     */
     public void startlistBucket(
 
@@ -1137,10 +1137,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
      * Auto generated method signature
-     * 
+     *
      * @see com.amazon.s3.client.AmazonS3#putObject
      * @param putObject8
-    
+
      */
 
     public com.amazon.s3.client.AmazonS3Stub.PutObjectResponse putObject(
@@ -1235,10 +1235,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
     * Auto generated method signature for Asynchronous Invocations
-    * 
+    *
     * @see com.amazon.s3.client.AmazonS3#startputObject
         * @param putObject8
-    
+
     */
     public void startputObject(
 
@@ -1364,10 +1364,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
      * Auto generated method signature
-     * 
+     *
      * @see com.amazon.s3.client.AmazonS3#createBucket
      * @param createBucket10
-    
+
      */
 
     public com.amazon.s3.client.AmazonS3Stub.CreateBucketResponse createBucket(
@@ -1463,10 +1463,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
     * Auto generated method signature for Asynchronous Invocations
-    * 
+    *
     * @see com.amazon.s3.client.AmazonS3#startcreateBucket
         * @param createBucket10
-    
+
     */
     public void startcreateBucket(
 
@@ -1592,10 +1592,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
      * Auto generated method signature
-     * 
+     *
      * @see com.amazon.s3.client.AmazonS3#listAllMyBuckets
      * @param listAllMyBuckets12
-    
+
      */
 
     public com.amazon.s3.client.AmazonS3Stub.ListAllMyBucketsResponse listAllMyBuckets(
@@ -1691,10 +1691,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
     * Auto generated method signature for Asynchronous Invocations
-    * 
+    *
     * @see com.amazon.s3.client.AmazonS3#startlistAllMyBuckets
         * @param listAllMyBuckets12
-    
+
     */
     public void startlistAllMyBuckets(
 
@@ -1820,10 +1820,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
      * Auto generated method signature
-     * 
+     *
      * @see com.amazon.s3.client.AmazonS3#getObject
      * @param getObject14
-    
+
      */
 
     public com.amazon.s3.client.AmazonS3Stub.GetObjectResponse getObject(
@@ -1918,10 +1918,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
     * Auto generated method signature for Asynchronous Invocations
-    * 
+    *
     * @see com.amazon.s3.client.AmazonS3#startgetObject
         * @param getObject14
-    
+
     */
     public void startgetObject(
 
@@ -2047,10 +2047,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
      * Auto generated method signature
-     * 
+     *
      * @see com.amazon.s3.client.AmazonS3#deleteBucket
      * @param deleteBucket16
-    
+
      */
 
     public com.amazon.s3.client.AmazonS3Stub.DeleteBucketResponse deleteBucket(
@@ -2146,10 +2146,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
     * Auto generated method signature for Asynchronous Invocations
-    * 
+    *
     * @see com.amazon.s3.client.AmazonS3#startdeleteBucket
         * @param deleteBucket16
-    
+
     */
     public void startdeleteBucket(
 
@@ -2275,10 +2275,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
      * Auto generated method signature
-     * 
+     *
      * @see com.amazon.s3.client.AmazonS3#setBucketLoggingStatus
      * @param setBucketLoggingStatus18
-    
+
      */
 
     public com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatusResponse setBucketLoggingStatus(
@@ -2374,10 +2374,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
     * Auto generated method signature for Asynchronous Invocations
-    * 
+    *
     * @see com.amazon.s3.client.AmazonS3#startsetBucketLoggingStatus
         * @param setBucketLoggingStatus18
-    
+
     */
     public void startsetBucketLoggingStatus(
 
@@ -2503,10 +2503,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
      * Auto generated method signature
-     * 
+     *
      * @see com.amazon.s3.client.AmazonS3#getObjectAccessControlPolicy
      * @param getObjectAccessControlPolicy20
-    
+
      */
 
     public com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicyResponse getObjectAccessControlPolicy(
@@ -2602,10 +2602,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
     * Auto generated method signature for Asynchronous Invocations
-    * 
+    *
     * @see com.amazon.s3.client.AmazonS3#startgetObjectAccessControlPolicy
         * @param getObjectAccessControlPolicy20
-    
+
     */
     public void startgetObjectAccessControlPolicy(
 
@@ -2731,10 +2731,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
      * Auto generated method signature
-     * 
+     *
      * @see com.amazon.s3.client.AmazonS3#deleteObject
      * @param deleteObject22
-    
+
      */
 
     public com.amazon.s3.client.AmazonS3Stub.DeleteObjectResponse deleteObject(
@@ -2830,10 +2830,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
     * Auto generated method signature for Asynchronous Invocations
-    * 
+    *
     * @see com.amazon.s3.client.AmazonS3#startdeleteObject
         * @param deleteObject22
-    
+
     */
     public void startdeleteObject(
 
@@ -2959,10 +2959,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
      * Auto generated method signature
-     * 
+     *
      * @see com.amazon.s3.client.AmazonS3#setBucketAccessControlPolicy
      * @param setBucketAccessControlPolicy24
-    
+
      */
 
     public com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicyResponse setBucketAccessControlPolicy(
@@ -3058,10 +3058,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
     * Auto generated method signature for Asynchronous Invocations
-    * 
+    *
     * @see com.amazon.s3.client.AmazonS3#startsetBucketAccessControlPolicy
         * @param setBucketAccessControlPolicy24
-    
+
     */
     public void startsetBucketAccessControlPolicy(
 
@@ -3187,10 +3187,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
      * Auto generated method signature
-     * 
+     *
      * @see com.amazon.s3.client.AmazonS3#setObjectAccessControlPolicy
      * @param setObjectAccessControlPolicy26
-    
+
      */
 
     public com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicyResponse setObjectAccessControlPolicy(
@@ -3286,10 +3286,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
     * Auto generated method signature for Asynchronous Invocations
-    * 
+    *
     * @see com.amazon.s3.client.AmazonS3#startsetObjectAccessControlPolicy
         * @param setObjectAccessControlPolicy26
-    
+
     */
     public void startsetObjectAccessControlPolicy(
 
@@ -3415,10 +3415,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
      * Auto generated method signature
-     * 
+     *
      * @see com.amazon.s3.client.AmazonS3#putObjectInline
      * @param putObjectInline28
-    
+
      */
 
     public com.amazon.s3.client.AmazonS3Stub.PutObjectInlineResponse putObjectInline(
@@ -3514,10 +3514,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
     * Auto generated method signature for Asynchronous Invocations
-    * 
+    *
     * @see com.amazon.s3.client.AmazonS3#startputObjectInline
         * @param putObjectInline28
-    
+
     */
     public void startputObjectInline(
 
@@ -3643,10 +3643,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
      * Auto generated method signature
-     * 
+     *
      * @see com.amazon.s3.client.AmazonS3#getObjectExtended
      * @param getObjectExtended30
-    
+
      */
 
     public com.amazon.s3.client.AmazonS3Stub.GetObjectExtendedResponse getObjectExtended(
@@ -3742,10 +3742,10 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     /**
     * Auto generated method signature for Asynchronous Invocations
-    * 
+    *
     * @see com.amazon.s3.client.AmazonS3#startgetObjectExtended
         * @param getObjectExtended30
-    
+
     */
     public void startgetObjectExtended(
 

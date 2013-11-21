@@ -48,7 +48,7 @@ public class CloudStackExtractTemplate {
     String zoneName;
 
     /**
-     * 
+     *
      */
     public CloudStackExtractTemplate() {
         // TODO Auto-generated constructor stub

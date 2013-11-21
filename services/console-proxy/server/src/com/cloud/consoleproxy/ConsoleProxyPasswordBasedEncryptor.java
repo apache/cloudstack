@@ -35,11 +35,11 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 /**
- * 
+ *
  * @author Kelven Yang
  * A simple password based encyrptor based on AES/CBC. It can serialize simple POJO object into URL safe string
  * and deserialize it back.
- * 
+ *
  */
 public class ConsoleProxyPasswordBasedEncryptor {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyPasswordBasedEncryptor.class);
@@ -176,7 +176,7 @@ public class ConsoleProxyPasswordBasedEncryptor {
             random.nextBytes(ivBytes);
 
             KeyIVPair keyIvPair = new KeyIVPair("8x/xUBgX0Up+3UEo39dSeG277JhVj31+ElHkN5+EC0Q=", "Y2SUiIN6JXTdKNK/ZMDyVtLB7gAM9MCCiyrP1xd3bSQ=");
-            //keyIvPair.setKeyBytes(keyBytes);    
+            //keyIvPair.setKeyBytes(keyBytes);
             //keyIvPair.setIvBytes(ivBytes);
 
             Gson gson = new GsonBuilder().create();

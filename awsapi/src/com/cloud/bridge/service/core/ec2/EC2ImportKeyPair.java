@@ -23,7 +23,7 @@ public class EC2ImportKeyPair {
     private String publicKeyMaterial;
 
     /**
-     * 
+     *
      */
     public EC2ImportKeyPair() {
         // TODO Auto-generated constructor stub

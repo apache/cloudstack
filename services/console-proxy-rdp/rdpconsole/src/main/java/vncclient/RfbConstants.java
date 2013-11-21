@@ -77,7 +77,7 @@ public interface RfbConstants {
    * Default 8 bit charset to use when communicating with server.
    */
   public static final Charset US_ASCII_CHARSET = Charset.availableCharsets().get("US-ASCII");
-  
+
   /**
    * Default 16 bit charset to use when communicating with server.
    */

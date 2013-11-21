@@ -52,11 +52,11 @@ public interface HostAllocator extends Adapter {
     /**
      * Determines which physical hosts are suitable to allocate the guest
      * virtual machines on
-     * 
+     *
      * Allocators must set any other hosts not considered for allocation in the
      * ExcludeList avoid. Thus the avoid set and the list of hosts suitable,
      * together must cover the entire host set in the cluster.
-     * 
+     *
      * @param VirtualMachineProfile
      *            vmProfile
      * @param DeploymentPlan
@@ -81,8 +81,8 @@ public interface HostAllocator extends Adapter {
      * Allocators must set any other hosts not considered for allocation in the
      * ExcludeList avoid. Thus the avoid set and the list of hosts suitable,
      * together must cover the entire host set in the cluster.
-     * 
-     * 
+     *
+     *
      * @param VirtualMachineProfile
      *            vmProfile
      * @param DeploymentPlan

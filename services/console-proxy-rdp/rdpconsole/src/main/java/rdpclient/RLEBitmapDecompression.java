@@ -58,7 +58,7 @@ public class RLEBitmapDecompression {
 
   /**
    * Writes a pixel to the specified buffer and advance cursor by bpp.
-   * 
+   *
    * @param bpp
    *          bytes per pixel
    */
@@ -85,7 +85,7 @@ public class RLEBitmapDecompression {
   /**
    * Reads a pixel from the specified buffer at given offset without changing of
    * cursor.
-   * 
+   *
    * @param bpp
    *          bytes per pixel
    * @param offset
@@ -123,7 +123,7 @@ public class RLEBitmapDecompression {
 
   /**
    * Reads a pixel from the specified buffer and advance cursor by bpp value.
-   * 
+   *
    * @param bpp
    *          bytes per pixel
    */
@@ -315,7 +315,7 @@ public class RLEBitmapDecompression {
 
   /**
    * Decompress a RLE compressed bitmap and flip decompressed image.
-   * 
+   *
    * @param srcBuf
    *          source buffer containing compressed bitmap
    * @param imageWidth
@@ -339,7 +339,7 @@ public class RLEBitmapDecompression {
 
   /**
    * Decompress a RLE compressed bitmap.
-   * 
+   *
    * @param srcBuf
    *          source buffer containing compressed bitmap
    * @param destBuf

@@ -25,7 +25,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 /**
- * 
+ *
  * ConsoleProxyClientStatsCollector collects client stats for console proxy agent to report
  */
 public class ConsoleProxyClientStatsCollector {

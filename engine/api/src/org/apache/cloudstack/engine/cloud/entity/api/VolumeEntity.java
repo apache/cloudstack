@@ -32,15 +32,15 @@ public interface VolumeEntity extends CloudStackEntity {
 
     /**
      * Make a reservation to do storage migration
-     * 
-     * @param expirationTime time in seconds the reservation is cancelled 
+     *
+     * @param expirationTime time in seconds the reservation is cancelled
      * @return reservation token
      */
     String reserveForMigration(long expirationTime);
 
     /**
      * Migrate using a reservation.
-     * @param reservationToken reservation token 
+     * @param reservationToken reservation token
      */
     void migrate(String reservationToken);
 

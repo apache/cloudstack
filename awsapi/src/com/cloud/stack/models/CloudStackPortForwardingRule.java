@@ -48,7 +48,7 @@ public class CloudStackPortForwardingRule {
     private String virtualMachineName;
 
     /**
-     * 
+     *
      */
     public CloudStackPortForwardingRule() {
         // TODO Auto-generated constructor stub

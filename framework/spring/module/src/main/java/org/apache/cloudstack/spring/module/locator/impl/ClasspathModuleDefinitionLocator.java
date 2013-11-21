@@ -32,31 +32,31 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.ResourcePatternResolver;
 
 public class ClasspathModuleDefinitionLocator implements ModuleDefinitionLocator {
-    
+
     protected ResourcePatternResolver getResolver() {
         return new PathMatchingResourcePatternResolver();
     }
-    
+
     public Collection<ModuleDefinition> locateModules(String context) throws IOException {
         ResourcePatternResolver resolver = getResolver();
-        
+
         Map<String, ModuleDefinition> allModules = discoverModules(context, resolver);
-        
+
         return allModules.values();
     }
-    
+
     protected Map<String, ModuleDefinition> discoverModules(String baseDir, ResourcePatternResolver resolver) throws IOException {
         Map<String, ModuleDefinition> result = new HashMap<String, ModuleDefinition>();
-        
+
         for ( Resource r : resolver.getResources(ModuleLocationUtils.getModulesLocation(baseDir)) ) {
             DefaultModuleDefinition def = new DefaultModuleDefinition(baseDir, r, resolver);
             def.init();
-            
+
             if ( def.isValid() )
                 result.put(def.getName(), def);
         }
-        
+
         return result;
     }
-    
+
 }

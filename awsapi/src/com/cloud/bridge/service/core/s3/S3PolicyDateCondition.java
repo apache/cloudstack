@@ -57,9 +57,9 @@ public class S3PolicyDateCondition extends S3PolicyCondition {
         return keys.get(key);
     }
 
-    /** 
+    /**
      * Convert the key's values into the type depending on the what the condition expects.
-     * @throws ParseException 
+     * @throws ParseException
      */
     public void setKey(ConditionKeys key, String[] values) throws ParseException {
         Calendar[] dates = new Calendar[values.length];
@@ -82,7 +82,7 @@ public class S3PolicyDateCondition extends S3PolicyCondition {
      * Evaluation logic is as follows:
      * 1) An 'AND' operation is used over all defined keys
      * 2) An 'OR'  operation is used over all key values
-     * 
+     *
      * Each condition has one or more keys, and each keys have one or more values to test.
      */
     public boolean isTrue(S3PolicyContext context, String SID) {

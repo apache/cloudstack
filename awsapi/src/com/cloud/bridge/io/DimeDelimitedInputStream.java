@@ -54,15 +54,15 @@ import org.apache.log4j.Logger;
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 </pre>
  * This implementation of input stream does not support marking operations.
- * 
+ *
  * Incoming data is DIME encoded when its MIME type is "application/dime".
  * Then use this class to pull out 2 streams:
- * (1) The first stream is the SOAP request, 
+ * (1) The first stream is the SOAP request,
  * (2) The second stream is a chunked attachment (e.g., a file to store)
  *
  * The DIME format is defined at this reference:
  * http://msdn.microsoft.com/en-us/library/aa480488.aspx
- * 
+ *
  * @author Rick Rineholt
  */
 public class DimeDelimitedInputStream extends FilterInputStream {
@@ -94,7 +94,7 @@ public class DimeDelimitedInputStream extends FilterInputStream {
 
     /**
      * There can be multiple streams in a DIME encoding.   For example, the first
-     * stream can be a SOAP message, and the second stream a binary attachment (e.g., 
+     * stream can be a SOAP message, and the second stream a binary attachment (e.g.,
      * a file).   During reading after an EOF is returned, this function should be
      * called to see if there is another stream following the last.
      *
@@ -231,7 +231,7 @@ public class DimeDelimitedInputStream extends FilterInputStream {
         if (0 == len)
             return 0; //quick.
 
-        // odd case no data to read -- give back 0 next time -1; 
+        // odd case no data to read -- give back 0 next time -1;
         if (recordLength == 0 && bytesRead == 0 && !moreChunks) {
             ++bytesRead;
             if (ME)
@@ -302,7 +302,7 @@ public class DimeDelimitedInputStream extends FilterInputStream {
     /**
      * The DIME header is read into local class data fields and are not
      * passed as part of the stream data.
-     * 
+     *
      * @param isChunk
      * @throws IOException
      */
@@ -430,7 +430,7 @@ public class DimeDelimitedInputStream extends FilterInputStream {
 
     /**
      * Read from the delimited stream.
-     * 
+     *
      * @param b is the array to read into. Read as much as possible
      *   into the size of this array.
      * @return the number of bytes read. -1 if endof stream
@@ -487,7 +487,7 @@ public class DimeDelimitedInputStream extends FilterInputStream {
     /**
      * Skip n bytes of data in the DIME stream, while reading and processing
      * any headers in the current stream.
-     * 
+     *
      * @param n - number of data bytes to skip
      * @return number of bytes actually skipped
      * @throws IOException

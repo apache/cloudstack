@@ -615,7 +615,7 @@ public class SqlGenerator {
 
     /**
      * buildDiscriminatorClause builds the join clause when there are multiple tables.
-     * 
+     *
      * @return
      */
     public Pair<StringBuilder, Map<String, Object>> buildDiscriminatorClause() {

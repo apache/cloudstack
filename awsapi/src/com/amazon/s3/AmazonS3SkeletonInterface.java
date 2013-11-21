@@ -32,7 +32,7 @@ public interface AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param getBucketLoggingStatus
      */
 
@@ -40,16 +40,16 @@ public interface AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param copyObject
-     * @throws AxisFault 
+     * @throws AxisFault
      */
 
     public com.amazon.s3.CopyObjectResponse copyObject(com.amazon.s3.CopyObject copyObject) throws AxisFault;
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param getBucketAccessControlPolicy
      */
 
@@ -57,7 +57,7 @@ public interface AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param listBucket
      */
 
@@ -65,7 +65,7 @@ public interface AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param putObject
      */
 
@@ -73,7 +73,7 @@ public interface AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createBucket
      */
 
@@ -81,7 +81,7 @@ public interface AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param listAllMyBuckets
      */
 
@@ -89,7 +89,7 @@ public interface AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param getObject
      */
 
@@ -97,7 +97,7 @@ public interface AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteBucket
      */
 
@@ -105,7 +105,7 @@ public interface AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param setBucketLoggingStatus
      */
 
@@ -113,7 +113,7 @@ public interface AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param getObjectAccessControlPolicy
      */
 
@@ -121,7 +121,7 @@ public interface AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteObject
      */
 
@@ -129,7 +129,7 @@ public interface AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param setBucketAccessControlPolicy
      */
 
@@ -137,7 +137,7 @@ public interface AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param setObjectAccessControlPolicy
      */
 
@@ -145,7 +145,7 @@ public interface AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param putObjectInline
      */
 
@@ -153,7 +153,7 @@ public interface AmazonS3SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param getObjectExtended
      */
 

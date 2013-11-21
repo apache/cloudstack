@@ -91,7 +91,7 @@ public class Link {
 
     /**
      * No user, so comment it out.
-     * 
+     *
      * Static methods for reading from a channel in case
      * you need to add a client that doesn't require nio.
      * @param ch channel to read from.
@@ -190,7 +190,7 @@ public class Link {
      * write method to write to a socket.  This method writes to completion so
      * it doesn't follow the nio standard.  We use this to make sure we write
      * our own protocol.
-     * 
+     *
      * @param ch channel to write to.
      * @param buffers buffers to write.
      * @throws IOException if unable to write to completion.

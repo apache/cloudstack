@@ -173,7 +173,7 @@ public class ManagementServerMock {
 
         List<NetworkVO> nets = _networksDao.listByZoneAndTrafficType(_zone.getId(), TrafficType.Public);
         if (nets != null && !nets.isEmpty()) {
-            NetworkVO public_net = nets.get(0); 
+            NetworkVO public_net = nets.get(0);
             public_net_id = public_net.getId();
         } else {
             s_logger.debug("no public network found in the zone: " + _zone.getId());
@@ -271,7 +271,7 @@ public class ManagementServerMock {
         } catch (OperationTimedoutException e) {
             e.printStackTrace();
         }
-        
+
         _userVmDao.remove(vm.getId());
     }
 
@@ -290,7 +290,7 @@ public class ManagementServerMock {
             if (tmpl.getHypervisorType() == HypervisorType.XenServer) {
                 return tmpl;
             }
-        }    
+        }
         return null;
     }
 
@@ -361,7 +361,7 @@ public class ManagementServerMock {
             PhysicalNetworkServiceProvider provider = providers.first().get(0);
             if (provider.getState() != PhysicalNetworkServiceProvider.State.Enabled) {
                 _networkService.updateNetworkServiceProvider(provider.getId(),
-                        PhysicalNetworkServiceProvider.State.Enabled.toString(), null); 
+                        PhysicalNetworkServiceProvider.State.Enabled.toString(), null);
             }
         }
 

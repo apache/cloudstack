@@ -117,14 +117,14 @@ public class ServiceProvider extends ManagerBase {
     }
 
     public long getManagementHostId() {
-        // we want to limit mhost within its own session, id of the value will be returned 
+        // we want to limit mhost within its own session, id of the value will be returned
         long mhostId = 0;
         if (mhost != null)
             mhostId = mhost.getId() != null ? mhost.getId().longValue() : 0L;
         return mhostId;
     }
 
-    /** 
+    /**
      * We return a 2-tuple to distinguish between two cases:
      * (1) there is no entry in the map for bucketName, and (2) there is a null entry
      * in the map for bucketName.   In case 2, the database was inspected for the
@@ -145,7 +145,7 @@ public class ServiceProvider extends ManagerBase {
     /**
      * The policy parameter can be set to null, which means that there is no policy
      * for the bucket so a database lookup is not necessary.
-     * 
+     *
      * @param bucketName
      * @param policy
      */

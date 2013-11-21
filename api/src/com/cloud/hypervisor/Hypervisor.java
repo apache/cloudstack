@@ -68,7 +68,7 @@ public class Hypervisor {
 
         /**
          * This method really needs to be part of the properties of the hypervisor type itself.
-         * 
+         *
          * @param hyperType
          * @return
          */

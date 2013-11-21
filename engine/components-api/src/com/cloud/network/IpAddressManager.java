@@ -45,7 +45,7 @@ public interface IpAddressManager {
 
     /**
      * Assigns a new public ip address.
-     * 
+     *
      * @param dcId
      * @param podId
      *            TODO
@@ -64,7 +64,7 @@ public interface IpAddressManager {
 
     /**
      * Do all of the work of releasing public ip addresses. Note that if this method fails, there can be side effects.
-     * 
+     *
      * @param userId
      * @param caller
      *            TODO

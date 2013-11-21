@@ -26,7 +26,7 @@ public class ServerTpkt extends BaseElement {
    * TPKT protocol version (first byte).
    */
   public static final int PROTOCOL_TPKT = 3;
-  
+
   public ServerTpkt(String id) {
     super(id);
   }
@@ -59,7 +59,7 @@ public class ServerTpkt extends BaseElement {
     // Extract payload
     ByteBuffer outBuf = buf.slice(buf.cursor, payloadLength, true);
     buf.unref();
-    
+
     if(verbose) {
       outBuf.putMetadata("source", this);
     }

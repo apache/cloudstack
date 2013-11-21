@@ -706,9 +706,9 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface {
 
     /**
      * Processes ec2-register
-     * 
+     *
      * @param
-     * 
+     *
      * @see <a href="http://docs.amazonwebservices.com/AWSEC2/2010-11-15/APIReference/index.html?ApiReference-query-RegisterImage.html">RegisterImage</a>
      */
     public RegisterImageResponse registerImage(RegisterImage registerImage) {
@@ -726,9 +726,9 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface {
 
     /**
      * Processes ec2-reset-image-attribute
-     * 
+     *
      * @param resetImageAttribute
-     * 
+     *
      * @see <a href="http://docs.amazonwebservices.com/AWSEC2/2010-11-15/APIReference/index.html?ApiReference-query-ResetInstanceAttribute.html">ResetInstanceAttribute</a>
      */
 
@@ -749,9 +749,9 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface {
 
     /**
      *  ec2-run-instances
-     *    
+     *
      * @param runInstances
-     * 
+     *
      * @see <a href="http://docs.amazonwebservices.com/AWSEC2/2010-11-15/APIReference/index.html?ApiReference-query-RunInstances.html">RunInstances</a>
      */
     public RunInstancesResponse runInstances(RunInstances runInstances) {
@@ -885,7 +885,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface {
 
     /**
      * @param modifyInstanceAttribute
-     * @return    
+     * @return
      */
     public static ModifyInstanceAttributeResponse toModifyInstanceAttributeResponse(Boolean status) {
         ModifyInstanceAttributeResponse miat = new ModifyInstanceAttributeResponse();
@@ -1196,7 +1196,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface {
         return request;
     }
 
-    // TODO make these filter set functions use generics 
+    // TODO make these filter set functions use generics
     private EC2GroupFilterSet toGroupFilterSet(FilterSetType fst) {
         EC2GroupFilterSet gfs = new EC2GroupFilterSet();
 
@@ -1580,9 +1580,9 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface {
     /**
      * Map our cloud state values into what Amazon defines.
      * Where are the values that can be returned by our cloud api defined?
-     * 
+     *
      * @param cloudState
-     * @return 
+     * @return
      */
     public static int toAmazonCode(String cloudState) {
         if (null == cloudState)
@@ -1890,7 +1890,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface {
         DetachVolumeResponse response = new DetachVolumeResponse();
         DetachVolumeResponseType param1 = new DetachVolumeResponseType();
         Calendar cal = Calendar.getInstance();
-        cal.set(1970, 1, 1);   // return one value, Unix Epoch, what else can we return? 
+        cal.set(1970, 1, 1);   // return one value, Unix Epoch, what else can we return?
 
         param1.setVolumeId(engineResponse.getId().toString());
         param1.setInstanceId((null == engineResponse.getInstanceId() ? "" : engineResponse.getInstanceId().toString()));
@@ -1918,7 +1918,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface {
         if (null != engineResponse.getState())
             param1.setStatus(engineResponse.getState());
         else
-            param1.setStatus("");  // ToDo - throw an Soap Fault 
+            param1.setStatus("");  // ToDo - throw an Soap Fault
 
         // -> CloudStack seems to have issues with timestamp formats so just in case
         Calendar cal = EC2RestAuth.parseDateString(engineResponse.getCreated());

@@ -29,12 +29,12 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 
 /**
- * JsonAccessor provides the functionality to allow navigating JSON object graph using simple expressions, 
+ * JsonAccessor provides the functionality to allow navigating JSON object graph using simple expressions,
  * for example, following property access expressions are all valid ones
- * 
+ *
  *         rootobj.level1obj[1].property
  *         this[0].level1obj[1].property
- * 
+ *
  */
 public class JsonAccessor {
     private JsonElement _json;

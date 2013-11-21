@@ -30,7 +30,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describePlacementGroups
      */
 
@@ -38,7 +38,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createSecurityGroup
      */
 
@@ -46,7 +46,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param resetNetworkInterfaceAttribute
      */
 
@@ -54,7 +54,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createDhcpOptions
      */
 
@@ -62,7 +62,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createRouteTable
      */
 
@@ -70,7 +70,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeSubnets
      */
 
@@ -78,7 +78,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deactivateLicense
      */
 
@@ -86,7 +86,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteVpc
      */
 
@@ -94,7 +94,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param cancelSpotInstanceRequests
      */
 
@@ -102,7 +102,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createSubnet
      */
 
@@ -110,7 +110,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteVpnGateway
      */
 
@@ -118,7 +118,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createNetworkAclEntry
      */
 
@@ -126,7 +126,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param requestSpotInstances
      */
 
@@ -134,7 +134,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeVolumeAttribute
      */
 
@@ -142,7 +142,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param associateDhcpOptions
      */
 
@@ -150,7 +150,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeTags
      */
 
@@ -158,7 +158,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param importKeyPair
      */
 
@@ -166,7 +166,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteNetworkInterface
      */
 
@@ -174,7 +174,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeVpcs
      */
 
@@ -182,7 +182,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeLicenses
      */
 
@@ -190,7 +190,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param bundleInstance
      */
 
@@ -198,7 +198,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeVpnConnections
      */
 
@@ -206,7 +206,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeImages
      */
 
@@ -214,7 +214,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createInternetGateway
      */
 
@@ -222,7 +222,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param disassociateRouteTable
      */
 
@@ -230,7 +230,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param replaceNetworkAclEntry
      */
 
@@ -238,7 +238,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param authorizeSecurityGroupIngress
      */
 
@@ -246,7 +246,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeSnapshotAttribute
      */
 
@@ -254,7 +254,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createVpnGateway
      */
 
@@ -262,7 +262,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param resetInstanceAttribute
      */
 
@@ -270,7 +270,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createTags
      */
 
@@ -278,7 +278,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param authorizeSecurityGroupEgress
      */
 
@@ -286,7 +286,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param associateAddress
      */
 
@@ -294,7 +294,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeImageAttribute
      */
 
@@ -302,7 +302,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeSpotPriceHistory
      */
 
@@ -310,7 +310,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param modifySnapshotAttribute
      */
 
@@ -318,7 +318,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeSpotInstanceRequests
      */
 
@@ -326,7 +326,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param importInstance
      */
 
@@ -334,7 +334,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeKeyPairs
      */
 
@@ -342,7 +342,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param revokeSecurityGroupIngress
      */
 
@@ -350,7 +350,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createPlacementGroup
      */
 
@@ -358,7 +358,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteNetworkAclEntry
      */
 
@@ -366,7 +366,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param activateLicense
      */
 
@@ -374,7 +374,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteRouteTable
      */
 
@@ -382,7 +382,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param unmonitorInstances
      */
 
@@ -390,7 +390,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param startInstances
      */
 
@@ -398,7 +398,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param confirmProductInstance
      */
 
@@ -406,7 +406,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeNetworkInterfaceAttribute
      */
 
@@ -415,7 +415,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param runInstances
      */
 
@@ -423,7 +423,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createReservedInstancesListing
      */
 
@@ -431,7 +431,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createCustomerGateway
      */
 
@@ -439,7 +439,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createNetworkAcl
      */
 
@@ -447,7 +447,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param resetImageAttribute
      */
 
@@ -455,7 +455,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param modifyVolumeAttribute
      */
 
@@ -463,7 +463,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeReservedInstances
      */
 
@@ -471,7 +471,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param resetSnapshotAttribute
      */
 
@@ -479,7 +479,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteVolume
      */
 
@@ -487,7 +487,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeAvailabilityZones
      */
 
@@ -495,7 +495,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createVpnConnection
      */
 
@@ -503,7 +503,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param cancelBundleTask
      */
 
@@ -511,7 +511,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param replaceNetworkAclAssociation
      */
 
@@ -519,7 +519,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param detachVpnGateway
      */
 
@@ -527,7 +527,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeSnapshots
      */
 
@@ -535,7 +535,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteSubnet
      */
 
@@ -543,7 +543,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeBundleTasks
      */
 
@@ -551,7 +551,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createKeyPair
      */
 
@@ -559,7 +559,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createImage
      */
 
@@ -567,7 +567,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param enableVgwRoutePropagation
      */
 
@@ -575,7 +575,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param unassignPrivateIpAddresses
      */
 
@@ -583,7 +583,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deregisterImage
      */
 
@@ -591,7 +591,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteVpnConnectionRoute
      */
 
@@ -599,7 +599,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param modifyImageAttribute
      */
 
@@ -607,7 +607,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param cancelConversionTask
      */
 
@@ -615,7 +615,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeVolumes
      */
 
@@ -623,7 +623,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param cancelReservedInstancesListing
      */
 
@@ -631,7 +631,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param getPasswordData
      */
 
@@ -639,7 +639,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param allocateAddress
      */
 
@@ -647,7 +647,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteSecurityGroup
      */
 
@@ -655,7 +655,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deletePlacementGroup
      */
 
@@ -663,7 +663,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param disassociateAddress
      */
 
@@ -671,7 +671,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteDhcpOptions
      */
 
@@ -679,7 +679,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeSpotDatafeedSubscription
      */
 
@@ -688,7 +688,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeNetworkAcls
      */
 
@@ -696,7 +696,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param enableVolumeIO
      */
 
@@ -704,7 +704,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param attachVpnGateway
      */
 
@@ -712,7 +712,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeInternetGateways
      */
 
@@ -720,7 +720,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeDhcpOptions
      */
 
@@ -728,7 +728,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createSpotDatafeedSubscription
      */
 
@@ -736,7 +736,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeReservedInstancesListings
      */
 
@@ -745,7 +745,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeInstanceStatus
      */
 
@@ -753,7 +753,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param modifyNetworkInterfaceAttribute
      */
 
@@ -761,7 +761,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param disableVgwRoutePropagation
      */
 
@@ -769,7 +769,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeVolumeStatus
      */
 
@@ -777,7 +777,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param detachNetworkInterface
      */
 
@@ -785,7 +785,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeSecurityGroups
      */
 
@@ -793,7 +793,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeInstances
      */
 
@@ -801,7 +801,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeNetworkInterfaces
      */
 
@@ -809,7 +809,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteKeyPair
      */
 
@@ -817,7 +817,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createSnapshot
      */
 
@@ -825,7 +825,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeVpnGateways
      */
 
@@ -833,7 +833,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteTags
      */
 
@@ -841,7 +841,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteSnapshot
      */
 
@@ -849,7 +849,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteCustomerGateway
      */
 
@@ -857,7 +857,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createVolume
      */
 
@@ -865,7 +865,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param cancelExportTask
      */
 
@@ -873,7 +873,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param registerImage
      */
 
@@ -881,7 +881,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param detachVolume
      */
 
@@ -889,7 +889,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param stopInstances
      */
 
@@ -897,7 +897,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createRoute
      */
 
@@ -905,7 +905,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param releaseAddress
      */
 
@@ -913,7 +913,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeRouteTables
      */
 
@@ -921,7 +921,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeCustomerGateways
      */
 
@@ -929,7 +929,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteNetworkAcl
      */
 
@@ -937,7 +937,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteRoute
      */
 
@@ -945,7 +945,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param rebootInstances
      */
 
@@ -953,7 +953,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param modifyInstanceAttribute
      */
 
@@ -961,7 +961,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param terminateInstances
      */
 
@@ -969,7 +969,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createVpnConnectionRoute
      */
 
@@ -977,7 +977,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeConversionTasks
      */
 
@@ -985,7 +985,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeAddresses
      */
 
@@ -993,7 +993,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeInstanceAttribute
      */
 
@@ -1001,7 +1001,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param attachInternetGateway
      */
 
@@ -1009,7 +1009,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createVpc
      */
 
@@ -1017,7 +1017,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param replaceRouteTableAssociation
      */
 
@@ -1025,7 +1025,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param associateRouteTable
      */
 
@@ -1033,7 +1033,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param detachInternetGateway
      */
 
@@ -1041,7 +1041,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param purchaseReservedInstancesOffering
      */
 
@@ -1050,7 +1050,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param importVolume
      */
 
@@ -1058,7 +1058,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeExportTasks
      */
 
@@ -1066,7 +1066,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createInstanceExportTask
      */
 
@@ -1074,7 +1074,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param assignPrivateIpAddresses
      */
 
@@ -1082,7 +1082,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param reportInstanceStatus
      */
 
@@ -1090,7 +1090,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeReservedInstancesOfferings
      */
 
@@ -1099,7 +1099,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteVpnConnection
      */
 
@@ -1107,7 +1107,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteInternetGateway
      */
 
@@ -1115,7 +1115,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param deleteSpotDatafeedSubscription
      */
 
@@ -1123,7 +1123,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param attachNetworkInterface
      */
 
@@ -1131,7 +1131,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param createNetworkInterface
      */
 
@@ -1139,7 +1139,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param revokeSecurityGroupEgress
      */
 
@@ -1147,7 +1147,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param monitorInstances
      */
 
@@ -1155,7 +1155,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param replaceRoute
      */
 
@@ -1163,7 +1163,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param attachVolume
      */
 
@@ -1171,7 +1171,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param getConsoleOutput
      */
 
@@ -1179,7 +1179,7 @@ public interface AmazonEC2SkeletonInterface {
 
     /**
      * Auto generated method signature
-     * 
+     *
                                 * @param describeRegions
      */
 

@@ -71,7 +71,7 @@ public class PublicNetworkTest extends TestCase {
     private static Merovingian2 _lockMaster;
     private ManagementServerMock _server;
     private ApiConnector _spy;
-    
+
 
     @BeforeClass
     public static void globalSetUp() throws Exception {
@@ -130,12 +130,12 @@ public class PublicNetworkTest extends TestCase {
 
         ArgumentCaptor<ApiObjectBase> createArg = ArgumentCaptor.forClass(ApiObjectBase.class);
         verify(_spy, times(4)).create(createArg.capture());
-        
+
         List<ApiObjectBase> argumentList = createArg.getAllValues();
         ApiObjectBase vmObj = argumentList.get(0);
         assertEquals(VirtualNetwork.class, vmObj.getClass());
         assertEquals("__default_Public__", vmObj.getName());
-        
+
         String vmiName = null;
         for (ApiObjectBase obj: argumentList) {
             if (obj.getClass() == VirtualMachineInterface.class) {

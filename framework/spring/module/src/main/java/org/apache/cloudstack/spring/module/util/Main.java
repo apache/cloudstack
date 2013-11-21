@@ -23,25 +23,25 @@ import org.apache.cloudstack.spring.module.factory.CloudStackSpringContext;
 public class Main {
 
     long start = System.currentTimeMillis();
-    
+
     public Main() {
-        
+
     }
-    
+
     public void start() throws Exception {
         CloudStackSpringContext context = new CloudStackSpringContext();
         context.registerShutdownHook();
-        
+
         if ( Boolean.getBoolean("force.exit") ) {
             System.exit(0);
         }
     }
-    
+
     public long getTime() {
         return System.currentTimeMillis() - start;
     }
-    
-    
+
+
     public static void main(String... args) {
         Main main = new Main();
 

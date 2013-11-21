@@ -81,7 +81,7 @@ public class ContrailElementImpl extends AdapterBase
     @Inject ServerDBSync  _dbSync;
     private static final Logger s_logger =
             Logger.getLogger(ContrailElement.class);
-    
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         s_logger.debug("configure");
@@ -128,13 +128,13 @@ public class ContrailElementImpl extends AdapterBase
         s_logger.debug("NetworkElement implement: " + network.getName() + ", traffic type: " + network.getTrafficType());
         if (network.getTrafficType() == TrafficType.Guest) {
             s_logger.debug("ignore network " + network.getName());
-            return true;        
+            return true;
         }
-        VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(), 
+        VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(),
                 _manager.getCanonicalName(network), network.getTrafficType());
 
         if (vnModel == null) {
-            vnModel = new VirtualNetworkModel(network, network.getUuid(), 
+            vnModel = new VirtualNetworkModel(network, network.getUuid(),
                     _manager.getCanonicalName(network), network.getTrafficType());
             vnModel.setProperties(_manager.getModelController(), network);
         }
@@ -142,7 +142,7 @@ public class ContrailElementImpl extends AdapterBase
             if (!vnModel.verify(_manager.getModelController())) {
                 vnModel.update(_manager.getModelController());
             }
-            _manager.getDatabase().getVirtualNetworks().add(vnModel);   
+            _manager.getDatabase().getVirtualNetworks().add(vnModel);
         } catch (Exception ex) {
             s_logger.warn("virtual-network update: ", ex);
         }
@@ -164,10 +164,10 @@ public class ContrailElementImpl extends AdapterBase
         }
 
         s_logger.debug("network: " + network.getId());
-        
-        VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(), 
+
+        VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(),
                 _manager.getCanonicalName(network), network.getTrafficType());
-        
+
         if (vnModel == null) {
             // There is no notification after a physical network is associated with the VRouter NetworkOffering
             // this may be the first time we see this network.
@@ -187,10 +187,10 @@ public class ContrailElementImpl extends AdapterBase
         VMInterfaceModel vmiModel = vmModel.getVMInterface(nic.getUuid());
         if (vmiModel == null) {
             vmiModel = new VMInterfaceModel(nic.getUuid());
-            vmiModel.addToVirtualMachine(vmModel);    
-                vmiModel.addToVirtualNetwork(vnModel);          
+            vmiModel.addToVirtualMachine(vmModel);
+                vmiModel.addToVirtualNetwork(vnModel);
         }
-        
+
         try {
             vmiModel.build(_manager.getModelController(), (VMInstanceVO) vm.getVirtualMachine(), nic);
         } catch (IOException ex) {
@@ -211,7 +211,7 @@ public class ContrailElementImpl extends AdapterBase
             s_logger.warn("virtual-machine-update", ex);
             return false;
         }
-        _manager.getDatabase().getVirtualMachines().add(vmModel);   
+        _manager.getDatabase().getVirtualMachines().add(vmModel);
 
         return true;
     }
@@ -339,11 +339,11 @@ public class ContrailElementImpl extends AdapterBase
                     throws ResourceUnavailableException {
         return true;
     }
-    
-    private boolean isFloatingIpCreate(PublicIpAddress ip) {        
+
+    private boolean isFloatingIpCreate(PublicIpAddress ip) {
         if (ip.getState() == IpAddress.State.Allocated && ip.getAssociatedWithVmId() != null && !ip.isSourceNat()) {
             return true;
         }
-        return false;        
+        return false;
     }
 }

@@ -46,7 +46,7 @@ public class CloudStackNetworkOffering {
     private String traffictype;
 
     /**
-     * 
+     *
      */
     public CloudStackNetworkOffering() {
         // TODO Auto-generated constructor stub

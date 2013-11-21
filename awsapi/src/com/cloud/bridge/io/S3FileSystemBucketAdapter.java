@@ -124,7 +124,7 @@ public class S3FileSystemBucketAdapter implements S3BucketAdapter {
      * object that can be accessed by normal S3 calls.  This function could take a long time since a multipart is
      * allowed to have upto 10,000 parts (each 5 gib long).   Amazon defines that while this operation is in progress
      * whitespace is sent back to the client inorder to keep the HTTP connection alive.
-     * 
+     *
      * @param mountedRoot - where both the source and dest buckets are located
      * @param destBucket - resulting location of the concatenated objects
      * @param fileName - resulting file name of the concatenated objects
@@ -230,7 +230,7 @@ public class S3FileSystemBucketAdapter implements S3BucketAdapter {
     }
 
     private String getBucketFolderName(String bucket) {
-        // temporary 
+        // temporary
         String name = bucket.replace(' ', '_');
         name = bucket.replace('\\', '-');
         name = bucket.replace('/', '-');

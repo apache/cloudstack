@@ -32,7 +32,7 @@ public interface ManagementServer extends ManagementService, PluggableService {
 
     /**
      * returns the instance id of this management server.
-     * 
+     *
      * @return id of the management server
      */
     long getId();
@@ -45,7 +45,7 @@ public interface ManagementServer extends ManagementService, PluggableService {
 
     /**
      * Retrieves a host by id
-     * 
+     *
      * @param hostId
      * @return Host
      */
@@ -57,7 +57,7 @@ public interface ManagementServer extends ManagementService, PluggableService {
 
     /**
      * Returns the vnc port of the vm.
-     * 
+     *
      * @param VirtualMachine vm
      * @return the vnc port if found; -1 if unable to find.
      */

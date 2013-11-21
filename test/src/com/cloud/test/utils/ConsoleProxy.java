@@ -44,14 +44,14 @@ public class ConsoleProxy implements Runnable {
     public int getConnectionsMade() {
         return this.connectionsMade;
     }
-    
+
     public long getResponseTime() {
         return this.responseTime;
     }
-    
+
     public void run() {
         while (true){
-            
+
             Script myScript = new Script("wget");
             myScript.add(command);
             myScript.execute();
@@ -62,22 +62,22 @@ public class ConsoleProxy implements Runnable {
             if (response!=null){
                 s_logger.info("Content lenght is incorrect: "+response);
             }
-            
+
             long duration = (end - begin);
             this.connectionsMade++;
             this.responseTime=this.responseTime+duration;
             try{
             Thread.sleep(1000);
             }catch (InterruptedException e){
-                
+
             }
-            
+
         }
     }
 
     public class wgetInt extends OutputInterpreter {
         private long end;
-        
+
         public long getEnd() {
             return end;
         }
@@ -105,7 +105,7 @@ public class ConsoleProxy implements Runnable {
                     else
                         status=line;
                 }
-                                  
+
             }
             return status;
         }

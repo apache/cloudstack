@@ -177,11 +177,11 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
         try {
 
             //check if multiple physical networks with 'Guest' Traffic types are present
-            //Yes: 
+            //Yes:
             //1) check if there are guest networks without tags, if yes then add a new physical network with default tag for them
             //2) Check if there are physical network tags present
             //No: Add unique tag to each physical network
-            //3) Get all guest networks unique network offering id's  
+            //3) Get all guest networks unique network offering id's
 
             //Clone each for each physical network and add the tag.
             //add ntwk service map entries

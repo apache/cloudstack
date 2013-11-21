@@ -26,10 +26,10 @@ import com.cloud.utils.ReflectUtil;
 /**
  *  Try to use static initialization to help you in finding incorrect
  *  field names being passed in early.
- * 
+ *
  *  Something like the following:
  *  protected static final Filter s_NameFilter = new Filter(VMInstanceVO, name, true, null, null);
- * 
+ *
  *  Filter nameFilter = new Filter(s_nameFilter);
  *
  */

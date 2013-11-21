@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.element;
@@ -809,7 +809,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             } else {
                 if (rules != null) {
                     for (StaticNat rule : rules) {
-                        // validate if EIP rule can be configured. 
+                        // validate if EIP rule can be configured.
                         ExternalLoadBalancerDeviceVO lbDevice = getNetScalerForEIP(rule);
                         if (lbDevice == null) {
                             String errMsg = "There is no NetScaler device configured to perform EIP to guest IP address: " + rule.getDestIpAddress();

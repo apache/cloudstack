@@ -26,8 +26,8 @@ public interface PortForwardingRulesDao extends GenericDao<PortForwardingRuleVO,
 
     /**
      * Find all port forwarding rules for the ip address that have not been revoked.
-     * 
-     * @param ip ip address 
+     *
+     * @param ip ip address
      * @return List of PortForwardingRuleVO
      */
     List<PortForwardingRuleVO> listByIpAndNotRevoked(long ipId);

@@ -44,7 +44,7 @@ public class CloudStackEvent {
     private String userName;
 
     /**
-     * 
+     *
      */
     public CloudStackEvent() {
         // TODO Auto-generated constructor stub

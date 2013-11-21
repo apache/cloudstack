@@ -337,7 +337,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
     /**
      * called by DatabaseUpgradeChecker to see if there are other peers running.
-     * 
+     *
      * @param notVersion
      *            If version is passed in, the peers CANNOT be running at this version. If version is null, return true if any
      *            peer is running regardless of version.

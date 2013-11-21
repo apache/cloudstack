@@ -39,8 +39,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
- * VirtualMachineEntity represents a Virtual Machine in Cloud Orchestration 
- * Platform.  
+ * VirtualMachineEntity represents a Virtual Machine in Cloud Orchestration
+ * Platform.
  *
  */
 @Path("vm/{id}")
@@ -85,7 +85,7 @@ public interface VirtualMachineEntity extends CloudStackEntity {
 
     /**
      * Start the virtual machine with a given deployment plan
-     * @param plannerToUse the Deployment Planner that should be used 
+     * @param plannerToUse the Deployment Planner that should be used
      * @param plan plan to which to deploy the machine
      * @param exclude list of areas to exclude
      * @return a reservation id
@@ -94,7 +94,7 @@ public interface VirtualMachineEntity extends CloudStackEntity {
 
     /**
      * Migrate this VM to a certain destination.
-     * 
+     *
      * @param reservationId reservation id from reserve call.
      */
     void migrateTo(String reservationId, String caller);
@@ -102,13 +102,13 @@ public interface VirtualMachineEntity extends CloudStackEntity {
     /**
      * Deploy this virtual machine according to the reservation from before.
      * @param reservationId reservation id from reserve call.
-     * 
+     *
      */
     void deploy(String reservationId, String caller, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException;
 
     /**
      * Stop the virtual machine
-     * 
+     *
      */
     boolean stop(String caller) throws ResourceUnavailableException, CloudException;
 

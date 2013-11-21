@@ -75,7 +75,7 @@ public class S3ConditionalHeaders {
     /**
      * Takes the header value from HTTP "If-Match", for example is:
      * If-Match: "xyzzy", "r2d2xxxx", "c3piozzzz"
-     * 
+     *
      * @param ifMatch
      */
     public void setMatch(String ifMatch) {
@@ -119,7 +119,7 @@ public class S3ConditionalHeaders {
 
     /**
      * Has the object been modified since the client has last checked?
-     * 
+     *
      * @param lastModified
      * @return a negative value means that the object has not been modified since
      *         a postive  value means that this test should be ignored.
@@ -136,7 +136,7 @@ public class S3ConditionalHeaders {
 
     /**
      * Has the object been modified since the unmodified date?
-     * 
+     *
      * @param lastModified
      * @return a negative value means that the object has been modified since
      *         a postive  value means that this test should be ignored.
@@ -154,7 +154,7 @@ public class S3ConditionalHeaders {
     /**
      * Does the object's contents (its MD5 signature) match what the client thinks
      * it is?
-     * 
+     *
      * @param ETag - an MD5 signature of the content of the data being stored in S3
      * @return a negative value means that the test has failed,
      *         a positive value means that the test succeeded or could not be done (so ignore it)
@@ -173,7 +173,7 @@ public class S3ConditionalHeaders {
     /**
      * None of the given ETags in the "If-None-Match" can match the ETag parameter for this
      * function to pass.
-     * 
+     *
      * @param ETag - an MD5 signature of the content of the data being stored in S3
      * @return a negative value means that the test has failed,
      *         a positive value means that the test succeeded or could not be done (so ignore it)

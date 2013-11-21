@@ -78,7 +78,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     /**
      * save a vm password on the router.
      * @param routers TODO
-     * 
+     *
      */
     boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile profile, List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
 

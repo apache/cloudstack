@@ -106,7 +106,7 @@ public class ClientX224ConnectionRequestPDU extends OneTimeSwitch {
 
   /**
    * Example.
-   * 
+   *
    * @see http://msdn.microsoft.com/en-us/library/cc240842.aspx
    * @see http://msdn.microsoft.com/en-us/library/cc240500.aspx
    */

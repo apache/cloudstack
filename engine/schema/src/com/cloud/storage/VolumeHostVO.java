@@ -40,7 +40,7 @@ import com.cloud.utils.db.GenericDaoBase;
 
 /**
  * Join table for storage hosts and volumes
- * 
+ *
  */
 @Entity
 @Table(name = "volume_host_ref")

@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.resource;
@@ -603,7 +603,7 @@ public class CiscoVnmcResource implements ServerResource {
                 throw new ExecutionException("Failed to create tenant edge static route in VNMC for guest network with vlan " + vlanId);
         }
 
-        // associate edge 
+        // associate edge
         if (!_connection.associateTenantVDCEdgeStaticRoutePolicy(tenant))
             throw new ExecutionException("Failed to associate edge static route policy with edge device profile in VNMC for guest network with vlan " + vlanId);
     }

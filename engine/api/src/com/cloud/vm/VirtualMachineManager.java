@@ -60,7 +60,7 @@ public interface VirtualMachineManager extends Manager {
      * Allocates a new virtual machine instance in the CloudStack DB.  This
      * orchestrates the creation of all virtual resources needed in CloudStack
      * DB to bring up a VM.
-     * 
+     *
      * @param vmInstanceName Instance name of the VM.  This name uniquely
      *        a VM in CloudStack's deploy environment.  The caller gets to
      *        define this VM but it must be unqiue for all of CloudStack.
@@ -118,7 +118,7 @@ public interface VirtualMachineManager extends Manager {
 
     /**
      * Check to see if a virtual machine can be upgraded to the given service offering
-     * 
+     *
      * @param vm
      * @param offering
      * @return true if the host can handle the upgrade, false otherwise

@@ -70,10 +70,10 @@ public class EC2InstanceFilterSet {
     /**
      * For a filter to match an instance just one of its values has to match the volume.
      * For an instance to be included in the instance response it must pass all the defined filters.
-     * 
+     *
      * @param sampleList - list of instances to test against the defined filters
      * @return EC2DescribeInstancesResponse
-     * @throws ParseException 
+     * @throws ParseException
      */
     public EC2DescribeInstancesResponse evaluate(EC2DescribeInstancesResponse sampleList) throws ParseException {
         EC2DescribeInstancesResponse resultList = new EC2DescribeInstancesResponse();

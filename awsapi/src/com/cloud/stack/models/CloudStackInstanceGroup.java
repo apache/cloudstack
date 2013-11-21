@@ -34,7 +34,7 @@ public class CloudStackInstanceGroup {
     private String name;
 
     /**
-     * 
+     *
      */
     public CloudStackInstanceGroup() {
         // TODO Auto-generated constructor stub

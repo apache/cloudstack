@@ -69,10 +69,10 @@ public class EC2SnapshotFilterSet {
     /**
      * For a filter to match a snapshot just one of its values has to match the volume.
      * For a snapshot to be included in the instance response it must pass all the defined filters.
-     * 
+     *
      * @param sampleList - list of snapshots to test against the defined filters
      * @return EC2DescribeSnapshotsResponse
-     * @throws ParseException 
+     * @throws ParseException
      */
     public EC2DescribeSnapshotsResponse evaluate(EC2DescribeSnapshotsResponse sampleList) throws ParseException {
         EC2DescribeSnapshotsResponse resultList = new EC2DescribeSnapshotsResponse();

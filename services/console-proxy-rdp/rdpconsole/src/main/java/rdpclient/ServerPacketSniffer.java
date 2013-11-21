@@ -25,8 +25,8 @@ public class ServerPacketSniffer extends PacketSniffer {
   private static final Pair[] serverRegexps = new Pair[] {
   // @formatter:off
   new Pair("Server FastPath update",             "04"),
-  new Pair("Server X224ConnectionRequest",       "03 00 XX XX 0E D0"), 
-  new Pair("Server MCSConnectResponse",          "03 00 XX XX 02 F0 80 7F 66 5A"), 
+  new Pair("Server X224ConnectionRequest",       "03 00 XX XX 0E D0"),
+  new Pair("Server MCSConnectResponse",          "03 00 XX XX 02 F0 80 7F 66 5A"),
   new Pair("Server AttachUserConfirm",           "03 00 XX XX 02 F0 80 2E"),
   new Pair("Server ChannelJoinConfirm",          "03 00 XX XX 02 F0 80 3E"),
   new Pair("Server ErrorAlert",                  "03 00 XX XX 02 F0 80 68 00 01 03 EB 70 14 80 00"),
@@ -37,7 +37,7 @@ public class ServerPacketSniffer extends PacketSniffer {
   new Pair("Server SET_ERROR_INFO_PDU",          "03 00 XX XX 02 F0 80 68 00 01 03 EB 30 XX XX XX 17 00 00 00 EA 03 XX 00 XX XX XX XX 2F"),
   new Pair("Server DeactivateAllPDU",            "03 00 XX XX 02 F0 80 68 00 01 03 EB 70 XX XX XX 16 00"),
   new Pair("Server CloseConnection",             "03 00 00 09 02 F0 80 21 80"),
-  
+
 //  new Pair("Server TPKT unknown packet",         "03"),
 //  new Pair("Server FastPath update with flags or continuation",  ".*"),
   // @formatter:on

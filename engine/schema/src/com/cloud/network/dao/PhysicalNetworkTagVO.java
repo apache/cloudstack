@@ -26,7 +26,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 /**
- * 
+ *
  */
 @Entity
 @Table(name = "physical_network_tags")

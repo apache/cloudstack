@@ -59,7 +59,7 @@ public interface AccountManager extends AccountService {
 
     /**
      * Authenticates a user when s/he logs in.
-     * 
+     *
      * @param username
      *            required username for authentication
      * @param password
@@ -75,7 +75,7 @@ public interface AccountManager extends AccountService {
 
     /**
      * Locate a user by their apiKey
-     * 
+     *
      * @param apiKey
      *            that was created for a particular user
      * @return the user/account pair if one exact match was found, null otherwise

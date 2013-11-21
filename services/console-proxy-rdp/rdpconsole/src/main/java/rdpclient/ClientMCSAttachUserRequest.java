@@ -68,14 +68,14 @@ public class ClientMCSAttachUserRequest extends OneTimeSwitch {
 
         0x03, 0x00, 0x00, 0x08,  //  TPKT Header (length = 8 bytes)
         0x02, (byte) 0xf0, (byte) 0x80,  //  X.224 Data TPDU
-        
+
         // PER encoded (ALIGNED variant of BASIC-PER) PDU contents:
-        0x28, 
-        
+        0x28,
+
         // 0x28:
         // 0 - --\
         // 0 -   |
-        // 1 -   | CHOICE: From DomainMCSPDU select attachUserRequest (10) 
+        // 1 -   | CHOICE: From DomainMCSPDU select attachUserRequest (10)
         // 0 -   | of type AttachUserRequest
         // 1 -   |
         // 0 - --/

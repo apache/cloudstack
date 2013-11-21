@@ -141,7 +141,7 @@ public class BaseElement implements Element {
 
   /**
    * By default, try to pull data from input links.
-   * 
+   *
    * Override this method in data source elements.
    */
   @Override
@@ -249,7 +249,7 @@ public class BaseElement implements Element {
 
   /**
    * Send event to all outputs.
-   * 
+   *
    * @param event
    *          a event
    * @param direction
@@ -279,7 +279,7 @@ public class BaseElement implements Element {
   /**
    * Ensure that packet has required minimum and maximum length, cuts tail when
    * necessary.
-   * 
+   *
    * @param buf
    *          a buffer
    * @param minLength

@@ -676,7 +676,7 @@ public class UserVmData {
             this.domainName = domainName;
         }
 
-        /* FIXME : the below functions are not used, so commenting out later need to include egress list 
+        /* FIXME : the below functions are not used, so commenting out later need to include egress list
                 public List<SecurityGroupRuleResponse> getIngressRules() {
                     return securityGroupRules;
                 }

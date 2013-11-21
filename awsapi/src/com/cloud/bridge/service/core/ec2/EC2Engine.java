@@ -114,7 +114,7 @@ public class EC2Engine extends ManagerBase {
      * Which management server to we talk to?
      * Load a mapping form Amazon values for 'instanceType' to cloud defined
      * diskOfferingId and serviceOfferingId.
-     * 
+     *
      * @throws IOException
      */
     private void loadConfigValues() throws IOException {
@@ -179,7 +179,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Helper function to manage the api connection
-     * 
+     *
      * @return
      */
     private CloudStackApi getApi() {
@@ -195,7 +195,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Verifies account can access CloudStack
-     * 
+     *
      * @param accessKey
      * @param secretKey
      * @return
@@ -240,7 +240,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Creates a security group
-     * 
+     *
      * @param groupName
      * @param groupDesc
      * @return
@@ -261,7 +261,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Deletes a security group
-     * 
+     *
      * @param groupName
      * @return
      */
@@ -281,7 +281,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * returns a list of security groups
-     * 
+     *
      * @param request
      * @return
      */
@@ -303,7 +303,7 @@ public class EC2Engine extends ManagerBase {
     /**
      * CloudStack supports revoke only by using the ruleid of the ingress rule.
      * We list all security groups and find the matching group and use the first ruleId we find.
-     * 
+     *
      * @param request
      * @return
      */
@@ -345,7 +345,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * authorizeSecurityGroup
-     * 
+     *
      * @param request - ip permission parameters
      */
     public boolean authorizeSecurityGroup(EC2AuthorizeRevokeSecurityGroup request) {
@@ -388,7 +388,7 @@ public class EC2Engine extends ManagerBase {
     /**
      * Does the permission from the request (left) match the permission from the cloudStack query (right).
      * If the cloudStack rule matches then we return its ruleId.
-     * 
+     *
      * @param permLeft
      * @param permRight
      * @return ruleId of the cloudstack rule
@@ -453,7 +453,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Returns a list of all snapshots
-     * 
+     *
      * @param request
      * @return
      */
@@ -500,7 +500,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Creates a snapshot
-     * 
+     *
      * @param volumeId
      * @return
      */
@@ -535,7 +535,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Deletes a snapshot
-     * 
+     *
      * @param snapshotId
      * @return
      */
@@ -557,7 +557,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Modify an existing template
-     * 
+     *
      * @param request
      * @return
      */
@@ -642,7 +642,7 @@ public class EC2Engine extends ManagerBase {
     // handlers
     /**
      * return password data from the instance
-     * 
+     *
      * @param instanceId
      * @return
      */
@@ -663,7 +663,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Lists SSH KeyPairs on the system
-     * 
+     *
      * @param request
      * @return
      */
@@ -683,7 +683,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Delete SSHKeyPair
-     * 
+     *
      * @param request
      * @return
      */
@@ -704,7 +704,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Create SSHKeyPair
-     * 
+     *
      * @param request
      * @return
      */
@@ -728,7 +728,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Import an existing SSH KeyPair
-     * 
+     *
      * @param request
      * @return
      */
@@ -751,7 +751,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * list ip addresses that have been allocated
-     * 
+     *
      * @param request
      * @return
      */
@@ -771,7 +771,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * release an IP Address
-     * 
+     *
      * @param request
      * @return
      */
@@ -794,7 +794,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Associate an address with an instance
-     * 
+     *
      * @param request
      * @return
      */
@@ -825,7 +825,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Disassociate an address from an instance
-     * 
+     *
      * @param request
      * @return
      */
@@ -849,7 +849,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Allocate an address
-     * 
+     *
      * @param request
      * @return
      */
@@ -887,7 +887,7 @@ public class EC2Engine extends ManagerBase {
     /**
      * List of templates available.  We only support the imageSet version of this call or when no search parameters are passed
      * which results in asking for all templates.
-     * 
+     *
      * @param request
      * @return
      */
@@ -921,10 +921,10 @@ public class EC2Engine extends ManagerBase {
      * 1) listVolumes&virtualMachineId=   -- gets the volumeId
      * 2) listVirtualMachinees&id=        -- gets the templateId
      * 3) listTemplates&id=               -- gets the osTypeId
-     * 
+     *
      * If we have to start and stop the VM in question then this function is
      * going to take a long time to complete.
-     * 
+     *
      * @param request
      * @return
      */
@@ -985,7 +985,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Register a template
-     * 
+     *
      * @param request
      * @return
      */
@@ -1015,7 +1015,7 @@ public class EC2Engine extends ManagerBase {
      * Deregister a template(image)
      * Our implementation is different from Amazon in that we do delete the template
      * when we deregister it.   The cloud API has not deregister call.
-     * 
+     *
      * @param image
      * @return
      */
@@ -1032,7 +1032,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * list instances
-     * 
+     *
      * @param request
      * @return
      */
@@ -1050,7 +1050,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * list Zones
-     * 
+     *
      * @param request
      * @return
      */
@@ -1070,7 +1070,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * list volumes
-     * 
+     *
      * @param request
      * @return
      */
@@ -1097,7 +1097,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Attach a volume to an instance
-     * 
+     *
      * @param request
      * @return
      */
@@ -1131,7 +1131,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Detach a volume from an instance
-     * 
+     *
      * @param request
      * @return
      */
@@ -1181,7 +1181,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Create a volume
-     * 
+     *
      * @param request
      * @return
      */
@@ -1240,7 +1240,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Delete a volume
-     * 
+     *
      * @param request
      * @return
      */
@@ -1332,7 +1332,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Reboot an instance or instances
-     * 
+     *
      * @param request
      * @return
      */
@@ -1369,7 +1369,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Using a template (AMI), launch n instances
-     * 
+     *
      * @param request
      * @return
      */
@@ -1488,7 +1488,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Start an instance or instances
-     * 
+     *
      * @param request
      * @return
      */
@@ -1528,7 +1528,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Stop an instance or instances
-     * 
+     *
      * @param request
      * @return
      */
@@ -1617,7 +1617,7 @@ public class EC2Engine extends ManagerBase {
      * RunInstances includes a min and max count of requested instances to create.
      * We have to be able to create the min number for the user or none at all.  So
      * here we determine what the user has left to create.
-     * 
+     *
      * @return -1 means no limit exists, other positive numbers give max number left that
      *         the user can create.
      */
@@ -1655,7 +1655,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Performs the cloud API listVirtualMachines one or more times.
-     * 
+     *
      * @param virtualMachineIds - an array of instances we are interested in getting information on
      * @param ifs - filter out unwanted instances
      */
@@ -1678,7 +1678,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Get one or more templates depending on the volumeId parameter.
-     * 
+     *
      * @param volumeId   - if interested in one specific volume, null if want to list all volumes
      * @param instanceId - if interested in volumes for a specific instance, null if instance is not important
      */
@@ -1736,9 +1736,9 @@ public class EC2Engine extends ManagerBase {
      * Translate the given zone name into the required zoneId.  Query for
      * a list of all zones and match the zone name given.   Amazon uses zone
      * names while the Cloud API often requires the zoneId.
-     * 
+     *
      * @param zoneName - (e.g., 'AH'), if null return the first zone in the available list
-     * 
+     *
      * @return the zoneId that matches the given zone name
      */
     private String toZoneId(String zoneName, String domainId) throws Exception {
@@ -1766,7 +1766,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Convert from the Amazon instanceType strings to Cloud serviceOfferingId
-     * 
+     *
      */
 
     private CloudStackServiceOfferingVO getCSServiceOfferingId(String instanceType) throws Exception {
@@ -1783,7 +1783,7 @@ public class EC2Engine extends ManagerBase {
     /**
      * Convert from the Cloud serviceOfferingId to the Amazon instanceType strings based
      * on the loaded map.
-     * 
+     *
      * @param serviceOfferingId
      * @return A valid value for the Amazon defined instanceType
      * @throws SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException
@@ -1806,7 +1806,7 @@ public class EC2Engine extends ManagerBase {
     /**
      * Match the value in the 'description' field of the listOsTypes response to get
      * the osTypeId.
-     * 
+     *
      * @param osTypeName
      * @return the Cloud.com API osTypeId
      */
@@ -1828,9 +1828,9 @@ public class EC2Engine extends ManagerBase {
     /**
      * More than one place we need to access the defined list of zones.  If given a specific
      * list of zones of interest, then only values from those zones are returned.
-     * 
+     *
      * @param interestedZones - can be null, should be a subset of all zones
-     * 
+     *
      * @return EC2DescribeAvailabilityZonesResponse
      */
     private EC2DescribeAvailabilityZonesResponse listZones(String[] interestedZones, String domainId) throws Exception {
@@ -1865,11 +1865,11 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Get information on one or more virtual machines depending on the instanceId parameter.
-     * 
+     *
      * @param instanceId - if null then return information on all existing instances, otherwise
      *                     just return information on the matching instance.
      * @param instances  - a container object to fill with one or more EC2Instance objects
-     * 
+     *
      * @return the same object passed in as the "instances" parameter modified with one or more
      *         EC2Instance objects loaded.
      */
@@ -1938,11 +1938,11 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Get one or more templates depending on the templateId parameter.
-     * 
+     *
      * @param templateId - if null then return information on all existing templates, otherwise
      *                     just return information on the matching template.
      * @param images     - a container object to fill with one or more EC2Image objects
-     * 
+     *
      * @return the same object passed in as the "images" parameter modified with one or more
      *         EC2Image objects loaded.
      */
@@ -2022,7 +2022,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * List security groups
-     * 
+     *
      * @param interestedGroups
      * @return
      * @throws EC2ServiceException
@@ -2199,7 +2199,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Convert ingress rule to EC2IpPermission records
-     * 
+     *
      * @param response
      * @param group
      * @return
@@ -2234,7 +2234,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Find the current account based on the SecretKey
-     * 
+     *
      * @return
      * @throws Exception
      */
@@ -2265,7 +2265,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * List networkOfferings by zone with securityGroup enabled
-     * 
+     *
      * @param zoneId
      * @return
      * @throws Exception
@@ -2283,7 +2283,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Create a network
-     * 
+     *
      * @param zoneId
      * @param offering
      * @param owner
@@ -2297,7 +2297,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * List of networks without securityGroup enabled by zone
-     * 
+     *
      * @param zoneId
      * @return
      * @throws Exception
@@ -2349,7 +2349,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Find a suitable network to use for deployVM
-     * 
+     *
      * @param zone
      * @return
      * @throws Exception
@@ -2403,7 +2403,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Windows has its own device strings.
-     * 
+     *
      * @param hypervisor
      * @param deviceId
      * @return
@@ -2462,7 +2462,7 @@ public class EC2Engine extends ManagerBase {
     /**
      * Translate the device name string into a Cloud Stack deviceId.
      * deviceId 3 is reserved for CDROM and 0 for the ROOT disk
-     * 
+     *
      * @param device string
      * @return deviceId value
      */
@@ -2524,7 +2524,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Map CloudStack instance state to Amazon state strings
-     * 
+     *
      * @param state
      * @return
      */
@@ -2606,7 +2606,7 @@ public class EC2Engine extends ManagerBase {
     /**
      * Stop an instance
      * Wait until one specific VM has stopped
-     * 
+     *
      * @param instanceId
      * @return
      * @throws Exception
@@ -2625,7 +2625,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Start an existing stopped instance(VM)
-     * 
+     *
      * @param instanceId
      * @return
      * @throws Exception
@@ -2644,7 +2644,7 @@ public class EC2Engine extends ManagerBase {
 
     /**
      * Cloud Stack API takes a comma separated list as a parameter.
-     * 
+     *
      * @throws UnsupportedEncodingException
      */
     private String constructList(String[] elements) throws UnsupportedEncodingException {

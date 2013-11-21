@@ -196,12 +196,12 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
      * @param ipAddress -- ip address of filer
      * @param aggrName -- name of containing aggregate
      * @param volName -- name of volume to destroy
-     * @throws ResourceInUseException 
+     * @throws ResourceInUseException
      * @throws NaException
      * @throws IOException
-     * @throws NaProtocolException 
-     * @throws NaAPIFailedException 
-     * @throws NaAuthenticationException 
+     * @throws NaProtocolException
+     * @throws NaAPIFailedException
+     * @throws NaAuthenticationException
      */
     @Override
     @DB
@@ -294,7 +294,7 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
      * @param username -- username
      * @param password -- password
      * @throws UnknownHostException
-     * @throws InvalidParameterValueException 
+     * @throws InvalidParameterValueException
      */
     @Override
     @DB
@@ -457,7 +457,7 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
     }
 
     /**
-     * This method is primarily used to cleanup volume created on the netapp filer, when createVol api command fails at snapshot reservation. 
+     * This method is primarily used to cleanup volume created on the netapp filer, when createVol api command fails at snapshot reservation.
      * We roll back the db record, but the record on the netapp box still exists. We clean up that record using this helper method.
      * @param volName
      * @param s -- server reference
@@ -550,7 +550,7 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
      * @param userName -- username
      * @param password -- password
      * @param serverIp -- ip address of filer
-     * @throws UnknownHostException 
+     * @throws UnknownHostException
      * @return-- available size on the volume in terms of bytes; return -1 if volume is offline
      * @throws ServerException
      */
@@ -597,9 +597,9 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
      * This method creates a lun on the netapp filer
      * @param poolName -- name of the pool
      * @param lunSize -- size of the lun to be created
-     * @return -- lun path 
+     * @return -- lun path
      * @throws IOException
-     * @throws ResourceAllocationException 
+     * @throws ResourceAllocationException
      * @throws NaException
      */
     @Override
@@ -972,7 +972,7 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
             s_logger.warn("Unable to associate LUN ", uhe);
             throw new ServerException("Unable to associate LUN", uhe);
         } catch (NaAPIFailedException naf) {
-            if (naf.getErrno() == 9008) { //initiator group already contains node                
+            if (naf.getErrno() == 9008) { //initiator group already contains node
                 return returnVal;
             }
             s_logger.warn("Unable to associate LUN ", naf);

@@ -30,9 +30,9 @@ import com.cloud.user.dao.UserAccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 /**
- * Simple UserAuthenticator that performs a MD5 hash of the password before 
+ * Simple UserAuthenticator that performs a MD5 hash of the password before
  * comparing it against the local database.
- * 
+ *
  */
 @Local(value = {UserAuthenticator.class})
 public class MD5UserAuthenticator extends DefaultUserAuthenticator {

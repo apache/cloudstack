@@ -290,7 +290,7 @@ public interface UserVmService {
     /**
      * Creates a User VM in Advanced Zone (Security Group feature is disabled)
      * in the database and returns the VM to the caller.
-     * 
+     *
      *
      * @param zone
      *            - availability zone for the virtual machine
@@ -397,7 +397,7 @@ public interface UserVmService {
      * @param cmd
      *            - the command specifying vmId and new serviceOfferingId
      * @return the vm
-     * @throws ResourceAllocationException 
+     * @throws ResourceAllocationException
      */
     UserVm upgradeVirtualMachine(UpgradeVMCmd cmd) throws ResourceAllocationException;
 

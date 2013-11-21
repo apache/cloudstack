@@ -30,7 +30,7 @@ import com.cloud.utils.net.NetUtils;
 
 /**
  * This VO represent Public Load Balancer
- * It references source ip address by its Id. 
+ * It references source ip address by its Id.
  * To get the VO for Internal Load Balancer rule, please refer to LoadBalancerRuleVO
  *
  */

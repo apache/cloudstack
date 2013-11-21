@@ -49,14 +49,14 @@ import org.springframework.util.StringUtils;
 public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultModuleDefinitionSet.class);
-    
+
     public static final String DEFAULT_CONFIG_RESOURCES = "DefaultConfigResources";
     public static final String DEFAULT_CONFIG_PROPERTIES = "DefaultConfigProperties";
     public static final String MODULES_EXCLUDE = "modules.exclude";
     public static final String MODULES_INCLUDE_PREFIX = "modules.include.";
     public static final String MODULE_PROPERITES = "ModuleProperties";
     public static final String DEFAULT_CONFIG_XML = "defaults-context.xml";
-    
+
     String root;
     Map<String, ModuleDefinition> modules;
     Map<String, ApplicationContext> contexts = new HashMap<String, ApplicationContext>();
@@ -73,25 +73,25 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
     public void load() throws IOException {
         if ( ! loadRootContext() )
             return;
-        
+
         printHierarchy();
         loadContexts();
         startContexts();
     }
-    
+
     protected boolean loadRootContext() {
         ModuleDefinition def = modules.get(root);
-        
+
         if ( def == null )
             return false;
-        
+
         ApplicationContext defaultsContext = getDefaultsContext();
-        
+
         rootContext = loadContext(def, defaultsContext);
-        
+
         return true;
     }
-    
+
     protected void startContexts() {
         withModule(new WithModule() {
             public void with(ModuleDefinition def, Stack<ModuleDefinition> parents) {
@@ -102,7 +102,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
                         log.info("Starting module [{}]", def.getName());
                         runnable.run();
                     } catch ( BeansException e ) {
-                       // Ignore 
+                       // Ignore
                     }
                 } catch ( EmptyStackException e ) {
                     // The root context is already loaded, so ignore the exception
@@ -110,7 +110,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
             }
         });
     }
-    
+
     protected void loadContexts() {
         withModule(new WithModule() {
             public void with(ModuleDefinition def, Stack<ModuleDefinition> parents) {
@@ -126,7 +126,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
     protected ApplicationContext loadContext(ModuleDefinition def, ApplicationContext parent) {
         ResourceApplicationContext context = new ResourceApplicationContext();
         context.setApplicationName("/" + def.getName());
-        
+
         Resource[] resources = getConfigResources(def.getName());
         context.setConfigResources(resources);
         context.setParent(parent);
@@ -140,26 +140,26 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
         }
         context.refresh();
         log.info("Loaded module context [{}] in {} ms", def.getName(), (System.currentTimeMillis() - start));
-        
+
         contexts.put(def.getName(), context);
-        
+
         return context;
     }
-    
+
     protected boolean shouldLoad(ModuleDefinition def) {
         return ! excludes.contains(def.getName());
     }
-    
+
     protected ApplicationContext getDefaultsContext() {
         URL config = DefaultModuleDefinitionSet.class.getResource(DEFAULT_CONFIG_XML);
-        
+
         ResourceApplicationContext context = new ResourceApplicationContext(new UrlResource(config));
         context.setApplicationName("/defaults");
         context.refresh();
-        
+
         @SuppressWarnings("unchecked")
         final List<Resource> resources = (List<Resource>) context.getBean(DEFAULT_CONFIG_RESOURCES);
-        
+
         withModule(new WithModule() {
             public void with(ModuleDefinition def, Stack<ModuleDefinition> parents) {
                 for ( Resource defaults : def.getConfigLocations() ) {
@@ -213,7 +213,7 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
             IOUtils.closeQuietly(is);
         }
     }
-    
+
     protected void printHierarchy() {
         withModule(new WithModule() {
             public void with(ModuleDefinition def, Stack<ModuleDefinition> parents) {
@@ -221,41 +221,41 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
             }
         });
     }
-    
+
     protected void withModule(WithModule with) {
         ModuleDefinition rootDef = modules.get(root);
         withModule(rootDef, new Stack<ModuleDefinition>(), with);
     }
-    
+
     protected void withModule(ModuleDefinition def, Stack<ModuleDefinition> parents, WithModule with) {
         if ( def == null )
             return;
-        
+
         if ( ! shouldLoad(def) ) {
             log.info("Excluding context [{}] based on configuration", def.getName());
             return;
         }
-        
+
         with.with(def, parents);
-        
+
         parents.push(def);
-        
+
         for ( ModuleDefinition child : def.getChildren() ) {
             withModule(child, parents, with);
         }
-        
+
         parents.pop();
     }
-    
+
     private static interface WithModule {
         public void with(ModuleDefinition def, Stack<ModuleDefinition> parents);
     }
-    
+
     @Configuration
     public static class ConfigContext {
-        
+
         List<Resource> resources;
-        
+
         public ConfigContext(List<Resource> resources) {
             super();
             this.resources = resources;
@@ -273,22 +273,22 @@ public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
 
     public Resource[] getConfigResources(String name) {
         Set<Resource> resources = new LinkedHashSet<Resource>();
-        
+
         ModuleDefinition original = null;
         ModuleDefinition def = original = modules.get(name);
-        
+
         if ( def == null )
             return new Resource[] {};
-        
+
         resources.addAll(def.getContextLocations());
-        
+
         while ( def != null ) {
             resources.addAll(def.getInheritableContextLocations());
             def = modules.get(def.getParentName());
         }
-        
+
         resources.addAll(original.getOverrideContextLocations());
-        
+
         return resources.toArray(new Resource[resources.size()]);
     }
 

@@ -149,7 +149,7 @@ public class FloatingIpPoolModel extends ModelObjectBase {
             } catch (IOException ex) {
                 s_logger.warn("floating ip pool update", ex);
                 throw new CloudRuntimeException("Unable to update floating ip ppol object", ex);
-            }            
+            }
         }
 
         for (ModelObject successor: successors()) {

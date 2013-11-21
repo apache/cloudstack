@@ -45,7 +45,7 @@ public class ChildTestConfiguration extends TestConfiguration {
 
     /*
      * @Override
-     * 
+     *
      * @Bean public PrimaryDataStoreDao primaryDataStoreDao() { return
      * Mockito.mock(PrimaryDataStoreDaoImpl.class); }
      */

@@ -80,7 +80,7 @@ public class AuthenticationHandler implements Handler {
 
     /**
      * For EC2 SOAP calls this function's goal is to extract the X509 certificate that is
-     * part of the WS-Security wrapped SOAP request.   We need the cert in order to 
+     * part of the WS-Security wrapped SOAP request.   We need the cert in order to
      * map it to the user's Cloud API key and Cloud Secret Key.
      */
     @Override
@@ -105,11 +105,11 @@ public class AuthenticationHandler implements Handler {
                 ByteArrayInputStream bs = new ByteArrayInputStream(certBytes);
                 while (bs.available() > 0)
                     userCert = cf.generateCertificate(bs);
-                //System.out.println( "cert: " + userCert.toString());              
+                //System.out.println( "cert: " + userCert.toString());
                 String uniqueId = AuthenticationUtils.X509CertUniqueId(userCert);
                 logger.debug("X509 cert's uniqueId: " + uniqueId);
 
-                // -> find the Cloud API key and the secret key from the cert's uniqueId 
+                // -> find the Cloud API key and the secret key from the cert's uniqueId
                 UserCredentialsDao ucDao = new UserCredentialsDaoImpl();
                 UserCredentialsVO cloudKeys = ucDao.getByCertUniqueId(uniqueId);
                 if (null == cloudKeys) {

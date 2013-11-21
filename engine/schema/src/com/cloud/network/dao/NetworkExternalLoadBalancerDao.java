@@ -32,7 +32,7 @@ public interface NetworkExternalLoadBalancerDao extends GenericDao<NetworkExtern
     /**
      * list all network to load balancer device mappings corresponding to a load balancer device Id
      * @param lbDeviceId load balancer device Id
-     * @return list of NetworkExternalLoadBalancerVO mappings corresponding to the networks mapped to the load balancer device 
+     * @return list of NetworkExternalLoadBalancerVO mappings corresponding to the networks mapped to the load balancer device
      */
     List<NetworkExternalLoadBalancerVO> listByLoadBalancerDeviceId(long lbDeviceId);
 }

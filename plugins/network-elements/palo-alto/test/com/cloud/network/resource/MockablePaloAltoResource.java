@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.resource;
@@ -113,7 +113,7 @@ public class MockablePaloAltoResource extends PaloAltoResource {
         if (params.containsKey("type") && params.get("type").equals("keygen")) {
             response = "<response status = 'success'><result><key>LUFRPT14MW5xOEo1R09KVlBZNnpnemh0VHRBOWl6TGM9bXcwM3JHUGVhRlNiY0dCR0srNERUQT09</key></result></response>";
         }
-        
+
         // 'config' requests
         if (params.containsKey("type") && params.get("type").equals("config") && params.containsKey("action")) {
             // action = 'get'
@@ -419,7 +419,7 @@ public class MockablePaloAltoResource extends PaloAltoResource {
             if (params.get("cmd").equals("<show><jobs><id>1</id></jobs></show>")) {
                 if (context.containsKey("simulate_commit_failure") && context.get("simulate_commit_failure").equals("true")) {
                     response = "<response status=\"success\"><result><job><tenq>2013/07/10 11:11:49</tenq><id>1</id><user>admin</user><type>Commit</type><status>FIN</status><stoppable>no</stoppable><result>FAIL</result><tfin>11:11:54</tfin><progress>11:11:54</progress><details><line>Bad config</line><line>Commit failed</line></details><warnings></warnings></job></result></response>";
-                } else { 
+                } else {
                     response = "<response status=\"success\"><result><job><tenq>2013/07/02 14:49:49</tenq><id>1</id><user>admin</user><type>Commit</type><status>FIN</status><stoppable>no</stoppable><result>OK</result><tfin>14:50:02</tfin><progress>14:50:02</progress><details><line>Configuration committed successfully</line></details><warnings></warnings></job></result></response>";
                 }
             }

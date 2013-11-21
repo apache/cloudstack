@@ -71,10 +71,10 @@ public class EC2VolumeFilterSet {
     /**
      * For a filter to match a volume just one of its values has to match the volume.
      * For a volume to be included in the volume response it must pass all the defined filters.
-     * 
+     *
      * @param sampleList - list of volumes to test against the defined filters
      * @return EC2DescribeVolumeResponse
-     * @throws ParseException 
+     * @throws ParseException
      */
     public EC2DescribeVolumesResponse evaluate(EC2DescribeVolumesResponse sampleList) throws ParseException {
         EC2DescribeVolumesResponse resultList = new EC2DescribeVolumesResponse();

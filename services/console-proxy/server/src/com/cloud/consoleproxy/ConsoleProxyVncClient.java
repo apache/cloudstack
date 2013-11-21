@@ -27,9 +27,9 @@ import com.cloud.consoleproxy.vnc.RfbConstants;
 import com.cloud.consoleproxy.vnc.VncClient;
 
 /**
- * 
+ *
  * ConsoleProxyVncClient bridges a VNC engine with the front-end AJAX viewer
- * 
+ *
  */
 public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyVncClient.class);

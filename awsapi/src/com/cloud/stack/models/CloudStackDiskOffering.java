@@ -36,7 +36,7 @@ public class CloudStackDiskOffering {
     private String tags;
 
     /**
-     * 
+     *
      */
     public CloudStackDiskOffering() {
     }

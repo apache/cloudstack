@@ -26,7 +26,7 @@ public class CloudStackOsCategory {
     private String name;
 
     /**
-     * 
+     *
      */
     public CloudStackOsCategory() {
         // TODO Auto-generated constructor stub

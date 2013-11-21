@@ -187,7 +187,7 @@ public class ConsoleProxyVO extends VMInstanceVO implements ConsoleProxy {
 
     /**
      * Correct constructor to use.
-     * 
+     *
      */
     public ConsoleProxyVO(long id, long serviceOfferingId, String name, long templateId, HypervisorType hypervisorType, long guestOSId, long dataCenterId, long domainId,
             long accountId, int activeSession, boolean haEnabled) {

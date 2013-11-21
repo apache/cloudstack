@@ -39,7 +39,7 @@ import com.cloud.utils.PropertiesUtil;
 
 /**
  * ManagementNetworkGuru
- * 
+ *
  * Replace the default management network strategy (PodBasedNetworkGuru) by using a Isolated network for management
  * traffic.
  */
@@ -96,7 +96,7 @@ public class ManagementNetworkGuru extends ContrailGuru {
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan,
             Network userSpecified, Account owner) {
-        
+
         if (!canHandle(offering)) {
             return null;
         }

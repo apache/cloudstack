@@ -39,7 +39,7 @@ import com.cloud.utils.Pair;
 
 /**
  *
- * 
+ *
  */
 public interface UserVmManager extends UserVmService {
     static final String EnableDynamicallyScaleVmCK = "enable.dynamic.scale.vm";

@@ -18,7 +18,7 @@ package com.cloud.utils.fsm;
 
 public interface StateListener<S, E, V> {
     /**
-     * Event is triggered before state machine transition finished. 
+     * Event is triggered before state machine transition finished.
      * If you want to get the state of vm before state machine changed, you need to listen on this event
      * @param oldState VM's old state
      * @param event that triggered this VM state change

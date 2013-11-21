@@ -27,10 +27,10 @@ import streamer.PipelineImpl;
 
 /**
  * Server response to MCS Attach User request.
- * 
+ *
  * Once the User Channel ID has been extracted, the client MUST send an MCS
  * Channel Join Request PDU for the user channel.
- * 
+ *
  * @see http://msdn.microsoft.com/en-us/library/cc240685.aspx
  */
 public class ServerMCSAttachUserConfirmPDU extends OneTimeSwitch {
@@ -54,7 +54,7 @@ public class ServerMCSAttachUserConfirmPDU extends OneTimeSwitch {
     int typeAndFlags = buf.readUnsignedByte();
     int type = typeAndFlags >> 2;
     int flags = typeAndFlags & 0x3;
-    
+
     if (type != MCS_ATTACH_USER_CONFIRM_PDU)
       throw new RuntimeException("["+this+"] ERROR: Incorrect type of MCS AttachUserConfirm PDU. Expected value: 11, actual value: " + type + ", data: " + buf + ".");
 
@@ -81,7 +81,7 @@ public class ServerMCSAttachUserConfirmPDU extends OneTimeSwitch {
    */
   /**
    * Example.
-   * 
+   *
    * @see http://msdn.microsoft.com/en-us/library/cc240842.aspx
    * @see http://msdn.microsoft.com/en-us/library/cc240500.aspx
    */
@@ -117,7 +117,7 @@ public class ServerMCSAttachUserConfirmPDU extends OneTimeSwitch {
 
 /*
  * 03 00 00 0B 02 F0 80 2E 00 00 03.
- * 
+ *
  * Frame: Number = 18, Captured Frame Length = 68, MediaType =
  * DecryptedPayloadHeader + DecryptedPayloadHeader: FrameCount = 1, ErrorStatus
  * = SUCCESS TLSSSLData: Transport Layer Security (TLS) Payload Data + TLS: TLS

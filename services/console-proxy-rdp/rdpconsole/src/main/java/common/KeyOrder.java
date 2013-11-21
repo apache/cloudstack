@@ -27,19 +27,19 @@ public class KeyOrder extends Order {
 
   public KeyOrder(KeyEvent event, boolean pressed) {
     type = "key event";
-    
+
     this.event = event;
     this.pressed = pressed;
   }
 
   public KeyEvent event;
-  
+
   public boolean pressed;
 
   @Override
   public String toString() {
     return "KeyOrder [event=" + event + ", pressed=" + pressed + "]";
   }
-  
-  
+
+
 }

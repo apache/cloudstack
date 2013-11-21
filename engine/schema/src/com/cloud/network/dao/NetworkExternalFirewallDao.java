@@ -32,7 +32,7 @@ public interface NetworkExternalFirewallDao extends GenericDao<NetworkExternalFi
     /**
      * list all network to firewall device mappings corresponding to a firewall device Id
      * @param lbDeviceId firewall device Id
-     * @return list of NetworkExternalFirewallVO mappings corresponding to the networks mapped to the firewall device 
+     * @return list of NetworkExternalFirewallVO mappings corresponding to the networks mapped to the firewall device
      */
     List<NetworkExternalFirewallVO> listByFirewallDeviceId(long lbDeviceId);
 }

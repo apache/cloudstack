@@ -17,7 +17,7 @@
 package com.cloud.consoleproxy;
 
 /**
- * 
+ *
  * Data object to store parameter info needed by client to connect to its host
  */
 public class ConsoleProxyClientParam {

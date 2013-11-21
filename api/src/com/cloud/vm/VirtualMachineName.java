@@ -21,7 +21,7 @@ import java.util.Formatter;
 import com.cloud.dc.Vlan;
 
 /**
- * VM Name. 
+ * VM Name.
  */
 public class VirtualMachineName {
     public static final String SEPARATOR = "-";

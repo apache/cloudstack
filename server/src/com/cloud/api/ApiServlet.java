@@ -311,7 +311,7 @@ public class ApiServlet extends HttpServlet {
                  * params.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { accountObj }); } else {
                  * params.put(BaseCmd.Properties.USER_ID.getName(), new String[] { userId });
                  * params.put(BaseCmd.Properties.ACCOUNT_OBJ.getName(), new Object[] { accountObj }); } }
-                 * 
+                 *
                  * // update user context info here so that we can take information if the request is authenticated // via api
                  * key mechanism updateUserContext(params, session != null ? session.getId() : null);
                  */
@@ -359,9 +359,9 @@ public class ApiServlet extends HttpServlet {
      * private void updateUserContext(Map<String, Object[]> requestParameters, String sessionId) { String userIdStr =
      * (String)(requestParameters.get(BaseCmd.Properties.USER_ID.getName())[0]); Account accountObj =
      * (Account)(requestParameters.get(BaseCmd.Properties.ACCOUNT_OBJ.getName())[0]);
-     * 
+     *
      * Long userId = null; Long accountId = null; if(userIdStr != null) userId = Long.parseLong(userIdStr);
-     * 
+     *
      * if(accountObj != null) accountId = accountObj.getId(); UserContext.updateContext(userId, accountId, sessionId); }
      */
 

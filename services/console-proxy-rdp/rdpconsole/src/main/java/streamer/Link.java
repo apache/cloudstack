@@ -24,7 +24,7 @@ public interface Link extends DataSource, DataSink, Runnable {
 
   /**
    * Wire this link with given sink.
-   * 
+   *
    * @param sink
    *          an Element
    * @return same sink element, for chaining
@@ -33,7 +33,7 @@ public interface Link extends DataSource, DataSink, Runnable {
 
   /**
    * Wire this link with given source.
-   * 
+   *
    * @param source
    *          an Element
    * @return same source element, for chaining
@@ -53,12 +53,12 @@ public interface Link extends DataSource, DataSink, Runnable {
    * Resume transfer.
    */
   void resume();
-  
+
   /**
    * Change mode of operation of this link from push mode to pull mode.
    */
   void setPullMode();
-  
+
   /**
    * Drop this link.
    */

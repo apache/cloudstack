@@ -60,7 +60,7 @@ public interface SnapshotDao extends GenericDao<SnapshotVO, Long>, StateDao<Snap
     /**
      * Gets the Total Secondary Storage space (in bytes) used by snapshots
      * allocated for an account
-     * 
+     *
      * @param account
      * @return total Secondary Storage space allocated
      */

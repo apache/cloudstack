@@ -155,7 +155,7 @@ public class Vnc_3_3_Authentication extends OneTimeSwitch {
 
   /**
    * Encode password using DES encryption with given challenge.
-   * 
+   *
    * @param challenge
    *          a random set of bytes.
    * @param password
@@ -194,10 +194,10 @@ public class Vnc_3_3_Authentication extends OneTimeSwitch {
   /**
    * Reverse bits in byte, so least significant bit will be most significant
    * bit. E.g. 01001100 will become 00110010.
-   * 
+   *
    * See also: http://www.vidarholen.net/contents/junk/vnc.html ,
    * http://bytecrafter .blogspot.com/2010/09/des-encryption-as-used-in-vnc.html
-   * 
+   *
    * @param b
    *          a byte
    * @return byte in reverse order

@@ -70,7 +70,7 @@ public class ConsoleProxyHttpHandlerHelper {
                     map.put("ticket", param.getTicket());
             }
         } else {
-            // we no longer accept information from parameter other than token 
+            // we no longer accept information from parameter other than token
             guardUserInput(map);
         }
 

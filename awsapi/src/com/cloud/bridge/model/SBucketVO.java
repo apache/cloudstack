@@ -34,10 +34,10 @@ import javax.persistence.Transient;
 /**
  * Holds the relation
  *  Id,
- *  Name, 
+ *  Name,
  *  OwnerCanonicalId,
- *  SHost, 
- *  CreateTime, 
+ *  SHost,
+ *  CreateTime,
  *  VersioningStatus
  * For ORM see "com/cloud/bridge/model/SHost.hbm.xml"
  */

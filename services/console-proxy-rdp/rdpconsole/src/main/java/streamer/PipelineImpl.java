@@ -148,7 +148,7 @@ public class PipelineImpl implements Pipeline {
       this.elements.put(id, element);
     }
   }
-  
+
   @Override
   public void link(String... elementNames) {
 

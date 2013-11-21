@@ -53,7 +53,7 @@ public class BufferedImageCopyRectAdapter extends BaseElement {
   public void handleData(ByteBuffer buf, Link link) {
     if (buf == null)
       return;
-    
+
     if (verbose)
       System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
 
@@ -98,11 +98,11 @@ public class BufferedImageCopyRectAdapter extends BaseElement {
         // 3
         13, 14, 15, 16 };
 
-    
+
     // Initalize image
     int[] data = ((DataBufferInt) canvas.getOfflineImage().getRaster().getDataBuffer()).getData();
     System.arraycopy(pixelsBeforeCopy, 0, data, 0, pixelsBeforeCopy.length);
-    
+
     ByteBuffer buf = new ByteBuffer(new byte[0]);
     buf.putMetadata(TARGET_X, 0);
     buf.putMetadata(TARGET_Y, 0);

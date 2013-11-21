@@ -244,7 +244,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
 
         /*
          * TemplateDataStoreVO templateStore = new TemplateDataStoreVO();
-         * 
+         *
          * templateStore.setDataStoreId(imageStore.getId());
          * templateStore.setDownloadPercent(100);
          * templateStore.setDownloadState(Status.DOWNLOADED);
@@ -304,7 +304,7 @@ public class SnapshotTest extends CloudStackTestNGBase {
              * this.podId); params.put("roles",
              * DataStoreRole.Primary.toString()); params.put("uuid", uuid);
              * params.put("providerName", String.valueOf(provider.getName()));
-             * 
+             *
              * DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
              * DataStore store = lifeCycle.initialize(params); ClusterScope
              * scope = new ClusterScope(clusterId, podId, dcId);

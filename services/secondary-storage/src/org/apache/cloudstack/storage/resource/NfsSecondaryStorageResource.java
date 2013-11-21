@@ -2198,15 +2198,15 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
      * Mount remote device named on local file system on subfolder of _parent
      * field.
      * <p>
-     * 
+     *
      * Supported schemes are "nfs" and "cifs".
      * <p>
-     * 
+     *
      * CIFS parameters are documented with mount.cifs at
      * http://linux.die.net/man/8/mount.cifs
      * For simplicity, when a URI is used to specify a CIFS share,
      * options such as domain,user,password are passed as query parameters.
-     * 
+     *
      * @param uri
      *            crresponding to the remote device. Will throw for unsupported
      *            scheme.

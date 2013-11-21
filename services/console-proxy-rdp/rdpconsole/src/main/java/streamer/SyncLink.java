@@ -78,7 +78,7 @@ public class SyncLink implements Link {
 
   /**
    * When in loop, indicates that loop must be stopped.
-   * 
+   *
    * @see run()
    */
   private boolean shutdown = false;
@@ -336,7 +336,7 @@ public class SyncLink implements Link {
   /**
    * Run pull loop to actively pull data from source and push it to sink. It
    * must be only one pull loop per thread.
-   * 
+   *
    * Pull loop will start after event STREAM_START. This link and source element
    * incomming links will be switched to pull mode before pull loop will be
    * started using event LINK_SWITCH_TO_PULL_MODE.

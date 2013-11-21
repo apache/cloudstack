@@ -39,7 +39,7 @@ import com.cloud.bridge.service.exception.PermissionDeniedException;
 /**
  * This class uses the JSON simple parser to convert the JSON of a Bucket Policy
  * into internal objects.
- * 
+ *
  * Another way to implement this by use of a stack to keep track of where the current
  * parsing is being done.   However, since we are only handling a limited JSON sequence
  * here simple counts and flags will do the same as a stack.
@@ -329,10 +329,10 @@ public class PolicyParser {
     }
 
     /**
-     * From Amazon on S3 Policies: 
-     * "Each policy must cover only a single bucket and resources within that bucket (when writing a 
+     * From Amazon on S3 Policies:
+     * "Each policy must cover only a single bucket and resources within that bucket (when writing a
      * policy, don't include statements that refer to other buckets or resources in other buckets)"
-     * 
+     *
      * @param resourcePath
      */
     private void verifySameBucket(String resourcePath) throws PermissionDeniedException {

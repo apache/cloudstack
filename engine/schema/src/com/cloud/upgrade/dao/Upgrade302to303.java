@@ -123,7 +123,7 @@ public class Upgrade302to303 implements DbUpgrade {
 
                         while (srxDevicesResult.next()) {
                             long srxHostId = srxDevicesResult.getLong(1);
-                            // add SRX provider and provider instance to physical network 
+                            // add SRX provider and provider instance to physical network
                             addSrxServiceProvider(conn, physicalNetworkId, zoneId);
                             addSrxFirewall(conn, srxHostId, physicalNetworkId);
                         }

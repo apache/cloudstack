@@ -17,14 +17,14 @@
 package streamer;
 
 public enum Event {
-  STREAM_START, 
+  STREAM_START,
   STREAM_CLOSE,
-  
+
   /**
    * Upgrade socket to SSL.
    */
   SOCKET_UPGRADE_TO_SSL,
-  
+
   /**
    * Switch links to input mode.
    */

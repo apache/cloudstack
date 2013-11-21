@@ -22,7 +22,7 @@ import com.cloud.utils.db.GenericDao;
 public interface VpcOfferingDao extends GenericDao<VpcOfferingVO, Long> {
     /**
      * Returns the VPC offering that matches the unique name.
-     * 
+     *
      * @param uniqueName
      *            name
      * @return VpcOfferingVO

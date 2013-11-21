@@ -41,7 +41,7 @@ import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpServer;
 
 /**
- * 
+ *
  * ConsoleProxy, singleton class that manages overall activities in console proxy process. To make legacy code work, we still
  */
 public class ConsoleProxy {

@@ -38,26 +38,26 @@ public abstract class ModelObjectBase implements ModelObject {
         }
     }
     private TreeSet<ModelReference> _ancestors;
-    
+
     private TreeSet<ModelObject> _successors;
 
     ModelObjectBase() {
         _ancestors = new TreeSet<ModelReference>();
         _successors = new TreeSet<ModelObject>(new UuidComparator());
     }
-    
+
     @Override
     public void addSuccessor(ModelObject child) {
         _successors.add(child);
         ModelObjectBase base = (ModelObjectBase) child;
         base._ancestors.add(new ModelReference(this));
     }
-    
+
     @Override
     public TreeSet<ModelReference> ancestors() {
         return _ancestors;
     }
-    
+
     private void clearAncestorReference(ModelObjectBase child) {
         ModelReference ref = null;
         for (ModelReference objref : child._ancestors) {
@@ -70,7 +70,7 @@ public abstract class ModelObjectBase implements ModelObject {
             child._ancestors.remove(ref);
         }
     }
-    
+
     @Override
     public void clearSuccessors() {
         for (ModelObject successor : _successors) {
@@ -104,7 +104,7 @@ public abstract class ModelObjectBase implements ModelObject {
         }
         return compareTo(other) == 0;
     }
-    
+
     @Override
     protected void finalize() {
         clearSuccessors();
@@ -113,7 +113,7 @@ public abstract class ModelObjectBase implements ModelObject {
     public boolean hasDescendents() {
         return !successors().isEmpty();
     }
-    
+
     @Override
     public void removeSuccessor(ModelObject child) {
         clearAncestorReference((ModelObjectBase) child);

@@ -25,7 +25,7 @@ public class CloudStackPasswordData {
     private String encryptedPassword;
 
     /**
-     * 
+     *
      */
     public CloudStackPasswordData() {
         // TODO Auto-generated constructor stub

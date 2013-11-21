@@ -29,14 +29,14 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateObject;
 
 /**
- * This interface specifies the states and operations all physical 
- * and virtual resources in the data center must implement. 
+ * This interface specifies the states and operations all physical
+ * and virtual resources in the data center must implement.
  */
 @Produces({"application/json", "application/xml"})
 public interface DataCenterResourceEntity extends CloudStackEntity, StateObject<DataCenterResourceEntity.State> {
 
     /**
-     * This is the state machine for how CloudStack should interact with 
+     * This is the state machine for how CloudStack should interact with
      *
      */
     public enum State {

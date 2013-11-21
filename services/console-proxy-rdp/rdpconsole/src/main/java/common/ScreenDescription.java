@@ -24,7 +24,7 @@ import java.util.Set;
  * VncScreenDescription - contains information about remote VNC screen.
  */
 public class ScreenDescription {
-  
+
   protected Set<SizeChangeListener> sizeChangeListeners = new HashSet<SizeChangeListener>();
 
   // Frame buffer size
@@ -109,7 +109,7 @@ public class ScreenDescription {
 
     this.framebufferWidth = width;
     this.framebufferHeight = height;
-    
+
     callSizeChangeListeners(width, height);
   }
 

@@ -36,7 +36,7 @@ public class VMInterfaceModel extends ModelObjectBase {
     private static final Logger s_logger = Logger.getLogger(VMInterfaceModel.class);
 
     private String _uuid;
-    
+
     /**
      * properties
      */
@@ -54,25 +54,25 @@ public class VMInterfaceModel extends ModelObjectBase {
     private VirtualMachineModel _vmModel;
     private VirtualNetworkModel _vnModel;
     private VirtualMachineInterface _vmi;
-    
+
     public VMInterfaceModel(String uuid) {
         _uuid = uuid;
     }
-    
+
     public void addToVirtualMachine(VirtualMachineModel vmModel) {
         _vmModel = vmModel;
         if (vmModel != null) {
             vmModel.addSuccessor(this);
         }
     }
-    
+
     public void addToVirtualNetwork(VirtualNetworkModel vnModel) {
         _vnModel = vnModel;
         if (vnModel != null) {
             vnModel.addSuccessor(this);
         }
     }
-    
+
     public void build(ModelController controller, VMInstanceVO instance, NicVO nic) throws IOException {
         setProperties(controller, instance, nic);
 
@@ -87,7 +87,7 @@ public class VMInterfaceModel extends ModelObjectBase {
         } else if (ipModel != null) {
             removeSuccessor(ipModel);
         }
-        
+
         _macAddress = nic.getMacAddress();
     }
 
@@ -102,7 +102,7 @@ public class VMInterfaceModel extends ModelObjectBase {
         }
         return _uuid.compareTo(other._uuid);
     }
-    
+
     @Override
     public void delete(ModelController controller) throws IOException {
         for (ModelObject successor: successors()) {
@@ -110,19 +110,19 @@ public class VMInterfaceModel extends ModelObjectBase {
         }
 
         ApiConnector api = controller.getApiAccessor();
-        api.delete(VirtualMachineInterface.class, _uuid);        
+        api.delete(VirtualMachineInterface.class, _uuid);
     }
 
     @Override
     public void destroy(ModelController controller) throws IOException {
         delete(controller);
-        
+
         for (ModelObject successor: successors()) {
             successor.destroy(controller);
         }
         clearSuccessors();
     }
-    
+
     public InstanceIpModel getInstanceIp() {
         for (ModelObject successor : successors()) {
             if (successor.getClass() == InstanceIpModel.class) {
@@ -131,23 +131,23 @@ public class VMInterfaceModel extends ModelObjectBase {
         }
         return null;
     }
-    
+
     public String getNetworkUuid() {
         return _networkId;
     }
-    
+
     public VirtualNetworkModel getVirtualNetworkModel() {
         return _vnModel;
     }
-    
+
     public String getUuid() {
         return _uuid;
     }
-    
+
     public VirtualMachineInterface getVMInterface() {
         return _vmi;
     }
-    
+
     public void setProperties(ModelController controller, VMInstanceVO instance, NicVO nic) throws IOException {
         _vmName = instance.getInstanceName();
         _deviceId = nic.getDeviceId();
@@ -162,7 +162,7 @@ public class VMInterfaceModel extends ModelObjectBase {
             _nicActive = false;
             break;
         }
-        
+
         switch (network.getState()) {
         case Implemented:
         case Setup:
@@ -173,17 +173,17 @@ public class VMInterfaceModel extends ModelObjectBase {
             break;
         }
         assert _vnModel != null;
-        _networkId = _vnModel.getUuid();        
+        _networkId = _vnModel.getUuid();
     }
-    
+
     public void setActive() {
         _nicActive = true;
     }
-    
+
     void setServiceTag(String tag) {
         _serviceTag = tag;
     }
-    
+
     @Override
     public void update(ModelController controller) throws InternalErrorException, IOException {
         if (!_netActive || !_nicActive) {
@@ -219,7 +219,7 @@ public class VMInterfaceModel extends ModelObjectBase {
             mac.addMacAddress(_macAddress);
             vmi.setMacAddresses(mac);
         }
-        
+
         if (_serviceTag != null) {
             vmi.setProperties(new VirtualMachineInterfacePropertiesType(_serviceTag, null));
         }
@@ -235,7 +235,7 @@ public class VMInterfaceModel extends ModelObjectBase {
         }
 
         api.read(vmi);
-        
+
         int ipCount = 0;
         for (ModelObject successor: successors()) {
             if (successor.getClass() == InstanceIpModel.class) {
@@ -249,7 +249,7 @@ public class VMInterfaceModel extends ModelObjectBase {
             s_logger.warn("virtual-machine-interface " + _uuid + " has no instance-ip");
         }
     }
-    
+
     @Override
     public boolean verify(ModelController controller) {
         // TODO Auto-generated method stub

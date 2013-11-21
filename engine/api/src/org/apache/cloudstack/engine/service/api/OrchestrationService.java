@@ -43,12 +43,12 @@ import com.cloud.vm.NicProfile;
 public interface OrchestrationService {
     /**
      * creates a new virtual machine
-     * 
+     *
      * @param id externally unique name to reference the virtual machine
      * @param owner owner reference
      * @param template reference to the template
      * @param hostName name of the host
-     * @param displayName name to look at 
+     * @param displayName name to look at
      * @param cpu # of cpu cores
      * @param speed speed of the cpu core in MHZ
      * @param memory memory to allocate in bytes

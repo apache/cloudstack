@@ -398,7 +398,7 @@ public class EC2RestServlet extends HttpServlet {
 
     /**
      * Provide an easy way to determine the version of the implementation running.
-     * 
+     *
      * This is an unauthenticated REST call.
      */
     private void cloudEC2Version(HttpServletRequest request, HttpServletResponse response) {
@@ -409,20 +409,20 @@ public class EC2RestServlet extends HttpServlet {
 
     /**
      * This request registers the Cloud.com account holder to the EC2 service.   The Cloud.com
-     * account holder saves his API access and secret keys with the EC2 service so that 
+     * account holder saves his API access and secret keys with the EC2 service so that
      * the EC2 service can make Cloud.com API calls on his behalf.   The given API access
-     * and secret key are saved into the "usercredentials" database table.   
-     * 
+     * and secret key are saved into the "usercredentials" database table.
+     *
      * This is an unauthenticated REST call.   The only required parameters are 'accesskey' and
-     * 'secretkey'. 
-     * 
+     * 'secretkey'.
+     *
      * To verify that the given keys represent an existing account they are used to execute the
      * Cloud.com's listAccounts API function.   If the keys do not represent a valid account the
      * listAccounts function will fail.
-     * 
+     *
      * A user can call this REST function any number of times, on each call the Cloud.com secret
      * key is simply over writes any previously stored value.
-     * 
+     *
      * As with all REST calls HTTPS should be used to ensure their security.
      */
     private void setUserKeys(HttpServletRequest request, HttpServletResponse response) {
@@ -468,18 +468,18 @@ public class EC2RestServlet extends HttpServlet {
     }
 
     /**
-     * The SOAP API for EC2 uses WS-Security to sign all client requests.  This requires that 
+     * The SOAP API for EC2 uses WS-Security to sign all client requests.  This requires that
      * the client have a public/private key pair and the public key defined by a X509 certificate.
      * Thus in order for a Cloud.com account holder to use the EC2's SOAP API he must register
      * his X509 certificate with the EC2 service.   This function allows the Cloud.com account
      * holder to "load" his X509 certificate into the service.   Note, that the SetUserKeys REST
      * function must be called before this call.
-     * 
+     *
      * This is an authenticated REST call and as such must contain all the required REST parameters
      * including: Signature, Timestamp, Expires, etc.   The signature is calculated using the
      * Cloud.com account holder's API access and secret keys and the Amazon defined EC2 signature
      * algorithm.
-     * 
+     *
      * A user can call this REST function any number of times, on each call the X509 certificate
      * simply over writes any previously stored value.
      */
@@ -544,11 +544,11 @@ public class EC2RestServlet extends HttpServlet {
     }
 
     /**
-     * The SOAP API for EC2 uses WS-Security to sign all client requests.  This requires that 
+     * The SOAP API for EC2 uses WS-Security to sign all client requests.  This requires that
      * the client have a public/private key pair and the public key defined by a X509 certificate.
      * This REST call allows a Cloud.com account holder to remove a previouly "loaded" X509
      * certificate out of the EC2 service.
-     * 
+     *
      * This is an unauthenticated REST call and as such must contain all the required REST parameters
      * including: Signature, Timestamp, Expires, etc.   The signature is calculated using the
      * Cloud.com account holder's API access and secret keys and the Amazon defined EC2 signature
@@ -707,11 +707,11 @@ public class EC2RestServlet extends HttpServlet {
     }
 
     /**
-     * The approach taken here is to map these REST calls into the same objects used 
+     * The approach taken here is to map these REST calls into the same objects used
      * to implement the matching SOAP requests (e.g., AttachVolume).   This is done by parsing
      * out the URL parameters and loading them into the relevant EC2XXX object(s).   Once
      * the parameters are loaded the appropriate EC2Engine function is called to perform
-     * the requested action.   The result of the EC2Engine function is a standard 
+     * the requested action.   The result of the EC2Engine function is a standard
      * Amazon WSDL defined object (e.g., AttachVolumeResponse Java object).   Finally the
      * serialize method is called on the returned response object to obtain the extected
      * response XML.
@@ -885,7 +885,7 @@ public class EC2RestServlet extends HttpServlet {
 
             } while (true);
 
-            // -> list: IpPermissions.n.Groups.m.UserId and IpPermissions.n.Groups.m.GroupName 
+            // -> list: IpPermissions.n.Groups.m.UserId and IpPermissions.n.Groups.m.GroupName
             mCount = 1;
             do {
                 String[] user = request.getParameterValues("IpPermissions." + nCount + ".Groups." + mCount + ".UserId");
@@ -1780,7 +1780,7 @@ public class EC2RestServlet extends HttpServlet {
      * &Filter.1.Value.1=i-1a2b3c4d
      * &Filter.2.Name=attachment.delete-on-termination
      * &Filter.2.Value.1=true
-     * 
+     *
      * @param request
      * @return List<EC2Filter>
      */
@@ -2076,7 +2076,7 @@ public class EC2RestServlet extends HttpServlet {
         restAuth.setHTTPRequestURI(requestUri);
 
         String queryString = request.getQueryString();
-        // getQueryString returns null (does it ever NOT return null for these), 
+        // getQueryString returns null (does it ever NOT return null for these),
         // we need to construct queryString to avoid changing the auth code...
         if (queryString == null) {
             // construct our idea of a queryString with parameters!
@@ -2108,7 +2108,7 @@ public class EC2RestServlet extends HttpServlet {
 
     /**
      * We check this to reduce replay attacks.
-     * 
+     *
      * @param timeStamp
      * @return true - if the request is not longer valid, false otherwise
      * @throws ParseException
@@ -2191,7 +2191,7 @@ public class EC2RestServlet extends HttpServlet {
     }
 
     /**
-     * Serialize Axis beans to XML output. 
+     * Serialize Axis beans to XML output.
      */
     private void serializeResponse(HttpServletResponse response, ADBBean EC2Response) throws ADBException, XMLStreamException, IOException {
         OutputStream os = response.getOutputStream();

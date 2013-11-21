@@ -23,7 +23,7 @@ import com.cloud.vm.VirtualMachine.PowerState;
 // TODO vmsync
 // We should also have a HostVmStateReport class instead of using raw Map<> data structure,
 // for now, we store host-specific info at each VM entry and host fields are fixed
-// 
+//
 // This needs to be refactor-ed afterwards
 //
 public class HostVmStateReportEntry {

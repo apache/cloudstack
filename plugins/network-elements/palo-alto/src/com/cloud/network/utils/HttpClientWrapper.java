@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.utils;
@@ -35,36 +35,36 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import java.io.*;
 
 public class HttpClientWrapper {
- 
+
     public static HttpClient wrapClient(HttpClient base) {
         try {
             SSLContext ctx = SSLContext.getInstance("TLS");
             X509TrustManager tm = new X509TrustManager() {
- 
+
                 public void checkClientTrusted(X509Certificate[] xcs, String string) throws CertificateException {
                 }
- 
+
                 public void checkServerTrusted(X509Certificate[] xcs, String string) throws CertificateException {
                 }
- 
+
                 public X509Certificate[] getAcceptedIssuers() {
                     return null;
                 }
             };
             X509HostnameVerifier verifier = new X509HostnameVerifier() {
- 
+
                 @Override
                 public void verify(String string, SSLSocket ssls) throws IOException {
                 }
- 
+
                 @Override
                 public void verify(String string, X509Certificate xc) throws SSLException {
                 }
- 
+
                 @Override
                 public void verify(String string, String[] strings, String[] strings1) throws SSLException {
                 }
- 
+
                 @Override
                 public boolean verify(String string, SSLSession ssls) {
                     return true;

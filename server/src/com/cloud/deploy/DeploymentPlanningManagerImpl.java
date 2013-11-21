@@ -930,7 +930,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         }
 
         // Cluster can be put in avoid set in following scenarios:
-        // 1. If storage allocators haven't put any pools in avoid set means either no pools in cluster 
+        // 1. If storage allocators haven't put any pools in avoid set means either no pools in cluster
         // or pools not suitable for the allocators to handle or there is no
         // linkage of any suitable host to any of the pools in cluster
         // 2. If all 'shared' or 'local' pools are in avoid set

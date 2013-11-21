@@ -26,9 +26,9 @@ import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
 /*
- * This helper class provides a way to retrieve Method in a strong-type way. It takes advantage of power of 
+ * This helper class provides a way to retrieve Method in a strong-type way. It takes advantage of power of
  * Intelligent IDE(Eclipse) in code-editing
- * 
+ *
  * DummyImpl dummy = new DummyImpl();
  * MethodCapturer<DummyImpl> capturer = MethodCapturer.capture(dummy);
  * Method method = capturer.get(capturer.instance().foo2());

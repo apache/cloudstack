@@ -84,7 +84,7 @@ public interface RegionManager {
 
     /**
      * Updates an account
-     * isPopagate falg is set to true if sent from peer Region 
+     * isPopagate falg is set to true if sent from peer Region
      *
      * @param cmd
      *            - the parameter containing accountId or account nameand domainId
@@ -125,7 +125,7 @@ public interface RegionManager {
 
     /**
      * update an existing domain
-     * 
+     *
      * @param cmd
      *            - the command containing domainId and new domainName
      * @return Domain object if the command succeeded

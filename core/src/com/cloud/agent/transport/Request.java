@@ -57,7 +57,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  * in the over the wire protocol. For example, if we decide to not use Gson.
  * It does not version the changes in the actual commands. That's expected
  * to be done by adding new classes to the command and answer list.
- * 
+ *
  * A request looks as follows:
  * 1. Version - 1 byte;
  * 2. Flags - 3 bytes;
@@ -66,7 +66,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  * 5. ManagementServerId - 8 bytes;
  * 6. AgentId - 8 bytes;
  * 7. Data Package.
- * 
+ *
  */
 public class Request {
     private static final Logger s_logger = Logger.getLogger(Request.class);
@@ -446,7 +446,7 @@ public class Request {
      * correctly formed so it's possible that it throws underflow exceptions
      * but you shouldn't be concerned about that since that all bytes sent in
      * should already be formatted correctly.
-     * 
+     *
      * @param bytes bytes to be converted.
      * @return Request or Response depending on the data.
      * @throws ClassNotFoundException if the Command or Answer can not be formed.

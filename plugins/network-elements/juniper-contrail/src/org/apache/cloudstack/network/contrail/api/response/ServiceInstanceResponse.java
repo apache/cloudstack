@@ -26,7 +26,7 @@ import com.google.gson.annotations.SerializedName;
 
 public class ServiceInstanceResponse extends BaseResponse implements
         ControlledEntityResponse {
-    
+
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the virtual machine")
     private String id;
 

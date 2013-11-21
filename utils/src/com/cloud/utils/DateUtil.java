@@ -115,12 +115,12 @@ public class DateUtil {
      * @param intervalType  hourly/daily/weekly/monthly
      * @param schedule MM[:HH][:DD] format. DD is day of week for weekly and day of month for monthly
      * @param timezone The timezone in which the schedule string is specified
-     * @param startDate if specified, returns next run time after the specified startDate  
+     * @param startDate if specified, returns next run time after the specified startDate
      * @return
      */
     public static Date getNextRunTime(IntervalType type, String schedule, String timezone, Date startDate) {
 
-        String[] scheduleParts = schedule.split(":"); //MM:HH:DAY 
+        String[] scheduleParts = schedule.split(":"); //MM:HH:DAY
 
         final Calendar scheduleTime = Calendar.getInstance();
         scheduleTime.setTimeZone(TimeZone.getTimeZone(timezone));
@@ -152,7 +152,7 @@ public class DateUtil {
                     execDate = scheduleTime.getTime();
                     scheduleTime.setLenient(false);
                 }
-                // XXX: !execDate.after(startDate) is strictly for testing. 
+                // XXX: !execDate.after(startDate) is strictly for testing.
                 // During testing we use a test clock which runs much faster than the real clock
                 // So startDate and execDate will always be ahead in the future
                 // and we will never increase the time here
@@ -178,7 +178,7 @@ public class DateUtil {
                     execDate = scheduleTime.getTime();
                     scheduleTime.setLenient(false);
                 }
-                // XXX: !execDate.after(startDate) is strictly for testing. 
+                // XXX: !execDate.after(startDate) is strictly for testing.
                 // During testing we use a test clock which runs much faster than the real clock
                 // So startDate and execDate will always be ahead in the future
                 // and we will never increase the time here
@@ -205,7 +205,7 @@ public class DateUtil {
                     execDate = scheduleTime.getTime();
                     scheduleTime.setLenient(false);
                 }
-                // XXX: !execDate.after(startDate) is strictly for testing. 
+                // XXX: !execDate.after(startDate) is strictly for testing.
                 // During testing we use a test clock which runs much faster than the real clock
                 // So startDate and execDate will always be ahead in the future
                 // and we will never increase the time here
@@ -236,7 +236,7 @@ public class DateUtil {
                     execDate = scheduleTime.getTime();
                     scheduleTime.setLenient(false);
                 }
-                // XXX: !execDate.after(startDate) is strictly for testing. 
+                // XXX: !execDate.after(startDate) is strictly for testing.
                 // During testing we use a test clock which runs much faster than the real clock
                 // So startDate and execDate will always be ahead in the future
                 // and we will never increase the time here

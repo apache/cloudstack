@@ -101,7 +101,7 @@ public class ByteBuffer {
 
   /**
    * Return string representation of this byte buffer.
-   * 
+   *
    * @param maxLength
    *          number of bytes to show in string
    */
@@ -113,7 +113,7 @@ public class ByteBuffer {
   /**
    * Return string representation of this byte buffer as hexadecimal numbers,
    * e.g. "[0x01, 0x02]".
-   * 
+   *
    * @param maxLength
    *          number of bytes to show in string
    */
@@ -133,7 +133,7 @@ public class ByteBuffer {
   /**
    * Return string representation of this byte buffer as hexadecimal numbers,
    * e.g. "01 02".
-   * 
+   *
    * @param maxLength
    *          number of bytes to show in string
    */
@@ -215,7 +215,7 @@ public class ByteBuffer {
 
   /**
    * Create new buffer, which holds data from both buffers. Expensive operation.
-   * 
+   *
    * @TODO if only one reference to this ByteBuffer exists, then extend this
    *       buffer instead of creating new buffer
    * @TODO support list of buffers to avoid expensive joins until absolute
@@ -368,10 +368,10 @@ public class ByteBuffer {
   /**
    * Read unsigned int in network order in variable length format. Cursor is
    * advanced by 1 to 4 bytes.
-   * 
+   *
    * Two most significant bits of first byte indicates length of field: 0x00 - 1
    * byte, 0x40 - 2 bytes, 0x80 - 3 bytes, 0xc0 - 4 bytes.
-   * 
+   *
    * @see http://msdn.microsoft.com/en-us/library/cc241614.aspx
    */
   public int readEncodedUnsignedInt() {
@@ -447,7 +447,7 @@ public class ByteBuffer {
   /**
    * Read unsigned short in network order in variable length format. Cursor is
    * advanced by 1 or 2 bytes.
-   * 
+   *
    * Most significant bit of first byte indicates length of field: 0 - 1 byte, 1
    * - 2 bytes.
    */
@@ -480,10 +480,10 @@ public class ByteBuffer {
   /**
    * Read unsigned short in network order in variable length format. Cursor is
    * advanced by 1 or 2 bytes.
-   * 
+   *
    * Most significant bit of first byte indicates length of field: 0x00 - 1
    * byte, 0x80 - 2 bytes.
-   * 
+   *
    * @see http://msdn.microsoft.com/en-us/library/cc241612.aspx
    */
   public int readEncodedUnsignedShort() {
@@ -503,11 +503,11 @@ public class ByteBuffer {
   /**
    * Read signed short in network order in variable length format. Cursor is
    * advanced by 1 or 2 bytes.
-   * 
+   *
    * Most significant bit of first byte indicates length of field: 0x00 - 1
    * byte, 0x80 - 2 bytes. Second most significant bit indicates is value
    * positive or negative.
-   * 
+   *
    * @see http://msdn.microsoft.com/en-us/library/cc241613.aspx
    */
   public int readEncodedSignedShort() {
@@ -631,7 +631,7 @@ public class ByteBuffer {
   /**
    * Write int in variable length format. Cursor is advanced by number of bytes
    * written (1-5).
-   * 
+   *
    * Topmost bit of each byte is set to 1 to indicate that next byte has data.
    */
   public void writeVariableIntLE(int i) {
@@ -652,7 +652,7 @@ public class ByteBuffer {
   /**
    * Write short in variable length format. Cursor is advanced by number of
    * bytes written (1-2).
-   * 
+   *
    * Topmost bit of first byte is set to 1 to indicate that next byte has data.
    */
   public void writeVariableShort(int length) {
@@ -778,7 +778,7 @@ public class ByteBuffer {
 
   /**
    * Read RGB color in LE order. Cursor is advanced by 3.
-   * 
+   *
    * @return color as int, with red in lowest octet.
    */
   public int readRGBColor() {

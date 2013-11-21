@@ -22,7 +22,7 @@ import java.util.TimerTask;
 
 /**
  * A test clock which is also a TimerTask. The task calls a Scheduler's poll method
- * 
+ *
  */
 public class TestClock extends TimerTask {
     private int _minute = 0;
@@ -134,7 +134,7 @@ public class TestClock extends TimerTask {
                 _year++;
             }
             if (_scheduler != null) {
-                // XXX: Creating new date is hugely inefficient for every minute. 
+                // XXX: Creating new date is hugely inefficient for every minute.
                 // Later the time in the database will be changed to currentTimeInMillis.
                 // Then we can use System.getCurrentTimeInMillis() which is damn cheap.
                 _cal.set(_year, _month, _day, _hour, _minute);

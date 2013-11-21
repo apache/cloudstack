@@ -40,7 +40,7 @@ public interface HypervisorResource extends ServerResource {
     /**
      * Stops a VM.  Must return true as long as the VM does not exist.
      * @param cmd information necessary to identify the VM to stop.
-     * @return StopAnswer 
+     * @return StopAnswer
      */
     StopAnswer execute(StopCommand cmd);
 

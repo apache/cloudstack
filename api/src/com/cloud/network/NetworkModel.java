@@ -42,14 +42,14 @@ import com.cloud.vm.VirtualMachine;
 /**
  * The NetworkModel presents a read-only view into the Network data such as L2 networks,
  * Nics, PublicIps, NetworkOfferings, traffic labels, physical networks and the like
- * The idea is that only the orchestration core should be able to modify the data, while other 
+ * The idea is that only the orchestration core should be able to modify the data, while other
  * participants in the orchestration can use this interface to query the data.
  */
 public interface NetworkModel {
 
     /**
      * Lists IP addresses that belong to VirtualNetwork VLANs
-     * 
+     *
      * @param accountId
      *            - account that the IP address should belong to
      * @param associatedNetworkId

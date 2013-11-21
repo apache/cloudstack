@@ -40,7 +40,7 @@ import com.cloud.utils.mgmt.JmxUtil;
 /**
  * ConnectionConcierge keeps stand alone database connections alive.  This is
  * needs someone to keep that database connection from being garbage collected
- * 
+ *
  */
 public class ConnectionConcierge {
 

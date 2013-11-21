@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.dao;
@@ -23,7 +23,7 @@ import com.cloud.utils.db.GenericDao;
 public interface CiscoNexusVSMDeviceDao extends GenericDao<CiscoNexusVSMDeviceVO, Long> {
 
     /**
-     * Return a Cisco Nexus VSM record given its switch domain Id. 
+     * Return a Cisco Nexus VSM record given its switch domain Id.
      * @param Cisco Nexus VSM Switch Domain Id
      * @return CiscoNexusVSMDeviceVO for the VSM having the specified switch domain Id.
      */
@@ -45,7 +45,7 @@ public interface CiscoNexusVSMDeviceDao extends GenericDao<CiscoNexusVSMDeviceVO
      * Return a list of VSM devices that use the same VLAN for no matter what interface. Unlikely, but oh well.
      * @param vlanId
      *     - Needs to filter results by the invoker's account Id. So we may end up adding another param
-     *    or may query it in the function. 
+     *    or may query it in the function.
      * @return
      */
     List<CiscoNexusVSMDeviceVO> listByVlanId(int vlanId);
@@ -66,7 +66,7 @@ public interface CiscoNexusVSMDeviceDao extends GenericDao<CiscoNexusVSMDeviceVO
     /**
      * Below is a big list of other functions that we may need, but will declare/define/implement once we implement
      * the functions above. Pasting those below to not lose track of them.
-     * 
+     *
      *      ListbyZoneId()
         - Lists all VSMs in the specified zone.
 
@@ -85,7 +85,7 @@ public interface CiscoNexusVSMDeviceDao extends GenericDao<CiscoNexusVSMDeviceVO
         - Lists all VSMs whose Packet VLAN matches the specified VLAN.
             - Filters results by the invoker's account Id.
 
-    ListbyConfigMode(mode)    
+    ListbyConfigMode(mode)
         - Lists all VSMs which are currently configured in the specified mode (standalone/HA).
             - Filters results by the invoker's account Id.
 

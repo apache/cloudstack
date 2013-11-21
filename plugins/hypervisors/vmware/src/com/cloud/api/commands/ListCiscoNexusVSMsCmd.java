@@ -48,7 +48,7 @@ public class ListCiscoNexusVSMsCmd extends BaseListCmd {
 
     /**
      * This command returns a list of all the VSMs configured in the management server.
-     * If a clusterId is specified, it will return a list containing only that VSM 
+     * If a clusterId is specified, it will return a list containing only that VSM
      * that is associated with that cluster. If a zone is specified, it will pull
      * up all the clusters of type vmware in that zone, and prepare a list of VSMs
      * associated with those clusters.

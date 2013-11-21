@@ -72,7 +72,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
 
         @Inject AccountJoinDao _accountJoinDao;
     @Inject UserDao _userDao;
-    
+
     UserVO _systemUser;
     AccountVO _systemAccount;
 
@@ -96,14 +96,14 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     public void checkAccess(Account arg0, Domain arg1)
             throws PermissionDeniedException {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
     public void checkAccess(Account arg0, AccessType arg1, boolean arg2,
             ControlledEntity... arg3) throws PermissionDeniedException {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
@@ -130,7 +130,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
 
     @Override
     public Account finalizeOwner(Account arg0, String arg1, Long arg2, Long arg3) {
-        return _systemAccount; 
+        return _systemAccount;
     }
 
     @Override
@@ -199,7 +199,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     @Override
     public void markUserRegistered(long arg0) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
@@ -214,7 +214,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
             SearchBuilder<? extends ControlledEntity> arg0, Long arg1,
             boolean arg2, List<Long> arg3, ListProjectResourcesCriteria arg4) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
@@ -222,7 +222,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
             SearchCriteria<? extends ControlledEntity> arg0, Long arg1,
             boolean arg2, List<Long> arg3, ListProjectResourcesCriteria arg4) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
@@ -231,7 +231,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
             Ternary<Long, Boolean, ListProjectResourcesCriteria> arg5,
             boolean arg6, boolean arg7) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
@@ -239,7 +239,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
             SearchBuilder<? extends ControlledViewEntity> arg0, Long arg1,
             boolean arg2, List<Long> arg3, ListProjectResourcesCriteria arg4) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
@@ -247,7 +247,7 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
             SearchCriteria<? extends ControlledViewEntity> arg0, Long arg1,
             boolean arg2, List<Long> arg3, ListProjectResourcesCriteria arg4) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
@@ -365,8 +365,8 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     @Override
     public void logoutUser(long userId) {
         // TODO Auto-generated method stub
-        
+
     }
-    
+
 
 }

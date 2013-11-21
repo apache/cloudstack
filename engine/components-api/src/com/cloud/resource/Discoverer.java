@@ -32,7 +32,7 @@ import com.cloud.utils.component.Adapter;
 public interface Discoverer extends Adapter {
     /**
      * Given an accessible ip address, find out what it is.
-     * 
+     *
      * @param url
      * @param username
      * @param password

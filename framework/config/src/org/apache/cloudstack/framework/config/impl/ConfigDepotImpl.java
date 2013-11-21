@@ -47,7 +47,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  *   - Gather all of the Configurable interfaces and insert their config
  *     variables into the config table.
  *   - Hide the data source where configs are stored and retrieved.
- * 
+ *
  * When dealing with this class, we must be very careful on cluster situations.
  *
  * TODO:

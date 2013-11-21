@@ -32,8 +32,8 @@ import com.cloud.host.Status;
 import com.cloud.storage.StoragePool;
 
 /**
- * ProvisioningService registers and deregisters physical and virtual 
- * resources that the management server can use.  
+ * ProvisioningService registers and deregisters physical and virtual
+ * resources that the management server can use.
  */
 public interface ProvisioningService {
 

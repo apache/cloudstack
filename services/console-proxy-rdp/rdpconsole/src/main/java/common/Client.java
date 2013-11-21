@@ -88,7 +88,7 @@ public class Client {
       pipeline.link("socket", main.getId(), "socket");
 
       pipeline.validate();
-      
+
       frame = createVncClientMainWindow(canvas, "VNC", new WindowAdapter() {
         public void windowClosing(WindowEvent evt) {
           shutdown();

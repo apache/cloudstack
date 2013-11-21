@@ -26,7 +26,7 @@ public class CloudStackNetworkServiceCapability {
     private String value;
 
     /**
-     * 
+     *
      */
     public CloudStackNetworkServiceCapability() {
     }

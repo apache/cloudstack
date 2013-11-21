@@ -20,7 +20,7 @@ public interface DataSource {
 
   /**
    * Get data from source.
-   * 
+   *
    * @param block
    *          if false, then return immediately when no data is available,
    *          otherwise wait for data
@@ -30,7 +30,7 @@ public interface DataSource {
 
   /**
    * Hold data temporary to use at next pull or push.
-   * 
+   *
    * @param buf
    *          a data
    */
@@ -40,7 +40,7 @@ public interface DataSource {
    * Hold data temporary to use at next pull. Don't return abything untill given
    * amount of data will be read from source, because data will be pushed back
    * anyway.
-   * 
+   *
    * @param buf
    *          a data
    * @param lengthOfFullPacket
@@ -50,7 +50,7 @@ public interface DataSource {
 
   /**
    * Send event to pads.
-   * 
+   *
    * @param event
    *          a event
    * @param direction

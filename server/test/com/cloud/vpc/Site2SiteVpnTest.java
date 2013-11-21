@@ -60,7 +60,7 @@ public class Site2SiteVpnTest {
 
     @Test
     public void testInjected() throws Exception {
-//        List<Pair<String, Class<? extends Site2SiteVpnServiceProvider>>> list = 
+//        List<Pair<String, Class<? extends Site2SiteVpnServiceProvider>>> list =
 //                new ArrayList<Pair<String, Class<? extends Site2SiteVpnServiceProvider>>>();
 //        list.add(new Pair<String, Class<? extends Site2SiteVpnServiceProvider>>("Site2SiteVpnServiceProvider", MockSite2SiteVpnServiceProvider.class));
 //        locator.addAdapterChain(Site2SiteVpnServiceProvider.class, list);

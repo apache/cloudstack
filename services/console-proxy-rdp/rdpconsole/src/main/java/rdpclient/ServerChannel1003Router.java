@@ -458,7 +458,7 @@ public class ServerChannel1003Router extends BaseElement {
 
   /**
    * Example.
-   * 
+   *
    */
   public static void main(String args[]) {
     // System.setProperty("streamer.Link.debug", "true");

@@ -38,7 +38,7 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     /**
      * Mark all hosts associated with a certain management server
      * as disconnected.
-     * 
+     *
      * @param msId management server id.
      */
     void markHostsAsDisconnected(long msId, long lastPing);

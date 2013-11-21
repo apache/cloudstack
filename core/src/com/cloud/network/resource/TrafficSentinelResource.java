@@ -193,7 +193,7 @@ public class TrafficSentinelResource implements ServerResource {
         try {
             //Direct Network Usage
             URL trafficSentinel;
-            //Use Global include/exclude zones if there are no per TS zones 
+            //Use Global include/exclude zones if there are no per TS zones
             if (_inclZones == null) {
                 _inclZones = cmd.getIncludeZones();
             }

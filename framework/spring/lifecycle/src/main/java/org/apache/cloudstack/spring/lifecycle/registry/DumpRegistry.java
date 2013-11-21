@@ -32,13 +32,13 @@ import org.slf4j.LoggerFactory;
 public class DumpRegistry extends ComponentLifecycleBase {
 
     private static final Logger log = LoggerFactory.getLogger(DumpRegistry.class);
-    
+
     List<Registry<?>> registries;
 
     public List<Registry<?>> getRegistries() {
         return registries;
     }
-    
+
     @Inject
     public void setRegistries(List<Registry<?>> registries) {
         this.registries = registries;
@@ -48,20 +48,20 @@ public class DumpRegistry extends ComponentLifecycleBase {
     public boolean start() {
         for ( Registry<?> registry : registries ) {
             StringBuilder buffer = new StringBuilder();
-            
+
             for ( Object o : registry.getRegistered() ) {
                 if ( buffer.length() > 0 )
                     buffer.append(", ");
-                
+
                 buffer.append(getName(o));
             }
-            
+
             log.info("Registry [{}] contains [{}]", registry.getName(), buffer);
         }
-        
+
         return super.start();
     }
-    
+
     protected String getName(Object o) {
         String name = null;
         if (o instanceof Named) {

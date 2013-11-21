@@ -63,7 +63,7 @@ public class NetappDefaultAllocatorImpl implements NetappAllocator {
 
     /**
      * This method does the actual round robin allocation
-     * @param poolName 
+     * @param poolName
      * @param lunSizeGb
      * @return -- the selected volume to create the lun on
      * @throws IOException
@@ -116,7 +116,7 @@ public class NetappDefaultAllocatorImpl implements NetappAllocator {
 
     /**
      * This method does the byte to gb conversion
-     * @param bytes 
+     * @param bytes
      * @return -- converted gb
      */
     private long bytesToGb(long bytes) {

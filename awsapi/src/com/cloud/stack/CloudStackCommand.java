@@ -32,7 +32,7 @@ import org.apache.commons.codec.binary.Base64;
 
 /**
  * CloudStackCommand wraps command properties that are being sent to CloudStack
- * 
+ *
  */
 public class CloudStackCommand {
     Map<String, String> _params = new HashMap<String, String>();

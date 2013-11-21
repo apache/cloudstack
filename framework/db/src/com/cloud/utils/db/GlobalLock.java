@@ -32,7 +32,7 @@ import com.cloud.utils.Profiler;
 // Example of using dynamic named locks
 //
 //        GlobalLock lock = GlobalLock.getInternLock("some table name" + rowId);
-//        
+//
 //        if(lock.lock()) {
 //            try {
 //                do something

@@ -25,7 +25,7 @@ public class EC2DescribeKeyPairsResponse {
     protected List<EC2SSHKeyPair> keyPairSet = new ArrayList<EC2SSHKeyPair>();
 
     /**
-     * 
+     *
      */
     public EC2DescribeKeyPairsResponse() {
     }

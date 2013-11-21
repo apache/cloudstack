@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.hypervisor.vmware;
@@ -67,7 +67,7 @@ public class VmwareCleanupMaid {
 
 //    @Override
 //    public int cleanup(CheckPointManager checkPointMgr) {
-//        
+//
 //        // save a check-point in case we crash at current run so that we won't lose it
 //        _checkPoint = checkPointMgr.pushCheckPoint(new VmwareCleanupMaid(_vCenterAddress, _dcMorValue, _vmName));
 //        addLeftOverVM(this);

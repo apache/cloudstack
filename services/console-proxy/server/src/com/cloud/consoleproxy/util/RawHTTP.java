@@ -37,7 +37,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 
 //
-// This file is originally from XenConsole with modifications 
+// This file is originally from XenConsole with modifications
 //
 
 /**

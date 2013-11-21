@@ -325,7 +325,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
         }
         /*
          * Map<String, State> changes = new HashMap<String, State>();
-         * 
+         *
          * if (_vmName != null) { State state = getVmState(); if (state != null)
          * { changes.put(_vmName, state); } }
          */
@@ -344,7 +344,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
         }
         /*
          * Map<String, State> changes = new HashMap<String, State>();
-         * 
+         *
          * if (_vmName != null) { State state = getVmState(); if (state != null)
          * { changes.put(_vmName, state); } }
          */
@@ -588,7 +588,7 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
         /*
          * Disable sync until we find a way that only tracks status but not does
          * action
-         * 
+         *
          * The scenario is: Baremetal will reboot host when creating template.
          * Given most servers take a long time to boot up, there would be a
          * period that mgmt server finds the host is stopped through fullsync.
@@ -597,13 +597,13 @@ public class BareMetalResourceBase extends ManagerBase implements ServerResource
          * running. Because in database the host is already stopped, mgmt server
          * sends out a stop command. As a result, creating image gets never
          * happened.
-         * 
+         *
          * if (_vmName == null) { return null; }
-         * 
+         *
          * State newState = getVmState(); if (newState == null) {
          * s_logger.warn("Cannot get power state of VM " + _vmName); return
          * null; }
-         * 
+         *
          * final State oldState = removeVmState(_vmName); if (oldState == null)
          * { changeVmState(_vmName, newState); changes.put(_vmName, newState); }
          * else if (oldState == State.Starting) { if (newState == State.Running)

@@ -190,7 +190,7 @@ public class FloatingIpModel extends ModelObjectBase {
             } catch (IOException ex) {
                 s_logger.warn("floating ip update", ex);
                 throw new CloudRuntimeException("Unable to update floating ip object", ex);
-            }            
+            }
         }
 
         addToVMInterface(vmiModel);

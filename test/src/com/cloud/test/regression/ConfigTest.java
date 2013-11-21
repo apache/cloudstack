@@ -30,29 +30,29 @@ import com.trilead.ssh2.Session;
 
 public class ConfigTest extends TestCase{
     public static final Logger s_logger = Logger.getLogger(ConfigTest.class.getName());
-    
+
     public ConfigTest(){
         this.setClient();
         this.setParam(new HashMap<String, String>());
     }
-    
+
     public boolean executeTest(){
-        
-        int error=0;    
+
+        int error=0;
         Element rootElement = this.getInputFile().get(0).getDocumentElement();
         NodeList commandLst = rootElement.getElementsByTagName("command");
-        
+
         //Analyze each command, send request and build the array list of api commands
         for (int i=0; i<commandLst.getLength(); i++) {
             Node fstNode = commandLst.item(i);
             Element fstElmnt = (Element) fstNode;
-            
+
             //new command
             ApiCommand api = new ApiCommand(fstElmnt, this.getParam(), this.getCommands());
-            
-            
+
+
             if (api.getName().equals("rebootManagementServer")) {
-                    
+
                 s_logger.info("Attempting to SSH into management server " + this.getParam().get("hostip"));
                 try {
                     Connection conn = new Connection(this.getParam().get("hostip"));
@@ -67,7 +67,7 @@ public class ConfigTest extends TestCase{
                         s_logger.info("Authentication failed for root with password");
                         return false;
                     }
-                    
+
                     String restartCommand = "service cloud-management restart; service cloud-usage restart";
                     Session sess = conn.openSession();
                     s_logger.info("Executing : " + restartCommand);
@@ -75,17 +75,17 @@ public class ConfigTest extends TestCase{
                     Thread.sleep(120000);
                     sess.close();
                     conn.close();
-                    
+
                 } catch (Exception ex) {
                     s_logger.error(ex);
                     return false;
-                }    
+                }
             }
             else {
                 //send a command
                 api.sendCommand(this.getClient(), null);
-                
-                
+
+
                 //verify the response of the command
                 if ((api.getResponseType() == ResponseType.ERROR) && (api.getResponseCode() == 200) && (api.getTestCaseInfo() != null)) {
                     s_logger.error("Test case " + api.getTestCaseInfo() + "failed. Command that was supposed to fail, passed. The command was sent with the following url " + api.getUrl());

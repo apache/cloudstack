@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 /**
  * PortProfileVO contains information on portprofiles that are created on a Cisco Nexus 1000v VSM associated
- * with a VMWare cluster. 
+ * with a VMWare cluster.
  */
 
 @Entity

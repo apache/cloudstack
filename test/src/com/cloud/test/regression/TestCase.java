@@ -34,7 +34,7 @@ import org.w3c.dom.Document;
 
 
 public abstract class TestCase{
-    
+
     public static Logger s_logger = Logger.getLogger(TestCase.class.getName());
     private Connection conn;
     private ArrayList <Document> inputFile = new ArrayList<Document> ();
@@ -42,7 +42,7 @@ public abstract class TestCase{
     private String testCaseName;
     private HashMap<String, String> param = new HashMap<String, String> ();
     private HashMap<String, String> commands = new HashMap<String, String> ();
-    
+
     public HashMap<String, String> getParam() {
         return param;
     }
@@ -50,8 +50,8 @@ public abstract class TestCase{
     public void setParam(HashMap<String, String> param) {
         this.param = param;
     }
-    
-    
+
+
     public HashMap<String, String> getCommands() {
         return commands;
     }
@@ -72,11 +72,11 @@ public abstract class TestCase{
             while (en.hasMoreElements()) {
                 String key = (String) en.nextElement();
                 commands.put(key, pro.getProperty(key));
-            }    
+            }
         } catch (Exception ex) {
             s_logger.info("Unable to find the file " + param.get("apicommands") + " due to following exception " + ex);
         }
-            
+
     }
 
     public Connection getConn() {
@@ -91,7 +91,7 @@ public abstract class TestCase{
             if (!this.conn.isValid(0)) {
                 s_logger.error("Connection to DB failed to establish");
             }
-            
+
         }catch (Exception ex) {
             s_logger.error(ex);
         }
@@ -111,16 +111,16 @@ public abstract class TestCase{
             }
             this.inputFile.add(doc);
         }
-    } 
+    }
 
     public ArrayList<Document> getInputFile() {
         return inputFile;
     }
-    
+
     public void setTestCaseName(String testCaseName) {
         this.testCaseName = testCaseName;
     }
-    
+
     public String getTestCaseName(){
         return this.testCaseName;
     }
@@ -129,11 +129,11 @@ public abstract class TestCase{
         HttpClient client = new HttpClient();
         this.client = client;
     }
-    
+
     public HttpClient getClient() {
         return this.client;
     }
-    
+
     //abstract methods
     public abstract boolean executeTest();
 

@@ -383,7 +383,7 @@ public class HypervServerDiscoverer extends DiscovererBase implements
         }
         return null;
     }
-    
+
 
     private void prepareSecondaryStorageStore(String storageUrl) {
         String mountPoint = getMountPoint(storageUrl);

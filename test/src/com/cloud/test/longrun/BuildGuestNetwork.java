@@ -32,19 +32,19 @@ public class BuildGuestNetwork {
     private static final int _developerPort=8080;
     private static final String _apiUrl = "/client/api";
     private static int numVM=1;
-    private static long zoneId=-1L; 
+    private static long zoneId=-1L;
     private static long templateId=3;
     private static long serviceOfferingId=1;
-    
+
 
 
         public static void main (String[] args){
-            
+
             List<String> argsList = Arrays.asList(args);
             Iterator<String> iter = argsList.iterator();
             String host = "http://localhost";
             int numThreads = 1;
-            
+
             while (iter.hasNext()){
                 String arg = iter.next();
                 if (arg.equals("-h")){
@@ -52,27 +52,27 @@ public class BuildGuestNetwork {
                 }
                 if (arg.equals("-t")){
                     numThreads=Integer.parseInt(iter.next());
-                }    
+                }
                 if (arg.equals("-n")){
                     numVM=Integer.parseInt(iter.next());
                 }
                 if (arg.equals("-z")){
                     zoneId=Integer.parseInt(iter.next());
                 }
-                
+
                 if (arg.equals("-e")){
                     templateId=Integer.parseInt(iter.next());
                 }
-                
+
                 if (arg.equals("-s")){
                     serviceOfferingId=Integer.parseInt(iter.next());
                 }
             }
-            
+
             final String server = host + ":" + _apiPort + "/";
             final String developerServer = host + ":" + _developerPort + _apiUrl;
             s_logger.info("Starting test in "+numThreads+" thread(s). Each thread is launching "+numVM+" VMs");
-            
+
             for (int i=0; i<numThreads; i++){
                 new Thread(new Runnable() {
                     public  void run() {
@@ -82,7 +82,7 @@ public class BuildGuestNetwork {
                         String singlePrivateIp=null;
                         Random ran = new Random();
                         username = Math.abs(ran.nextInt())+ "-user";
-                        
+
                         //Create User
                         User myUser = new User(username,username, server, developerServer);
                         try{
@@ -91,7 +91,7 @@ public class BuildGuestNetwork {
                         }catch (Exception e){
                             s_logger.warn("Error code: ", e);
                         }
-                        
+
                         if (myUser.getUserId()!=null){
                             s_logger.info("User "+myUser.getUserName()+" was created successfully, starting VM creation");
                             //create VMs for the user
@@ -101,7 +101,7 @@ public class BuildGuestNetwork {
                                 myVM.deployVM(zoneId, serviceOfferingId, templateId, myUser.getDeveloperServer(), myUser.getApiKey(), myUser.getSecretKey());
                                 myUser.getVirtualMachines().add(myVM);
                                 singlePrivateIp=myVM.getPrivateIp();
-                                
+
                                 if (singlePrivateIp!=null){
                                     s_logger.info("VM with private Ip "+singlePrivateIp+" was successfully created");
                                 }
@@ -109,9 +109,9 @@ public class BuildGuestNetwork {
                                     s_logger.info("Problems with VM creation for a user"+myUser.getUserName());
                                     s_logger.info("Deployment failed");
                                     break;
-                                }            
+                                }
                             }
-                            
+
                             s_logger.info("Deployment done..."+numVM+" VMs were created.");
                         }
 
@@ -120,9 +120,9 @@ public class BuildGuestNetwork {
                         }
                     }
                 }).start();
-        
+
             }
         }
-    
-    
+
+
 }

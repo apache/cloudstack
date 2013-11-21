@@ -79,7 +79,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  * HighAvailabilityManagerImpl coordinates the HA process. VMs are registered with the HA Manager for HA. The request is stored
  * within a database backed work queue. HAManager has a number of workers that pick up these work items to perform HA on the
  * VMs.
- * 
+ *
  * The HA process goes as follows: 1. Check with the list of Investigators to determine that the VM is no longer running. If a
  * Investigator finds the VM is still alive, the HA process is stopped and the state of the VM reverts back to its previous
  * state. If a Investigator finds the VM is dead, then HA process is started on the VM, skipping step 2. 2. If the list of
@@ -88,7 +88,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  * process of starting VMs. Note that once the VM is marked as stopped, the user may have started the VM himself. 5. VMs that
  * have re-started more than the configured number of times are marked as in Error state and the user is not allowed to restart
  * the VM.
- * 
+ *
  * @config {@table || Param Name | Description | Values | Default || || workers | number of worker threads to spin off to do the
  *         processing | int | 1 || || time.to.sleep | Time to sleep if no work items are found | seconds | 60 || || max.retries
  *         | number of times to retry start | int | 5 || || time.between.failure | Time elapsed between failures before we

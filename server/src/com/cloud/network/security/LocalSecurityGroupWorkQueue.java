@@ -37,7 +37,7 @@ import com.cloud.network.security.SecurityGroupWork.Step;
 public class LocalSecurityGroupWorkQueue implements SecurityGroupWorkQueue {
     protected static Logger s_logger = Logger.getLogger(LocalSecurityGroupWorkQueue.class);
 
-    //protected Set<SecurityGroupWork> _currentWork = new HashSet<SecurityGroupWork>(); 
+    //protected Set<SecurityGroupWork> _currentWork = new HashSet<SecurityGroupWork>();
     protected Set<SecurityGroupWork> _currentWork = new TreeSet<SecurityGroupWork>();
 
     private final ReentrantLock _lock = new ReentrantLock();

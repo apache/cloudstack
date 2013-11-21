@@ -25,7 +25,7 @@ public interface StorageCacheManager {
 
     /**
      * only create cache object in db
-     * 
+     *
      * @param data
      * @param scope
      * @return

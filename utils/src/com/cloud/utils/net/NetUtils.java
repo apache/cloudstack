@@ -665,7 +665,7 @@ public class NetUtils {
     /**
      * Given a cidr, this method returns an ip address within the range but
      * is not in the avoid list.
-     * 
+     *
      * @param startIp ip that the cidr starts with
      * @param size size of the cidr
      * @param avoid set of ips to avoid
@@ -678,9 +678,9 @@ public class NetUtils {
 
     /**
      * Given a cidr, this method returns an ip address within the range but
-     * is not in the avoid list. 
+     * is not in the avoid list.
      * Note: the gateway address has to be specified in the avoid list
-     * 
+     *
      * @param cidr ip that the cidr starts with
      * @param size size of the cidr
      * @param avoid set of ips to avoid

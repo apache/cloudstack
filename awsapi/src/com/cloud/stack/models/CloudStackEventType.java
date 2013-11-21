@@ -24,7 +24,7 @@ public class CloudStackEventType {
     private String name;
 
     /**
-     * 
+     *
      */
     public CloudStackEventType() {
         // TODO Auto-generated constructor stub

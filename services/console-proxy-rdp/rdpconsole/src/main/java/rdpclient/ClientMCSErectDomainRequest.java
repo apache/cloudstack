@@ -50,16 +50,16 @@ public class ClientMCSErectDomainRequest extends OneTimeSwitch {
     ByteBuffer buf = new ByteBuffer(length, true);
 
     buf.writeByte(0x04); // Erect Domain Request
-    
+
     // Client SHOULD initialize both the subHeight and subinterval fields of the MCS Erect Domain Request PDU to zero.
-    
+
     buf.writeByte(1); // ErectDomainRequest::subHeight length = 1 byte
     buf.writeByte(0); // ErectDomainRequest::subHeight
-    
+
     buf.writeByte(1); // ErectDomainRequest::subInterval length = 1 byte
     buf.writeByte(0); // ErectDomainRequest::subInterval
-    
-    
+
+
     pushDataToOTOut(buf);
 
     switchOff();
@@ -79,20 +79,20 @@ public class ClientMCSErectDomainRequest extends OneTimeSwitch {
 
         0x03, 0x00, 0x00, 0x0c,  //  TPKT Header (length = 12 bytes)
         0x02, (byte) 0xf0, (byte) 0x80,  //  X.224 Data TPDU
-        
+
         // PER encoded (ALIGNED variant of BASIC-PER) PDU contents:
         0x04, 0x01, 0x00, 0x01, 0x00,
-         
+
         // 0x04:
         // 0 - --\
         // 0 -   |
-        // 0 -   | CHOICE: From DomainMCSPDU select erectDomainRequest (1) 
+        // 0 -   | CHOICE: From DomainMCSPDU select erectDomainRequest (1)
         // 0 -   | of type ErectDomainRequest
         // 0 -   |
         // 1 - --/
         // 0 - padding
         // 0 - padding
-        
+
         // 0x01:
         // 0 - --\
         // 0 -   |
@@ -102,7 +102,7 @@ public class ClientMCSErectDomainRequest extends OneTimeSwitch {
         // 0 -   |
         // 0 -   |
         // 1 - --/
-        
+
         // 0x00:
         // 0 - --\
         // 0 -   |
@@ -112,7 +112,7 @@ public class ClientMCSErectDomainRequest extends OneTimeSwitch {
         // 0 -   |
         // 0 -   |
         // 0 - --/
-        
+
         // 0x01:
         // 0 - --\
         // 0 -   |
@@ -122,7 +122,7 @@ public class ClientMCSErectDomainRequest extends OneTimeSwitch {
         // 0 -   |
         // 0 -   |
         // 1 - --/
-        
+
         // 0x00:
         // 0 - --\
         // 0 -   |
@@ -133,7 +133,7 @@ public class ClientMCSErectDomainRequest extends OneTimeSwitch {
         // 0 -   |
         // 0 - --/
 
-        
+
     };
     /* @formatter:on */
 

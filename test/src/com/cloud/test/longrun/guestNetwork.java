@@ -25,16 +25,16 @@ import com.trilead.ssh2.Session;
 
 public class guestNetwork implements Runnable{
     public static final Logger s_logger= Logger.getLogger(guestNetwork.class.getClass());
-    
+
     private String publicIp;
     private ArrayList<VirtualMachine> virtualMachines;
     private int retryNum;
-    
+
     public guestNetwork(String publicIp, int retryNum){
         this.publicIp=publicIp;
-        this.retryNum=retryNum;    
+        this.retryNum=retryNum;
     }
-    
+
     public ArrayList<VirtualMachine> getVirtualMachines() {
         return virtualMachines;
     }
@@ -46,7 +46,7 @@ public class guestNetwork implements Runnable{
     public void run(){
         NDC.push("Following thread has started"+Thread.currentThread().getName());
         int retry = 0;
-                    
+
                 //Start copying files between machines in the network
                 s_logger.info("The size of the array is " + this.virtualMachines.size());
                 while (true) {
@@ -57,7 +57,7 @@ public class guestNetwork implements Runnable{
                         Thread.sleep(120000);
                     }
                     for (VirtualMachine vm: this.virtualMachines ){
-                        
+
                             s_logger.info("Attempting to SSH into linux host " + this.publicIp
                                     + " with retry attempt: " + retry);
                             Connection conn = new Connection(this.publicIp);
@@ -81,7 +81,7 @@ public class guestNetwork implements Runnable{
                             sess.execCommand(copyCommand);
                             Thread.sleep(120000);
                             sess.close();
-                            
+
                             //execute wget command
                             sess = conn.openSession();
                             String downloadCommand = new String ("wget http://172.16.0.220/scripts/checkDiskSpace.sh; chmod +x *sh; ./checkDiskSpace.sh; rm -rf checkDiskSpace.sh");
@@ -89,7 +89,7 @@ public class guestNetwork implements Runnable{
                             sess.execCommand(downloadCommand);
                             Thread.sleep(120000);
                             sess.close();
-                            
+
                             //close the connection
                             conn.close();
                         }
@@ -100,8 +100,8 @@ public class guestNetwork implements Runnable{
                                 s_logger.info("Performance Guest Network test failed with error "
                                         + ex.getMessage()) ;
                             }
-                    }        
+                    }
                     }
 
-    }    
+    }
 }

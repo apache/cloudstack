@@ -121,7 +121,7 @@ public class ExternalNetworkDeviceManagerImpl extends ManagerBase implements Ext
     int _externalNetworkStatsInterval;
 
     // obsolete
-    // private final static IdentityService _identityService = (IdentityService)ComponentLocator.getLocator(ManagementServer.Name).getManager(IdentityService.class); 
+    // private final static IdentityService _identityService = (IdentityService)ComponentLocator.getLocator(ManagementServer.Name).getManager(IdentityService.class);
 
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalNetworkDeviceManagerImpl.class);
 

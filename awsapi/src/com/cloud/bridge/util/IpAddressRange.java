@@ -20,7 +20,7 @@ import java.io.IOException;
 
 /**
  * Represents a network IP address or a range of addresses.
- * A range is useful when representing IP addresses defined in 
+ * A range is useful when representing IP addresses defined in
  * CIDR format.   The range is a 32 bit IP inclusive.
  */
 public class IpAddressRange {
@@ -100,10 +100,10 @@ public class IpAddressRange {
         return range;
     }
 
-    /** 
-     * In order to do unsigned math here we must use long types so that high order bits 
+    /**
+     * In order to do unsigned math here we must use long types so that high order bits
      * are not used as the sign of the number.
-     * 
+     *
      * @param ipAddress
      * @return
      */

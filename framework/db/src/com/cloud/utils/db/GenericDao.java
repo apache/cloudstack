@@ -72,7 +72,7 @@ public interface GenericDao<T, ID extends Serializable> {
 
     /**
      * Returns a SearchCriteria object that can be used to build search conditions.
-     * 
+     *
      * @return SearchCriteria
      */
     SearchCriteria<T> createSearchCriteria();
@@ -80,7 +80,7 @@ public interface GenericDao<T, ID extends Serializable> {
     /**
      * lock the rows that matched the search criteria and filter.  This method needs
      * to be called within a transaction.
-     * 
+     *
      * @param sc SearchCriteria containing the different search conditions
      * @param filter Filter containing limits etc
      * @param exclusive exclusive or share lock
@@ -108,7 +108,7 @@ public interface GenericDao<T, ID extends Serializable> {
     /**
      * Acquires a database wide lock on the id of the entity.  This ensures
      * that only one is being used.  The timeout is the configured default.
-     * 
+     *
      * @param id id of the entity to acquire an lock on.
      * @return object if acquired; null if not.  If null, you need to call findById to see if it is actually not found.
      */
@@ -117,7 +117,7 @@ public interface GenericDao<T, ID extends Serializable> {
     /**
      * Acquires a database wide lock on the id of the entity.  This ensures
      * that only one is being used.  The timeout is the configured default.
-     * 
+     *
      * @param id id of the entity to acquire an lock on.
      * @param seconds time to wait for the lock.
      * @return entity if the lock is acquired; null if not.

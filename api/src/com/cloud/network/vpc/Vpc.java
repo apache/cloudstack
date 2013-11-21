@@ -27,7 +27,7 @@ public interface Vpc extends ControlledEntity, Identity, InternalIdentity {
     }
 
     /**
-     * 
+     *
      * @return VPC name
      */
     String getName();
@@ -43,31 +43,31 @@ public interface Vpc extends ControlledEntity, Identity, InternalIdentity {
     String getCidr();
 
     /**
-     * 
+     *
      * @return VPC state
      */
     State getState();
 
     /**
-     * 
+     *
      * @return VPC offering id - the offering that VPC is created from
      */
     long getVpcOfferingId();
 
     /**
-     * 
+     *
      * @return VPC display text
      */
     String getDisplayText();
 
     /**
-     * 
+     *
      * @return VPC network domain. All networks participating in the VPC, become the part of the same network domain
      */
     String getNetworkDomain();
 
     /**
-     * 
+     *
      * @return true if restart is required for the VPC; false otherwise
      */
     boolean isRestartRequired();

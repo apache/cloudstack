@@ -41,16 +41,16 @@ public class TestClient {
     private static int numOfUsers = 0;
     private static String[] users = null;
     private static boolean internet = true;
-    
+
     private static final int MAX_RETRY_LINUX = 5;
     private static final int MAX_RETRY_WIN = 10;
-    
+
     public static void main (String[] args) {
         String host = "http://localhost";
         String port = "8080";
         String testUrl = "/client/test";
         int numThreads = 1;
-        
+
         try {
             // Parameters
             List<String> argsList = Arrays.asList(args);
@@ -61,41 +61,41 @@ public class TestClient {
                 if (arg.equals("-h")) {
                     host = "http://" + iter.next();
                 }
-                
+
                 if (arg.equals("-p")) {
                     port = iter.next();
                 }
-                
+
                 if (arg.equals("-t")) {
                     numThreads = Integer.parseInt(iter.next());
                 }
-                
+
                 if (arg.equals("-s")) {
                     sleepTime = Long.parseLong(iter.next());
                 }
-                
+
                 if (arg.equals("-c")) {
                     cleanUp = Boolean.parseBoolean(iter.next());
                     if (!cleanUp) sleepTime = 0L; // no need to wait if we don't ever cleanup
                 }
-                
+
                 if (arg.equals("-r")) {
                     repeat = Boolean.parseBoolean(iter.next());
                 }
-                
+
                 if (arg.equals("-u")) {
                     numOfUsers = Integer.parseInt(iter.next());
                 }
-                
+
                 if (arg.equals("-i")) {
                     internet = Boolean.parseBoolean(iter.next());
                 }
             }
-            
+
             final String server = host+":"+port+testUrl;
             s_logger.info("Starting test against server: " + server + " with " + numThreads + " thread(s)");
             if (cleanUp) s_logger.info("Clean up is enabled, each test will wait " + sleepTime + " ms before cleaning up");
-            
+
             if (numOfUsers > 0) {
                 s_logger.info("Pre-generating users for test of size : " + numOfUsers);
                 users = new String[numOfUsers];
@@ -104,7 +104,7 @@ public class TestClient {
                     users[i] = Math.abs(ran.nextInt()) + "-user";
                 }
             }
-            
+
             for (int i = 0; i < numThreads; i++) {
                 new Thread(new Runnable() {
                     public void run() {
@@ -131,10 +131,10 @@ public class TestClient {
                                     if (internet) {
                                         s_logger.info("Deploy successful...waiting 5 minute before SSH tests");
                                         Thread.sleep(300000L);  // Wait 60 seconds so the linux VM can boot up.
-                                        
+
                                         s_logger.info("Begin Linux SSH test");
                                         reason = sshTest(method.getResponseHeader("linuxIP").getValue());
-                                        
+
                                         if (reason == null) {
                                             s_logger.info("Linux SSH test successful");
                                             s_logger.info("Begin Windows SSH test");
@@ -205,13 +205,13 @@ public class TestClient {
             s_logger.error(e);
         }
     }
-    
+
     private static String sshWinTest(String host) {
         if (host == null) {
             s_logger.info("Did not receive a host back from test, ignoring win ssh test");
             return null;
         }
-        
+
         // We will retry 5 times before quitting
         int retry = 0;
 
@@ -221,12 +221,12 @@ public class TestClient {
                     s_logger.info("Retry attempt : " + retry + " ...sleeping 300 seconds before next attempt");
                     Thread.sleep(300000);
                 }
-                
+
                 s_logger.info("Attempting to SSH into windows host " + host + " with retry attempt: " + retry);
-                
+
                 Connection conn = new Connection(host);
                 conn.connect(null, 60000, 60000);
-                
+
                 s_logger.info("SSHed successfully into windows host " + host);
                 boolean success = false;
                 boolean isAuthenticated = conn.authenticateWithPassword("vmops", "vmops");
@@ -234,48 +234,48 @@ public class TestClient {
                     return "Authentication failed";
                 }
                 SCPClient scp = new SCPClient(conn);
-                
+
                 scp.put("wget.exe", "");
-                
+
                 Session sess = conn.openSession();
                 s_logger.info("Executing : wget http://172.16.0.220/dump.bin");
                 sess.execCommand("wget http://172.16.0.220/dump.bin && dir dump.bin");
-                
+
                 InputStream stdout = sess.getStdout();
                 InputStream stderr = sess.getStderr();
-                
+
                 byte[] buffer = new byte[8192];
                 while (true) {
                     if ((stdout.available() == 0) && (stderr.available() == 0)) {
                         int conditions = sess.waitForCondition(ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA
                                 | ChannelCondition.EOF, 120000);
-                        
+
                         if ((conditions & ChannelCondition.TIMEOUT) != 0) {
                             s_logger.info("Timeout while waiting for data from peer.");
                             return null;
                         }
-                        
+
                         if ((conditions & ChannelCondition.EOF) != 0) {
                             if ((conditions & (ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA)) == 0) {
                                 break;
                             }
                         }
                     }
-                    
+
                     while (stdout.available() > 0) {
                         success = true;
                         int len = stdout.read(buffer);
                         if (len > 0) // this check is somewhat paranoid
                             s_logger.info(new String(buffer, 0, len));
                     }
-        
+
                     while (stderr.available() > 0) {
                         int len = stderr.read(buffer);
                     }
                 }
                 sess.close();
                 conn.close();
-                
+
                 if (success) {
                     return null;
                 } else {
@@ -292,13 +292,13 @@ public class TestClient {
             }
         }
     }
-    
+
     private static String sshTest(String host) {
         if (host == null) {
             s_logger.info("Did not receive a host back from test, ignoring ssh test");
             return null;
         }
-        
+
         // We will retry 5 times before quitting
         int retry = 0;
 
@@ -308,16 +308,16 @@ public class TestClient {
                     s_logger.info("Retry attempt : " + retry + " ...sleeping 120 seconds before next attempt");
                     Thread.sleep(120000);
                 }
-                
+
                 s_logger.info("Attempting to SSH into linux host " + host + " with retry attempt: " + retry);
-                
+
                 Connection conn = new Connection(host);
                 conn.connect(null, 60000, 60000);
-                
+
                 s_logger.info("SSHed successfully into linux host " + host);
-        
+
                 boolean isAuthenticated = conn.authenticateWithPassword("root", "password");
-        
+
                 if (isAuthenticated == false) {
                     return "Authentication failed";
                 }
@@ -325,43 +325,43 @@ public class TestClient {
                 Session sess = conn.openSession();
                 s_logger.info("Executing : wget http://172.16.0.220/dump.bin");
                 sess.execCommand("wget http://172.16.0.220/dump.bin && ls -al dump.bin");
-                
+
                 InputStream stdout = sess.getStdout();
                 InputStream stderr = sess.getStderr();
-                
+
                 byte[] buffer = new byte[8192];
                 while (true) {
                     if ((stdout.available() == 0) && (stderr.available() == 0)) {
                         int conditions = sess.waitForCondition(ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA
                                 | ChannelCondition.EOF, 120000);
-                        
+
                         if ((conditions & ChannelCondition.TIMEOUT) != 0) {
                             s_logger.info("Timeout while waiting for data from peer.");
                             return null;
                         }
-                        
+
                         if ((conditions & ChannelCondition.EOF) != 0) {
                             if ((conditions & (ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA)) == 0) {
                                 break;
                             }
                         }
                     }
-                    
+
                     while (stdout.available() > 0) {
                         success = true;
                         int len = stdout.read(buffer);
                         if (len > 0) // this check is somewhat paranoid
                             s_logger.info(new String(buffer, 0, len));
                     }
-        
+
                     while (stderr.available() > 0) {
                         int len = stderr.read(buffer);
                     }
                 }
-                
+
                 sess.close();
                 conn.close();
-                
+
                 if (success) {
                     return null;
                 } else {

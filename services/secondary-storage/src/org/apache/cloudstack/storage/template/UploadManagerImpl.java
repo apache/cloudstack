@@ -524,7 +524,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
     /**
      * Get notified of change of job status. Executed in context of uploader thread
-     * 
+     *
      * @param jobId
      *            the id of the job
      * @param status

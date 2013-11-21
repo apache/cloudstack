@@ -23,9 +23,9 @@ import com.cloud.utils.component.Manager;
 
 /**
  * StorageLayer is an independence layer for
- * 
+ *
  *   1. Proper synchronization between threads.
- * 
+ *
  *
  */
 public interface StorageLayer extends Manager {

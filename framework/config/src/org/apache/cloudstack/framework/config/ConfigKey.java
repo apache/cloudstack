@@ -26,7 +26,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 /**
  * ConfigKey supplants the original Config.java.  It is just a class
  * declaration where others can declare their config variables.
- * 
+ *
  */
 public class ConfigKey<T> {
 

@@ -27,11 +27,11 @@ import com.cloud.consoleproxy.util.TileTracker;
 import com.cloud.consoleproxy.vnc.FrameBufferCanvas;
 
 /**
- * 
+ *
  * an instance of specialized console protocol implementation, such as VNC or RDP
- * 
+ *
  * It mainly implements the features needed by front-end AJAX viewer
- * 
+ *
  */
 public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, ConsoleProxyClientListener {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyClientBase.class);
@@ -159,7 +159,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
     }
 
     //
-    // AJAX Image manipulation 
+    // AJAX Image manipulation
     //
     public byte[] getFrameBufferJpeg() {
         FrameBufferCanvas canvas = getFrameBufferCavas();
@@ -255,7 +255,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
         if (s_logger.isTraceEnabled())
             s_logger.trace("Ajax client start, frame buffer w: " + width + ", " + height);
 
-        /*        
+        /*
                 int retry = 0;
                 tracker.initCoverageTest();
                 while(!tracker.hasFullCoverage() && retry < 10) {

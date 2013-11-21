@@ -35,7 +35,7 @@ public class ConfigDepotLifeCycle implements BeanPostProcessor {
         if ( bean instanceof Configurable ) {
             configDepotAdmin.populateConfiguration((Configurable)bean);
         }
-        
+
         return bean;
     }
 
@@ -43,5 +43,5 @@ public class ConfigDepotLifeCycle implements BeanPostProcessor {
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         return bean;
     }
-    
+
 }

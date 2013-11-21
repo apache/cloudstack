@@ -34,7 +34,7 @@ public class RemoteAccessVpnTest {
 //        locator.addDao("ConfigurationDao", ConfigurationDaoImpl.class);
 //
 //    }
-//    
+//
 //    private static void addManagers(MockComponentLocator locator) {
 //        locator.addManager("AccountManager", MockAccountManagerImpl.class);
 //        locator.addManager("DomainManager", MockDomainManagerImpl.class);
@@ -58,7 +58,7 @@ public class RemoteAccessVpnTest {
 
     @Test
     public void testInjected() throws Exception {
-//        List<Pair<String, Class<? extends RemoteAccessVPNServiceProvider>>> list = 
+//        List<Pair<String, Class<? extends RemoteAccessVPNServiceProvider>>> list =
 //                new ArrayList<Pair<String, Class<? extends RemoteAccessVPNServiceProvider>>>();
 //        list.add(new Pair<String, Class<? extends RemoteAccessVPNServiceProvider>>("RemoteAccessVPNServiceProvider", MockRemoteAccessVPNServiceProvider.class));
 //        locator.addAdapterChain(RemoteAccessVPNServiceProvider.class, list);

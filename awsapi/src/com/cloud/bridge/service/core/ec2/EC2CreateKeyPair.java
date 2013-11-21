@@ -21,7 +21,7 @@ public class EC2CreateKeyPair {
     private String keyName;
 
     /**
-     * 
+     *
      */
     public EC2CreateKeyPair() {
         // TODO Auto-generated constructor stub

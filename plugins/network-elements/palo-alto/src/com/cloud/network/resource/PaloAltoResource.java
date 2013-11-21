@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.resource;
@@ -208,7 +208,7 @@ public class PaloAltoResource implements ServerResource {
             _password = (String) params.get("password");
             if (_password == null) {
                 throw new ConfigurationException("Unable to find password");
-            }           
+            }
 
             _publicInterface = (String) params.get("publicinterface");
             if (_publicInterface == null) {
@@ -311,7 +311,7 @@ public class PaloAltoResource implements ServerResource {
 
     }
 
-    public StartupCommand[] initialize() {   
+    public StartupCommand[] initialize() {
         StartupExternalFirewallCommand cmd = new StartupExternalFirewallCommand();
         cmd.setName(_name);
         cmd.setDataCenter(_zoneId);
@@ -391,7 +391,7 @@ public class PaloAltoResource implements ServerResource {
 
         String keygenBody;
         try {
-            keygenBody = request(PaloAltoMethod.GET, params);    
+            keygenBody = request(PaloAltoMethod.GET, params);
         } catch (ExecutionException e) {
             return false;
         }
@@ -411,7 +411,7 @@ public class PaloAltoResource implements ServerResource {
 
 
     // ENTRY POINTS...
-    
+
 
     private Answer execute(ReadyCommand cmd) {
         return new ReadyAnswer(cmd);
@@ -435,7 +435,7 @@ public class PaloAltoResource implements ServerResource {
         return execute(cmd, _numRetries);
     }
 
-    private Answer execute(IpAssocCommand cmd, int numRetries) {        
+    private Answer execute(IpAssocCommand cmd, int numRetries) {
         String[] results = new String[cmd.getIpAddresses().length];
         int i = 0;
         try {
@@ -444,9 +444,9 @@ public class PaloAltoResource implements ServerResource {
                 throw new ExecutionException("Received an invalid number of guest IPs to associate.");
             } else {
                 ip = cmd.getIpAddresses()[0];
-            }                               
+            }
 
-            String sourceNatIpAddress = null; 
+            String sourceNatIpAddress = null;
             GuestNetworkType type = GuestNetworkType.INTERFACE_NAT;
 
             if (ip.isSourceNat()) {
@@ -463,8 +463,8 @@ public class PaloAltoResource implements ServerResource {
             String guestVlanGateway = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
             String cidr = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR);
             long cidrSize = NetUtils.cidrToLong(cidr)[1];
-            String guestVlanSubnet = NetUtils.getCidrSubNet(guestVlanGateway, cidrSize);    
-            
+            String guestVlanSubnet = NetUtils.getCidrSubNet(guestVlanGateway, cidrSize);
+
             Long publicVlanTag = null;
             if (ip.getBroadcastUri() != null && !ip.getBroadcastUri().equals("untagged")) {
                 try {
@@ -472,11 +472,11 @@ public class PaloAltoResource implements ServerResource {
                 } catch (Exception e) {
                     throw new ExecutionException("Could not parse public VLAN tag: " + ip.getBroadcastUri());
                 }
-            } 
+            }
 
             ArrayList<IPaloAltoCommand> commandList = new ArrayList<IPaloAltoCommand>();
 
-            if (ip.isAdd()) {                                 
+            if (ip.isAdd()) {
                 // Implement the guest network for this VLAN
                 implementGuestNetwork(commandList, type, publicVlanTag, sourceNatIpAddress, guestVlanTag, guestVlanGateway, guestVlanSubnet, cidrSize);
             } else {
@@ -518,23 +518,23 @@ public class PaloAltoResource implements ServerResource {
         s_logger.debug(msg);
     }
 
-    private void shutdownGuestNetwork(ArrayList<IPaloAltoCommand> cmdList, GuestNetworkType type, Long publicVlanTag, String sourceNatIpAddress, long privateVlanTag, String privateGateway, String privateSubnet, long privateCidrSize) throws ExecutionException {     
+    private void shutdownGuestNetwork(ArrayList<IPaloAltoCommand> cmdList, GuestNetworkType type, Long publicVlanTag, String sourceNatIpAddress, long privateVlanTag, String privateGateway, String privateSubnet, long privateCidrSize) throws ExecutionException {
         privateSubnet = privateSubnet+"/"+privateCidrSize;
 
         if (type.equals(GuestNetworkType.SOURCE_NAT)) {
             manageNetworkIsolation(cmdList, PaloAltoPrimative.DELETE, privateVlanTag, privateSubnet, privateGateway);
             manageSrcNatRule(cmdList, PaloAltoPrimative.DELETE, type, publicVlanTag, sourceNatIpAddress+"/32", privateVlanTag, privateGateway+"/"+privateCidrSize);
-            managePublicInterface(cmdList, PaloAltoPrimative.DELETE, publicVlanTag, sourceNatIpAddress+"/32", privateVlanTag);                                                             
+            managePublicInterface(cmdList, PaloAltoPrimative.DELETE, publicVlanTag, sourceNatIpAddress+"/32", privateVlanTag);
         }
 
-        managePrivateInterface(cmdList, PaloAltoPrimative.DELETE, privateVlanTag, privateGateway+"/"+privateCidrSize);       
+        managePrivateInterface(cmdList, PaloAltoPrimative.DELETE, privateVlanTag, privateGateway+"/"+privateCidrSize);
 
         String msg = "Shut down guest network with type " + type +". Guest VLAN tag: " + privateVlanTag + ", guest gateway: " + privateGateway+"/"+privateCidrSize;
         msg += type.equals(GuestNetworkType.SOURCE_NAT) ? ", source NAT IP: " + sourceNatIpAddress : "";
         s_logger.debug(msg);
     }
 
-    
+
 
     /*
      * Firewall rule entry point
@@ -543,7 +543,7 @@ public class PaloAltoResource implements ServerResource {
         refreshPaloAltoConnection();
         return execute(cmd, _numRetries);
     }
-    
+
     private Answer execute(SetFirewallRulesCommand cmd, int numRetries) {
         FirewallRuleTO[] rules = cmd.getRules();
         try {
@@ -558,7 +558,7 @@ public class PaloAltoResource implements ServerResource {
             }
 
             boolean status = requestWithCommit(commandList);
-                
+
             return new Answer(cmd);
         } catch (ExecutionException e) {
             s_logger.error(e);
@@ -581,9 +581,9 @@ public class PaloAltoResource implements ServerResource {
     private synchronized Answer execute(SetStaticNatRulesCommand cmd) {
         refreshPaloAltoConnection();
         return execute(cmd, _numRetries);
-    }       
+    }
 
-    private Answer execute(SetStaticNatRulesCommand cmd, int numRetries) {      
+    private Answer execute(SetStaticNatRulesCommand cmd, int numRetries) {
         StaticNatRuleTO[] rules = cmd.getRules();
 
         try {
@@ -622,7 +622,7 @@ public class PaloAltoResource implements ServerResource {
         return execute(cmd, _numRetries);
     }
 
-    private Answer execute(SetPortForwardingRulesCommand cmd, int numRetries) {     
+    private Answer execute(SetPortForwardingRulesCommand cmd, int numRetries) {
         PortForwardingRuleTO[] rules = cmd.getRules();
 
         try {
@@ -636,12 +636,12 @@ public class PaloAltoResource implements ServerResource {
                 }
             }
 
-            boolean status = requestWithCommit(commandList);         
+            boolean status = requestWithCommit(commandList);
 
             return new Answer(cmd);
         } catch (ExecutionException e) {
             s_logger.error(e);
-            
+
             if (numRetries > 0 && refreshPaloAltoConnection()) {
                 int numRetriesRemaining = numRetries - 1;
                 s_logger.debug("Retrying SetPortForwardingRulesCommand. Number of retries remaining: " + numRetriesRemaining);
@@ -887,7 +887,7 @@ public class PaloAltoResource implements ServerResource {
                 return true;
             }
 
-            String xml = ""; 
+            String xml = "";
             xml += "<from><member>"+_privateZone+"</member></from>";
             xml += "<to><member>"+_publicZone+"</member></to>";
             xml += "<source><member>"+privateGateway+"</member></source>";
@@ -1000,7 +1000,7 @@ public class PaloAltoResource implements ServerResource {
             cmdList.add(new DefaultPaloAltoCommand(PaloAltoMethod.GET, a_sub_params));
 
             // add the destination nat rule for the public IP
-            String xml = ""; 
+            String xml = "";
             xml += "<from><member>"+_publicZone+"</member></from>";
             xml += "<to><member>"+_publicZone+"</member></to>";
             xml += "<source><member>any</member></source>";
@@ -1117,7 +1117,7 @@ public class PaloAltoResource implements ServerResource {
             cmdList.add(new DefaultPaloAltoCommand(PaloAltoMethod.GET, a_sub_params));
 
             // add the static nat rule for the public IP
-            String xml = ""; 
+            String xml = "";
             xml += "<from><member>"+_publicZone+"</member></from>";
             xml += "<to><member>"+_publicZone+"</member></to>";
             xml += "<source><member>any</member></source>";
@@ -1164,7 +1164,7 @@ public class PaloAltoResource implements ServerResource {
         }
     }
 
-    
+
     /*
      * Firewall rule implementation
      */
@@ -1249,7 +1249,7 @@ public class PaloAltoResource implements ServerResource {
                         if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
                             srcCidrXML += "<member>"+getPrivateSubnet(rule.getSrcVlanTag())+"</member>";
                         } else {
-                            srcCidrXML += "<member>any</member>"; 
+                            srcCidrXML += "<member>any</member>";
                         }
                     } else {
                         srcCidrXML += "<member>"+ruleSrcCidrList.get(i).trim()+"</member>";
@@ -1259,7 +1259,7 @@ public class PaloAltoResource implements ServerResource {
                 if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
                     srcCidrXML = "<member>"+getPrivateSubnet(rule.getSrcVlanTag())+"</member>";
                 } else {
-                   srcCidrXML = "<member>any</member>"; 
+                   srcCidrXML = "<member>any</member>";
                 }
             }
 
@@ -1311,7 +1311,7 @@ public class PaloAltoResource implements ServerResource {
 
 
     /*
-     * Usage    
+     * Usage
      */
 
 
@@ -1449,7 +1449,7 @@ public class PaloAltoResource implements ServerResource {
 
     public boolean manageService(ArrayList<IPaloAltoCommand> cmdList, PaloAltoPrimative prim, String protocol, String dstPorts, String srcPorts) throws ExecutionException {
         String serviceName = genServiceName(protocol, dstPorts, srcPorts);
-        
+
         switch (prim) {
 
         case CHECK_IF_EXISTS:
@@ -1523,7 +1523,7 @@ public class PaloAltoResource implements ServerResource {
             }
             if (response_body.getLength() > 0) {
                 return response_body.item(0).getAttributes().getNamedItem("name").getTextContent();
-            } 
+            }
         }
         return null;
     }
@@ -1565,7 +1565,7 @@ public class PaloAltoResource implements ServerResource {
             } catch (UnsupportedEncodingException e) {
                 debug_msg = debug_msg + "GET request: https://" + _ip + _apiUri + queryString + "\n";
             }
-            
+
 
             HttpGet get_request = new HttpGet("https://" + _ip + _apiUri + queryString);
             ResponseHandler<String> responseHandler = new BasicResponseHandler();
@@ -1608,10 +1608,10 @@ public class PaloAltoResource implements ServerResource {
         debug_msg = debug_msg + prettyFormat(responseBody);
         debug_msg = debug_msg + "\n" + responseBody.replace("\"", "\\\"") + "\n\n"; // test cases
         //s_logger.debug(debug_msg); // this can be commented if we don't want to show each request in the log.
-        
+
         return responseBody;
     }
-    
+
     /* Used for requests that require polling to get a result (eg: commit) */
     private String requestWithPolling(PaloAltoMethod method, Map<String, String> params) throws ExecutionException {
         String job_id;
@@ -1688,7 +1688,7 @@ public class PaloAltoResource implements ServerResource {
             Map<String, String> check_params = new HashMap<String, String>();
             check_params.put("type", "op");
             check_params.put("cmd", "<check><pending-changes></pending-changes></check>");
-            String check_response = request(PaloAltoMethod.GET, check_params); 
+            String check_response = request(PaloAltoMethod.GET, check_params);
             Document check_doc = getDocument(check_response);
             XPath check_xpath = XPathFactory.newInstance().newXPath();
             try {
@@ -1705,7 +1705,7 @@ public class PaloAltoResource implements ServerResource {
                 Map<String, String> add_lock_params = new HashMap<String, String>();
                 add_lock_params.put("type", "op");
                 add_lock_params.put("cmd", "<request><config-lock><add></add></config-lock></request>");
-                String add_lock_response = request(PaloAltoMethod.GET, add_lock_params); 
+                String add_lock_response = request(PaloAltoMethod.GET, add_lock_params);
                 Document add_lock_doc = getDocument(add_lock_response);
                 XPath add_lock_xpath = XPathFactory.newInstance().newXPath();
                 try {
@@ -1744,7 +1744,7 @@ public class PaloAltoResource implements ServerResource {
                         Map<String, String> remove_lock_params = new HashMap<String, String>();
                         remove_lock_params.put("type", "op");
                         remove_lock_params.put("cmd", "<request><config-lock><remove></remove></config-lock></request>");
-                        String remove_lock_response = request(PaloAltoMethod.GET, remove_lock_params); 
+                        String remove_lock_response = request(PaloAltoMethod.GET, remove_lock_params);
                         Document remove_lock_doc = getDocument(remove_lock_response);
                         XPath remove_lock_xpath = XPathFactory.newInstance().newXPath();
                         try {
@@ -1757,7 +1757,7 @@ public class PaloAltoResource implements ServerResource {
                             throw new ExecutionException("Could not release the Palo Alto device.  Please notify an administrator!");
                         }
                     }
-                    
+
                 } catch (ExecutionException ex) {
                     // REVERT TO RUNNING
                     String revert_job_id;
@@ -1771,7 +1771,7 @@ public class PaloAltoResource implements ServerResource {
                     Map<String, String> remove_lock_params = new HashMap<String, String>();
                     remove_lock_params.put("type", "op");
                     remove_lock_params.put("cmd", "<request><config-lock><remove></remove></config-lock></request>");
-                    String remove_lock_response = request(PaloAltoMethod.GET, remove_lock_params); 
+                    String remove_lock_response = request(PaloAltoMethod.GET, remove_lock_params);
                     Document remove_lock_doc = getDocument(remove_lock_response);
                     XPath remove_lock_xpath = XPathFactory.newInstance().newXPath();
                     try {
@@ -1853,8 +1853,8 @@ public class PaloAltoResource implements ServerResource {
             throw new ExecutionException(e.getCause().getMessage());
         }
 
-        if (response_body.getLength() > 0 && 
-            (!response_body.item(0).getTextContent().equals("") || 
+        if (response_body.getLength() > 0 &&
+            (!response_body.item(0).getTextContent().equals("") ||
                 (response_body.item(0).hasChildNodes() && response_body.item(0).getFirstChild().hasChildNodes()))) {
             return true;
         } else {
@@ -1907,7 +1907,7 @@ public class PaloAltoResource implements ServerResource {
     private abstract class AbstractPaloAltoCommand implements IPaloAltoCommand {
         PaloAltoMethod method;
         Map<String, String> params;
-        
+
         public AbstractPaloAltoCommand() {}
 
         public AbstractPaloAltoCommand(PaloAltoMethod method, Map<String, String> params) {
@@ -1931,8 +1931,8 @@ public class PaloAltoResource implements ServerResource {
 
     /*
      * Misc
-     */    
-    
+     */
+
     private String genIpIdentifier(String ip) {
         return ip.replace('.', '-').replace('/', '-');
     }
@@ -1944,13 +1944,13 @@ public class PaloAltoResource implements ServerResource {
             return Protocol.valueOf(protocolName);
         } catch (Exception e) {
             throw new ExecutionException("Invalid protocol: " + protocolName);
-        }       
+        }
     }
 
     private Document getDocument(String xml) throws ExecutionException {
         StringReader xmlReader = new StringReader(xml);
         InputSource xmlSource = new InputSource(xmlReader);
-        Document doc = null; 
+        Document doc = null;
 
         try {
             doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(xmlSource);
@@ -1974,7 +1974,7 @@ public class PaloAltoResource implements ServerResource {
             StreamResult xmlOutput = new StreamResult(stringWriter);
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             transformerFactory.setAttribute("indent-number", indent);
-            Transformer transformer = transformerFactory.newTransformer(); 
+            Transformer transformer = transformerFactory.newTransformer();
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
             transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
             transformer.transform(xmlInput, xmlOutput);
@@ -2000,13 +2000,13 @@ public class PaloAltoResource implements ServerResource {
     //@Override
     public void setName(String name) {
         // TODO Auto-generated method stub
-        
+
     }
 
     //@Override
     public void setConfigParams(Map<String, Object> params) {
         // TODO Auto-generated method stub
-        
+
     }
 
     //@Override
@@ -2024,7 +2024,7 @@ public class PaloAltoResource implements ServerResource {
     //@Override
     public void setRunLevel(int level) {
         // TODO Auto-generated method stub
-        
-    }    
-    
+
+    }
+
 }

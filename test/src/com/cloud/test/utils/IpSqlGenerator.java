@@ -30,24 +30,24 @@ public class IpSqlGenerator {
                 System.out.println("  will generate ips ranging from public ips 192.168.1.1 to 192.168.1.255 for dc 1 and pod 1");
                 return;
             }
-            
+
             String type = args[0];
-            
+
             StringTokenizer st = new StringTokenizer(args[1], ".");
             int ipS1 = Integer.parseInt(st.nextToken());
             int ipS2 = Integer.parseInt(st.nextToken());
             int ipS3 = Integer.parseInt(st.nextToken());
             int ipS4 = Integer.parseInt(st.nextToken());
-            
+
             st = new StringTokenizer(args[2], ".");
             int ipE1 = Integer.parseInt(st.nextToken());
             int ipE2 = Integer.parseInt(st.nextToken());
             int ipE3 = Integer.parseInt(st.nextToken());
             int ipE4 = Integer.parseInt(st.nextToken());
-            
+
             String dcId = args[3];
             String podId = args[4];
-            
+
             if (type.equals("private")) {
                 FileOutputStream fs = new FileOutputStream(new File("private-ips.sql"));
                 DataOutputStream out = new DataOutputStream(fs);
@@ -55,7 +55,7 @@ public class IpSqlGenerator {
                     for (int j = ipS2; j <= ipE2; j++) {
                         for (int k = ipS3; k <= ipE3; k++) {
                             for (int l = ipS4; l <= ipE4; l++) {
-                                out.writeBytes("INSERT INTO `vmops`.`dc_ip_address_alloc` (ip_address, data_center_id, pod_id) VALUES ('" 
+                                out.writeBytes("INSERT INTO `vmops`.`dc_ip_address_alloc` (ip_address, data_center_id, pod_id) VALUES ('"
                                         + i + "." + j + "." + k + "." + l + "'," + dcId + "," + podId + ");\r\n");
                             }
                         }
@@ -71,7 +71,7 @@ public class IpSqlGenerator {
                     for (int j = ipS2; j <= ipE2; j++) {
                         for (int k = ipS3; k <= ipE3; k++) {
                             for (int l = ipS4; l <= ipE4; l++) {
-                                out.writeBytes("INSERT INTO `vmops`.`user_ip_address` (ip_address, data_center_id) VALUES ('" 
+                                out.writeBytes("INSERT INTO `vmops`.`user_ip_address` (ip_address, data_center_id) VALUES ('"
                                         + i + "." + j + "." + k + "." + l + "'," + dcId + ");\r\n");
                             }
                         }
@@ -82,7 +82,7 @@ public class IpSqlGenerator {
                 out.close();
             }
         } catch (Exception e) {
-            
+
         }
     }
 }

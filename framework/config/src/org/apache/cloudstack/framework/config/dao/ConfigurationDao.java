@@ -26,11 +26,11 @@ import com.cloud.utils.db.GenericDao;
 public interface ConfigurationDao extends GenericDao<ConfigurationVO, String> {
 
     /**
-     * 
+     *
      *    1. params passed in.
      *    2. configuration for the instance.
      *    3. configuration for the DEFAULT instance.
-     * 
+     *
      * @param params parameters from the components.xml which will override the database values.
      * @return a consolidated look at the configuration parameters.
      */

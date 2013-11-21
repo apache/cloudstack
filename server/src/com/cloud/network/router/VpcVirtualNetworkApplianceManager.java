@@ -63,8 +63,8 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
      * @param gateway
      * @param router TODO
      * @return
-     * @throws ResourceUnavailableException 
-     * @throws ConcurrentOperationException 
+     * @throws ResourceUnavailableException
+     * @throws ConcurrentOperationException
      */
     boolean setupPrivateGateway(PrivateGateway gateway, VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException;
 
@@ -72,8 +72,8 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
      * @param gateway
      * @param router
      * @return
-     * @throws ResourceUnavailableException 
-     * @throws ConcurrentOperationException 
+     * @throws ResourceUnavailableException
+     * @throws ConcurrentOperationException
      */
     boolean destroyPrivateGateway(PrivateGateway gateway, VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException;
 
@@ -81,7 +81,7 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
      * @param routes
      * @param routers
      * @return
-     * @throws ResourceUnavailableException 
+     * @throws ResourceUnavailableException
      */
     boolean applyStaticRoutes(List<StaticRouteProfile> routes, List<DomainRouterVO> routers) throws ResourceUnavailableException;
 
@@ -108,7 +108,7 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
     List<DomainRouterVO> getVpcRouters(long vpcId);
 
     /**
-     * @param vpn 
+     * @param vpn
      * @param router
      * @return
      * @throws ResourceUnavailableException
@@ -116,7 +116,7 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
     boolean startRemoteAccessVpn(RemoteAccessVpn vpn, VirtualRouter router) throws ResourceUnavailableException;
 
     /**
-     * @param vpn 
+     * @param vpn
      * @param router
      * @return
      * @throws ResourceUnavailableException
@@ -124,8 +124,8 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
     boolean stopRemoteAccessVpn(RemoteAccessVpn vpn, VirtualRouter router) throws ResourceUnavailableException;
 
     /**
-     * @param vpn 
-     * @param users 
+     * @param vpn
+     * @param users
      * @param routers
      * @return
      * @throws ResourceUnavailableException

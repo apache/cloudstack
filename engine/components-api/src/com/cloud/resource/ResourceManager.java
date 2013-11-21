@@ -42,7 +42,7 @@ public interface ResourceManager extends ResourceService {
     /**
      * Register a listener for different types of resource life cycle events.
      * There can only be one type of listener per type of host.
-     * 
+     *
      * @param Event type see ResourceListener.java, allow combination of multiple events.
      * @param listener the listener to notify.
      */
@@ -51,7 +51,7 @@ public interface ResourceManager extends ResourceService {
     public void unregisterResourceEvent(ResourceListener listener);
 
     /**
-     * 
+     *
      * @param name of adapter
      * @param adapter
      * @param hates, a list of names which will be eliminated by this adapter. Especially for the case where

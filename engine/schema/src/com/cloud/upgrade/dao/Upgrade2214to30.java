@@ -117,12 +117,12 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
          * add default traffic types, pnsp and virtual router element in enabled state
          * set p.network.id in op_dc_vnet and vlan and user_ip_address
          * list guest networks for the zone, set p.network.id
-         * 
+         *
          * for cases where network_tags are used for multiple guest networks:
          * - figure out distinct tags
          * - create physical network per tag
          * - create traffic types and set the tag to xen_network_label
-         * - add physical network id  to networks, vlan, user_ip_address for networks belonging to this tag 
+         * - add physical network id  to networks, vlan, user_ip_address for networks belonging to this tag
          */
         PreparedStatement pstmt = null;
         ResultSet rs = null;

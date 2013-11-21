@@ -31,7 +31,7 @@ public class AsyncSampleListenerStyleCaller {
                     @Override
                     public void complete(String resultObject) {
                         // TODO Auto-generated method stub
-                        
+
                     }
             });*/
     }

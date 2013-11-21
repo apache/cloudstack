@@ -40,7 +40,7 @@ public class CloudStackSecurityGroupIngress {
     private Integer startPort;
 
     /**
-     * 
+     *
      */
     public CloudStackSecurityGroupIngress() {
         // TODO Auto-generated constructor stub

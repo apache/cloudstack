@@ -52,7 +52,7 @@ public class OvmStoragePool extends OvmObject {
     }
 
     /**
-     * 
+     *
      * @param c: connection
      * @param uuid: uuid of primary storage
      * @return: Details with full fields
@@ -65,12 +65,12 @@ public class OvmStoragePool extends OvmObject {
     }
 
     /**
-     * 
+     *
      * @param c: Connection
      * @param uuid: Pool uuid
      * @param from: secondary storage download path
      * @return: <destenation path, size of template>
-     * @throws XmlRpcException 
+     * @throws XmlRpcException
      */
     public static Pair<String, Long> downloadTemplate(Connection c, String uuid, String from) throws XmlRpcException {
         Object[] params = {uuid, from};

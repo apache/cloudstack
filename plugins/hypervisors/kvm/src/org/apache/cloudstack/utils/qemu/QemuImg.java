@@ -78,7 +78,7 @@ public class QemuImg {
      * Create a new image
      *
      * This method calls 'qemu-img create'
-     * 
+     *
      * @param file
      *            The file to create
      * @param backingFile
@@ -174,7 +174,7 @@ public class QemuImg {
      *
      * This method calls 'qemu-img convert' and takes two objects
      * as an argument.
-     * 
+     *
      *
      * @param srcFile
      *            The source file

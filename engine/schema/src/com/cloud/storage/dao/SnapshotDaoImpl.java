@@ -158,7 +158,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
          * ParentIdSearch.and("prevSnapshotId",
          * ParentIdSearch.entity().getPrevSnapshotId(), SearchCriteria.Op.EQ);
          * ParentIdSearch.done();
-         * 
+         *
          * backupUuidSearch = createSearchBuilder();
          * backupUuidSearch.and("backupUuid",
          * backupUuidSearch.entity().getBackupSnapshotId(),

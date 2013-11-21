@@ -39,12 +39,12 @@ public interface PortProfileDao extends GenericDao<PortProfileVO, Long> {
 
     /**
      * Other candidate functions that could be helpful.
-     * 
+     *
      * List all portprofiles configured with a particular id.
      * List<PortProfileVO> listByVlanId(int vlanId);
-     * 
+     *
      * List all uplink portprofiles (these represent physical ports).
      * List<PortProfileVO> listAllUplinkPortProfiles();    // we may have to provide some filter, like clusterId or zoneId or something.
-     * 
+     *
      */
 }

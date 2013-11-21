@@ -28,16 +28,16 @@ import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.Session;
 
 public class WgetTest {
-    
+
     public static int MAX_RETRY_LINUX = 1;
     public static final Logger s_logger = Logger.getLogger(WgetTest.class.getName());
     public static String host = "";
     public static String password = "rs-ccb35ea5";
-    
 
-    
+
+
     public static void main (String[] args) {
-        
+
         // Parameters
         List<String> argsList = Arrays.asList(args);
         Iterator<String> iter = argsList.iterator();
@@ -46,22 +46,22 @@ public class WgetTest {
             // host
             if (arg.equals("-h")) {
                 host = iter.next();
-            }    
+            }
             //password
-            
+
             if (arg.equals("-p")) {
                 password = iter.next();
-            }    
-            
+            }
+
         }
-    
+
         int i = 0;
         if (host == null || host.equals("")) {
             s_logger
                     .info("Did not receive a host back from test, ignoring ssh test");
             System.exit(2);
         }
-        
+
         if (password == null){
             s_logger.info("Did not receive a password back from test, ignoring ssh test");
             System.exit(2);
@@ -90,21 +90,21 @@ public class WgetTest {
                     s_logger.info("Authentication failed for root with password" + password);
                     System.exit(2);
                 }
-                
+
                 boolean success = false;
                 String linuxCommand = null;
-                
-                if (i % 10 == 0) 
+
+                if (i % 10 == 0)
                     linuxCommand = "rm -rf *; wget http://192.168.1.250/dump.bin && ls -al dump.bin";
-                else 
+                else
                     linuxCommand = "wget http://192.168.1.250/dump.bin && ls -al dump.bin";
-                
+
                 Session sess = conn.openSession();
                 sess.execCommand(linuxCommand);
 
                 InputStream stdout = sess.getStdout();
                 InputStream stderr = sess.getStderr();
-                
+
 
                 byte[] buffer = new byte[8192];
                 while (true) {
@@ -141,7 +141,7 @@ public class WgetTest {
 
                 sess.close();
                 conn.close();
-                
+
                 if (!success) {
                     retry++;
                     if (retry == MAX_RETRY_LINUX) {

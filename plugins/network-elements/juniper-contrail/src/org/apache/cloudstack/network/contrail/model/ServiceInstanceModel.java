@@ -53,7 +53,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
     private String _mgmtName;
     private String _leftName;
     private String _rightName;
-   
+
     private String _templateName;
     private String _templateId;
     private String _templateUrl;
@@ -65,7 +65,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
 
     /**
      * Create a ServiceInstance as result of an API call.
-     * 
+     *
      * @param owner
      * @param name
      * @param template
@@ -82,18 +82,18 @@ public class ServiceInstanceModel extends ModelObjectBase {
             parent_name = ContrailManager.VNC_ROOT_DOMAIN + ":" + ContrailManager.VNC_DEFAULT_PROJECT;
         }
         _fq_name = parent_name + ":" + name;
-        
+
         _mgmtName = ContrailManager.VNC_ROOT_DOMAIN + ":" + ContrailManager.VNC_DEFAULT_PROJECT + ":"
                 + ContrailManager.managementNetworkName;
         _left = left;
         _right = right;
         _leftName = StringUtils.join(left.getQualifiedName(), ":");
         _rightName = StringUtils.join(right.getQualifiedName(), ":");
-        
+
         _templateName = template.getName();
         _templateId = template.getUuid();
         _templateUrl = template.getUrl();
-        
+
         _projectId = project.getUuid();
     }
 
@@ -104,15 +104,15 @@ public class ServiceInstanceModel extends ModelObjectBase {
     public ServiceInstanceModel(String uuid) {
         _uuid  = uuid;
     }
-    
+
     public String getQualifiedName() {
         return _fq_name;
     }
-    
+
     public String getName() {
         return _fq_name.substring(_fq_name.lastIndexOf(':') + 1);
     }
-    
+
     private void applyNetworkPolicy(ModelController controller, NetworkPolicy policy,
             VirtualNetwork left, VirtualNetwork right) {
         left.setNetworkPolicy(policy, new VirtualNetworkPolicyType(
@@ -125,7 +125,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
         } catch (IOException ex) {
             throw new CloudRuntimeException("Unable to update virtual-network", ex);
         }
-        
+
         right.setNetworkPolicy(policy, new VirtualNetworkPolicyType(
                 new VirtualNetworkPolicyType.SequenceType(1, 0), null));
         // TODO: network_ipam_refs attr is missing
@@ -170,7 +170,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
             s_logger.warn("network-policy read", ex);
         }
     }
-    
+
     @Override
     public int compareTo(ModelObject o) {
         ServiceInstanceModel other;
@@ -182,7 +182,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
         }
         return _fq_name.compareTo(other._fq_name);
     }
-    
+
     private ServiceInstance createServiceInstance(ModelController controller) {
         Project project  = null;
         if (_projectId != null) {
@@ -191,7 +191,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
                 project = (Project) api.findById(Project.class, _projectId);
            } catch (IOException ex) {
                 s_logger.warn("project read", ex);
-                throw new CloudRuntimeException("Unable to create service-instance object", ex);            
+                throw new CloudRuntimeException("Unable to create service-instance object", ex);
            }
         }
 
@@ -210,10 +210,10 @@ public class ServiceInstanceModel extends ModelObjectBase {
             s_logger.warn("service-instance create", ex);
             throw new CloudRuntimeException("Unable to create service-instance object", ex);
         }
-        
+
         return si_obj;
     }
-    
+
     private NetworkPolicy createServicePolicy(ModelController controller) {
         NetworkPolicy policy = new NetworkPolicy();
         policy.setParent(_serviceInstance.getParent());
@@ -227,14 +227,14 @@ public class ServiceInstanceModel extends ModelObjectBase {
         siList.add(StringUtils.join(_serviceInstance.getQualifiedName(), ':'));
         List<PolicyRuleType.PortType> portAny = new ArrayList<PolicyRuleType.PortType>();
         portAny.add(new PolicyRuleType.PortType(0, 65535));
-        
+
         PolicyRuleType rule = new PolicyRuleType(
                 new PolicyRuleType.SequenceType(1, 0), /* uuid */ null, "<>", "any",
                 srcList, portAny, /* application */ null, dstList, portAny,
                 new PolicyRuleType.ActionListType("pass", "in-network", siList, null));
         policy_map.addPolicyRule(rule);
         policy.setEntries(policy_map);
-        
+
         try {
             ApiConnector api = controller.getApiAccessor();
             if (!api.create(policy)) {
@@ -245,7 +245,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
         }
         return policy;
     }
-    
+
     @Override
     public void delete(ModelController controller) throws IOException {
         ApiConnector api = controller.getApiAccessor();
@@ -253,11 +253,11 @@ public class ServiceInstanceModel extends ModelObjectBase {
             api.delete(_serviceInstance);
         }
     }
-    
+
     @Override
     public void destroy(ModelController controller) throws IOException {
     }
-    
+
     public ServiceInstance getServiceInstance() {
         return _serviceInstance;
     }
@@ -265,7 +265,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
     public String getUuid() {
         return _uuid;
     }
-    
+
     private ServiceTemplate locateServiceTemplate(ModelController controller) {
         ServiceTemplate tmpl;
         try {

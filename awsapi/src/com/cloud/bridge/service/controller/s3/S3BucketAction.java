@@ -296,10 +296,10 @@ public class S3BucketAction implements ServletAction {
         return nValue.getNodeValue();
     }
 
-    /** 
+    /**
      * In order to support a policy on the "s3:CreateBucket" action we must be able to set and get
      * policies before a bucket is actually created.
-     * 
+     *
      * @param request
      * @param response
      * @throws IOException
@@ -321,7 +321,7 @@ public class S3BucketAction implements ServletAction {
             }
         }
 
-        // [B] "The bucket owner by default has permissions to attach bucket policies to their buckets using PUT Bucket policy." 
+        // [B] "The bucket owner by default has permissions to attach bucket policies to their buckets using PUT Bucket policy."
         //  -> the bucket owner may want to restrict the IP address from where this can be executed
         String client = UserContext.current().getCanonicalUserId();
         S3PolicyContext context = new S3PolicyContext(PolicyActions.PutBucketPolicy, bucketName);
@@ -563,7 +563,7 @@ public class S3BucketAction implements ServletAction {
         OutputStream outputStream = response.getOutputStream();
         response.setStatus(200);
         response.setContentType("application/xml");
-        // The content-type literally should be "application/xml; charset=UTF-8" 
+        // The content-type literally should be "application/xml; charset=UTF-8"
         // but any compliant JVM supplies utf-8 by default;
 
         MTOMAwareResultStreamWriter resultWriter = new MTOMAwareResultStreamWriter("GetBucketAccessControlPolicyResult", outputStream);
@@ -907,11 +907,11 @@ public class S3BucketAction implements ServletAction {
     }
 
     /**
-     * Multipart upload is a complex operation with all the options defined by Amazon.   Part of the functionality is 
-     * provided by the query done against the database.  The CommonPrefixes functionality is done the same way 
-     * as done in the listBucketContents function (i.e., by iterating though the list to decide which output 
+     * Multipart upload is a complex operation with all the options defined by Amazon.   Part of the functionality is
+     * provided by the query done against the database.  The CommonPrefixes functionality is done the same way
+     * as done in the listBucketContents function (i.e., by iterating though the list to decide which output
      * element each key is placed).
-     * 
+     *
      * @param request
      * @param response
      * @throws IOException

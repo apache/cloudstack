@@ -98,7 +98,7 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
                 while (_ipv6Dao.findByNetworkIdAndIp(networkId, ip) != null) {
                     ip = NetUtils.getNextIp6InRange(ip, vlan.getIp6Range());
                     count++;
-                    // It's an arbitrate number to prevent the infinite loop 
+                    // It's an arbitrate number to prevent the infinite loop
                     if (count > _ipv6RetryMax) {
                         ip = null;
                         break;

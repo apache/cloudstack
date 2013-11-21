@@ -21,10 +21,10 @@ import org.apache.log4j.Logger;
 import java.io.InputStream;
 import java.io.IOException;
 
-/**  
+/**
  * A DIME stream is actually composed of multiple encoded streams.
- * This class is a wrapper around the DimeDelimitedInputStream inorder 
- * to provide a simple iterator like interface for all the streams in a 
+ * This class is a wrapper around the DimeDelimitedInputStream inorder
+ * to provide a simple iterator like interface for all the streams in a
  * DIME encoded message.
  */
 public class MultiPartDimeInputStream {
@@ -42,7 +42,7 @@ public class MultiPartDimeInputStream {
     /**
      * The SOAP stream must be first, call nextInputStream to get
      * access to the first stream and all streams after that.
-     * 
+     *
      * @param is the true input stream holding the incoming request.
      */
     public MultiPartDimeInputStream(InputStream is) throws IOException {
@@ -52,7 +52,7 @@ public class MultiPartDimeInputStream {
     /**
      * These three methods are DIME specific but provide potentially
      * useful information about the current stream's data.
-     * 
+     *
      * @return URL or MIME type
      */
     public String getStreamType() {
@@ -87,7 +87,7 @@ public class MultiPartDimeInputStream {
      * Move on to the next stream encoded in the DIME stream.
      * If the current stream has not been all read, then we skip the remaining bytes of
      * that stream.
-     * 
+     *
      * @return false if no next input stream, true if next input stream ready
      * @throws IOException
      */

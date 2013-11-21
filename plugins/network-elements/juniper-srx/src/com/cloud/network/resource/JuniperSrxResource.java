@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.resource;
@@ -564,7 +564,7 @@ public class JuniperSrxResource implements ServerResource {
     }
 
     /*
-     * The usage data will be handled on it's own socket, so usage 
+     * The usage data will be handled on it's own socket, so usage
      * commands will use the following methods...
      */
     private boolean usageLogin() throws ExecutionException {
@@ -702,7 +702,7 @@ public class JuniperSrxResource implements ServerResource {
 
             // Remove the guest network:
             // Remove source, static, and destination NAT rules
-            // Remove VPN 
+            // Remove VPN
             shutdownGuestNetwork(type, ip.getAccountId(), publicVlanTag, sourceNatIpAddress, guestVlanTag, guestVlanGateway, guestVlanSubnet, cidrSize);
 
             if (ip.isAdd()) {
@@ -1076,7 +1076,7 @@ public class JuniperSrxResource implements ServerResource {
             manageSecurityPolicy(SecurityPolicyType.VPN, SrxCommand.DELETE, accountId, null, null, null, null, securityPolicyName, false);
         }
 
-        // Delete all address book entries 
+        // Delete all address book entries
         for (String addressBookEntryName : getVpnObjectNames(SrxXml.ADDRESS_BOOK_ENTRY_GETALL, accountId)) {
             manageAddressBookEntry(SrxCommand.DELETE, _privateZone, null, addressBookEntryName);
         }
@@ -3209,7 +3209,7 @@ public class JuniperSrxResource implements ServerResource {
     }
 
     /*
-     * Usage    
+     * Usage
      */
 
     private ExternalNetworkResourceUsageAnswer getUsageAnswer(ExternalNetworkResourceUsageCommand cmd) throws ExecutionException {

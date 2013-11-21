@@ -275,14 +275,14 @@ import static com.google.common.collect.Lists.newArrayList;
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process
  * to perform the required functionalities for CloudStack.
- * 
+ *
  * ==============>  READ THIS  <==============
  * Because the XenServer objects can expire when the session expires, we cannot
  * keep any of the actual XenServer objects in this class.  The only
  * thing that is constant is the UUID of the XenServer objects but not the
  * objects themselves!  This is very important before you do any changes in
  * this code here.
- * 
+ *
  */
 @Local(value = ServerResource.class)
 public abstract class CitrixResourceBase implements ServerResource, HypervisorResource {
@@ -2609,7 +2609,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     /**
      * This is the method called for getting the HOST stats
-     * 
+     *
      * @param cmd
      * @return
      */
@@ -4435,14 +4435,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      * used to talk to retrieve a network by the name.  The reason is
      * because of the problems in using the name label as the way to find
      * the Network.
-     * 
+     *
      * To see how we are working around these problems, take a look at
      * enableVlanNetwork().  The following description assumes you have looked
      * at the description on that method.
-     * 
+     *
      * In order to understand this, we have to see what type of networks are
      * within a XenServer that's under CloudStack control.
-     * 
+     *
      *   - Native Networks: these are networks that are untagged on the
      *     XenServer and are used to crate VLAN networks on.  These are
      *     created by the user and is assumed to be one per cluster.
@@ -4451,7 +4451,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      *   - LinkLocal Networks: these are dynamically created by CloudStack and
      *     can also have problems with duplicated names but these don't have
      *     actual PIFs.
-     * 
+     *
      *  In order to speed to retrieval of a network, we do the following:
      *    - We retrieve by the name.  If only one network is retrieved, we
      *      assume we retrieved the right network.
@@ -4459,13 +4459,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      *      has the pif for the local host and use that.
      *    - If a pif is not found, then we look at the tags and find the
      *      one with the lowest timestamp. (See enableVlanNetwork())
-     * 
+     *
      * @param conn Xapi connection
      * @param name name of the network
      * @return XsNic an object that contains network, network record, pif, and pif record.
      * @throws XenAPIException
      * @throws XmlRpcException
-     * 
+     *
      * @see CitrixResourceBase#enableVlanNetwork
      */
     protected XsLocalNetwork getNetworkByName(Connection conn, String name) throws XenAPIException, XmlRpcException {
@@ -4529,13 +4529,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     /**
      * enableVlanNetwork creates a Network object, Vlan object, and thereby
      * a tagged PIF object in Xapi.
-     * 
+     *
      * In XenServer, VLAN is added by
      *   - Create a network, which is unique cluster wide.
      *   - Find the PIF that you want to create the VLAN on.
      *   - Create a VLAN using the network and the PIF.  As a result of this
      *     operation, a tagged PIF object is also created.
-     * 
+     *
      * Here is a list of problems with clustered Xapi implementation that
      * we are trying to circumvent.
      *   - There can be multiple Networks with the same name-label so searching
@@ -4550,9 +4550,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      *     problems in migration because the VMs are logically attached
      *     to different networks in Xapi's database but in reality, they
      *     are attached to the same network.
-     * 
+     *
      * To work around these problems, we do the following.
-     * 
+     *
      *   - When creating the VLAN network, we name it as VLAN-UUID of the
      *     Network it is created on-VLAN Tag.  Because VLAN tags is unique with
      *     one particular network, this is a unique name-label to quickly
@@ -4564,10 +4564,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      *     lowest random number as the VLAN network.  This allows VLAN creation
      *     to happen on multiple hosts concurrently but even if two VLAN
      *     networks were created with the same name, only one of them is used.
-     * 
+     *
      * One cavaet about this approach is that it relies on the timestamp to
      * be relatively accurate among different hosts.
-     * 
+     *
      * @param conn Xapi Connection
      * @param tag VLAN tag
      * @param network network on this host to create the VLAN on.

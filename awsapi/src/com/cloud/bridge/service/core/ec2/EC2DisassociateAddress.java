@@ -21,7 +21,7 @@ public class EC2DisassociateAddress {
     private String publicIp;
 
     /**
-     * 
+     *
      */
     public EC2DisassociateAddress() {
         setPublicIp(null);

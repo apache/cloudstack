@@ -26,14 +26,14 @@ public interface Pipeline extends Element {
 
   /**
    * Add elements to pipeline.
-   * 
+   *
    * @param elements
    */
   void add(Element... elements);
 
   /**
    * Add elements to pipeline and link them in given order.
-   * 
+   *
    * @param elements
    */
   void addAndLink(Element... elements);
@@ -43,19 +43,19 @@ public interface Pipeline extends Element {
    * "PADNAME< " or/and suffix " >PADNAME" to use given named pads instead of
    * "stdin" and "stdout". I.e. <code>link("foo", "bar", "baz");</code> is equal
    * to <code>link("foo >stdin", "stdout< bar >stdin", "stdout< baz");</code> .
-   * 
+   *
    * Special elements "IN" and "OUT" are pointing to pipeline outer interfaces,
    * so when pipeline will be connected with other elements, outside of this
    * pipeline, they will be connected to IN and OUT elements.
-   * 
+   *
    * Example:
-   * 
+   *
    * <pre>
    * pipeline.link(&quot;IN&quot;, &quot;foo&quot;, &quot;bar&quot;, &quot;OUT&quot;);
    * // Make additional branch from foo to baz, and then to OUT
    * pipeline.link(&quot;foo &gt;baz_out&quot;, &quot;baz&quot;, &quot;baz_in&lt; OUT&quot;);
    * </pre>
-   * 
+   *
    * @param elements
    *          elements to link
    */
@@ -63,7 +63,7 @@ public interface Pipeline extends Element {
 
   /**
    * Get element by name.
-   * 
+   *
    * @return an element
    */
   Element get(String elementName);

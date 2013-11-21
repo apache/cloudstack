@@ -159,7 +159,7 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
 
     /**
      * This method deletes the primary records from the host
-     * 
+     *
      * @param hostId
      *            -- id of the host
      */

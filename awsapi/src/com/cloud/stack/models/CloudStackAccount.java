@@ -76,7 +76,7 @@ public class CloudStackAccount {
     private String defaultZoneId;
 
     /**
-     * 
+     *
      */
     public CloudStackAccount() {
         // TODO Auto-generated constructor stub
@@ -272,7 +272,7 @@ public class CloudStackAccount {
         return user;
     }
 
-    /**        
+    /**
      * @return the defaultZoneId
      */
     public String getDefaultZoneId() {

@@ -71,7 +71,7 @@ public class Upgrade227to228Premium extends Upgrade227to228 {
                 }
 
             } catch (Exception e) {
-                // if there is an exception, it means that field doesn't exist, and we can create it   
+                // if there is an exception, it means that field doesn't exist, and we can create it
                 insertField = true;
             }
 

@@ -23,7 +23,7 @@ import streamer.Order;
 
 /**
  * Not an order, but derived from Order class for compatibility with orders.
- * 
+ *
  * @see http://msdn.microsoft.com/en-us/library/dd306368.aspx
  */
 public class BitmapOrder extends Order {

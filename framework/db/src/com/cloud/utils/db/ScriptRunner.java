@@ -1,7 +1,7 @@
 /*
  * Slightly modified version of the com.ibatis.common.jdbc.ScriptRunner class
  * from the iBATIS Apache project. Only removed dependency on Resource class
- * and a constructor 
+ * and a constructor
  */
 /*
  *  Copyright 2004 Clinton Begin
@@ -73,7 +73,7 @@ public class ScriptRunner {
 
     /**
      * Runs an SQL script (read in using the Reader parameter)
-     * 
+     *
      * @param reader
      *            - the source of the script
      */
@@ -100,7 +100,7 @@ public class ScriptRunner {
     /**
      * Runs an SQL script (read in using the Reader parameter) using the
      * connection passed in
-     * 
+     *
      * @param conn
      *            - the connection to use for the script
      * @param reader
@@ -127,7 +127,7 @@ public class ScriptRunner {
                 } else if (trimmedLine.length() < 1 || trimmedLine.startsWith("--")) {
                     // Do nothing
                 } else if (trimmedLine.length() < 1 || trimmedLine.startsWith("#")) {
-                    // Do nothing  
+                    // Do nothing
                 } else if (!fullLineDelimiter && trimmedLine.endsWith(getDelimiter()) || fullLineDelimiter && trimmedLine.equals(getDelimiter())) {
                     command.append(line.substring(0, line.lastIndexOf(getDelimiter())));
                     command.append(" ");

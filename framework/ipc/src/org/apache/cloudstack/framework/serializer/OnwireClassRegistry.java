@@ -33,7 +33,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
 //
-// Finding classes in a given package code is taken and modified from 
+// Finding classes in a given package code is taken and modified from
 // Credit: http://internna.blogspot.com/2007/11/java-5-retrieving-all-classes-from.html
 //
 public class OnwireClassRegistry {

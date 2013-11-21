@@ -62,7 +62,7 @@ public interface InternalLoadBalancerVMManager {
         throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException;
 
     /**
-     * 
+     *
      * @param network
      * @param rules
      * @param internalLbVms

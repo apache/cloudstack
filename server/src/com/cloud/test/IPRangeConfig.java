@@ -572,7 +572,7 @@ public class IPRangeConfig {
 //        return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`configuration` WHERE name = \"guest.ip.network\"", "value",
 //        "Unable to start DB connection to read guest IP network. Please contact Cloud Support.");
 //    }
-//    
+//
 //    public static String getGuestNetmask() {
 //        return DatabaseConfig.getDatabaseValueString("SELECT * FROM `cloud`.`configuration` WHERE name = \"guest.netmask\"", "value",
 //        "Unable to start DB connection to read guest netmask. Please contact Cloud Support.");
@@ -581,10 +581,10 @@ public class IPRangeConfig {
 //    public static String getGuestSubnet() {
 //        String guestIpNetwork = getGuestIpNetwork();
 //        String guestNetmask = getGuestNetmask();
-//        
+//
 //        if (guestIpNetwork == null || guestIpNetwork.isEmpty()) printError("Please enter a valid guest IP network address.");
 //        if (guestNetmask == null || guestNetmask.isEmpty()) printError("Please enter a valid guest IP network netmask");
-//        
+//
 //        return NetUtils.getSubNet(guestIpNetwork, guestNetmask);
 //    }
 

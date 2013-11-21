@@ -217,7 +217,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     static HashMap<String, String> s_providerToNetworkElementMap = new HashMap<String, String>();
 
     /**
-     * 
+     *
      */
     public NetworkModelImpl() {
         super();

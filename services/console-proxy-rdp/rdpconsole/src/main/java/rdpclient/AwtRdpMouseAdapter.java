@@ -127,7 +127,7 @@ public class AwtRdpMouseAdapter extends BaseElement {
     if (order.pressed) {
       // Mouse pressed
       flags |= PTRFLAGS_DOWN;
-      
+
       // Check, which one of buttons is released
       boolean b1 = ((modifiers & MouseEvent.BUTTON1_DOWN_MASK) > 0) && !button1;
       boolean b2 = ((modifiers & MouseEvent.BUTTON2_DOWN_MASK) > 0) && !button2;
@@ -149,7 +149,7 @@ public class AwtRdpMouseAdapter extends BaseElement {
       }
     } else if (order.released) {
       // Mouse released
-      
+
       // Check, which one of buttons is released
       boolean b1 = !((modifiers & MouseEvent.BUTTON1_DOWN_MASK) > 0) && button1;
       boolean b2 = !((modifiers & MouseEvent.BUTTON2_DOWN_MASK) > 0) && button2;

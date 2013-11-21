@@ -29,38 +29,38 @@ import org.w3c.dom.NodeList;
 
 public class Test extends TestCase{
     public static final Logger s_logger = Logger.getLogger(Test.class.getName());
-    
+
     public Test(){
         this.setClient();
         this.setParam(new HashMap<String, String>());
     }
-    
+
     public boolean executeTest(){
-        
-        int error=0;    
+
+        int error=0;
         Element rootElement = this.getInputFile().get(0).getDocumentElement();
         NodeList commandLst = rootElement.getElementsByTagName("command");
-        
+
         //Analyze each command, send request and build the array list of api commands
         for (int i=0; i<commandLst.getLength(); i++) {
             Node fstNode = commandLst.item(i);
             Element fstElmnt = (Element) fstNode;
-            
+
             //new command
             ApiCommand api = new ApiCommand(fstElmnt, this.getParam(), this.getCommands());
-            
+
             //send a command
             api.sendCommand(this.getClient(), null);
-            
+
         }
-        
+
         //Try to create portForwarding rule for all available private/public ports
         ArrayList<String> port = new ArrayList<String>();
         for (int j=1; j<1000; j++){
             port.add(Integer.toString(j));
         }
-        
-        //try all public ports    
+
+        //try all public ports
         for (String portValue : port) {
             try {
                 s_logger.info("public port is " + portValue);
@@ -71,13 +71,13 @@ public class Test extends TestCase{
                 if (responseCode != 200 ) {
                     error++;
                     s_logger.error("Can't create portForwarding network rule for the public port " + portValue + ". Request was sent with url " + url);
-                }    
+                }
             }catch (Exception ex) {
                 s_logger.error(ex);
             }
         }
-        
-        
+
+
             if (error != 0)
                 return false;
             else

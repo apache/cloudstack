@@ -69,22 +69,22 @@ public class AddAccountToProjectCmdTest extends TestCase {
 
     /****
      * Condition not handled in the code
-     * 
+     *
      *****/
 
     /*
      * @Test public void testGetEntityOwnerIdForNullProject() {
-     * 
+     *
      * ProjectService projectService = Mockito.mock(ProjectService.class);
      * Mockito
      * .when(projectService.getProject(Mockito.anyLong())).thenReturn(null);
      * addAccountToProjectCmd._projectService = projectService;
-     * 
+     *
      * try { addAccountToProjectCmd.getEntityOwnerId(); }
      * catch(InvalidParameterValueException exception) {
      * Assert.assertEquals("Unable to find project by id 2",
      * exception.getLocalizedMessage()); }
-     * 
+     *
      * }
      */
 
@@ -110,32 +110,32 @@ public class AddAccountToProjectCmdTest extends TestCase {
     /**
      * To run the test uncomment the return statement for getAccountName() in
      * setup() and return null
-     * 
+     *
      * **/
 
     /*
      * @Test public void testGetEventDescriptionForNullAccount() {
-     * 
+     *
      * String result = addAccountToProjectCmd.getEventDescription(); String
      * expected = "Sending invitation to email null to join project: 2";
      * Assert.assertEquals(expected, result);
-     * 
+     *
      * }
      */
 
     /***
-     * 
-     * 
-     * 
+     *
+     *
+     *
      * ***/
 
     /*
      * @Test public void testGetEventDescriptionForAccount() {
-     * 
+     *
      * String result = addAccountToProjectCmd.getEventDescription(); String
      * expected = "Adding account accountName to project: 2";
      * Assert.assertEquals(expected, result);
-     * 
+     *
      * }
      */
 
@@ -152,20 +152,20 @@ public class AddAccountToProjectCmdTest extends TestCase {
 
     /*
      * @Test public void testExecuteForAccountNameEmail() {
-     * 
+     *
      * try {
-     * 
+     *
      * ComponentLocator c = Mockito.mock(ComponentLocator.class); UserContext
      * userContext = Mockito.mock(UserContext.class);
-     * 
+     *
      * // Mockito.when(userContext.current()).thenReturn(userContext);
-     * 
-     * 
+     *
+     *
      * addAccountToProjectCmd.execute(); } catch(InvalidParameterValueException
      * exception) {
      * Assert.assertEquals("Either accountName or email is required",
      * exception.getLocalizedMessage()); }
-     * 
+     *
      * }
      */
 

@@ -26,7 +26,7 @@ import java.util.Map;
  * AWS S3 in constructing the URL for requesting RESTful services.  The three possibilities are
  * (*) hostname followed by bucket as path information (sometimes termed the path style)
  * (*) bucketname before hostname, so that bucketname appears addressible as a subdomain (termed the subdomain style)
- * (*) bucketname as a DNS resolvable entry so that path information conveys extra parameters (termed the 
+ * (*) bucketname as a DNS resolvable entry so that path information conveys extra parameters (termed the
  * virtual hosting style).
  * The path information is held as a Map of key-value pairs termed pathArgs.
  * Specification as provided at http://docs.amazonwebservices.com/AmazonS3/latest/dev/VirtualHosting.html.

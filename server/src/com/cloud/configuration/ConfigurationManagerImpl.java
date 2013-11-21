@@ -939,7 +939,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             /*
              * Commenting out due to Bug 11593 - CIDR conflicts with zone when
              * extending pod but not when creating it
-             * 
+             *
              * checkCidrVlanOverlap(zoneId, cidr);
              */
         }

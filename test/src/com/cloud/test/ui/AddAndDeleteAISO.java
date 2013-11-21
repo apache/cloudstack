@@ -39,12 +39,12 @@ public class AddAndDeleteAISO extends AbstractSeleniumTestCase {
             selenium.click("label");
 
             selenium.type("add_iso_name", "abc");
-            selenium.type("add_iso_display_text", "abc");            
+            selenium.type("add_iso_display_text", "abc");
             String iso_url = System.getProperty("add_iso_url", "http://10.91.28.6/ISO/Fedora-11-i386-DVD.iso");
             selenium.type("add_iso_url", iso_url);
-            String iso_zone = System.getProperty("add_iso_zone", "All Zones");    
+            String iso_zone = System.getProperty("add_iso_zone", "All Zones");
             selenium.select("add_iso_zone", "label="+iso_zone);
-            String iso_os_type = System.getProperty("add_iso_os_type", "Fedora 11");            
+            String iso_os_type = System.getProperty("add_iso_os_type", "Fedora 11");
             selenium.select("add_iso_os_type", "label="+iso_os_type);
             selenium.click("//div[28]/div[11]/button[1]");
             Thread.sleep(3000);
@@ -57,7 +57,7 @@ public class AddAndDeleteAISO extends AbstractSeleniumTestCase {
                     selenium.click("//div[" +i+ "]/div/div[2]/span/span");
                 }
             }
-            catch(Exception ex) {                
+            catch(Exception ex) {
             }
 
             for (int second = 0;; second++) {
@@ -74,7 +74,7 @@ public class AddAndDeleteAISO extends AbstractSeleniumTestCase {
                 for(int j =1;j<=i;j++)
 
                 {
-                    if (selenium.isTextPresent("Ready"))    
+                    if (selenium.isTextPresent("Ready"))
                     {
                         status=0;
                         break;

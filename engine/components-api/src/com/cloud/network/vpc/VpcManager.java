@@ -40,7 +40,7 @@ import com.cloud.user.Account;
 public interface VpcManager {
     /**
      * Returns all the Guest networks that are part of VPC
-     * 
+     *
      * @param vpcId
      * @return
      */
@@ -55,7 +55,7 @@ public interface VpcManager {
 
     /**
      * Destroys the VPC
-     * 
+     *
      * @param vpc
      * @param caller TODO
      * @param callerUserId TODO
@@ -67,7 +67,7 @@ public interface VpcManager {
 
     /**
      * Returns true if the IP is allocated to the VPC; false otherwise
-     * 
+     *
      * @param ip
      * @return
      */
@@ -75,7 +75,7 @@ public interface VpcManager {
 
     /**
      * Disassociates the public IP address from VPC
-     * 
+     *
      * @param ipId
      * @param networkId
      */
@@ -83,7 +83,7 @@ public interface VpcManager {
 
     /**
      * Creates guest network in the VPC
-     * 
+     *
      *
      * @param ntwkOffId
      * @param name
@@ -113,7 +113,7 @@ public interface VpcManager {
 
     /**
      * Assigns source nat public IP address to VPC
-     * 
+     *
      * @param owner
      * @param vpc
      * @return public IP address object
@@ -124,7 +124,7 @@ public interface VpcManager {
 
     /**
      * Validates network offering to find if it can be used for network creation in VPC
-     * 
+     *
      * @param guestNtwkOff
      * @param supportedSvcs TODO
      */

@@ -499,7 +499,7 @@ public class IntegrationTestConfiguration {
             return includedInBasePackageClasses(clsname, cs);
         }
     }
-    
+
     public static boolean includedInBasePackageClasses(String clazzName, ComponentScan cs) {
         Class<?> clazzToCheck;
         try {
@@ -530,11 +530,11 @@ public class IntegrationTestConfiguration {
     public AffinityGroupService affinityGroupService() {
         AffinityGroupService mock = Mockito.mock(AffinityGroupService.class);
         try {
-            final AffinityGroupVO gmock = new AffinityGroupVO("grp1", "grp-type", "affinity group", 1, AccountVO.ACCOUNT_ID_SYSTEM, ControlledEntity.ACLType.Account); 
+            final AffinityGroupVO gmock = new AffinityGroupVO("grp1", "grp-type", "affinity group", 1, AccountVO.ACCOUNT_ID_SYSTEM, ControlledEntity.ACLType.Account);
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-            _affinityGroupDao.persist(gmock);        
+            _affinityGroupDao.persist(gmock);
             }
         });
             Mockito.when(mock.createAffinityGroupInternal(Mockito.any(String.class), Mockito.any(Long.class), Mockito.any(String.class), Mockito.any(String.class), Mockito.any(String.class))).thenReturn(gmock);
@@ -827,7 +827,7 @@ public class IntegrationTestConfiguration {
     public VolumeDataFactory volumeDataFactory() {
         return Mockito.mock(VolumeDataFactory.class);
     }
-    @Bean 
+    @Bean
     public VolumeOrchestrationService volumeOrchestrationService() {
         return Mockito.mock(VolumeOrchestrationService.class);
     }

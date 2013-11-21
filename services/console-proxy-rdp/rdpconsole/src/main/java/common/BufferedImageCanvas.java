@@ -31,7 +31,7 @@ public class BufferedImageCanvas extends Canvas {
 
    // Offline screen buffer
   private BufferedImage offlineImage;
-  
+
   // Cached Graphics2D object for offline screen buffer
   private Graphics2D graphics;
 
@@ -39,7 +39,7 @@ public class BufferedImageCanvas extends Canvas {
     super();
 
     setBackground(Color.black);
-    
+
     setFocusable(true);
 
     // Don't intercept TAB key

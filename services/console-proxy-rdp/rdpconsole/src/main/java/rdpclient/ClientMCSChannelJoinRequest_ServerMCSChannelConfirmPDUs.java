@@ -31,7 +31,7 @@ import streamer.PipelineImpl;
  * sent after receiving the MCS Channel Join Confirm PDU for the previous
  * request. Sending of the MCS Channel Join Request PDUs MUST continue until all
  * channels have been successfully joined.
- * 
+ *
  * @see http://msdn.microsoft.com/en-us/library/cc240686.aspx
  */
 public class ClientMCSChannelJoinRequest_ServerMCSChannelConfirmPDUs extends OneTimeSwitch {
@@ -85,11 +85,11 @@ public class ClientMCSChannelJoinRequest_ServerMCSChannelConfirmPDUs extends One
     if (actualChannel != channels[channelRequestsSent - 1])
       throw new RuntimeException("Unexpeceted channeld ID returned. Expected channeld ID: " + channels[channelRequestsSent - 1] + ", actual channel ID: "
           + actualChannel + ", data: " + buf + ".");
-    
+
     state.channelJoined(actualChannel);
-    
+
     buf.unref();
-    
+
 
     if (channelRequestsSent < channels.length)
       sendChannelRequest(channels[channelRequestsSent++]);
@@ -119,7 +119,7 @@ public class ClientMCSChannelJoinRequest_ServerMCSChannelConfirmPDUs extends One
 
   /**
    * Example.
-   * 
+   *
    * @see http://msdn.microsoft.com/en-us/library/cc240834.aspx
    */
   public static void main(String args[]) {
@@ -131,14 +131,14 @@ public class ClientMCSChannelJoinRequest_ServerMCSChannelConfirmPDUs extends One
     byte[] clientRequestPacket = new byte[] {
         0x03, 0x00, 0x00, 0x0c,  //  TPKT Header (length = 12 bytes)
         0x02, (byte) 0xf0, (byte) 0x80,  //  X.224 Data TPDU
-        
+
         // PER encoded (ALIGNED variant of BASIC-PER) PDU contents:
-        0x38, 0x00, 0x03, 0x03, (byte) 0xef, 
+        0x38, 0x00, 0x03, 0x03, (byte) 0xef,
 
          // 0x38:
          // 0 - --\
          // 0 -   |
-         // 1 -   | CHOICE: From DomainMCSPDU select channelJoinRequest (14) 
+         // 1 -   | CHOICE: From DomainMCSPDU select channelJoinRequest (14)
          // 1 -   | of type ChannelJoinRequest
          // 1 -   |
          // 0 - --/
@@ -147,22 +147,22 @@ public class ClientMCSChannelJoinRequest_ServerMCSChannelConfirmPDUs extends One
 
          // 0x00:
          // 0 - --\
-         // 0 -   | 
-         // 0 -   | 
-         // 0 -   | 
-         // 0 -   | 
-         // 0 -   | 
-         // 0 -   | 
-         // 0 -   | 
+         // 0 -   |
+         // 0 -   |
+         // 0 -   |
+         // 0 -   |
+         // 0 -   |
+         // 0 -   |
+         // 0 -   |
          //       | ChannelJoinRequest::initiator = 0x03 + 1001 = 1004
          // 0x03: |
-         // 0 -   | 
-         // 0 -   | 
-         // 0 -   | 
-         // 0 -   | 
-         // 0 -   | 
-         // 1 -   | 
-         // 1 -   | 
+         // 0 -   |
+         // 0 -   |
+         // 0 -   |
+         // 0 -   |
+         // 0 -   |
+         // 1 -   |
+         // 1 -   |
          // 0 - --/
 
          // 0x03:
@@ -185,20 +185,20 @@ public class ClientMCSChannelJoinRequest_ServerMCSChannelConfirmPDUs extends One
          // 1 -   |
          // 1 - --/
     };
-    
+
     byte[] serverResponsePacket = new byte[] {
         // MCS Channel Confirm
-    (byte)0x3e, 
-    
+    (byte)0x3e,
+
     // result: rt-successful (0)
-    (byte)0x00, 
-    
+    (byte)0x00,
+
     // Initiator: 1007 (6+1001)
-    (byte)0x00, (byte)0x06, 
-    
+    (byte)0x00, (byte)0x06,
+
     // Requested channel
     (byte)0x03, (byte)0xef,
-    
+
     // Actual channel
     (byte)0x03, (byte)0xef,
     };

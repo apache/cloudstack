@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.deploy;
@@ -40,7 +40,7 @@ public class UserDispersingPlanner extends FirstFitPlanner implements Deployment
     private static final Logger s_logger = Logger.getLogger(UserDispersingPlanner.class);
 
     /**
-     * This method should reorder the given list of Cluster Ids by applying any necessary heuristic 
+     * This method should reorder the given list of Cluster Ids by applying any necessary heuristic
      * for this planner
      * For UserDispersingPlanner we need to order the clusters by considering the number of VMs for this account
      * @return List<Long> ordered list of Cluster Ids
@@ -69,7 +69,7 @@ public class UserDispersingPlanner extends FirstFitPlanner implements Deployment
     }
 
     /**
-     * This method should reorder the given list of Pod Ids by applying any necessary heuristic 
+     * This method should reorder the given list of Pod Ids by applying any necessary heuristic
      * for this planner
      * For UserDispersingPlanner we need to order the pods by considering the number of VMs for this account
      * @return List<Long> ordered list of Pod Ids

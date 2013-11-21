@@ -47,7 +47,7 @@ import com.cloud.vm.VirtualMachine;
 /**
  * ConfigurationManager handles adding pods/zones, changing IP ranges, enabling external firewalls, and editing
  * configuration values
- * 
+ *
  */
 public interface ConfigurationManager {
     /**
@@ -62,7 +62,7 @@ public interface ConfigurationManager {
 
     /**
      * Updates a configuration entry with a new value
-     * 
+     *
      * @param userId
      * @param name
      * @param value
@@ -71,7 +71,7 @@ public interface ConfigurationManager {
 
 //    /**
 //     * Creates a new service offering
-//     * 
+//     *
 //     * @param name
 //     * @param cpu
 //     * @param ramSize
@@ -100,7 +100,7 @@ public interface ConfigurationManager {
 
 //    /**
 //     * Creates a new disk offering
-//     * 
+//     *
 //     * @param domainId
 //     * @param name
 //     * @param description
@@ -124,7 +124,7 @@ public interface ConfigurationManager {
 
     /**
      * Creates a new pod
-     * 
+     *
      * @param userId
      * @param podName
      * @param zoneId
@@ -142,7 +142,7 @@ public interface ConfigurationManager {
 
     /**
      * Creates a new zone
-     * 
+     *
      * @param userId
      * @param zoneName
      * @param dns1
@@ -168,7 +168,7 @@ public interface ConfigurationManager {
     /**
      * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated
      * IP addresses.
-     * 
+     *
      * @param userId
      * @param vlanDbId
      * @param caller TODO
@@ -224,7 +224,7 @@ public interface ConfigurationManager {
 
     /**
      * Edits a pod in the database. Will not allow you to edit pods that are being used anywhere in the system.
-     * 
+     *
      * @param id
      * @param name
      * @param startIp

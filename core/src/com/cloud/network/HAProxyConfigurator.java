@@ -236,8 +236,8 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
           cookie JSESSIONID prefix
           cookie SRV insert indirect nocache
           cookie SRV insert postonly indirect
-    
-    
+
+
     appsession <cookie> len <length> timeout <holdtime>
              [request-learn] [prefix] [mode <path-parameters|query-string>]
     Define session stickiness on an existing application cookie.
@@ -314,16 +314,16 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
             /*
              * cookie <name> [ rewrite | insert | prefix ] [ indirect ] [ nocache ]
               [ postonly ] [ domain <domain> ]*
-             
+
              */
             if (StickinessMethodType.LBCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
                 /* Default Values */
-                String cookieName = null; // optional 
+                String cookieName = null; // optional
                 String mode = "insert "; // optional
                 Boolean indirect = false; // optional
                 Boolean nocache = false; // optional
-                Boolean postonly = false; // optional       
-                StringBuilder domainSb = null; // optional 
+                Boolean postonly = false; // optional
+                StringBuilder domainSb = null; // optional
 
                 for (Pair<String, String> paramKV : paramsList) {
                     String key = paramKV.first();
@@ -346,7 +346,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                     if ("postonly".equalsIgnoreCase(key))
                         postonly = true;
                 }
-                if (cookieName == null) {// re-check all haproxy mandatory params 
+                if (cookieName == null) {// re-check all haproxy mandatory params
                     StringBuilder tempSb = new StringBuilder();
                     String srcip = lbTO.getSrcIp();
                     if (srcip == null)
@@ -365,8 +365,8 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                     sb.append(domainSb).append(" ");
             } else if (StickinessMethodType.SourceBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
                 /* Default Values */
-                String tablesize = "200k"; // optional 
-                String expire = "30m"; // optional 
+                String tablesize = "200k"; // optional
+                String expire = "30m"; // optional
 
                 /* overwrite default values with the stick parameters */
                 for (Pair<String, String> paramKV : paramsList) {
@@ -386,12 +386,12 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                  * <path-parameters|query-string>]
                  */
                 /* example: appsession JSESSIONID len 52 timeout 3h */
-                String cookieName = null; // optional 
-                String length = "52"; // optional 
-                String holdtime = "3h"; // optional 
-                String mode = null; // optional 
-                Boolean requestlearn = false; // optional 
-                Boolean prefix = false; // optional 
+                String cookieName = null; // optional
+                String length = "52"; // optional
+                String holdtime = "3h"; // optional
+                String mode = null; // optional
+                Boolean requestlearn = false; // optional
+                Boolean prefix = false; // optional
 
                 for (Pair<String, String> paramKV : paramsList) {
                     String key = paramKV.first();
@@ -409,7 +409,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                     if ("prefix".equalsIgnoreCase(key))
                         prefix = true;
                 }
-                if (cookieName == null) {// re-check all haproxy mandatory params 
+                if (cookieName == null) {// re-check all haproxy mandatory params
                     StringBuilder tempSb = new StringBuilder();
                     String srcip = lbTO.getSrcIp();
                     if (srcip == null)
@@ -425,7 +425,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
                 if (mode != null)
                     sb.append("mode ").append(mode).append(" ");
             } else {
-                /* 
+                /*
                  * Error is silently swallowed.
                  * Not supposed to reach here, validation of methods are
                  * done at the higher layer
@@ -540,7 +540,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
     public String[] generateConfiguration(LoadBalancerConfigCommand lbCmd) {
         List<String> result = new ArrayList<String>();
         List<String> gSection = Arrays.asList(globalSection);
-//        note that this is overwritten on the String in the static ArrayList<String> 
+//        note that this is overwritten on the String in the static ArrayList<String>
         gSection.set(2, "\tmaxconn " + lbCmd.maxconn);
         // TODO DH: write test for this function
         String pipesLine = "\tmaxpipes " + Long.toString(Long.parseLong(lbCmd.maxconn) / 4);

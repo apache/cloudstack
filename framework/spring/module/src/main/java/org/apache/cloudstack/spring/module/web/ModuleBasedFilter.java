@@ -33,7 +33,7 @@ public abstract class ModuleBasedFilter implements Filter {
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         String module = filterConfig.getInitParameter("module");
-        CloudStackSpringContext context = 
+        CloudStackSpringContext context =
                 (CloudStackSpringContext) filterConfig.getServletContext().getAttribute(CloudStackSpringContext.CLOUDSTACK_CONTEXT_SERVLET_KEY);
 
         if ( context == null )

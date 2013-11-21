@@ -105,7 +105,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
         VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(
                 network.getUuid(), _manager.getCanonicalName(network), network.getTrafficType());
         if (vnModel == null) {
-            vnModel = new VirtualNetworkModel(network, network.getUuid(), 
+            vnModel = new VirtualNetworkModel(network, network.getUuid(),
                     _manager.getCanonicalName(network), network.getTrafficType());
             vnModel.setProperties(_manager.getModelController(), network);
         }
@@ -118,14 +118,14 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
             s_logger.warn("virtual-network update: ", ex);
             return network;
         }
-        _manager.getDatabase().getVirtualNetworks().add(vnModel);   
+        _manager.getDatabase().getVirtualNetworks().add(vnModel);
         return network;
     }
 
     /**
      * Allocate the NicProfile object.
      * At this point the UUID of the nic is not yet known. We defer allocating the VMI and instance-ip objects
-     * until the reserve API is called because of this reason. 
+     * until the reserve API is called because of this reason.
      */
     @Override
     public NicProfile allocate(Network network, NicProfile profile,
@@ -142,7 +142,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
         }
 
         profile.setStrategy(ReservationStrategy.Start);
-        
+
         return profile;
     }
 
@@ -166,7 +166,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
                 network.getUuid(), _manager.getCanonicalName(network), network.getTrafficType());
         /* Network must have been implemented */
         assert vnModel != null;
-        
+
         VirtualMachineModel vmModel = _manager.getDatabase().lookupVirtualMachine(vm.getUuid());
         if (vmModel == null) {
             VMInstanceVO vmVo = (VMInstanceVO) vm.getVirtualMachine();
@@ -207,7 +207,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
             return;
         }
 
-        _manager.getDatabase().getVirtualMachines().add(vmModel);   
+        _manager.getDatabase().getVirtualMachines().add(vmModel);
 
         VirtualMachineInterface vmi = vmiModel.getVMInterface();
         // allocate mac address
@@ -268,7 +268,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
             return;
         }
         vmModel.removeSuccessor(vmiModel);
-        
+
         if (!vmModel.hasDescendents()) {
             _manager.getDatabase().getVirtualMachines().remove(vmModel);
             try {
@@ -290,7 +290,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void shutdown(NetworkProfile network, NetworkOffering offering)  {
         s_logger.debug("NetworkGuru shutdown");
-        VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(), 
+        VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(),
                 _manager.getCanonicalName(network), network.getTrafficType());
         if (vnModel == null) {
             return;

@@ -66,7 +66,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 
 /**
- * 
+ *
  * I don't want to introduce extra cross-cutting concerns into console proxy
  * process, as it involves configurations like zone/pod, agent auto self-upgrade
  * etc. I also don't want to introduce more module dependency issues into our
@@ -74,12 +74,12 @@ import com.cloud.utils.script.Script;
  * will be done through reflection. As a result, come out with following
  * solution to solve the problem of building a communication channel between
  * consoole proxy and management server.
- * 
+ *
  * We will deploy an agent shell inside console proxy VM, and this agent shell
  * will launch current console proxy from within this special server resource,
  * through it console proxy can build a communication channel with management
  * server.
- * 
+ *
  */
 public class ConsoleProxyResource extends ServerResourceBase implements ServerResource {
     static final Logger s_logger = Logger.getLogger(ConsoleProxyResource.class);

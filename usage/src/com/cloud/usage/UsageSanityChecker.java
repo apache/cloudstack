@@ -64,7 +64,7 @@ public class UsageSanityChecker {
     private boolean checkVmUsage(Connection conn) throws SQLException {
         boolean success = true;
         /*
-         * Check for Vm usage records which are created after the vm is destroyed 
+         * Check for Vm usage records which are created after the vm is destroyed
          */
         PreparedStatement pstmt = conn.prepareStatement("select count(*) from cloud_usage.cloud_usage cu inner join cloud.vm_instance vm where vm.type = 'User' " +
                                                         "and cu.usage_type in (1 , 2) and cu.usage_id = vm.id and cu.start_date > vm.removed" + lastCheckId);
@@ -76,7 +76,7 @@ public class UsageSanityChecker {
         }
 
         /*
-         * Check for Vms which have multiple running vm records in helper table 
+         * Check for Vms which have multiple running vm records in helper table
          */
         pstmt = conn.prepareStatement("select sum(cnt) from (select count(*) as cnt from cloud_usage.usage_vm_instance where usage_type =1 "
                                       + "and end_date is null group by vm_instance_id having count(vm_instance_id) > 1) c ;");
@@ -88,7 +88,7 @@ public class UsageSanityChecker {
         }
 
         /*
-         * Check for Vms which have multiple allocated vm records in helper table 
+         * Check for Vms which have multiple allocated vm records in helper table
          */
         pstmt = conn.prepareStatement("select sum(cnt) from (select count(*) as cnt from cloud_usage.usage_vm_instance where usage_type =2 "
                                       + "and end_date is null group by vm_instance_id having count(vm_instance_id) > 1) c ;");
@@ -100,7 +100,7 @@ public class UsageSanityChecker {
         }
 
         /*
-         * Check for Vms which have running vm entry without allocated vm  entry in helper table 
+         * Check for Vms which have running vm entry without allocated vm  entry in helper table
          */
         pstmt = conn.prepareStatement("select count(vm_instance_id) from cloud_usage.usage_vm_instance o where o.end_date is null and o.usage_type=1 and not exists "
                                       + "(select 1 from cloud_usage.usage_vm_instance i where i.vm_instance_id=o.vm_instance_id and usage_type=2 and i.end_date is null)");
@@ -116,7 +116,7 @@ public class UsageSanityChecker {
     private boolean checkVolumeUsage(Connection conn) throws SQLException {
         boolean success = true;
         /*
-         * Check for Volume usage records which are created after the volume is removed 
+         * Check for Volume usage records which are created after the volume is removed
          */
         PreparedStatement pstmt = conn.prepareStatement("select count(*) from cloud_usage.cloud_usage cu inner join cloud.volumes v " +
                                                         "where cu.usage_type = 6 and cu.usage_id = v.id and cu.start_date > v.removed" + lastCheckId);
@@ -142,7 +142,7 @@ public class UsageSanityChecker {
 
     private boolean checkTemplateISOUsage(Connection conn) throws SQLException {
         /*
-         * Check for Template/ISO usage records which are created after it is removed 
+         * Check for Template/ISO usage records which are created after it is removed
          */
         PreparedStatement pstmt = conn.prepareStatement("select count(*) from cloud_usage.cloud_usage cu inner join cloud.template_zone_ref tzr " +
                                                         "where cu.usage_id = tzr.template_id and cu.zone_id = tzr.zone_id and cu.usage_type in (7,8) and cu.start_date > tzr.removed" +
@@ -158,7 +158,7 @@ public class UsageSanityChecker {
 
     private boolean checkSnapshotUsage(Connection conn) throws SQLException {
         /*
-         * Check for snapshot usage records which are created after snapshot is removed 
+         * Check for snapshot usage records which are created after snapshot is removed
          */
         PreparedStatement pstmt = conn.prepareStatement("select count(*) from cloud_usage.cloud_usage cu inner join cloud.snapshots s " +
                                                         "where cu.usage_id = s.id and cu.usage_type = 9 and cu.start_date > s.removed" + lastCheckId);
@@ -183,7 +183,7 @@ public class UsageSanityChecker {
             }
             reader.close();
         } catch (Exception e) {
-            // Error while reading last check id  
+            // Error while reading last check id
         }
 
         Connection conn = TransactionLegacy.getStandaloneConnection();

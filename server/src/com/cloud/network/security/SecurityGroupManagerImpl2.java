@@ -224,7 +224,7 @@ public class SecurityGroupManagerImpl2 extends SecurityGroupManagerImpl {
         //TODO: over time clean up op_vm_ruleset_log table for destroyed vms
     }
 
-    /* 
+    /*
      * Same as the superclass, except that we use the  ip address(es) returned from the join
      * made with the nics table when retrieving the SecurityGroupVmMapVO. If a vm has a single
      * nic then that nic is the default and then this query is correct. If the vm has multiple nics

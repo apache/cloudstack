@@ -30,8 +30,8 @@ public class SignRequest {
     public static String apikey;
     public static String secretkey;
     public static String command;
-    
-    
+
+
     public static void main (String[] args) {
         // Parameters
         List<String> argsList = Arrays.asList(args);
@@ -40,38 +40,38 @@ public class SignRequest {
             String arg = iter.next();
             if (arg.equals("-a")) {
                 apikey = iter.next();
-                
+
             }
             if (arg.equals("-u")) {
                 url = iter.next();
             }
-            
+
             if (arg.equals("-s")) {
                 secretkey = iter.next();
             }
         }
-        
-        
+
+
         if (url == null) {
             System.out.println("Please specify url with -u option. Example: -u \"command=listZones&id=1\"");
             System.exit(1);
         }
-        
+
         if (apikey == null) {
             System.out.println("Please specify apikey with -a option");
             System.exit(1);
         }
-        
+
         if (secretkey == null) {
             System.out.println("Please specify secretkey with -s option");
             System.exit(1);
         }
-        
+
         TreeMap<String, String> param = new TreeMap<String, String>();
-        
+
         String temp = "";
         param.put("apikey", apikey);
-        
+
         StringTokenizer str1 = new StringTokenizer (url, "&");
         while(str1.hasMoreTokens()) {
             String newEl = str1.nextToken();
@@ -80,7 +80,7 @@ public class SignRequest {
             String value= str2.nextToken();
             param.put(name, value);
         }
-        
+
         //sort url hash map by key
         Set c = param.entrySet();
         Iterator it = c.iterator();
@@ -93,10 +93,10 @@ public class SignRequest {
             } catch (Exception ex) {
                 System.out.println("Unable to set parameter " + value + " for the command " + param.get("command"));
             }
-            
+
         }
         temp = temp.substring(0, temp.length()-1 );
-        String requestToSign = temp.toLowerCase();    
+        String requestToSign = temp.toLowerCase();
         System.out.println("After sorting: " + requestToSign);
         String signature = UtilsForTest.signRequest(requestToSign, secretkey);
         System.out.println("After Base64 encoding: " + signature);
@@ -109,6 +109,6 @@ public class SignRequest {
         System.out.println("After UTF8 encoding: " + encodedSignature);
         String url = temp + "&signature=" + encodedSignature;
         System.out.println("After sort and add signature: " + url);
-        
+
     }
 }

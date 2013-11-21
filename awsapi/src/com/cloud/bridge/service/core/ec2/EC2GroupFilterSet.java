@@ -66,10 +66,10 @@ public class EC2GroupFilterSet {
     /**
      * For a filter to match a snapshot just one of its values has to match the volume.
      * For a snapshot to be included in the instance response it must pass all the defined filters.
-     * 
+     *
      * @param sampleList - list of snapshots to test against the defined filters
      * @return EC2DescribeSnapshotsResponse
-     * @throws ParseException 
+     * @throws ParseException
      */
     public EC2DescribeSecurityGroupsResponse evaluate(EC2DescribeSecurityGroupsResponse sampleList) throws ParseException {
         EC2DescribeSecurityGroupsResponse resultList = new EC2DescribeSecurityGroupsResponse();

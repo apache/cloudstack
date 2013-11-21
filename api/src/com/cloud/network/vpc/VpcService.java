@@ -35,7 +35,7 @@ public interface VpcService {
 
     /**
      * Persists VPC record in the database
-     * 
+     *
      * @param zoneId
      * @param vpcOffId
      * @param vpcOwnerId
@@ -50,7 +50,7 @@ public interface VpcService {
 
     /**
      * Deletes a VPC
-     * 
+     *
      * @param vpcId
      * @return
      * @throws InsufficientCapacityException
@@ -61,7 +61,7 @@ public interface VpcService {
 
     /**
      * Updates VPC with new name/displayText
-     * 
+     *
      * @param vpcId
      * @param vpcName
      * @param displayText
@@ -71,7 +71,7 @@ public interface VpcService {
 
     /**
      * Lists VPC(s) based on the parameters passed to the method call
-     * 
+     *
      * @param id
      * @param vpcName
      * @param displayText
@@ -98,7 +98,7 @@ public interface VpcService {
 
     /**
      * Starts VPC which includes starting VPC provider and applying all the neworking rules on the backend
-     * 
+     *
      * @param vpcId
      * @param destroyOnFailure TODO
      * @return
@@ -110,7 +110,7 @@ public interface VpcService {
 
     /**
      * Shuts down the VPC which includes shutting down all VPC provider and rules cleanup on the backend
-     * 
+     *
      * @param vpcId
      * @return
      * @throws ConcurrentOperationException
@@ -120,7 +120,7 @@ public interface VpcService {
 
     /**
      * Restarts the VPC. VPC gets shutdown and started as a part of it
-     * 
+     *
      * @param id
      * @return
      * @throws InsufficientCapacityException
@@ -129,7 +129,7 @@ public interface VpcService {
 
     /**
      * Returns a Private gateway found in the VPC by id
-     * 
+     *
      * @param id
      * @return
      */
@@ -137,7 +137,7 @@ public interface VpcService {
 
     /**
      * Persists VPC private gateway in the Database.
-     * 
+     *
      *
      * @param vpcId TODO
      * @param physicalNetworkId
@@ -159,7 +159,7 @@ public interface VpcService {
 
     /**
      * Applies VPC private gateway on the backend, so it becomes functional
-     * 
+     *
      * @param gatewayId
      * @param destroyOnFailure TODO
      * @return
@@ -170,7 +170,7 @@ public interface VpcService {
 
     /**
      * Deletes VPC private gateway
-     * 
+     *
      * @param id
      * @return
      * @throws ResourceUnavailableException
@@ -180,7 +180,7 @@ public interface VpcService {
 
     /**
      * Returns the list of Private gateways existing in the VPC
-     * 
+     *
      * @param listPrivateGatewaysCmd
      * @return
      */
@@ -188,7 +188,7 @@ public interface VpcService {
 
     /**
      * Returns Static Route found by Id
-     * 
+     *
      * @param routeId
      * @return
      */
@@ -196,7 +196,7 @@ public interface VpcService {
 
     /**
      * Applies existing Static Routes to the VPC elements
-     * 
+     *
      * @param vpcId
      * @return
      * @throws ResourceUnavailableException
@@ -205,7 +205,7 @@ public interface VpcService {
 
     /**
      * Deletes static route from the backend and the database
-     * 
+     *
      * @param routeId
      * @return TODO
      * @throws ResourceUnavailableException
@@ -214,7 +214,7 @@ public interface VpcService {
 
     /**
      * Persists static route entry in the Database
-     * 
+     *
      * @param gatewayId
      * @param cidr
      * @return
@@ -223,7 +223,7 @@ public interface VpcService {
 
     /**
      * Lists static routes based on parameters passed to the call
-     * 
+     *
      * @param listStaticRoutesCmd
      * @return
      */
@@ -231,7 +231,7 @@ public interface VpcService {
 
     /**
      * Associates IP address from the Public network, to the VPC
-     * 
+     *
      * @param ipId
      * @param vpcId
      * @return

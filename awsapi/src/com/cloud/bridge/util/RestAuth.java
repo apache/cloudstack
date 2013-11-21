@@ -97,7 +97,7 @@ public class RestAuth {
     /**
      * This header is used iff the "x-amz-date:" header is not defined.
      * Value is used in constructing the StringToSign for signature verification.
-     * 
+     *
      * @param date - the contents of the "Date:" header, skipping the 'Date:' preamble.
      *        OR pass in the value of the "Expires=" query string parameter passed in
      *        for "Query String Authentication".
@@ -132,13 +132,13 @@ public class RestAuth {
     }
 
     /**
-     * The bucket name can be in the "Host:" header but it does not have to be.  It can 
+     * The bucket name can be in the "Host:" header but it does not have to be.  It can
      * instead be in the uriPath as the first step in the path.
-     * 
+     *
      * Used as part of the CanonalizedResource element of the StringToSign.
      * If we get "Host: static.johnsmith.net:8080",  then the bucket name is "static.johnsmith.net"
-     * 
-     * @param header - contents of the "Host:" header, skipping the 'Host:' preamble. 
+     *
+     * @param header - contents of the "Host:" header, skipping the 'Host:' preamble.
      */
     public void setHostHeader(String header) {
         if (null == header) {
@@ -158,7 +158,7 @@ public class RestAuth {
      * Used as part of the CanonalizedResource element of the StringToSign.
      * CanonicalizedResource = [ "/" + Bucket ] +
      * <HTTP-Request-URI, from the protocol name up to the query string> + [sub-resource]
-     * The list of sub-resources that must be included when constructing the CanonicalizedResource Element are: acl, lifecycle, location, 
+     * The list of sub-resources that must be included when constructing the CanonicalizedResource Element are: acl, lifecycle, location,
      * logging, notification, partNumber, policy, requestPayment, torrent, uploadId, uploads, versionId, versioning, versions and website.
      * (http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html)
      * @param query - results from calling "HttpServletRequest req.getQueryString()"
@@ -184,7 +184,7 @@ public class RestAuth {
         for (String subResource : subResources) {
             builtQuery.append(subResource + "&");
         }
-        // If anything inside the string buffer, add a "?" at the beginning, 
+        // If anything inside the string buffer, add a "?" at the beginning,
         // and then remove the last '&'
         if (builtQuery.length() > 0) {
             builtQuery.insert(0, "?");
@@ -196,7 +196,7 @@ public class RestAuth {
     /**
      * Used as part of the CanonalizedResource element of the StringToSign.
      * Append the path part of the un-decoded HTTP Request-URI, up-to but not including the query string.
-     * 
+     *
      * @param path - - results from calling "HttpServletRequest req.getPathInfo()"
      */
     public void addUriPath(String path) {
@@ -210,7 +210,7 @@ public class RestAuth {
      * Each Amazon header added will become part of the signature calculation.
      * We are using a TreeMap here because of the S3 definition:
      *      "Sort the collection of headers lexicographically by header name."
-     * 
+     *
      * @param headerAndValue - needs to be the complete amazon header (i.e., starts with "x-amz").
      */
     public void addAmazonHeader(String headerAndValue) {
@@ -232,7 +232,7 @@ public class RestAuth {
 
         // [B] Does this header already exist?
         if (AmazonHeaders.containsKey(header)) {
-            // -> combine header fields with the same name into one "header-name:comma-separated-value-list" pair as prescribed by RFC 2616, section 4.2, without any white-space between values. 
+            // -> combine header fields with the same name into one "header-name:comma-separated-value-list" pair as prescribed by RFC 2616, section 4.2, without any white-space between values.
             canonicalized = AmazonHeaders.get(header);
             canonicalized = new String(canonicalized + "," + value + "\n");
             canonicalized = canonicalized.replaceAll("\n,", ",");   // remove the '\n' from the first stored value
@@ -250,18 +250,18 @@ public class RestAuth {
     }
 
     /**
-     * The request is authenticated if we can regenerate the same signature given 
+     * The request is authenticated if we can regenerate the same signature given
      * on the request.  Before calling this function make sure to set the header values
      * defined by the public values above.
-     * 
+     *
      * @param httpVerb  - the type of HTTP request (e.g., GET, PUT)
      * @param secretKey - value obtained from the AWSAccessKeyId
      * @param signature - the signature we are trying to recreate, note can be URL-encoded
-     * 
-     * @throws SignatureException 
-     * 
+     *
+     * @throws SignatureException
+     *
      * @return true if request has been authenticated, false otherwise
-     * @throws UnsupportedEncodingException 
+     * @throws UnsupportedEncodingException
      */
 
     public boolean verifySignature(String httpVerb, String secretKey, String signature) throws SignatureException, UnsupportedEncodingException {
@@ -291,14 +291,14 @@ public class RestAuth {
     /**
      * This function generates the single string that will be used to sign with a users
      * secret key.
-     * 
+     *
      * StringToSign = HTTP-Verb + "\n" +
      * Content-MD5 + "\n" +
      * Content-Type + "\n" +
      * Date + "\n" +
      * CanonicalizedAmzHeaders +
      * CanonicalizedResource;
-     * 
+     *
      * @return The single StringToSign or null.
      */
     private String genStringToSign(String httpVerb) {
@@ -356,9 +356,9 @@ public class RestAuth {
     }
 
     /**
-     * Construct the Canonicalized Amazon headers element of the StringToSign by 
+     * Construct the Canonicalized Amazon headers element of the StringToSign by
      * concatenating all headers in the TreeMap into a single string.
-     * 
+     *
      * @return A single string with all the Amazon headers glued together, or null
      *         if no Amazon headers appeared in the request.
      */
@@ -379,7 +379,7 @@ public class RestAuth {
     /**
      * Create a signature by the following method:
      *     new String( Base64( SHA1( key, byte array )))
-     * 
+     *
      * @param signIt    - the data to generate a keyed HMAC over
      * @param secretKey - the user's unique key for the HMAC operation
      * @return String   - the recalculated string

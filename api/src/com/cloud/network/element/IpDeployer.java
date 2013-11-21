@@ -30,7 +30,7 @@ public interface IpDeployer extends Adapter {
     /**
      * Modify ip addresses on this network
      * Depending on the State of the ip addresses the element should take
-     * appropriate action. 
+     * appropriate action.
      * If state is Releasing the ip address should be de-allocated
      * If state is Allocating or Allocated the ip address should be provisioned
      * @param network

@@ -39,7 +39,7 @@ import com.cloud.utils.fsm.StateObject;
 
 /**
  * Join table for image_data_store and snapshots
- * 
+ *
  */
 @Entity
 @Table(name = "snapshot_store_ref")

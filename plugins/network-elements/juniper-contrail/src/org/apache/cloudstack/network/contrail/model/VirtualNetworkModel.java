@@ -47,10 +47,10 @@ public class VirtualNetworkModel extends ModelObjectBase {
 
     private String _uuid;
     private long _id;
-    private TrafficType _trafficType; 
+    private TrafficType _trafficType;
 
     /*
-     * current state for object properties 
+     * current state for object properties
      */
     private boolean _initialized;
     private String _name;
@@ -91,13 +91,13 @@ public class VirtualNetworkModel extends ModelObjectBase {
     /**
      * Determine whether this network is dynamically created by cloudstack or is created by default by the contrail
      * API server.
-     * 
+     *
      * @return
      */
     boolean isDynamicNetwork() {
         return (_trafficType == TrafficType.Guest) || (_trafficType == TrafficType.Public);
     }
-    
+
     @Override
     public int compareTo(ModelObject o) {
         VirtualNetworkModel other;
@@ -107,7 +107,7 @@ public class VirtualNetworkModel extends ModelObjectBase {
             String clsname = o.getClass().getName();
             return VirtualNetworkModel.class.getName().compareTo(clsname);
         }
-        
+
         if (!isDynamicNetwork()) {
             if (!other.isDynamicNetwork()) {
                 // name is not unique since both management and storage networks may map to ip-fabric
@@ -121,7 +121,7 @@ public class VirtualNetworkModel extends ModelObjectBase {
         } else if (!other.isDynamicNetwork()) {
             return 1;
         }
-                
+
         return _uuid.compareTo(other._uuid);
     }
 
@@ -171,7 +171,7 @@ public class VirtualNetworkModel extends ModelObjectBase {
         _name = manager.getCanonicalName(network);
         _prefix = network.getCidr();
         _gateway = network.getGateway();
-        
+
         // For non-cloudstack managed network, find the uuid at this stage.
         if (!isDynamicNetwork()) {
             try {
@@ -180,14 +180,14 @@ public class VirtualNetworkModel extends ModelObjectBase {
                 s_logger.warn("Unable to read virtual-network", ex);
             }
         }
-        
+
         try {
             _projectId = manager.getProjectId(network.getDomainId(), network.getAccountId());
         } catch (IOException ex) {
             s_logger.warn("project read", ex);
             throw new CloudRuntimeException(ex);
         }
-      
+
         _initialized = true;
     }
 
@@ -199,12 +199,12 @@ public class VirtualNetworkModel extends ModelObjectBase {
         ApiConnector api = controller.getApiAccessor();
         VlanDao vlanDao = controller.getVlanDao();
         VirtualNetwork vn = _vn;
-        
+
         if (!isDynamicNetwork()) {
             _vn = (VirtualNetwork) controller.getApiAccessor().findById(VirtualNetwork.class, _uuid);
             return;
         }
-        
+
         assert _uuid != null : "uuid is not set";
 
         if (_vn == null) {
@@ -217,15 +217,15 @@ public class VirtualNetworkModel extends ModelObjectBase {
                         project = (Project) api.findById(Project.class, _projectId);
                     } catch (IOException ex) {
                         s_logger.debug("project read", ex);
-                        throw new CloudRuntimeException("Failed to read project", ex);                    
+                        throw new CloudRuntimeException("Failed to read project", ex);
                     }
                     vn.setParent(project);
                 }
                 vn.setName(_name);
                 vn.setUuid(_uuid);
-            } 
+            }
         }
-     
+
         if (_ipam == null) {
             NetworkIpam ipam = null;
             try {
@@ -264,7 +264,7 @@ public class VirtualNetworkModel extends ModelObjectBase {
                 subnet.addIpamSubnets(new SubnetType(ip_addr, plen), vlan.getVlanGateway());
                 vn.addNetworkIpam(_ipam, subnet);
             }
-        } 
+        }
 
         if (_vn == null) {
             try {
@@ -280,7 +280,7 @@ public class VirtualNetworkModel extends ModelObjectBase {
             } catch (IOException ex) {
                 s_logger.warn("virtual-network update", ex);
                 throw new CloudRuntimeException("Unable to update virtual-network object", ex);
-            }            
+            }
         }
 
         for (ModelObject successor: successors()) {
@@ -337,7 +337,7 @@ public class VirtualNetworkModel extends ModelObjectBase {
                 subnet.addIpamSubnets(new SubnetType(ip_addr, plen), vlan.getVlanGateway());
                 _vn.addNetworkIpam(_ipam, subnet);
             }
-        } 
+        }
         return;
     }
 
@@ -362,7 +362,7 @@ public class VirtualNetworkModel extends ModelObjectBase {
         if (!isDynamicNetwork()) {
             return true;
         }
-        
+
         List<String> dbSubnets = new ArrayList<String>();
         if (_trafficType == TrafficType.Public) {
             List<VlanVO> vlan_list = vlanDao.listVlansByNetworkId(_id);
@@ -371,16 +371,16 @@ public class VirtualNetworkModel extends ModelObjectBase {
                 dbSubnets.add(vlan.getVlanGateway() + cidr);
             }
         } else {
-            dbSubnets.add(this._gateway + this._prefix);  
+            dbSubnets.add(this._gateway + this._prefix);
         }
-            
+
         List<ObjectReference<VnSubnetsType>> ipamRefs = _vn.getNetworkIpam();
         List<String> vncSubnets = new ArrayList<String>();
-        
+
         if (ipamRefs == null && !dbSubnets.isEmpty()) {
             return false;
         }
-        
+
         if (ipamRefs != null) {
             for (ObjectReference<VnSubnetsType> ref: ipamRefs) {
                 VnSubnetsType vnSubnetType = ref.getAttr();
@@ -389,21 +389,21 @@ public class VirtualNetworkModel extends ModelObjectBase {
                     if (subnets != null && !subnets.isEmpty()) {
                         VnSubnetsType.IpamSubnetType ipamSubnet = subnets.get(0);
                         vncSubnets.add(ipamSubnet.getDefaultGateway() +
-                                ipamSubnet.getSubnet().getIpPrefix() +"/" + ipamSubnet.getSubnet().getIpPrefixLen());  
-                    }  
-                } 
+                                ipamSubnet.getSubnet().getIpPrefix() +"/" + ipamSubnet.getSubnet().getIpPrefixLen());
+                    }
+                }
             }
         }
-        // unordered, no duplicates hence perform negation operation as set 
+        // unordered, no duplicates hence perform negation operation as set
         Set<String> diff = new HashSet<String>(dbSubnets);
         diff.removeAll(vncSubnets);
-        
+
         if (!diff.isEmpty()) {
-            s_logger.debug("Subnets changed, network: " + this._name + 
+            s_logger.debug("Subnets changed, network: " + this._name +
                     "; db: " + dbSubnets + ", vnc: " + vncSubnets + ", diff: " + diff);
             return false;
         }
-        
+
         for (ModelObject successor: successors()) {
             if (!successor.verify(controller)) {
                 return false;
@@ -420,12 +420,12 @@ public class VirtualNetworkModel extends ModelObjectBase {
         assert this._vn != null : "vnc virtual network current is not initialized";
 
         try {
-            latest = (VirtualNetworkModel) o;            
+            latest = (VirtualNetworkModel) o;
         } catch (ClassCastException ex) {
             s_logger.warn("Invalid model object is passed to cast to VirtualNetworkModel");
             return false;
         }
-        
+
         try {
             latest.read(controller);
         } catch (Exception e) {
@@ -433,22 +433,22 @@ public class VirtualNetworkModel extends ModelObjectBase {
             return false;
         }
         assert latest._vn != null : "vnc virtual network new is not initialized";
-        
+
         List<ObjectReference<VnSubnetsType>> currentIpamRefs = this._vn.getNetworkIpam();
         List<ObjectReference<VnSubnetsType>> newIpamRefs = latest._vn.getNetworkIpam();
         List<String> currentSubnets = new ArrayList<String>();
         List<String> newSubnets = new ArrayList<String>();
 
-        
-        if ((currentIpamRefs == null && newIpamRefs != null) || 
+
+        if ((currentIpamRefs == null && newIpamRefs != null) ||
             (currentIpamRefs != null && newIpamRefs == null)) {  //Check for existence only
             s_logger.debug("ipams differ: current=" + currentIpamRefs + ", new=" + newIpamRefs);
             return false;
-        }        
+        }
         if (currentIpamRefs == null) {
             return true;
         }
-        
+
         for (ObjectReference<VnSubnetsType> ref: currentIpamRefs) {
             VnSubnetsType vnSubnetType = ref.getAttr();
             if (vnSubnetType != null) {
@@ -456,11 +456,11 @@ public class VirtualNetworkModel extends ModelObjectBase {
                 if (subnets != null && !subnets.isEmpty()) {
                     VnSubnetsType.IpamSubnetType ipamSubnet = subnets.get(0);
                     currentSubnets.add(ipamSubnet.getDefaultGateway() + ipamSubnet.getSubnet().getIpPrefix() +
-                            "/" + ipamSubnet.getSubnet().getIpPrefixLen());  
-                } 
-            } 
+                            "/" + ipamSubnet.getSubnet().getIpPrefixLen());
+                }
+            }
         }
-        
+
         for (ObjectReference<VnSubnetsType> ref: newIpamRefs) {
             VnSubnetsType vnSubnetType = ref.getAttr();
             if (vnSubnetType != null) {
@@ -468,20 +468,20 @@ public class VirtualNetworkModel extends ModelObjectBase {
                 if (subnets != null && !subnets.isEmpty()) {
                     VnSubnetsType.IpamSubnetType ipamSubnet = subnets.get(0);
                     newSubnets.add(ipamSubnet.getDefaultGateway() + ipamSubnet.getSubnet().getIpPrefix() +
-                            "/" + ipamSubnet.getSubnet().getIpPrefixLen());  
-                } 
-            } 
+                            "/" + ipamSubnet.getSubnet().getIpPrefixLen());
+                }
+            }
         }
-        
+
         Set<String> diff = new HashSet<String>(currentSubnets);
         diff.removeAll(newSubnets);
-        
+
         if (!diff.isEmpty()) {
-            s_logger.debug("Subnets differ, network: " + this._name + 
+            s_logger.debug("Subnets differ, network: " + this._name +
                     "; db: " + currentSubnets + ", vnc: " + newSubnets + ", diff: " + diff);
             return false;
         }
-                
+
         return true;
     }
 

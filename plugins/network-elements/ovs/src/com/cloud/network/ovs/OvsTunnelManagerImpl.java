@@ -199,7 +199,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         }
 
         // Try to fetch GRE endpoint IP address for cloud db
-        // If not found, then find it on the hypervisor            
+        // If not found, then find it on the hypervisor
         OvsTunnelInterfaceVO tunnelIface = _tunnelInterfaceDao.getByHostAndLabel(host.getId(), physNetLabel);
         if (tunnelIface == null) {
             //Now find and fetch configuration for physical interface
@@ -278,7 +278,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             }
 
             ta = _tunnelNetworkDao.getByFromToNetwork(rh.longValue(), hostId, nw.getId());
-            // Try and create the tunnel even if a previous attempt failed            
+            // Try and create the tunnel even if a previous attempt failed
             if (ta == null || ta.getState().equals("FAILED")) {
                 s_logger.debug("Attempting to create tunnel from:" + rh.longValue() + " to:" + hostId);
                 if (ta == null) {
@@ -404,7 +404,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             return;
         }
         try {
-            /* Now we are last one on host, destroy the bridge with all 
+            /* Now we are last one on host, destroy the bridge with all
              * the tunnels for this network  */
             int key = getGreKey(nw);
             Command cmd = new OvsDestroyBridgeCommand(nw.getId(), key);

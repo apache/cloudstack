@@ -209,7 +209,7 @@ public class S3ObjectAction implements ServletAction {
         OutputStream outputStream = response.getOutputStream();
         response.setStatus(200);
         response.setContentType("application/xml");
-        // The content-type literally should be "application/xml; charset=UTF-8" 
+        // The content-type literally should be "application/xml; charset=UTF-8"
         // but any compliant JVM supplies utf-8 by default;
 
         MTOMAwareResultStreamWriter resultWriter = new MTOMAwareResultStreamWriter("CopyObjectResult", outputStream);
@@ -248,7 +248,7 @@ public class S3ObjectAction implements ServletAction {
         OutputStream outputStream = response.getOutputStream();
         response.setStatus(200);
         response.setContentType("application/xml");
-        // The content-type literally should be "application/xml; charset=UTF-8" 
+        // The content-type literally should be "application/xml; charset=UTF-8"
         // but any compliant JVM supplies utf-8 by default;
 
         MTOMAwareResultStreamWriter resultWriter = new MTOMAwareResultStreamWriter("GetObjectAccessControlPolicyResult", outputStream);
@@ -377,7 +377,7 @@ public class S3ObjectAction implements ServletAction {
     }
 
     /**
-     * Once versioining is turned on then to delete an object requires specifying a version 
+     * Once versioining is turned on then to delete an object requires specifying a version
      * parameter.   A deletion marker is set once versioning is turned on in a bucket.
      */
     private void executeDeleteObject(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -468,7 +468,7 @@ public class S3ObjectAction implements ServletAction {
         S3GetObjectResponse engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest(engineRequest);
         response.setStatus(engineResponse.getResultCode());
 
-        //bucket lookup for non-existance key 
+        //bucket lookup for non-existance key
 
         if (engineResponse.getResultCode() == 404)
             return;
@@ -501,7 +501,7 @@ public class S3ObjectAction implements ServletAction {
 
     // There is a problem with POST since the 'Signature' and 'AccessKey' parameters are not
     // determined until we hit this function (i.e., they are encoded in the body of the message
-    // they are not HTTP request headers).  All the values we used to get in the request headers 
+    // they are not HTTP request headers).  All the values we used to get in the request headers
     // are not encoded in the request body.
     //
     // add ETag header computed as Base64 MD5 whenever object is uploaded or updated
@@ -573,7 +573,7 @@ public class S3ObjectAction implements ServletAction {
                 }
                 state = 1;
             } else if (1 == state && 0 == oneLine.length()) {
-                // -> data of a body part starts here 
+                // -> data of a body part starts here
                 state = 2;
             } else if (1 == state) {
                 // -> the name of the 'name-value' pair is encoded in the Content-Disposition header
@@ -622,7 +622,7 @@ public class S3ObjectAction implements ServletAction {
     /**
      * Save all the information about the multipart upload request in the database so once it is finished
      * (in the future) we can create the real S3 object.
-     * 
+     *
      * @throws IOException
      */
     private void executeInitiateMultipartUpload(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -724,7 +724,7 @@ public class S3ObjectAction implements ServletAction {
 
     /**
      * This function is required to both parsing XML on the request and return XML as part of its result.
-     * 
+     *
      * @param request
      * @param response
      * @throws IOException
@@ -1011,7 +1011,7 @@ public class S3ObjectAction implements ServletAction {
      * as defined in rfc2616.   Any characters that could cause an invalid HTTP header will
      * prevent that meta data from being returned via the REST call (as is defined in the Amazon
      * spec).   These characters can be defined if using the SOAP API as well as the REST API.
-     * 
+     *
      * @param engineResponse
      * @param response
      */
@@ -1034,7 +1034,7 @@ public class S3ObjectAction implements ServletAction {
                 }
             }
 
-            // -> cannot have HTTP separators in an HTTP header 
+            // -> cannot have HTTP separators in an HTTP header
             if (-1 != name.indexOf('(') || -1 != name.indexOf(')') || -1 != name.indexOf('@') || -1 != name.indexOf('<') || -1 != name.indexOf('>') || -1 != name.indexOf('\"') ||
                 -1 != name.indexOf('[') || -1 != name.indexOf(']') || -1 != name.indexOf('=') || -1 != name.indexOf(',') || -1 != name.indexOf(';') || -1 != name.indexOf(':') ||
                 -1 != name.indexOf('\\') || -1 != name.indexOf('/') || -1 != name.indexOf(' ') || -1 != name.indexOf('{') || -1 != name.indexOf('}') || -1 != name.indexOf('?') ||
@@ -1054,7 +1054,7 @@ public class S3ObjectAction implements ServletAction {
     /**
      * Extract the name and value of all meta data so it can be written with the
      * object that is being 'PUT'.
-     * 
+     *
      * @param request
      * @return
      */
@@ -1085,13 +1085,13 @@ public class S3ObjectAction implements ServletAction {
     }
 
     /**
-     * Parameters on the query string may or may not be name-value pairs. 
+     * Parameters on the query string may or may not be name-value pairs.
      * For example:  "?acl&versionId=2", notice that "acl" has no value other
      * than it is present.
-     * 
+     *
      * @param queryString - from a URL to locate the 'find' parameter
      * @param find        - name string to return first found
-     * @return the value matching the found name 
+     * @return the value matching the found name
      */
     private String returnParameter(String queryString, String find) {
         int offset = queryString.indexOf(find);
@@ -1128,11 +1128,11 @@ public class S3ObjectAction implements ServletAction {
      * The Complete Multipart Upload function pass in the request body a list of
      * all uploaded body parts.   It is required that we verify that list matches
      * what was uploaded.
-     * 
+     *
      * @param is
      * @param parts
      * @return error code, and error string
-     * @throws ParserConfigurationException, IOException, SAXException 
+     * @throws ParserConfigurationException, IOException, SAXException
      */
     private OrderedPair<Integer, String> verifyParts(InputStream is, S3MultipartPart[] parts) {
         try {

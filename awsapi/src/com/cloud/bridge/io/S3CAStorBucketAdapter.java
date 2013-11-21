@@ -95,7 +95,7 @@ public class S3CAStorBucketAdapter implements S3BucketAdapter {
         // The "domain" to store streams can be specified. If not specified, streams will be written
         // without a "domain" query arg, so they will go into the castor default domain.
         // The port is optional and must be at the end of the config string, defaults to 80.
-        // Examples: "castor 172.16.78.130 172.16.78.131 80", "castor 172.16.78.130 domain=mycluster.example.com", 
+        // Examples: "castor 172.16.78.130 172.16.78.131 80", "castor 172.16.78.130 domain=mycluster.example.com",
         // "castor zeroconf=mycluster.example.com domain=mycluster.example.com 80"
         String[] cfg = mountedRoot.split(" ");
         int numIPs = cfg.length - 1;

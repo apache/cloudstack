@@ -51,7 +51,7 @@ public class CloudStackUser {
     private String username;
 
     /**
-     * 
+     *
      */
     public CloudStackUser() {
     }

@@ -88,7 +88,7 @@ public class CloudStackTemplate {
     private List<CloudStackKeyValue> tags;
 
     /**
-     * 
+     *
      */
     public CloudStackTemplate() {
     }

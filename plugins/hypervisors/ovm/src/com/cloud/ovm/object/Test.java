@@ -29,16 +29,16 @@ public class Test {
     public static void main(String[] args) {
         try {
             /*Connection c = new Connection("192.168.105.155", "oracle", "password");
-            Utils util = new UtilsImpl(c);    
+            Utils util = new UtilsImpl(c);
             Storage storage = new StorageImpl(c);
             String[] res = util.listDir("/etc", 1);
             for (String s : res) {
                 System.out.println(s);
             }
-            
-            
+
+
             Pool pool = new PoolImpl(c);
-            
+
             //pool.registerServer("192.168.105.155", Pool.ServerType.SITE);
             //pool.registerServer("192.168.105.155", Pool.ServerType.UTILITY);
             //pool.registerServer("192.168.105.155", Pool.ServerType.XEN);

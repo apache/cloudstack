@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network;
@@ -27,8 +27,8 @@ import javax.persistence.Table;
 
 /**
  * NetScalerPodVO contains information about a EIP deployment where on datacenter L3 router a PBR (policy
- * based routing) is setup between a POD's subnet IP range to a NetScaler device. This VO object 
- * represents a mapping between a POD and NetScaler device where PBR is setup. 
+ * based routing) is setup between a POD's subnet IP range to a NetScaler device. This VO object
+ * represents a mapping between a POD and NetScaler device where PBR is setup.
  *
  */
 @Entity

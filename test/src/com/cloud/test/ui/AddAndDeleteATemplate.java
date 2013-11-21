@@ -41,9 +41,9 @@ public class AddAndDeleteATemplate extends AbstractSeleniumTestCase {
             selenium.type("add_template_display_text", "abc");
             String template_url = System.getProperty("add_template_url", "http://10.91.28.6/templates/centos53-x86_64/latest/f59f18fb-ae94-4f97-afd2-f84755767aca.vhd.bz2");
             selenium.type("add_template_url", template_url);
-            String template_zone = System.getProperty("add_template_zone", "All Zones");    
+            String template_zone = System.getProperty("add_template_zone", "All Zones");
             selenium.select("add_template_zone", "label="+template_zone);
-            String template_os_type = System.getProperty("add_template_os_type", "CentOS 5.3 (32-bit)");            
+            String template_os_type = System.getProperty("add_template_os_type", "CentOS 5.3 (32-bit)");
             selenium.select("add_template_os_type", "label="+template_os_type);
             selenium.click("//div[28]/div[11]/button[1]");
             Thread.sleep(3000);
@@ -56,7 +56,7 @@ public class AddAndDeleteATemplate extends AbstractSeleniumTestCase {
                     selenium.click("//div[" +i+ "]/div/div[2]/span/span");
                 }
             }
-            catch(Exception ex) {                
+            catch(Exception ex) {
             }
 
             for (int second = 0;; second++) {
@@ -73,7 +73,7 @@ public class AddAndDeleteATemplate extends AbstractSeleniumTestCase {
                 for(int j =1;j<=i;j++)
 
                 {
-                    if (selenium.isTextPresent("Ready"))    
+                    if (selenium.isTextPresent("Ready"))
                     {
                         status=0;
                         break;

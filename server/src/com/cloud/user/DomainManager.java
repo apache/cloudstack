@@ -41,7 +41,7 @@ public interface DomainManager extends DomainService {
 
     /**
      * update an existing domain
-     * 
+     *
      * @param cmd
      *            - the command containing domainId and new domainName
      * @return Domain object if the command succeeded

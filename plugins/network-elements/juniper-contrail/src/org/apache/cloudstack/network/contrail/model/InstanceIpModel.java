@@ -31,18 +31,18 @@ import com.cloud.exception.InternalErrorException;
 
 public class InstanceIpModel extends ModelObjectBase {
     private static final Logger s_logger = Logger.getLogger(InstanceIpModel.class);
-    
+
     private String _name;
     private String _uuid;
-    
+
     private String _ipAddress;
-    
+
     private VMInterfaceModel _vmiModel;
-    
+
     public InstanceIpModel(String vmName, int deviceId) {
         _name = vmName + '-' + deviceId;
     }
-    
+
     public void addToVMInterface(VMInterfaceModel vmiModel) {
         _vmiModel = vmiModel;
         if (vmiModel != null) {
@@ -79,30 +79,30 @@ public class InstanceIpModel extends ModelObjectBase {
     public String getAddress() {
         return _ipAddress;
     }
-    
+
     public String getName() {
         return _name;
     }
-    
+
     public void setAddress(String ipaddress) {
         _ipAddress = ipaddress;
     }
-    
+
     @Override
     public void update(ModelController controller)
             throws InternalErrorException, IOException {
         assert _vmiModel != null;
-                
+
         ApiConnector api = controller.getApiAccessor();
         VirtualNetworkModel vnModel = _vmiModel.getVirtualNetworkModel();
         assert vnModel != null;
-                
+
         VirtualMachineInterface vmi = _vmiModel.getVMInterface();
         VirtualNetwork vnet = vnModel.getVirtualNetwork();
         if (vnet == null) {
             vnet = (VirtualNetwork) api.findById(VirtualNetwork.class, _vmiModel.getNetworkUuid());
         }
-        
+
         String ipid = api.findByName(InstanceIp.class, null, _name);
         if (ipid == null) {
             InstanceIp ip_obj = new InstanceIp();
@@ -140,7 +140,7 @@ public class InstanceIpModel extends ModelObjectBase {
                 ip_obj.setAddress(_ipAddress);
                 update = true;
             }
-            
+
             String vmi_id = ObjectReference.getReferenceListUuid(ip_obj.getVirtualMachineInterface());
             if (vmi_id == null || !vmi_id.equals(_vmiModel.getUuid())) {
                 if (vmi != null) {
@@ -155,7 +155,7 @@ public class InstanceIpModel extends ModelObjectBase {
             api.read(ip_obj);
             _uuid = ip_obj.getUuid();
             _ipAddress = ip_obj.getAddress();
-        }        
+        }
     }
 
     @Override

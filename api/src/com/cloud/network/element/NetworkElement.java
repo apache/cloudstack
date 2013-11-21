@@ -44,13 +44,13 @@ public interface NetworkElement extends Adapter {
     Map<Service, Map<Capability, String>> getCapabilities();
 
     /**
-     * NOTE:  
+     * NOTE:
      * NetworkElement -> Network.Provider is a one-to-one mapping. While adding a new NetworkElement, one must add a new Provider name to Network.Provider.
      */
     Provider getProvider();
 
     /**
-     * Implement the network configuration as specified. 
+     * Implement the network configuration as specified.
      * @param config fully specified network configuration.
      * @param offering network offering that originated the network configuration.
      * @return true if network configuration is now usable; false if not; null if not handled by this element.
@@ -124,7 +124,7 @@ public interface NetworkElement extends Adapter {
     boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
-     * This should return true if out of multiple services provided by this element, only some can be enabled. If all the services MUST be provided, this should return false. 
+     * This should return true if out of multiple services provided by this element, only some can be enabled. If all the services MUST be provided, this should return false.
      * @return true/false
      */
     boolean canEnableIndividualServices();

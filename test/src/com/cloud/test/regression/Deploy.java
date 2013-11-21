@@ -29,30 +29,30 @@ import org.w3c.dom.NodeList;
 
 public class Deploy extends TestCase{
     public static final Logger s_logger = Logger.getLogger(Deploy.class.getName());
-    
+
     public Deploy(){
         this.setClient();
         this.setParam(new HashMap<String, String>());
     }
 
-    
+
     public boolean executeTest() {
-        int error=0;    
+        int error=0;
         Element rootElement = this.getInputFile().get(0).getDocumentElement();
         NodeList commandLst = rootElement.getElementsByTagName("command");
-        
+
         //Analyze each command, send request and build the array list of api commands
         for (int i=0; i<commandLst.getLength(); i++) {
             Node fstNode = commandLst.item(i);
             Element fstElmnt = (Element) fstNode;
-            
+
             //new command
             ApiCommand api = new ApiCommand(fstElmnt, this.getParam(), this.getCommands());
-            
+
             //send a command
             api.sendCommand(this.getClient(), null);
-            
-            
+
+
             //verify the response of the command
             if (api.getResponseCode() != 200) {
                 error++;
@@ -67,15 +67,15 @@ public class Deploy extends TestCase{
             else
                 return true;
     }
-        
-    
+
+
     public static void main (String[] args) {
-        
+
         List<String> argsList = Arrays.asList(args);
         Iterator<String> iter = argsList.iterator();
         String host = null;
         String file = null;
-        
+
         while (iter.hasNext()) {
             String arg = iter.next();
             // management server host
@@ -86,9 +86,9 @@ public class Deploy extends TestCase{
                 file = iter.next();
             }
         }
-        
+
         Deploy deploy = new Deploy ();
-        
+
         ArrayList<String> inputFile = new ArrayList<String>();
         inputFile.add(file);
         deploy.setInputFile(inputFile);
@@ -96,9 +96,9 @@ public class Deploy extends TestCase{
         deploy.getParam().put("hostip", host);
         deploy.getParam().put("apicommands", "../metadata/func/commands");
         deploy.setCommands();
-        
+
         s_logger.info("Starting deployment against host " + host);
-        
+
         boolean result = deploy.executeTest();
         if (result == false) {
             s_logger.error("DEPLOYMENT FAILED");
@@ -107,8 +107,8 @@ public class Deploy extends TestCase{
         else {
             s_logger.info("DEPLOYMENT IS SUCCESSFUL");
         }
-        
-    } 
-    
+
+    }
+
 }
 

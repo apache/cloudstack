@@ -76,10 +76,10 @@ public interface ContrailManager {
     public boolean isSystemDefaultNetwork(NetworkVO dbNet);
     public String getVifNameByVmName(String vm_name, Integer device_id);
     public String getVifNameByVmUuid(String vm_uuid, Integer device_id);
-    
+
     public ApiConnector getApiConnector();
     public ModelDatabase getDatabase();
-    public ModelController getModelController(); 
+    public ModelController getModelController();
     public List<NetworkVO> findJuniperManagedNetworks(List<TrafficType> types);
     public List<IPAddressVO> findJuniperManagedPublicIps();
     public VirtualNetwork findDefaultVirtualNetwork(TrafficType trafficType)
@@ -90,4 +90,4 @@ public interface ContrailManager {
     public boolean createFloatingIp(PublicIpAddress ip);
     public boolean deleteFloatingIp(PublicIpAddress ip);
 }
-  
+

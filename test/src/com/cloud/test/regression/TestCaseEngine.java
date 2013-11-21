@@ -69,21 +69,21 @@ public class TestCaseEngine {
             if (arg.equals("-p")) {
                 _printUrl = true;
             }
-            
+
             //type of the test: sanity, regression, all (default)
             if (arg.equals("-type")) {
                 type = iter.next();
             }
-            
+
             if (arg.equals("-repeat")) {
                 _repeat = Boolean.valueOf(iter.next());
             }
-            
+
             if (arg.equals("-filename")) {
                 fileName = iter.next();
             }
         }
-        
+
         if (type.equalsIgnoreCase("sanity"))
             isSanity = true;
         else if (type.equalsIgnoreCase("regression"))
@@ -193,7 +193,7 @@ public class TestCaseEngine {
                     testCaseName = ((Element) testCaseNameList.item(0))
                             .getTextContent();
                 }
-                
+
                 if (isSanity == true && !testCaseName.equals("SANITY TEST"))
                     continue;
                 else if (isRegression == true && !(testCaseName.equals("SANITY TEST") || testCaseName.equals("REGRESSION TEST")))
@@ -221,13 +221,13 @@ public class TestCaseEngine {
                 }
             }
         }
-        
+
         //If sanity test required, make sure that SANITY TEST componennt got loaded
         if (isSanity == true && _componentMap.size() == 0) {
             s_logger.error("FAILURE!!! Failed to load SANITY TEST component. Verify that the test is uncommented in adapter.xml");
             System.exit(1);
         }
-        
+
         if (isRegression == true && _componentMap.size() != 2) {
             s_logger.error("FAILURE!!! Failed to load SANITY TEST or REGRESSION TEST components. Verify that these tests are uncommented in adapter.xml");
             System.exit(1);

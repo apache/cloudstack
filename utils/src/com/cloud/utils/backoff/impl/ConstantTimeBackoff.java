@@ -32,9 +32,9 @@ import com.cloud.utils.component.AdapterBase;
 /**
  * An implementation of BackoffAlgorithm that waits for some seconds.
  * After the time the client can try to perform the operation again.
- * 
+ *
  * @config
- * {@table 
+ * {@table
  *    || Param Name | Description | Values | Default ||
  *    || seconds    | seconds to sleep | integer | 5 ||
  *  }

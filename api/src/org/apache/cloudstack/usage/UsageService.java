@@ -29,7 +29,7 @@ public interface UsageService {
     /**
      * Generate Billing Records from the last time it was generated to the
      * time specified.
-     * 
+     *
      * @param cmd the command wrapping the generate parameters
      *   - userId unique id of the user, pass in -1 to generate billing records
      *            for all users
@@ -41,7 +41,7 @@ public interface UsageService {
 
     /**
      * Retrieves all Usage Records generated between the start and end date specified
-     * 
+     *
      * @param userId unique id of the user, pass in -1 to retrieve billing records
      *        for all users
      * @param startDate inclusive.

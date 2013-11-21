@@ -35,7 +35,7 @@ public class EC2CreateVolume {
 
     /**
      * Define the size of the volume to create
-     * 
+     *
      * @param size - valid values are [1 .. 1024] and represent gigBytes
      */
     public void setSize(String size) {
