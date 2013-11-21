@@ -30,15 +30,15 @@ public class ConsoleProxy implements Runnable {
     private int connectionsMade;
     private long responseTime;
     public static final Logger s_logger = Logger.getLogger(ConsoleProxy.class
-            .getClass());
+        .getClass());
 
     public ConsoleProxy(String port, String sid, String host) {
         this.command = "https://" + proxyIp
-                + ".realhostip.com:8000/getscreen?w=100&h=75&host=" + host
-                + "&port=" + port + "&sid=" + sid;
+                       + ".realhostip.com:8000/getscreen?w=100&h=75&host=" + host
+                       + "&port=" + port + "&sid=" + sid;
         s_logger.info("Command for a console proxy is " + this.command);
-        this.connectionsMade=0;
-        this.responseTime=0;
+        this.connectionsMade = 0;
+        this.responseTime = 0;
     }
 
     public int getConnectionsMade() {
@@ -50,7 +50,7 @@ public class ConsoleProxy implements Runnable {
     }
 
     public void run() {
-        while (true){
+        while (true) {
 
             Script myScript = new Script("wget");
             myScript.add(command);
@@ -59,16 +59,16 @@ public class ConsoleProxy implements Runnable {
             wgetInt process = new wgetInt();
             String response = myScript.execute(process);
             long end = process.getEnd();
-            if (response!=null){
-                s_logger.info("Content lenght is incorrect: "+response);
+            if (response != null) {
+                s_logger.info("Content lenght is incorrect: " + response);
             }
 
             long duration = (end - begin);
             this.connectionsMade++;
-            this.responseTime=this.responseTime+duration;
-            try{
-            Thread.sleep(1000);
-            }catch (InterruptedException e){
+            this.responseTime = this.responseTime + duration;
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
 
             }
 
@@ -97,13 +97,13 @@ public class ConsoleProxy implements Runnable {
                 if (index == -1) {
                     continue;
                 }
-                else{
+                else {
                     int index1 = line.indexOf("Length: 1827");
                     if (index1 == -1) {
                         return status;
                     }
                     else
-                        status=line;
+                        status = line;
                 }
 
             }

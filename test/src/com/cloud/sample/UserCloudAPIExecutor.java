@@ -32,7 +32,6 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 
-
 /**
  *
  *
@@ -97,7 +96,8 @@ public class UserCloudAPIExecutor {
                 return;
             }
 
-            System.out.println("Constructing API call to host = '" + host + "' with API command = '" + apiUrl + "' using apiKey = '" + apiKey + "' and secretKey = '" + secretKey + "'");
+            System.out.println("Constructing API call to host = '" + host + "' with API command = '" + apiUrl + "' using apiKey = '" + apiKey + "' and secretKey = '" + secretKey +
+                               "'");
 
             // Step 1: Make sure your APIKey is URL encoded
             String encodedApiKey = URLEncoder.encode(apiKey, "UTF-8");

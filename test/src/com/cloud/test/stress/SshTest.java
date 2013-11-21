@@ -32,7 +32,7 @@ public class SshTest {
     public static String password = "password";
     public static String url = "http://google.com";
 
-    public static void main (String[] args) {
+    public static void main(String[] args) {
 
         // Parameters
         List<String> argsList = Arrays.asList(args);
@@ -56,7 +56,7 @@ public class SshTest {
             System.exit(2);
         }
 
-        if (password == null){
+        if (password == null) {
             s_logger.info("Did not receive a password back from test, ignoring ssh test");
             System.exit(2);
         }

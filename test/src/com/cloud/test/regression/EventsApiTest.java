@@ -28,36 +28,33 @@ import com.cloud.test.regression.ApiCommand.ResponseType;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.Session;
 
-public class EventsApiTest extends TestCase{
-public static final Logger s_logger = Logger.getLogger(EventsApiTest.class.getName());
+public class EventsApiTest extends TestCase {
+    public static final Logger s_logger = Logger.getLogger(EventsApiTest.class.getName());
 
-
-    public EventsApiTest(){
+    public EventsApiTest() {
         this.setClient();
         this.setParam(new HashMap<String, String>());
     }
 
-    public boolean executeTest(){
-        int error=0;
+    public boolean executeTest() {
+        int error = 0;
         Element rootElement = this.getInputFile().get(0).getDocumentElement();
         NodeList commandLst = rootElement.getElementsByTagName("command");
 
-
         //Analyze each command, send request and build the array list of api commands
-        for (int i=0; i<commandLst.getLength(); i++) {
+        for (int i = 0; i < commandLst.getLength(); i++) {
             Node fstNode = commandLst.item(i);
-            Element fstElmnt = (Element) fstNode;
-
+            Element fstElmnt = (Element)fstNode;
 
             //!!!check if we need to execute mySql command
             NodeList commandName = fstElmnt.getElementsByTagName("name");
-            Element commandElmnt = (Element) commandName.item(0);
+            Element commandElmnt = (Element)commandName.item(0);
             NodeList commandNm = commandElmnt.getChildNodes();
-            if (((Node) commandNm.item(0)).getNodeValue().equals("mysqlupdate")) {
+            if (((Node)commandNm.item(0)).getNodeValue().equals("mysqlupdate")) {
                 //establish connection to mysql server and execute an update command
                 NodeList mysqlList = fstElmnt.getElementsByTagName("mysqlcommand");
-                for (int j=0; j<mysqlList.getLength(); j++) {
-                    Element itemVariableElement = (Element) mysqlList.item(j);
+                for (int j = 0; j < mysqlList.getLength(); j++) {
+                    Element itemVariableElement = (Element)mysqlList.item(j);
 
                     s_logger.info("Executing mysql command " + itemVariableElement.getTextContent());
                     try {
@@ -70,13 +67,13 @@ public static final Logger s_logger = Logger.getLogger(EventsApiTest.class.getNa
                 }
             }
 
-            else if (((Node) commandNm.item(0)).getNodeValue().equals("agentcommand")) {
+            else if (((Node)commandNm.item(0)).getNodeValue().equals("agentcommand")) {
                 //connect to all the agents and execute agent command
                 NodeList commandList = fstElmnt.getElementsByTagName("commandname");
-                Element commandElement = (Element) commandList.item(0);
+                Element commandElement = (Element)commandList.item(0);
                 NodeList ipList = fstElmnt.getElementsByTagName("ip");
-                for (int j=0; j<ipList.getLength(); j++) {
-                    Element itemVariableElement = (Element) ipList.item(j);
+                for (int j = 0; j < ipList.getLength(); j++) {
+                    Element itemVariableElement = (Element)ipList.item(j);
 
                     s_logger.info("Attempting to SSH into agent " + itemVariableElement.getTextContent());
                     try {
@@ -86,7 +83,7 @@ public static final Logger s_logger = Logger.getLogger(EventsApiTest.class.getNa
                         s_logger.info("SSHed successfully into agent " + itemVariableElement.getTextContent());
 
                         boolean isAuthenticated = conn.authenticateWithPassword("root",
-                                "password");
+                            "password");
 
                         if (isAuthenticated == false) {
                             s_logger.info("Authentication failed for root with password");
@@ -114,10 +111,10 @@ public static final Logger s_logger = Logger.getLogger(EventsApiTest.class.getNa
                 //send a command
                 api.sendCommand(this.getClient(), null);
 
-
                 //verify the response of the command
                 if ((api.getResponseType() == ResponseType.ERROR) && (api.getResponseCode() == 200)) {
-                    s_logger.error("Test case " + api.getTestCaseInfo() + " failed. Command that was supposed to fail, passed. The command was sent with the following url " + api.getUrl());
+                    s_logger.error("Test case " + api.getTestCaseInfo() + " failed. Command that was supposed to fail, passed. The command was sent with the following url " +
+                                   api.getUrl());
                     error++;
                 }
                 else if ((api.getResponseType() != ResponseType.ERROR) && (api.getResponseCode() == 200)) {
@@ -135,10 +132,11 @@ public static final Logger s_logger = Logger.getLogger(EventsApiTest.class.getNa
                         else {
                             //set parameters for the future use
                             if (api.setParam(this.getParam()) == false) {
-                                s_logger.error("Exiting the test...Command " + api.getName() + " didn't return parameters needed for the future use. The command was sent with url " + api.getUrl());
+                                s_logger.error("Exiting the test...Command " + api.getName() +
+                                               " didn't return parameters needed for the future use. The command was sent with url " + api.getUrl());
                                 return false;
                             }
-                            else if (api.getTestCaseInfo() != null){
+                            else if (api.getTestCaseInfo() != null) {
                                 s_logger.info("Test case " + api.getTestCaseInfo() + " passed. Command was sent with the url " + api.getUrl());
                             }
                         }
@@ -152,8 +150,8 @@ public static final Logger s_logger = Logger.getLogger(EventsApiTest.class.getNa
                     }
                     error++;
                 }
-                else if (api.getTestCaseInfo() != null){
-                        s_logger.info("Test case " + api.getTestCaseInfo() +  " passed. Command that was supposed to fail, failed. Command was sent with url " + api.getUrl());
+                else if (api.getTestCaseInfo() != null) {
+                    s_logger.info("Test case " + api.getTestCaseInfo() + " passed. Command that was supposed to fail, failed. Command was sent with url " + api.getUrl());
 
                 }
             }
@@ -162,17 +160,18 @@ public static final Logger s_logger = Logger.getLogger(EventsApiTest.class.getNa
         //verify events with userid parameter - test case 97
         HashMap<String, Integer> expectedEvents = new HashMap<String, Integer>();
         expectedEvents.put("VM.START", 1);
-        boolean eventResult = ApiCommand.verifyEvents(expectedEvents, "INFO", "http://" + this.getParam().get("hostip") + ":8096", "userid=" + this.getParam().get("userid1") + "&type=VM.START");
+        boolean eventResult = ApiCommand.verifyEvents(expectedEvents, "INFO", "http://" + this.getParam().get("hostip") + ":8096", "userid=" + this.getParam().get("userid1") +
+                                                                                                                                   "&type=VM.START");
         s_logger.info("Test case 97 - listEvent command verification result is  " + eventResult);
 
         //verify error events
-        eventResult = ApiCommand.verifyEvents("../metadata/error_events.properties", "ERROR", "http://" + this.getParam().get("hostip") + ":8096", this.getParam().get("erroruseraccount"));
+        eventResult = ApiCommand.verifyEvents("../metadata/error_events.properties", "ERROR", "http://" + this.getParam().get("hostip") + ":8096",
+            this.getParam().get("erroruseraccount"));
         s_logger.info("listEvent command verification result is  " + eventResult);
 
-
-            if (error != 0)
-                return false;
-            else
-                return true;
+        if (error != 0)
+            return false;
+        else
+            return true;
     }
 }

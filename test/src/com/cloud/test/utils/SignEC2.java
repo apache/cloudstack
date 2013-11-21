@@ -38,10 +38,9 @@ public class SignEC2 {
     public static String command;
     public static String accessPoint;
     public static final Logger s_logger = Logger
-    .getLogger(SignRequest.class.getName());
+        .getLogger(SignRequest.class.getName());
 
-
-    public static void main (String[] args) {
+    public static void main(String[] args) {
         // Parameters
         List<String> argsList = Arrays.asList(args);
         Iterator<String> iter = argsList.iterator();
@@ -64,7 +63,6 @@ public class SignEC2 {
         host = prop.getProperty("host");
         secretkey = prop.getProperty("secretkey");
         port = prop.getProperty("port");
-
 
         if (host == null) {
             s_logger.info("Please set host in tool.properties file");
@@ -96,25 +94,23 @@ public class SignEC2 {
             System.exit(1);
         }
 
-
-
         TreeMap<String, String> param = new TreeMap<String, String>();
 
         String req = "GET\n" + host + ":" + prop.getProperty("port") + "\n/" + prop.getProperty("accesspoint") + "\n";
         String temp = "";
         param.put("AWSAccessKeyId", prop.getProperty("apikey"));
-        param.put("Expires",prop.getProperty("expires"));
+        param.put("Expires", prop.getProperty("expires"));
         param.put("SignatureMethod", "HmacSHA1");
         param.put("SignatureVersion", "2");
         param.put("Version", prop.getProperty("version"));
         param.put("id", "1");
 
-        StringTokenizer str1 = new StringTokenizer (url, "&");
-        while(str1.hasMoreTokens()) {
+        StringTokenizer str1 = new StringTokenizer(url, "&");
+        while (str1.hasMoreTokens()) {
             String newEl = str1.nextToken();
             StringTokenizer str2 = new StringTokenizer(newEl, "=");
             String name = str2.nextToken();
-            String value= str2.nextToken();
+            String value = str2.nextToken();
             param.put(name, value);
         }
 
@@ -123,8 +119,8 @@ public class SignEC2 {
         Iterator it = c.iterator();
         while (it.hasNext()) {
             Map.Entry me = (Map.Entry)it.next();
-            String key = (String) me.getKey();
-            String value = (String) me.getValue();
+            String key = (String)me.getKey();
+            String value = (String)me.getValue();
             try {
                 temp = temp + key + "=" + URLEncoder.encode(value, "UTF-8") + "&";
             } catch (Exception ex) {
@@ -132,7 +128,7 @@ public class SignEC2 {
             }
 
         }
-        temp = temp.substring(0, temp.length()-1 );
+        temp = temp.substring(0, temp.length() - 1);
         String requestToSign = req + temp;
         String signature = UtilsForTest.signRequest(requestToSign, secretkey);
         String encodedSignature = "";

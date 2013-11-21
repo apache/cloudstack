@@ -31,8 +31,7 @@ public class SignRequest {
     public static String secretkey;
     public static String command;
 
-
-    public static void main (String[] args) {
+    public static void main(String[] args) {
         // Parameters
         List<String> argsList = Arrays.asList(args);
         Iterator<String> iter = argsList.iterator();
@@ -50,7 +49,6 @@ public class SignRequest {
                 secretkey = iter.next();
             }
         }
-
 
         if (url == null) {
             System.out.println("Please specify url with -u option. Example: -u \"command=listZones&id=1\"");
@@ -72,12 +70,12 @@ public class SignRequest {
         String temp = "";
         param.put("apikey", apikey);
 
-        StringTokenizer str1 = new StringTokenizer (url, "&");
-        while(str1.hasMoreTokens()) {
+        StringTokenizer str1 = new StringTokenizer(url, "&");
+        while (str1.hasMoreTokens()) {
             String newEl = str1.nextToken();
             StringTokenizer str2 = new StringTokenizer(newEl, "=");
             String name = str2.nextToken();
-            String value= str2.nextToken();
+            String value = str2.nextToken();
             param.put(name, value);
         }
 
@@ -86,8 +84,8 @@ public class SignRequest {
         Iterator it = c.iterator();
         while (it.hasNext()) {
             Map.Entry me = (Map.Entry)it.next();
-            String key = (String) me.getKey();
-            String value = (String) me.getValue();
+            String key = (String)me.getKey();
+            String value = (String)me.getValue();
             try {
                 temp = temp + key + "=" + URLEncoder.encode(value, "UTF-8") + "&";
             } catch (Exception ex) {
@@ -95,7 +93,7 @@ public class SignRequest {
             }
 
         }
-        temp = temp.substring(0, temp.length()-1 );
+        temp = temp.substring(0, temp.length() - 1);
         String requestToSign = temp.toLowerCase();
         System.out.println("After sorting: " + requestToSign);
         String signature = UtilsForTest.signRequest(requestToSign, secretkey);

@@ -333,7 +333,7 @@ public class MetadataDirective implements org.apache.axis2.databinding.ADBBean {
         public static MetadataDirective fromValue(java.lang.String value) throws java.lang.IllegalArgumentException {
             MetadataDirective enumeration = (MetadataDirective)
 
-            _table_.get(value);
+                    _table_.get(value);
 
             if (enumeration == null)
                 throw new java.lang.IllegalArgumentException();

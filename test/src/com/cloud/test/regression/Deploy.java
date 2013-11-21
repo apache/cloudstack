@@ -27,31 +27,29 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-public class Deploy extends TestCase{
+public class Deploy extends TestCase {
     public static final Logger s_logger = Logger.getLogger(Deploy.class.getName());
 
-    public Deploy(){
+    public Deploy() {
         this.setClient();
         this.setParam(new HashMap<String, String>());
     }
 
-
     public boolean executeTest() {
-        int error=0;
+        int error = 0;
         Element rootElement = this.getInputFile().get(0).getDocumentElement();
         NodeList commandLst = rootElement.getElementsByTagName("command");
 
         //Analyze each command, send request and build the array list of api commands
-        for (int i=0; i<commandLst.getLength(); i++) {
+        for (int i = 0; i < commandLst.getLength(); i++) {
             Node fstNode = commandLst.item(i);
-            Element fstElmnt = (Element) fstNode;
+            Element fstElmnt = (Element)fstNode;
 
             //new command
             ApiCommand api = new ApiCommand(fstElmnt, this.getParam(), this.getCommands());
 
             //send a command
             api.sendCommand(this.getClient(), null);
-
 
             //verify the response of the command
             if (api.getResponseCode() != 200) {
@@ -62,14 +60,13 @@ public class Deploy extends TestCase{
                 s_logger.info("The command " + api.getUrl() + " passsed");
             }
         }
-            if (error != 0)
-                return false;
-            else
-                return true;
+        if (error != 0)
+            return false;
+        else
+            return true;
     }
 
-
-    public static void main (String[] args) {
+    public static void main(String[] args) {
 
         List<String> argsList = Arrays.asList(args);
         Iterator<String> iter = argsList.iterator();
@@ -87,7 +84,7 @@ public class Deploy extends TestCase{
             }
         }
 
-        Deploy deploy = new Deploy ();
+        Deploy deploy = new Deploy();
 
         ArrayList<String> inputFile = new ArrayList<String>();
         inputFile.add(file);
@@ -111,4 +108,3 @@ public class Deploy extends TestCase{
     }
 
 }
-

@@ -53,63 +53,73 @@ public enum Config {
             "alert.smtp.password",
             null,
             "Password for SMTP authentication (applies only if alert.smtp.useAuth is true).",
-            null), AlertSMTPPort("Alert", ManagementServer.class, Integer.class, "alert.smtp.port", "465", "Port the SMTP server is listening on.", null), AlertSMTPUseAuth(
+            null),
+    AlertSMTPPort("Alert", ManagementServer.class, Integer.class, "alert.smtp.port", "465", "Port the SMTP server is listening on.", null),
+    AlertSMTPUseAuth(
             "Alert",
             ManagementServer.class,
             String.class,
             "alert.smtp.useAuth",
             null,
             "If true, use SMTP authentication when sending emails.",
-            null), AlertSMTPUsername(
+            null),
+    AlertSMTPUsername(
             "Alert",
             ManagementServer.class,
             String.class,
             "alert.smtp.username",
             null,
             "Username for SMTP authentication (applies only if alert.smtp.useAuth is true).",
-            null), CapacityCheckPeriod(
+            null),
+    CapacityCheckPeriod(
             "Alert",
             ManagementServer.class,
             Integer.class,
             "capacity.check.period",
             "300000",
             "The interval in milliseconds between capacity checks",
-            null), PublicIpCapacityThreshold(
+            null),
+    PublicIpCapacityThreshold(
             "Alert",
             ManagementServer.class,
             Float.class,
             "zone.virtualnetwork.publicip.capacity.notificationthreshold",
             "0.75",
             "Percentage (as a value between 0 and 1) of public IP address space utilization above which alerts will be sent.",
-            null), PrivateIpCapacityThreshold(
+            null),
+    PrivateIpCapacityThreshold(
             "Alert",
             ManagementServer.class,
             Float.class,
             "pod.privateip.capacity.notificationthreshold",
             "0.75",
             "Percentage (as a value between 0 and 1) of private IP address space utilization above which alerts will be sent.",
-            null), SecondaryStorageCapacityThreshold(
+            null),
+    SecondaryStorageCapacityThreshold(
             "Alert",
             ManagementServer.class,
             Float.class,
             "zone.secstorage.capacity.notificationthreshold",
             "0.75",
             "Percentage (as a value between 0 and 1) of secondary storage utilization above which alerts will be sent about low storage available.",
-            null), VlanCapacityThreshold(
+            null),
+    VlanCapacityThreshold(
             "Alert",
             ManagementServer.class,
             Float.class,
             "zone.vlan.capacity.notificationthreshold",
             "0.75",
             "Percentage (as a value between 0 and 1) of Zone Vlan utilization above which alerts will be sent about low number of Zone Vlans.",
-            null), DirectNetworkPublicIpCapacityThreshold(
+            null),
+    DirectNetworkPublicIpCapacityThreshold(
             "Alert",
             ManagementServer.class,
             Float.class,
             "zone.directnetwork.publicip.capacity.notificationthreshold",
             "0.75",
             "Percentage (as a value between 0 and 1) of Direct Network Public Ip Utilization above which alerts will be sent about low number of direct network public ips.",
-            null), LocalStorageCapacityThreshold(
+            null),
+    LocalStorageCapacityThreshold(
             "Alert",
             ManagementServer.class,
             Float.class,

@@ -333,7 +333,7 @@ public class MfaDeleteStatus implements org.apache.axis2.databinding.ADBBean {
         public static MfaDeleteStatus fromValue(java.lang.String value) throws java.lang.IllegalArgumentException {
             MfaDeleteStatus enumeration = (MfaDeleteStatus)
 
-            _table_.get(value);
+                    _table_.get(value);
 
             if (enumeration == null)
                 throw new java.lang.IllegalArgumentException();

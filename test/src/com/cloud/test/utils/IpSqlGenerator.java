@@ -22,7 +22,7 @@ import java.io.FileOutputStream;
 import java.util.StringTokenizer;
 
 public class IpSqlGenerator {
-    public static void main (String[] args) {
+    public static void main(String[] args) {
         try {
             if (args.length != 5) {
                 System.out.println("Usage -- generate-ip.sh <public|private> <begin ip range> <end ip range> <data center id> <pod id>");
@@ -56,7 +56,7 @@ public class IpSqlGenerator {
                         for (int k = ipS3; k <= ipE3; k++) {
                             for (int l = ipS4; l <= ipE4; l++) {
                                 out.writeBytes("INSERT INTO `vmops`.`dc_ip_address_alloc` (ip_address, data_center_id, pod_id) VALUES ('"
-                                        + i + "." + j + "." + k + "." + l + "'," + dcId + "," + podId + ");\r\n");
+                                               + i + "." + j + "." + k + "." + l + "'," + dcId + "," + podId + ");\r\n");
                             }
                         }
                     }
@@ -72,7 +72,7 @@ public class IpSqlGenerator {
                         for (int k = ipS3; k <= ipE3; k++) {
                             for (int l = ipS4; l <= ipE4; l++) {
                                 out.writeBytes("INSERT INTO `vmops`.`user_ip_address` (ip_address, data_center_id) VALUES ('"
-                                        + i + "." + j + "." + k + "." + l + "'," + dcId + ");\r\n");
+                                               + i + "." + j + "." + k + "." + l + "'," + dcId + ");\r\n");
                             }
                         }
                     }

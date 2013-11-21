@@ -35,7 +35,7 @@ public class UIScenarioTest extends AbstractSeleniumTestCase {
             assertTrue(selenium.isTextPresent("admin"));
             selenium.click("//div[@id='leftmenu_instances']/div");
             selenium
-                    .click("//div[@id='leftmenu_instances_stopped_instances']/div/span");
+                .click("//div[@id='leftmenu_instances_stopped_instances']/div/span");
 
             Thread.sleep(3000);
             selenium.click("//div[@id='midmenu_startvm_link']/div/div[2]");
@@ -52,9 +52,9 @@ public class UIScenarioTest extends AbstractSeleniumTestCase {
                 Thread.sleep(10000);
             }
             assertTrue(selenium
-                    .isTextPresent("Start Instance action succeeded"));
+                .isTextPresent("Start Instance action succeeded"));
             selenium
-                    .click("//div[@id='leftmenu_instances_running_instances']/div/span");
+                .click("//div[@id='leftmenu_instances_running_instances']/div/span");
 
             Thread.sleep(3000);
             selenium.click("//div[@id='midmenu_stopvm_link']/div/div[2]");

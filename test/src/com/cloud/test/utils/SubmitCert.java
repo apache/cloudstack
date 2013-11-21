@@ -49,10 +49,9 @@ public class SubmitCert {
     public static String certFileName;
     public static String cert;
     public static final Logger s_logger = Logger
-    .getLogger(SubmitCert.class.getName());
+        .getLogger(SubmitCert.class.getName());
 
-
-    public static void main (String[] args) {
+    public static void main(String[] args) {
         // Parameters
         List<String> argsList = Arrays.asList(args);
         Iterator<String> iter = argsList.iterator();
@@ -112,7 +111,6 @@ public class SubmitCert {
             System.exit(1);
         }
 
-
         TreeMap<String, String> param = new TreeMap<String, String>();
 
         String req = "GET\n" + host + ":" + prop.getProperty("port") + "\n/" + prop.getProperty("accesspoint") + "\n";
@@ -124,17 +122,17 @@ public class SubmitCert {
         }
 
         param.put("AWSAccessKeyId", apiKey);
-        param.put("Expires",prop.getProperty("expires"));
-        param.put("SignatureMethod",  prop.getProperty("signaturemethod"));
+        param.put("Expires", prop.getProperty("expires"));
+        param.put("SignatureMethod", prop.getProperty("signaturemethod"));
         param.put("SignatureVersion", "2");
         param.put("Version", prop.getProperty("version"));
 
-        StringTokenizer str1 = new StringTokenizer (url, "&");
-        while(str1.hasMoreTokens()) {
+        StringTokenizer str1 = new StringTokenizer(url, "&");
+        while (str1.hasMoreTokens()) {
             String newEl = str1.nextToken();
             StringTokenizer str2 = new StringTokenizer(newEl, "=");
             String name = str2.nextToken();
-            String value= str2.nextToken();
+            String value = str2.nextToken();
             param.put(name, value);
         }
 
@@ -143,8 +141,8 @@ public class SubmitCert {
         Iterator it = c.iterator();
         while (it.hasNext()) {
             Map.Entry me = (Map.Entry)it.next();
-            String key = (String) me.getKey();
-            String value = (String) me.getValue();
+            String key = (String)me.getKey();
+            String value = (String)me.getValue();
             try {
                 temp = temp + key + "=" + URLEncoder.encode(value, "UTF-8") + "&";
             } catch (Exception ex) {
@@ -152,7 +150,7 @@ public class SubmitCert {
             }
 
         }
-        temp = temp.substring(0, temp.length()-1 );
+        temp = temp.substring(0, temp.length() - 1);
         String requestToSign = req + temp;
         String signature = UtilsForTest.signRequest(requestToSign, secretKey);
         String encodedSignature = "";
@@ -171,10 +169,10 @@ public class SubmitCert {
         try {
             StringBuffer fileData = new StringBuffer(1000);
             BufferedReader reader = new BufferedReader(
-                    new FileReader(filePath));
+                new FileReader(filePath));
             char[] buf = new char[1024];
-            int numRead=0;
-            while((numRead=reader.read(buf)) != -1){
+            int numRead = 0;
+            while ((numRead = reader.read(buf)) != -1) {
                 String readData = String.valueOf(buf, 0, numRead);
                 fileData.append(readData);
                 buf = new char[1024];

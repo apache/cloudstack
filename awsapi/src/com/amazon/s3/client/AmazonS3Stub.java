@@ -235,9 +235,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatusResponse getBucketLoggingStatus(
 
-    com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatus getBucketLoggingStatus0)
+        com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatus getBucketLoggingStatus0)
 
-    throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -333,11 +333,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startgetBucketLoggingStatus(
 
-    com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatus getBucketLoggingStatus0,
+        com.amazon.s3.client.AmazonS3Stub.GetBucketLoggingStatus getBucketLoggingStatus0,
 
-    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-    throws java.rmi.RemoteException {
+        throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[0].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/GetBucketLoggingStatusRequest");
@@ -463,9 +463,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.CopyObjectResponse copyObject(
 
-    com.amazon.s3.client.AmazonS3Stub.CopyObject copyObject2)
+        com.amazon.s3.client.AmazonS3Stub.CopyObject copyObject2)
 
-    throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -560,11 +560,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startcopyObject(
 
-    com.amazon.s3.client.AmazonS3Stub.CopyObject copyObject2,
+        com.amazon.s3.client.AmazonS3Stub.CopyObject copyObject2,
 
-    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-    throws java.rmi.RemoteException {
+        throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[1].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/CopyObjectRequest");
@@ -690,9 +690,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicyResponse getBucketAccessControlPolicy(
 
-    com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicy getBucketAccessControlPolicy4)
+        com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicy getBucketAccessControlPolicy4)
 
-    throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -788,11 +788,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startgetBucketAccessControlPolicy(
 
-    com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicy getBucketAccessControlPolicy4,
+        com.amazon.s3.client.AmazonS3Stub.GetBucketAccessControlPolicy getBucketAccessControlPolicy4,
 
-    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-    throws java.rmi.RemoteException {
+        throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[2].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/GetBucketAccessControlPolicyRequest");
@@ -918,9 +918,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.ListBucketResponse listBucket(
 
-    com.amazon.s3.client.AmazonS3Stub.ListBucket listBucket6)
+        com.amazon.s3.client.AmazonS3Stub.ListBucket listBucket6)
 
-    throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -1015,11 +1015,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startlistBucket(
 
-    com.amazon.s3.client.AmazonS3Stub.ListBucket listBucket6,
+        com.amazon.s3.client.AmazonS3Stub.ListBucket listBucket6,
 
-    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-    throws java.rmi.RemoteException {
+        throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[3].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/ListBucketRequest");
@@ -1145,9 +1145,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.PutObjectResponse putObject(
 
-    com.amazon.s3.client.AmazonS3Stub.PutObject putObject8)
+        com.amazon.s3.client.AmazonS3Stub.PutObject putObject8)
 
-    throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -1242,11 +1242,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startputObject(
 
-    com.amazon.s3.client.AmazonS3Stub.PutObject putObject8,
+        com.amazon.s3.client.AmazonS3Stub.PutObject putObject8,
 
-    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-    throws java.rmi.RemoteException {
+        throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[4].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/PutObjectRequest");
@@ -1372,9 +1372,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.CreateBucketResponse createBucket(
 
-    com.amazon.s3.client.AmazonS3Stub.CreateBucket createBucket10)
+        com.amazon.s3.client.AmazonS3Stub.CreateBucket createBucket10)
 
-    throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -1470,11 +1470,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startcreateBucket(
 
-    com.amazon.s3.client.AmazonS3Stub.CreateBucket createBucket10,
+        com.amazon.s3.client.AmazonS3Stub.CreateBucket createBucket10,
 
-    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-    throws java.rmi.RemoteException {
+        throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[5].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/CreateBucketRequest");
@@ -1600,9 +1600,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.ListAllMyBucketsResponse listAllMyBuckets(
 
-    com.amazon.s3.client.AmazonS3Stub.ListAllMyBuckets listAllMyBuckets12)
+        com.amazon.s3.client.AmazonS3Stub.ListAllMyBuckets listAllMyBuckets12)
 
-    throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -1698,11 +1698,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startlistAllMyBuckets(
 
-    com.amazon.s3.client.AmazonS3Stub.ListAllMyBuckets listAllMyBuckets12,
+        com.amazon.s3.client.AmazonS3Stub.ListAllMyBuckets listAllMyBuckets12,
 
-    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-    throws java.rmi.RemoteException {
+        throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[6].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/ListAllMyBucketsRequest");
@@ -1828,9 +1828,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.GetObjectResponse getObject(
 
-    com.amazon.s3.client.AmazonS3Stub.GetObject getObject14)
+        com.amazon.s3.client.AmazonS3Stub.GetObject getObject14)
 
-    throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -1925,11 +1925,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startgetObject(
 
-    com.amazon.s3.client.AmazonS3Stub.GetObject getObject14,
+        com.amazon.s3.client.AmazonS3Stub.GetObject getObject14,
 
-    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-    throws java.rmi.RemoteException {
+        throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[7].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/GetObjectRequest");
@@ -2055,9 +2055,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.DeleteBucketResponse deleteBucket(
 
-    com.amazon.s3.client.AmazonS3Stub.DeleteBucket deleteBucket16)
+        com.amazon.s3.client.AmazonS3Stub.DeleteBucket deleteBucket16)
 
-    throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -2153,11 +2153,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startdeleteBucket(
 
-    com.amazon.s3.client.AmazonS3Stub.DeleteBucket deleteBucket16,
+        com.amazon.s3.client.AmazonS3Stub.DeleteBucket deleteBucket16,
 
-    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-    throws java.rmi.RemoteException {
+        throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[8].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/DeleteBucketRequest");
@@ -2283,9 +2283,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatusResponse setBucketLoggingStatus(
 
-    com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatus setBucketLoggingStatus18)
+        com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatus setBucketLoggingStatus18)
 
-    throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -2381,11 +2381,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startsetBucketLoggingStatus(
 
-    com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatus setBucketLoggingStatus18,
+        com.amazon.s3.client.AmazonS3Stub.SetBucketLoggingStatus setBucketLoggingStatus18,
 
-    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-    throws java.rmi.RemoteException {
+        throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[9].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/SetBucketLoggingStatusRequest");
@@ -2511,9 +2511,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicyResponse getObjectAccessControlPolicy(
 
-    com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicy getObjectAccessControlPolicy20)
+        com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicy getObjectAccessControlPolicy20)
 
-    throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -2609,11 +2609,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startgetObjectAccessControlPolicy(
 
-    com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicy getObjectAccessControlPolicy20,
+        com.amazon.s3.client.AmazonS3Stub.GetObjectAccessControlPolicy getObjectAccessControlPolicy20,
 
-    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-    throws java.rmi.RemoteException {
+        throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[10].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/GetObjectAccessControlPolicyRequest");
@@ -2739,9 +2739,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.DeleteObjectResponse deleteObject(
 
-    com.amazon.s3.client.AmazonS3Stub.DeleteObject deleteObject22)
+        com.amazon.s3.client.AmazonS3Stub.DeleteObject deleteObject22)
 
-    throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -2837,11 +2837,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startdeleteObject(
 
-    com.amazon.s3.client.AmazonS3Stub.DeleteObject deleteObject22,
+        com.amazon.s3.client.AmazonS3Stub.DeleteObject deleteObject22,
 
-    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-    throws java.rmi.RemoteException {
+        throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[11].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/DeleteObjectRequest");
@@ -2967,9 +2967,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicyResponse setBucketAccessControlPolicy(
 
-    com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicy setBucketAccessControlPolicy24)
+        com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicy setBucketAccessControlPolicy24)
 
-    throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -3065,11 +3065,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startsetBucketAccessControlPolicy(
 
-    com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicy setBucketAccessControlPolicy24,
+        com.amazon.s3.client.AmazonS3Stub.SetBucketAccessControlPolicy setBucketAccessControlPolicy24,
 
-    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-    throws java.rmi.RemoteException {
+        throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[12].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/SetBucketAccessControlPolicyRequest");
@@ -3195,9 +3195,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicyResponse setObjectAccessControlPolicy(
 
-    com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicy setObjectAccessControlPolicy26)
+        com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicy setObjectAccessControlPolicy26)
 
-    throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -3293,11 +3293,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startsetObjectAccessControlPolicy(
 
-    com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicy setObjectAccessControlPolicy26,
+        com.amazon.s3.client.AmazonS3Stub.SetObjectAccessControlPolicy setObjectAccessControlPolicy26,
 
-    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-    throws java.rmi.RemoteException {
+        throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[13].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/SetObjectAccessControlPolicyRequest");
@@ -3423,9 +3423,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.PutObjectInlineResponse putObjectInline(
 
-    com.amazon.s3.client.AmazonS3Stub.PutObjectInline putObjectInline28)
+        com.amazon.s3.client.AmazonS3Stub.PutObjectInline putObjectInline28)
 
-    throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -3521,11 +3521,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startputObjectInline(
 
-    com.amazon.s3.client.AmazonS3Stub.PutObjectInline putObjectInline28,
+        com.amazon.s3.client.AmazonS3Stub.PutObjectInline putObjectInline28,
 
-    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-    throws java.rmi.RemoteException {
+        throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[14].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/PutObjectInlineRequest");
@@ -3651,9 +3651,9 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
 
     public com.amazon.s3.client.AmazonS3Stub.GetObjectExtendedResponse getObjectExtended(
 
-    com.amazon.s3.client.AmazonS3Stub.GetObjectExtended getObjectExtended30)
+        com.amazon.s3.client.AmazonS3Stub.GetObjectExtended getObjectExtended30)
 
-    throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
 
     {
         org.apache.axis2.context.MessageContext _messageContext = null;
@@ -3749,11 +3749,11 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
     */
     public void startgetObjectExtended(
 
-    com.amazon.s3.client.AmazonS3Stub.GetObjectExtended getObjectExtended30,
+        com.amazon.s3.client.AmazonS3Stub.GetObjectExtended getObjectExtended30,
 
-    final com.amazon.s3.client.AmazonS3CallbackHandler callback)
+        final com.amazon.s3.client.AmazonS3CallbackHandler callback)
 
-    throws java.rmi.RemoteException {
+        throws java.rmi.RemoteException {
 
         org.apache.axis2.client.OperationClient _operationClient = _serviceClient.createClient(_operations[15].getName());
         _operationClient.getOptions().setAction("http://s3.amazonaws.com/doc/2006-03-01/AmazonS3/GetObjectExtendedRequest");
@@ -18178,7 +18178,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             public static Permission fromValue(java.lang.String value) throws java.lang.IllegalArgumentException {
                 Permission enumeration = (Permission)
 
-                _table_.get(value);
+                        _table_.get(value);
 
                 if (enumeration == null)
                     throw new java.lang.IllegalArgumentException();
@@ -22816,7 +22816,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             public static MetadataDirective fromValue(java.lang.String value) throws java.lang.IllegalArgumentException {
                 MetadataDirective enumeration = (MetadataDirective)
 
-                _table_.get(value);
+                        _table_.get(value);
 
                 if (enumeration == null)
                     throw new java.lang.IllegalArgumentException();
@@ -28731,7 +28731,7 @@ public class AmazonS3Stub extends org.apache.axis2.client.Stub {
             public static StorageClass fromValue(java.lang.String value) throws java.lang.IllegalArgumentException {
                 StorageClass enumeration = (StorageClass)
 
-                _table_.get(value);
+                        _table_.get(value);
 
                 if (enumeration == null)
                     throw new java.lang.IllegalArgumentException();

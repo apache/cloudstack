@@ -25,25 +25,25 @@ import org.w3c.dom.NodeList;
 
 import com.cloud.test.regression.ApiCommand.ResponseType;
 
-public class PortForwardingTest extends TestCase{
+public class PortForwardingTest extends TestCase {
     public static final Logger s_logger = Logger.getLogger(PortForwardingTest.class.getName());
 
-    public PortForwardingTest(){
+    public PortForwardingTest() {
         this.setClient();
         this.setParam(new HashMap<String, String>());
     }
 
-    public boolean executeTest(){
+    public boolean executeTest() {
 
-        int error=0;
+        int error = 0;
         Element rootElement = this.getInputFile().get(0).getDocumentElement();
         NodeList commandLst = rootElement.getElementsByTagName("command");
 
         //Analyze each command, send request and build the array list of api commands
-        for (int i=0; i<commandLst.getLength(); i++) {
+        for (int i = 0; i < commandLst.getLength(); i++) {
 
             Node fstNode = commandLst.item(i);
-            Element fstElmnt = (Element) fstNode;
+            Element fstElmnt = (Element)fstNode;
 
             //new command
             ApiCommand api = new ApiCommand(fstElmnt, this.getParam(), this.getCommands());
@@ -51,10 +51,10 @@ public class PortForwardingTest extends TestCase{
             //send a command
             api.sendCommand(this.getClient(), null);
 
-
             //verify the response of the command
             if ((api.getResponseType() != ResponseType.ERROR) && (api.getResponseCode() == 200)) {
-                s_logger.error("Test case " + api.getTestCaseInfo() + " failed. Command that was supposed to fail, passed. The command was sent with the following url " + api.getUrl());
+                s_logger.error("Test case " + api.getTestCaseInfo() + " failed. Command that was supposed to fail, passed. The command was sent with the following url " +
+                               api.getUrl());
                 error++;
             }
             else if ((api.getResponseType() != ResponseType.ERROR) && (api.getResponseCode() == 200)) {
@@ -72,10 +72,11 @@ public class PortForwardingTest extends TestCase{
                     else {
                         //set parameters for the future use
                         if (api.setParam(this.getParam()) == false) {
-                            s_logger.error("Exiting the test...Command " + api.getName() + " didn't return parameters needed for the future use. The command was sent with url " + api.getUrl());
+                            s_logger.error("Exiting the test...Command " + api.getName() + " didn't return parameters needed for the future use. The command was sent with url " +
+                                           api.getUrl());
                             return false;
                         }
-                        else if (api.getTestCaseInfo() != null){
+                        else if (api.getTestCaseInfo() != null) {
                             s_logger.info("Test case " + api.getTestCaseInfo() + " passed");
                         }
                     }
@@ -89,8 +90,8 @@ public class PortForwardingTest extends TestCase{
                 }
                 error++;
             }
-            else if (api.getTestCaseInfo() != null){
-                    s_logger.info("Test case " + api.getTestCaseInfo() +  " passed");
+            else if (api.getTestCaseInfo() != null) {
+                s_logger.info("Test case " + api.getTestCaseInfo() + " passed");
 
             }
         }
@@ -135,7 +136,6 @@ public class PortForwardingTest extends TestCase{
 //                s_logger.error(ex);
 //            }
 //        }
-
 
         if (error != 0)
             return false;

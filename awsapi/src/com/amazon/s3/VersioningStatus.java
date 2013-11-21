@@ -333,7 +333,7 @@ public class VersioningStatus implements org.apache.axis2.databinding.ADBBean {
         public static VersioningStatus fromValue(java.lang.String value) throws java.lang.IllegalArgumentException {
             VersioningStatus enumeration = (VersioningStatus)
 
-            _table_.get(value);
+                    _table_.get(value);
 
             if (enumeration == null)
                 throw new java.lang.IllegalArgumentException();

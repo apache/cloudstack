@@ -57,7 +57,7 @@ public class StressTestDirectAttach {
     private static long sleepTime = 180000L; // default 0
     private static boolean cleanUp = true;
     public static final Logger s_logger = Logger
-            .getLogger(TestClientWithAPI.class.getName());
+        .getLogger(TestClientWithAPI.class.getName());
     private static boolean repeat = true;
     private static String[] users = null;
     private static boolean internet = false;
@@ -74,19 +74,18 @@ public class StressTestDirectAttach {
     private static ThreadLocal<String> _newVolume = new ThreadLocal<String>();
     private static ThreadLocal<String> _newVolume1 = new ThreadLocal<String>();
     private static DocumentBuilderFactory factory = DocumentBuilderFactory
-            .newInstance();
+        .newInstance();
     private static int usageIterator = 1;
     private static int numThreads = 1;
     private static int wait = 5000;
     private static String accountName = null;
     private static String zoneId = "1";
     private static String serviceOfferingId = "13";
-    private static String diskOfferingId="11";
-    private static String diskOfferingId1="12";
+    private static String diskOfferingId = "11";
+    private static String diskOfferingId1 = "12";
 
     private static final int MAX_RETRY_LINUX = 10;
     private static final int MAX_RETRY_WIN = 10;
-
 
     public static void main(String[] args) {
         String host = "http://localhost";
@@ -155,12 +154,10 @@ public class StressTestDirectAttach {
             final String server = host + ":" + port + "/";
             final String developerServer = host + ":" + devPort + apiUrl;
             s_logger.info("Starting test against server: " + server + " with "
-                    + numThreads + " thread(s)");
+                          + numThreads + " thread(s)");
             if (cleanUp)
                 s_logger.info("Clean up is enabled, each test will wait "
-                        + sleepTime + " ms before cleaning up");
-
-
+                              + sleepTime + " ms before cleaning up");
 
             for (int i = 0; i < numThreads; i++) {
                 new Thread(new Runnable() {
@@ -171,23 +168,20 @@ public class StressTestDirectAttach {
                             try {
                                 long now = System.currentTimeMillis();
                                 Random ran = new Random();
-                                username = Math.abs(ran.nextInt())+ "-user";
+                                username = Math.abs(ran.nextInt()) + "-user";
                                 NDC.push(username);
 
                                 s_logger.info("Starting test for the user " + username);
                                 int response = executeDeployment(server,
-                                        developerServer, username);
+                                    developerServer, username);
                                 boolean success = false;
                                 String reason = null;
-
-
-
 
                                 if (response == 200) {
                                     success = true;
                                     if (internet) {
                                         s_logger
-                                        .info("Deploy successful...waiting 5 minute before SSH tests");
+                                            .info("Deploy successful...waiting 5 minute before SSH tests");
                                         Thread.sleep(300000L); // Wait 60
                                         // seconds so
                                         // the windows VM
@@ -196,24 +190,23 @@ public class StressTestDirectAttach {
                                         s_logger.info("Begin Linux SSH test for account " + _account.get());
                                         reason = sshTest(_linuxIP.get(), _linuxPassword.get());
 
-
                                         if (reason == null) {
                                             s_logger
-                                            .info("Linux SSH test successful for account " + _account.get());
+                                                .info("Linux SSH test successful for account " + _account.get());
                                         }
                                     }
                                     if (reason == null) {
                                         if (internet) {
                                             s_logger
-                                            .info("Windows SSH test successful for account " + _account.get());
+                                                .info("Windows SSH test successful for account " + _account.get());
                                         } else {
                                             s_logger
-                                            .info("deploy test successful....now cleaning up");
+                                                .info("deploy test successful....now cleaning up");
                                             if (cleanUp) {
                                                 s_logger
-                                                .info("Waiting "
-                                                        + sleepTime
-                                                        + " ms before cleaning up vms");
+                                                    .info("Waiting "
+                                                          + sleepTime
+                                                          + " ms before cleaning up vms");
                                                 Thread.sleep(sleepTime);
                                             } else {
                                                 success = true;
@@ -224,33 +217,34 @@ public class StressTestDirectAttach {
                                             int eventsAndBillingResponseCode =
                                                     executeEventsAndBilling(server, developerServer);
                                             s_logger.info("events and usage records command finished with response code: "
-                                                    + eventsAndBillingResponseCode);
+                                                          + eventsAndBillingResponseCode);
                                             usageIterator = 1;
 
                                         }
                                         else {
-                                            s_logger.info("Skipping events and usage records for this user: usageIterator " + usageIterator+ " and number of Threads " + numThreads);
+                                            s_logger.info("Skipping events and usage records for this user: usageIterator " + usageIterator + " and number of Threads " +
+                                                          numThreads);
                                             usageIterator++;
                                         }
 
                                         if ((users == null) && (accountName == null)) {
                                             s_logger
-                                            .info("Sending cleanup command");
+                                                .info("Sending cleanup command");
                                             int cleanupResponseCode = executeCleanup(
-                                                    server, developerServer, username);
+                                                server, developerServer, username);
                                             s_logger
-                                            .info("cleanup command finished with response code: "
-                                                    + cleanupResponseCode);
+                                                .info("cleanup command finished with response code: "
+                                                      + cleanupResponseCode);
                                             success = (cleanupResponseCode == 200);
                                         } else {
                                             s_logger
-                                            .info("Sending stop DomR / destroy VM command");
+                                                .info("Sending stop DomR / destroy VM command");
                                             int stopResponseCode = executeStop(
-                                                    server, developerServer,
-                                                    username);
+                                                server, developerServer,
+                                                username);
                                             s_logger
-                                            .info("stop(destroy) command finished with response code: "
-                                                    + stopResponseCode);
+                                                .info("stop(destroy) command finished with response code: "
+                                                      + stopResponseCode);
                                             success = (stopResponseCode == 200);
                                         }
 
@@ -258,15 +252,15 @@ public class StressTestDirectAttach {
                                         // Just stop but don't destroy the
                                         // VMs/Routers
                                         s_logger
-                                        .info("SSH test failed for account " + _account.get() +  "with reason '"
-                                                + reason
-                                                + "', stopping VMs");
+                                            .info("SSH test failed for account " + _account.get() + "with reason '"
+                                                  + reason
+                                                  + "', stopping VMs");
                                         int stopResponseCode = executeStop(
-                                                server, developerServer,
-                                                username);
+                                            server, developerServer,
+                                            username);
                                         s_logger
-                                        .info("stop command finished with response code: "
-                                                + stopResponseCode);
+                                            .info("stop command finished with response code: "
+                                                  + stopResponseCode);
                                         success = false; // since the SSH test
                                         // failed, mark the
                                         // whole test as
@@ -276,14 +270,14 @@ public class StressTestDirectAttach {
                                     // Just stop but don't destroy the
                                     // VMs/Routers
                                     s_logger
-                                    .info("Deploy test failed with reason '"
-                                            + reason
-                                            + "', stopping VMs");
+                                        .info("Deploy test failed with reason '"
+                                              + reason
+                                              + "', stopping VMs");
                                     int stopResponseCode = executeStop(server,
-                                            developerServer, username);
+                                        developerServer, username);
                                     s_logger
-                                    .info("stop command finished with response code: "
-                                            + stopResponseCode);
+                                        .info("stop command finished with response code: "
+                                              + stopResponseCode);
                                     success = false; // since the deploy test
                                     // failed, mark the
                                     // whole test as failure
@@ -291,22 +285,22 @@ public class StressTestDirectAttach {
 
                                 if (success) {
                                     s_logger
-                                    .info("***** Completed test for user : "
-                                            + username
-                                            + " in "
-                                            + ((System
-                                                    .currentTimeMillis() - now) / 1000L)
-                                                    + " seconds");
+                                        .info("***** Completed test for user : "
+                                              + username
+                                              + " in "
+                                              + ((System
+                                                  .currentTimeMillis() - now) / 1000L)
+                                              + " seconds");
 
                                 } else {
                                     s_logger
-                                    .info("##### FAILED test for user : "
-                                            + username
-                                            + " in "
-                                            + ((System
-                                                    .currentTimeMillis() - now) / 1000L)
-                                                    + " seconds with reason : "
-                                                    + reason);
+                                        .info("##### FAILED test for user : "
+                                              + username
+                                              + " in "
+                                              + ((System
+                                                  .currentTimeMillis() - now) / 1000L)
+                                              + " seconds with reason : "
+                                              + reason);
                                 }
                                 s_logger.info("Sleeping for " + wait + " seconds before starting next iteration");
                                 Thread.sleep(wait);
@@ -314,9 +308,9 @@ public class StressTestDirectAttach {
                                 s_logger.warn("Error in thread", e);
                                 try {
                                     int stopResponseCode = executeStop(server,
-                                            developerServer, username);
+                                        developerServer, username);
                                     s_logger.info("stop response code: "
-                                            + stopResponseCode);
+                                                  + stopResponseCode);
                                 } catch (Exception e1) {
                                 }
                             } finally {
@@ -331,9 +325,8 @@ public class StressTestDirectAttach {
         }
     }
 
-
     public static Map<String, List<String>> getMultipleValuesFromXML(
-            InputStream is, String[] tagNames) {
+        InputStream is, String[] tagNames) {
         Map<String, List<String>> returnValues = new HashMap<String, List<String>>();
         try {
             DocumentBuilder docBuilder = factory.newDocumentBuilder();
@@ -341,10 +334,10 @@ public class StressTestDirectAttach {
             Element rootElement = doc.getDocumentElement();
             for (int i = 0; i < tagNames.length; i++) {
                 NodeList targetNodes = rootElement
-                        .getElementsByTagName(tagNames[i]);
+                    .getElementsByTagName(tagNames[i]);
                 if (targetNodes.getLength() <= 0) {
                     s_logger.error("no " + tagNames[i]
-                            + " tag in XML response...returning null");
+                                   + " tag in XML response...returning null");
                 } else {
                     List<String> valueList = new ArrayList<String>();
                     for (int j = 0; j < targetNodes.getLength(); j++) {
@@ -361,7 +354,7 @@ public class StressTestDirectAttach {
     }
 
     public static Map<String, String> getSingleValueFromXML(InputStream is,
-            String[] tagNames) {
+        String[] tagNames) {
         Map<String, String> returnValues = new HashMap<String, String>();
         try {
             DocumentBuilder docBuilder = factory.newDocumentBuilder();
@@ -370,13 +363,13 @@ public class StressTestDirectAttach {
 
             for (int i = 0; i < tagNames.length; i++) {
                 NodeList targetNodes = rootElement
-                        .getElementsByTagName(tagNames[i]);
+                    .getElementsByTagName(tagNames[i]);
                 if (targetNodes.getLength() <= 0) {
                     s_logger.error("no " + tagNames[i]
-                            + " tag in XML response...returning null");
+                                   + " tag in XML response...returning null");
                 } else {
                     returnValues.put(tagNames[i], targetNodes.item(0)
-                            .getTextContent());
+                        .getTextContent());
                 }
             }
         } catch (Exception ex) {
@@ -386,7 +379,7 @@ public class StressTestDirectAttach {
     }
 
     public static Map<String, String> getSingleValueFromXML(Element rootElement,
-            String[] tagNames) {
+        String[] tagNames) {
         Map<String, String> returnValues = new HashMap<String, String>();
         if (rootElement == null) {
             s_logger.error("Root element is null, can't get single value from xml");
@@ -395,13 +388,13 @@ public class StressTestDirectAttach {
         try {
             for (int i = 0; i < tagNames.length; i++) {
                 NodeList targetNodes = rootElement
-                        .getElementsByTagName(tagNames[i]);
+                    .getElementsByTagName(tagNames[i]);
                 if (targetNodes.getLength() <= 0) {
                     s_logger.error("no " + tagNames[i]
-                            + " tag in XML response...returning null");
+                                   + " tag in XML response...returning null");
                 } else {
                     returnValues.put(tagNames[i], targetNodes.item(0)
-                            .getTextContent());
+                        .getTextContent());
                 }
             }
         } catch (Exception ex) {
@@ -410,7 +403,6 @@ public class StressTestDirectAttach {
         return returnValues;
     }
 
-
     private static List<String> getNonSourceNatIPs(InputStream is) {
         List<String> returnValues = new ArrayList<String>();
         try {
@@ -418,7 +410,7 @@ public class StressTestDirectAttach {
             Document doc = docBuilder.parse(is);
             Element rootElement = doc.getDocumentElement();
             NodeList allocatedIpAddrNodes = rootElement
-                    .getElementsByTagName("publicipaddress");
+                .getElementsByTagName("publicipaddress");
             for (int i = 0; i < allocatedIpAddrNodes.getLength(); i++) {
                 Node allocatedIpAddrNode = allocatedIpAddrNodes.item(i);
                 NodeList childNodes = allocatedIpAddrNode.getChildNodes();
@@ -450,7 +442,7 @@ public class StressTestDirectAttach {
             Document doc = docBuilder.parse(is);
             Element rootElement = doc.getDocumentElement();
             NodeList allocatedIpAddrNodes = rootElement
-                    .getElementsByTagName("publicipaddress");
+                .getElementsByTagName("publicipaddress");
             for (int i = 0; i < allocatedIpAddrNodes.getLength(); i++) {
                 Node allocatedIpAddrNode = allocatedIpAddrNodes.item(i);
                 NodeList childNodes = allocatedIpAddrNode.getChildNodes();
@@ -475,7 +467,7 @@ public class StressTestDirectAttach {
     }
 
     private static String executeRegistration(String server, String username,
-            String password) throws HttpException, IOException {
+        String password) throws HttpException, IOException {
         String url = server + "?command=registerUserKeys&id=" + _userId.get().toString();
         s_logger.info("registering: " + username);
         String returnValue = null;
@@ -485,17 +477,17 @@ public class StressTestDirectAttach {
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, String> requestKeyValues = getSingleValueFromXML(is,
-                    new String[] { "apikey", "secretkey" });
+                new String[] {"apikey", "secretkey"});
             _apiKey.set(requestKeyValues.get("apikey"));
             returnValue = requestKeyValues.get("secretkey");
-        } else  {
+        } else {
             s_logger.error("registration failed with error code: " + responseCode);
         }
         return returnValue;
     }
 
     private static Integer executeDeployment(String server, String developerServer,
-            String username) throws HttpException, IOException {
+        String username) throws HttpException, IOException {
         // test steps:
         // - create user
         // - deploy Windows VM
@@ -514,12 +506,12 @@ public class StressTestDirectAttach {
         String encodedPassword = URLEncoder.encode(encryptedPassword, "UTF-8");
 
         String url = server + "?command=createUser&username=" + encodedUsername
-                + "&password=" + encodedPassword
-                + "&firstname=Test&lastname=Test&email=test@vmops.com&domainId=1&accounttype=0";
-        if (accountName != null ) {
+                     + "&password=" + encodedPassword
+                     + "&firstname=Test&lastname=Test&email=test@vmops.com&domainId=1&accounttype=0";
+        if (accountName != null) {
             url = server + "?command=createUser&username=" + encodedUsername
-                    + "&password=" + encodedPassword
-                    + "&firstname=Test&lastname=Test&email=test@vmops.com&domainId=1&accounttype=0&account=" + accountName;
+                  + "&password=" + encodedPassword
+                  + "&firstname=Test&lastname=Test&email=test@vmops.com&domainId=1&accounttype=0&account=" + accountName;
         }
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(url);
@@ -528,20 +520,20 @@ public class StressTestDirectAttach {
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, String> userIdValues = getSingleValueFromXML(is,
-                    new String[] { "id", "account" });
+                new String[] {"id", "account"});
             String userIdStr = userIdValues.get("id");
-            s_logger.info("created user " + username + " with id "+ userIdStr);
+            s_logger.info("created user " + username + " with id " + userIdStr);
             if (userIdStr != null) {
                 userId = Long.parseLong(userIdStr);
                 _userId.set(userId);
                 _account.set(userIdValues.get("account"));
                 if (userId == -1) {
                     s_logger
-                    .error("create user (" + username + ") failed to retrieve a valid user id, aborting depolyment test");
+                        .error("create user (" + username + ") failed to retrieve a valid user id, aborting depolyment test");
                     return -1;
                 }
             }
-        } else  {
+        } else {
             s_logger.error("create user test failed for user " + username + " with error code :" + responseCode);
             return responseCode;
         }
@@ -550,14 +542,13 @@ public class StressTestDirectAttach {
 
         if (_secretKey.get() == null) {
             s_logger
-            .error("FAILED to retrieve secret key during registration, skipping user: "
-                    + username);
+                .error("FAILED to retrieve secret key during registration, skipping user: "
+                       + username);
             return -1;
         } else {
             s_logger.info("got secret key: " + _secretKey.get());
             s_logger.info("got api key: " + _apiKey.get());
         }
-
 
         // ---------------------------------
         // CREATE NETWORK GROUP AND ADD INGRESS RULE TO IT
@@ -571,18 +562,18 @@ public class StressTestDirectAttach {
         }
         String encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
         String requestToSign = "apikey=" + encodedApiKey
-                + "&command=createSecurityGroup&name=" + encodedUsername;
+                               + "&command=createSecurityGroup&name=" + encodedUsername;
         requestToSign = requestToSign.toLowerCase();
         String signature = signRequest(requestToSign, _secretKey.get());
         String encodedSignature = URLEncoder.encode(signature, "UTF-8");
         url = developerServer + "?command=createSecurityGroup&name=" + encodedUsername + "&apikey=" + encodedApiKey
-                + "&signature=" + encodedSignature;
+              + "&signature=" + encodedSignature;
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, String> values = getSingleValueFromXML(is,
-                    new String[] { "id" });
+                new String[] {"id"});
 
             if (values.get("id") == null) {
                 s_logger.info("Create network rule response code: 401");
@@ -591,15 +582,14 @@ public class StressTestDirectAttach {
             else {
                 s_logger.info("Create security group response code: " + responseCode);
             }
-        } else  {
+        } else {
             s_logger.error("Create security group failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
         }
 
-
         String encodedCidr = URLEncoder.encode("192.168.1.143/32", "UTF-8");
         url = server + "?command=authorizeSecurityGroupIngress&cidrlist=" + encodedCidr + "&endport=22&" +
-                "securitygroupname=" + encodedUsername +"&protocol=tcp&startport=22&account=" + networkAccount + "&domainid=1";
+              "securitygroupname=" + encodedUsername + "&protocol=tcp&startport=22&account=" + networkAccount + "&domainid=1";
 
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
@@ -607,7 +597,7 @@ public class StressTestDirectAttach {
             InputStream input = method.getResponseBodyAsStream();
             Element el = queryAsyncJobResult(server, input);
             Map<String, String> values = getSingleValueFromXML(el,
-                    new String[] { "id" });
+                new String[] {"id"});
 
             if (values.get("id") == null) {
                 s_logger.info("Authorise security group ingress response code: 401");
@@ -616,12 +606,10 @@ public class StressTestDirectAttach {
             else {
                 s_logger.info("Authorise security group ingress response code: " + responseCode);
             }
-        } else  {
+        } else {
             s_logger.error("Authorise security group ingress failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
         }
-
-
 
         // ---------------------------------
         // DEPLOY LINUX VM
@@ -630,21 +618,21 @@ public class StressTestDirectAttach {
             long templateId = 2;
             String encodedZoneId = URLEncoder.encode("" + zoneId, "UTF-8");
             String encodedServiceOfferingId = URLEncoder.encode(""
-                    + serviceOfferingId, "UTF-8");
+                                                                + serviceOfferingId, "UTF-8");
             String encodedTemplateId = URLEncoder.encode("" + templateId,
-                    "UTF-8");
+                "UTF-8");
             encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
             requestToSign = "apikey=" + encodedApiKey
-                    + "&command=deployVirtualMachine&securitygrouplist=" + encodedUsername + "&serviceofferingid="
-                    + encodedServiceOfferingId + "&templateid="
-                    + encodedTemplateId + "&zoneid=" + encodedZoneId;
+                            + "&command=deployVirtualMachine&securitygrouplist=" + encodedUsername + "&serviceofferingid="
+                            + encodedServiceOfferingId + "&templateid="
+                            + encodedTemplateId + "&zoneid=" + encodedZoneId;
             requestToSign = requestToSign.toLowerCase();
             signature = signRequest(requestToSign, _secretKey.get());
             encodedSignature = URLEncoder.encode(signature, "UTF-8");
             url = developerServer + "?command=deployVirtualMachine&securitygrouplist=" + encodedUsername + "&zoneid=" + encodedZoneId + "&serviceofferingid="
-                    + encodedServiceOfferingId + "&templateid="
-                    + encodedTemplateId + "&apikey=" + encodedApiKey
-                    + "&signature=" + encodedSignature;
+                  + encodedServiceOfferingId + "&templateid="
+                  + encodedTemplateId + "&apikey=" + encodedApiKey
+                  + "&signature=" + encodedSignature;
 
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
@@ -652,10 +640,10 @@ public class StressTestDirectAttach {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
                 Map<String, String> values = getSingleValueFromXML(el,
-                        new String[] { "id", "ipaddress" });
+                    new String[] {"id", "ipaddress"});
 
                 if ((values.get("ipaddress") == null) || (values
-                        .get("id") == null)) {
+                    .get("id") == null)) {
                     s_logger.info("deploy linux vm response code: 401");
                     return 401;
                 }
@@ -667,17 +655,15 @@ public class StressTestDirectAttach {
                     _linuxIP.set(values.get("ipaddress"));
                     _linuxPassword.set("rs-ccb35ea5");
                 }
-            } else  {
+            } else {
                 s_logger.error("deploy linux vm failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
         }
 
-
-
         //Create a new volume
         {
-            url = server + "?command=createVolume&diskofferingid=" + diskOfferingId + "&zoneid=" + zoneId + "&name=newvolume&account=" +  _account.get() + "&domainid=1";
+            url = server + "?command=createVolume&diskofferingid=" + diskOfferingId + "&zoneid=" + zoneId + "&name=newvolume&account=" + _account.get() + "&domainid=1";
             s_logger.info("Creating volume....");
             client = new HttpClient();
             method = new GetMethod(url);
@@ -686,7 +672,7 @@ public class StressTestDirectAttach {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
                 Map<String, String> values = getSingleValueFromXML(el,
-                        new String[] { "id" });
+                    new String[] {"id"});
 
                 if (values.get("id") == null) {
                     s_logger.info("create volume response code: 401");
@@ -698,7 +684,7 @@ public class StressTestDirectAttach {
                     s_logger.info("got volume id: " + volumeId);
                     _newVolume.set(volumeId);
                 }
-            } else  {
+            } else {
                 s_logger.error("create volume failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
@@ -716,7 +702,7 @@ public class StressTestDirectAttach {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
                 Map<String, String> values = getSingleValueFromXML(el,
-                        new String[] { "id" });
+                    new String[] {"id"});
 
                 if (values.get("id") == null) {
                     s_logger.info("Attach volume response code: 401");
@@ -725,7 +711,7 @@ public class StressTestDirectAttach {
                 else {
                     s_logger.info("Attach volume response code: " + responseCode);
                 }
-            } else  {
+            } else {
                 s_logger.error("Attach volume failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
@@ -740,21 +726,21 @@ public class StressTestDirectAttach {
             long templateId = 2;
             String encodedZoneId = URLEncoder.encode("" + zoneId, "UTF-8");
             String encodedServiceOfferingId = URLEncoder.encode(""
-                    + serviceOfferingId, "UTF-8");
+                                                                + serviceOfferingId, "UTF-8");
             String encodedTemplateId = URLEncoder.encode("" + templateId,
-                    "UTF-8");
+                "UTF-8");
             encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
             requestToSign = "apikey=" + encodedApiKey
-                    + "&command=deployVirtualMachine&securitygrouplist=" + encodedUsername + "&serviceofferingid="
-                    + encodedServiceOfferingId + "&templateid="
-                    + encodedTemplateId + "&zoneid=" + encodedZoneId;
+                            + "&command=deployVirtualMachine&securitygrouplist=" + encodedUsername + "&serviceofferingid="
+                            + encodedServiceOfferingId + "&templateid="
+                            + encodedTemplateId + "&zoneid=" + encodedZoneId;
             requestToSign = requestToSign.toLowerCase();
             signature = signRequest(requestToSign, _secretKey.get());
             encodedSignature = URLEncoder.encode(signature, "UTF-8");
             url = developerServer + "?command=deployVirtualMachine&securitygrouplist=" + encodedUsername + "&zoneid=" + encodedZoneId + "&serviceofferingid="
-                    + encodedServiceOfferingId + "&templateid="
-                    + encodedTemplateId + "&apikey=" + encodedApiKey
-                    + "&signature=" + encodedSignature;
+                  + encodedServiceOfferingId + "&templateid="
+                  + encodedTemplateId + "&apikey=" + encodedApiKey
+                  + "&signature=" + encodedSignature;
 
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
@@ -762,10 +748,10 @@ public class StressTestDirectAttach {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
                 Map<String, String> values = getSingleValueFromXML(el,
-                        new String[] { "id", "ipaddress" });
+                    new String[] {"id", "ipaddress"});
 
                 if ((values.get("ipaddress") == null) || (values
-                        .get("id") == null)) {
+                    .get("id") == null)) {
                     s_logger.info("deploy linux vm response code: 401");
                     return 401;
                 }
@@ -775,17 +761,15 @@ public class StressTestDirectAttach {
                     s_logger.info("got linux virtual machine id: " + linuxVMId);
                     _linuxVmId1.set(values.get("id"));
                 }
-            } else  {
+            } else {
                 s_logger.error("deploy linux vm failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
         }
 
-
-
         //Create a new volume
         {
-            url = server + "?command=createVolume&diskofferingid=" + diskOfferingId1 + "&zoneid=" + zoneId + "&name=newvolume1&account=" +  _account.get() + "&domainid=1";
+            url = server + "?command=createVolume&diskofferingid=" + diskOfferingId1 + "&zoneid=" + zoneId + "&name=newvolume1&account=" + _account.get() + "&domainid=1";
             s_logger.info("Creating volume....");
             client = new HttpClient();
             method = new GetMethod(url);
@@ -794,7 +778,7 @@ public class StressTestDirectAttach {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
                 Map<String, String> values = getSingleValueFromXML(el,
-                        new String[] { "id" });
+                    new String[] {"id"});
 
                 if (values.get("id") == null) {
                     s_logger.info("create volume response code: 401");
@@ -806,7 +790,7 @@ public class StressTestDirectAttach {
                     s_logger.info("got volume id: " + volumeId);
                     _newVolume1.set(volumeId);
                 }
-            } else  {
+            } else {
                 s_logger.error("create volume failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
@@ -824,7 +808,7 @@ public class StressTestDirectAttach {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
                 Map<String, String> values = getSingleValueFromXML(el,
-                        new String[] { "id" });
+                    new String[] {"id"});
 
                 if (values.get("id") == null) {
                     s_logger.info("Attach volume response code: 401");
@@ -833,7 +817,7 @@ public class StressTestDirectAttach {
                 else {
                     s_logger.info("Attach volume response code: " + responseCode);
                 }
-            } else  {
+            } else {
                 s_logger.error("Attach volume failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
@@ -841,11 +825,8 @@ public class StressTestDirectAttach {
         return 200;
     }
 
-
-
-
     private static int executeCleanup(String server, String developerServer, String username)
-            throws HttpException, IOException {
+        throws HttpException, IOException {
         // test steps:
         // - get user
         // - delete user
@@ -864,14 +845,14 @@ public class StressTestDirectAttach {
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, String> userInfo = getSingleValueFromXML(is,
-                    new String[] { "username", "id", "account" });
+                new String[] {"username", "id", "account"});
             if (!username.equals(userInfo.get("username"))) {
                 s_logger
-                .error("get user failed to retrieve requested user, aborting cleanup test" + ". Following URL was sent: " + url);
+                    .error("get user failed to retrieve requested user, aborting cleanup test" + ". Following URL was sent: " + url);
                 return -1;
             }
 
-        } else  {
+        } else {
             s_logger.error("get user failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
         }
@@ -881,7 +862,7 @@ public class StressTestDirectAttach {
         // -----------------------------
         {
             url = server + "?command=updateUser&id=" + userId
-                    + "&firstname=delete&lastname=me";
+                  + "&firstname=delete&lastname=me";
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
@@ -889,10 +870,10 @@ public class StressTestDirectAttach {
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 Map<String, String> success = getSingleValueFromXML(is,
-                        new String[] { "success" });
+                    new String[] {"success"});
                 s_logger
-                .info("update user..success? " + success.get("success"));
-            } else  {
+                    .info("update user..success? " + success.get("success"));
+            } else {
                 s_logger.error("update user failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
@@ -910,20 +891,20 @@ public class StressTestDirectAttach {
         String encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
         url = developerServer + "?command=rebootVirtualMachine&id=" + _linuxVmId.get() + "&apikey="
-                + encodedApiKey + "&signature=" + encodedSignature;
+              + encodedApiKey + "&signature=" + encodedSignature;
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
         s_logger.info("Reboot VM response code: "
-                + responseCode);
+                      + responseCode);
         if (responseCode == 200) {
             InputStream input = method.getResponseBodyAsStream();
             Element el = queryAsyncJobResult(server, input);
             Map<String, String> success = getSingleValueFromXML(el,
-                    new String[] { "success" });
+                new String[] {"success"});
             s_logger.info("VM was rebooted with the status: "
-                    + success.get("success"));
-        } else  {
+                          + success.get("success"));
+        } else {
             s_logger.error(" VM test failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
         }
@@ -935,20 +916,20 @@ public class StressTestDirectAttach {
         encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
         url = developerServer + "?command=stopVirtualMachine&id=" + _linuxVmId.get() + "&apikey="
-                + encodedApiKey + "&signature=" + encodedSignature;
+              + encodedApiKey + "&signature=" + encodedSignature;
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
         s_logger.info("Stop VM response code: "
-                + responseCode);
+                      + responseCode);
         if (responseCode == 200) {
             InputStream input = method.getResponseBodyAsStream();
             Element el = queryAsyncJobResult(server, input);
             Map<String, String> success = getSingleValueFromXML(el,
-                    new String[] { "success" });
+                new String[] {"success"});
             s_logger.info("VM was stopped with the status: "
-                    + success.get("success"));
-        } else  {
+                          + success.get("success"));
+        } else {
             s_logger.error("Stop VM test failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
         }
@@ -960,18 +941,18 @@ public class StressTestDirectAttach {
         encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
         url = developerServer + "?command=startVirtualMachine&id=" + _linuxVmId.get() + "&apikey="
-                + encodedApiKey + "&signature=" + encodedSignature;
+              + encodedApiKey + "&signature=" + encodedSignature;
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
         s_logger.info("Start VM response code: "
-                + responseCode);
+                      + responseCode);
 
         if (responseCode == 200) {
             InputStream input = method.getResponseBodyAsStream();
             Element el = queryAsyncJobResult(server, input);
             Map<String, String> success = getSingleValueFromXML(el,
-                    new String[] { "id" });
+                new String[] {"id"});
 
             if (success.get("id") == null) {
                 s_logger.info("Start linux vm response code: 401");
@@ -982,8 +963,8 @@ public class StressTestDirectAttach {
             }
 
             s_logger.info("VM was started with the status: "
-                    + success.get("success"));
-        } else  {
+                          + success.get("success"));
+        } else {
             s_logger.error("Start VM test failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
         }
@@ -1021,8 +1002,8 @@ public class StressTestDirectAttach {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
                 s_logger
-                .info("Deleted user successfully");
-            } else  {
+                    .info("Deleted user successfully");
+            } else {
                 s_logger.error("delete user failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
@@ -1031,7 +1012,7 @@ public class StressTestDirectAttach {
     }
 
     private static int executeEventsAndBilling(String server, String developerServer)
-            throws HttpException, IOException {
+        throws HttpException, IOException {
         // test steps:
         // - get all the events in the system for all users in the system
         // - generate all the usage records in the system
@@ -1040,7 +1021,7 @@ public class StressTestDirectAttach {
         // -----------------------------
         // GET EVENTS
         // -----------------------------
-        String url =server+"?command=listEvents&page=1&account=" + _account.get();
+        String url = server + "?command=listEvents&page=1&account=" + _account.get();
 
         s_logger.info("Getting events for the account " + _account.get());
         HttpClient client = new HttpClient();
@@ -1050,7 +1031,7 @@ public class StressTestDirectAttach {
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, List<String>> eventDescriptions = getMultipleValuesFromXML(
-                    is, new String[] { "description" });
+                is, new String[] {"description"});
             List<String> descriptionText = eventDescriptions.get("description");
             if (descriptionText == null) {
                 s_logger.info("no events retrieved...");
@@ -1059,7 +1040,7 @@ public class StressTestDirectAttach {
                     s_logger.info("event: " + text);
                 }
             }
-        } else  {
+        } else {
             s_logger.error("list events failed with error code: " + responseCode + ". Following URL was sent: " + url);
 
             return responseCode;
@@ -1067,9 +1048,8 @@ public class StressTestDirectAttach {
         return responseCode;
     }
 
-
     private static int executeStop(String server, String developerServer,
-            String username) throws HttpException, IOException {
+        String username) throws HttpException, IOException {
         // test steps:
         // - get userId for the given username
         // - list virtual machines for the user
@@ -1092,17 +1072,17 @@ public class StressTestDirectAttach {
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, String> userIdValues = getSingleValueFromXML(is,
-                    new String[] { "id" });
+                new String[] {"id"});
             String userIdStr = userIdValues.get("id");
             if (userIdStr != null) {
                 userId = userIdStr;
                 if (userId == null) {
                     s_logger
-                    .error("get user failed to retrieve a valid user id, aborting depolyment test" + ". Following URL was sent: " + url);
+                        .error("get user failed to retrieve a valid user id, aborting depolyment test" + ". Following URL was sent: " + url);
                     return -1;
                 }
             }
-        } else  {
+        } else {
             s_logger.error("get user failed with error code: " + responseCode + ". Following URL was sent: " + url);
             return responseCode;
         }
@@ -1113,13 +1093,13 @@ public class StressTestDirectAttach {
             // ----------------------------------
             String encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
             String requestToSign = "apikey=" + encodedApiKey
-                    + "&command=listVirtualMachines";
+                                   + "&command=listVirtualMachines";
             requestToSign = requestToSign.toLowerCase();
             String signature = signRequest(requestToSign, _secretKey.get());
             String encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
             url = developerServer + "?command=listVirtualMachines&apikey=" + encodedApiKey + "&signature="
-                    + encodedSignature;
+                  + encodedSignature;
 
             s_logger.info("Listing all virtual machines for the user with url " + url);
             String[] vmIds = null;
@@ -1127,11 +1107,11 @@ public class StressTestDirectAttach {
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
             s_logger.info("list virtual machines response code: "
-                    + responseCode);
+                          + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
                 Map<String, List<String>> vmIdValues = getMultipleValuesFromXML(
-                        is, new String[] { "id" });
+                    is, new String[] {"id"});
                 if (vmIdValues.containsKey("id")) {
                     List<String> vmIdList = vmIdValues.get("id");
                     if (vmIdList != null) {
@@ -1148,12 +1128,10 @@ public class StressTestDirectAttach {
                     }
                 }
 
-
-            } else  {
+            } else {
                 s_logger.error("list virtual machines test failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
-
 
             // ----------------------------------
             // STOP/DESTROY VIRTUAL MACHINES
@@ -1166,20 +1144,20 @@ public class StressTestDirectAttach {
                     encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
                     url = developerServer + "?command=stopVirtualMachine&id=" + vmId + "&apikey="
-                            + encodedApiKey + "&signature=" + encodedSignature;
+                          + encodedApiKey + "&signature=" + encodedSignature;
                     client = new HttpClient();
                     method = new GetMethod(url);
                     responseCode = client.executeMethod(method);
                     s_logger.info("StopVirtualMachine" + " [" + vmId + "] response code: "
-                            + responseCode);
+                                  + responseCode);
                     if (responseCode == 200) {
                         InputStream input = method.getResponseBodyAsStream();
                         Element el = queryAsyncJobResult(server, input);
                         Map<String, String> success = getSingleValueFromXML(el,
-                                new String[] { "success" });
+                            new String[] {"success"});
                         s_logger.info("StopVirtualMachine..success? "
-                                + success.get("success"));
-                    } else  {
+                                      + success.get("success"));
+                    } else {
                         s_logger.error("Stop virtual machine test failed with error code: " + responseCode + ". Following URL was sent: " + url);
                         return responseCode;
                     }
@@ -1203,7 +1181,6 @@ public class StressTestDirectAttach {
 //                }
 //            }
 
-
         }
 
         _linuxIP.set("");
@@ -1222,7 +1199,7 @@ public class StressTestDirectAttach {
         try {
             Mac mac = Mac.getInstance("HmacSHA1");
             SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(),
-                    "HmacSHA1");
+                "HmacSHA1");
             mac.init(keySpec);
             mac.update(request.getBytes());
             byte[] encryptedBytes = mac.doFinal();
@@ -1236,7 +1213,7 @@ public class StressTestDirectAttach {
     private static String sshWinTest(String host) {
         if (host == null) {
             s_logger
-            .info("Did not receive a host back from test, ignoring win ssh test");
+                .info("Did not receive a host back from test, ignoring win ssh test");
             return null;
         }
 
@@ -1247,12 +1224,12 @@ public class StressTestDirectAttach {
             try {
                 if (retry > 0) {
                     s_logger.info("Retry attempt : " + retry
-                            + " ...sleeping 300 seconds before next attempt. Account is " + _account.get());
+                                  + " ...sleeping 300 seconds before next attempt. Account is " + _account.get());
                     Thread.sleep(300000);
                 }
 
                 s_logger.info("Attempting to SSH into windows host " + host
-                        + " with retry attempt: " + retry + " for account " + _account.get());
+                              + " with retry attempt: " + retry + " for account " + _account.get());
 
                 Connection conn = new Connection(host);
                 conn.connect(null, 60000, 60000);
@@ -1260,7 +1237,7 @@ public class StressTestDirectAttach {
                 s_logger.info("User " + _account.get() + " ssHed successfully into windows host " + host);
                 boolean success = false;
                 boolean isAuthenticated = conn.authenticateWithPassword(
-                        "Administrator", "password");
+                    "Administrator", "password");
                 if (isAuthenticated == false) {
                     return "Authentication failed";
                 }
@@ -1276,14 +1253,14 @@ public class StressTestDirectAttach {
                     s_logger.error("Unable to put wget.exe " + ex);
                 }
 
-                if (conn == null ){
+                if (conn == null) {
                     s_logger.error("Connection is null");
                 }
                 Session sess = conn.openSession();
 
                 s_logger.info("User + " + _account.get() + " executing : wget http://192.168.1.250/dump.bin");
                 sess
-                .execCommand("wget http://192.168.1.250/dump.bin && dir dump.bin");
+                    .execCommand("wget http://192.168.1.250/dump.bin && dir dump.bin");
 
                 InputStream stdout = sess.getStdout();
                 InputStream stderr = sess.getStderr();
@@ -1292,13 +1269,13 @@ public class StressTestDirectAttach {
                 while (true) {
                     if ((stdout.available() == 0) && (stderr.available() == 0)) {
                         int conditions = sess.waitForCondition(
-                                ChannelCondition.STDOUT_DATA
-                                | ChannelCondition.STDERR_DATA
-                                | ChannelCondition.EOF, 120000);
+                            ChannelCondition.STDOUT_DATA
+                                    | ChannelCondition.STDERR_DATA
+                                    | ChannelCondition.EOF, 120000);
 
                         if ((conditions & ChannelCondition.TIMEOUT) != 0) {
                             s_logger
-                            .info("Timeout while waiting for data from peer.");
+                                .info("Timeout while waiting for data from peer.");
                             return null;
                         }
 
@@ -1337,7 +1314,7 @@ public class StressTestDirectAttach {
                 retry++;
                 if (retry == MAX_RETRY_WIN) {
                     return "SSH Windows Network test fail with error "
-                            + e.getMessage();
+                           + e.getMessage();
                 }
             }
         }
@@ -1347,29 +1324,29 @@ public class StressTestDirectAttach {
         int i = 0;
         if (host == null) {
             s_logger
-            .info("Did not receive a host back from test, ignoring ssh test");
+                .info("Did not receive a host back from test, ignoring ssh test");
             return null;
         }
 
-        if (password == null){
+        if (password == null) {
             s_logger.info("Did not receive a password back from test, ignoring ssh test");
             return null;
         }
 
         // We will retry 5 times before quitting
-        String result  = null;
+        String result = null;
         int retry = 0;
 
         while (true) {
             try {
                 if (retry > 0) {
                     s_logger.info("Retry attempt : " + retry
-                            + " ...sleeping 120 seconds before next attempt. Account is " + _account.get());
+                                  + " ...sleeping 120 seconds before next attempt. Account is " + _account.get());
                     Thread.sleep(120000);
                 }
 
                 s_logger.info("Attempting to SSH into linux host " + host
-                        + " with retry attempt: " + retry + ". Account is " + _account.get());
+                              + " with retry attempt: " + retry + ". Account is " + _account.get());
 
                 Connection conn = new Connection(host);
                 conn.connect(null, 60000, 60000);
@@ -1377,7 +1354,7 @@ public class StressTestDirectAttach {
                 s_logger.info("User + " + _account.get() + " ssHed successfully into linux host " + host);
 
                 boolean isAuthenticated = conn.authenticateWithPassword("root",
-                        password);
+                    password);
 
                 if (isAuthenticated == false) {
                     s_logger.info("Authentication failed for root with password" + password);
@@ -1400,18 +1377,17 @@ public class StressTestDirectAttach {
                 InputStream stdout = sess.getStdout();
                 InputStream stderr = sess.getStderr();
 
-
                 byte[] buffer = new byte[8192];
                 while (true) {
                     if ((stdout.available() == 0) && (stderr.available() == 0)) {
                         int conditions = sess.waitForCondition(
-                                ChannelCondition.STDOUT_DATA
-                                | ChannelCondition.STDERR_DATA
-                                | ChannelCondition.EOF, 120000);
+                            ChannelCondition.STDOUT_DATA
+                                    | ChannelCondition.STDERR_DATA
+                                    | ChannelCondition.EOF, 120000);
 
                         if ((conditions & ChannelCondition.TIMEOUT) != 0) {
                             s_logger
-                            .info("Timeout while waiting for data from peer.");
+                                .info("Timeout while waiting for data from peer.");
                             return null;
                         }
 
@@ -1450,7 +1426,7 @@ public class StressTestDirectAttach {
                 s_logger.error("SSH Linux Network test fail with error");
                 if (retry == MAX_RETRY_LINUX) {
                     return "SSH Linux Network test fail with error "
-                            + e.getMessage();
+                           + e.getMessage();
                 }
             }
             i++;
@@ -1480,12 +1456,11 @@ public class StressTestDirectAttach {
         return sb.toString();
     }
 
-
-    public static Element queryAsyncJobResult (String host, InputStream inputStream) {
+    public static Element queryAsyncJobResult(String host, InputStream inputStream) {
         Element returnBody = null;
 
         Map<String, String> values = getSingleValueFromXML(inputStream,
-                new String[] { "jobid" });
+            new String[] {"jobid"});
         String jobId = values.get("jobid");
 
         if (jobId == null) {
@@ -1507,9 +1482,9 @@ public class StressTestDirectAttach {
                 Document doc = builder.parse(is);
                 returnBody = doc.getDocumentElement();
                 doc.getDocumentElement().normalize();
-                Element jobStatusTag = (Element) returnBody.getElementsByTagName("jobstatus").item(0);
+                Element jobStatusTag = (Element)returnBody.getElementsByTagName("jobstatus").item(0);
                 String jobStatus = jobStatusTag.getTextContent();
-                if(jobStatus.equals("0")) {
+                if (jobStatus.equals("0")) {
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {

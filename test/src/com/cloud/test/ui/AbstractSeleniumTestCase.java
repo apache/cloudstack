@@ -54,7 +54,7 @@ public abstract class AbstractSeleniumTestCase {
     }
 
     protected static DefaultSelenium createSeleniumClient(String url)
-            throws Exception {
+        throws Exception {
         return new DefaultSelenium("localhost", 4444, "*firefox", url);
     }
 }

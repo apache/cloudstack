@@ -61,9 +61,9 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
 
                 pstmt = txn.prepareAutoCloseStatement(String.format("SELECT id FROM `%s` WHERE id=? OR uuid=?", tableName)
 
-                // TODO : after graceful period, use following line turn on more secure check
-                // String.format("SELECT id FROM %s WHERE (id=? AND uuid IS NULL) OR uuid=?", mapper.entityTableName())
-                );
+                    // TODO : after graceful period, use following line turn on more secure check
+                    // String.format("SELECT id FROM %s WHERE (id=? AND uuid IS NULL) OR uuid=?", mapper.entityTableName())
+                    );
 
                 long id = 0;
                 try {
@@ -150,8 +150,8 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
         try {
             try {
                 pstmt = txn.prepareAutoCloseStatement(String.format("SELECT uuid FROM `%s` WHERE id=? OR uuid=?", tableName)
-                // String.format("SELECT uuid FROM %s WHERE (id=? AND uuid IS NULL) OR uuid=?", tableName)
-                );
+                    // String.format("SELECT uuid FROM %s WHERE (id=? AND uuid IS NULL) OR uuid=?", tableName)
+                    );
 
                 long id = 0;
                 try {

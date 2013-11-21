@@ -32,16 +32,15 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 
-
-public abstract class TestCase{
+public abstract class TestCase {
 
     public static Logger s_logger = Logger.getLogger(TestCase.class.getName());
     private Connection conn;
-    private ArrayList <Document> inputFile = new ArrayList<Document> ();
+    private ArrayList<Document> inputFile = new ArrayList<Document>();
     private HttpClient client;
     private String testCaseName;
-    private HashMap<String, String> param = new HashMap<String, String> ();
-    private HashMap<String, String> commands = new HashMap<String, String> ();
+    private HashMap<String, String> param = new HashMap<String, String>();
+    private HashMap<String, String> commands = new HashMap<String, String>();
 
     public HashMap<String, String> getParam() {
         return param;
@@ -50,7 +49,6 @@ public abstract class TestCase{
     public void setParam(HashMap<String, String> param) {
         this.param = param;
     }
-
 
     public HashMap<String, String> getCommands() {
         return commands;
@@ -70,7 +68,7 @@ public abstract class TestCase{
             pro.load(in);
             Enumeration<?> en = pro.propertyNames();
             while (en.hasMoreElements()) {
-                String key = (String) en.nextElement();
+                String key = (String)en.nextElement();
                 commands.put(key, pro.getProperty(key));
             }
         } catch (Exception ex) {
@@ -87,18 +85,18 @@ public abstract class TestCase{
         this.conn = null;
         try {
             Class.forName("com.mysql.jdbc.Driver");
-            this.conn=DriverManager.getConnection("jdbc:mysql://" + param.get("db") + "/cloud", "root", dbPassword);
+            this.conn = DriverManager.getConnection("jdbc:mysql://" + param.get("db") + "/cloud", "root", dbPassword);
             if (!this.conn.isValid(0)) {
                 s_logger.error("Connection to DB failed to establish");
             }
 
-        }catch (Exception ex) {
+        } catch (Exception ex) {
             s_logger.error(ex);
         }
     }
 
-    public void setInputFile (ArrayList<String> fileNameInput) {
-        for (String fileName: fileNameInput) {
+    public void setInputFile(ArrayList<String> fileNameInput) {
+        for (String fileName : fileNameInput) {
             File file = new File(fileName);
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             Document doc = null;
@@ -121,7 +119,7 @@ public abstract class TestCase{
         this.testCaseName = testCaseName;
     }
 
-    public String getTestCaseName(){
+    public String getTestCaseName() {
         return this.testCaseName;
     }
 

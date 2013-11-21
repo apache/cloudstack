@@ -332,7 +332,7 @@ public class Payer implements org.apache.axis2.databinding.ADBBean {
         public static Payer fromValue(java.lang.String value) throws java.lang.IllegalArgumentException {
             Payer enumeration = (Payer)
 
-            _table_.get(value);
+                    _table_.get(value);
 
             if (enumeration == null)
                 throw new java.lang.IllegalArgumentException();

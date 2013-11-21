@@ -38,7 +38,7 @@ import org.w3c.dom.NodeList;
 public class TestCaseEngine {
 
     public static final Logger s_logger = Logger.getLogger(TestCaseEngine.class
-            .getName());
+        .getName());
     public static String fileName = "../metadata/adapter.xml";
     public static HashMap<String, String> globalParameters = new HashMap<String, String>();
     protected static HashMap<String, String> _componentMap = new HashMap<String, String>();
@@ -93,7 +93,7 @@ public class TestCaseEngine {
             // parse adapter.xml file to get list of tests to execute
             File file = new File(fileName);
             DocumentBuilderFactory factory = DocumentBuilderFactory
-                    .newInstance();
+                .newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document doc = builder.parse(file);
             doc.getDocumentElement().normalize();
@@ -111,7 +111,7 @@ public class TestCaseEngine {
             for (int i = 0; i < _numThreads; i++) {
                 if (_numThreads > 1) {
                     s_logger.info("STARTING STRESS TEST IN "
-                            + _numThreads + " THREADS");
+                                  + _numThreads + " THREADS");
                 } else {
                     s_logger.info("STARTING FUNCTIONAL TEST");
                 }
@@ -122,7 +122,7 @@ public class TestCaseEngine {
                                 try {
                                     for (String key : _keys) {
                                         Class<?> c = Class.forName(_componentMap.get(key));
-                                        TestCase component = (TestCase) c.newInstance();
+                                        TestCase component = (TestCase)c.newInstance();
                                         executeTest(key, c, component);
                                     }
                                 } catch (Exception ex1) {
@@ -134,14 +134,14 @@ public class TestCaseEngine {
                                 }
                             } else {
                                 Random ran = new Random();
-                                Integer randomNumber = (Integer) Math.abs(ran
-                                        .nextInt(_keys.size()));
+                                Integer randomNumber = (Integer)Math.abs(ran
+                                    .nextInt(_keys.size()));
                                 try {
                                     String key = _keys.get(randomNumber);
                                     Class<?> c = Class.forName(_componentMap
-                                            .get(key));
-                                    TestCase component = (TestCase) c
-                                            .newInstance();
+                                        .get(key));
+                                    TestCase component = (TestCase)c
+                                        .newInstance();
                                     executeTest(key, c, component);
                                 } catch (Exception e) {
                                     s_logger.error("Error in thread ", e);
@@ -159,21 +159,21 @@ public class TestCaseEngine {
 
     public static void setGlobalParams(Element rootElement) {
         NodeList globalParam = rootElement.getElementsByTagName("globalparam");
-        Element parameter = (Element) globalParam.item(0);
+        Element parameter = (Element)globalParam.item(0);
         NodeList paramLst = parameter.getElementsByTagName("param");
 
         for (int i = 0; i < paramLst.getLength(); i++) {
-            Element paramElement = (Element) paramLst.item(i);
+            Element paramElement = (Element)paramLst.item(i);
 
             if (paramElement.getNodeType() == Node.ELEMENT_NODE) {
-                Element itemElement = (Element) paramElement;
+                Element itemElement = (Element)paramElement;
                 NodeList itemName = itemElement.getElementsByTagName("name");
-                Element itemNameElement = (Element) itemName.item(0);
+                Element itemNameElement = (Element)itemName.item(0);
                 NodeList itemVariable = itemElement
-                        .getElementsByTagName("variable");
-                Element itemVariableElement = (Element) itemVariable.item(0);
+                    .getElementsByTagName("variable");
+                Element itemVariableElement = (Element)itemVariable.item(0);
                 globalParameters.put(itemVariableElement.getTextContent(),
-                        itemNameElement.getTextContent());
+                    itemNameElement.getTextContent());
             }
         }
     }
@@ -181,17 +181,17 @@ public class TestCaseEngine {
     public static void setComponent(Element rootElement) {
         NodeList testLst = rootElement.getElementsByTagName("test");
         for (int j = 0; j < testLst.getLength(); j++) {
-            Element testElement = (Element) testLst.item(j);
+            Element testElement = (Element)testLst.item(j);
 
             if (testElement.getNodeType() == Node.ELEMENT_NODE) {
-                Element itemElement = (Element) testElement;
+                Element itemElement = (Element)testElement;
 
                 // get test case name
                 NodeList testCaseNameList = itemElement
-                        .getElementsByTagName("testname");
+                    .getElementsByTagName("testname");
                 if (testCaseNameList != null) {
-                    testCaseName = ((Element) testCaseNameList.item(0))
-                            .getTextContent();
+                    testCaseName = ((Element)testCaseNameList.item(0))
+                        .getTextContent();
                 }
 
                 if (isSanity == true && !testCaseName.equals("SANITY TEST"))
@@ -203,20 +203,20 @@ public class TestCaseEngine {
                 NodeList className = itemElement.getElementsByTagName("class");
                 if ((className.getLength() == 0) || (className == null)) {
                     _componentMap.put(testCaseName,
-                            "com.cloud.test.regression.VMApiTest");
+                        "com.cloud.test.regression.VMApiTest");
                 } else {
-                    String name = ((Element) className.item(0))
-                            .getTextContent();
+                    String name = ((Element)className.item(0))
+                        .getTextContent();
                     _componentMap.put(testCaseName, name);
                 }
 
                 // set input file name
                 NodeList inputFileNameLst = itemElement
-                        .getElementsByTagName("filename");
+                    .getElementsByTagName("filename");
                 _inputFile.put(testCaseName, new ArrayList<String>());
                 for (int k = 0; k < inputFileNameLst.getLength(); k++) {
-                    String inputFileName = ((Element) inputFileNameLst.item(k))
-                            .getTextContent();
+                    String inputFileName = ((Element)inputFileNameLst.item(k))
+                        .getTextContent();
                     _inputFile.get(testCaseName).add(inputFileName);
                 }
             }
@@ -237,8 +237,8 @@ public class TestCaseEngine {
         Set<?> set = _componentMap.entrySet();
         Iterator<?> it = set.iterator();
         while (it.hasNext()) {
-            Map.Entry<?, ?> me = (Map.Entry<?, ?>) it.next();
-            String key = (String) me.getKey();
+            Map.Entry<?, ?> me = (Map.Entry<?, ?>)it.next();
+            String key = (String)me.getKey();
             _keys.add(key);
         }
 
