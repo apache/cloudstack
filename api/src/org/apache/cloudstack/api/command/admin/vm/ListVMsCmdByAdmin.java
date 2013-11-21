@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
 
-@APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account.", responseObject = UserVmResponse.class, responseView = ResponseView.Admin)
+@APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account.", responseObject = UserVmResponse.class, responseView = ResponseView.Full)
 public class ListVMsCmdByAdmin extends ListVMsCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMsCmdByAdmin.class.getName());
 

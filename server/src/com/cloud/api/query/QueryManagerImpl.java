@@ -737,9 +737,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<UserVmResponse> searchForUserVMs(ListVMsCmd cmd) {
         Pair<List<UserVmJoinVO>, Integer> result = searchForUserVMsInternal(cmd);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
-        ResponseView respView = ResponseView.User;
+        ResponseView respView = ResponseView.Restricted;
         if (cmd instanceof ListVMsCmdByAdmin) {
-            respView = ResponseView.Admin;
+            respView = ResponseView.Full;
         }
         List<UserVmResponse> vmResponses = ViewResponseHelper.createUserVmResponse(respView, "virtualmachine", cmd.getDetails(),
                 result.first().toArray(new UserVmJoinVO[result.first().size()]));

@@ -40,7 +40,7 @@ public @interface APICommand {
 
     String since() default "";
     
-    ResponseView responseView() default ResponseView.Admin;
+    ResponseView responseView() default ResponseView.Full;
 
     RoleType[] authorized() default {};
 }

@@ -887,9 +887,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             return cmdList.get(0);
         else {
             // determine the cmd class based on calling context
-            ResponseView view = ResponseView.User;
+            ResponseView view = ResponseView.Restricted;
             if (_accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())) {
-                view = ResponseView.Admin;
+                view = ResponseView.Full;
             }
             for (Class<?> cmdClass : cmdList) {
                 APICommand at = cmdClass.getAnnotation(APICommand.class);
