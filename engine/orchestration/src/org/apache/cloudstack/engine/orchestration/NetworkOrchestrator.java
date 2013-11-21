@@ -47,6 +47,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.PortableIpDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -147,6 +148,7 @@ import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StaticNatRuleImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.NetworkACLManager;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.network.vpn.RemoteAccessVpnService;
@@ -1031,22 +1033,22 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             (network.getGuestType() == Network.GuestType.Isolated || (network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced))) {
 
             List<IPAddressVO> ips = null;
+            Account owner = _entityMgr.findById(Account.class, network.getAccountId());
             if (network.getVpcId() != null) {
                 ips = _ipAddressDao.listByAssociatedVpc(network.getVpcId(), true);
                 if (ips.isEmpty()) {
-                    throw new CloudRuntimeException("Vpc is not implemented; there is no source nat ip");
+                    Vpc vpc = _vpcMgr.getActiveVpc(network.getVpcId());
+                    s_logger.debug("Creating a source nat ip for vpc " + vpc);
+                    _vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc);
                 }
             } else {
                 ips = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
-            }
-
-            if (ips.isEmpty()) {
-                s_logger.debug("Creating a source nat ip for network " + network);
-                Account owner = _entityMgr.findById(Account.class, network.getAccountId());
-                _ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, network);
+                if (ips.isEmpty()) {
+                    s_logger.debug("Creating a source nat ip for network " + network);
+                    _ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, network);
+                }
             }
         }
-
         // get providers to implement
         List<Provider> providersToImplement = getNetworkProviders(network.getId());
         for (NetworkElement element : _networkElements) {

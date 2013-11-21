@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpc;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -30,6 +28,7 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -43,47 +42,54 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVPCCmd.class.getName());
     private static final String s_name = "createvpcresponse";
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account associated with the VPC. "
-        + "Must be used with the domainId parameter.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account associated with the VPC. " +
+            "Must be used with the domainId parameter.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the domain ID associated with the VPC. "
-        + "If used with the account parameter returns the VPC associated with the account for the specified domain.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class,
+            description = "the domain ID associated with the VPC. " +
+                    "If used with the account parameter returns the VPC associated with the account for the specified domain.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "create VPC for the project")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class,
+            description = "create VPC for the project")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, required = true, description = "the ID of the availability zone")
+    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
+            required = true, description = "the ID of the availability zone")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the VPC")
     private String vpcName;
 
-    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "the display text of " + "the VPC")
+    @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, required = true, description = "the display text of " +
+            "the VPC")
     private String displayText;
 
-    @Parameter(name = ApiConstants.CIDR, type = CommandType.STRING, required = true, description = "the cidr of the VPC. All VPC "
-        + "guest networks' cidrs should be within this CIDR")
+    @Parameter(name = ApiConstants.CIDR, type = CommandType.STRING, required = true, description = "the cidr of the VPC. All VPC " +
+            "guest networks' cidrs should be within this CIDR")
     private String cidr;
 
-    @Parameter(name = ApiConstants.VPC_OFF_ID,
-               type = CommandType.UUID,
-               entityType = VpcOfferingResponse.class,
-               required = true,
-               description = "the ID of the VPC offering")
+    @Parameter(name = ApiConstants.VPC_OFF_ID, type = CommandType.UUID, entityType = VpcOfferingResponse.class,
+            required = true, description = "the ID of the VPC offering")
     private Long vpcOffering;
 
-    @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING, description = "VPC network domain. All networks inside the VPC will belong to this domain")
+    @Parameter(name = ApiConstants.NETWORK_DOMAIN, type = CommandType.STRING,
+            description = "VPC network domain. All networks inside the VPC will belong to this domain")
     private String networkDomain;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    @Parameter(name = ApiConstants.START, type = CommandType.BOOLEAN,
+            description = "If set to false, the VPC won't start (VPC VR will not get allocated) until its first network gets implemented. " +
+                    "True by default.", since = "4.3")
+    private Boolean start;
+
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
 
     public String getAccountName() {
         return accountName;
@@ -117,6 +123,13 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd {
         return networkDomain;
     }
 
+    public boolean isStart() {
+        if (start != null) {
+            return start;
+        }
+        return true;
+    }
+
     @Override
     public void create() throws ResourceAllocationException {
         Vpc vpc = _vpcService.createVpc(getZoneId(), getVpcOffering(), getEntityOwnerId(), getVpcName(), getDisplayText(), getCidr(), getNetworkDomain());
@@ -131,10 +144,14 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         Vpc vpc = null;
+        boolean success = true;
         try {
-            if (_vpcService.startVpc(getEntityId(), true)) {
-                vpc = _entityMgr.findById(Vpc.class, getEntityId());
+            if (isStart()) {
+                success = _vpcService.startVpc(getEntityId(), true);
+            } else {
+                s_logger.debug("Not starting VPC as " + ApiConstants.START + "=false was passed to the API");
             }
+            vpc = _entityMgr.findById(Vpc.class, getEntityId());
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
@@ -147,7 +164,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd {
             throw new ServerApiException(ApiErrorCode.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         }
 
-        if (vpc != null) {
+        if (vpc != null && success) {
             VpcResponse response = _responseGenerator.createVpcResponse(vpc);
             response.setResponseName(getCommandName());
             setResponseObject(response);
