@@ -387,7 +387,7 @@
                             async: false,
                             success: function(json) {
                                 args.response.success({
-                                    data: $(json.listhypervisorsresponse.hypervisor).map(function(index, hypervisor) {                                                	
+                                    data: $(json.listhypervisorsresponse.hypervisor).map(function(index, hypervisor) {                                              	
                                     	var totalHostCount = 0;                                                	
                                     	var currentPage = 1;
                                     	var returnedHostCount = 0;
@@ -8648,6 +8648,16 @@
                                 },
                                 routerCount: {
                                 	label: 'Total of Virtual Routers'
+                                },
+                                routerRequiresUpgrade: {
+                                	label: 'Virtual Routers require upgrade',
+                                	converter: function(args) {                                		
+                                		if (args > 0) {
+                                			return 'Yes';
+                                		} else {
+                                			return 'No';
+                                		}
+                                	}
                                 }
                             },
 
@@ -8680,8 +8690,41 @@
     	                                            success: function(json) {
     	                                            	if (json.listroutersresponse.count != undefined) {
     	                                            		zoneObjs[i].routerCount = json.listroutersresponse.count;    
+    	                                            		    	                                            		
+    	                                            		var routerCountFromAllPages = zoneObjs[i].routerCount;                                                	
+    	                                                	var currentPage = 1;
+    	                                                	var routerCountFromFirstPageToCurrentPage = 0;  
+    	                                                	var routerRequiresUpgrade = 0;    	                                                	                                                	
+    	                                                	var callListApiWithPage = function() {                                                		
+    	                                                		$.ajax({
+    	                                        					url: createURL('listRouters'),
+    	                                                    		async: false,
+    	                                                    		data: {    	                                                    			
+    	                                                    			zoneid: zoneObjs[i].id,
+    	                                                    			page: currentPage,
+    	                                                    	        pagesize: pageSize //global variable
+    	                                                    		},
+    	                                                    		success: function(json) {                           			
+    	                                                    			routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;    	                                                    			                                                    			
+    	                                                    			var items = json.listroutersresponse.router;
+    	                                                    			for (var i = 0; i < items.length; i++) {    	                                                    				
+    	                                                    				if (items[i].requiresupgrade) {
+    	                                                    					routerRequiresUpgrade++;
+    	                                                    				}
+    	                                                    			}      	                                                    			
+    	                                                    			if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
+    	                                                    				currentPage++;
+    	                                                    				callListApiWithPage();
+    	                                                    			}                                                    			
+    	                                                    		}
+    	                                        				});                                                		
+    	                                                	}    	                                                	
+    	                                                	callListApiWithPage();                  	
+    	                                                	zoneObjs[i].routerRequiresUpgrade = routerRequiresUpgrade;
+    	                                            		
     	                                            	} else {
     	                                            		zoneObjs[i].routerCount = 0;
+    	                                            		zoneObjs[i].routerRequiresUpgrade = 0;
     	                                            	}    	                                            		                                                
     	                                            }
     	                                        });
