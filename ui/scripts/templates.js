@@ -423,6 +423,7 @@
 
                                     isdynamicallyscalable: {
                                         label: "Dynamically Scalable",
+                                        docID: 'helpRegisterTemplateDynamicallyScalable',
                                         isBoolean: true
                                     },
 
@@ -441,6 +442,7 @@
                                     },
                                     isrouting: {
                                         label: 'label.routing',
+                                        docID: 'helpRegisterTemplateRouting',
                                         isBoolean: true,
                                         isHidden: true
                                     }
