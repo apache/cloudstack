@@ -34,6 +34,7 @@ import org.springframework.stereotype.Component;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.snapshot.CreateSnapshotCmd;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
@@ -82,6 +83,8 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     protected VolumeDao _volsDao;
     @Inject
     protected ConfigurationDao _configDao;
+    @Inject
+    protected AsyncJobDispatcher _asyncDispatcher;
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
     private int _snapshotPollInterval;
@@ -254,6 +257,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
                     new AsyncJobVO(UUID.randomUUID().toString(), User.UID_SYSTEM, volume.getAccountId(), CreateSnapshotCmd.class.getName(), ApiGsonHelper.getBuilder()
                         .create()
                         .toJson(params), cmd.getEntityId(), cmd.getInstanceType() != null ? cmd.getInstanceType().toString() : null);
+                job.setDispatcher(_asyncDispatcher.getName());
 
                 long jobId = _asyncMgr.submitAsyncJob(job);
 
