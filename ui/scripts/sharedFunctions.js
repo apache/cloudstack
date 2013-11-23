@@ -1340,6 +1340,15 @@ var processPropertiesInImagestoreObject = function(jsonObj) {
         return url;
     }
 
+    function glusterURL(server, path) {
+        var url;
+        if (server.indexOf("://") == -1)
+            url = "gluster://" + server + path;
+        else
+            url = server + path;
+        return url;
+    }
+
 
     //VM Instance
 

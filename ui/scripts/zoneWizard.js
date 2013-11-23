@@ -1486,6 +1486,10 @@
                                     id: "clvm",
                                     description: "CLVM"
                                 });
+                                items.push({
+                                    id: "gluster",
+                                    description: "Gluster"
+                                });
                                 args.response.success({
                                     data: items
                                 });
@@ -1587,8 +1591,9 @@
                                     
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "SMB") { //"SMB" show almost the same fields as "nfs" does, except 3 more SMB-specific fields.                                                  
-                                	$form.find('[rel=server]').css('display', 'block');                                    
+                               	    $form.find('[rel=server]').css('display', 'block');                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("");
                                     
                                     $form.find('[rel=path]').css('display', 'block');                                   
@@ -1604,6 +1609,8 @@
                                     
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "ocfs2") { //ocfs2 is the same as nfs, except no server field.                                    
                                     $form.find('[rel=server]').hide();                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("");
@@ -1621,6 +1628,8 @@
                                    
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "PreSetup") {                                   
                                     $form.find('[rel=server]').hide();                                   
                                     $form.find('[rel=server]').find(".value").find("input").val("localhost");
@@ -1639,6 +1648,8 @@
                                     
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "iscsi") {                                    
                                     $form.find('[rel=server]').css('display', 'block');                                   
                                     $form.find('[rel=server]').find(".value").find("input").val("");
@@ -1656,6 +1667,8 @@
                                     
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if ($(this).val() == "clvm") {                                    
                                     $form.find('[rel=server]').hide();                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("localhost");
@@ -1673,6 +1686,8 @@
                                    
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "vmfs") {                                    
                                     $form.find('[rel=server]').css('display', 'block');                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("");
@@ -1690,6 +1705,8 @@
                                    
                                     $form.find('[rel=vCenterDataCenter]').css('display', 'block');
                                     $form.find('[rel=vCenterDataStore]').css('display', 'block');
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 } else if (protocol == "SharedMountPoint") { //"SharedMountPoint" show the same fields as "nfs" does.                                   
                                     $form.find('[rel=server]').hide();                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("localhost");
@@ -1707,6 +1724,27 @@
                                    
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
+                                } else if (protocol == "gluster") {
+                                    $form.find('[rel=server]').css('display', 'block');
+                                    $form.find('[rel=server]').find(".value").find("input").val("");
+
+                                    $form.find('[rel=path]').hide();
+                                   
+                                    $form.find('[rel=smbUsername]').hide();
+                                    $form.find('[rel=smbPassword]').hide();
+                                    $form.find('[rel=smbDomain]').hide();
+
+                                    $form.find('[rel=iqn]').hide();
+                                    $form.find('[rel=lun]').hide();
+
+                                    $form.find('[rel=volumegroup]').hide();
+
+                                    $form.find('[rel=vCenterDataCenter]').hide();
+                                    $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').css('display', 'block');
                                 } else {                                    
                                     $form.find('[rel=server]').css('display', 'block');                                    
                                     $form.find('[rel=server]').find(".value").find("input").val("");
@@ -1722,6 +1760,8 @@
                                     
                                     $form.find('[rel=vCenterDataCenter]').hide();
                                     $form.find('[rel=vCenterDataStore]').hide();
+
+                                    $form.find('[rel=glustervolume]').hide();
                                 }
                             });
 
@@ -1804,6 +1844,15 @@
                     },
                     vCenterDataStore: {
                         label: 'label.vcenter.datastore',
+                        validation: {
+                            required: true
+                        },
+                        isHidden: true
+                    },
+
+                    //gluster
+                    glustervolume: {
+                        label: 'label.gluster.volume',
                         validation: {
                             required: true
                         },

@@ -15171,6 +15171,10 @@
                                                     id: "clvm",
                                                     description: "CLVM"
                                                 });
+                                                items.push({
+                                                    id: "gluster",
+                                                    description: "Gluster"
+                                                });
                                                 args.response.success({
                                                     data: items
                                                 });
@@ -15277,6 +15281,8 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
                                                 } else if (protocol == "SMB") {
                                                     //"SMB" show almost the same fields as "nfs" does, except 3 more SMB-specific fields.
                                                     $form.find('.form-item[rel=server]').css('display', 'inline-block');
@@ -15302,6 +15308,8 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
                                                 } else if (protocol == "ocfs2") {
                                                     //ocfs2 is the same as nfs, except no server field.
                                                     $form.find('.form-item[rel=server]').hide();
@@ -15327,6 +15335,8 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
                                                 } else if (protocol == "PreSetup") {
                                                     $form.find('.form-item[rel=server]').hide();
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("localhost");
@@ -15351,6 +15361,8 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
                                                 } else if (protocol == "iscsi") {
                                                     $form.find('.form-item[rel=server]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("");
@@ -15373,6 +15385,8 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
                                                 } else if ($(this).val() == "clvm") {
                                                     $form.find('.form-item[rel=server]').hide();
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("localhost");
@@ -15395,6 +15409,8 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
                                                 } else if (protocol == "vmfs") {
                                                     $form.find('.form-item[rel=server]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("");
@@ -15417,6 +15433,8 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
                                                 } else if (protocol == "SharedMountPoint") {
                                                     //"SharedMountPoint" show the same fields as "nfs" does.
                                                     $form.find('.form-item[rel=server]').hide();
@@ -15442,6 +15460,8 @@
                                                     $form.find('.form-item[rel=rbdpool]').hide();
                                                     $form.find('.form-item[rel=rbdid]').hide();
                                                     $form.find('.form-item[rel=rbdsecret]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
                                                 } else if (protocol == "rbd") {
                                                     $form.find('.form-item[rel=rbdmonitor]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=rbdmonitor]').find(".name").find("label").text("RADOS Monitor:");
@@ -15466,6 +15486,33 @@
                                                     $form.find('.form-item[rel=smbUsername]').hide();
                                                     $form.find('.form-item[rel=smbPassword]').hide();
                                                     $form.find('.form-item[rel=smbDomain]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
+                                                } else if (protocol == "gluster") {
+                                                    $form.find('.form-item[rel=server]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=server]').find(".value").find("input");
+
+                                                    $form.find('.form-item[rel=glustervolume]').css('display', 'inline-block');
+                                                    $form.find('.form-item[rel=glustervolume]').find(".name").find("label").text("Volume:");
+
+                                                    $form.find('.form-item[rel=path]').hide();
+
+                                                    $form.find('.form-item[rel=smbUsername]').hide();
+                                                    $form.find('.form-item[rel=smbPassword]').hide();
+                                                    $form.find('.form-item[rel=smbDomain]').hide();
+
+                                                    $form.find('.form-item[rel=iqn]').hide();
+                                                    $form.find('.form-item[rel=lun]').hide();
+
+                                                    $form.find('.form-item[rel=volumegroup]').hide();
+
+                                                    $form.find('.form-item[rel=vCenterDataCenter]').hide();
+                                                    $form.find('.form-item[rel=vCenterDataStore]').hide();
+
+                                                    $form.find('.form-item[rel=rbdmonitor]').hide();
+                                                    $form.find('.form-item[rel=rbdpool]').hide();
+                                                    $form.find('.form-item[rel=rbdid]').hide();
+                                                    $form.find('.form-item[rel=rbdsecret]').hide();
                                                 } else {
                                                     $form.find('.form-item[rel=server]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=server]').find(".value").find("input").val("");
@@ -15486,6 +15533,8 @@
                                                     $form.find('.form-item[rel=smbUsername]').hide();
                                                     $form.find('.form-item[rel=smbPassword]').hide();
                                                     $form.find('.form-item[rel=smbDomain]').hide();
+
+                                                    $form.find('.form-item[rel=glustervolume]').hide();
                                                 }
                                             });
                                             
@@ -15613,7 +15662,16 @@
                                         },
                                         isHidden: true
                                     },
-                                    
+
+                                    //gluster
+                                    glustervolume: {
+                                        label: 'label.gluster.volume',
+                                        validation: {
+                                            required: true
+                                        },
+                                        isHidden: true
+                                    },
+
                                     //always appear (begin)
                                     storageTags: {
                                         label: 'label.storage.tags',
@@ -15698,6 +15756,12 @@
                                     path = "/" + path;
                                     path += "/" + args.data.vCenterDataStore;
                                     url = vmfsURL("dummy", path);
+                                } else if (args.data.protocol == "gluster") {
+                                    var glustervolume = args.data.glustervolume;
+
+                                    if (glustervolume.substring(0, 1) != "/")
+                                        glustervolume = "/" + glustervolume;
+                                    url = glusterURL(server, glustervolume);
                                 } else {
                                     var iqn = args.data.iqn;
                                     if (iqn.substring(0, 1) != "/")
@@ -16903,8 +16967,7 @@
                                                 }
                                             },
                                             //SMB (end)
-                                            
-                                            
+
                                             //S3 (begin)
                                             accesskey: {
                                                 label: 'label.s3.access_key',

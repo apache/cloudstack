@@ -607,6 +607,7 @@ dictionary = {
 'label.gateway': '<fmt:message key="label.gateway" />',
 'label.general.alerts': '<fmt:message key="label.general.alerts" />',
 'label.generating.url': '<fmt:message key="label.generating.url" />',
+'label.gluster.volume': '<fmt:message key="label.gluster.volume" />',
 'label.go.step.2': '<fmt:message key="label.go.step.2" />',
 'label.go.step.3': '<fmt:message key="label.go.step.3" />',
 'label.go.step.4': '<fmt:message key="label.go.step.4" />',
