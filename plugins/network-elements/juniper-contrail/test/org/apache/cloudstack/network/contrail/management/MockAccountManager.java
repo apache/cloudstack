@@ -397,6 +397,22 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
         // TODO Auto-generated method stub
         return false;
     }
+
+    @Override
+    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedDomains, List<Long> permittedAccounts,
+            List<Long> permittedResources, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation,
+            String action) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, SearchCriteria<? extends ControlledEntity> aclSc, boolean isRecursive,
+            List<Long> permittedDomains, List<Long> permittedAccounts, List<Long> permittedResources, ListProjectResourcesCriteria listProjectResourcesCriteria) {
+        // TODO Auto-generated method stub
+
+    }
+
     
 
 }

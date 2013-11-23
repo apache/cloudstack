@@ -689,4 +689,22 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         return roles;
     }
 
+    @Override
+    public List<Long> getGrantedDomains(long accountId, AclEntityType entityType, String action) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<Long> getGrantedAccounts(long accountId, AclEntityType entityType, String action) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<Long> getGrantedResources(long accountId, AclEntityType entityType, String action) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }

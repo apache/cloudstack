@@ -2537,4 +2537,132 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return _userAccountDao.getUserByApiKey(apiKey);
     }
 
+    @Override
+    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedDomains, List<Long> permittedAccounts,
+            List<Long> permittedResources, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation,
+            String action) {
+        Long domainId = domainIdRecursiveListProject.first();
+        if (domainId != null) {
+            // look for entity in the given domain
+            Domain domain = _domainDao.findById(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
+            }
+            // check permissions
+            checkAccess(caller, domain);
+        }
+
+        if (id != null) {
+            // look for an individual entity, no other permission criteria are needed
+            permittedResources.add(id);
+            return;
+        }
+
+        if (accountName != null) {
+            if (projectId != null) {
+                throw new InvalidParameterValueException("Account and projectId can't be specified together");
+            }
+
+            Account userAccount = null;
+            Domain domain = null;
+            if (domainId != null) {
+                userAccount = _accountDao.findActiveAccount(accountName, domainId);
+                domain = _domainDao.findById(domainId);
+            } else {
+                userAccount = _accountDao.findActiveAccount(accountName, caller.getDomainId());
+                domain = _domainDao.findById(caller.getDomainId());
+            }
+
+            if (userAccount != null) {
+                //check permissions
+                checkAccess(caller, null, false, userAccount);
+                permittedAccounts.add(userAccount.getId());
+            } else {
+                throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domain.getUuid());
+            }
+        }
+
+        // set project information
+        if (projectId != null) {
+            if (!forProjectInvitation) {
+                if (projectId.longValue() == -1) {
+                    if (isNormalUser(caller.getId())) {
+                        permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
+                    } else {
+                        domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.ListProjectResourcesOnly);
+                    }
+                } else {
+                    Project project = _projectMgr.getProject(projectId);
+                    if (project == null) {
+                        throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+                    }
+                    if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
+                        throw new PermissionDeniedException("Account " + caller + " can't access project id=" + projectId);
+                    }
+                    permittedAccounts.add(project.getProjectAccountId());
+                }
+            }
+        } else {
+            domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.SkipProjectResources);
+
+            // search for policy permissions associated with caller to get all his authorized domains, accounts, and resources
+            // Assumption: if a domain is in grantedDomains, then all the accounts under this domain will not be returned in "grantedAccounts". Similarly, if an account
+            // is in grantedAccounts, then all the resources owned by this account will not be returned in "grantedResources".
+            List<Long> grantedDomains = _aclService.getGrantedDomains(caller.getId(), AclEntityType.VM, action);
+            List<Long> grantedAccounts = _aclService.getGrantedAccounts(caller.getId(), AclEntityType.VM, action);
+            List<Long> grantedResources = _aclService.getGrantedResources(caller.getId(), AclEntityType.VM, action);
+
+            if (domainId != null) {
+                // specific domain is specified
+                if (grantedDomains.contains(domainId)) {
+                    permittedDomains.add(domainId);
+                } else {
+                    for (Long acctId : grantedAccounts) {
+                        Account acct = _accountDao.findById(acctId);
+                        if (acct != null && acct.getDomainId() == domainId) {
+                            permittedAccounts.add(acctId);
+                        }
+                    }
+                    permittedResources.addAll(grantedResources);
+                }
+            } else if (permittedAccounts.isEmpty()) {
+                // neither domain nor account is not specified
+                permittedDomains.addAll(grantedDomains);
+                permittedAccounts.addAll(grantedAccounts);
+                permittedResources.addAll(grantedResources);
+            }
+        }
+
+    }
+
+    @Override
+    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, SearchCriteria<? extends ControlledEntity> aclSc, boolean isRecursive,
+            List<Long> permittedDomains,
+            List<Long> permittedAccounts, List<Long> permittedResources, ListProjectResourcesCriteria listProjectResourcesCriteria) {
+
+        if (listProjectResourcesCriteria != null) {
+            sc.addAnd("accountType", SearchCriteria.Op.EQ, Account.ACCOUNT_TYPE_PROJECT);
+        }
+
+        // Note that this may have limitations on number of permitted domains, accounts, or resource ids are allowed due to sql package size limitation
+        if (!permittedDomains.isEmpty()) {
+            if (isRecursive) {
+                for (int i = 0; i < permittedDomains.size(); i++) {
+                    Domain domain = _domainDao.findById(permittedDomains.get(i));
+                    aclSc.addOr("domainPath" + i, SearchCriteria.Op.LIKE, domain.getPath() + "%");
+                }
+            } else {
+                aclSc.addOr("domainIdIN", SearchCriteria.Op.IN, permittedDomains.toArray());
+            }
+        }
+        if (!permittedAccounts.isEmpty()) {
+            aclSc.addOr("accountIdIN", SearchCriteria.Op.IN, permittedAccounts.toArray());
+        }
+        if (!permittedResources.isEmpty()) {
+            aclSc.addOr("idIn", SearchCriteria.Op.IN, permittedResources.toArray());
+        }
+
+        sc.addAnd("accountIdIn", SearchCriteria.Op.SC, aclSc);
+    }
+
 }

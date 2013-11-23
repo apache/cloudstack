@@ -20,8 +20,8 @@ import java.util.List;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
-import com.cloud.utils.Pair;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 
 public interface AclService {
 
@@ -88,5 +88,11 @@ public interface AclService {
     boolean isAPIAccessibleForRoles(String apiName, List<AclRole> roles);
 
     List<AclRole> getEffectiveRoles(Account caller, ControlledEntity entity);
+
+    List<Long> getGrantedDomains(long accountId, AclEntityType entityType, String action);
+
+    List<Long> getGrantedAccounts(long accountId, AclEntityType entityType, String action);
+
+    List<Long> getGrantedResources(long accountId, AclEntityType entityType, String action);
 
 }

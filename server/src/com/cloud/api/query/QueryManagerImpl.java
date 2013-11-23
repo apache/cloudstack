@@ -29,12 +29,10 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.AclGroup;
 import org.apache.cloudstack.acl.AclRole;
 import org.apache.cloudstack.acl.AclService;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.dao.AclGroupDao;
 import org.apache.cloudstack.acl.dao.AclRoleDao;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
@@ -749,20 +747,17 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     private Pair<List<UserVmJoinVO>, Integer> searchForUserVMsInternal(ListVMsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
-
-        // get granted or denied entity instance permissions
-        Pair<List<Long>, List<Long>> idPair = _aclService.getAclEntityPermission(caller.getId(), AclEntityType.VM.toString(), AccessType.ListEntry);
-        List<Long> grantedIds = idPair.first();
-        List<Long> revokedIds = idPair.second();
+        List<Long> permittedResources = new ArrayList<Long>();
 
         boolean listAll = cmd.listAll();
         Long id = cmd.getId();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts,
-                domainIdRecursiveListProject, listAll, false);
-        Long domainId = domainIdRecursiveListProject.first();
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
+                domainIdRecursiveListProject, listAll, false, "listVirtualMachines");
+        //Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
@@ -772,10 +767,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         // first search distinct vm id by using query criteria and pagination
         SearchBuilder<UserVmJoinVO> sb = _userVmJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct ids
-
-        // build acl search builder condition
-        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria, grantedIds, revokedIds);
 
         Map<String, String> tags = cmd.getTags();
         String hypervisor = cmd.getHypervisor();
@@ -854,10 +845,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         // populate the search criteria with the values passed in
         SearchCriteria<UserVmJoinVO> sc = sb.create();
+        SearchCriteria<UserVmJoinVO> aclSc = _userVmJoinDao.createSearchCriteria();
 
         // building ACL search criteria
-        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria, grantedIds, revokedIds);
+        _accountMgr.buildACLViewSearchCriteria(sc, aclSc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         if (tags != null && !tags.isEmpty()) {
             SearchCriteria<UserVmJoinVO> tagSc = _userVmJoinDao.createSearchCriteria();

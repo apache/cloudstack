@@ -36,15 +36,6 @@ public interface QueryChecker extends Adapter {
     List<Long> getAuthorizedDomains(Account caller, AclEntityType entityType);
 
     /**
-    * List denied domains for the caller, given a specific entity type.
-    *
-    * @param caller account to check against.
-    * @param entityType entity type
-    * @return list of domain Ids granted to the caller account.
-    */
-    List<Long> getDeniedDomains(Account caller, AclEntityType entityType);
-
-    /**
     * List granted accounts for the caller, given a specific entity type.
     *
     * @param caller account to check against.
@@ -53,14 +44,6 @@ public interface QueryChecker extends Adapter {
     */
     List<Long> getAuthorizedAccounts(Account caller, AclEntityType entityType);
 
-    /**
-    * List denied accounts for the caller, given a specific entity type.
-    *
-    * @param caller account to check against.
-    * @param entityType entity type
-    * @return list of domain Ids granted to the caller account.
-    */
-    List<Long> getDeniedAccounts(Account caller, AclEntityType entityType);
 
     /**
     * List granted resources for the caller, given a specific entity type.
@@ -71,13 +54,5 @@ public interface QueryChecker extends Adapter {
     */
     List<Long> getAuthorizedResources(Account caller, AclEntityType entityType);
 
-    /**
-    * List denied resources for the caller, given a specific entity type.
-    *
-    * @param caller account to check against.
-    * @param entityType entity type
-    * @return list of domain Ids granted to the caller account.
-    */
-    List<Long> getDeniedResources(Account caller, AclEntityType entityType);
 
 }

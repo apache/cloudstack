@@ -107,6 +107,15 @@ public interface AccountManager extends AccountService {
 	void buildACLSearchParameters(Account caller, Long id,
 			String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation);
 	
+    // new ACL model routine for query api based on db views
+    void buildACLSearchParameters(Account caller, Long id,
+            String accountName, Long projectId, List<Long> permittedDomains, List<Long> permittedAccounts, List<Long> permittedResources,
+            Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation, String action);
+
+    void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, SearchCriteria<? extends ControlledEntity> aclSc, boolean isRecursive,
+            List<Long> permittedDomains, List<Long> permittedAccounts,
+            List<Long> permittedResources, ListProjectResourcesCriteria listProjectResourcesCriteria);
+
     /**
      * Deletes a user by userId
      *
