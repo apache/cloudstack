@@ -51,6 +51,7 @@ import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStore
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.volume.ListVolumesCmdByAdmin;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
@@ -1614,7 +1615,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Pair<List<VolumeJoinVO>, Integer> result = searchForVolumesInternal(cmd);
         ListResponse<VolumeResponse> response = new ListResponse<VolumeResponse>();
 
-        List<VolumeResponse> volumeResponses = ViewResponseHelper.createVolumeResponse(result.first().toArray(
+        ResponseView respView = ResponseView.Restricted;
+        if (cmd instanceof ListVolumesCmdByAdmin) {
+            respView = ResponseView.Full;
+        }
+
+        List<VolumeResponse> volumeResponses = ViewResponseHelper.createVolumeResponse(respView, result.first().toArray(
                 new VolumeJoinVO[result.first().size()]));
         response.setResponses(volumeResponses, result.second());
         return response;
@@ -1623,7 +1629,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     private Pair<List<VolumeJoinVO>, Integer> searchForVolumesInternal(ListVolumesCmd cmd) {
 
         Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
 
         Long id = cmd.getId();
         Long vmInstanceId = cmd.getVirtualMachineId();
@@ -1631,20 +1639,16 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         String keyword = cmd.getKeyword();
         String type = cmd.getType();
         Map<String, String> tags = cmd.getTags();
-        boolean isRootAdmin = _accountMgr.isRootAdmin(caller.getType());
         Long storageId = cmd.getStorageId();
 
         Long zoneId = cmd.getZoneId();
-        Long podId = null;
-        if (_accountMgr.isAdmin(caller.getType())) {
-            podId = cmd.getPodId();
-        }
+        Long podId = cmd.getPodId();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts,
-                domainIdRecursiveListProject, cmd.listAll(), false);
-        Long domainId = domainIdRecursiveListProject.first();
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
+                domainIdRecursiveListProject, cmd.listAll(), false, "listVolumes");
+//        Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         Filter searchFilter = new Filter(VolumeJoinVO.class, "created", false, cmd.getStartIndex(),
@@ -1659,8 +1663,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         // number of
         // records with
         // pagination
-        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
+
 
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -1675,7 +1678,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         // display UserVM volumes only
         sb.and().op("type", sb.entity().getVmType(), SearchCriteria.Op.NIN);
         sb.or("nulltype", sb.entity().getVmType(), SearchCriteria.Op.NULL);
-        if(!isRootAdmin){
+        if (!(cmd instanceof ListVolumesCmdByAdmin)) {
             sb.and("displayVolume", sb.entity().isDisplayVolume(), SearchCriteria.Op.EQ);
         }
         sb.cp();
@@ -1683,8 +1686,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         // now set the SC criteria...
         SearchCriteria<VolumeJoinVO> sc = sb.create();
-        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
+        SearchCriteria<VolumeJoinVO> aclSc = _volumeJoinDao.createSearchCriteria();
+
+        // building ACL search criteria
+        _accountMgr.buildACLViewSearchCriteria(sc, aclSc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         if (keyword != null) {
             SearchCriteria<VolumeJoinVO> ssc = _volumeJoinDao.createSearchCriteria();
@@ -1732,7 +1737,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sc.setParameters("storageId", storageId);
         }
 
-        if(!isRootAdmin){
+        if (!(cmd instanceof ListVolumesCmdByAdmin)) {
             sc.setParameters("displayVolume", 1);
         }
 

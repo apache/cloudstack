@@ -67,7 +67,7 @@ public interface VolumeApiService {
     /**
      * Uploads the volume to secondary storage
      *
-     * @param UploadVolumeCmd cmd
+     * @param UploadVolumeCmdByAdmin cmd
      *
      * @return Volume object
      */

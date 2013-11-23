@@ -266,17 +266,17 @@ public class ViewResponseHelper {
         return new ArrayList<HostForMigrationResponse>(vrDataList.values());
     }
 
-    public static List<VolumeResponse> createVolumeResponse(VolumeJoinVO... volumes) {
+    public static List<VolumeResponse> createVolumeResponse(ResponseView view, VolumeJoinVO... volumes) {
         Hashtable<Long, VolumeResponse> vrDataList = new Hashtable<Long, VolumeResponse>();
         for (VolumeJoinVO vr : volumes) {
             VolumeResponse vrData = vrDataList.get(vr.getId());
             if ( vrData == null ){
                 // first time encountering this volume
-                vrData = ApiDBUtils.newVolumeResponse(vr);
+                vrData = ApiDBUtils.newVolumeResponse(view, vr);
             }
             else{
                 // update tags
-                vrData = ApiDBUtils.fillVolumeDetails(vrData, vr);
+                vrData = ApiDBUtils.fillVolumeDetails(view, vrData, vr);
             }
             vrDataList.put(vr.getId(), vrData);
         }

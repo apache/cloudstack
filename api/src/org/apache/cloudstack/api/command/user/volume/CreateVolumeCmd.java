@@ -16,12 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -31,14 +34,12 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 
-@APICommand(name = "createVolume", responseObject=VolumeResponse.class, description="Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.")
+@APICommand(name = "createVolume", responseObject = VolumeResponse.class, description = "Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.", responseView = ResponseView.Restricted)
 public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());
     private static final String s_name = "createvolumeresponse";
@@ -175,10 +176,10 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException{
 
-        Volume volume = this._volumeService.allocVolume(this);
+        Volume volume = _volumeService.allocVolume(this);
         if (volume != null) {
-            this.setEntityId(volume.getId());
-            this.setEntityUuid(volume.getUuid());
+            setEntityId(volume.getId());
+            setEntityUuid(volume.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create volume");
         }
@@ -189,7 +190,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
         CallContext.current().setEventDetails("Volume Id: "+getEntityId()+((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId()));
         Volume volume = _volumeService.createVolume(this);
         if (volume != null) {
-            VolumeResponse response = _responseGenerator.createVolumeResponse(volume);
+            VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, volume);
             //FIXME - have to be moved to ApiResponseHelper
             if (getSnapshotId() != null) {
                 Snapshot snap = _entityMgr.findById(Snapshot.class, getSnapshotId());
@@ -204,7 +205,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
                 }
             }
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create a volume");
         }

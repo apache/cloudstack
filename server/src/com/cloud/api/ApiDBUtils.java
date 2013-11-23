@@ -1560,13 +1560,13 @@ public class ApiDBUtils {
         return _hostJoinDao.newHostView(vr);
     }
 
-    public static VolumeResponse newVolumeResponse(VolumeJoinVO vr) {
-        return _volJoinDao.newVolumeResponse(vr);
+    public static VolumeResponse newVolumeResponse(ResponseView view, VolumeJoinVO vr) {
+        return _volJoinDao.newVolumeResponse(view, vr);
     }
 
 
-    public static VolumeResponse fillVolumeDetails(VolumeResponse vrData, VolumeJoinVO vr){
-        return _volJoinDao.setVolumeResponse(vrData, vr);
+    public static VolumeResponse fillVolumeDetails(ResponseView view, VolumeResponse vrData, VolumeJoinVO vr) {
+        return _volJoinDao.setVolumeResponse(view, vrData, vr);
     }
 
     public static List<VolumeJoinVO> newVolumeView(Volume vr){

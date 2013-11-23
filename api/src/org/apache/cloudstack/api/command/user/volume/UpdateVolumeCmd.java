@@ -16,23 +16,25 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.Volume;
 
-@APICommand(name = "updateVolume", description="Updates the volume.", responseObject=VolumeResponse.class)
+@APICommand(name = "updateVolume", description = "Updates the volume.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted)
 public class UpdateVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVolumeCmd.class.getName());
     private static final String s_name = "updatevolumeresponse";
@@ -90,10 +92,12 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
         return s_name;
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.Volume;
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }
@@ -117,7 +121,7 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
         StringBuilder desc = new StringBuilder("Updating volume: ");
         desc.append(getId()).append(" with");
         if (getPath() != null) {
-            desc.append(" path " + getPath());            
+            desc.append(" path " + getPath());
         }
         if (getStorageId() != null) {
             desc.append(", storage id " + getStorageId());
@@ -134,9 +138,9 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
         CallContext.current().setEventDetails("Volume Id: "+getId());
         Volume result = _volumeService.updateVolume(getId(), getPath(), getState(), getStorageId(), getDisplayVolume());
         if (result != null) {
-            VolumeResponse response = _responseGenerator.createVolumeResponse(result);
+            VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update volume");
         }

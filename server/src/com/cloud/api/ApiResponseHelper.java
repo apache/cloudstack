@@ -920,9 +920,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public VolumeResponse createVolumeResponse(Volume volume) {
+    public VolumeResponse createVolumeResponse(ResponseView view, Volume volume) {
         List<VolumeJoinVO> viewVrs = ApiDBUtils.newVolumeView(volume);
-        List<VolumeResponse> listVrs = ViewResponseHelper.createVolumeResponse(viewVrs.toArray(new VolumeJoinVO[viewVrs.size()]));
+        List<VolumeResponse> listVrs = ViewResponseHelper.createVolumeResponse(view, viewVrs.toArray(new VolumeJoinVO[viewVrs.size()]));
         assert listVrs != null && listVrs.size() == 1 : "There should be one volume returned";
         return listVrs.get(0);
     }

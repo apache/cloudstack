@@ -14,24 +14,34 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.query.dao;
+package org.apache.cloudstack.api.command.admin.volume;
 
-import java.util.List;
-
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
 import org.apache.cloudstack.api.response.VolumeResponse;
 
-import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.storage.Volume;
-import com.cloud.utils.db.GenericDao;
 
-public interface VolumeJoinDao extends GenericDao<VolumeJoinVO, Long> {
 
-    VolumeResponse newVolumeResponse(ResponseView view, VolumeJoinVO vol);
+@APICommand(name = "migrateVolume", description = "Migrate volume", responseObject = VolumeResponse.class, since = "3.0.0", responseView = ResponseView.Full)
+public class MigrateVolumeCmdByAdmin extends MigrateVolumeCmd {
 
-    VolumeResponse setVolumeResponse(ResponseView view, VolumeResponse volData, VolumeJoinVO vol);
 
-    List<VolumeJoinVO> newVolumeView(Volume vol);
+    @Override
+    public void execute(){
+    	Volume result;
 
-    List<VolumeJoinVO> searchByIds(Long... ids);
+    	result = _volumeService.migrateVolume(this);
+    	if (result != null) {
+            VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Full, result);
+    		response.setResponseName(getCommandName());
+    		setResponseObject(response);
+    	} else {
+    		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate volume");
+    	}
+    }
+
 }

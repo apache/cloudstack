@@ -259,7 +259,7 @@ public interface ResponseGenerator {
 
     ZoneResponse createZoneResponse(DataCenter dataCenter, Boolean showCapacities);
 
-    VolumeResponse createVolumeResponse(Volume volume);
+    VolumeResponse createVolumeResponse(ResponseView view, Volume volume);
 
     InstanceGroupResponse createInstanceGroupResponse(InstanceGroup group);
 

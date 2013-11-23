@@ -21,17 +21,17 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
 
-@APICommand(name = "migrateVolume", description="Migrate volume", responseObject=VolumeResponse.class, since="3.0.0")
+@APICommand(name = "migrateVolume", description = "Migrate volume", responseObject = VolumeResponse.class, since = "3.0.0", responseView = ResponseView.Restricted)
 public class MigrateVolumeCmd extends BaseAsyncCmd {
     private static final String s_name = "migratevolumeresponse";
 
@@ -102,9 +102,9 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
 
     	result = _volumeService.migrateVolume(this);
     	if (result != null) {
-    		VolumeResponse response = _responseGenerator.createVolumeResponse(result);
+            VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, result);
     		response.setResponseName(getCommandName());
-    		this.setResponseObject(response);
+    		setResponseObject(response);
     	} else {
     		throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate volume");
     	}
