@@ -51,7 +51,8 @@ setup(name="Marvin",
         "mysql-connector-python",
         "requests",
         "paramiko",
-        "nose"
+        "nose",
+        "ddt >= 0.4.0"
     ],
     py_modules=['marvin.marvinPlugin'],
     zip_safe=False,
