@@ -202,6 +202,7 @@ import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StaticNat;
@@ -2788,9 +2789,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         UserVmVO vm = _userVmDao.findById(profile.getId());
         _userVmDao.loadDetails(vm);
 
-        final boolean isZoneBasic = (dest.getDataCenter().getNetworkType() == NetworkType.Basic);
-        final Long podId = isZoneBasic ? dest.getPod().getId() : null;
-
         //Asuming we have only one router per network For Now.
         DomainRouterVO router = routers.get(0);
         if (router.getState() != State.Running) {
@@ -2820,7 +2818,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             if (ipInVmsubnet == false) {
                 try {
                     if (network.getTrafficType() == TrafficType.Guest && network.getGuestType() == GuestType.Shared) {
-                        Pod pod = _podDao.findById(vm.getPodIdToDeployIn());
+                        _podDao.findById(vm.getPodIdToDeployIn());
                         Account caller = CallContext.current().getCallingAccount();
                         List<VlanVO> vlanList = _vlanDao.listVlansByNetworkIdAndGateway(network.getId(), nic.getGateway());
                         List<Long> vlanDbIdList = new ArrayList<Long>();
@@ -3471,7 +3469,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             ipList.add(DhcpTO);
             ipAliasVO.setVmId(router.getId());
         }
-        DataCenterVO dcvo = _dcDao.findById(router.getDataCenterId());
+        _dcDao.findById(router.getDataCenterId());
         DnsMasqConfigCommand dnsMasqConfigCmd = new DnsMasqConfigCommand(ipList);
         dnsMasqConfigCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         dnsMasqConfigCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
@@ -3719,6 +3717,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
             rulesTO = new ArrayList<FirewallRuleTO>();
             for (FirewallRule rule : rules) {
+                _rulesDao.loadSourceCidrs((FirewallRuleVO)rule);
                 FirewallRule.TrafficType traffictype = rule.getTrafficType();
                 if (traffictype == FirewallRule.TrafficType.Ingress) {
                     IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
