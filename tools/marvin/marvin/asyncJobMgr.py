@@ -81,7 +81,7 @@ class workThread(threading.Thread):
             if cmd.isAsync == "false":
                 jobstatus.startTime = datetime.datetime.now()
 
-                result = self.connection.make_request(cmd)
+                result = self.connection.marvinRequest(cmd)
                 jobstatus.result = result
                 jobstatus.endTime = datetime.datetime.now()
                 jobstatus.duration =\
