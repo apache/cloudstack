@@ -9070,8 +9070,6 @@
                             }
                         }
                     },
-                    
-                    //???
                     routerGroupByCluster: {
                         id: 'routerGroupByCluster',
                         type: 'select',
@@ -9229,6 +9227,12 @@
                                                         return 'No';
                                                     }
                                                 }
+                                            },
+                                            podname: {
+                                            	label: 'label.pod'
+                                            },
+                                            zonename: {
+                                            	label: 'zone'
                                             }
                                         }],
                                         dataProvider: function (args) {
@@ -9287,8 +9291,7 @@
                                 }
                             }
                         }
-                    }
-                    //???
+                    }                    
                 }
             },
             systemVms: {
