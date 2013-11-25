@@ -530,11 +530,15 @@ class VirtualMachine:
         cmd.id = volume.id
         return apiclient.detachVolume(cmd)
 
-    def add_nic(self, apiclient, networkId):
+    def add_nic(self, apiclient, networkId, ipaddress=None):
         """Add a NIC to a VM"""
         cmd = addNicToVirtualMachine.addNicToVirtualMachineCmd()
         cmd.virtualmachineid = self.id
         cmd.networkid = networkId
+
+        if ipaddress:
+            cmd.ipaddress = ipaddress
+
         return apiclient.addNicToVirtualMachine(cmd)
 
     def remove_nic(self, apiclient, nicId):
