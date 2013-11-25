@@ -114,6 +114,7 @@ namespace HypervResource
 
         private static ILog logger = LogManager.GetLogger(typeof(HypervResourceController));
         private static string systemVmIso;
+        Dictionary<String, String> contextMap = new Dictionary<String, String>();
 
         public static void Initialize()
         {
@@ -175,7 +176,8 @@ namespace HypervResource
                 {
                     result = result,
                     details = "success - NOP",
-                    _reconnect = false
+                    _reconnect = false,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.SetupAnswer);
@@ -220,7 +222,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = result,
-                    details = details
+                    details = details,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.AttachAnswer);
@@ -264,7 +267,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = result,
-                    details = details
+                    details = details,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.DettachAnswer);
@@ -307,7 +311,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = result,
-                    details = details
+                    details = details,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.RebootAnswer);
@@ -369,7 +374,8 @@ namespace HypervResource
                 object ansContent = new
                     {
                         result = result,
-                        details = details
+                        details = details,
+                        contextMap = contextMap
                     };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
@@ -484,7 +490,8 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
-                    volume = volume
+                    volume = volume,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CreateAnswer);
             }
@@ -552,7 +559,8 @@ namespace HypervResource
                     result = result,
                     details = details,
                     templateSize = size,
-                    installPath = newCopyFileName
+                    installPath = newCopyFileName,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.PrimaryStorageDownloadAnswer);
             }
@@ -654,7 +662,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = true,
-                    details = "resource is alive"
+                    details = "resource is alive",
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CheckHealthAnswer);
             }
@@ -672,7 +681,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = true,
-                    details = "NOP, TODO: implement properly"
+                    details = "NOP, TODO: implement properly",
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CheckSshAnswer);
             }
@@ -708,7 +718,8 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
-                    state = state
+                    state = state,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CheckVirtualMachineAnswer);
             }
@@ -725,7 +736,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = true,
-                    details = "Current implementation does not delete local path corresponding to storage pool!"
+                    details = "Current implementation does not delete local path corresponding to storage pool!",
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
             }
@@ -747,7 +759,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = true,
-                    details = "success - NOP"
+                    details = "success - NOP",
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
             }
@@ -772,7 +785,8 @@ namespace HypervResource
                     ansContent = new
                     {
                         result = result,
-                        details = details
+                        details = details,
+                        contextMap = contextMap
                     };
                     return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
                 }
@@ -815,7 +829,8 @@ namespace HypervResource
                     result = result,
                     details = details,
                     templateInfo = tInfo,
-                    poolInfo = poolInfo
+                    poolInfo = poolInfo,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.ModifyStoragePoolAnswer);
@@ -857,7 +872,8 @@ namespace HypervResource
                 object ansContent = new
                  {
                      result = false,
-                     details = "nothing to cleanup in our current implementation"
+                     details = "nothing to cleanup in our current implementation",
+                     contextMap = contextMap
                  };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
             }
@@ -874,7 +890,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = true,
-                    details = (string)null
+                    details = (string)null,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CheckNetworkAnswer);
             }
@@ -891,7 +908,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = true,
-                    details = (string)null
+                    details = (string)null,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.ReadyAnswer);
             }
@@ -924,7 +942,8 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
-                    vm = cmd.vm
+                    vm = cmd.vm,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.StartAnswer);
             }
@@ -956,7 +975,8 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
-                    vm = cmd.vm
+                    vm = cmd.vm,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.StopAnswer);
             }
@@ -976,7 +996,8 @@ namespace HypervResource
                 {
                     result = true,
                     details = "success - NOP for MaintainCommand",
-                    _reconnect = false
+                    _reconnect = false,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.MaintainAnswer);
@@ -997,7 +1018,8 @@ namespace HypervResource
                 {
                     result = true,
                     details = "success - NOP for PingRoutingCommand",
-                    _reconnect = false
+                    _reconnect = false,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
@@ -1018,7 +1040,8 @@ namespace HypervResource
                 {
                     result = true,
                     details = "success - NOP for PingCommand",
-                    _reconnect = false
+                    _reconnect = false,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
@@ -1064,6 +1087,7 @@ namespace HypervResource
                     vmInfos = vmProcessorInfo,
                     result = result,
                     details = details,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.GetVmStatsAnswer);
             }
@@ -1225,7 +1249,8 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
-                    newData = cmd.destTO 
+                    newData = cmd.destTO,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CopyCmdAnswer);
             }
@@ -1338,7 +1363,8 @@ namespace HypervResource
                     result = result,
                     details = details,
                     capacity = capacity,
-                    used = used
+                    used = used,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.GetStorageStatsAnswer);
             }
@@ -1399,7 +1425,8 @@ namespace HypervResource
                 {
                     result = result,
                     hostStats = hostStats,
-                    details = details
+                    details = details,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.GetHostStatsAnswer);
             }
@@ -1430,7 +1457,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = result,
-                    details = details
+                    details = details,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.PrepareForMigrationAnswer);
@@ -1462,7 +1490,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = result,
-                    details = details
+                    details = details,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.MigrateAnswer);
@@ -1553,7 +1582,8 @@ namespace HypervResource
                         poolInfo = pi,
                         guid = pi.uuid,
                         dataCenter = strtRouteCmd.dataCenter,
-                        resourceType = StorageResourceType.STORAGE_POOL.ToString()  // TODO: check encoding
+                        resourceType = StorageResourceType.STORAGE_POOL.ToString(),  // TODO: check encoding
+                        contextMap = contextMap
                     };
                     JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.StartupStorageCommand, ansContent);
                     cmdArray.Add(ansObj);
