@@ -8850,7 +8850,226 @@
                             	}
                             }                                               
                         }
-                    }                   
+                    },  
+                    routerGroupByPod: {
+                        id: 'routerGroupByPod',
+                        type: 'select',
+                        title: 'group by pod',
+                        listView: {
+                            id: 'routerGroupByPod',
+                            label: 'label.virtual.appliances',
+                            fields: {
+                                name: {
+                                    label: 'label.pod'
+                                },
+                                routerCount: {
+                                    label: 'Total of Virtual Routers'
+                                },
+                                routerRequiresUpgrade: {
+                                    label: 'Virtual Routers require upgrade',
+                                    converter: function (args) {
+                                        if (args > 0) {
+                                            return 'Yes';
+                                        } else {
+                                            return 'No';
+                                        }
+                                    }
+                                }
+                            },
+
+                            dataProvider: function (args) {
+                                var array1 = [];
+                                if (args.filterBy != null) {
+                                    if (args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+                                        switch (args.filterBy.search.by) {
+                                        case "name":
+                                            if (args.filterBy.search.value.length > 0)
+                                                array1.push("&keyword=" + args.filterBy.search.value);
+                                            break;
+                                        }
+                                    }
+                                }
+                                $.ajax({
+                                    url: createURL("listPods&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                                    dataType: "json",
+                                    async: true,
+                                    success: function (json) {
+                                        var podObjs = json.listpodsresponse.pod;
+                                        if (podObjs != null) {
+                                            for (var i = 0; i < podObjs.length; i++) {
+                                                $.ajax({
+                                                    url: createURL('listRouters'),
+                                                    data: {
+                                                        podid: podObjs[i].id
+                                                    },
+                                                    async: false,
+                                                    success: function (json) {
+                                                        if (json.listroutersresponse.count != undefined) {
+                                                            podObjs[i].routerCount = json.listroutersresponse.count;
+
+                                                            var routerCountFromAllPages = podObjs[i].routerCount;
+                                                            var currentPage = 1;
+                                                            var routerCountFromFirstPageToCurrentPage = 0;
+                                                            var routerRequiresUpgrade = 0;
+                                                            var callListApiWithPage = function () {
+                                                                $.ajax({
+                                                                    url: createURL('listRouters'),
+                                                                    async: false,
+                                                                    data: {
+                                                                        podid: podObjs[i].id,
+                                                                        page: currentPage,
+                                                                        pagesize: pageSize //global variable
+                                                                    },
+                                                                    success: function (json) {
+                                                                        routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
+                                                                        var items = json.listroutersresponse.router;
+                                                                        for (var i = 0; i < items.length; i++) {
+                                                                            if (items[i].requiresupgrade) {
+                                                                                routerRequiresUpgrade++;
+                                                                            }
+                                                                        }
+                                                                        if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
+                                                                            currentPage++;
+                                                                            callListApiWithPage();
+                                                                        }
+                                                                    }
+                                                                });
+                                                            }
+                                                            callListApiWithPage();
+                                                            podObjs[i].routerRequiresUpgrade = routerRequiresUpgrade;
+
+                                                        } else {
+                                                            podObjs[i].routerCount = 0;
+                                                            podObjs[i].routerRequiresUpgrade = 0;
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                        }
+                                        args.response.success({
+                                            data: podObjs
+                                        });
+                                    }
+                                });
+                            },
+                            detailView: {
+                                name: 'Virtual Routers group by pod',
+                                actions: {
+                                    upgradeRouterToUseNewerTemplate: {
+                                        label: 'Upgrade Router to Use Newer Template',
+                                        messages: {
+                                            confirm: function (args) {
+                                                return 'Please confirm that you want to upgrade all routers in this pod to use newer template';
+                                            },
+                                            notification: function (args) {
+                                                return 'Upgrade Router to Use Newer Template';
+                                            }
+                                        },
+                                        action: function (args) {
+                                            $.ajax({
+                                                url: createURL('upgradeRouterTemplate'),
+                                                data: {
+                                                    podid: args.context.routerGroupByPod[0].id
+                                                },
+                                                success: function (json) {
+                                                    var jobs = json.upgraderoutertemplateresponse.asyncjobs;
+                                                    if (jobs != undefined) {
+                                                        args.response.success({
+                                                            _custom: {
+                                                                jobId: jobs[0].jobid
+                                                            }
+                                                        });
+                                                    }
+                                                }
+                                            });
+                                        },
+                                        notification: {
+                                            poll: pollAsyncJobResult
+                                        }
+                                    }
+                                },
+                                tabs: {
+                                    details: {
+                                        title: 'Virtual Routers group by pod',
+                                        fields: [{
+                                            name: {
+                                                label: 'label.pod'
+                                            }
+                                        }, {
+                                            routerCount: {
+                                                label: 'Total of Virtual Routers'
+                                            },
+                                            routerRequiresUpgrade: {
+                                                label: 'Virtual Routers require upgrade',
+                                                converter: function (args) {
+                                                    if (args > 0) {
+                                                        return 'Yes';
+                                                    } else {
+                                                        return 'No';
+                                                    }
+                                                }
+                                            },
+                                            zonename: {
+                                            	label: 'label.zone'
+                                            }
+                                        }],
+                                        dataProvider: function (args) {
+                                            $.ajax({
+                                                url: createURL('listRouters'),
+                                                data: {
+                                                    podid: args.context.routerGroupByPod[0].id
+                                                },
+                                                async: false,
+                                                success: function (json) {
+                                                    if (json.listroutersresponse.count != undefined) {
+                                                        args.context.routerGroupByPod[0].routerCount = json.listroutersresponse.count;
+
+                                                        var routerCountFromAllPages = args.context.routerGroupByPod[0].routerCount;
+                                                        var currentPage = 1;
+                                                        var routerCountFromFirstPageToCurrentPage = 0;
+                                                        var routerRequiresUpgrade = 0;
+                                                        var callListApiWithPage = function () {
+                                                            $.ajax({
+                                                                url: createURL('listRouters'),
+                                                                async: false,
+                                                                data: {
+                                                                    podid: args.context.routerGroupByPod[0].id,
+                                                                    page: currentPage,
+                                                                    pagesize: pageSize //global variable
+                                                                },
+                                                                success: function (json) {
+                                                                    routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
+                                                                    var items = json.listroutersresponse.router;
+                                                                    for (var i = 0; i < items.length; i++) {
+                                                                        if (items[i].requiresupgrade) {
+                                                                            routerRequiresUpgrade++;
+                                                                        }
+                                                                    }
+                                                                    if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
+                                                                        currentPage++;
+                                                                        callListApiWithPage();
+                                                                    }
+                                                                }
+                                                            });
+                                                        }
+                                                        callListApiWithPage();
+                                                        args.context.routerGroupByPod[0].routerRequiresUpgrade = routerRequiresUpgrade;
+
+                                                    } else {
+                                                        args.context.routerGroupByPod[0].routerCount = 0;
+                                                        args.context.routerGroupByPod[0].routerRequiresUpgrade = 0;
+                                                    }
+                                                }
+                                            });
+                                            args.response.success({
+                                                data: args.context.routerGroupByPod[0]
+                                            })
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }                                    
                 }
             },
             systemVms: {
