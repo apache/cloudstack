@@ -52,6 +52,14 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.AclPermissionVO;
+import org.apache.cloudstack.acl.AclPolicyPermissionMapVO;
+import org.apache.cloudstack.acl.PermissionScope;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.AclPermission.Permission;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.dao.AclPermissionDao;
+import org.apache.cloudstack.acl.dao.AclPolicyPermissionMapDao;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -171,6 +179,10 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     List<PluggableService> _pluggableServices;
     List<APIChecker> _apiAccessCheckers;
+    @Inject
+    private AclPermissionDao _aclPermissionDao;
+    @Inject
+    private AclPolicyPermissionMapDao _aclPolicyPermissionMapDao;
 
     @Inject
     protected ApiAsyncJobDispatcher _asyncDispatcher;
@@ -233,6 +245,51 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 _apiNameCmdClassMap.put(apiName, apiCmdList);
             }
             apiCmdList.add(cmdClass);
+
+            boolean isReadCommand = false;
+            BaseCmd cmdObj;
+            try {
+                cmdObj = (BaseCmd) cmdClass.newInstance();
+                if (cmdObj instanceof BaseListCmd) {
+                    isReadCommand = true;
+                }
+            } catch (Exception e) {
+            }
+
+            for (RoleType role : at.authorized()) {
+                AclPermissionVO apiPermission = null;
+                switch (role) {
+                case User:
+                    apiPermission = new AclPermissionVO(apiName, null, null, PermissionScope.ACCOUNT, null,
+                            Permission.Allow);
+                    break;
+
+                case Admin:
+                    apiPermission = new AclPermissionVO(apiName, null, null, PermissionScope.ALL, null,
+                            Permission.Allow);
+                    break;
+
+                case DomainAdmin:
+                    apiPermission = new AclPermissionVO(apiName, null, null, PermissionScope.DOMAIN, null,
+                            Permission.Allow);
+                    break;
+
+                case ResourceAdmin:
+                    apiPermission = new AclPermissionVO(apiName, null, null, PermissionScope.DOMAIN, null,
+                            Permission.Allow);
+                    break;
+                }
+
+                if (apiPermission != null) {
+                    if (isReadCommand) {
+                        apiPermission.setAccessType(AccessType.ListEntry);
+                    }
+                    _aclPermissionDao.persist(apiPermission);
+                    AclPolicyPermissionMapVO policyPermMapEntry = new AclPolicyPermissionMapVO(role.ordinal() + 1,
+                            apiPermission.getId());
+                    _aclPolicyPermissionMapDao.persist(policyPermMapEntry);
+                }
+            }
         }
 
         encodeApiResponse = Boolean.valueOf(_configDao.getValue(Config.EncodeApiResponse.key()));

@@ -71,7 +71,15 @@ public class AclPermissionVO implements AclPermission {
 
     }
 
-
+    public AclPermissionVO(String action, String entityType, AccessType accessType, PermissionScope scope,
+            Long scopeId, Permission permission) {
+        this.action = action;
+        this.entityType = entityType;
+        this.accessType = accessType;
+        this.scope = scope;
+        this.scopeId = scopeId;
+        this.permission = permission;
+    }
 
     @Override
     public long getId() {

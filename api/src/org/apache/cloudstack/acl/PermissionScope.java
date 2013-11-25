@@ -4,7 +4,7 @@ public enum PermissionScope {
     RESOURCE(0),
     ACCOUNT(1),
     DOMAIN(2),
-    REGION(3);
+ REGION(3), ALL(4);
 
     private int _scale;
 
