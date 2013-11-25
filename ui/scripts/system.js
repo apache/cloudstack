@@ -9069,7 +9069,226 @@
                                 }
                             }
                         }
-                    }                                    
+                    },
+                    
+                    //???
+                    routerGroupByCluster: {
+                        id: 'routerGroupByCluster',
+                        type: 'select',
+                        title: 'group by cluster',
+                        listView: {
+                            id: 'routerGroupByCluster',
+                            label: 'label.virtual.appliances',
+                            fields: {
+                                name: {
+                                    label: 'label.cluster'
+                                },
+                                routerCount: {
+                                    label: 'Total of Virtual Routers'
+                                },
+                                routerRequiresUpgrade: {
+                                    label: 'Virtual Routers require upgrade',
+                                    converter: function (args) {
+                                        if (args > 0) {
+                                            return 'Yes';
+                                        } else {
+                                            return 'No';
+                                        }
+                                    }
+                                }
+                            },
+
+                            dataProvider: function (args) {
+                                var array1 = [];
+                                if (args.filterBy != null) {
+                                    if (args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+                                        switch (args.filterBy.search.by) {
+                                        case "name":
+                                            if (args.filterBy.search.value.length > 0)
+                                                array1.push("&keyword=" + args.filterBy.search.value);
+                                            break;
+                                        }
+                                    }
+                                }
+                                $.ajax({
+                                    url: createURL("listClusters&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                                    dataType: "json",
+                                    async: true,
+                                    success: function (json) {
+                                        var clusterObjs = json.listclustersresponse.cluster;
+                                        if (clusterObjs != null) {
+                                            for (var i = 0; i < clusterObjs.length; i++) {
+                                                $.ajax({
+                                                    url: createURL('listRouters'),
+                                                    data: {
+                                                        clusterid: clusterObjs[i].id
+                                                    },
+                                                    async: false,
+                                                    success: function (json) {
+                                                        if (json.listroutersresponse.count != undefined) {
+                                                            clusterObjs[i].routerCount = json.listroutersresponse.count;
+
+                                                            var routerCountFromAllPages = clusterObjs[i].routerCount;
+                                                            var currentPage = 1;
+                                                            var routerCountFromFirstPageToCurrentPage = 0;
+                                                            var routerRequiresUpgrade = 0;
+                                                            var callListApiWithPage = function () {
+                                                                $.ajax({
+                                                                    url: createURL('listRouters'),
+                                                                    async: false,
+                                                                    data: {
+                                                                        clusterid: clusterObjs[i].id,
+                                                                        page: currentPage,
+                                                                        pagesize: pageSize //global variable
+                                                                    },
+                                                                    success: function (json) {
+                                                                        routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
+                                                                        var items = json.listroutersresponse.router;
+                                                                        for (var i = 0; i < items.length; i++) {
+                                                                            if (items[i].requiresupgrade) {
+                                                                                routerRequiresUpgrade++;
+                                                                            }
+                                                                        }
+                                                                        if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
+                                                                            currentPage++;
+                                                                            callListApiWithPage();
+                                                                        }
+                                                                    }
+                                                                });
+                                                            }
+                                                            callListApiWithPage();
+                                                            clusterObjs[i].routerRequiresUpgrade = routerRequiresUpgrade;
+
+                                                        } else {
+                                                            clusterObjs[i].routerCount = 0;
+                                                            clusterObjs[i].routerRequiresUpgrade = 0;
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                        }
+                                        args.response.success({
+                                            data: clusterObjs
+                                        });
+                                    }
+                                });
+                            },
+                            detailView: {
+                                name: 'Virtual Routers group by cluster',
+                                actions: {
+                                    upgradeRouterToUseNewerTemplate: {
+                                        label: 'Upgrade Router to Use Newer Template',
+                                        messages: {
+                                            confirm: function (args) {
+                                                return 'Please confirm that you want to upgrade all routers in this cluster to use newer template';
+                                            },
+                                            notification: function (args) {
+                                                return 'Upgrade Router to Use Newer Template';
+                                            }
+                                        },
+                                        action: function (args) {
+                                            $.ajax({
+                                                url: createURL('upgradeRouterTemplate'),
+                                                data: {
+                                                    clusterid: args.context.routerGroupByCluster[0].id
+                                                },
+                                                success: function (json) {
+                                                    var jobs = json.upgraderoutertemplateresponse.asyncjobs;
+                                                    if (jobs != undefined) {
+                                                        args.response.success({
+                                                            _custom: {
+                                                                jobId: jobs[0].jobid
+                                                            }
+                                                        });
+                                                    }
+                                                }
+                                            });
+                                        },
+                                        notification: {
+                                            poll: pollAsyncJobResult
+                                        }
+                                    }
+                                },
+                                tabs: {
+                                    details: {
+                                        title: 'Virtual Routers group by cluster',
+                                        fields: [{
+                                            name: {
+                                                label: 'label.cluster'
+                                            }
+                                        }, {
+                                            routerCount: {
+                                                label: 'Total of Virtual Routers'
+                                            },
+                                            routerRequiresUpgrade: {
+                                                label: 'Virtual Routers require upgrade',
+                                                converter: function (args) {
+                                                    if (args > 0) {
+                                                        return 'Yes';
+                                                    } else {
+                                                        return 'No';
+                                                    }
+                                                }
+                                            }
+                                        }],
+                                        dataProvider: function (args) {
+                                            $.ajax({
+                                                url: createURL('listRouters'),
+                                                data: {
+                                                    clusterid: args.context.routerGroupByCluster[0].id
+                                                },
+                                                async: false,
+                                                success: function (json) {
+                                                    if (json.listroutersresponse.count != undefined) {
+                                                        args.context.routerGroupByCluster[0].routerCount = json.listroutersresponse.count;
+
+                                                        var routerCountFromAllPages = args.context.routerGroupByCluster[0].routerCount;
+                                                        var currentPage = 1;
+                                                        var routerCountFromFirstPageToCurrentPage = 0;
+                                                        var routerRequiresUpgrade = 0;
+                                                        var callListApiWithPage = function () {
+                                                            $.ajax({
+                                                                url: createURL('listRouters'),
+                                                                async: false,
+                                                                data: {
+                                                                    clusterid: args.context.routerGroupByCluster[0].id,
+                                                                    page: currentPage,
+                                                                    pagesize: pageSize //global variable
+                                                                },
+                                                                success: function (json) {
+                                                                    routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
+                                                                    var items = json.listroutersresponse.router;
+                                                                    for (var i = 0; i < items.length; i++) {
+                                                                        if (items[i].requiresupgrade) {
+                                                                            routerRequiresUpgrade++;
+                                                                        }
+                                                                    }
+                                                                    if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
+                                                                        currentPage++;
+                                                                        callListApiWithPage();
+                                                                    }
+                                                                }
+                                                            });
+                                                        }
+                                                        callListApiWithPage();
+                                                        args.context.routerGroupByCluster[0].routerRequiresUpgrade = routerRequiresUpgrade;
+
+                                                    } else {
+                                                        args.context.routerGroupByCluster[0].routerCount = 0;
+                                                        args.context.routerGroupByCluster[0].routerRequiresUpgrade = 0;
+                                                    }
+                                                }
+                                            });
+                                            args.response.success({
+                                                data: args.context.routerGroupByCluster[0]
+                                            })
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    //???
                 }
             },
             systemVms: {
