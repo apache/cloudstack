@@ -755,6 +755,9 @@ CREATE VIEW `cloud`.`domain_router_view` AS
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'management-server', "vmware.vcenter.session.timeout", "1200", "VMware client timeout in seconds", "1200", NULL,NULL,0);
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'management-server', "mgt.server.vendor", "ACS", "the vendor of management server", "ACS", NULL,NULL,0);
 
+ALTER TABLE `cloud_usage`.`usage_vm_instance` ADD COLUMN `cpu_speed` INT(10) UNSIGNED NULL  COMMENT 'speed per core in Mhz',
+    ADD COLUMN `cpu_cores` INT(10) UNSIGNED NULL  COMMENT 'number of cpu cores',
+    ADD COLUMN  `memory` INT(10) UNSIGNED NULL  COMMENT 'memory in MB';
 
 CREATE TABLE `cloud`.`vpc_details` (
   `id` bigint unsigned NOT NULL auto_increment,
