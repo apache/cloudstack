@@ -8737,7 +8737,41 @@
                                 });
                             },                                                       
                             detailView: {
-                            	name: 'Virtual Routers group by zone',    
+                            	name: 'Virtual Routers group by zone',                                	
+                            	actions: {                            	
+                                 	upgradeRouterToUseNewerTemplate: {
+                                        label: 'Upgrade Router to Use Newer Template',
+                                        messages: {
+                                            confirm: function(args) {
+                                                return 'Please confirm that you want to upgrade all routers in this zone to use newer template';
+                                            },
+                                            notification: function (args) {
+                                                return 'Upgrade Router to Use Newer Template';
+                                            }
+                                        },
+                                        action: function (args) {                                        	
+                                            $.ajax({
+                                                url: createURL('upgradeRouterTemplate'),
+                                                data: {
+                                                	zoneid: args.context.routerGroupByZone[0].id
+                                                },
+                                                success: function (json) {
+                                                    var jobs = json.upgraderoutertemplateresponse.asyncjobs;
+                                                    if (jobs != undefined) {
+                                                        args.response.success({
+                                                            _custom: {
+                                                                jobId: jobs[0].jobid
+                                                            }
+                                                        });
+                                                    }
+                                                }
+                                            });
+                                        },
+                                        notification: {
+                                            poll: pollAsyncJobResult
+                                        }
+                                    }                            	
+                                },   
                             	tabs: {
                             		details: {
                             			title: 'Virtual Routers group by zone',                            			
