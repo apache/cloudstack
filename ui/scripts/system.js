@@ -8735,7 +8735,86 @@
                                         });
                                     }
                                 });
-                            }
+                            },                                                       
+                            detailView: {
+                            	name: 'Virtual Routers group by zone',    
+                            	tabs: {
+                            		details: {
+                            			title: 'Virtual Routers group by zone',                            			
+                            			fields: [{
+                                            name: {
+                                                label: 'label.zone'
+                                            }
+                            			}, {
+                                            routerCount: {
+                                            	label: 'Total of Virtual Routers'
+                                            },
+                                            routerRequiresUpgrade: {
+                                            	label: 'Virtual Routers require upgrade',
+                                            	converter: function(args) {                                		
+                                            		if (args > 0) {
+                                            			return 'Yes';
+                                            		} else {
+                                            			return 'No';
+                                            		}
+                                            	}
+                                            }
+                                        }],  
+                                        dataProvider: function(args) {     
+                                        	$.ajax({
+	                                            url: createURL('listRouters'),
+	                                            data: {
+	                                            	zoneid: args.context.routerGroupByZone[0].id
+	                                            },
+	                                            async: false,
+	                                            success: function(json) {
+	                                            	if (json.listroutersresponse.count != undefined) {
+	                                            		args.context.routerGroupByZone[0].routerCount = json.listroutersresponse.count;    
+	                                            		    	                                            		
+	                                            		var routerCountFromAllPages = args.context.routerGroupByZone[0].routerCount;                                                	
+	                                                	var currentPage = 1;
+	                                                	var routerCountFromFirstPageToCurrentPage = 0;  
+	                                                	var routerRequiresUpgrade = 0;    	                                                	                                                	
+	                                                	var callListApiWithPage = function() {                                                		
+	                                                		$.ajax({
+	                                        					url: createURL('listRouters'),
+	                                                    		async: false,
+	                                                    		data: {    	                                                    			
+	                                                    			zoneid: args.context.routerGroupByZone[0].id,
+	                                                    			page: currentPage,
+	                                                    	        pagesize: pageSize //global variable
+	                                                    		},
+	                                                    		success: function(json) {                           			
+	                                                    			routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;    	                                                    			                                                    			
+	                                                    			var items = json.listroutersresponse.router;
+	                                                    			for (var i = 0; i < items.length; i++) {    	                                                    				
+	                                                    				if (items[i].requiresupgrade) {
+	                                                    					routerRequiresUpgrade++;
+	                                                    				}
+	                                                    			}      	                                                    			
+	                                                    			if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
+	                                                    				currentPage++;
+	                                                    				callListApiWithPage();
+	                                                    			}                                                    			
+	                                                    		}
+	                                        				});                                                		
+	                                                	}    	                                                	
+	                                                	callListApiWithPage();                  	
+	                                                	args.context.routerGroupByZone[0].routerRequiresUpgrade = routerRequiresUpgrade;
+	                                            		
+	                                            	} else {
+	                                            		args.context.routerGroupByZone[0].routerCount = 0;
+	                                            		args.context.routerGroupByZone[0].routerRequiresUpgrade = 0;
+	                                            	}    	                                            		                                                
+	                                            }
+	                                        });                                        	
+                                        	args.response.success({
+                                        		data: args.context.routerGroupByZone[0]
+                                        	})
+                                        }
+                            		}
+                            	}
+                            }                                               
                         }
                     }                   
                 }
