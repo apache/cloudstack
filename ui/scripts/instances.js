@@ -1765,7 +1765,7 @@
                                     else if (isAdmin()) 
                                         jsonObj = $.extend(args.context.instances[0], {
                                             state: "Expunged"
-                                        }); //after root admin expunge a VM, listVirtualMachines API will no longer returns this expunged VM to all users.
+                                        }); //after root/domain admin expunge a VM, listVirtualMachines API will no longer returns this expunged VM to all users.
                                     else
                                         jsonObj = $.extend(args.context.instances[0], {
                                             state: "Destroyed"
@@ -2101,7 +2101,7 @@
             if (isAdmin() || isDomainAdmin()) {
                 allowedActions.push("restore");
             }
-            if (isAdmin())
+            if (isAdmin() || isDomainAdmin())
                 allowedActions.push("expunge");
         } else if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
@@ -2161,7 +2161,7 @@
         } else if (jsonObj.state == 'Error') {
             allowedActions.push("destroy");
         } else if (jsonObj.state == 'Expunging') {
-            if (isAdmin())
+            if (isAdmin() || isDomainAdmin())
                 allowedActions.push("expunge");
         }
         return allowedActions;
