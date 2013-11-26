@@ -2744,6 +2744,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             vmConfigSpec.setCpuHotAddEnabled(vmMo.isCpuHotAddSupported(guestOsId));
             configNestedHVSupport(vmMo, vmSpec, vmConfigSpec);
 
+             // Check for multi-cores per socket settings
+            String coresPerSocket = vmSpec.getDetails().get("cpu.corespersocket");
+            if (coresPerSocket != null) {
+                vmConfigSpec.setNumCoresPerSocket(NumbersUtil.parseInt(coresPerSocket, 1));
+            }
+
             VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[totalChangeDevices];
             int i = 0;
             int ideUnitNumber = 0;
