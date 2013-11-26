@@ -57,7 +57,7 @@ class Services:
                 "cpunumber": 1,
                 "cpuspeed": 100,
                 "memory": 128,
-                "hosttags": "host1"
+                "tags": "host1"
             },
             "service_offering_2": {
                 "name": "Tiny Instance- tagged host 2",
@@ -65,7 +65,7 @@ class Services:
                 "cpunumber": 1,
                 "cpuspeed": 100,
                 "memory": 128,
-                "hosttags": "host2"
+                "tags": "host2"
             },
             "network_offering": {
                 "name": 'VPC Network offering',
