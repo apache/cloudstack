@@ -325,6 +325,8 @@
   <bean id="RemoteAccessVpnDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.RemoteAccessVpnDetailsDaoImpl" />
   <bean id="VpcDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.VpcDetailsDaoImpl" />
   <bean id="VpcGatewayDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.VpcGatewayDetailsDaoImpl" />
+  <bean id="NetworkACLListDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.NetworkACLListDetailsDaoImpl" />
+
   <bean id="databaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker" />
 
 </beans>

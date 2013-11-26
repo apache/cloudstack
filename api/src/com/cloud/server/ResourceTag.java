@@ -45,7 +45,8 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         Zone(false, true),
         ServiceOffering(false, true),
         Storage(false, true),
-        PrivateGateway(false, true);
+        PrivateGateway(false, true),
+        NetworkACLList(false, true);
 
         ResourceObjectType(boolean resourceTagsSupport, boolean resourceMetadataSupport) {
             this.resourceTagsSupport = resourceTagsSupport;

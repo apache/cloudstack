@@ -45,6 +45,7 @@ import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.NetworkACLItemDao;
+import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.StaticRouteDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
@@ -135,6 +136,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     PrimaryDataStoreDao _storagePoolDao;
     @Inject
     VpcGatewayDao _vpcGatewayDao;
+    @Inject
+    NetworkACLDao _networkACLListDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -160,6 +163,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         _daoMap.put(ResourceObjectType.ServiceOffering, _serviceOffDao);
         _daoMap.put(ResourceObjectType.Storage, _storagePoolDao);
         _daoMap.put(ResourceObjectType.PrivateGateway, _vpcGatewayDao);
+        _daoMap.put(ResourceObjectType.NetworkACLList, _networkACLListDao);
 
         return true;
     }
