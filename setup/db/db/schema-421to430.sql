@@ -779,3 +779,13 @@ CREATE TABLE `cloud`.`vpc_gateway_details` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_vpc_gateway_details__vpc_gateway_id` FOREIGN KEY `fk_vpc_gateway_details__vpc_gateway_id`(`vpc_gateway_id`) REFERENCES `vpc_gateways`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`network_acl_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `network_acl_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_network_acl_details__network_acl_id` FOREIGN KEY `fk_network_acl_details__network_acl_id`(`network_acl_id`) REFERENCES `network_acl`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
