@@ -2593,6 +2593,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             details.add(new UserVmDetailVO(id, ServiceOfferingVO.DynamicParameters.cpuSpeed.toString(), cpuSpeed.toString()));
             details.add(new UserVmDetailVO(id, ServiceOfferingVO.DynamicParameters.memory.toString(), memory.toString()));
             offering = _serviceOfferingDao.getcomputeOffering(serviceOffering.getId(), cpuNumber, cpuSpeed, memory);
+            offering.setDynamicFlag(true);
         }
         if (hostName != null) {
             // Check is hostName is RFC compliant
