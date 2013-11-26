@@ -380,7 +380,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        final Map<String, String> configs = _configDao.getConfiguration("ManagementServer", params);
+        final Map<String, String> configs = _configDao.getConfiguration("management-server", params);
         _sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
 
         String cert = configs.get("secstorage.secure.copy.cert");
