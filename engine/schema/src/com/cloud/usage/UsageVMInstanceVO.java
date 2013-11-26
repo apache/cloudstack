@@ -27,6 +27,10 @@ import javax.persistence.TemporalType;
 @Entity
 @Table(name = "usage_vm_instance")
 public class UsageVMInstanceVO {
+    public enum DynamicParameters {
+        cpuSpeed, cpuNumber, memory
+    };
+
     @Column(name = "usage_type")
     private int usageType;
 
@@ -44,6 +48,15 @@ public class UsageVMInstanceVO {
 
     @Column(name = "service_offering_id")
     private long serviceOfferingId;
+
+    @Column(name="cpu_cores")
+    private  Long cpuCores;
+
+    @Column(name="memory")
+    private  Long memory;
+
+    @Column(name="cpu_speed")
+    private  Long cpuSpeed;
 
     @Column(name = "template_id")
     private long templateId;
@@ -126,5 +139,29 @@ public class UsageVMInstanceVO {
 
     public void setEndDate(Date endDate) {
         this.endDate = endDate;
+    }
+
+    public Long getMemory() {
+        return memory;
+    }
+
+    public void setMemory(Long memory) {
+        this.memory = memory;
+    }
+
+    public Long getCpuCores() {
+        return cpuCores;
+    }
+
+    public void setCpuCores(Long cpuCores) {
+        this.cpuCores = cpuCores;
+    }
+
+    public Long getCpuSpeed() {
+        return cpuSpeed;
+    }
+
+    public void setCpuSpeed(Long cpuSpeed) {
+        this.cpuSpeed = cpuSpeed;
     }
 }

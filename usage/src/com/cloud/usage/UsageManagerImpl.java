@@ -85,6 +85,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.event.dao.UsageEventDetailsDao;
 
 @Component
 @Local(value = {UsageManager.class})
@@ -136,6 +137,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     protected AlertManager _alertMgr;
     @Inject
     protected UsageEventDao _usageEventDao;
+    @Inject
+    protected UsageEventDetailsDao _usageEventDetailsDao;
     @Inject
     ConfigurationDao _configDao;
     @Inject
@@ -1102,10 +1105,37 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             try {
                 Long templateId = event.getTemplateId();
                 String hypervisorType = event.getResourceType();
+                Long cpuCores= null;
+                Long memory = null;
+                Long cpuSpeed = null;
+
+                //populate the cpu, memory and cpuSpeed of the vm when created from a dynamic offering.
+                Map<String, String> usageDetails = _usageEventDetailsDao.findDetails(event.getId());
+
+                if (usageDetails != null && usageDetails.size() != 0) {
+                    if (usageDetails.get(UsageVMInstanceVO.DynamicParameters.cpuNumber.name()) != null) {
+                        cpuCores = Long.parseLong(usageDetails.get(UsageVMInstanceVO.DynamicParameters.cpuNumber.name()));
+                    }
+                    if (usageDetails.get(UsageVMInstanceVO.DynamicParameters.cpuSpeed.name()) != null) {
+                        cpuSpeed = Long.parseLong(usageDetails.get(UsageVMInstanceVO.DynamicParameters.cpuSpeed.name()));
+                    }
+                    if (usageDetails.get(UsageVMInstanceVO.DynamicParameters.memory.name()) != null) {
+                        memory = Long.parseLong(usageDetails.get(UsageVMInstanceVO.DynamicParameters.memory.name()));
+                    }
+                }
+
                 // add this VM to the usage helper table
-                UsageVMInstanceVO usageInstanceNew =
-                    new UsageVMInstanceVO(UsageTypes.ALLOCATED_VM, zoneId, event.getAccountId(), vmId, vmName, soId, templateId, hypervisorType, event.getCreateDate(),
-                        null);
+                UsageVMInstanceVO usageInstanceNew = new UsageVMInstanceVO(UsageTypes.ALLOCATED_VM, zoneId, event.getAccountId(), vmId, vmName,
+                        soId, templateId, hypervisorType, event.getCreateDate(), null);
+                if (cpuCores != null) {
+                    usageInstanceNew.setCpuCores(cpuCores);
+                }
+                if (cpuSpeed != null) {
+                    usageInstanceNew.setCpuSpeed(cpuSpeed);
+                }
+                if (memory != null) {
+                    usageInstanceNew.setMemory(memory);
+                }
                 m_usageInstanceDao.persist(usageInstanceNew);
             } catch (Exception ex) {
                 s_logger.error("Error saving usage instance for vm: " + vmId, ex);
