@@ -7636,6 +7636,7 @@
                                 });
                             },
                             detailView: {
+                                noCompact: true,
                                 name: 'Virtual applicance details',
                                 actions: {
                                     start: {
@@ -8276,7 +8277,8 @@
                                 });
                             },                                                       
                             detailView: {
-                            	name: 'Virtual Routers group by zone',                                	
+                                noCompact: true,
+                            	  name: 'Virtual Routers group by zone',                                	
                             	actions: {                            	
                                  	upgradeRouterToUseNewerTemplate: {
                                         label: 'Upgrade Router to Use Newer Template',
@@ -8492,6 +8494,7 @@
                                 });
                             },
                             detailView: {
+                                noCompact: true,
                                 name: 'Virtual Routers group by pod',
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
@@ -8711,6 +8714,7 @@
                                 });
                             },
                             detailView: {
+                                noCompact: true,
                                 name: 'Virtual Routers group by cluster',
                                 actions: {
                                     upgradeRouterToUseNewerTemplate: {
