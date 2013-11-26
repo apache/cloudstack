@@ -71,7 +71,7 @@ assignVirtualMachine=7
 migrateVirtualMachine=1
 migrateVirtualMachineWithVolume=1
 recoverVirtualMachine=7
-expungeVirtualMachine=1
+expungeVirtualMachine=7
 
 #### snapshot commands
 createSnapshot=15
