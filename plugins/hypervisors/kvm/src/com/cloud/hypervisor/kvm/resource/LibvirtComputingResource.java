@@ -1609,13 +1609,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private String getBroadcastUriFromBridge(String brName) {
         String pif = matchPifFileInDirectory(brName);
-        Pattern pattern = Pattern.compile("(\\D+)(\\d+)");
+        Pattern pattern = Pattern.compile("(\\D+)(\\d+)(\\D*)(\\d*)");
         Matcher matcher = pattern.matcher(pif);
         if (matcher.find()) {
             if (brName.startsWith("brvx")) {
                 return BroadcastDomainType.Vxlan.toUri(matcher.group(2)).toString();
             } else {
-                return BroadcastDomainType.Vlan.toUri(matcher.group(2)).toString();
+                return BroadcastDomainType.Vlan.toUri(matcher.group(4)).toString();
             }
         } else {
             s_logger.debug("failed to get vNet id from bridge " + brName + "attached to physical interface" + pif);
