@@ -32,13 +32,16 @@ import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
-@Table(name = ("acl_permission"))
-public class AclPermissionVO implements AclPermission {
+@Table(name = ("acl_policy_permission"))
+public class AclPolicyPermissionVO implements AclPolicyPermission {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
+
+    @Column(name = "policy_id")
+    private long aclPolicyId;
 
     @Column(name = "action")
     private String action;
@@ -67,12 +70,14 @@ public class AclPermissionVO implements AclPermission {
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
-    public AclPermissionVO() {
+    public AclPolicyPermissionVO() {
 
     }
 
-    public AclPermissionVO(String action, String entityType, AccessType accessType, PermissionScope scope,
+    public AclPolicyPermissionVO(long aclPolicyId, String action, String entityType, AccessType accessType,
+            PermissionScope scope,
             Long scopeId, Permission permission) {
+        this.aclPolicyId = aclPolicyId;
         this.action = action;
         this.entityType = entityType;
         this.accessType = accessType;
@@ -84,6 +89,11 @@ public class AclPermissionVO implements AclPermission {
     @Override
     public long getId() {
         return id;
+    }
+
+    @Override
+    public long getAclPolicyId() {
+        return aclPolicyId;
     }
 
 

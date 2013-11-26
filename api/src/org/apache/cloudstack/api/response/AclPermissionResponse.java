@@ -19,7 +19,7 @@ package org.apache.cloudstack.api.response;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.acl.AclEntityType;
-import org.apache.cloudstack.acl.AclPermission;
+import org.apache.cloudstack.acl.AclPolicyPermission;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -46,7 +46,7 @@ public class AclPermissionResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ACL_ALLOW_DENY)
     @Param(description = "allow or deny of this permission")
-    private AclPermission.Permission permission;
+    private AclPolicyPermission.Permission permission;
 
     public AclEntityType getEntityType() {
         return entityType;
@@ -80,11 +80,11 @@ public class AclPermissionResponse extends BaseResponse {
         this.scopeId = scopeId;
     }
 
-    public AclPermission.Permission getPermission() {
+    public AclPolicyPermission.Permission getPermission() {
         return permission;
     }
 
-    public void setPermission(AclPermission.Permission permission) {
+    public void setPermission(AclPolicyPermission.Permission permission) {
         this.permission = permission;
     }
 

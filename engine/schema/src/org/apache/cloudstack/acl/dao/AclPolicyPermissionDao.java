@@ -16,9 +16,11 @@
 // under the License.
 package org.apache.cloudstack.acl.dao;
 
-import org.apache.cloudstack.acl.AclPermissionVO;
+
+import org.apache.cloudstack.acl.AclPolicyPermissionVO;
+
 import com.cloud.utils.db.GenericDao;
 
-public interface AclPermissionDao extends GenericDao<AclPermissionVO, Long> {
+public interface AclPolicyPermissionDao extends GenericDao<AclPolicyPermissionVO, Long> {
 
 }

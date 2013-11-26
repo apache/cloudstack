@@ -325,7 +325,8 @@
   <bean id="AclGroupRoleMapDaoImpl" class="org.apache.cloudstack.acl.dao.AclGroupRoleMapDaoImpl"/> 
   <bean id="AclApiPermissionDaoImpl" class="org.apache.cloudstack.acl.dao.AclApiPermissionDaoImpl"/>
   <bean id="AclEntityPermissionDaoImpl" class="org.apache.cloudstack.acl.dao.AclEntityPermissionDaoImpl"/>  
-  <bean id="AclRolePermissionDaoImpl" class="org.apache.cloudstack.acl.dao.AclRolePermissionDaoImpl"/>  
+  <bean id="AclRolePermissionDaoImpl" class="org.apache.cloudstack.acl.dao.AclRolePermissionDaoImpl"/>
+  <bean id="AclPolicyPermissionDaoImpl" class="org.apache.cloudstack.acl.dao.AclPolicyPermissionDaoImpl"/>  
     
   <bean id="databaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker" />
 

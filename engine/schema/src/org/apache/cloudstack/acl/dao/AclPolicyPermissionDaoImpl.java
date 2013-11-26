@@ -14,28 +14,30 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl;
+package org.apache.cloudstack.acl.dao;
 
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.InternalIdentity;
+import java.util.Map;
 
-public interface AclPermission extends InternalIdentity {
+import javax.naming.ConfigurationException;
 
-    String getAction();
+import org.apache.cloudstack.acl.AclPolicyPermissionVO;
 
-    String getEntityType();
+import com.cloud.utils.db.GenericDaoBase;
 
-    AccessType getAccessType();
+public class AclPolicyPermissionDaoImpl extends GenericDaoBase<AclPolicyPermissionVO, Long> implements
+        AclPolicyPermissionDao {
 
-    PermissionScope getScope();
+    public AclPolicyPermissionDaoImpl()
+    {
 
-    Long getScopeId();
-
-    Permission getPermission();
-
-    public enum Permission {
-        Allow,
-        Deny
     }
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        super.configure(name, params);
+
+        return true;
+    }
+
 
 }

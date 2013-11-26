@@ -28,7 +28,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.acl.AclEntityType;
-import org.apache.cloudstack.acl.AclPermission;
+import org.apache.cloudstack.acl.AclPolicyPermission;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
@@ -95,7 +95,7 @@ public class AclPolicyJoinVO extends BaseViewVO implements ControlledViewEntity 
 
     @Column(name = "permission_allow_deny")
     @Enumerated(value = EnumType.STRING)
-    private AclPermission.Permission permissionAllowDeny;
+    private AclPolicyPermission.Permission permissionAllowDeny;
 
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
@@ -206,7 +206,7 @@ public class AclPolicyJoinVO extends BaseViewVO implements ControlledViewEntity 
         return permissionAccessType;
     }
 
-    public AclPermission.Permission getPermissionAllowDeny() {
+    public AclPolicyPermission.Permission getPermissionAllowDeny() {
         return permissionAllowDeny;
     }
 

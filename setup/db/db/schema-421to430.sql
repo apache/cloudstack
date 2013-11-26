@@ -355,32 +355,23 @@ CREATE TABLE `acl_group_policy_map` (
   CONSTRAINT `fk_acl_group_policy_map__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `acl_policy` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `acl_permission` (
+CREATE TABLE `acl_policy_permission` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `policy_id` bigint(20) unsigned NOT NULL,
   `action` varchar(100) NOT NULL,
-  `resource_type` varchar(100) NOT NULL,
-  `scope_id` bigint(20) unsigned NOT NULL,
+  `resource_type` varchar(100) DEFAULT NULL,
+  `scope_id` bigint(20) unsigned,
   `scope` varchar(40) DEFAULT NULL,
-  `access_type` varchar(40) NOT NULL,
+  `access_type` varchar(40) DEFAULT NULL,
   `permission`  varchar(40) NOT NULL COMMENT 'Allow or Deny',
   `removed` datetime DEFAULT NULL COMMENT 'date the permission was revoked',
   `created` datetime DEFAULT NULL COMMENT 'date the permission was granted',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `id` (`id`)
+  UNIQUE KEY `id` (`id`),
+  KEY `fk_acl_policy_permission__policy_id` (`policy_id`),
+  CONSTRAINT `fk_acl_policy_permission__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `acl_policy` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-CREATE TABLE `acl_policy_permission_map` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `policy_id` bigint(20) unsigned NOT NULL,
-  `permission_id` bigint(20) unsigned NOT NULL,
-  `removed` datetime DEFAULT NULL COMMENT 'date the permission was removed from the policy',
-  `created` datetime DEFAULT NULL COMMENT 'date the permission was added to the policy',
-  PRIMARY KEY (`id`),
-  KEY `fk_acl_policy_permission_map__policy_id` (`policy_id`),
-  KEY `fk_acl_policy_permission_map__permission_id` (`permission_id`),
-  CONSTRAINT `fk_acl_policy_permission_map__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `acl_policy` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_acl_policy_permission_map__permission_id` FOREIGN KEY (`permission_id`) REFERENCES `acl_permission` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
 
 INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (1, 'NORMAL', 'Domain user role', UUID(), 1, 1, Now(), 'Static');
 INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (2, 'ADMIN', 'Root admin role', UUID(), 1, 1, Now(), 'Static');
@@ -412,12 +403,12 @@ CREATE OR REPLACE VIEW `cloud`.`acl_policy_view` AS
         account.uuid account_uuid,
         account.account_name account_name,     
         account.type account_type,  
-        acl_permission.action permission_action,
-        acl_permission.resource_type permission_entity_type,
-        acl_permission.scope permission_scope,
-        acl_permission.scope_id permission_scope_id,        
-        acl_permission.access_type permission_access_type,
-        acl_permission.permission permission_allow_deny
+        acl_policy_permission.action permission_action,
+        acl_policy_permission.resource_type permission_entity_type,
+        acl_policy_permission.scope permission_scope,
+        acl_policy_permission.scope_id permission_scope_id,        
+        acl_policy_permission.access_type permission_access_type,
+        acl_policy_permission.permission permission_allow_deny
     from
         `cloud`.`acl_policy`
             inner join
@@ -425,9 +416,7 @@ CREATE OR REPLACE VIEW `cloud`.`acl_policy_view` AS
             inner join
         `cloud`.`account` ON acl_policy.account_id = account.id        
             left join
-        `cloud`.`acl_policy_permission_map` ON acl_policy.id = acl_policy_permission_map.policy_id            
-            left join
-        `cloud`.`acl_permission` ON acl_permission.id = acl_policy_permission_map.permission_id;          
+        `cloud`.`acl_policy_permission` ON acl_policy.id = acl_policy_permission.policy_id;
         
          
 CREATE OR REPLACE VIEW `cloud`.`acl_group_view` AS
@@ -462,8 +451,6 @@ CREATE OR REPLACE VIEW `cloud`.`acl_group_view` AS
         `cloud`.`acl_group_policy_map` ON acl_group.id = acl_group_policy_map.group_id  
             left join         
         `cloud`.`acl_policy` ON acl_group_policy_map.policy_id = acl_policy.id  
-            left join
-        `cloud`.`acl_policy_permission_map` ON acl_group.id = acl_policy_permission_map.policy_id            
             left join
         `cloud`.`acl_group_account_map` ON acl_group.id = acl_group_account_map.group_id
             left join

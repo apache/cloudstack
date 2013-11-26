@@ -52,14 +52,13 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.cloudstack.acl.APIChecker;
-import org.apache.cloudstack.acl.AclPermissionVO;
-import org.apache.cloudstack.acl.AclPolicyPermissionMapVO;
+import org.apache.cloudstack.acl.AclPolicyPermissionVO;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.acl.AclPermission.Permission;
+import org.apache.cloudstack.acl.AclPolicyPermission.Permission;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.acl.dao.AclPermissionDao;
-import org.apache.cloudstack.acl.dao.AclPolicyPermissionMapDao;
+import org.apache.cloudstack.acl.dao.AclPolicyPermissionDao;
+import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -149,12 +148,14 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.UserVO;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -180,15 +181,17 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     List<PluggableService> _pluggableServices;
     List<APIChecker> _apiAccessCheckers;
     @Inject
-    private AclPermissionDao _aclPermissionDao;
-    @Inject
-    private AclPolicyPermissionMapDao _aclPolicyPermissionMapDao;
+    private AclPolicyPermissionDao _aclPermissionDao;
 
     @Inject
     protected ApiAsyncJobDispatcher _asyncDispatcher;
     private static int _workerCount = 0;
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     private static Map<String, List<Class<?>>> _apiNameCmdClassMap = new HashMap<String, List<Class<?>>>();
+
+    private static Set<String> commandsPropertiesOverrides = new HashSet<String>();
+    private static Map<RoleType, Set<String>> commandsPropertiesRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
+
 
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
@@ -197,6 +200,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        processMapping(PropertiesUtil.processConfigFile(new String[] { "commands.properties" }));
         return true;
     }
 
@@ -233,6 +237,40 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
         }
 
+        // drop all default policy api permissions - we reload them every time
+        // to include any chanegs done to the @APICommand or
+        // commands.properties.
+        SearchBuilder<AclPolicyPermissionVO> sb = _aclPermissionDao.createSearchBuilder();
+        sb.and("policyId", sb.entity().getAclPolicyId(), SearchCriteria.Op.EQ);
+        sb.and("resourceType", sb.entity().getEntityType(), SearchCriteria.Op.NULL);
+        sb.and("scope", sb.entity().getScope(), SearchCriteria.Op.EQ);
+        sb.done();
+
+        SearchCriteria<AclPolicyPermissionVO> permissionSC = sb.create();
+
+        for (RoleType role : RoleType.values()) {
+            permissionSC.setParameters("policyId", role.ordinal() + 1);
+            switch (role) {
+            case User:
+                permissionSC.setParameters("scope", PermissionScope.ACCOUNT.toString());
+                break;
+
+            case Admin:
+                permissionSC.setParameters("scope", PermissionScope.ALL.toString());
+                break;
+
+            case DomainAdmin:
+                permissionSC.setParameters("scope", PermissionScope.DOMAIN.toString());
+                break;
+
+            case ResourceAdmin:
+                permissionSC.setParameters("scope", PermissionScope.DOMAIN.toString());
+                break;
+            }
+            _aclPermissionDao.expunge(permissionSC);
+
+        }
+
         for(Class<?> cmdClass: cmdClasses) {
             APICommand at = cmdClass.getAnnotation(APICommand.class);
             if (at == null) {
@@ -246,51 +284,26 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
             apiCmdList.add(cmdClass);
 
-            boolean isReadCommand = false;
-            BaseCmd cmdObj;
-            try {
-                cmdObj = (BaseCmd) cmdClass.newInstance();
-                if (cmdObj instanceof BaseListCmd) {
-                    isReadCommand = true;
-                }
-            } catch (Exception e) {
-            }
-
-            for (RoleType role : at.authorized()) {
-                AclPermissionVO apiPermission = null;
-                switch (role) {
-                case User:
-                    apiPermission = new AclPermissionVO(apiName, null, null, PermissionScope.ACCOUNT, null,
-                            Permission.Allow);
-                    break;
-
-                case Admin:
-                    apiPermission = new AclPermissionVO(apiName, null, null, PermissionScope.ALL, null,
-                            Permission.Allow);
-                    break;
-
-                case DomainAdmin:
-                    apiPermission = new AclPermissionVO(apiName, null, null, PermissionScope.DOMAIN, null,
-                            Permission.Allow);
-                    break;
-
-                case ResourceAdmin:
-                    apiPermission = new AclPermissionVO(apiName, null, null, PermissionScope.DOMAIN, null,
-                            Permission.Allow);
-                    break;
-                }
-
-                if (apiPermission != null) {
-                    if (isReadCommand) {
-                        apiPermission.setAccessType(AccessType.ListEntry);
-                    }
-                    _aclPermissionDao.persist(apiPermission);
-                    AclPolicyPermissionMapVO policyPermMapEntry = new AclPolicyPermissionMapVO(role.ordinal() + 1,
-                            apiPermission.getId());
-                    _aclPolicyPermissionMapDao.persist(policyPermMapEntry);
+            if (!commandsPropertiesOverrides.contains(apiName)) {
+                for (RoleType role : at.authorized()) {
+                    addDefaultAclPolicyPermission(apiName, cmdClass, role);
                 }
             }
         }
+
+        // read commands.properties and load api acl permissions -
+        // commands.properties overrides any @APICommand authorization
+
+        for (String apiName : commandsPropertiesOverrides) {
+            Class<?> cmdClass = getCmdClass(apiName);
+            for (RoleType role : RoleType.values()) {
+                if (commandsPropertiesRoleBasedApisMap.get(role).contains(apiName)) {
+                    // insert permission for this role for this api
+                    addDefaultAclPolicyPermission(apiName, cmdClass, role);
+                }
+            }
+        }
+
 
         encodeApiResponse = Boolean.valueOf(_configDao.getValue(Config.EncodeApiResponse.key()));
         String jsonType = _configDao.getValue(Config.JavaScriptDefaultContentType.key());
@@ -304,6 +317,74 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
         
         return true;
+    }
+
+    private void processMapping(Map<String, String> configMap) {
+        for (RoleType roleType : RoleType.values()) {
+            commandsPropertiesRoleBasedApisMap.put(roleType, new HashSet<String>());
+        }
+
+        for (Map.Entry<String, String> entry : configMap.entrySet()) {
+            String apiName = entry.getKey();
+            String roleMask = entry.getValue();
+            commandsPropertiesOverrides.add(apiName);
+            try {
+                short cmdPermissions = Short.parseShort(roleMask);
+                for (RoleType roleType : RoleType.values()) {
+                    if ((cmdPermissions & roleType.getValue()) != 0)
+                        commandsPropertiesRoleBasedApisMap.get(roleType).add(apiName);
+                }
+            } catch (NumberFormatException nfe) {
+                s_logger.info("Malformed key=value pair for entry: " + entry.toString());
+            }
+        }
+    }
+
+    private void addDefaultAclPolicyPermission(String apiName, Class<?> cmdClass, RoleType role) {
+
+        boolean isReadCommand = false;
+        if (cmdClass != null) {
+            BaseCmd cmdObj;
+            try {
+                cmdObj = (BaseCmd) cmdClass.newInstance();
+                if (cmdObj instanceof BaseListCmd) {
+                    isReadCommand = true;
+                }
+            } catch (Exception e) {
+                throw new CloudRuntimeException(String.format(
+                        "%s is claimed as an API command, but it cannot be instantiated", cmdClass.getName()));
+            }
+        }
+
+        AclPolicyPermissionVO apiPermission = null;
+        switch (role) {
+        case User:
+            apiPermission = new AclPolicyPermissionVO(role.ordinal() + 1, apiName, null, null, PermissionScope.ACCOUNT,
+                    null, Permission.Allow);
+            break;
+
+        case Admin:
+            apiPermission = new AclPolicyPermissionVO(role.ordinal() + 1, apiName, null, null, PermissionScope.ALL,
+                    null, Permission.Allow);
+            break;
+
+        case DomainAdmin:
+            apiPermission = new AclPolicyPermissionVO(role.ordinal() + 1, apiName, null, null, PermissionScope.DOMAIN,
+                    null, Permission.Allow);
+            break;
+
+        case ResourceAdmin:
+            apiPermission = new AclPolicyPermissionVO(role.ordinal() + 1, apiName, null, null, PermissionScope.DOMAIN,
+                    null, Permission.Allow);
+            break;
+        }
+
+        if (apiPermission != null) {
+            if (isReadCommand) {
+                apiPermission.setAccessType(AccessType.ListEntry);
+            }
+            _aclPermissionDao.persist(apiPermission);
+        }
     }
 
     // NOTE: handle() only handles over the wire (OTW) requests from integration.api.port 8096
@@ -945,7 +1026,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         else {
             // determine the cmd class based on calling context
             ResponseView view = ResponseView.Restricted;
-            if (_accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())) {
+            if (CallContext.current() != null
+                    && _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())) {
                 view = ResponseView.Full;
             }
             for (Class<?> cmdClass : cmdList) {
