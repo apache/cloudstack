@@ -106,7 +106,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
     @Override
     public boolean configure(String name, Map<String, Object> params) {
-        final Map<String, String> configs = _configDao.getConfiguration("ManagementServer", params);
+        final Map<String, String> configs = _configDao.getConfiguration("management-server", params);
         _sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
         _proxy = configs.get(Config.SecStorageProxy.key());
 
