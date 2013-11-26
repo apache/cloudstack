@@ -135,6 +135,49 @@ def isPidMatchPidFile(pidfile, pids):
     fd.close()
     return StatusCodes.FAILED
 
+def checkProcessRunningStatus(process_name, pidFile):
+    printd("checking the process " + process_name)
+    cmd = ''
+    pids = []
+    cmd = 'pidof ' + process_name
+    printd(cmd)
+
+    #cmd = 'service ' + process_name + ' status'
+    pout = Popen(cmd, shell=True, stdout=PIPE)
+    exitStatus = pout.wait()
+    temp_out = pout.communicate()[0]
+
+    #check there is only one pid or not
+    if exitStatus == 0:
+        pids = temp_out.split(' ')
+        printd("pid(s) of process %s are %s " %(process_name, pids))
+
+        #there is more than one process so match the pid file
+        #if not matched set pidFileMatched=False
+        printd("Checking pid file")
+        if isPidMatchPidFile(pidFile, pids) == StatusCodes.SUCCESS:
+            return True,pids;
+
+    printd("pid of exit status %s" %exitStatus)
+
+    return False,pids;
+
+def restartService(service_name):
+
+    cmd = 'service ' + service_name + ' restart'
+    cout = Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT)
+    return_val = cout.wait()
+
+    if return_val == 0:
+        printd("The service " + service_name +" recovered successfully ")
+        msg="The process " +service_name+" is recovered successfully "
+        raisealert(Log.INFO,msg,service_name)
+        return True
+    else:
+        printd("process restart failed ....")
+
+    return False
+
 
 
 def checkProcessStatus( process ):
@@ -152,56 +195,28 @@ def checkProcessStatus( process ):
     if process_name is None:
         printd ("\n Invalid Process Name")
         return StatusCodes.INVALID_INP
-    else:
-        printd("checking the process " + process_name)
-        cmd = 'pidof ' + process_name
-        printd(cmd)
-        #cmd = 'service ' + process_name + ' status'
-        pout = Popen(cmd, shell=True, stdout=PIPE)
-        exitStatus = pout.wait()
-        temp_out = pout.communicate()[0]
 
-    #check there is only one pid or not
-    if exitStatus == 0:
-        pids = temp_out.split(' ')
-        msg="pids: " +temp_out;
-        printd(msg)
+    status, pids = checkProcessRunningStatus(process_name, pidfile)
 
-        #there is more than one process so match the pid file
-        #if not matched set pidFileMatched=False
-        printd("Checking pid file")
-        if isPidMatchPidFile(pidfile, pids) == StatusCodes.SUCCESS:
-            pidFileMatched = True;
-        else:
-            pidFileMatched = False;
-
-    if exitStatus == 0 and pidFileMatched == True:
+    if status == True:
         printd("The process is running ....")
         return  StatusCodes.RUNNING
     else:
-        printd('exit status:'+str(exitStatus))
-        msg="The process " + process_name +" is not running trying recover "
-        printd(msg)
+        printd("Process %s is not running trying to recover" %process_name)
         #Retry the process state for few seconds
+
         for i in range(1, Config.RETRY_ITERATIONS):
-            pout = Popen(cmd, shell=True, stdout=PIPE)
-            exitStatus = pout.wait()
-            temp_out = pout.communicate()[0]
+            time.sleep(Config.SLEEP_SEC)
 
             if i < Config.RETRY_FOR_RESTART: # this is just for trying few more times
-                if exitStatus == 0:
-                    pids = temp_out.split(' ')
 
-                    if isPidMatchPidFile(pidfile, pids) == StatusCodes.SUCCESS:
-                        pidFileMatched = True;
-                        printd("pid file is matched ...")
-                        raisealert(Log.ALERT, "The process detected as running", process_name)
-                        break
-                    else:
-                        printd("pid file is not matched ...")
-                        pidFileMatched = False;
-                        time.sleep(Config.SLEEP_SEC)
-                        continue
+                status, pids = checkProcessRunningStatus(process_name, pidfile)
+                if status == True:
+                    raisealert(Log.ALERT, "The process detected as running", process_name)
+                    break
+                else:
+                    printd("Process %s is not running checking the status again..." %process_name)
+                    continue
             else:
                 msg="The process " +process_name+" is not running trying recover "
                 raisealert(Log.INFO,process_name,msg)
@@ -213,25 +228,10 @@ def checkProcessStatus( process ):
                         printd(cmd)
                         Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT)
 
-                cmd = 'service ' + service_name + ' restart'
-
-                time.sleep(Config.SLEEP_SEC)
-                #return_val= check_call(cmd , shell=True)
-
-                cout = Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT)
-                return_val = cout.wait()
-
-                if return_val == 0:
-                    printd("The process" + process_name +" recovered successfully ")
-                    msg="The process " +process_name+" is recovered successfully "
-                    raisealert(Log.INFO,msg,process_name)
-
-                    break;
+                if restartService(service_name) == True:
+                    break
                 else:
-                    #retry restarting the process for few tries
-                    printd("process restart failing trying again ....")
-                    restartFailed=True
-                    time.sleep(Config.SLEEP_SEC)
+                    restartFailed = True
                     continue
         #for end here
 
@@ -255,6 +255,7 @@ def monitProcess( processes_info ):
 
     dict_unmonit={}
     umonit_update={}
+    unMonitPs=False
 
     if not path.isfile(Config.UNMONIT_PS_FILE):
         printd('Unmonit File not exist')
@@ -265,30 +266,23 @@ def monitProcess( processes_info ):
     #time for noting process down time
     csec = repr(time.time()).split('.')[0]
 
-    unMonitPs=False
-
     for process,properties in processes_info.items():
         #skip the process it its time stamp less than Config.MONIT_AFTER_MINS
-        printd ("checking the process %s \n" %process)
+        printd ("checking the service %s \n" %process)
 
         if not is_emtpy(dict_unmonit):
             if dict_unmonit.has_key(process):
                 ts = dict_unmonit[process]
-                printd("Time difference=%s" %str(int(csec) - int(ts)))
-                tmin = (int(csec) - int(ts) )/60
 
-                if ( int(csec) - int(ts) )/60 < Config.MONIT_AFTER_MINS:
-                    raisealert(Log.ALERT, "The %s get monitor after %s minutes " %(process, Config.MONIT_AFTER_MINS))
-                    printd('process will be monitored after %s min' %(str(int(Config.MONIT_AFTER_MINS) - tmin)))
-                    unMonitPs=True
+                if checkPsTimeStampForMonitor (csec, ts, properties) == False:
+                    unMonitPs = True
                     continue
 
         if checkProcessStatus( properties) != StatusCodes.RUNNING:
-            printd( "\n Process %s is not Running"%process)
+            printd( "\n Service %s is not Running"%process)
             #add this process into unmonit list
-            printd ("updating the process for unmonit %s\n" %process)
+            printd ("updating the service for unmonit %s\n" %process)
             umonit_update[process]=csec
-
 
     #if dict is not empty write to file else delete it
     if not is_emtpy(umonit_update):
@@ -296,11 +290,24 @@ def monitProcess( processes_info ):
     else:
         if is_emtpy(umonit_update) and unMonitPs == False:
             #delete file it is there
-            if path.isfile(Config.UNMONIT_PS_FILE):
-                printd("Removing the file %s" %Config.UNMONIT_PS_FILE)
-                os.remove(Config.UNMONIT_PS_FILE)
+            removeFile(Config.UNMONIT_PS_FILE)
 
 
+def checkPsTimeStampForMonitor(csec,ts, process):
+    printd("Time difference=%s" %str(int(csec) - int(ts)))
+    tmin = (int(csec) - int(ts) )/60
+
+    if ( int(csec) - int(ts) )/60 < Config.MONIT_AFTER_MINS:
+        raisealert(Log.ALERT, "The %s get monitor after %s minutes " %(process, Config.MONIT_AFTER_MINS))
+        printd('process will be monitored after %s min' %(str(int(Config.MONIT_AFTER_MINS) - tmin)))
+        return False
+
+    return  True
+
+def removeFile(fileName):
+    if path.isfile(fileName):
+        printd("Removing the file %s" %fileName)
+        os.remove(fileName)
 
 def loadPsFromUnMonitFile():
 
@@ -358,17 +365,13 @@ def main():
     '''
     Step1 : Get Config
     '''
-
     printd("monitoring started")
     temp_dict  = getConfig()
-
 
     '''
     Step2: Monitor and Raise Alert
     '''
-    #raisealert(Log.INFO, 'Monit started')
     monitProcess( temp_dict )
-
 
 if __name__ == "__main__":
     main()
