@@ -47,6 +47,7 @@ import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.NetworkACLItemDao;
 import com.cloud.network.vpc.dao.StaticRouteDao;
 import com.cloud.network.vpc.dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
@@ -134,6 +135,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     ServiceOfferingDao _serviceOffDao;
     @Inject
     PrimaryDataStoreDao _storagePoolDao;
+    @Inject
+    VpcGatewayDao _vpcGatewayDao;
 
 
     @Override
@@ -159,6 +162,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         _daoMap.put(ResourceObjectType.Zone, _dataCenterDao);
         _daoMap.put(ResourceObjectType.ServiceOffering, _serviceOffDao);
         _daoMap.put(ResourceObjectType.Storage, _storagePoolDao);
+        _daoMap.put(ResourceObjectType.PrivateGateway, _vpcGatewayDao);
 
 
         return true;
