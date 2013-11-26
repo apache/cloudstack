@@ -280,6 +280,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 value = accountResourceLimitMap.get(type);
             }
             if (value != null) {
+                if (value < 0) { // return unlimit if value is set to negative
+                    return max;
+                }
                 // convert the value from GiB to bytes in case of primary or secondary storage.
                 if (type == ResourceType.primary_storage || type == ResourceType.secondary_storage) {
                     value = value * ResourceType.bytesToGiB;
@@ -314,6 +317,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 value = accountResourceLimitMap.get(type);
             }
             if (value != null) {
+                if (value < 0) { // return unlimit if value is set to negative
+                    return max;
+                }
                 if (type == ResourceType.primary_storage || type == ResourceType.secondary_storage) {
                     value = value * ResourceType.bytesToGiB;
                 }
