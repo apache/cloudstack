@@ -749,6 +749,17 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     }
 
     @Override
+    protected HashMap<String, Object> buildConfigParams(HostVO host){
+        HashMap<String, Object> params = super.buildConfigParams(host);
+        DataCenterVO zone = _dcDao.findById(host.getDataCenterId());
+        if ( zone != null ) {
+            boolean securityGroupEnabled = zone.isSecurityGroupEnabled();
+            params.put("securitygroupenabled", Boolean.toString(securityGroupEnabled));
+        }
+        return params;
+    }
+
+    @Override
     public boolean stop() {
         _resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
         return super.stop();
