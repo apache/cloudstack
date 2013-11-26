@@ -116,6 +116,8 @@
 
     <bean id="identityServiceImpl" class="com.cloud.uuididentity.IdentityServiceImpl" />
 
+    <bean id="uUIDManagerImpl" class="com.cloud.uuididentity.UUIDManagerImpl" />
+
     <bean id="keystoreManagerImpl" class="com.cloud.keystore.KeystoreManagerImpl" />
 
     <bean id="loadBalancingRulesManagerImpl" class="com.cloud.network.lb.LoadBalancingRulesManagerImpl" >

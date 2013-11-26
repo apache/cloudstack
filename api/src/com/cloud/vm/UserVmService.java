@@ -137,6 +137,7 @@ public interface UserVmService {
      * caller.
      *
      *
+     *
      * @param zone
      *            - availability zone for the virtual machine
      * @param serviceOffering
@@ -182,15 +183,10 @@ public interface UserVmService {
      * @param displayVm
      *            - Boolean flag whether to the display the vm to the end user or not
      * @param affinityGroupIdList
-     * @param accountName
-     *            - an optional account for the virtual machine. Must be used
-     *            with domainId
-     * @param domainId
-     *            - an optional domainId for the virtual machine. If the account
-     *            parameter is used, domainId must also be used
      * @param cpuSpeed
      * @param memory
      * @param cpuNumber
+     * @param customId
      * @return UserVm object if successful.
      *
      * @throws InsufficientCapacityException
@@ -204,14 +200,15 @@ public interface UserVmService {
      * @throws InsufficientResourcesException
      */
     UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList,
-        Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod,
-        String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIp, Boolean displayVm, String keyboard,
-        List<Long> affinityGroupIdList, Integer cpuSpeed, Integer memory, Integer cpuNumber, Long rootdisksize) throws InsufficientCapacityException,
+                                                  Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod,
+                                                  String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIp, Boolean displayVm, String keyboard,
+                                                  List<Long> affinityGroupIdList, Integer cpuSpeed, Integer memory, Integer cpuNumber, Long rootdisksize, String customId) throws InsufficientCapacityException,
         ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
      * Creates a User VM in Advanced Zone (Security Group feature is enabled) in
      * the database and returns the VM to the caller.
+     *
      *
      *
      * @param zone
@@ -261,15 +258,9 @@ public interface UserVmService {
      * @param displayVm
      *            - Boolean flag whether to the display the vm to the end user or not
      * @param affinityGroupIdList
-     * @param accountName
-     *            - an optional account for the virtual machine. Must be used
-     *            with domainId
-     * @param domainId
-     *            - an optional domainId for the virtual machine. If the account
-     *            parameter is used, domainId must also be used
-     * @param CpuSpeed
      * @param memory
      * @param cpuNumber
+     * @param customId
      * @return UserVm object if successful.
      *
      * @throws InsufficientCapacityException
@@ -283,14 +274,15 @@ public interface UserVmService {
      * @throws InsufficientResourcesException
      */
     UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList,
-        List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
-        HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard,
-        List<Long> affinityGroupIdList, Integer cpuSpeed, Integer memory, Integer cpuNumber, Long rootdisksize) throws InsufficientCapacityException,
+                                                     List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
+                                                     HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard,
+                                                     List<Long> affinityGroupIdList, Integer cpuSpeed, Integer memory, Integer cpuNumber, Long rootdisksize, String customId) throws InsufficientCapacityException,
         ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
      * Creates a User VM in Advanced Zone (Security Group feature is disabled)
      * in the database and returns the VM to the caller.
+     *
      *
      *
      * @param zone
@@ -337,15 +329,10 @@ public interface UserVmService {
      * @param displayVm
      *            - Boolean flag whether to the display the vm to the end user or not
      * @param affinityGroupIdList
-     * @param accountName
-     *            - an optional account for the virtual machine. Must be used
-     *            with domainId
-     * @param domainId
-     *            - an optional domainId for the virtual machine. If the account
-     *            parameter is used, domainId must also be used
      * @param cpuSpeed
      * @param memory
      * @param cpuNumber
+     * @param customId
      * @return UserVm object if successful.
      *
      * @throws InsufficientCapacityException
@@ -359,9 +346,9 @@ public interface UserVmService {
      * @throws InsufficientResourcesException
      */
     UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner,
-        String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData,
-        String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList,
-        Integer cpuSpeed, Integer memory, Integer cpuNumber, Long rootdkisksize)
+                                        String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData,
+                                        String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList,
+                                        Integer cpuSpeed, Integer memory, Integer cpuNumber, Long rootdkisksize, String customId)
 
     throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 

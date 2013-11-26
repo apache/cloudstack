@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -69,7 +70,7 @@ import com.cloud.uservm.UserVm;
 @APICommand(name = "deployVirtualMachine",
             description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.",
             responseObject = UserVmResponse.class)
-public class DeployVMCmd extends BaseAsyncCreateCmd {
+public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmd.class.getName());
 
     private static final String s_name = "deployvirtualmachineresponse";
@@ -576,14 +577,14 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                     vm =
                         _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name, displayName,
                             diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard,
-                            getAffinityGroupIdList(), cpuSpeed, memory, cpuNumber, rootdisksize);
+                            getAffinityGroupIdList(), cpuSpeed, memory, cpuNumber, rootdisksize, getCustomId());
                 }
             } else {
                 if (zone.isSecurityGroupEnabled()) {
                     vm =
                         _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(), owner, name,
                             displayName, diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm,
-                            keyboard, getAffinityGroupIdList(), cpuSpeed, memory, cpuNumber, rootdisksize);
+                            keyboard, getAffinityGroupIdList(), cpuSpeed, memory, cpuNumber, rootdisksize, getCustomId());
 
                 } else {
                     if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
@@ -592,7 +593,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                     vm =
                         _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName, diskOfferingId, size,
                             group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList(),
-                            cpuSpeed, memory, cpuNumber, rootdisksize);
+                            cpuSpeed, memory, cpuNumber, rootdisksize, getCustomId());
 
                 }
             }

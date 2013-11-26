@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.uuididentity.UUIDManager;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.BaseCmd;
@@ -302,6 +303,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     UploadMonitor _uploadMonitor;
     @Inject
     UploadDao _uploadDao;
+    @Inject
+    UUIDManager _uuidMgr;
 
     @Inject
     protected HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
@@ -604,18 +607,21 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             userSpecifiedName = getRandomVolumeName();
         }
 
-        VolumeVO volume = commitVolume(cmd, caller, ownerId, displayVolumeEnabled, zoneId, diskOfferingId, size, minIops, maxIops, parentVolume, userSpecifiedName);
+        VolumeVO volume = commitVolume(cmd, caller, ownerId, displayVolumeEnabled, zoneId, diskOfferingId, size, minIops,
+                maxIops, parentVolume, userSpecifiedName, _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()));
 
         return volume;
     }
 
     private VolumeVO commitVolume(final CreateVolumeCmd cmd, final Account caller, final long ownerId, final Boolean displayVolumeEnabled, final Long zoneId,
-        final Long diskOfferingId, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume, final String userSpecifiedName) {
+        final Long diskOfferingId, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume,
+        final String userSpecifiedName, final String uuid) {
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
                 VolumeVO volume = new VolumeVO(userSpecifiedName, -1, -1, -1, -1, new Long(-1), null, null, 0, Volume.Type.DATADISK);
                 volume.setPoolId(null);
+                volume.setUuid(uuid);
                 volume.setDataCenterId(zoneId);
                 volume.setPodId(null);
                 volume.setAccountId(ownerId);
@@ -1134,7 +1140,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPDATE, eventDescription = "updating volume", async = true)
-    public Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume) {
+    public Volume updateVolume(long volumeId, String path, String state, Long storageId, Boolean displayVolume, String customId) {
         VolumeVO volume = _volumeDao.findById(volumeId);
 
         if (path != null) {
@@ -1160,6 +1166,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new InvalidParameterValueException("Invalid storageId specified; refers to the pool outside of the volume's zone");
             }
             volume.setPoolId(pool.getId());
+        }
+
+        if (customId != null){
+            _uuidMgr.checkUuid(customId, Volume.class);
+            volume.setUuid(customId);
         }
 
         _volumeDao.update(volumeId, volume);

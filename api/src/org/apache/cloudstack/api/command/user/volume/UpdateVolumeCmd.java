@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
+import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -34,7 +35,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.Volume;
 
 @APICommand(name = "updateVolume", description = "Updates the volume.", responseObject = VolumeResponse.class)
-public class UpdateVolumeCmd extends BaseAsyncCmd {
+public class UpdateVolumeCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVolumeCmd.class.getName());
     private static final String s_name = "updatevolumeresponse";
 
@@ -140,7 +141,7 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Volume Id: " + getId());
-        Volume result = _volumeService.updateVolume(getId(), getPath(), getState(), getStorageId(), getDisplayVolume());
+        Volume result = _volumeService.updateVolume(getId(), getPath(), getState(), getStorageId(), getDisplayVolume(), getCustomId());
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(result);
             response.setResponseName(getCommandName());

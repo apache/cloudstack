@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
+import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -41,7 +43,7 @@ import com.cloud.storage.Volume;
 @APICommand(name = "createVolume",
             responseObject = VolumeResponse.class,
             description = "Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.")
-public class CreateVolumeCmd extends BaseAsyncCreateCmd {
+public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());
     private static final String s_name = "createvolumeresponse";
 
@@ -50,7 +52,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ACCOUNT,
-               type = CommandType.STRING,
+               type = BaseCmd.CommandType.STRING,
                description = "the account associated with the disk volume. Must be used with the domainId parameter.")
     private String accountName;
 
