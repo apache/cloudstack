@@ -78,6 +78,11 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     @Transient
     Map<String, String> details;
 
+    // This flag is required to tell if the offering is dynamic once the cpu, memory and speed are set.
+    // In some cases cpu, memory and speed are set to non-null values even if the offering is dynamic.
+    @Transient
+    boolean isDynamic;
+
     protected ServiceOfferingVO() {
         super();
     }
@@ -257,8 +262,10 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     }
 
     public boolean isDynamic() {
-        return cpu == null || speed == null || ramSize == null;
+        return cpu == null || speed == null || ramSize == null || isDynamic;
     }
 
-
+    public void setDynamicFlag(boolean isdynamic) {
+        this.isDynamic = isdynamic;
+    }
 }
