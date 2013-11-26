@@ -156,11 +156,11 @@ def checkProcessRunningStatus(process_name, pidFile):
         #if not matched set pidFileMatched=False
         printd("Checking pid file")
         if isPidMatchPidFile(pidFile, pids) == StatusCodes.SUCCESS:
-            return True,pids;
+            return True,pids
 
     printd("pid of exit status %s" %exitStatus)
 
-    return False,pids;
+    return False,pids
 
 def restartService(service_name):
 
@@ -224,7 +224,7 @@ def checkProcessStatus( process ):
                 if service_name == 'apache2':
                     # Killing apache2 process with this the main service will not start
                     for pid in pids:
-                        cmd = 'kill -9 '+pid;
+                        cmd = 'kill -9 '+pid
                         printd(cmd)
                         Popen(cmd, shell=True, stdout=PIPE, stderr=STDOUT)
 
@@ -331,9 +331,9 @@ def loadPsFromUnMonitFile():
     for i in plist:
         dict_unmonit[i.split(':')[0]] = i.split(':')[1]
 
-    fd.close();
+    fd.close()
 
-    return dict_unmonit;
+    return dict_unmonit
 
 
 def writePsListToUnmonitFile(umonit_update):
@@ -348,7 +348,7 @@ def writePsListToUnmonitFile(umonit_update):
         printd("Failed to open file %s " %Config.UNMONIT_PS_FILE)
         return StatusCodes.FAILED
 
-    fd.write(line);
+    fd.write(line)
     fd.close()
 
 
