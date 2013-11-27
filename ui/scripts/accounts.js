@@ -372,7 +372,59 @@
                                         data: data,
                                         async: true,
                                         success: function(json) {
-                                            //var resourcecounts= json.updateresourcecountresponse.resourcecount;   //do nothing
+                                            var resourcecounts= json.updateresourcecountresponse.resourcecount;                                               
+                                            //pop up API response in a dialog box since only updateResourceCount API returns resourcecount (listResourceLimits API does NOT return resourcecount)
+                                            var msg = '';
+                                            if (resourcecounts != null) {
+                                            	for (var i = 0; i < resourcecounts.length; i++) {                                            		
+                                            		switch (resourcecounts[i].resourcetype) {
+                                            		case '0':
+                                            			msg += 'Instance'; //vmLimit
+                                            			break;
+                                            		case '1':
+                                            			msg += 'Public IP'; //ipLimit
+                                            			break;
+                                            		case '2':
+                                            			msg += 'Volume'; //volumeLimit
+                                            			break;
+                                            		case '3':
+                                            		    msg += 'Snapshot'; //snapshotLimit
+                                            		    break;
+                                            		case '4':
+                                            			msg += 'Template'; //templateLimit
+                                            			break;
+                                            		case '5':                                            			
+                                            			continue; //resourcetype 5 is not in use. so, skip to next item.                                          			
+                                            			break;
+                                            		case '6':
+                                            			msg += 'Network'; //networkLimit
+                                            			break;
+                                            		case '7':
+                                            			msg += 'VPC'; //vpcLimit
+                                            			break;
+                                            		case '8':
+                                            			msg += 'CPU'; //cpuLimit
+                                            			break;
+                                            		case '9':
+                                            			msg += 'Memory'; //memoryLimit
+                                            			break;
+                                            		case '10':
+                                            			msg += 'Primary Storage'; //primaryStorageLimit
+                                            			break;
+                                            		case '11':
+                                            			msg += 'Secondary Storage'; //secondaryStorageLimit
+                                            			break;      
+                                            		}
+                                            		                                      		
+                                            		msg += ' Count: ' + resourcecounts[i].resourcecount + ' <br> ';
+                                            	}
+                                            }
+                                            
+                                            
+                                            cloudStack.dialog.notice({
+                                            	message: msg
+                                            });                                            
+                                            
                                             args.response.success();
                                         },
                                         error: function(json) {
