@@ -346,6 +346,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         CountByAccount.select(null, Func.COUNT, null);
         CountByAccount.and("account", CountByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
         CountByAccount.and("state", CountByAccount.entity().getState(), SearchCriteria.Op.NIN);
+        CountByAccount.and("displayVolume", CountByAccount.entity().isDisplayVolume(), Op.EQ);
         CountByAccount.done();
 
         primaryStorageSearch = createSearchBuilder(SumCount.class);
@@ -355,6 +356,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         primaryStorageSearch.and().op("path", primaryStorageSearch.entity().getPath(), Op.NNULL);
         primaryStorageSearch.or("states", primaryStorageSearch.entity().getState(), Op.IN);
         primaryStorageSearch.cp();
+        primaryStorageSearch.and("displayVolume", primaryStorageSearch.entity().isDisplayVolume(), Op.EQ);
         primaryStorageSearch.and("isRemoved", primaryStorageSearch.entity().getRemoved(), Op.NULL);
         primaryStorageSearch.done();
 
@@ -382,6 +384,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         SearchCriteria<Long> sc = CountByAccount.create();
         sc.setParameters("account", accountId);
         sc.setParameters("state", Volume.State.Destroy);
+        sc.setParameters("displayVolume", 1);
         return customSearch(sc, null).get(0);
     }
 
@@ -393,6 +396,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
             sc.setParameters("virtualRouterVmIds", virtualRouters.toArray(new Object[virtualRouters.size()]));
         }
         sc.setParameters("states", State.Allocated);
+        sc.setParameters("displayVolume", 1);
         List<SumCount> storageSpace = customSearch(sc, null);
         if (storageSpace != null) {
             return storageSpace.get(0).sum;
