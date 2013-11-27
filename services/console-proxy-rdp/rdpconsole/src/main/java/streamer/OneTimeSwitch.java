@@ -87,13 +87,16 @@ public abstract class OneTimeSwitch extends BaseElement {
         // Wake up next peer(s)
         sendEventToAllPads(Event.STREAM_START, Direction.OUT);
 
+        // Disconnect our stdin from this element
         stdin.setSink(null);
         inputPads.remove(STDIN);
 
+        // Replace next peer stdin (our stdout) by our stdin
         Element nextPeer = stdout.getSink();
         nextPeer.replaceLink(stdout, stdin);
         stdout.drop();
 
+        // Drop all other links
         for (Object link : inputPads.values().toArray())
             ((Link)link).drop();
         for (Object link : outputPads.values().toArray())

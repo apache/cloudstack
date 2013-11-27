@@ -82,32 +82,32 @@ public class BufferedImagePixelsAdapter extends BaseElement {
 
         switch (dataBuf.getDataType()) {
 
-            case DataBuffer.TYPE_INT: {
+        case DataBuffer.TYPE_INT: {
 
-                // Convert array of bytes to array of int's
-                int[] intArray = buf.toIntLEArray();
+            // Convert array of bytes to array of int's
+            int[] intArray = buf.toIntLEArray();
 
-                // We chose RGB888 model, so Raster will use DataBufferInt type
-                DataBufferInt dataBuffer = (DataBufferInt)dataBuf;
+            // We chose RGB888 model, so Raster will use DataBufferInt type
+            DataBufferInt dataBuffer = (DataBufferInt)dataBuf;
 
-                int imageWidth = image.getWidth();
-                int imageHeight = image.getHeight();
+            int imageWidth = image.getWidth();
+            int imageHeight = image.getHeight();
 
-                // Paint rectangle directly on buffer, line by line
-                int[] imageBuffer = dataBuffer.getData();
+            // Paint rectangle directly on buffer, line by line
+            int[] imageBuffer = dataBuffer.getData();
 
-                for (int srcLine = 0, dstLine = y; srcLine < rectHeight && dstLine < imageHeight; srcLine++, dstLine++) {
-                    try {
-                        System.arraycopy(intArray, srcLine * rectWidth, imageBuffer, x + dstLine * imageWidth, rectWidth);
-                    } catch (IndexOutOfBoundsException e) {
-                    }
+            for (int srcLine = 0, dstLine = y; srcLine < rectHeight && dstLine < imageHeight; srcLine++, dstLine++) {
+                try {
+                    System.arraycopy(intArray, srcLine * rectWidth, imageBuffer, x + dstLine * imageWidth, rectWidth);
+                } catch (IndexOutOfBoundsException e) {
                 }
-                break;
             }
+            break;
+        }
 
-            default:
-                throw new RuntimeException("Unsupported data buffer in buffered image: expected data buffer of type int (DataBufferInt). Actual data buffer type: " +
-                    dataBuf.getClass().getSimpleName());
+        default:
+            throw new RuntimeException("Unsupported data buffer in buffered image: expected data buffer of type int (DataBufferInt). Actual data buffer type: "
+                    + dataBuf.getClass().getSimpleName());
         }
 
         // Request update of repainted area
@@ -123,13 +123,11 @@ public class BufferedImagePixelsAdapter extends BaseElement {
 
         Element renderer = new BufferedImagePixelsAdapter("renderer", canvas);
 
-        byte[] pixels =
-            new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
-                12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
+        byte[] pixels = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5,
+                6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
 
-        int[] pixelsLE =
-            new int[] {0x04030201, 0x08070605, 0x0c0b0a09, 0x100f0e0d, 0x04030201, 0x08070605, 0x0c0b0a09, 0x100f0e0d, 0x04030201, 0x08070605, 0x0c0b0a09, 0x100f0e0d,
-                0x04030201, 0x08070605, 0x0c0b0a09, 0x100f0e0d};
+        int[] pixelsLE = new int[] {0x04030201, 0x08070605, 0x0c0b0a09, 0x100f0e0d, 0x04030201, 0x08070605, 0x0c0b0a09, 0x100f0e0d, 0x04030201, 0x08070605,
+                0x0c0b0a09, 0x100f0e0d, 0x04030201, 0x08070605, 0x0c0b0a09, 0x100f0e0d};
 
         ByteBuffer buf = new ByteBuffer(pixels);
         buf.putMetadata(TARGET_X, 0);

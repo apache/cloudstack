@@ -56,12 +56,12 @@ public class ScreenDescription {
      * Store information about server pixel format.
      */
     public void setPixelFormat(int bitsPerPixel, int depth, boolean bigEndianFlag, boolean trueColorFlag, int redMax, int greenMax, int blueMax, int redShift,
-        int greenShift, int blueShift) {
+            int greenShift, int blueShift) {
 
-        this.bytesPerPixel = (bitsPerPixel + 7) / 8;
+        bytesPerPixel = (bitsPerPixel + 7) / 8;
 
         this.bitsPerPixel = bitsPerPixel;
-        this.colorDepth = depth;
+        colorDepth = depth;
         this.bigEndianFlag = bigEndianFlag;
         this.trueColorFlag = trueColorFlag;
 
@@ -79,23 +79,23 @@ public class ScreenDescription {
     public void setPixelFormatRGBTrueColor(int bitsPerPixel) {
 
         switch (bitsPerPixel) {
-            case 8:
-                setPixelFormat(8, 8, false, false, -1, -1, -1, -1, -1, -1);
-                break;
-            case 15:
-                setPixelFormat(16, 15, false, true, 31, 31, 31, 0, 5, 10);
-                break;
-            case 16:
-                setPixelFormat(16, 16, false, true, 31, 63, 31, 0, 5, 11);
-                break;
-            case 24:
-                setPixelFormat(24, 24, false, true, 255, 255, 255, 0, 8, 16);
-                break;
-            case 32:
-                setPixelFormat(32, 24, false, true, 255, 255, 255, 0, 8, 16);
-                break;
-            default:
-                throw new RuntimeException("Unknown color depth.");
+        case 8:
+            setPixelFormat(8, 8, false, false, -1, -1, -1, -1, -1, -1);
+            break;
+        case 15:
+            setPixelFormat(16, 15, false, true, 31, 31, 31, 0, 5, 10);
+            break;
+        case 16:
+            setPixelFormat(16, 16, false, true, 31, 63, 31, 0, 5, 11);
+            break;
+        case 24:
+            setPixelFormat(24, 24, false, true, 255, 255, 255, 0, 8, 16);
+            break;
+        case 32:
+            setPixelFormat(32, 24, false, true, 255, 255, 255, 0, 8, 16);
+            break;
+        default:
+            throw new RuntimeException("Unknown color depth.");
         }
 
     }
@@ -107,8 +107,8 @@ public class ScreenDescription {
         if (height <= 0 || width <= 0)
             throw new RuntimeException("Incorrect framebuffer size: " + width + "x" + height + ".");
 
-        this.framebufferWidth = width;
-        this.framebufferHeight = height;
+        framebufferWidth = width;
+        framebufferHeight = height;
 
         callSizeChangeListeners(width, height);
     }
@@ -145,16 +145,16 @@ public class ScreenDescription {
     }
 
     public boolean isRGB888_32_LE() {
-        return (colorDepth == 24 && bitsPerPixel == 32 && redShift == 0 && greenShift == 8 && blueShift == 16 && redMax == 255 && greenMax == 255 && blueMax == 255 &&
-            !bigEndianFlag && trueColorFlag);
+        return (colorDepth == 24 && bitsPerPixel == 32 && redShift == 0 && greenShift == 8 && blueShift == 16 && redMax == 255 && greenMax == 255 && blueMax == 255
+                && !bigEndianFlag && trueColorFlag);
     }
 
     @Override
     public String toString() {
-        return "ScreenDescription [framebufferWidth=" + framebufferWidth + ", framebufferHeight=" + framebufferHeight + ", desktopName=" + desktopName +
-            ", bytesPerPixel=" + bytesPerPixel + ", depth=" + colorDepth + ", bitsPerPixel=" + bitsPerPixel + ", redShift=" + redShift + ", greenShift=" + greenShift +
-            ", blueShift=" + blueShift + ", redMax=" + redMax + ", greenMax=" + greenMax + ", blueMax=" + blueMax + ", bigEndianFlag=" + bigEndianFlag +
-            ", trueColorFlag=" + trueColorFlag + "]";
+        return "ScreenDescription [framebufferWidth=" + framebufferWidth + ", framebufferHeight=" + framebufferHeight + ", desktopName=" + desktopName
+                + ", bytesPerPixel=" + bytesPerPixel + ", depth=" + colorDepth + ", bitsPerPixel=" + bitsPerPixel + ", redShift=" + redShift + ", greenShift=" + greenShift
+                + ", blueShift=" + blueShift + ", redMax=" + redMax + ", greenMax=" + greenMax + ", blueMax=" + blueMax + ", bigEndianFlag=" + bigEndianFlag
+                + ", trueColorFlag=" + trueColorFlag + "]";
     }
 
     public void addSizeChangeListener(SizeChangeListener sizeChangeListener) {

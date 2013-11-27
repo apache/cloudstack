@@ -111,6 +111,19 @@ rem Start TS service
 
 net start Termservice
 
+rem Enable logs
+
+wevtutil sl Microsoft-Windows-TerminalServices-RemoteConnectionManager/Admin /enabled:true /quiet:true
+wevtutil sl Microsoft-Windows-TerminalServices-RemoteConnectionManager/Analytic /enabled:true /quiet:true
+wevtutil sl Microsoft-Windows-TerminalServices-RemoteConnectionManager/Debug /enabled:true /quiet:true
+wevtutil sl Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational /enabled:true /quiet:true
+wevtutil sl Microsoft-Windows-TerminalServices-SessionBroker-Client/Admin /enabled:true /quiet:true
+wevtutil sl Microsoft-Windows-TerminalServices-SessionBroker-Client/Analytic /enabled:true /quiet:true
+wevtutil sl Microsoft-Windows-TerminalServices-SessionBroker-Client/Debug /enabled:true /quiet:true
+wevtutil sl Microsoft-Windows-TerminalServices-SessionBroker-Client/Operational /enabled:true /quiet:true
+wevtutil sl Microsoft-Windows-NTLM/Operational /enabled:true /quiet:true
+
+
 
 rem For Network Monitor Decrypt Expert.
 

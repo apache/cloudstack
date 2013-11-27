@@ -16,9 +16,14 @@
 // under the License.
 package streamer;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import streamer.debug.FakeSink;
+import streamer.debug.FakeSource;
 
 public class PipelineImpl implements Pipeline {
 
@@ -51,11 +56,11 @@ public class PipelineImpl implements Pipeline {
     @Override
     public Set<String> getPads(Direction direction) {
         switch (direction) {
-            case IN:
-                return elements.get(IN).getPads(direction);
+        case IN:
+            return elements.get(IN).getPads(direction);
 
-            case OUT:
-                return elements.get(OUT).getPads(direction);
+        case OUT:
+            return elements.get(OUT).getPads(direction);
         }
         return null;
     }
@@ -71,8 +76,8 @@ public class PipelineImpl implements Pipeline {
             int outPadsNumber = element.getPads(Direction.OUT).size();
             int inPadsNumber = element.getPads(Direction.IN).size();
             if ((outPadsNumber | inPadsNumber) > 0 && (outPadsNumber == 0 || inPadsNumber == 0))
-                throw new RuntimeException("[ " + this + "] Pads of input element of pipeline are not balanced. Element: " + element + ", output pads: " +
-                    element.getPads(Direction.OUT).toString() + ", input pads: " + element.getPads(Direction.IN).toString() + ".");
+                throw new RuntimeException("[ " + this + "] Pads of input element of pipeline are not balanced. Element: " + element + ", output pads: "
+                        + element.getPads(Direction.OUT).toString() + ", input pads: " + element.getPads(Direction.IN).toString() + ".");
         }
 
         // Check OUT element
@@ -81,8 +86,8 @@ public class PipelineImpl implements Pipeline {
             int outPadsNumber = element.getPads(Direction.OUT).size();
             int inPadsNumber = element.getPads(Direction.IN).size();
             if ((outPadsNumber | inPadsNumber) > 0 && (outPadsNumber == 0 || inPadsNumber == 0))
-                throw new RuntimeException("[ " + this + "] Pads of output element of pipeline are not balanced. Element: " + element + ", output pads: " +
-                    element.getPads(Direction.OUT).toString() + ", input pads: " + element.getPads(Direction.IN).toString() + ".");
+                throw new RuntimeException("[ " + this + "] Pads of output element of pipeline are not balanced. Element: " + element + ", output pads: "
+                        + element.getPads(Direction.OUT).toString() + ", input pads: " + element.getPads(Direction.IN).toString() + ".");
         }
 
     }
@@ -127,12 +132,12 @@ public class PipelineImpl implements Pipeline {
     @Override
     public void handleEvent(Event event, Direction direction) {
         switch (direction) {
-            case IN:
-                get(IN).handleEvent(event, direction);
-                break;
-            case OUT:
-                get(OUT).handleEvent(event, direction);
-                break;
+        case IN:
+            get(IN).handleEvent(event, direction);
+            break;
+        case OUT:
+            get(OUT).handleEvent(event, direction);
+            break;
         }
     }
 
@@ -142,8 +147,8 @@ public class PipelineImpl implements Pipeline {
             String id = element.getId();
 
             if (this.elements.containsKey(id))
-                throw new RuntimeException("This pipeline already contains element with same ID. New element: " + element + ", existing element: " +
-                    this.elements.get(id) + ".");
+                throw new RuntimeException("This pipeline already contains element with same ID. New element: " + element + ", existing element: "
+                        + this.elements.get(id) + ".");
 
             this.elements.put(id, element);
         }
@@ -151,6 +156,8 @@ public class PipelineImpl implements Pipeline {
 
     @Override
     public void link(String... elementNames) {
+
+        elementNames = filterOutEmptyStrings(elementNames);
 
         if (elementNames.length < 2)
             throw new RuntimeException("At least two elements are necessary to create link between them.");
@@ -180,8 +187,8 @@ public class PipelineImpl implements Pipeline {
             elements[i] = get(elementName);
 
             if (elements[i] == null)
-                throw new RuntimeException("Cannot find element by name in this pipeline. Element name: \"" + elementName + "\" (" + elementNames[i] + "), pipeline: " +
-                    this + ".");
+                throw new RuntimeException("Cannot find element by name in this pipeline. Element name: \"" + elementName + "\" (" + elementNames[i] + "), pipeline: "
+                        + this + ".");
 
             i++;
         }
@@ -202,6 +209,30 @@ public class PipelineImpl implements Pipeline {
             leftElement.setLink(leftPad, link, Direction.OUT);
             rightElement.setLink(rightPad, link, Direction.IN);
         }
+    }
+
+    /**
+     * Filter out empty strings from array and return new array with non-empty
+     * elements only. If array contains no empty string, returns same array.
+     */
+    private String[] filterOutEmptyStrings(String[] strings) {
+
+        boolean found = false;
+        for (String string : strings) {
+            if (string == null || string.isEmpty()) {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found)
+            return strings;
+
+        List<String> filteredStrings = new ArrayList<String>(strings.length);
+        for (String string : strings)
+            if (string != null && !string.isEmpty())
+                filteredStrings.add(string);
+        return filteredStrings.toArray(new String[filteredStrings.size()]);
     }
 
     @Override
@@ -281,20 +312,20 @@ public class PipelineImpl implements Pipeline {
         // Create elements
         pipeline.add(new FakeSource("source") {
             {
-                this.incommingBufLength = 3;
-                this.numBuffers = 10;
-                this.delay = 100;
+                incommingBufLength = 3;
+                numBuffers = 10;
+                delay = 100;
             }
         });
         pipeline.add(new BaseElement("tee"));
         pipeline.add(new FakeSink("sink") {
             {
-                this.verbose = true;
+                verbose = true;
             }
         });
         pipeline.add(new FakeSink("sink2") {
             {
-                this.verbose = true;
+                verbose = true;
             }
         });
 

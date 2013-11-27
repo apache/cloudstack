@@ -27,7 +27,7 @@ public class SyncLink implements Link {
      * avoid consuming of 100% of CPU in main loop in cases when link is pauses or
      * source element cannot produce data right now.
      */
-    protected static final long STANDARD_DELAY_FOR_EMPTY_PACKET = 10; // Milliseconds
+    public static final long STANDARD_DELAY_FOR_EMPTY_PACKET = 10; // Milliseconds
 
     /**
      * Delay for null packets in poll method when blocking is requested, in
@@ -46,7 +46,8 @@ public class SyncLink implements Link {
     protected String id = null;
 
     /**
-     * Buffer with data to hold because link is paused, or data is pushed back.
+     * Buffer with data to hold because link is paused, on hold, or data is pushed
+     * back from output element.
      */
     protected ByteBuffer cacheBuffer = null;
 
@@ -60,11 +61,6 @@ public class SyncLink implements Link {
      * Number of packets and packet header transferred to element.
      */
     protected int packetNumber = 0;
-
-    /**
-     * Set to true to hold all data in link until it will be set to false again.
-     */
-    protected boolean paused = false;
 
     /**
      * Element to pull data from, when in pull mode.
@@ -87,12 +83,24 @@ public class SyncLink implements Link {
      * Indicates that event STREAM_START is passed over this link, so main loop
      * can be started to pull data from source element.
      */
-    protected boolean start;
+    protected boolean started = false;
 
     /**
-     * Operate in pull mode.
+     * Set to true to hold all data in link until it will be set to false again.
      */
-    protected boolean pullMode;
+    protected boolean paused = false;
+
+    /**
+     * Used by pull() method to hold all data in this link to avoid recursion when
+     * source element is asked to push new data to it outputs.
+     */
+    protected boolean hold = false;
+
+    /**
+     * Operate in pull mode instead of default push mode. In pull mode, link will
+     * ask it source element for new data.
+     */
+    protected boolean pullMode = false;
 
     public SyncLink() {
     }
@@ -139,7 +147,7 @@ public class SyncLink implements Link {
      */
     @Override
     public void sendData(ByteBuffer buf) {
-        if (!paused && pullMode)
+        if (!hold && pullMode)
             throw new RuntimeException("[" + this + "] ERROR: link is not in push mode.");
 
         if (verbose)
@@ -162,7 +170,7 @@ public class SyncLink implements Link {
         // When data pushed back and length of data is less than length of full
         // packet, then feed data to sink element immediately
         while (cacheBuffer != null) {
-            if (paused) {
+            if (paused || hold) {
                 if (verbose)
                     System.out.println("[" + this + "] INFO: Transfer is paused. Data in cache buffer: " + cacheBuffer + ".");
 
@@ -172,8 +180,8 @@ public class SyncLink implements Link {
 
             if (expectedPacketSize > 0 && cacheBuffer.length < expectedPacketSize) {
                 if (verbose)
-                    System.out.println("[" + this + "] INFO: Transfer is suspended because available data is less than expected packet size. Expected packet size: " +
-                        expectedPacketSize + ", data in cache buffer: " + cacheBuffer + ".");
+                    System.out.println("[" + this + "] INFO: Transfer is suspended because available data is less than expected packet size. Expected packet size: "
+                            + expectedPacketSize + ", data in cache buffer: " + cacheBuffer + ".");
 
                 // Wait until rest of packet will be read
                 return;
@@ -203,43 +211,46 @@ public class SyncLink implements Link {
 
         // Shutdown main loop (if any) when STREAM_CLOSE event is received.
         switch (event) {
-            case STREAM_START: {
-                if (!start)
-                    start = true;
-                else
-                    // Event already sent trough this link
-                    return;
-                break;
-            }
-            case STREAM_CLOSE: {
-                if (!shutdown)
-                    shutdown = true;
-                else
-                    // Event already sent trough this link
-                    return;
-                break;
-            }
-            case LINK_SWITCH_TO_PULL_MODE: {
-                setPullMode();
-                break;
-            }
+        case STREAM_START: {
+            if (!started)
+                started = true;
+            else
+                // Event already sent trough this link
+                return;
+            break;
+        }
+        case STREAM_CLOSE: {
+            if (!shutdown)
+                shutdown = true;
+            else
+                // Event already sent trough this link
+                return;
+            break;
+        }
+        case LINK_SWITCH_TO_PULL_MODE: {
+            setPullMode();
+            break;
+        }
 
         }
 
         switch (direction) {
-            case IN:
-                source.handleEvent(event, direction);
-                break;
-            case OUT:
-                sink.handleEvent(event, direction);
-                break;
+        case IN:
+            source.handleEvent(event, direction);
+            break;
+        case OUT:
+            sink.handleEvent(event, direction);
+            break;
         }
     }
 
     @Override
     public ByteBuffer pull(boolean block) {
         if (!pullMode)
-            throw new RuntimeException("This link is not in pull mode.");
+            throw new RuntimeException("[" + this + "] ERROR: This link is not in pull mode.");
+
+        if (hold)
+            throw new RuntimeException("[" + this + "] ERROR: This link is already on hold, waiting for data to be pulled in. Circular reference?");
 
         if (paused) {
             if (verbose)
@@ -269,9 +280,12 @@ public class SyncLink implements Link {
 
         // Pause this link, so incoming data will not be sent to sink
         // immediately, then ask source element for more data
-        pause();
-        source.poll(block);
-        resume();
+        try {
+            hold = true;
+            source.poll(block);
+        } finally {
+            hold = false;
+        }
 
         // Can return something only when data was stored in buffer
         if (cacheBuffer != null && (expectedPacketSize == 0 || (expectedPacketSize > 0 && cacheBuffer.length >= expectedPacketSize))) {
@@ -289,10 +303,11 @@ public class SyncLink implements Link {
     @Override
     public Element setSink(Element sink) {
         if (sink != null && this.sink != null)
-            throw new RuntimeException("This link sink element is already set. Link: " + this + ", new sink: " + sink + ", existing sink: " + this.sink + ".");
+            throw new RuntimeException("[" + this + "] ERROR: This link sink element is already set. Link: " + this + ", new sink: " + sink + ", existing sink: "
+                    + this.sink + ".");
 
         if (sink == null && cacheBuffer != null)
-            throw new RuntimeException("Cannot drop link: cache is not empty. Link: " + this + ", cache: " + cacheBuffer);
+            throw new RuntimeException("[" + this + "] ERROR: Cannot drop link: cache is not empty. Link: " + this + ", cache: " + cacheBuffer);
 
         this.sink = sink;
 
@@ -302,7 +317,8 @@ public class SyncLink implements Link {
     @Override
     public Element setSource(Element source) {
         if (this.source != null && source != null)
-            throw new RuntimeException("This link source element is already set. Link: " + this + ", new source: " + source + ", existing source: " + this.source + ".");
+            throw new RuntimeException("[" + this + "] ERROR: This link source element is already set. Link: " + this + ", new source: " + source
+                    + ", existing source: " + this.source + ".");
 
         this.source = source;
         return source;
@@ -321,7 +337,7 @@ public class SyncLink implements Link {
     @Override
     public void pause() {
         if (paused)
-            throw new RuntimeException("Link is already paused.");
+            throw new RuntimeException("[" + this + "] ERROR: Link is already paused.");
 
         paused = true;
 
@@ -343,7 +359,7 @@ public class SyncLink implements Link {
     @Override
     public void run() {
         // Wait until even STREAM_START will arrive
-        while (!start) {
+        while (!started) {
             delay();
         }
 
@@ -374,8 +390,7 @@ public class SyncLink implements Link {
         try {
             Thread.sleep(delay);
         } catch (InterruptedException e) {
-            e.printStackTrace(System.err);
-            throw new RuntimeException("Interrupted in main loop.", e);
+            throw new RuntimeException("[" + this + "] ERROR: Interrupted in main loop.", e);
         }
     }
 
@@ -384,16 +399,16 @@ public class SyncLink implements Link {
         if (verbose)
             System.out.println("[" + this + "] INFO: Switching to PULL mode.");
 
-        this.pullMode = true;
+        pullMode = true;
     }
 
     @Override
     public void drop() {
         if (pullMode)
-            throw new RuntimeException("Cannot drop link in pull mode.");
+            throw new RuntimeException("[" + this + "] ERROR: Cannot drop link in pull mode.");
 
         if (cacheBuffer != null)
-            throw new RuntimeException("Cannot drop link when cache conatains data: " + cacheBuffer + ".");
+            throw new RuntimeException("[" + this + "] ERROR: Cannot drop link when cache conatains data: " + cacheBuffer + ".");
 
         source.dropLink(this);
         sink.dropLink(this);

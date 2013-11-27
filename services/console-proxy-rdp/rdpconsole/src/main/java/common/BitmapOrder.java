@@ -40,7 +40,8 @@ public class BitmapOrder extends Order {
     @Override
     public String toString() {
         final int maxLen = 10;
-        return String.format("BitmapUpdateOrder [rectangles=%s]", rectangles != null ? Arrays.asList(rectangles).subList(0, Math.min(rectangles.length, maxLen)) : null);
+        return String.format("BitmapUpdateOrder [rectangles=%s]", rectangles != null ? Arrays.asList(rectangles).subList(0, Math.min(rectangles.length, maxLen))
+                : null);
     }
 
 }

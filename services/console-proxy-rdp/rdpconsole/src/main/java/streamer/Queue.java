@@ -19,6 +19,9 @@ package streamer;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import streamer.debug.FakeSink;
+import streamer.debug.FakeSource;
+
 /**
  * Message queue for safe transfer of packets between threads.
  */
@@ -30,7 +33,6 @@ public class Queue extends BaseElement {
         super(id);
     }
 
-    @SuppressWarnings("incomplete-switch")
     @Override
     public void poll(boolean block) {
         try {
@@ -67,12 +69,12 @@ public class Queue extends BaseElement {
     @Override
     public void handleEvent(Event event, Direction direction) {
         switch (event) {
-            case LINK_SWITCH_TO_PULL_MODE:
-                // Do not propagate this event, because this element is boundary between
-                // threads
-                break;
-            default:
-                super.handleEvent(event, direction);
+        case LINK_SWITCH_TO_PULL_MODE:
+            // Do not propagate this event, because this element is boundary between
+            // threads
+            break;
+        default:
+            super.handleEvent(event, direction);
         }
     }
 
@@ -104,17 +106,17 @@ public class Queue extends BaseElement {
 
         Element source1 = new FakeSource("source1") {
             {
-                this.delay = 100;
-                this.numBuffers = 10;
-                this.incommingBufLength = 10;
+                delay = 100;
+                numBuffers = 10;
+                incommingBufLength = 10;
             }
         };
 
         Element source2 = new FakeSource("source2") {
             {
-                this.delay = 100;
-                this.numBuffers = 10;
-                this.incommingBufLength = 10;
+                delay = 100;
+                numBuffers = 10;
+                incommingBufLength = 10;
             }
         };
 

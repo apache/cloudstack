@@ -49,7 +49,7 @@ public class BufferedImageCanvas extends Canvas {
     }
 
     public void setCanvasSize(int width, int height) {
-        this.offlineImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        offlineImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         graphics = offlineImage.createGraphics();
 
         setSize(offlineImage.getWidth(), offlineImage.getHeight());
