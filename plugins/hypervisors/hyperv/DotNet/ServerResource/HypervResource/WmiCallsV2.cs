@@ -286,13 +286,13 @@ namespace HypervResource
                         throw new ArgumentException(errMsg);
                     }
                     errMsg = vmName + ": Malformed PrimaryDataStore for disk " + diskDrive.ToString();
-                    if (String.IsNullOrEmpty(volInfo.primaryDataStore.path))
+                    if (String.IsNullOrEmpty(volInfo.primaryDataStore.Path))
                     {
                         logger.Error(errMsg);
                         throw new ArgumentException(errMsg);
                     }
-                    errMsg = vmName + ": Missing folder PrimaryDataStore for disk " + diskDrive.ToString() + ", missing path: " +  volInfo.primaryDataStore.path;
-                    if (!Directory.Exists(volInfo.primaryDataStore.path))
+                    errMsg = vmName + ": Missing folder PrimaryDataStore for disk " + diskDrive.ToString() + ", missing path: " +  volInfo.primaryDataStore.Path;
+                    if (!Directory.Exists(volInfo.primaryDataStore.Path))
                     {
                         logger.Error(errMsg);
                         throw new ArgumentException(errMsg);

@@ -23,7 +23,10 @@ using Microsoft.CSharp.RuntimeBinder;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
+using System.Collections.Specialized;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -78,6 +81,31 @@ namespace HypervResource
         public ulong ParentPartitionMinMemoryMb;
         public string LocalSecondaryStoragePath;
         public string systemVmIso;
+
+        private string getPrimaryKey(string id)
+        {
+            return "primary_storage_" + id;
+        }
+
+        public string getPrimaryStorage(string id)
+        {
+            NameValueCollection settings = ConfigurationManager.AppSettings;
+            return settings.Get(getPrimaryKey(id));
+        }
+
+        public void setPrimaryStorage(string id, string path)
+        {
+            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            KeyValueConfigurationCollection settings = config.AppSettings.Settings;
+            string key = getPrimaryKey(id);
+            if (settings[key] != null)
+            {
+                settings.Remove(key);
+            }
+            settings.Add(key, path);
+            config.Save(ConfigurationSaveMode.Modified);
+            ConfigurationManager.RefreshSection("appSettings");
+        }
     }
 
     /// <summary>
@@ -1092,14 +1120,24 @@ namespace HypervResource
 
                     logger.Info(CloudStackTypes.CopyCommand + cmd.ToString());
 
+                    string destFile = null;
+                    if (destTemplateObjectTO != null && destTemplateObjectTO.primaryDataStore != null)
+                    {
+                        destFile = destTemplateObjectTO.FullFileName;
+                        if (!destTemplateObjectTO.primaryDataStore.isLocal)
+                        {
+                            PrimaryDataStoreTO primary = destTemplateObjectTO.primaryDataStore;
+                            Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
+                        }
+                    }
+
                     // Already exists?
-                    if (destTemplateObjectTO != null &&
-                        File.Exists(destTemplateObjectTO.FullFileName) &&
+                    if (destFile != null && File.Exists(destFile) &&
                         !String.IsNullOrEmpty(destTemplateObjectTO.checksum))
                     {
                         // TODO: checksum fails us, because it is of the compressed image.
                         // ASK: should we store the compressed or uncompressed version or is the checksum not calculated correctly?
-                        result = VerifyChecksum(destTemplateObjectTO.FullFileName, destTemplateObjectTO.checksum);
+                        result = VerifyChecksum(destFile, destTemplateObjectTO.checksum);
                     }
 
                     // Do we have to create a new one?
@@ -1112,8 +1150,6 @@ namespace HypervResource
                             // NFS provider download to primary storage?
                             if ((srcTemplateObjectTO.s3DataStoreTO != null || srcTemplateObjectTO.nfsDataStoreTO != null) && destTemplateObjectTO.primaryDataStore != null)
                             {
-                                string destFile = destTemplateObjectTO.FullFileName;
-
                                 if (File.Exists(destFile))
                                 {
                                     logger.Info("Deleting existing file " + destFile);
@@ -1187,7 +1223,7 @@ namespace HypervResource
                             {
                                 destVolumeObjectTO.format = srcTemplateObjectTO.format;
                             }
-                            string destFile = destVolumeObjectTO.FullFileName;
+                            destFile = destVolumeObjectTO.FullFileName;
                             string srcFile = srcTemplateObjectTO.FullFileName;
 
                             if (!File.Exists(srcFile))

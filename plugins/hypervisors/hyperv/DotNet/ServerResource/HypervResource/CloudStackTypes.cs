@@ -31,23 +31,114 @@ namespace HypervResource
 {
     public class PrimaryDataStoreTO
     {
-        public string path;
+        private string path;
+        public string host;
+        private string poolType;
+        public Uri uri;
+        public string _role;
+
+        public string Path
+        {
+            get
+            {
+                if (this.isLocal)
+                {
+                    return path;
+                }
+                else
+                {
+                    return this.UncPath;
+                }
+            }
+            set
+            {
+                this.path = value;
+            }
+        }
+
+        public string UncPath
+        {
+            get
+            {
+                string uncPath = null;
+                if (uri.Scheme.Equals("cifs") || uri.Scheme.Equals("networkfilesystem"))
+                {
+                    uncPath = @"\\" + uri.Host + uri.LocalPath;
+                }
+                return uncPath;
+            }
+        }
+
+        public string User
+        {
+            get
+            {
+                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                return System.Web.HttpUtility.UrlDecode(queryDictionary["user"]);
+            }
+        }
+
+        public string Password
+        {
+            get
+            {
+                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                return System.Web.HttpUtility.UrlDecode(queryDictionary["password"]);
+            }
+        }
+
+        public string Domain
+        {
+            get
+            {
+                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                if (queryDictionary["domain"] != null)
+                {
+                    return System.Web.HttpUtility.UrlDecode(queryDictionary["domain"]);
+                }
+                else return uri.Host;
+            }
+        }
+
+        public Boolean isLocal
+        {
+            get
+            {
+                if (poolType.Equals("Filesystem"))
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
 
         public static PrimaryDataStoreTO ParseJson(dynamic json)
         {
             PrimaryDataStoreTO result = null;
-
             if (json == null)
             {
                 return result;
             }
+
             dynamic primaryDataStoreTOJson = json[CloudStackTypes.PrimaryDataStoreTO];
             if (primaryDataStoreTOJson != null)
             {
                 result = new PrimaryDataStoreTO()
                 {
-                    path = (string)primaryDataStoreTOJson.path
+                    path = (string)primaryDataStoreTOJson.path,
+                    host = (string)primaryDataStoreTOJson.host,
+                    poolType = (string)primaryDataStoreTOJson.poolType
                 };
+
+                if (!result.isLocal)
+                {
+                    // Delete security credentials in original command.  Prevents logger from spilling the beans, as it were.
+                    String uriStr = @"cifs://" + result.host + result.path;
+                    result.uri = new Uri(uriStr);
+                }
             }
             return result;
         }
@@ -61,12 +152,22 @@ namespace HypervResource
         {
             get
             {
-                String result = Path.Combine(this.primaryDataStore.path, this.name);
+                string fileName = null;
+                if (this.primaryDataStore.isLocal)
+                {
+                    fileName = Path.Combine(this.primaryDataStore.Path, this.name);
+                }
+                else
+                {
+                    fileName = @"\\" + this.primaryDataStore.uri.Host + this.primaryDataStore.uri.LocalPath + @"\" + this.name;
+                }
+
                 if (this.format != null)
                 {
-                    result = result + "." + this.format.ToLowerInvariant();
+                    fileName = fileName + "." + this.format.ToLowerInvariant();
                 }
-                return result;
+
+                return fileName;
             }
         }
 
@@ -116,11 +217,16 @@ namespace HypervResource
             {
                 logger.Info("No image format in VolumeObjectTO, going to use format from first file that matches " + volInfo.FullFileName);
 
-                string[] choices = Directory.GetFiles(volInfo.primaryDataStore.path, volInfo.name + ".vhd*");
+                string path = volInfo.primaryDataStore.Path;
+                if (!volInfo.primaryDataStore.isLocal)
+                {
+                    path = volInfo.primaryDataStore.UncPath;
+                }
 
+                string[] choices = choices = Directory.GetFiles(path, volInfo.name + ".vhd*");
                 if (choices.Length != 1)
                 {
-                    String errMsg = "Tried to guess file extension, but cannot find file corresponding to " + Path.Combine(volInfo.primaryDataStore.path, volInfo.name); // format being guessed.
+                    String errMsg = "Tried to guess file extension, but cannot find file corresponding to " + Path.Combine(volInfo.primaryDataStore.Path, volInfo.name); // format being guessed.
                     logger.Debug(errMsg);
                 }
                 else
@@ -145,7 +251,16 @@ namespace HypervResource
             {
                 if (String.IsNullOrEmpty(this.path))
                 {
-                    return Path.Combine(this.primaryDataStore.path, this.name) + '.' + this.format.ToLowerInvariant();
+                    string fileName = null;
+                    if (this.primaryDataStore.isLocal)
+                    {
+                        fileName = Path.Combine(this.primaryDataStore.Path, this.name);
+                    }
+                    else
+                    {
+                        fileName = @"\\" + this.primaryDataStore.uri.Host + this.primaryDataStore.uri.LocalPath + @"\" + this.name;
+                    }
+                    return fileName +'.' + this.format.ToLowerInvariant();
                 }
                 return this.path;
             }
