@@ -326,6 +326,7 @@
   <bean id="VpcDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.VpcDetailsDaoImpl" />
   <bean id="VpcGatewayDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.VpcGatewayDetailsDaoImpl" />
   <bean id="NetworkACLListDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.NetworkACLListDetailsDaoImpl" />
+  <bean id="NetworkACLItemDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.NetworkACLItemDetailsDaoImpl" />
 
   <bean id="databaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker" />
 

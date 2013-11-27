@@ -27,6 +27,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
+import org.apache.cloudstack.resourcedetail.dao.NetworkACLItemDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.NetworkACLListDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.RemoteAccessVpnDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
@@ -89,6 +90,9 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     VpcGatewayDetailsDao _vpcGatewayDetailsDao;
     @Inject
     NetworkACLListDetailsDao _networkACLListDetailsDao;
+    @Inject
+    NetworkACLItemDetailsDao _networkACLDetailsDao;
+    
 
     private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> _daoMap =
             new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
@@ -111,6 +115,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         _daoMap.put(ResourceObjectType.Vpc, _vpcDetailsDao);
         _daoMap.put(ResourceObjectType.PrivateGateway, _vpcGatewayDetailsDao);
         _daoMap.put(ResourceObjectType.NetworkACLList, _networkACLListDetailsDao);
+        _daoMap.put(ResourceObjectType.NetworkACL, _networkACLDetailsDao);
 
         return true;
     }
