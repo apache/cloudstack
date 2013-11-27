@@ -1112,9 +1112,8 @@ namespace HypervResource
 
                 object ansContent = new
                 {
-                    vmInfos = vmProcessorInfo,
+                    vmStatsMap = vmProcessorInfo,
                     result = result,
-                    details = details,
                     contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.GetVmStatsAnswer);
