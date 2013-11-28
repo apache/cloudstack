@@ -25,6 +25,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.event.UsageEventVO;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.UserVmDetailsDao;
@@ -188,14 +189,12 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     public ServiceOfferingVO findById(Long vmId, long serviceOfferingId) {
         ServiceOfferingVO offering = super.findById(serviceOfferingId);
         if (offering.isDynamic()) {
+            offering.setDynamicFlag(true);
             if (vmId == null) {
                 throw new CloudRuntimeException("missing argument vmId");
             }
             Map<String, String> dynamicOffering = userVmDetailsDao.listDetailsKeyPairs(vmId);
-            offering.setCpu(Integer.parseInt(dynamicOffering.get(ServiceOfferingVO.DynamicParameters.cpuNumber.name())));
-            offering.setSpeed(Integer.parseInt(dynamicOffering.get(ServiceOfferingVO.DynamicParameters.cpuSpeed.name())));
-            offering.setRamSize(Integer.parseInt(dynamicOffering.get(ServiceOfferingVO.DynamicParameters.memory.name())));
-            return offering;
+            return getcomputeOffering(offering, dynamicOffering);
         }
         return offering;
     }
@@ -203,15 +202,12 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     public ServiceOfferingVO findByIdIncludingRemoved(Long vmId, long serviceOfferingId) {
         ServiceOfferingVO offering = super.findByIdIncludingRemoved(serviceOfferingId);
         if (offering.isDynamic()) {
+            offering.setDynamicFlag(true);
             if (vmId == null) {
                 throw new CloudRuntimeException("missing argument vmId");
             }
             Map<String, String> dynamicOffering = userVmDetailsDao.listDetailsKeyPairs(vmId);
-            offering.setCpu(Integer.parseInt(dynamicOffering.get(ServiceOfferingVO.DynamicParameters.cpuNumber.name())));
-            offering.setSpeed(Integer.parseInt(dynamicOffering.get(ServiceOfferingVO.DynamicParameters.cpuSpeed.name())));
-            offering.setRamSize(Integer.parseInt(dynamicOffering.get(ServiceOfferingVO.DynamicParameters.memory.name())));
-            return offering;
-
+            return  getcomputeOffering(offering, dynamicOffering);
         }
         return offering;
     }
@@ -227,5 +223,20 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         offering.setSpeed(cpuSpeed);
         offering.setRamSize(memory);
         return offering;
+    }
+
+    public ServiceOfferingVO getcomputeOffering(ServiceOfferingVO serviceOffering, Map<String, String> customParameters) {
+        ServiceOfferingVO dummyoffering = new ServiceOfferingVO(serviceOffering);
+        dummyoffering.setDynamicFlag(true);
+        if (customParameters.containsKey(UsageEventVO.DynamicParameters.cpuNumber.name())) {
+            dummyoffering.setCpu(Integer.parseInt(customParameters.get(UsageEventVO.DynamicParameters.cpuNumber.name())));
+        }
+        if (customParameters.containsKey(UsageEventVO.DynamicParameters.cpuSpeed.name())) {
+            dummyoffering.setSpeed(Integer.parseInt(customParameters.get(UsageEventVO.DynamicParameters.cpuSpeed.name())));
+        }
+        if (customParameters.containsKey(UsageEventVO.DynamicParameters.memory.name())) {
+            dummyoffering.setRamSize(Integer.parseInt(customParameters.get(UsageEventVO.DynamicParameters.memory.name())));
+        }
+        return dummyoffering;
     }
 }

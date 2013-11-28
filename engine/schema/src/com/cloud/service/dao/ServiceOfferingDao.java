@@ -36,6 +36,6 @@ public interface ServiceOfferingDao extends GenericDao<ServiceOfferingVO, Long> 
     void saveDetails(ServiceOfferingVO serviceOffering);
     ServiceOfferingVO findById(Long vmId, long serviceOfferingId);
     ServiceOfferingVO findByIdIncludingRemoved(Long vmId, long serviceOfferingId);
-     boolean isDynamic(long serviceOfferingId);
-    ServiceOfferingVO getcomputeOffering(long serviceOfferingId, Integer cpuCores, Integer cpuSpeed, Integer memory);
+    boolean isDynamic(long serviceOfferingId);
+    ServiceOfferingVO getcomputeOffering(ServiceOfferingVO serviceOffering, Map<String, String> customParameters);
 }

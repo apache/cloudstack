@@ -113,6 +113,8 @@ public class UserVmManagerTest {
     @Mock ServiceOfferingDao _offeringDao;
     @Mock
     EntityManager _entityMgr;
+    @Mock
+    ServiceOfferingVO _offeringVo;
     @Mock ResourceLimitService _resourceLimitMgr;
 
     @Before
@@ -360,13 +362,13 @@ public class UserVmManagerTest {
 
         doNothing().when(_accountMgr).checkAccess(_account, null, true, _templateMock);
 
-        doNothing().when(_itMgr).checkIfCanUpgrade(_vmMock, cmd.getServiceOfferingId());
+        doNothing().when(_itMgr).checkIfCanUpgrade(_vmMock, _offeringVo);
 
 
         ServiceOffering so1 =  getSvcoffering(512);
         ServiceOffering so2 =  getSvcoffering(256);
 
-        when(_entityMgr.findById(eq(ServiceOffering.class), anyLong())).thenReturn(so1);
+        when(_offeringDao.findById(anyLong())).thenReturn((ServiceOfferingVO)so1);
         when(_offeringDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn((ServiceOfferingVO) so1);
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, UUID.randomUUID().toString());

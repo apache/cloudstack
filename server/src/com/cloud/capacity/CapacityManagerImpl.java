@@ -27,6 +27,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.event.UsageEventVO;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
@@ -575,9 +576,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         ClusterDetailsVO clusterDetailRam = _clusterDetailsDao.findDetail(cluster.getId(), "memoryOvercommitRatio");
         Float clusterCpuOvercommitRatio = Float.parseFloat(clusterDetailCpu.getValue());
         Float clusterRamOvercommitRatio = Float.parseFloat(clusterDetailRam.getValue());
-        Float cpuOvercommitRatio = 1f;
-        Float ramOvercommitRatio = 1f;
+        Float cpuOvercommitRatio = null;
+        Float ramOvercommitRatio = null;
         for (VMInstanceVO vm : vms) {
+            cpuOvercommitRatio = 1f;
+            ramOvercommitRatio = 1f;
             Map<String, String> vmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
             String vmDetailCpu = vmDetails.get("cpuOvercommitRatio");
             String vmDetailRam = vmDetails.get("memoryOvercommitRatio");
@@ -588,8 +591,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             }
             ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
             if (so.isDynamic()) {
-                usedMemory += ((Integer.parseInt(vmDetails.get(ServiceOfferingVO.DynamicParameters.memory.name())) * 1024L * 1024L)/ramOvercommitRatio)*clusterRamOvercommitRatio;
-                usedCpu += ((Integer.parseInt(vmDetails.get(ServiceOfferingVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(ServiceOfferingVO.DynamicParameters.cpuSpeed.name())))/cpuOvercommitRatio)*clusterCpuOvercommitRatio;
+                usedMemory += ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.memory.name())) * 1024L * 1024L)/ramOvercommitRatio)*clusterRamOvercommitRatio;
+                usedCpu += ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name())))/cpuOvercommitRatio)*clusterCpuOvercommitRatio;
             }
             else {
                 usedMemory += ((so.getRamSize() * 1024L * 1024L)/ramOvercommitRatio)*clusterRamOvercommitRatio;
@@ -604,16 +607,24 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         for (VMInstanceVO vm : vmsByLastHostId) {
             long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - vm.getUpdateTime().getTime()) / 1000;
             if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
-                UserVmDetailVO vmDetailCpu = _userVmDetailsDao.findDetail(vm.getId(), "cpuOvercommitRatio");
-                UserVmDetailVO vmDetailRam = _userVmDetailsDao.findDetail(vm.getId(),"memoryOvercommitRatio");
+                cpuOvercommitRatio = 1f;
+                ramOvercommitRatio = 1f;
+                Map<String, String> vmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
+                String vmDetailCpu = vmDetails.get("cpuOvercommitRatio");
+                String vmDetailRam = vmDetails.get("memoryOvercommitRatio");
                 if (vmDetailCpu != null ) {
                     //if vmDetail_cpu is not null it means it is running in a overcommited cluster.
-                    cpuOvercommitRatio = Float.parseFloat(vmDetailCpu.getValue());
-                    ramOvercommitRatio = Float.parseFloat(vmDetailRam.getValue());
+                    cpuOvercommitRatio = Float.parseFloat(vmDetailCpu);
+                    ramOvercommitRatio = Float.parseFloat(vmDetailRam);
                 }
                 ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
-                reservedMemory += ((so.getRamSize() * 1024L * 1024L)/ramOvercommitRatio)*clusterRamOvercommitRatio;
-                reservedCpu += (so.getCpu() * so.getSpeed()/cpuOvercommitRatio)*clusterCpuOvercommitRatio;
+                if (so.isDynamic()) {
+                    reservedMemory += ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.memory.name())) * 1024L * 1024L)/ramOvercommitRatio)*clusterRamOvercommitRatio;
+                    reservedMemory += ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name())))/cpuOvercommitRatio)*clusterCpuOvercommitRatio;
+                }else {
+                    reservedMemory += ((so.getRamSize() * 1024L * 1024L)/ramOvercommitRatio)*clusterRamOvercommitRatio;
+                    reservedCpu += (so.getCpu() * so.getSpeed()/cpuOvercommitRatio)*clusterCpuOvercommitRatio;
+                }
             } else {
                 // signal if not done already, that the VM has been stopped for skip.counting.hours,
                 // hence capacity will not be reserved anymore.

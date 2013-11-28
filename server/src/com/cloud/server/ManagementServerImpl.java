@@ -42,6 +42,8 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.api.command.admin.router.UpgradeRouterTemplateCmd;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
@@ -718,6 +720,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     AccountService _accountService;
     @Inject
     ConfigurationManager _configMgr;
+    @Inject
+    ServiceOfferingDao _offeringDao;
 
     @Inject
     DeploymentPlanningManager _dpMgr;
@@ -3808,7 +3812,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (vmInstance.getHypervisorType() == HypervisorType.XenServer && vmInstance.getState().equals(State.Running)) {
             throw new InvalidParameterValueException("Dynamic Scaling operation is not permitted for this hypervisor on system vm");
         }
-        boolean result = _userVmMgr.upgradeVirtualMachine(cmd.getId(), cmd.getServiceOfferingId());
+        boolean result = _userVmMgr.upgradeVirtualMachine(cmd.getId(), cmd.getServiceOfferingId(), cmd.getCustomParameters());
         if(result){
             VirtualMachine vm = _vmInstanceDao.findById(cmd.getId());
             return vm;
@@ -3822,11 +3826,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public VirtualMachine upgradeSystemVM(UpgradeSystemVMCmd cmd) {
         Long systemVmId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
-        return upgradeStoppedSystemVm(systemVmId, serviceOfferingId);
+        return upgradeStoppedSystemVm(systemVmId, serviceOfferingId, cmd.getCustomParameters());
 
     }
 
-    private VirtualMachine upgradeStoppedSystemVm(Long systemVmId, Long serviceOfferingId){
+    private VirtualMachine upgradeStoppedSystemVm(Long systemVmId, Long serviceOfferingId, Map<String, String> customparameters){
         Account caller = CallContext.current().getCallingAccount();
 
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(systemVmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
@@ -3837,9 +3841,24 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         _accountMgr.checkAccess(caller, null, true, systemVm);
 
         // Check that the specified service offering ID is valid
-        _itMgr.checkIfCanUpgrade(systemVm, serviceOfferingId);
+        ServiceOfferingVO newServiceOffering = _offeringDao.findById(serviceOfferingId);
+        ServiceOfferingVO currentServiceOffering = _offeringDao.findById(systemVmId,systemVm.getServiceOfferingId());
+        if (newServiceOffering.isDynamic()){
+            newServiceOffering.setDynamicFlag(true);
+            _userVmMgr.validateCustomParameters(newServiceOffering, customparameters);
+            newServiceOffering = _offeringDao.getcomputeOffering(newServiceOffering, customparameters);
+        }
+        _itMgr.checkIfCanUpgrade(systemVm, newServiceOffering);
 
         boolean result = _itMgr.upgradeVmDb(systemVmId, serviceOfferingId);
+
+        if (newServiceOffering.isDynamic()) {
+            //save the custom values to the database.
+            _userVmMgr.saveCustomOfferingDetails(systemVmId, newServiceOffering);
+        }
+        if (currentServiceOffering.isDynamic() && !newServiceOffering.isDynamic()) {
+            _userVmMgr.removeCustomOfferingDetails(systemVmId);
+        }
 
         if (result) {
             return _vmInstanceDao.findById(systemVmId);
