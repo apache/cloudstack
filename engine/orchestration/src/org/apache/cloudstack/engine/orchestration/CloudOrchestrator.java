@@ -164,7 +164,7 @@ public class CloudOrchestrator implements OrchestrationService {
             Long diskSize,
             List<String> computeTags,
             List<String> rootDiskTags,
-            Map<String, NicProfile> networkNicMap, DeploymentPlan plan, Long rootDiskSize) throws InsufficientCapacityException {
+            Map<String, NicProfile> networkNicMap, DeploymentPlan plan) throws InsufficientCapacityException {
 
     	// VirtualMachineEntityImpl vmEntity = new VirtualMachineEntityImpl(id, owner, hostName, displayName, cpu, speed, memory, computeTags, rootDiskTags, networks, vmEntityManager);
 
@@ -193,7 +193,6 @@ public class CloudOrchestrator implements OrchestrationService {
 
 		ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
 		rootDiskOffering.first(offering);
-        rootDiskOffering.second(rootDiskSize);
 
 		if(vm.getDiskOfferingId() != null){
     		DiskOfferingVO diskOffering = _diskOfferingDao.findById(vm.getDiskOfferingId());

@@ -398,7 +398,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 } else if (template.getFormat() == ImageFormat.BAREMETAL) {
                     // Do nothing
                 } else {
-                    volumeMgr.allocateTemplatedVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOffering.first(), rootDiskOffering.second(), template, vmFinal, owner);
+                    volumeMgr.allocateTemplatedVolume(Type.ROOT, "ROOT-" + vmFinal.getId(), rootDiskOffering.first(), template, vmFinal, owner);
                 }
         
                 for (Map.Entry<? extends DiskOffering, Long> offering : dataDiskOfferingsFinal.entrySet()) {
