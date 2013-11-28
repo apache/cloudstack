@@ -207,6 +207,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuModeDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuTuneDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DevicesDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.deviceType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.diskProtocol;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.FeaturesDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.FilesystemDef;
@@ -4603,6 +4604,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             List<DiskDef> disks = getDisks(conn, vmName);
 
             for (DiskDef disk : disks) {
+                if (disk.getDeviceType() != deviceType.DISK)
+                    break;
                 DomainBlockStats blockStats = dm.blockStats(disk.getDiskLabel());
                 String path = disk.getDiskPath(); // for example, path = /mnt/pool_uuid/disk_path/
                 String diskPath = null;
