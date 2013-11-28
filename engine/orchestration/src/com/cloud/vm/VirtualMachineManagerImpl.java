@@ -3011,10 +3011,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public void checkIfCanUpgrade(VirtualMachine vmInstance, long newServiceOfferingId) {
-        ServiceOfferingVO newServiceOffering = _offeringDao.findById(vmInstance.getId(), newServiceOfferingId);
+    public void checkIfCanUpgrade(VirtualMachine vmInstance, ServiceOffering newServiceOffering) {
         if (newServiceOffering == null) {
-            throw new InvalidParameterValueException("Unable to find a service offering with id " + newServiceOfferingId);
+            throw new InvalidParameterValueException("Unable to find a service offering with id " + newServiceOffering.getId());
         }
 
         // Check that the VM is stopped / running
@@ -3025,7 +3024,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         // Check if the service offering being upgraded to is what the VM is already running with
-        if (vmInstance.getServiceOfferingId() == newServiceOffering.getId()) {
+        if (!newServiceOffering.isDynamic() && vmInstance.getServiceOfferingId() == newServiceOffering.getId()) {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("Not upgrading vm " + vmInstance.toString() + " since it already has the requested " + "service offering (" + newServiceOffering.getName() +
                     ")");
@@ -3734,7 +3733,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
         long newServiceofferingId = vm.getServiceOfferingId();
-        ServiceOffering newServiceOffering = _entityMgr.findById(ServiceOffering.class, newServiceofferingId);
+        ServiceOffering newServiceOffering = _offeringDao.findById(vm.getId(), newServiceofferingId);
         HostVO hostVo = _hostDao.findById(vm.getHostId());
 
         Float memoryOvercommitRatio = CapacityManager.MemOverprovisioningFactor.valueIn(hostVo.getClusterId());

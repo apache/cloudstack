@@ -27,9 +27,6 @@ import javax.persistence.TemporalType;
 @Entity
 @Table(name = "usage_vm_instance")
 public class UsageVMInstanceVO {
-    public enum DynamicParameters {
-        cpuSpeed, cpuNumber, memory
-    };
 
     @Column(name = "usage_type")
     private int usageType;

@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOfferingVO;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
@@ -108,7 +110,7 @@ public interface UserVmManager extends UserVmService {
     Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
-    boolean upgradeVirtualMachine(Long id, Long serviceOfferingId) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
+    boolean upgradeVirtualMachine(Long id, Long serviceOfferingId, Map<String, String> customParameters) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException,
         VirtualMachineMigrationException;
 
     boolean setupVmForPvlan(boolean add, Long hostId, NicProfile nic);
@@ -117,4 +119,12 @@ public interface UserVmManager extends UserVmService {
 
     UserVm updateVirtualMachine(long id, String displayName, String group, Boolean ha, Boolean isDisplayVmEnabled, Long osTypeId, String userData,
                                 Boolean isDynamicallyScalable, HTTPMethod httpMethod, String customId) throws ResourceUnavailableException, InsufficientCapacityException;
+
+    //the validateCustomParameters, save and remove CustomOfferingDetils functions can be removed from the interface once we can
+    //find a common place for all the scaling and upgrading code of both user and systemvms.
+    void validateCustomParameters(ServiceOfferingVO serviceOffering, Map<String, String> customParameters);
+
+    public void saveCustomOfferingDetails(long vmId, ServiceOffering serviceOffering);
+
+    public void removeCustomOfferingDetails(long vmId);
 }

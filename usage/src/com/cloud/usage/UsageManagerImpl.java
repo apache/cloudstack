@@ -1113,14 +1113,14 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 Map<String, String> usageDetails = _usageEventDetailsDao.findDetails(event.getId());
 
                 if (usageDetails != null && usageDetails.size() != 0) {
-                    if (usageDetails.get(UsageVMInstanceVO.DynamicParameters.cpuNumber.name()) != null) {
-                        cpuCores = Long.parseLong(usageDetails.get(UsageVMInstanceVO.DynamicParameters.cpuNumber.name()));
+                    if (usageDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name()) != null) {
+                        cpuCores = Long.parseLong(usageDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name()));
                     }
-                    if (usageDetails.get(UsageVMInstanceVO.DynamicParameters.cpuSpeed.name()) != null) {
-                        cpuSpeed = Long.parseLong(usageDetails.get(UsageVMInstanceVO.DynamicParameters.cpuSpeed.name()));
+                    if (usageDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name()) != null) {
+                        cpuSpeed = Long.parseLong(usageDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name()));
                     }
-                    if (usageDetails.get(UsageVMInstanceVO.DynamicParameters.memory.name()) != null) {
-                        memory = Long.parseLong(usageDetails.get(UsageVMInstanceVO.DynamicParameters.memory.name()));
+                    if (usageDetails.get(UsageEventVO.DynamicParameters.memory.name()) != null) {
+                        memory = Long.parseLong(usageDetails.get(UsageEventVO.DynamicParameters.memory.name()));
                     }
                 }
 

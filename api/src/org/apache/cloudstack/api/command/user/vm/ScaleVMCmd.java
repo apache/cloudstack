@@ -39,6 +39,12 @@ import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
+
 @APICommand(name = "scaleVirtualMachine", description = "Scales the virtual machine to a new service offering.", responseObject = SuccessResponse.class)
 public class ScaleVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ScaleVMCmd.class.getName());
@@ -60,6 +66,11 @@ public class ScaleVMCmd extends BaseAsyncCmd {
                description = "the ID of the service offering for the virtual machine")
     private Long serviceOfferingId;
 
+    @Parameter(name=ApiConstants.CUSTOM_PARAMETERS,
+            type = CommandType.MAP,
+            description = "name value pairs of custom parameters for cpu, memory and cpunumber. example customparameters[i].name=value")
+    private Map<String, String> customParameters;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -70,6 +81,24 @@ public class ScaleVMCmd extends BaseAsyncCmd {
 
     public Long getServiceOfferingId() {
         return serviceOfferingId;
+    }
+
+    //instead of reading a map directly we are using collections.
+    //it is because customParameters.values() cannot be cast to a map.
+    //it gives a exception
+    public Map<String, String> getCustomParameters() {
+        Map<String,String> customparameterMap = new HashMap<String, String>();
+        if (customParameters != null && customParameters.size() !=0){
+            Collection parameterCollection = customParameters.values();
+            Iterator iter = parameterCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> value = (HashMap<String, String>) iter.next();
+                for (String key : value.keySet()) {
+                    customparameterMap.put(key, value.get(key));
+                }
+            }
+        }
+        return customparameterMap;
     }
 
     /////////////////////////////////////////////////////

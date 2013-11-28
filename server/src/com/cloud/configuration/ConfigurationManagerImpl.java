@@ -1934,6 +1934,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Integer cpuSpeed = cmd.getCpuSpeed();
         Integer memory = cmd.getMemory();
 
+        //restricting the createserviceoffering to allow setting all or none of the dynamic parameters to null
+        if (cpuNumber == null || cpuSpeed == null || memory == null) {
+            if (cpuNumber !=null || cpuSpeed !=null || memory !=null) {
+                throw new InvalidParameterValueException("For creating a custom compute offering cpu, cpu speed and memory all should be null");
+            }
+        }
+
         if ((cpuNumber != null) && ((cpuNumber.intValue() <= 0) || (cpuNumber.intValue() > 2147483647))) {
             throw new InvalidParameterValueException("Failed to create service offering " + name + ": specify the cpu number value between 1 and 2147483647");
         }

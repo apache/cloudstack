@@ -145,9 +145,9 @@ public interface VirtualMachineManager extends Manager {
 
     /**
      * @param vmInstance
-     * @param newServiceOfferingId
+     * @param newServiceOffering
      */
-    void checkIfCanUpgrade(VirtualMachine vmInstance, long newServiceOfferingId);
+    void checkIfCanUpgrade(VirtualMachine vmInstance, ServiceOffering newServiceOffering);
 
     /**
      * @param vmId

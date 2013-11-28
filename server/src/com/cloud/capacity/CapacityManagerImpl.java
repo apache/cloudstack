@@ -27,6 +27,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.event.UsageEventVO;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -543,10 +544,10 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
             if (so.isDynamic()) {
                 usedMemory +=
-                    ((Integer.parseInt(vmDetails.get(ServiceOfferingVO.DynamicParameters.memory.name())) * 1024L * 1024L) / ramOvercommitRatio) *
+                    ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.memory.name())) * 1024L * 1024L) / ramOvercommitRatio) *
                         clusterRamOvercommitRatio;
                 usedCpu +=
-                    ((Integer.parseInt(vmDetails.get(ServiceOfferingVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(ServiceOfferingVO.DynamicParameters.cpuSpeed.name()))) / cpuOvercommitRatio) *
+                    ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name()))) / cpuOvercommitRatio) *
                         clusterCpuOvercommitRatio;
             } else {
                 usedMemory += ((so.getRamSize() * 1024L * 1024L) / ramOvercommitRatio) * clusterRamOvercommitRatio;

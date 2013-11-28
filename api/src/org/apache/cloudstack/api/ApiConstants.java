@@ -72,6 +72,7 @@ public class ApiConstants {
     public static final String DISPLAY_VM = "displayvm";
     public static final String DISPLAY_OFFERING = "displayoffering";
     public static final String DISPLAY_VOLUME = "displayvolume";
+    public static final String CUSTOM_PARAMETERS = "customparameters";
     public static final String DNS1 = "dns1";
     public static final String DNS2 = "dns2";
     public static final String IP6_DNS1 = "ip6dns1";

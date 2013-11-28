@@ -206,6 +206,22 @@ public class DiskOfferingVO implements DiskOffering {
         state = State.Active;
     }
 
+    public DiskOfferingVO(long id, String name, String displayText, boolean mirrored, String tags, boolean recreatable,
+                          boolean useLocalStorage, boolean systemUse, boolean customized, Long domainId) {
+        this.id = id;
+        type = Type.Service;
+        this.name = name;
+        this.displayText = displayText;
+        this.tags = tags;
+        this.recreatable = recreatable;
+        this.useLocalStorage = useLocalStorage;
+        this.systemUse = systemUse;
+        this.customized = customized;
+        this.domainId = domainId;
+        uuid = UUID.randomUUID().toString();
+        state = State.Active;
+    }
+
     @Override
     public State getState() {
         return state;

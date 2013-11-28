@@ -30,6 +30,10 @@ import com.cloud.utils.db.GenericDao;
 @Entity
 @Table(name = "usage_event")
 public class UsageEventVO implements UsageEvent {
+    public enum DynamicParameters {
+        cpuSpeed, cpuNumber, memory
+    };
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

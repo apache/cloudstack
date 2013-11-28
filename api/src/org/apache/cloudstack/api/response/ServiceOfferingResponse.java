@@ -44,15 +44,15 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     @SerializedName("cpunumber")
     @Param(description = "the number of CPU")
-    private int cpuNumber;
+    private Integer cpuNumber;
 
     @SerializedName("cpuspeed")
     @Param(description = "the clock rate CPU speed in Mhz")
-    private int cpuSpeed;
+    private Integer cpuSpeed;
 
     @SerializedName("memory")
     @Param(description = "the memory in MB")
-    private int memory;
+    private Integer memory;
 
     @SerializedName("created")
     @Param(description = "the date this service offering was created")
@@ -130,6 +130,10 @@ public class ServiceOfferingResponse extends BaseResponse {
     @Param(description = "additional key/value details tied with this service offering", since = "4.2.0")
     private Map<String, String> details;
 
+    @SerializedName("iscustomized")
+    @Param(description = "is true if the offering is customized", since = "4.3.0")
+    private Boolean isCustomized;
+
     public ServiceOfferingResponse() {
     }
 
@@ -185,7 +189,7 @@ public class ServiceOfferingResponse extends BaseResponse {
         return cpuNumber;
     }
 
-    public void setCpuNumber(int cpuNumber) {
+    public void setCpuNumber(Integer cpuNumber) {
         this.cpuNumber = cpuNumber;
     }
 
@@ -193,7 +197,7 @@ public class ServiceOfferingResponse extends BaseResponse {
         return cpuSpeed;
     }
 
-    public void setCpuSpeed(int cpuSpeed) {
+    public void setCpuSpeed(Integer cpuSpeed) {
         this.cpuSpeed = cpuSpeed;
     }
 
@@ -201,7 +205,7 @@ public class ServiceOfferingResponse extends BaseResponse {
         return memory;
     }
 
-    public void setMemory(int memory) {
+    public void setMemory(Integer memory) {
         this.memory = memory;
     }
 
@@ -307,6 +311,11 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     public void setDetails(Map<String, String> details) {
         this.details = details;
+    }
+
+    public void setIscutomized(boolean iscutomized) {
+        this.isCustomized = iscutomized;
+
     }
 
 }
