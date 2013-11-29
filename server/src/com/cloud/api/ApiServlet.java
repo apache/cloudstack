@@ -121,7 +121,13 @@ public class ApiServlet extends HttpServlet {
 
     private void processRequestInContext(HttpServletRequest req, HttpServletResponse resp) {
         StringBuffer auditTrailSb = new StringBuffer();
-        auditTrailSb.append(" " + req.getRemoteAddr());
+        String ipAddress = req.getHeader("X-FORWARDED-FOR");
+        if (ipAddress == null) {
+            ipAddress = req.getRemoteAddr();
+        } else {
+            ipAddress = ipAddress.split(",")[0];
+        }
+        auditTrailSb.append(" " + ipAddress);
         auditTrailSb.append(" -- " + req.getMethod() + " ");
         // get the response format since we'll need it in a couple of places
         String responseType = BaseCmd.RESPONSE_TYPE_XML;
