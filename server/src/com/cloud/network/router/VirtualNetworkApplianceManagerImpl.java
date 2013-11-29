@@ -189,6 +189,7 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatImpl;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -2794,12 +2795,11 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     @Override
-    public boolean configDhcpForSubnet(Network network, final NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest, List<DomainRouterVO> routers) throws ResourceUnavailableException {
+    public boolean configDhcpForSubnet(Network network, final NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest, List<DomainRouterVO> routers)
+            throws ResourceUnavailableException {
         _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
 
         final VirtualMachineProfile<UserVm> updatedProfile = profile;
-        final boolean isZoneBasic = (dest.getDataCenter().getNetworkType() == NetworkType.Basic);
-        final Long podId = isZoneBasic ? dest.getPod().getId() : null;
 
         //Asuming we have only one router per network For Now.
         DomainRouterVO router = routers.get(0);
@@ -3732,6 +3732,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
             rulesTO = new ArrayList<FirewallRuleTO>();
             for (FirewallRule rule : rules) {
+                _rulesDao.loadSourceCidrs((FirewallRuleVO)rule);
                 FirewallRule.TrafficType traffictype = rule.getTrafficType();
                 if(traffictype == FirewallRule.TrafficType.Ingress){
                     IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
