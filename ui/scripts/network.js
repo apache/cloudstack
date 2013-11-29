@@ -540,11 +540,8 @@
                                     domain: {
                                         label: 'label.domain',
                                         select: function(args) {
-                                            var items = [];
                                             $.ajax({
                                                 url: createURL("listDomains&listAll=true"),
-                                                dataType: "json",
-                                                async: false,
                                                 success: function(json) {
                                                     var items = [];
                                                     items.push({
