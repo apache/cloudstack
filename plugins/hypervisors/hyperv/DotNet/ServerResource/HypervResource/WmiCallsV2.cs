@@ -431,7 +431,15 @@ namespace HypervResource
                 System.Threading.Thread.Sleep(90000);
                 SetState(newVm, RequiredState.Reset);
                 // wait for the second boot and then return with sucesss
-                pingResource(publicIpAddress);
+                //if publicIPAddress is empty or null don't ping the ip
+                if (publicIpAddress.Equals("") == true)
+                {
+                    System.Threading.Thread.Sleep(90000);
+                }
+                else
+                {
+                    pingResource(publicIpAddress);
+                }
             }
             logger.InfoFormat("Started VM {0}", vmName);
             return newVm;
