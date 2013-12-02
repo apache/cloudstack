@@ -1236,6 +1236,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
         }
 
+        // Don't allow detach if target VM has associated VM snapshots
+        List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.findByVm(vmId);
+        if (vmSnapshots.size() > 0) {
+            throw new InvalidParameterValueException("Unable to detach volume, please specify a VM that does not have VM snapshots");
+        }
+
         AsyncJobExecutionContext asyncExecutionContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (asyncExecutionContext != null) {
             AsyncJob job = asyncExecutionContext.getJob();
