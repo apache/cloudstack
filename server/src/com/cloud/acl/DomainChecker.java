@@ -93,7 +93,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     }
 
     @Override
-    public boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType) throws PermissionDeniedException {
+    public boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType)
+            throws PermissionDeniedException {
         if (entity instanceof VirtualMachineTemplate) {
             
             VirtualMachineTemplate template = (VirtualMachineTemplate) entity;
@@ -315,4 +316,10 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 		}
 		return false;
 	}
+
+    @Override
+    public boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType, String action)
+            throws PermissionDeniedException {
+        return checkAccess(caller, entity, accessType);
+    }
 }

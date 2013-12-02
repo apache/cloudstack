@@ -30,6 +30,8 @@ public @interface ACL {
 
     AccessType accessType() default AccessType.ListEntry;
 
+    String action() default "";
+
     boolean checkKeyAccess() default false;
     boolean checkValueAccess() default false;
 }

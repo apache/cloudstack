@@ -67,18 +67,40 @@ public interface SecurityChecker extends Adapter {
 
     /**
      * Checks if the account can access the object.
-     *
+     * 
      * @param caller
      *            account to check against.
      * @param entity
      *            object that the account is trying to access.
      * @param accessType
      *            TODO
-     * @return true if access allowed. false if this adapter cannot provide permission.
+     * @return true if access allowed. false if this adapter cannot provide
+     *         permission.
      * @throws PermissionDeniedException
-     *             if this adapter is suppose to authenticate ownership and the check failed.
+     *             if this adapter is suppose to authenticate ownership and the
+     *             check failed.
      */
-    boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType) throws PermissionDeniedException;
+    boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType)
+            throws PermissionDeniedException;
+
+    /**
+     * Checks if the account can access the object.
+     * 
+     * @param caller
+     *            account to check against.
+     * @param entity
+     *            object that the account is trying to access.
+     * @param accessType
+     *            TODO
+     * @param action
+     *            name of the API
+     * @return true if access allowed. false if this adapter cannot provide
+     *         permission.
+     * @throws PermissionDeniedException
+     *             if this adapter is suppose to authenticate ownership and the
+     *             check failed.
+     */
+    boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType, String action) throws PermissionDeniedException;
 
     /**
      * Checks if the user belongs to an account that can access the object.
