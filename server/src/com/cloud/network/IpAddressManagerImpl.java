@@ -1644,6 +1644,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         Set<Long> availableIps = _networkModel.getAvailableIps(network, requestedIp);
 
         if (availableIps == null || availableIps.isEmpty()) {
+            s_logger.debug("There are no free ips in the  network " + network );
             return null;
         }
 
@@ -1656,9 +1657,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             if (!isSameCidr) {
                 s_logger.warn("Requested ip address " + requestedIp + " doesn't belong to the network " + network + " cidr");
                 return null;
-            } else {
-                return requestedIp;
+            } else if (NetUtils.IsIpEqualToNetworkOrBroadCastIp(requestedIp, cidr[0], Integer.parseInt(cidr[1]))) {
+                s_logger.warn("Requested ip address " + requestedIp + " is equal to the to the network/broadcast ip of the network" + network);
+                return null;
             }
+            return requestedIp;
         }
 
         String result;
