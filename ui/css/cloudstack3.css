@@ -7498,16 +7498,16 @@ div.detail-group td.view-all div.view-all div.end {
 }
 
 .ui-dialog .list-view .toolbar {
-  top: 33px;
-  width: 824px;
+  top: 50px;
+  width: 854px;
 }
 
 div.panel.ui-dialog div.list-view div.fixed-header {
-  top: 42px;
-  left: 20px;
+  top: 55px;
+  left: 35px;
   width: 759px;
   height: 49px;
-  background-color: #EAECEF;
+  background-color: #FFFFFF;
   margin: 0;
   z-index: 1;
 }
