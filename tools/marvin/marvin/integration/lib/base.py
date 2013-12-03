@@ -98,7 +98,10 @@ class Account:
         cmd.lastname = services["lastname"]
 
         cmd.password = services["password"]
-        cmd.username = "-".join([services["username"], random_gen(id=apiclient.id)])
+
+        username = "-".join([services["username"], random_gen(id=apiclient.id)])
+        #  Trim username to 99 characters to prevent failure
+        cmd.username = username[:99] if len(username) > 99 else username
 
         if "accountUUID" in services:
             cmd.accountid =  "-".join([services["accountUUID"],random_gen()])
