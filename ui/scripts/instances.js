@@ -1430,37 +1430,115 @@
                                 return description;                  	                
                             },
                             fields: {
-                                serviceOffering: {
+                            	serviceofferingid: {
                                     label: 'label.compute.offering',
                                     select: function(args) {
+                                    	var serviceofferingObjs;
                                         $.ajax({
                                             url: createURL("listServiceOfferings&VirtualMachineId=" + args.context.instances[0].id),
                                             dataType: "json",
                                             async: true,
                                             success: function(json) {
-                                                var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
-                                                var items = [];
-                                                $(serviceofferings).each(function() {
-                                                    items.push({
-                                                        id: this.id,
-                                                        description: this.name
-                                                    });
-                                                });
+                                            	serviceofferingObjs = json.listserviceofferingsresponse.serviceoffering;
+                                                var items = [];                                              
+                                                if (serviceofferingObjs != null) {
+                                                	for (var i = 0; i < serviceofferingObjs.length; i++) {
+                                                		items.push({
+                                                            id: serviceofferingObjs[i].id,
+                                                            description: serviceofferingObjs[i].name
+                                                        });
+                                                	}
+                                                }                                               
                                                 args.response.success({
                                                     data: items
                                                 });
                                             }
                                         });
+                                        
+                                        args.$select.change(function(){
+                                        	var $form = $(this).closest('form');
+                                            
+                                            var serviceofferingid = $(this).val();
+                                            if (serviceofferingid == null || serviceofferingid.length == 0)
+                                                return;
+                                           
+                                            var items = [];
+                                            var selectedServiceofferingObj;
+                                            if (serviceofferingObjs != null) {
+                                            	for (var i = 0; i < serviceofferingObjs.length; i++) {
+                                            		if (serviceofferingObjs[i].id == serviceofferingid) {
+                                            			selectedServiceofferingObj = serviceofferingObjs[i];
+                                            			break; 
+                                            		}
+                                            	}
+                                            }                                            
+                                            if (selectedServiceofferingObj == undefined) 
+                                            	return;                                                  
+                                            
+                                            if (selectedServiceofferingObj.iscustomized == true) {
+                                            	$form.find('.form-item[rel=cpuSpeed]').css('display', 'inline-block');
+                                            	$form.find('.form-item[rel=cpuNumber]').css('display', 'inline-block');
+                                            	$form.find('.form-item[rel=memory]').css('display', 'inline-block');
+                                            } else {
+                                            	$form.find('.form-item[rel=cpuSpeed]').hide();
+                                            	$form.find('.form-item[rel=cpuNumber]').hide();
+                                            	$form.find('.form-item[rel=memory]').hide();
+                                            }
+                                        });
                                     }
-                                }
+                                },                               
+                                cpuSpeed: {
+                                	label: 'label.cpu.mhz',                                    
+                                    validation: {
+                                        required: true,
+                                        number: true
+                                    },
+                                    isHidden: true
+                                },
+                                cpuNumber: {
+                                	label: 'label.num.cpu.cores',                                   
+                                    validation: {
+                                        required: true,
+                                        number: true
+                                    },
+                                    isHidden: true
+                                },
+                                memory: {
+                                	label: 'label.memory.mb',                                   
+                                    validation: {
+                                        required: true,
+                                        number: true
+                                    },
+                                    isHidden: true
+                                }      
                             }
                         },
 
                         action: function(args) {
+                        	var data = {
+                        		id: args.context.instances[0].id,
+                        		serviceofferingid: args.data.serviceofferingid
+                        	};       
+                        	                        	
+                        	if (args.$form.find('.form-item[rel=cpuSpeed]').is(':visible')) {
+                                $.extend(data, {
+                                	'customparameters[0].cpuSpeed': args.data.cpuSpeed 
+                                });
+                            }                        	
+                        	if (args.$form.find('.form-item[rel=cpuNumber]').is(':visible')) {
+                                $.extend(data, {
+                                	'customparameters[0].cpuNumber': args.data.cpuNumber
+                                });
+                            }                        	
+                        	if (args.$form.find('.form-item[rel=memory]').is(':visible')) {
+                                $.extend(data, {
+                                	'customparameters[0].memory': args.data.memory
+                                });
+                            }                        	
+                        	
                             $.ajax({
-                                url: createURL("scaleVirtualMachine&id=" + args.context.instances[0].id + "&serviceofferingid=" + args.data.serviceOffering),
-                                dataType: "json",
-                                async: true,
+                                url: createURL('scaleVirtualMachine'),
+                                data: data,
                                 success: function(json) {
                                     var jid = json.scalevirtualmachineresponse.jobid;
                                     args.response.success({
