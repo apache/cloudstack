@@ -4455,6 +4455,7 @@ Dialogs*/
 }
 
 .dashboard.admin .dashboard-container.sub.alerts ul li span.title {
+  width: 100%;
   font-weight: bold;
   font-size: 14px;
   font-weight: 100;
