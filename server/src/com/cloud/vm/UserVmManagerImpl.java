@@ -3873,13 +3873,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             ex.addProxyObject(vm.getUuid(), "vmId");
             throw ex;
         }
-        if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) &&
-            !vm.getHypervisorType().equals(HypervisorType.KVM) && !vm.getHypervisorType().equals(HypervisorType.Ovm) &&
-            !vm.getHypervisorType().equals(HypervisorType.Simulator)) {
+        if (!vm.getHypervisorType().equals(HypervisorType.XenServer)
+                && !vm.getHypervisorType().equals(HypervisorType.VMware)
+                && !vm.getHypervisorType().equals(HypervisorType.KVM)
+                && !vm.getHypervisorType().equals(HypervisorType.Ovm)
+                && !vm.getHypervisorType().equals(HypervisorType.Hyperv)
+                && !vm.getHypervisorType().equals(HypervisorType.Simulator)) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(vm + " is not XenServer/VMware/KVM/Ovm, cannot migrate this VM.");
+                s_logger.debug(vm
+                        + " is not XenServer/VMware/KVM/Ovm/Hyperv, cannot migrate this VM.");
             }
-            throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support XenServer/VMware/KVM only");
+            throw new InvalidParameterValueException(
+                    "Unsupported Hypervisor Type for VM migration, we support XenServer/VMware/KVM/Ovm/Hyperv only");
         }
 
         if (isVMUsingLocalStorage(vm)) {

@@ -1477,14 +1477,15 @@ namespace HypervResource
                 logger.Info(CloudStackTypes.PrepareForMigrationCommand + cmd.ToString());
 
                 string details = null;
-                bool result = false;
+                bool result = true;
 
                 try
                 {
-                    details = "NOP - failure";
+                    details = "NOP - success";
                 }
                 catch (Exception sysEx)
                 {
+                    result = false;
                     details = CloudStackTypes.PrepareForMigrationCommand + " failed due to " + sysEx.Message;
                     logger.Error(details, sysEx);
                 }
@@ -1514,7 +1515,10 @@ namespace HypervResource
 
                 try
                 {
-                    details = "NOP - failure";
+                    string vm = (string)cmd.vmName;
+                    string destination = (string)cmd.destIp;
+                    wmiCallsV2.MigrateVm(vm, destination);
+                    result = true;
                 }
                 catch (Exception sysEx)
                 {
