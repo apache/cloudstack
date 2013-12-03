@@ -42,6 +42,9 @@ public class AlertResponse extends BaseResponse {
         + "MANAGMENT_NODE = 13: lost connection to default route (to the gateway), "
         + "DOMAIN_ROUTER_MIGRATE = 14, CONSOLE_PROXY_MIGRATE = 15, USERVM_MIGRATE = 16, VLAN = 17, SSVM = 18, " + "USAGE_SERVER_RESULT = 19")
     private Short alertType;
+    
+    @SerializedName(ApiConstants.NAME) @Param(description="the name of the alert", since="4.3")
+    private String alertName;
 
     @SerializedName(ApiConstants.DESCRIPTION)
     @Param(description = "description of the alert")
@@ -65,5 +68,9 @@ public class AlertResponse extends BaseResponse {
 
     public void setLastSent(Date lastSent) {
         this.lastSent = lastSent;
+    }
+    
+    public void setName(String name) {
+        this.alertName = name;
     }
 }

@@ -450,6 +450,10 @@ public class EventTypes {
     // Object store migration
     public static final String EVENT_MIGRATE_PREPARE_SECONDARY_STORAGE = "MIGRATE.PREPARE.SS";
 
+    //Alert generation
+    public static final String ALERT_GENERATE = "ALERT.GENERATE";
+
+    
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking

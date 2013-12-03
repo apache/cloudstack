@@ -818,7 +818,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         HostPodVO podVO = _podDao.findById(host.getPodId());
                         String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
                         if ((host.getType() != Host.Type.SecondaryStorage) && (host.getType() != Host.Type.ConsoleProxy)) {
-                            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host disconnected, " + hostDesc,
+                            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host disconnected, " + hostDesc,
                                 "If the agent for host [" + hostDesc + "] is not restarted within " + AlertWait + " seconds, HA will begin on the VMs");
                         }
                         event = Status.Event.AgentDisconnected;
@@ -828,8 +828,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
                     HostPodVO podVO = _podDao.findById(host.getPodId());
                     String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
-                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host in ALERT state, " + hostDesc,
-                        "In availability zone " + host.getDataCenterId() + ", host is in alert state: " + host.getId() + "-" + host.getName());
+                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host in ALERT state, " + hostDesc, "In availability zone " + host.getDataCenterId()
+                            + ", host is in alert state: " + host.getId() + "-" + host.getName());
                 }
             } else {
                 s_logger.debug("The next status of Agent " + host.getId() + " is not Alert, no need to investigate what happened");
@@ -1201,11 +1201,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                                         String hostDesc =
                                             "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
 
-                                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId(),
+                                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId(),
                                             "Host lost connection to gateway, " + hostDesc, "Host [" + hostDesc +
                                                 "] lost connection to gateway (default route) and is possibly having network connection issues.");
                                     } else {
-                                        _alertMgr.clearAlert(AlertManager.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId());
+                                        _alertMgr.clearAlert(AlertManager.AlertType.ALERT_TYPE_ROUTING, host.getDataCenterId(), host.getPodId());
                                     }
                                 } else {
                                     s_logger.debug("Not processing " + PingRoutingCommand.class.getSimpleName() + " for agent id=" + cmdHostId +

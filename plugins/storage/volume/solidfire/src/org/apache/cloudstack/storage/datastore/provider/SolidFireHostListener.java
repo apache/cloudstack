@@ -82,7 +82,7 @@ public class SolidFireHostListener implements HypervisorHostListener {
         if (!answer.getResult()) {
             String msg = "Unable to attach storage pool " + storagePoolId + " to host " + hostId;
 
-            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
 
             throw new CloudRuntimeException("Unable to establish a connection from agent to storage pool " + storagePool.getId() + " due to " + answer.getDetails() +
                 " (" + storagePool.getId() + ")");

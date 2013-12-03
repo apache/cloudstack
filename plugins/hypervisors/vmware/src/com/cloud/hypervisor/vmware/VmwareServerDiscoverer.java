@@ -402,7 +402,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                 try {
                     resource.configure("VMware", params);
                 } catch (ConfigurationException e) {
-                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, "Unable to add " + url.getHost(), "Error is " + e.getMessage());
+                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId, "Unable to add " + url.getHost(), "Error is " + e.getMessage());
                     s_logger.warn("Unable to instantiate " + url.getHost(), e);
                 }
                 resource.start();

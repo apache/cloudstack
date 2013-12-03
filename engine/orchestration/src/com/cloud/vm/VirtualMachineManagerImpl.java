@@ -40,8 +40,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -69,6 +67,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -1676,11 +1675,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new CloudRuntimeException("VM is not Running, unable to migrate the vm currently " + vm + " , current state: " + vm.getState().toString());
         }
 
-        short alertType = AlertManager.ALERT_TYPE_USERVM_MIGRATE;
+        AlertManager.AlertType alertType = AlertManager.AlertType.ALERT_TYPE_USERVM_MIGRATE;
         if (VirtualMachine.Type.DomainRouter.equals(vm.getType())) {
-            alertType = AlertManager.ALERT_TYPE_DOMAIN_ROUTER_MIGRATE;
+            alertType = AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER_MIGRATE;
         } else if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-            alertType = AlertManager.ALERT_TYPE_CONSOLE_PROXY_MIGRATE;
+            alertType = AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY_MIGRATE;
         }
 
         VirtualMachineProfile vmSrc = new VirtualMachineProfileImpl(vm);
@@ -1936,11 +1935,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 " doesn't involve migrating the volumes.");
         }
 
-        short alertType = AlertManager.ALERT_TYPE_USERVM_MIGRATE;
+        AlertManager.AlertType alertType = AlertManager.AlertType.ALERT_TYPE_USERVM_MIGRATE;
         if (VirtualMachine.Type.DomainRouter.equals(vm.getType())) {
-            alertType = AlertManager.ALERT_TYPE_DOMAIN_ROUTER_MIGRATE;
+            alertType = AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER_MIGRATE;
         } else if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-            alertType = AlertManager.ALERT_TYPE_CONSOLE_PROXY_MIGRATE;
+            alertType = AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY_MIGRATE;
         }
 
         _networkMgr.prepareNicForMigration(profile, destination);
@@ -2555,13 +2554,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (agentState == State.Error) {
             agentState = State.Stopped;
 
-            short alertType = AlertManager.ALERT_TYPE_USERVM;
+            AlertManager.AlertType alertType = AlertManager.AlertType.ALERT_TYPE_USERVM;
             if (VirtualMachine.Type.DomainRouter.equals(vm.getType())) {
-                alertType = AlertManager.ALERT_TYPE_DOMAIN_ROUTER;
+                alertType = AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER;
             } else if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-                alertType = AlertManager.ALERT_TYPE_CONSOLE_PROXY;
+                alertType = AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY;
             } else if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())) {
-                alertType = AlertManager.ALERT_TYPE_SSVM;
+                alertType = AlertManager.AlertType.ALERT_TYPE_SSVM;
             }
 
             HostPodVO podVO = _podDao.findById(vm.getPodIdToDeployIn());
@@ -3506,11 +3505,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new CloudRuntimeException("VM is not Running, unable to migrate the vm currently " + vm + " , current state: " + vm.getState().toString());
         }
 
-        short alertType = AlertManager.ALERT_TYPE_USERVM_MIGRATE;
+        AlertManager.AlertType alertType = AlertManager.AlertType.ALERT_TYPE_USERVM_MIGRATE;
         if (VirtualMachine.Type.DomainRouter.equals(vm.getType())) {
-            alertType = AlertManager.ALERT_TYPE_DOMAIN_ROUTER_MIGRATE;
+            alertType = AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER_MIGRATE;
         } else if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-            alertType = AlertManager.ALERT_TYPE_CONSOLE_PROXY_MIGRATE;
+            alertType = AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY_MIGRATE;
         }
 
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
@@ -3859,7 +3858,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 // we need to alert admin or user about this risky state transition
-                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
                     VM_SYNC_ALERT_SUBJECT, "VM " + vm.getHostName() + "(" + vm.getInstanceName() +
                         ") state is sync-ed (Starting -> Running) from out-of-context transition. VM network environment may need to be reset");
                 break;
@@ -3881,7 +3880,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 } catch (NoTransitionException e) {
                     s_logger.warn("Unexpected VM state transition exception, race-condition?", e);
                 }
-                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
                     VM_SYNC_ALERT_SUBJECT, "VM " + vm.getHostName() + "(" + vm.getInstanceName() + ") state is sync-ed (" + vm.getState() +
                         " -> Running) from out-of-context transition. VM network environment may need to be reset");
                 break;
@@ -3923,7 +3922,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 } catch (NoTransitionException e) {
                     s_logger.warn("Unexpected VM state transition exception, race-condition?", e);
                 }
-                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
                     VM_SYNC_ALERT_SUBJECT, "VM " + vm.getHostName() + "(" + vm.getInstanceName() + ") state is sync-ed (" + vm.getState() +
                         " -> Stopped) from out-of-context transition.");
                 // TODO: we need to forcely release all resource allocation
@@ -3984,7 +3983,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             VMInstanceVO vm = _vmDao.findById(vmId);
 
             // We now only alert administrator about this situation
-            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_SYNC, vm.getDataCenterId(), vm.getPodIdToDeployIn(),
                 VM_SYNC_ALERT_SUBJECT, "VM " + vm.getHostName() + "(" + vm.getInstanceName() + ") is stuck in " + vm.getState() +
                     " state and its host is unreachable for too long");
         }

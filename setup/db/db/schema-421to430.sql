@@ -799,3 +799,7 @@ CREATE TABLE `cloud`.`network_acl_item_details` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_network_acl_item_details__network_acl_item_id` FOREIGN KEY `fk_network_acl_item_details__network_acl_item_id`(`network_acl_item_id`) REFERENCES `network_acl_item`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+ALTER TABLE `cloud`.`alert` ADD COLUMN `name` varchar(255) DEFAULT NULL COMMENT 'name of the alert';
+

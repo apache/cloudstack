@@ -818,10 +818,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 // switch back to CLOUD_DB
                 TransactionLegacy swap = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
                 if (!success) {
-                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USAGE_SERVER_RESULT, 0, new Long(0), "Usage job failed. Job id: " + job.getId(),
+                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_USAGE_SERVER_RESULT, 0, new Long(0), "Usage job failed. Job id: " + job.getId(),
                         "Usage job failed. Job id: " + job.getId());
                 } else {
-                    _alertMgr.clearAlert(AlertManager.ALERT_TYPE_USAGE_SERVER_RESULT, 0, 0);
+                    _alertMgr.clearAlert(AlertManager.AlertType.ALERT_TYPE_USAGE_SERVER_RESULT, 0, 0);
                 }
                 swap.close();
 
@@ -1863,9 +1863,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             try {
                 String errors = usc.runSanityCheck();
                 if (errors.length() > 0) {
-                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USAGE_SANITY_RESULT, 0, new Long(0), "Usage Sanity Check failed", errors);
+                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_USAGE_SANITY_RESULT, 0, new Long(0), "Usage Sanity Check failed", errors);
                 } else {
-                    _alertMgr.clearAlert(AlertManager.ALERT_TYPE_USAGE_SANITY_RESULT, 0, 0);
+                    _alertMgr.clearAlert(AlertManager.AlertType.ALERT_TYPE_USAGE_SANITY_RESULT, 0, 0);
                 }
             } catch (SQLException e) {
                 s_logger.error("Error in sanity check", e);

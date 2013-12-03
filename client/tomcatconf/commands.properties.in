@@ -246,6 +246,7 @@ deleteEvents=15
 listAlerts=3
 archiveAlerts=1
 deleteAlerts=1
+generateAlert=1
 
 #### system capacity commands
 listCapacity=3

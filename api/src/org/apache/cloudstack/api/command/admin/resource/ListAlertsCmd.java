@@ -19,14 +19,13 @@ package org.apache.cloudstack.api.command.admin.resource;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AlertResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.alert.Alert;
 import com.cloud.utils.Pair;
@@ -47,6 +46,9 @@ public class ListAlertsCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "list by alert type")
     private String type;
+    
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list by alert name", since="4.3")
+    private String name;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -58,6 +60,10 @@ public class ListAlertsCmd extends BaseListCmd {
 
     public String getType() {
         return type;
+    }
+    
+    public String getName() {
+        return name;
     }
 
     // ///////////////////////////////////////////////////
@@ -80,6 +86,7 @@ public class ListAlertsCmd extends BaseListCmd {
             alertResponse.setAlertType(alert.getType());
             alertResponse.setDescription(alert.getSubject());
             alertResponse.setLastSent(alert.getLastSent());
+            alertResponse.setName(alert.getName());
 
             alertResponse.setObjectName("alert");
             alertResponseList.add(alertResponse);

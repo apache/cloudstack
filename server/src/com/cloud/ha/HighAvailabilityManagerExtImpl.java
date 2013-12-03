@@ -92,10 +92,10 @@ public class HighAvailabilityManagerExtImpl extends HighAvailabilityManagerImpl 
                 }
 
                 if (!isRunning) {
-                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USAGE_SERVER, 0, new Long(0), "No usage server process running",
+                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_USAGE_SERVER, 0, new Long(0), "No usage server process running",
                         "No usage server process has been detected, some attention is required");
                 } else {
-                    _alertMgr.clearAlert(AlertManager.ALERT_TYPE_USAGE_SERVER, 0, 0);
+                    _alertMgr.clearAlert(AlertManager.AlertType.ALERT_TYPE_USAGE_SERVER, 0, 0);
                 }
             } catch (Exception ex) {
                 s_logger.warn("Error while monitoring usage job", ex);
