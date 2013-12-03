@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack-plugins</artifactId>
-    <version>4.2.1</version>
+    <version>4.2.1-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <dependencies>
@@ -40,7 +40,7 @@
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-storage</artifactId>
-      <version>4.2.1</version>
+      <version>4.2.1-SNAPSHOT</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
