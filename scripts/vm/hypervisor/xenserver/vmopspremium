@@ -22,7 +22,10 @@
 
 import os, sys, time
 import XenAPIPlugin
-sys.path.append("/opt/xensource/sm/")
+if os.path.exists("/opt/xensource/sm"):
+    sys.path.extend(["/opt/xensource/sm/", "/usr/local/sbin/", "/sbin/"])
+if os.path.exists("/usr/lib/xcp/sm"):
+    sys.path.extend(["/usr/lib/xcp/sm/", "/usr/local/sbin/", "/sbin/"])
 import util
 import socket
 
@@ -52,7 +55,7 @@ def create_privatetemplate_from_snapshot(session, args):
     snapshotPath = args['snapshotPath']
     tmpltLocalDir = args['tmpltLocalDir']
     try:
-        cmd = ["bash", "/opt/xensource/bin/create_privatetemplate_from_snapshot.sh",snapshotPath, templatePath, tmpltLocalDir]
+        cmd = ["bash", "/opt/cloud/bin/create_privatetemplate_from_snapshot.sh",snapshotPath, templatePath, tmpltLocalDir]
         txt = util.pread2(cmd)
     except:
         txt = '10#failed'
@@ -63,7 +66,7 @@ def upgrade_snapshot(session, args):
     templatePath = args['templatePath']
     snapshotPath = args['snapshotPath']
     try:
-        cmd = ["bash", "/opt/xensource/bin/upgrate_snapshot.sh",snapshotPath, templatePath]
+        cmd = ["bash", "/opt/cloud/bin/upgrate_snapshot.sh",snapshotPath, templatePath]
         txt = util.pread2(cmd)
     except:
         txt = '10#failed'
@@ -75,7 +78,7 @@ def copy_vhd_to_secondarystorage(session, args):
     vdiuuid = args['vdiuuid']
     sruuid = args['sruuid']
     try:
-        cmd = ["bash", "/opt/xensource/bin/copy_vhd_to_secondarystorage.sh", mountpoint, vdiuuid, sruuid]
+        cmd = ["bash", "/opt/cloud/bin/copy_vhd_to_secondarystorage.sh", mountpoint, vdiuuid, sruuid]
         txt = util.pread2(cmd)
     except:
         txt = '10#failed'
@@ -87,7 +90,7 @@ def copy_vhd_from_secondarystorage(session, args):
     sruuid = args['sruuid']
     namelabel = args['namelabel']
     try:
-        cmd = ["bash", "/opt/xensource/bin/copy_vhd_from_secondarystorage.sh", mountpoint, sruuid, namelabel]
+        cmd = ["bash", "/opt/cloud/bin/copy_vhd_from_secondarystorage.sh", mountpoint, sruuid, namelabel]
         txt = util.pread2(cmd)
     except:
         txt = '10#failed'
@@ -98,7 +101,7 @@ def setup_heartbeat_sr(session, args):
     host = args['host']
     sr = args['sr']
     try:
-        cmd = ["bash", "/opt/xensource/bin/setup_heartbeat_sr.sh", host, sr]
+        cmd = ["bash", "/opt/cloud/bin/setup_heartbeat_sr.sh", host, sr]
         txt = util.pread2(cmd)
     except:
         txt = ''
@@ -110,7 +113,7 @@ def setup_heartbeat_file(session, args):
     sr = args['sr']
     add = args['add']
     try:
-        cmd = ["bash", "/opt/xensource/bin/setup_heartbeat_file.sh", host, sr, add]
+        cmd = ["bash", "/opt/cloud/bin/setup_heartbeat_file.sh", host, sr, add]
         txt = util.pread2(cmd)
     except:
         txt = ''
@@ -121,7 +124,7 @@ def check_heartbeat(session, args):
     host = args['host']
     interval = args['interval']
     try:
-       cmd = ["bash", "/opt/xensource/bin/check_heartbeat.sh", host, interval]
+       cmd = ["bash", "/opt/cloud/bin/check_heartbeat.sh", host, interval]
        txt = util.pread2(cmd)
     except:
        txt=''
@@ -133,7 +136,7 @@ def heartbeat(session, args):
     host = args['host']
     interval = args['interval']
     try: 
-       cmd = ["/bin/bash", "/opt/xensource/bin/launch_hb.sh", host, interval]
+       cmd = ["/bin/bash", "/opt/cloud/bin/launch_hb.sh", host, interval]
        txt = util.pread2(cmd)
     except:
        txt='fail'
