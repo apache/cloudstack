@@ -1264,18 +1264,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             updatedTemplate.setFeatured(isFeatured.booleanValue());
         }
 
-        if (isExtractable != null && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {// Only
-            // ROOT
-            // admins
-            // allowed
-            // to
-            // change
-            // this
-            // powerful
-            // attribute
-            updatedTemplate.setExtractable(isExtractable.booleanValue());
-        } else if (isExtractable != null && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-            throw new InvalidParameterValueException("Only ROOT admins are allowed to modify this attribute.");
+        if(isExtractable != null){
+            // Only Root admins allowed to change it for templates
+            if(!template.getFormat().equals(ImageFormat.ISO) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN){
+                throw new InvalidParameterValueException("Only ROOT admins are allowed to modify this attribute.");
+            }else{
+            // For Isos normal user can change it, as their are no derivatives.
+                updatedTemplate.setExtractable(isExtractable.booleanValue());
+            }
         }
 
         _tmpltDao.update(template.getId(), updatedTemplate);
