@@ -152,8 +152,8 @@ public class StringUtils {
         return sb.toString();
     }
 
-    // removes a password request param and it's value
-    private static final Pattern REGEX_PASSWORD_QUERYSTRING = Pattern.compile("&?(password|accesskey|secretkey)=.*?(?=[&'\"])");
+    // removes a password request param and it's value, also considering password is in query parameter value which has been url encoded
+    private static final Pattern REGEX_PASSWORD_QUERYSTRING = Pattern.compile("(&|%26)?(password|accesskey|secretkey)(=|%3D).*?(?=(%26|[&'\"]))");
 
     // removes a password/accesskey/ property from a response json object
     private static final Pattern REGEX_PASSWORD_JSON = Pattern.compile("\"(password|accesskey|secretkey)\":\".*?\",?");

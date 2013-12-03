@@ -26,6 +26,8 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import com.ibm.wsdl.util.StringUtils;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
@@ -84,13 +86,13 @@ public class CloudStackImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         DataStoreRole role = (DataStoreRole)dsInfos.get("role");
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
-        s_logger.info("Trying to add a new data store at " + url + " to data center " + dcId);
+        s_logger.info("Trying to add a new data store at " + StringUtils.cleanString(url) + " to data center " + dcId);
 
         URI uri = null;
         try {
             uri = new URI(UriUtils.encodeURIComponent(url));
             if (uri.getScheme() == null) {
-                throw new InvalidParameterValueException("uri.scheme is null " + url + ", add nfs:// (or cifs://) as a prefix");
+                throw new InvalidParameterValueException("uri.scheme is null " + StringUtils.cleanString(url) + ", add nfs:// (or cifs://) as a prefix");
             } else if (uri.getScheme().equalsIgnoreCase("nfs")) {
                 if (uri.getHost() == null || uri.getHost().equalsIgnoreCase("") || uri.getPath() == null || uri.getPath().equalsIgnoreCase("")) {
                     throw new InvalidParameterValueException("Your host and/or path is wrong.  Make sure it's of the format nfs://hostname/path");
