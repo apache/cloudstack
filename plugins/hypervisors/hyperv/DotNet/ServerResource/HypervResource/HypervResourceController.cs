@@ -738,7 +738,7 @@ namespace HypervResource
                 }
                 else
                 {
-                    state = EnabledState.ToString(sys.EnabledState); // TODO: V2 changes?
+                    state = EnabledState.ToCloudStackState(sys.EnabledState); // TODO: V2 changes?
                     result = true;
                 }
 

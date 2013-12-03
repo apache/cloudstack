@@ -890,13 +890,17 @@ namespace HypervResource
             VirtualSystemMigrationSettingData migrationSettingData = VirtualSystemMigrationSettingData.CreateInstance();
             VirtualSystemMigrationService service = GetVirtualisationSystemMigrationService();
 
+            IPAddress addr = IPAddress.Parse(destination);
+            IPHostEntry entry = Dns.GetHostEntry(addr);
+            string[] destinationHost = new string[] { destination };
+
             migrationSettingData.LateBoundObject["MigrationType"] = MigrationType.VirtualSystem;
             migrationSettingData.LateBoundObject["TransportType"] = TransportType.TCP;
+            migrationSettingData.LateBoundObject["DestinationIPAddressList"] = destinationHost;
             string migrationSettings = migrationSettingData.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20);
 
             ManagementPath jobPath;
-            string destinationHost = "band-cloud153.blr.cloudstack.org";
-            var ret_val = service.MigrateVirtualSystemToHost(vm.Path, destinationHost, migrationSettings, null, null, out jobPath);
+            var ret_val = service.MigrateVirtualSystemToHost(vm.Path, entry.HostName, migrationSettings, null, null, out jobPath);
             if (ret_val == ReturnCode.Started)
             {
                 MigrationJobCompleted(jobPath);
