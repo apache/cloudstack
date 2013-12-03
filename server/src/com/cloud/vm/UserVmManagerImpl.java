@@ -816,8 +816,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         //UserVmVO vmInstance = _vmDao.findById(vmId);
         VMInstanceVO vmInstance = _vmInstanceDao.findById(vmId);
         if (vmInstance == null) {
-            throw new InvalidParameterValueException(
-                    "unable to find a virtual machine with id " + vmId);
+            throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+        }else if (!(vmInstance.getState().equals(State.Stopped))) {
+            throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString() + " " + " in state " + vmInstance.getState() +
+                    "; make sure the virtual machine is stopped");
         }
 
         _accountMgr.checkAccess(caller, null, true, vmInstance);
