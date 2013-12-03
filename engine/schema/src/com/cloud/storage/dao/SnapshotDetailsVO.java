@@ -44,6 +44,10 @@ public class SnapshotDetailsVO implements ResourceDetail {
     @Column(name = "value")
     String value;
 
+    public SnapshotDetailsVO() {
+
+    }
+
     public SnapshotDetailsVO(Long resourceId, String name, String value) {
         this.resourceId = resourceId;
         this.name = name;
