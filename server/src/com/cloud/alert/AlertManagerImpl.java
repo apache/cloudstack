@@ -262,7 +262,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         if (alertType == ALERT_TYPE_MEMORY) {
             return "ALERT.MEMORY";
         } else if (alertType == ALERT_TYPE_CPU) {
-            return "ALERT.MEMORY";
+            return "ALERT.CPU";
         } else if (alertType == ALERT_TYPE_STORAGE) {
             return "ALERT.STORAGE";
         } else if (alertType == ALERT_TYPE_STORAGE_ALLOCATED) {
