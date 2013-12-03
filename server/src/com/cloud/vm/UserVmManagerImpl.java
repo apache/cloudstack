@@ -4098,13 +4098,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 && !vm.getHypervisorType().equals(HypervisorType.VMware)
                 && !vm.getHypervisorType().equals(HypervisorType.KVM)
                 && !vm.getHypervisorType().equals(HypervisorType.Ovm)
+                && !vm.getHypervisorType().equals(HypervisorType.Hyperv)
                 && !vm.getHypervisorType().equals(HypervisorType.Simulator)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(vm
-                        + " is not XenServer/VMware/KVM/Ovm, cannot migrate this VM.");
+                        + " is not XenServer/VMware/KVM/Ovm/Hyperv, cannot migrate this VM.");
             }
             throw new InvalidParameterValueException(
-                    "Unsupported Hypervisor Type for VM migration, we support XenServer/VMware/KVM only");
+                    "Unsupported Hypervisor Type for VM migration, we support XenServer/VMware/KVM/Ovm/Hyperv only");
         }
 
         if (isVMUsingLocalStorage(vm)) {
