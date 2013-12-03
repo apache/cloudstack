@@ -72,14 +72,14 @@ public class AlertVO implements Alert {
 
     @Column(name="archived")
     private boolean archived;
+    
+    @Column(name="name")
+    private String name;
 
     public AlertVO() {
         this.uuid = UUID.randomUUID().toString();
     }
-    public AlertVO(Long id) {
-        this.id = id;
-        this.uuid = UUID.randomUUID().toString();
-    }
+
 
     @Override
     public long getId() {
@@ -179,5 +179,15 @@ public class AlertVO implements Alert {
 
     public void setArchived(Boolean archived) {
         this.archived = archived;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

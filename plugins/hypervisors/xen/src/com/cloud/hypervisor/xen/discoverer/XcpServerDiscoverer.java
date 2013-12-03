@@ -247,7 +247,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                     }
                     if( !support_hvm ) {
                         String msg = "Unable to add host " + record.address + " because it doesn't support hvm";
-                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
+                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId, msg, msg);
                         s_logger.debug(msg);
                         throw new RuntimeException(msg);
                     }
@@ -325,7 +325,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 try {
                     resource.configure("Xen Server", params);
                 } catch (ConfigurationException e) {
-                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, "Unable to add " + record.address, "Error is " + e.getMessage());
+                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId, "Unable to add " + record.address, "Error is " + e.getMessage());
                     s_logger.warn("Unable to instantiate " + record.address, e);
                     continue;
                 }
@@ -465,7 +465,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         }
 
         String msg = "Only support XCP 1.0.0, 1.1.0, 1.4.x, 1.5 beta, 1.6.x; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2, 6.1.0, 6.2.0 but this one is " + prodBrand + " " + prodVersion;
-        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
+        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId, msg, msg);
         s_logger.debug(msg);
         throw new RuntimeException(msg);
     }
@@ -737,7 +737,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
 				String msg = "Unable to eject host " + host.getGuid() + " due to there is no host up in this cluster, please execute xe pool-eject host-uuid="
 				        + host.getGuid() + "in this host " + host.getPrivateIpAddress();
 				s_logger.warn(msg);
-				_alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Unable to eject host " + host.getGuid(), msg);
+				_alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Unable to eject host " + host.getGuid(), msg);
 			}
 		}
 

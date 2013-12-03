@@ -409,7 +409,7 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
                 s_logger.warn("Management network CIDR is not configured originally. Set it default to "
                         + localCidrs[0]);
 
-                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0),
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0),
                         "Management network CIDR is not configured originally. Set it default to " + localCidrs[0], "");
                 _configDao
                 .update(Config.ManagementNetwork.key(), Config.ManagementNetwork.getCategory(), localCidrs[0]);
@@ -417,7 +417,7 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
                 s_logger.warn("Management network CIDR is not properly configured and we are not able to find a default setting");
                 _alertMgr
                 .sendAlert(
-                        AlertManager.ALERT_TYPE_MANAGMENT_NODE,
+                        AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE,
                         0,
                         new Long(0),
                         "Management network CIDR is not properly configured and we are not able to find a default setting",

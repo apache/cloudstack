@@ -71,7 +71,7 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
         			secStorageVm.getPrivateIpAddress());
     		
 			_alertMgr.sendAlert(
-				AlertManager.ALERT_TYPE_SSVM,
+				AlertManager.AlertType.ALERT_TYPE_SSVM,
 				args.getZoneId(),
 				secStorageVm.getPodIdToDeployIn(),
 				"Secondary Storage Vm up in zone: " + dc.getName() + ", secStorageVm: " + secStorageVm.getHostName() + ", public IP: " + secStorageVm.getPublicIpAddress() 
@@ -87,7 +87,7 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
         			(secStorageVm.getPrivateIpAddress() == null ? "N/A" : secStorageVm.getPrivateIpAddress()));
     		
 			_alertMgr.sendAlert(
-				AlertManager.ALERT_TYPE_SSVM,
+				AlertManager.AlertType.ALERT_TYPE_SSVM,
 				args.getZoneId(),
 				secStorageVm.getPodIdToDeployIn(),
 				"Secondary Storage Vm down in zone: " + dc.getName() + ", secStorageVm: " + secStorageVm.getHostName() + ", public IP: " + secStorageVm.getPublicIpAddress() 
@@ -103,7 +103,7 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
         			(secStorageVm.getPrivateIpAddress() == null ? "N/A" : secStorageVm.getPrivateIpAddress()));
     		
 			_alertMgr.sendAlert(
-				AlertManager.ALERT_TYPE_SSVM,
+				AlertManager.AlertType.ALERT_TYPE_SSVM,
 				args.getZoneId(),
 				secStorageVm.getPodIdToDeployIn(),
 				"Secondary Storage Vm rebooted in zone: " + dc.getName() + ", secStorageVm: " + secStorageVm.getHostName() + ", public IP: " + secStorageVm.getPublicIpAddress() 
@@ -119,7 +119,7 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
         			(secStorageVm.getPrivateIpAddress() == null ? "N/A" : secStorageVm.getPrivateIpAddress()));
     		
 			_alertMgr.sendAlert(
-				AlertManager.ALERT_TYPE_SSVM,
+				AlertManager.AlertType.ALERT_TYPE_SSVM,
 				args.getZoneId(),
 				secStorageVm.getPodIdToDeployIn(),
 				"Secondary Storage Vm creation failure. zone: " + dc.getName() + ", secStorageVm: " + secStorageVm.getHostName() + ", public IP: " + secStorageVm.getPublicIpAddress() 
@@ -136,7 +136,7 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
         			(secStorageVm.getPrivateIpAddress() == null ? "N/A" : secStorageVm.getPrivateIpAddress()));
     		
 			_alertMgr.sendAlert(
-				AlertManager.ALERT_TYPE_SSVM,
+				AlertManager.AlertType.ALERT_TYPE_SSVM,
 				args.getZoneId(),
 				secStorageVm.getPodIdToDeployIn(),
 				"Secondary Storage Vm startup failure. zone: " + dc.getName() + ", secStorageVm: " + secStorageVm.getHostName() + ", public IP: " + secStorageVm.getPublicIpAddress() 
@@ -153,7 +153,7 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
         			(secStorageVm.getPrivateIpAddress() == null ? "N/A" : secStorageVm.getPrivateIpAddress()));
     		
 			_alertMgr.sendAlert(
-				AlertManager.ALERT_TYPE_SSVM,
+				AlertManager.AlertType.ALERT_TYPE_SSVM,
 				args.getZoneId(),
 				secStorageVm.getPodIdToDeployIn(),
 				"Failed to open secondary storage vm firewall port. zone: " + dc.getName() + ", secStorageVm: " + secStorageVm.getHostName() 
@@ -170,7 +170,7 @@ public class SecondaryStorageVmAlertAdapter extends AdapterBase implements Alert
         			secStorageVm.getPrivateIpAddress() + ", message: " + args.getMessage());
     		
 			_alertMgr.sendAlert(
-				AlertManager.ALERT_TYPE_STORAGE_MISC,
+				AlertManager.AlertType.ALERT_TYPE_STORAGE_MISC,
 				args.getZoneId(),
 				secStorageVm.getPodIdToDeployIn(),
 				"Secondary Storage Vm storage issue. zone: " + dc.getName() + ", message: " + args.getMessage(),

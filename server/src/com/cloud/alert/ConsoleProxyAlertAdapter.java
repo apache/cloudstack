@@ -68,7 +68,7 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
                         proxy.getPrivateIpAddress());
 
             _alertMgr.sendAlert(
-                    AlertManager.ALERT_TYPE_CONSOLE_PROXY,
+                    AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY,
                     args.getZoneId(),
                     proxy.getPodIdToDeployIn(),
                     "Console proxy up in zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() 
@@ -84,7 +84,7 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
                         (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()));
 
             _alertMgr.sendAlert(
-                    AlertManager.ALERT_TYPE_CONSOLE_PROXY,
+                    AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY,
                     args.getZoneId(),
                     proxy.getPodIdToDeployIn(),
                     "Console proxy down in zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() 
@@ -100,7 +100,7 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
                         (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()));
 
             _alertMgr.sendAlert(
-                    AlertManager.ALERT_TYPE_CONSOLE_PROXY,
+                    AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY,
                     args.getZoneId(),
                     proxy.getPodIdToDeployIn(),
                     "Console proxy rebooted in zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() 
@@ -116,7 +116,7 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
                         (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()));
 
             _alertMgr.sendAlert(
-                    AlertManager.ALERT_TYPE_CONSOLE_PROXY,
+                    AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY,
                     args.getZoneId(),
                     proxy.getPodIdToDeployIn(),
                     "Console proxy creation failure. zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() 
@@ -133,7 +133,7 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
                         (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()));
 
             _alertMgr.sendAlert(
-                    AlertManager.ALERT_TYPE_CONSOLE_PROXY,
+                    AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY,
                     args.getZoneId(),
                     proxy.getPodIdToDeployIn(),
                     "Console proxy startup failure. zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() 
@@ -150,7 +150,7 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
                         (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()));
 
             _alertMgr.sendAlert(
-                    AlertManager.ALERT_TYPE_CONSOLE_PROXY,
+                    AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY,
                     args.getZoneId(),
                     proxy.getPodIdToDeployIn(),
                     "Failed to open console proxy firewall port. zone: " + dc.getName() + ", proxy: " + proxy.getHostName() 
@@ -167,7 +167,7 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
                         proxy.getPrivateIpAddress() + ", message: " + args.getMessage());
 
             _alertMgr.sendAlert(
-                    AlertManager.ALERT_TYPE_STORAGE_MISC,
+                    AlertManager.AlertType.ALERT_TYPE_STORAGE_MISC,
                     args.getZoneId(),
                     proxy.getPodIdToDeployIn(),
                     "Console proxy storage issue. zone: " + dc.getName() + ", message: " + args.getMessage(),

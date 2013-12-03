@@ -960,7 +960,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                             String context = "Site-to-site Vpn Connection to " + gw.getName() + " on router " + router.getHostName() +
                                     "(id: " + router.getId() + ") " + " just switch from " + oldState + " to " + conn.getState();
                             s_logger.info(context);
-                            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
+                            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER,
                                     router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
                         }
                     } finally {
@@ -1023,7 +1023,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                         " just switch from " + prevState + " to " + currState;
                 s_logger.info(context);
                 if (currState == RedundantState.MASTER) {
-                    _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
+                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER,
                             router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
                 }
             }
@@ -1040,7 +1040,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug(title);
                 }
-                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER,
                         backupRouter.getDataCenterId(), backupRouter.getPodIdToDeployIn(), title, title);
                 try {
                     rebootRouter(backupRouter.getId(), true);
@@ -1130,8 +1130,8 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                         String title = "More than one redundant virtual router is in MASTER state! Router " + router.getHostName() + " and router " + dupRouter.getHostName();
                         String context =  "Virtual router (name: " + router.getHostName() + ", id: " + router.getId() + " and router (name: "
                                 + dupRouter.getHostName() + ", id: " + router.getId() + ") are both in MASTER state! If the problem persist, restart both of routers. ";
-                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
-                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER, dupRouter.getDataCenterId(), dupRouter.getPodIdToDeployIn(), title, context);
+                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
+                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, dupRouter.getDataCenterId(), dupRouter.getPodIdToDeployIn(), title, context);
                         s_logger.warn(context);
                     } else {
                             networkRouterMaps.put(routerGuestNtwkId, router);
@@ -3491,7 +3491,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         }
         String title = "Virtual router " + disconnectedRouter.getInstanceName() + " would be stopped after connecting back, due to " + reason;
         String context =  "Virtual router (name: " + disconnectedRouter.getInstanceName() + ", id: " + disconnectedRouter.getId() + ") would be stopped after connecting back, due to: " + reason;
-        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
+        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER,
                 disconnectedRouter.getDataCenterId(), disconnectedRouter.getPodIdToDeployIn(), title, context);
         disconnectedRouter.setStopPending(true);
         disconnectedRouter = _routerDao.persist(disconnectedRouter);
@@ -3510,7 +3510,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 }
             } else {
                 String t = "Can't bump up virtual router " + connectedRouter.getInstanceName() + "'s priority due to it's already bumped up!";
-                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER,
                         connectedRouter.getDataCenterId(), connectedRouter.getPodIdToDeployIn(), t, t);
             }
         }

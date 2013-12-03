@@ -367,12 +367,12 @@ public class HypervServerDiscoverer extends DiscovererBase implements
             // TODO: does the resource have to create a connection?
             return resources;
         } catch (ConfigurationException e) {
-            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId,
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId,
                     "Unable to add " + uri.getHost(),
                     "Error is " + e.getMessage());
             s_logger.warn("Unable to instantiate " + uri.getHost(), e);
         } catch (UnknownHostException e) {
-            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId,
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId,
                     "Unable to add " + uri.getHost(),
                     "Error is " + e.getMessage());
             s_logger.warn("Unable to instantiate " + uri.getHost(), e);

@@ -60,6 +60,7 @@ import org.apache.cloudstack.api.command.admin.account.DisableAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.EnableAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.LockAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.alert.GenerateAlertCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.DeleteCounterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
@@ -2288,6 +2289,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Object id = cmd.getId();
         Object type = cmd.getType();
         Object keyword = cmd.getKeyword();
+        Object name = cmd.getName();
 
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), null);
         if (id != null) {
@@ -2306,6 +2308,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (type != null) {
             sc.addAnd("type", SearchCriteria.Op.EQ, type);
+        }
+        
+        if (name != null) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
 
         sc.addAnd("archived", SearchCriteria.Op.EQ, false);
@@ -2891,6 +2897,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListSslCertsCmd.class);
         cmdList.add(AssignCertToLoadBalancerCmd.class);
         cmdList.add(RemoveCertFromLoadBalancerCmd.class);
+        cmdList.add(GenerateAlertCmd.class);
         return cmdList;
     }
 

@@ -369,7 +369,7 @@ public class TemplateServiceImpl implements TemplateService {
                                                     tmpltInfo.getSize() - UriUtils.getRemoteSize(tmplt.getUrl()));
                                         } catch (ResourceAllocationException e) {
                                             s_logger.warn(e.getMessage());
-                                            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, zoneId, null,
+                                            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED, zoneId, null,
                                                     e.getMessage(), e.getMessage());
                                         } finally {
                                             _resourceLimitMgr.recalculateResourceCount(accountId, _accountMgr.getAccount(accountId)
