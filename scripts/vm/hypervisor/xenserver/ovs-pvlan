@@ -32,11 +32,11 @@ from time import localtime as _localtime, asctime as _asctime
 
 xePath = "/opt/xensource/bin/xe"
 lib.setup_logging("/var/log/ovs-pvlan.log")
-dhcpSetupPath = "/opt/xensource/bin/ovs-pvlan-dhcp-host.sh"
-vmSetupPath = "/opt/xensource/bin/ovs-pvlan-vm.sh"
-getDhcpIfacePath = "/opt/xensource/bin/ovs-get-dhcp-iface.sh"
-pvlanCleanupPath = "/opt/xensource/bin/ovs-pvlan-cleanup.sh"
-getBridgePath = "/opt/xensource/bin/ovs-get-bridge.sh"
+dhcpSetupPath = "/opt/cloud/bin/ovs-pvlan-dhcp-host.sh"
+vmSetupPath = "/opt/cloud/bin/ovs-pvlan-vm.sh"
+getDhcpIfacePath = "/opt/cloud/bin/ovs-get-dhcp-iface.sh"
+pvlanCleanupPath = "/opt/cloud/bin/ovs-pvlan-cleanup.sh"
+getBridgePath = "/opt/cloud/bin/ovs-get-bridge.sh"
 
 def echo(fn):
     def wrapped(*v, **k):

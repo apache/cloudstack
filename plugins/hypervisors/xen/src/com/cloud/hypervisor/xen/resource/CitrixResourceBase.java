@@ -291,6 +291,7 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import com.cloud.utils.ssh.SSHCmdHelper;
 
 import static com.cloud.utils.ReflectUtil.flattenProperties;
 import static com.google.common.collect.Lists.newArrayList;
@@ -5191,6 +5192,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
 
                 com.trilead.ssh2.Session session = sshConnection.openSession();
+
+                String cmd = "mkdir -p /opt/cloud/bin";
+                if (!SSHCmdHelper.sshExecuteCmd(sshConnection, cmd)) {
+                    throw new CloudRuntimeException("Cannot create directory /opt/cloud/bin on XenServer hosts");
+                }
+
                 SCPClient scp = new SCPClient(sshConnection);
 
                 List<File> files = getPatchFiles();

@@ -58,7 +58,7 @@ if [ `xe pbd-list sr-uuid=$2 | grep -B 1 $1 | wc -l` -eq 0 ]; then
   exit 0
 fi
 
-hbfile=/opt/xensource/bin/heartbeat
+hbfile=/opt/cloud/bin/heartbeat
 
 if [ "$3" = "true" ]; then
 
