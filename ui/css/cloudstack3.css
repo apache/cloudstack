@@ -214,6 +214,7 @@ table thead th.quick-view {
   width: 58px !important;
   height: 14px !important;
   text-indent: 2px;
+  white-space: nowrap;
 }
 
 table tbody td.quick-view {
