@@ -41,9 +41,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
@@ -89,6 +86,8 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -666,12 +665,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 lifeCycle.attachZone(store, zoneScope, hypervisorType);
             }
         } catch (Exception e) {
-            s_logger.debug("Failed to add data store", e);
+            s_logger.debug("Failed to add data store: "+e.getMessage(), e);
             // clean up the db
             if (store != null) {
                 lifeCycle.deleteDataStore(store);
             }
-            throw new CloudRuntimeException("Failed to add data store", e);
+            throw new CloudRuntimeException("Failed to add data store: "+e.getMessage(), e);
         }
 
         return (PrimaryDataStoreInfo) dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Primary);
@@ -1736,8 +1735,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         try {
             store = lifeCycle.initialize(params);
         } catch (Exception e) {
-            s_logger.debug("Failed to add data store", e);
-            throw new CloudRuntimeException("Failed to add data store", e);
+            s_logger.debug("Failed to add data store: "+e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to add data store: "+e.getMessage(), e);
         }
 
         if (((ImageStoreProvider) storeProvider).needDownloadSysTemplate()) {
@@ -1827,14 +1826,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-        // first delete from image_store_details table, we need to do that since
-        // we are not actually deleting record from main
-        // image_data_store table, so delete cascade will not work
-        _imageStoreDetailsDao.deleteDetails(storeId);
-        _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.Image);
-        _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
-        _templateStoreDao.deletePrimaryRecordsForStore(storeId);
-        _imageStoreDao.remove(storeId);
+                // first delete from image_store_details table, we need to do that since
+                // we are not actually deleting record from main
+                // image_data_store table, so delete cascade will not work
+                _imageStoreDetailsDao.deleteDetails(storeId);
+                _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.Image);
+                _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
+                _templateStoreDao.deletePrimaryRecordsForStore(storeId);
+                _imageStoreDao.remove(storeId);
             }
         });
 
@@ -1902,8 +1901,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         try {
             store = lifeCycle.initialize(params);
         } catch (Exception e) {
-            s_logger.debug("Failed to add data store", e);
-            throw new CloudRuntimeException("Failed to add data store", e);
+            s_logger.debug("Failed to add data store: "+e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to add data store: "+e.getMessage(), e);
         }
 
         return (ImageStore) _dataStoreMgr.getDataStore(store.getId(), DataStoreRole.ImageCache);
@@ -1939,14 +1938,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-        // first delete from image_store_details table, we need to do that since
-        // we are not actually deleting record from main
-        // image_data_store table, so delete cascade will not work
-        _imageStoreDetailsDao.deleteDetails(storeId);
-        _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.ImageCache);
-        _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
-        _templateStoreDao.deletePrimaryRecordsForStore(storeId);
-        _imageStoreDao.remove(storeId);
+                // first delete from image_store_details table, we need to do that since
+                // we are not actually deleting record from main
+                // image_data_store table, so delete cascade will not work
+                _imageStoreDetailsDao.deleteDetails(storeId);
+                _snapshotStoreDao.deletePrimaryRecordsForStore(storeId, DataStoreRole.ImageCache);
+                _volumeStoreDao.deletePrimaryRecordsForStore(storeId);
+                _templateStoreDao.deletePrimaryRecordsForStore(storeId);
+                _imageStoreDao.remove(storeId);
             }
         });
 
