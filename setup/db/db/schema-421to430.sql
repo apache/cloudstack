@@ -45,7 +45,7 @@ ALTER TABLE `cloud`.`load_balancing_rules` ADD COLUMN `lb_protocol` VARCHAR(40);
 
 DROP TABLE IF EXISTS `cloud`.`vm_snapshot_details`;
 CREATE TABLE `cloud`.`vm_snapshot_details` (
-  `id` bigint unsigned UNIQUE NOT NULL,
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT,
   `vm_snapshot_id` bigint unsigned NOT NULL,
   `name` varchar(255) NOT NULL,
   `value` varchar(255) NOT NULL,
@@ -54,7 +54,7 @@ CREATE TABLE `cloud`.`vm_snapshot_details` (
 
 DROP TABLE IF EXISTS `cloud`.`snapshot_details`;
 CREATE TABLE `cloud`.`snapshot_details` (
-  `id` bigint unsigned UNIQUE NOT NULL,
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT,
   `snapshot_id` bigint unsigned NOT NULL,
   `name` varchar(255) NOT NULL,
   `value` varchar(255) NOT NULL,
