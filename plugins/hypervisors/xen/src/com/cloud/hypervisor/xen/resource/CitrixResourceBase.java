@@ -689,7 +689,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             if (vmSpec.getLimitCpuUse()) {
                 long utilization = 0; // max CPU cap, default is unlimited
-                utilization = (int)((speed * 0.99 * vmSpec.getCpus()) / _host.speed * 100);
+                utilization = (int) ((vmSpec.getMaxSpeed() * 0.99 * vmSpec.getCpus()) / _host.speed * 100);
                 //vm.addToVCPUsParamsLive(conn, "cap", Long.toString(utilization)); currently xenserver doesnot support Xapi to add VCPUs params live.
                 callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "cap", "value", Long.toString(utilization), "vmname", vmSpec.getName());
             }
