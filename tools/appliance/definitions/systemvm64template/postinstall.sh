@@ -51,6 +51,10 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install nfs-common
   # nfs irqbalance
   apt-get --no-install-recommends -q -y --force-yes install irqbalance
+  
+ # cifs client
+  apt-get --no-install-recommends -q -y --force-yes install samba-common
+  apt-get --no-install-recommends -q -y --force-yes install cifs-utils
 
   # vpn stuff
   apt-get --no-install-recommends -q -y --force-yes install xl2tpd bcrelay ppp ipsec-tools tdb-tools
