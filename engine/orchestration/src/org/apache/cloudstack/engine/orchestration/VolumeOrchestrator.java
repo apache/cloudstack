@@ -524,10 +524,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         vol = _volsDao.persist(vol);
 
         // Save usage event and update resource count for user vm volumes
-        if (vm instanceof UserVm) {
-
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(),
-                null, size, Volume.class.getName(), vol.getUuid());
+        if (vm.getType() == VirtualMachine.Type.User) {
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE,
+                vol.getAccountId(),
+                vol.getDataCenterId(),
+                vol.getId(),
+                vol.getName(),
+                offering.getId(),
+                null,
+                size,
+                Volume.class.getName(),
+                vol.getUuid());
 
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.primary_storage, new Long(vol.getSize()));
@@ -564,7 +571,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         vol = _volsDao.persist(vol);
 
         // Create event and update resource count for volumes if vm is a user vm
-        if (vm instanceof UserVm) {
+        if (vm.getType() == VirtualMachine.Type.User) {
 
             Long offeringId = null;
 
