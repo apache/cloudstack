@@ -39,7 +39,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -55,6 +54,8 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ControlledViewEntity;
@@ -380,6 +381,22 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public void checkAccess(Account caller, AccessType accessType, boolean sameOwner, ControlledEntity... entities) {
+        
+        //check for the same owner
+        Long ownerId = null;
+        ControlledEntity prevEntity = null;
+        if (sameOwner) {
+            for (ControlledEntity entity : entities) {
+                if (sameOwner) {
+                    if (ownerId == null) {
+                        ownerId = entity.getAccountId();
+                    } else if (ownerId.longValue() != entity.getAccountId()) {
+                        throw new PermissionDeniedException("Entity " + entity + " and entity " + prevEntity + " belong to different accounts");
+                    }
+                    prevEntity = entity;
+                }
+            } 
+        }
 
         if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(caller.getType())) {
             // no need to make permission checks if the system/root admin makes the call
@@ -390,13 +407,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         HashMap<Long, List<ControlledEntity>> domains = new HashMap<Long, List<ControlledEntity>>();
-        Long ownerId = null;
-        ControlledEntity prevEntity = null;
 
         for (ControlledEntity entity : entities) {
             long domainId = entity.getDomainId();
             if (entity.getAccountId() != -1 && domainId == -1) { // If account exists domainId should too so calculate
-// it. This condition might be hit for templates or entities which miss domainId in their tables
+                // it. This condition might be hit for templates or entities which miss domainId in their tables
                 Account account = ApiDBUtils.findAccountById(entity.getAccountId());
                 domainId = account != null ? account.getDomainId() : -1;
             }
@@ -419,15 +434,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     granted = true;
                     break;
                 }
-            }
-
-            if (sameOwner) {
-                if (ownerId == null) {
-                    ownerId = entity.getAccountId();
-                } else if (ownerId.longValue() != entity.getAccountId()) {
-                    throw new PermissionDeniedException("Entity " + entity + " and entity " + prevEntity + " belong to different accounts");
-                }
-                prevEntity = entity;
             }
 
             if (!granted) {
