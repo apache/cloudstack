@@ -1992,8 +1992,8 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network"]["acltype"] = "Domain"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
-        self.services["network"]["vlan"] = shared_ntwk_vlan
-        self.debug("Creating a shared network in non-cloudstack VLAN %s" % shared_ntwk_vlan)
+        self.services["network"]["vlan"] = shared_vlan
+        self.debug("Creating a shared network in non-cloudstack VLAN %s" % shared_vlan)
         self.network = Network.create(
                          self.api_client,
                          self.services["network"],
