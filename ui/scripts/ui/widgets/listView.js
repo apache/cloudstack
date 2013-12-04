@@ -370,6 +370,12 @@
                                     }
                                 }
 
+                                if (needsRefresh) {
+                                    if (!$listView.closest('.detail-view').size()) {
+                                        $loading.remove();
+                                    }
+                                }
+
                                 if (options.error) options.error(message);
 
                                 if (message) cloudStack.dialog.notice({
