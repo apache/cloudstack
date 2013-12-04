@@ -1010,6 +1010,66 @@ namespace HypervResource
             }
         }
 
+        // POST api/HypervResource/CreateObjectCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.CreateObjectCommand)]
+        public JContainer CreateObjectCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.CreateObjectCommand + cmd.ToString());
+
+                bool result = false;
+                string details = null;
+
+                try
+                {
+                    VolumeObjectTO volume = VolumeObjectTO.ParseJson(cmd.data);
+                    PrimaryDataStoreTO primary = volume.primaryDataStore;
+                    ulong volumeSize = volume.size;
+                    string volumeName = volume.name + ".vhdx";
+                    string volumePath = null;
+
+                    if (primary.isLocal)
+                    {
+                        volumePath = Path.Combine(primary.Path, volumeName);
+                    }
+                    else
+                    {
+                        volumePath = @"\\" + primary.uri.Host + primary.uri.LocalPath + @"\" + volumeName;
+                        volumePath = volumePath.Replace('/', '\\');
+                        Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
+                    }
+
+                    wmiCallsV2.CreateDynamicVirtualHardDisk(volumeSize, volumePath);
+                    if (File.Exists(volumePath))
+                    {
+                        result = true;
+                    }
+                    else
+                    {
+                        details = "Failed to create disk with name " + volumePath;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Test by providing wrong key
+                    details = CloudStackTypes.CreateObjectCommand + " failed on exception, " + ex.Message;
+                    logger.Error(details, ex);
+                }
+
+                object ansContent = new
+                {
+                    result = result,
+                    details = details,
+                    data = cmd.data,
+                    contextMap = contextMap
+                };
+
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CreateObjectAnswer);
+            }
+        }
+
         // POST api/HypervResource/MaintainCommand
         // TODO: should this be a NOP?
         [HttpPost]
@@ -1085,7 +1145,6 @@ namespace HypervResource
             {
                 logger.Info(CloudStackTypes.GetVmStatsCommand + cmd.ToString());
                 bool result = false;
-                string details = null;
                 JArray vmNamesJson = cmd.vmNames;
                 string[] vmNames = vmNamesJson.ToObject<string[]>();
                 Dictionary<string, VmStatsEntry> vmProcessorInfo = new Dictionary<string, VmStatsEntry>(vmNames.Length);

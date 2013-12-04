@@ -135,6 +135,9 @@
     <Compile Include="ROOT.virtualization.v2.Msvm_StorageAllocationSettingData.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="ROOT.virtualization.v2.Msvm_StorageJob.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="ROOT.virtualization.v2.Msvm_SummaryInformation.cs">
       <SubType>Component</SubType>
     </Compile>
