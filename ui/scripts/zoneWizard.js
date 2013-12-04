@@ -1838,25 +1838,15 @@
                         			if(s3stores != null && s3stores.length > 0) {                        				
                         				storageproviders.push({ id: 'S3', description: 'S3'}); //if (region-wide) S3 store exists already, only "S3" option should be included here. Any other type of store is not allowed to be created since cloudstack doesn't support multiple types of store at this point. 
                         			} else {
-                        				$.ajax({
-                                            url: createURL('listStorageProviders'),
-                                            data: {
-                                                type: 'image'
-                                            },
-                                            async: false,
-                                            success: function(json) {
-                                                var objs = json.liststorageprovidersresponse.dataStoreProvider;                                                
-                                                if (objs != null) {
-                                                    for (var i = 0; i < objs.length; i++) {    
-                                                    	storageproviders.push({
-                                                            id: objs[i].name,
-                                                            description: objs[i].name
-                                                        });
-                                                    }
-                                                }                                    
-                                            }
-                                        });
-                        				storageproviders.push({ id: 'SMB', description: 'SMB/cifs'}); //temporary, before Rajesh adds 'SMB' to listStorageProviders API response.                                        
+                        				/*                                                	  
+                                    	UI no longer gets providers from "listStorageProviders&type=image" because:
+                                    	(1) Not all of returned values are handled by UI (e.g. Provider "NetApp" is not handled by UI).
+                                    	(2) Provider "SMB" which is handled by UI is not returned from "listStorageProviders&type=image" 
+                                    	*/
+                        				storageproviders.push({ id: 'NFS', description: 'NFS'});
+                        				storageproviders.push({ id: 'SMB', description: 'SMB/cifs'});
+                        				storageproviders.push({ id: 'S3', description: 'S3'});
+                        				storageproviders.push({ id: 'Swift', description: 'Swift'});                        				
                         			}                        		                    			
                                     args.response.success({
                                         data: storageproviders
