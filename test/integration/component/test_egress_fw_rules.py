@@ -376,12 +376,21 @@ class TestEgressFWRules(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             self.virtual_machine.delete(self.apiclient)
             wait_for_cleanup(self.apiclient, ["expunge.interval", "expunge.delay"])
-            self.debug("Sleep for VM cleanup to complete.")
-            #time.sleep(self.services['sleep'])
+
+            retriesCount = 5
+            while True:
+                vms = list_virtual_machines(self.apiclient, id=self.virtual_machine.id)
+                if vms is None:
+                    break
+                elif retriesCount == 0:
+                    self.fail("Failed to delete/expunge VM")
+
+                time.sleep(10)
+                retriesCount -= 1
+
             self.network.delete(self.apiclient)
             self.debug("Sleep for Network cleanup to complete.")
             wait_for_cleanup(self.apiclient, ["network.gc.wait", "network.gc.interval"])
-            #time.sleep(self.services['sleep'])
             cleanup_resources(self.apiclient, reversed(self.cleanup))
             self.debug("Cleanup complete!")
         except Exception as e:
