@@ -392,19 +392,22 @@
                                     	var currentPage = 1;
                                     	var returnedHostCount = 0;
                                     	var returnedHostCpusocketsSum = 0;
-                                    	var returnedHostHavingCpusockets = true;
-                                    	                                                	
+                                    	                                              	
                                     	var callListHostsWithPage = function(setTotalHostCount) {                                                		
                                     		$.ajax({
                             					url: createURL('listHosts'),
                                         		async: false,
                                         		data: {
                                         			type: 'routing',
-                                        			hypervisortype: hypervisor.name,
+                                        			hypervisor: hypervisor.name,
                                         			page: currentPage,
                                         	        pagesize: pageSize //global variable
                                         		},
-                                        		success: function(json) {                                                      			
+                                        		success: function(json) {                                          			
+                                        			if (json.listhostsresponse.count == undefined) {                                        				
+                                        				return;
+                                        			}
+                                        			                                        			
                                         			if (setTotalHostCount) {
                                         				totalHostCount = json.listhostsresponse.count;
                                         			}                                                    			
@@ -414,9 +417,7 @@
                                         			for (var i = 0; i < items.length; i++) {
                                         				if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
                                         					returnedHostCpusocketsSum += items[i].cpusockets;
-                                        				} else {
-                                        					returnedHostHavingCpusockets = false;
-                                        				}
+                                        				} 
                                         			}  
                                         			
                                         			if (returnedHostCount < totalHostCount) {
@@ -428,10 +429,8 @@
                                     	}
                                     	
                                     	callListHostsWithPage(true);
-                                    	
-                                    	if (returnedHostHavingCpusockets) {
-                                    		socketCount += returnedHostCpusocketsSum;
-                                    	}                                    	
+                                    	                                    	
+                                    	socketCount += returnedHostCpusocketsSum;                                    	                                    	
                                     })
                                 });
                             }
@@ -7496,19 +7495,22 @@
                                                 	var currentPage = 1;
                                                 	var returnedHostCount = 0;
                                                 	var returnedHostCpusocketsSum = 0;
-                                                	var returnedHostHavingCpusockets = true;
-                                                	                                                	
+                                                	                                                	                                                	
                                                 	var callListHostsWithPage = function(setTotalHostCount) {                                                		
                                                 		$.ajax({
                                         					url: createURL('listHosts'),
                                                     		async: false,
                                                     		data: {
                                                     			type: 'routing',
-                                                    			hypervisortype: hypervisor.name,
+                                                    			hypervisor: hypervisor.name,
                                                     			page: currentPage,
                                                     	        pagesize: pageSize //global variable
                                                     		},
-                                                    		success: function(json) {                                                      			
+                                                    		success: function(json) {   
+                                                    			if (json.listhostsresponse.count == undefined) {   
+                                                    				return;
+                                                    			}                                                    			
+                                                    			
                                                     			if (setTotalHostCount) {
                                                     				totalHostCount = json.listhostsresponse.count;
                                                     			}                                                    			
@@ -7518,9 +7520,7 @@
                                                     			for (var i = 0; i < items.length; i++) {
                                                     				if (items[i].cpusockets != undefined && isNaN(items[i].cpusockets) == false) {
                                                     					returnedHostCpusocketsSum += items[i].cpusockets;
-                                                    				} else {
-                                                    					returnedHostHavingCpusockets = false;
-                                                    				}
+                                                    				} 
                                                     			}  
                                                     			
                                                     			if (returnedHostCount < totalHostCount) {
@@ -7532,11 +7532,11 @@
                                                 	}
                                                 	
                                                 	callListHostsWithPage(true);
-                                                	                                         	
+                                                	                                        	
                                                     return {
                                                         hypervisor: hypervisor.name,
                                                         hosts: totalHostCount,
-                                                        sockets: (returnedHostHavingCpusockets? returnedHostCpusocketsSum : 'unknown')                                                    
+                                                        sockets: returnedHostCpusocketsSum                                                    
                                                     };
                                                 })
                                             });
