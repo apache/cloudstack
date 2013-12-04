@@ -176,6 +176,7 @@ namespace HypervResource
         public string format;
         public string name;
         public string uuid;
+        public ulong size;
         public PrimaryDataStoreTO primaryDataStore;
 
         public static VolumeObjectTO ParseJson(dynamic json)
@@ -195,7 +196,8 @@ namespace HypervResource
                     dataStore = volumeObjectTOJson.dataStore,
                     format = ((string)volumeObjectTOJson.format),
                     name = (string)volumeObjectTOJson.name,
-                    uuid = (string)volumeObjectTOJson.uuid
+                    uuid = (string)volumeObjectTOJson.uuid,
+                    size = (ulong)volumeObjectTOJson.size
                 };
                 result.primaryDataStore = PrimaryDataStoreTO.ParseJson(volumeObjectTOJson.dataStore);
 
@@ -312,20 +314,23 @@ namespace HypervResource
         public static S3TO ParseJson(dynamic json)
         {
             S3TO result = null;
-            dynamic s3TOJson = json[CloudStackTypes.S3TO];
-            if (s3TOJson != null)
+            if (json != null)
             {
-                result = new S3TO()
+                dynamic s3TOJson = json[CloudStackTypes.S3TO];
+                if (s3TOJson != null)
                 {
-                    bucketName = (string)s3TOJson.bucketName,
-                    secretKey = (string)s3TOJson.secretKey,
-                    accessKey = (string)s3TOJson.accessKey,
-                    endpoint = (string)s3TOJson.endPoint,
-                    httpsFlag = (bool)s3TOJson.httpsFlag
-                };
-                // Delete security credentials in original command.  Prevents logger from spilling the beans, as it were.
-                s3TOJson.secretKey = string.Empty;
-                s3TOJson.accessKey = string.Empty;
+                    result = new S3TO()
+                    {
+                        bucketName = (string)s3TOJson.bucketName,
+                        secretKey = (string)s3TOJson.secretKey,
+                        accessKey = (string)s3TOJson.accessKey,
+                        endpoint = (string)s3TOJson.endPoint,
+                        httpsFlag = (bool)s3TOJson.httpsFlag
+                    };
+                    // Delete security credentials in original command. Prevents logger from spilling the beans, as it were.
+                    s3TOJson.secretKey = string.Empty;
+                    s3TOJson.accessKey = string.Empty;
+                }
             }
             return result;
         }
@@ -380,16 +385,19 @@ namespace HypervResource
         public static NFSTO ParseJson(dynamic json)
         {
             NFSTO result = null;
-            dynamic nfsTOJson = json[CloudStackTypes.NFSTO];
-            if (nfsTOJson != null)
+            if (json != null)
             {
-                result = new NFSTO()
+                dynamic nfsTOJson = json[CloudStackTypes.NFSTO];
+                if (nfsTOJson != null)
                 {
-                    _role = (string)nfsTOJson._role,
-                };
-                // Delete security credentials in original command.  Prevents logger from spilling the beans, as it were.
-                String uriStr = (String)nfsTOJson._url;
-                result.uri = new Uri(uriStr);
+                    result = new NFSTO()
+                    {
+                        _role = (string)nfsTOJson._role,
+                    };
+                    // Delete security credentials in original command.  Prevents logger from spilling the beans, as it were.
+                    String uriStr = (String)nfsTOJson._url;
+                    result.uri = new Uri(uriStr);
+                }
             }
             return result;
         }

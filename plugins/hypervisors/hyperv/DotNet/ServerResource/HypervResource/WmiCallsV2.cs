@@ -286,7 +286,10 @@ namespace HypervResource
             {
                 string vhdFile = null;
                 string diskName = null;
+                string isoPath = null;
                 VolumeObjectTO volInfo = VolumeObjectTO.ParseJson(diskDrive.data);
+                TemplateObjectTO templateInfo = TemplateObjectTO.ParseJson(diskDrive.data);
+
                 if (volInfo != null)
                 {
                     // assert
@@ -327,6 +330,13 @@ namespace HypervResource
                     }
                     logger.Debug("Going to create " + vmName + " with attached voluem " + diskName + " at " + vhdFile);
                 }
+                else if (templateInfo != null && templateInfo.nfsDataStoreTO != null)
+                {
+                    NFSTO share = templateInfo.nfsDataStoreTO;
+                    Utils.ConnectToRemote(share.UncPath, share.Domain, share.User, share.Password);
+                    // The share is mapped, now attach the iso
+                    isoPath = Path.Combine(share.UncPath.Replace('/', Path.DirectorySeparatorChar), templateInfo.path);
+                }
 
                 string driveType = diskDrive.type;
 
@@ -353,6 +363,10 @@ namespace HypervResource
                 logger.DebugFormat("Create disk type {1} (Named: {0}), on vm {2} {3}", diskName, driveResourceType, vmName, 
                                         string.IsNullOrEmpty(vhdFile) ? " no disk to insert" : ", inserting disk" +vhdFile );
                 AddDiskDriveToVm(newVm, vhdFile, ideCtrllr, driveResourceType);
+                if (isoPath != null)
+                {
+                    AttachIso(vmName, isoPath);
+                }
             }
 
             String publicIpAddress = "";
@@ -1484,7 +1498,7 @@ namespace HypervResource
             // If the Job is done asynchronously
             if (ret_val == ReturnCode.Started)
             {
-                JobCompleted(jobPath);
+                StorageJobCompleted(jobPath);
             }
             else if (ret_val != ReturnCode.Completed)
             {
@@ -1588,6 +1602,32 @@ namespace HypervResource
             for (;;)
             {
                 jobObj = new MigrationJob(jobPath);
+                if (jobObj.JobState != JobState.Starting && jobObj.JobState != JobState.Running)
+                {
+                    break;
+                }
+                logger.InfoFormat("In progress... {0}% completed.", jobObj.PercentComplete);
+                System.Threading.Thread.Sleep(1000);
+            }
+
+            if (jobObj.JobState != JobState.Completed)
+            {
+                var errMsg = string.Format(
+                    "Hyper-V Job failed, Error Code:{0}, Description: {1}",
+                    jobObj.ErrorCode,
+                    jobObj.ErrorDescription);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+        }
+
+        private static void StorageJobCompleted(ManagementPath jobPath)
+        {
+            StorageJob jobObj = null;
+            for (; ; )
+            {
+                jobObj = new StorageJob(jobPath);
                 if (jobObj.JobState != JobState.Starting && jobObj.JobState != JobState.Running)
                 {
                     break;
