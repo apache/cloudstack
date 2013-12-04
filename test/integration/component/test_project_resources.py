@@ -905,10 +905,12 @@ class TestSnapshots(cloudstackTestCase):
         self.assertEqual(
                             snapshot.state in [
                                                  'BackedUp',
-                                                 'CreatedOnPrimary'
+                                                 'CreatedOnPrimary',
+                                                 'Allocated'
                                                  ],
                             True,
-                            "Check Snapshot state is Running or not"
+                            "Check Snapshot state is in one of the mentioned possible states, \
+                                    It is currently: %s" % snapshot.state
                         )
 
         snapshots = Snapshot.list(
