@@ -46,11 +46,13 @@
 
         // Refresh detail view context
         if ($detailView) {
-            $.extend(
-                $detailView.data('view-args').context[
-                    $detailView.data('view-args').section
-                ][0], newData
-            );
+            var detailViewArgs = $detailView.data('view-args');
+            var listViewArgs = $listView.data('view-args');
+            var contextID = listViewArgs.sections && listViewArgs.sections[detailViewArgs.section].id ?
+                listViewArgs.sections[detailViewArgs.section].id :
+                detailViewArgs.section;
+
+            $.extend($detailView.data('view-args').context[contextID][0], newData);
         }
     };
 
