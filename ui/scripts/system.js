@@ -2338,7 +2338,7 @@
                                                                 _custom: {
                                                                     jobId: jid,
                                                                     getUpdatedItem: function(json) {
-                                                                        return json.queryasyncjobresultresponse.jobresult.domainrouter;
+                                                                        return json.queryasyncjobresultresponse.jobresult.router;
                                                                     },
                                                                     getActionFilter: function() {
                                                                         return routerActionfilter;
@@ -2384,7 +2384,7 @@
                                                                 _custom: {
                                                                     jobId: jid,
                                                                     getUpdatedItem: function(json) {
-                                                                        return json.queryasyncjobresultresponse.jobresult.domainrouter;
+                                                                        return json.queryasyncjobresultresponse.jobresult.router;
                                                                     },
                                                                     getActionFilter: function() {
                                                                         return routerActionfilter;
@@ -3418,7 +3418,7 @@
                                                                 _custom: {
                                                                     jobId: jid,
                                                                     getUpdatedItem: function(json) {
-                                                                        return json.queryasyncjobresultresponse.jobresult.domainrouter;
+                                                                        return json.queryasyncjobresultresponse.jobresult.router;
                                                                     },
                                                                     getActionFilter: function() {
                                                                         return routerActionfilter;
@@ -3464,7 +3464,7 @@
                                                                 _custom: {
                                                                     jobId: jid,
                                                                     getUpdatedItem: function(json) {
-                                                                        return json.queryasyncjobresultresponse.jobresult.domainrouter;
+                                                                        return json.queryasyncjobresultresponse.jobresult.router;
                                                                     },
                                                                     getActionFilter: function() {
                                                                         return routerActionfilter;
@@ -3500,7 +3500,7 @@
                                                                 _custom: {
                                                                     jobId: jid,
                                                                     getUpdatedItem: function(json) {
-                                                                        return json.queryasyncjobresultresponse.jobresult.domainrouter;
+                                                                        return json.queryasyncjobresultresponse.jobresult.router;
                                                                     },
                                                                     getActionFilter: function() {
                                                                         return routerActionfilter;
@@ -7659,7 +7659,7 @@
                                                         _custom: {
                                                             jobId: jid,
                                                             getUpdatedItem: function(json) {
-                                                                return json.queryasyncjobresultresponse.jobresult.domainrouter;
+                                                                return json.queryasyncjobresultresponse.jobresult.router;
                                                             },
                                                             getActionFilter: function() {
                                                                 return routerActionfilter;
@@ -7705,7 +7705,7 @@
                                                         _custom: {
                                                             jobId: jid,
                                                             getUpdatedItem: function(json) {
-                                                                return json.queryasyncjobresultresponse.jobresult.domainrouter;
+                                                                return json.queryasyncjobresultresponse.jobresult.router;
                                                             },
                                                             getActionFilter: function() {
                                                                 return routerActionfilter;
@@ -7804,7 +7804,7 @@
                                                         _custom: {
                                                             jobId: jid,
                                                             getUpdatedItem: function(json) {
-                                                                return json.queryasyncjobresultresponse.jobresult.domainrouter;
+                                                                return json.queryasyncjobresultresponse.jobresult.router;
                                                             },
                                                             getActionFilter: function() {
                                                                 return routerActionfilter;
