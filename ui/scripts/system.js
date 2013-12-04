@@ -8380,10 +8380,13 @@
 	                                            		args.context.routerGroupByZone[0].routerRequiresUpgrade = 0;
 	                                            	}    	                                            		                                                
 	                                            }
-	                                        });                                        	
-                                        	args.response.success({
-                                        		data: args.context.routerGroupByZone[0]
-                                        	})
+	                                        });
+
+                                            setTimeout(function() {
+                                                args.response.success({
+                                                    data: args.context.routerGroupByZone[0]
+                                                })
+                                            });
                                         }
                             		}
                             	}
@@ -8600,9 +8603,11 @@
                                                     }
                                                 }
                                             });
-                                            args.response.success({
-                                                data: args.context.routerGroupByPod[0]
-                                            })
+                                            setTimeout(function() {
+                                                args.response.success({
+                                                    data: args.context.routerGroupByPod[0]
+                                                });
+                                            });
                                         }
                                     }
                                 }
@@ -8822,9 +8827,11 @@
                                                     }
                                                 }
                                             });
-                                            args.response.success({
-                                                data: args.context.routerGroupByCluster[0]
-                                            })
+                                            setTimeout(function() {
+                                                args.response.success({
+                                                    data: args.context.routerGroupByCluster[0]
+                                                });
+                                            });
                                         }
                                     }
                                 }
@@ -17887,7 +17894,7 @@
             jsonObj["redundantRouterState"] = jsonObj.redundantstate;
         } else {
             jsonObj["redundantRouterState"] = "";
-        }  
+        }
     }
 
     var refreshNspData = function(nspName) {

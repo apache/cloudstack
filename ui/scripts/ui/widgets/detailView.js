@@ -93,7 +93,8 @@
                 var $detailViewElems = $detailView.find('ul.ui-tabs-nav, .detail-group').remove();
                 var viewArgs = $detailView.data('view-args');
                 var context = viewArgs.context;
-                var activeContextItem = viewArgs.section ? context[viewArgs.section][0] : null;
+                var activeContextItem = viewArgs.section && context[viewArgs.section] ?
+                    context[viewArgs.section][0] : null;
 
                 $detailView.tabs('destroy');
                 $detailView.data('view-args').jsonObj = newData;
