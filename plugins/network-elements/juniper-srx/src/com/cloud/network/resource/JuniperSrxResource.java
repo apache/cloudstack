@@ -691,7 +691,7 @@ public class JuniperSrxResource implements ServerResource {
             Long publicVlanTag = null;
             if (ip.getBroadcastUri() != null && !ip.getBroadcastUri().equals("untagged")) {
                 try {
-                    publicVlanTag = Long.parseLong(ip.getBroadcastUri());
+                    publicVlanTag = Long.parseLong(BroadcastDomainType.getValue(ip.getBroadcastUri()));
                 } catch (Exception e) {
                     throw new ExecutionException("Could not parse public VLAN tag: " + ip.getBroadcastUri());
                 }
