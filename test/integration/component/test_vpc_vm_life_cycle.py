@@ -1396,6 +1396,20 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         """ Test recover an instance in VPC networks
         """
 
+        self.debug("Deploying vm")
+
+        self.vm_2 = VirtualMachine.create(
+                                  self.api_client,
+                                  self.services["virtual_machine"],
+                                  accountid=self.account.name,
+                                  domainid=self.account.domainid,
+                                  serviceofferingid=self.service_offering.id,
+                                  networkids=[str(self.network_1.id),
+                                              str(self.network_2.id)]
+                                  )
+
+        self.cleanup.append(self.vm_2)
+
         try:
             self.vm_2.delete(self.apiclient)
         except Exception as e:
@@ -1604,7 +1618,7 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         self.debug("Delete virtual machines in account: %s" %
                                                 self.account.name)
         try:
-            self.vm_2.delete(self.apiclient)
+            self.vm_3.delete(self.apiclient)
         except Exception as e:
             self.fail("Failed to destroy the virtual instances, %s" % e)
 
@@ -1624,7 +1638,6 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
                                                     self.account.name)
         try:
             self.vm_1.delete(self.apiclient)
-            self.vm_3.delete(self.apiclient)
         except Exception as e:
             self.fail("Failed to destroy the virtual instances, %s" % e)
 
