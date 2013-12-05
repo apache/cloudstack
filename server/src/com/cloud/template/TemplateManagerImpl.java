@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -185,6 +186,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = {TemplateManager.class, TemplateApiService.class})
@@ -199,6 +201,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     VMTemplatePoolDao _tmpltPoolDao;
     @Inject
     VMTemplateZoneDao _tmpltZoneDao;
+    @Inject
+    protected UserVmDetailsDao _vmDetailsDao;
     @Inject
     protected VMTemplateDetailsDao _templateDetailsDao;
     @Inject
@@ -1624,13 +1628,26 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO template = _tmpltDao.persist(privateTemplate);
         // Increment the number of templates
         if (template != null) {
-            Map<String, String> detailsStr = cmd.getDetails();
-            if (detailsStr != null) {
-                List<VMTemplateDetailVO> details = new ArrayList<VMTemplateDetailVO>();
-                for (String key : detailsStr.keySet()) {
-                    details.add(new VMTemplateDetailVO(template.getId(), key, detailsStr.get(key)));
+            Map<String, String> details = new HashMap<String, String>();
+            if ( volume != null ) {
+                Long vmId = volume.getInstanceId();
+                if ( vmId != null ) {
+	            UserVmVO userVm = _userVmDao.findById(vmId);
+                    if (userVm == null) {
+                        _userVmDao.loadDetails(userVm);
+                        details.putAll(userVm.getDetails());
+                    }
                 }
-                _templateDetailsDao.saveDetails(details);
+            }
+            if(cmd.getDetails() != null) {
+                details.putAll(cmd.getDetails());
+            }
+            if( !details.isEmpty()) {
+                List<VMTemplateDetailVO> tdetails = new ArrayList<VMTemplateDetailVO>();
+                for (String key : details.keySet()) {
+                    tdetails.add(new VMTemplateDetailVO(template.getId(), key, details.get(key)));
+                }
+                this._templateDetailsDao.saveDetails(tdetails);
             }
 
             _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.template);

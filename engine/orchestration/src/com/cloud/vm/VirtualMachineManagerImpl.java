@@ -964,15 +964,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 s_logger.info("The guru did not like the answers so stopping " + vm);
                             }
 
-                            StopCommand cmd = new StopCommand(vm, ExecuteInSequence.value());
-                            StopAnswer answer = (StopAnswer)_agentMgr.easySend(destHostId, cmd);
-                            if (answer != null) {
-                                String hypervisortoolsversion = answer.getHypervisorToolsVersion();
-                                if (hypervisortoolsversion != null) {
-                                    if (vm.getType() == VirtualMachine.Type.User) {
+                            StopCommand cmd = new StopCommand(vm,  ExecuteInSequence.value());
+                            StopAnswer answer = (StopAnswer) _agentMgr.easySend(destHostId, cmd);
+                            if ( answer != null ) {
+                                if (vm.getType() == VirtualMachine.Type.User) {
+                                    String platform = answer.getPlatform();
+                                    if (platform != null) {
                                         UserVmVO userVm = _userVmDao.findById(vm.getId());
                                         _userVmDao.loadDetails(userVm);
-                                        userVm.setDetail("hypervisortoolsversion", hypervisortoolsversion);
+                                        userVm.setDetail("platform",  platform);
                                         _userVmDao.saveDetails(userVm);
                                     }
                                 }
@@ -1128,14 +1128,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VirtualMachine vm = profile.getVirtualMachine();
         StopCommand stop = new StopCommand(vm, ExecuteInSequence.value());
         try {
-            StopAnswer answer = (StopAnswer)_agentMgr.send(vm.getHostId(), stop);
-            if (answer != null) {
-                String hypervisortoolsversion = answer.getHypervisorToolsVersion();
-                if (hypervisortoolsversion != null) {
-                    if (vm.getType() == VirtualMachine.Type.User) {
+            StopAnswer answer = (StopAnswer) _agentMgr.send(vm.getHostId(), stop);
+            if ( answer != null ) {
+                if (vm.getType() == VirtualMachine.Type.User) {
+                    String platform = answer.getPlatform();
+                    if (platform != null) {
                         UserVmVO userVm = _userVmDao.findById(vm.getId());
                         _userVmDao.loadDetails(userVm);
-                        userVm.setDetail("hypervisortoolsversion", hypervisortoolsversion);
+                        userVm.setDetail("platform",  platform);
                         _userVmDao.saveDetails(userVm);
                     }
                 }
@@ -1368,14 +1368,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         StopAnswer answer = null;
         try {
             answer = (StopAnswer)_agentMgr.send(vm.getHostId(), stop);
-
-            if (answer != null) {
-                String hypervisortoolsversion = answer.getHypervisorToolsVersion();
-                if (hypervisortoolsversion != null) {
-                    if (vm.getType() == VirtualMachine.Type.User) {
+            if ( answer != null ) {
+                if (vm.getType() == VirtualMachine.Type.User) {
+                    String platform = answer.getPlatform();
+                    if ( platform != null) {
                         UserVmVO userVm = _userVmDao.findById(vm.getId());
                         _userVmDao.loadDetails(userVm);
-                        userVm.setDetail("hypervisortoolsversion", hypervisortoolsversion);
+                        userVm.setDetail("platform",  platform);
                         _userVmDao.saveDetails(userVm);
                     }
                 }
@@ -1383,16 +1382,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             stopped = answer.getResult();
             if (!stopped) {
                 throw new CloudRuntimeException("Unable to stop the virtual machine due to " + answer.getDetails());
-            } else {
-                Integer timeoffset = answer.getTimeOffset();
-                if (timeoffset != null) {
-                    if (vm.getType() == VirtualMachine.Type.User) {
-                        UserVmVO userVm = _userVmDao.findById(vm.getId());
-                        _userVmDao.loadDetails(userVm);
-                        userVm.setDetail("timeoffset", timeoffset.toString());
-                        _userVmDao.saveDetails(userVm);
-                    }
-                }
             }
             vmGuru.finalizeStop(profile, answer);
 
@@ -2572,21 +2561,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 ") stopped on host " + hostDesc + " due to storage failure", "Virtual Machine " + vm.getInstanceName() + " (id: " + vm.getId() + ") running on host [" +
                 vm.getHostId() + "] stopped due to storage failure.");
         }
-        // track hypervsion tools version
-        if (info.hvtoolsversion != null && !info.hvtoolsversion.isEmpty()) {
+        // track platform info
+        if( info.platform != null && !info.platform.isEmpty() ) {
             if (vm.getType() == VirtualMachine.Type.User) {
                 UserVmVO userVm = _userVmDao.findById(vm.getId());
                 _userVmDao.loadDetails(userVm);
-                userVm.setDetail("hypervisortoolsversion", info.hvtoolsversion);
-                _userVmDao.saveDetails(userVm);
-            }
-        }
-        // track hypervsion tools version
-        if (info.hvtoolsversion != null && !info.hvtoolsversion.isEmpty()) {
-            if (vm.getType() == VirtualMachine.Type.User) {
-                UserVmVO userVm = _userVmDao.findById(vm.getId());
-                _userVmDao.loadDetails(userVm);
-                userVm.setDetail("hypervisortoolsversion", info.hvtoolsversion);
+                userVm.setDetail("platform",  info.platform);
                 _userVmDao.saveDetails(userVm);
             }
         }
@@ -2974,17 +2954,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         public String name;
         public State state;
         public String hostUuid;
-        public String hvtoolsversion;
         public VMInstanceVO vm;
+        public String platform;
 
         @SuppressWarnings("unchecked")
-        public AgentVmInfo(String name, VMInstanceVO vm, State state, String host, String hvtoolsversion) {
+        public AgentVmInfo(String name, VMInstanceVO vm, State state, String host, String platform) {
             this.name = name;
             this.state = state;
             this.vm = vm;
-            hostUuid = host;
-            this.hvtoolsversion = hvtoolsversion;
-
+            this.hostUuid = host;
+            this.platform = platform;
+            
         }
 
         public AgentVmInfo(String name, VMInstanceVO vm, State state, String host) {
@@ -2998,9 +2978,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         public String getHostUuid() {
             return hostUuid;
         }
-
-        public String getHvtoolsversion() {
-            return hvtoolsversion;
+        
+        public String getPlatform() {
+            return platform;
         }
     }
 

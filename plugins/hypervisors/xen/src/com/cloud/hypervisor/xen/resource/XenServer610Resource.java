@@ -454,18 +454,4 @@ public class XenServer610Resource extends XenServer56FP1Resource {
         }
         return "xenserver56";
     }
-
-    @Override
-    protected void finalizeVmMetaData(VM vm, Connection conn, VirtualMachineTO vmSpec) throws Exception {
-        Map<String, String> details = vmSpec.getDetails();
-        if (details != null) {
-            String xentoolsversion = details.get("hypervisortoolsversion");
-            if (xentoolsversion == null || !xentoolsversion.equalsIgnoreCase("xenserver61")) {
-                Map<String, String> platform = vm.getPlatform(conn);
-                platform.remove("device_id");
-                vm.setPlatform(conn, platform);
-            }
-        }
-    }
-
 }

@@ -19,6 +19,9 @@ package com.cloud.utils;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+
 import java.util.regex.Pattern;
 
 import org.owasp.esapi.StringUtilities;
@@ -184,5 +187,28 @@ public class StringUtils {
         String searchable = text.substring(start, end);
         int found = searchable.lastIndexOf(separator);
         return found > 0 ? found : end - start;
+    }
+
+
+    public static Map<String, String> stringToMap(String s){
+        Map<String, String> map=new HashMap<String, String>();
+        String[] elements = s.split(";");
+        for (String parts: elements) {
+            String[] keyValue = parts.split(":");
+            map.put(keyValue[0], keyValue[1]);
+        }
+        return map;
+    }
+
+
+    public static String mapToString(Map<String, String> map){
+        String s = "";
+        for (Map.Entry<String, String> entry: map.entrySet()) {
+            s += entry.getKey() + ":" + entry.getValue() +";";
+        }
+        if (s.length() > 0) {
+            s = s.substring(0, s.length()-1);
+        }
+        return s;
     }
 }
