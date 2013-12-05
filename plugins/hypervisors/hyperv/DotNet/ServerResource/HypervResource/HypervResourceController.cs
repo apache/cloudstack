@@ -1752,14 +1752,20 @@ namespace HypervResource
                 dynamic strtRouteCmd = cmdArray[0][CloudStackTypes.StartupRoutingCommand];
 
                 // Insert networking details
-                strtRouteCmd.privateIpAddress = config.PrivateIpAddress;
-                strtRouteCmd.privateNetmask = config.PrivateNetmask;
-                strtRouteCmd.privateMacAddress = config.PrivateMacAddress;
-                strtRouteCmd.storageIpAddress = config.PrivateIpAddress;
-                strtRouteCmd.storageNetmask = config.PrivateNetmask;
-                strtRouteCmd.storageMacAddress = config.PrivateMacAddress;
-                strtRouteCmd.gatewayIpAddress = config.GatewayIpAddress;
-                strtRouteCmd.hypervisorVersion = System.Environment.OSVersion.Version.ToString();
+                string privateIpAddress = strtRouteCmd.privateIpAddress;
+                string subnet;
+                System.Net.NetworkInformation.NetworkInterface privateNic = GetNicInfoFromIpAddress(privateIpAddress, out subnet);
+                strtRouteCmd.privateIpAddress = privateIpAddress;
+                strtRouteCmd.privateNetmask = subnet;
+                strtRouteCmd.privateMacAddress = privateNic.GetPhysicalAddress().ToString();
+                string storageip = strtRouteCmd.storageIpAddress;
+                System.Net.NetworkInformation.NetworkInterface storageNic = GetNicInfoFromIpAddress(storageip, out subnet);
+
+                strtRouteCmd.storageIpAddress = storageip;
+                strtRouteCmd.storageNetmask = subnet;
+                strtRouteCmd.storageMacAddress = storageNic.GetPhysicalAddress().ToString();
+                strtRouteCmd.gatewayIpAddress = storageNic.GetPhysicalAddress().ToString();
+
                 strtRouteCmd.caps = "hvm";
 
                 dynamic details = strtRouteCmd.hostDetails;
@@ -1850,9 +1856,11 @@ namespace HypervResource
         public static System.Net.NetworkInformation.NetworkInterface GetNicInfoFromIpAddress(string ipAddress, out string subnet)
         {
             System.Net.NetworkInformation.NetworkInterface[] nics = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();
+            System.Net.NetworkInformation.NetworkInterface defaultnic = null;
             foreach (var nic in nics)
             {
                 subnet = null;
+                defaultnic = nic;
                 // TODO: use to remove NETMASK and MAC from the config file, and to validate the IPAddress.
                 var nicProps = nic.GetIPProperties();
                 bool found = false;
@@ -1870,7 +1878,9 @@ namespace HypervResource
                 }
                 return nic;
             }
-            throw new ArgumentException("No NIC for ipAddress " + ipAddress);
+            var defaultSubnet = defaultnic.GetIPProperties().UnicastAddresses[0];
+            subnet = defaultSubnet.IPv4Mask.ToString();
+            return defaultnic;
         }
 
         public static void GetCapacityForLocalPath(string localStoragePath, out long capacityBytes, out long availableBytes)
