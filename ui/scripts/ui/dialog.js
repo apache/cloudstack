@@ -144,7 +144,7 @@
                 if (field.isHidden != null) {
                     if (typeof(field.isHidden) == 'boolean' && field.isHidden == true)
                         $formItem.hide();
-                    else if (typeof(field.isHidden) == 'function' && field.isHidden() == true)
+                    else if (typeof(field.isHidden) == 'function' && field.isHidden(args) == true)
                         $formItem.hide();
                 }
 
