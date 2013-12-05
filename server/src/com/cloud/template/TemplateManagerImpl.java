@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -181,6 +182,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
@@ -195,6 +197,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     VMTemplatePoolDao _tmpltPoolDao;
     @Inject
     VMTemplateZoneDao _tmpltZoneDao;
+    @Inject
+    protected UserVmDetailsDao _vmDetailsDao;
     @Inject
     protected VMTemplateDetailsDao _templateDetailsDao;
     @Inject
@@ -1634,8 +1638,21 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO template = this._tmpltDao.persist(privateTemplate);
         // Increment the number of templates
         if (template != null) {
-            if (cmd.getDetails() != null) {
-                this._templateDetailsDao.persist(template.getId(), cmd.getDetails());
+            Map<String, String> details = new HashMap<String, String>();
+            if ( volume != null ) {
+                Long vmId = volume.getInstanceId();
+                if ( vmId != null ) {
+                    Map<String, String> vmdetails = _vmDetailsDao.findDetails(vmId);
+                    if ( vmdetails != null ) {
+                        details.putAll(vmdetails);
+                    }
+                }
+            }
+            if(cmd.getDetails() != null) {
+                details.putAll(cmd.getDetails());
+            }
+            if( !details.isEmpty()) {
+                this._templateDetailsDao.persist(template.getId(), details);
             }
 
             _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.template);

@@ -52,9 +52,9 @@ public class XenServerPoolVms {
     }
     
 
-    public void put(String clusterId, String hostUuid, String name, State state, String xstoolsversion){
+    public void put(String clusterId, String hostUuid, String name, State state, String platform){
         HashMap<String, Ternary<String, State, String>> vms= getClusterVmState(clusterId);
-        vms.put(name, new Ternary<String, State, String>(hostUuid, state, xstoolsversion));
+        vms.put(name, new Ternary<String, State, String>(hostUuid, state, platform));
     }
     
 
