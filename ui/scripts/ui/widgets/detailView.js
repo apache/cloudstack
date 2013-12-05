@@ -1159,7 +1159,7 @@
             tab: targetTabID,
             id: args.id,
             jsonObj: jsonObj,
-            context: args.context,
+            context: $.extend(args.context, options),
             response: {
                 success: function(args) {
                     if (options.newData) {
@@ -1474,7 +1474,8 @@
         if ($target.closest('div.toolbar div.refresh').size()) {
             loadTabContent(
                 $target.closest('div.detail-view').find('div.detail-group:visible'),
-                $target.closest('div.detail-view').data('view-args')
+                $target.closest('div.detail-view').data('view-args'),
+                { refresh: true }
             );
 
             return false;
