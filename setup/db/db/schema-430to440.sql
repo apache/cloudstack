@@ -212,3 +212,5 @@ CREATE VIEW `cloud`.`volume_view` AS
         `cloud`.`async_job` ON async_job.instance_id = volumes.id
             and async_job.instance_type = 'Volume'
             and async_job.job_status = 0;
+
+UPDATE `cloud`.`configuration` SET `description` = 'If set to true, StartCommand, StopCommand, CopyCommand, MigrateCommand will be synchronized on the agent side. If set to false, these commands become asynchronous. Default value is true.' WHERE `name` = 'execute.in.sequence.hypervisor.commands';
