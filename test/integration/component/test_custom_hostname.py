@@ -631,8 +631,8 @@ class TestInstanceNameFlagFalse(cloudstackTestCase):
         # Validate the following
         # 1. Set the vm.instancename.flog to false. Hostname and displayname
         #    should be UUID
-        # 2. Give the user provided user name. Internal name should be
-        #    i-<userid>-<vmid>-display name
+        # 2. Give the user provided display name. Internal name should be
+        #    i-<userid>-<vmid>-instance name (It should not contain display name)
 
         if not is_config_suitable(apiclient=self.apiclient, name='vm.instancename.flag', value='false'):
             self.skipTest('vm.instancename.flag should be false. skipping')
@@ -665,10 +665,12 @@ class TestInstanceNameFlagFalse(cloudstackTestCase):
                          "Running",
                          "Vm state should be running after deployment"
                          )
-        self.debug("VM diaplyname: %s" % (vm))
+        self.debug("vm.displayname: %s, original: %s" %
+                        (vm.displayname,
+                        self.services["virtual_machine"]["displayname"]))
         self.assertEqual(
-                         vm.name,
-                         vm.id,
+                         vm.displayname,
+                         self.services["virtual_machine"]["displayname"],
                          "Vm display name should match the given name"
                          )
 
@@ -732,121 +734,6 @@ class TestInstanceNameFlagFalse(cloudstackTestCase):
         internal_name = "i-%s-%s-%s" %(str(account_id), str(vmid), instance_name)
         self.debug("Internal name: %s" % internal_name)
         self.debug("vm instance name : %s" % vm.instancename)
-        self.assertEqual(
-                        vm.instancename,
-                        internal_name,
-                        "VM internal name should match with that of the format"
-                        )
-        return
-
-    @attr(configuration='vm.instancename.flag')
-    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
-    def test_02_custom_hostname_instancename_false(self):
-        """ Verify custom hostname for the instance when
-            vm.instancename.flag=false
-        """
-
-        # Validate the following
-        # 1. Set the vm.instancename.flag to false. Hostname and displayname
-        #    should be UUID
-        # 2. Dont give the user provided user name. Internal name should be
-        #    i-<userid>-<vmid>-instance name
-
-        if not is_config_suitable(apiclient=self.apiclient, name='vm.instancename.flag', value='false'):
-            self.skipTest('vm.instancename.flag should be false. skipping')
-
-        self.debug("Deploying VM in account: %s" % self.account.name)
-        # Spawn an instance in that network
-        virtual_machine = VirtualMachine.create(
-                                  self.apiclient,
-                                  self.services["virtual_machine"],
-                                  accountid=self.account.name,
-                                  domainid=self.account.domainid,
-                                  serviceofferingid=self.service_offering.id,
-                                  )
-        self.debug(
-            "Checking if the virtual machine is created properly or not?")
-        vms = VirtualMachine.list(
-                                  self.apiclient,
-                                  id=virtual_machine.id,
-                                  listall=True
-                                  )
-
-        self.assertEqual(
-                         isinstance(vms, list),
-                         True,
-                         "List vms should retuen a valid name"
-                         )
-        vm = vms[0]
-        self.assertEqual(
-                         vm.state,
-                         "Running",
-                         "Vm state should be running after deployment"
-                         )
-        self.assertEqual(
-                         vm.name,
-                         vm.id,
-                         "Vm display name should not match the given name"
-                         )
-
-        # Fetch account ID and VMID from database to check internal name
-        self.debug("select id from account where uuid = '%s';" \
-                                            % self.account.id)
-
-        qresultset = self.dbclient.execute(
-                                "select id from account where uuid = '%s';" \
-                                % self.account.id
-                                )
-        self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
-
-        self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
-        qresult = qresultset[0]
-        account_id = qresult[0]
-
-        self.debug("select id from vm_instance where uuid = '%s';" % vm.id)
-
-        qresultset = self.dbclient.execute(
-                        "select id from vm_instance where uuid = '%s';" %
-                        vm.id)
-
-        self.assertEqual(
-                         isinstance(qresultset, list),
-                         True,
-                         "Check DB query result set for valid data"
-                         )
-
-        self.assertNotEqual(
-                            len(qresultset),
-                            0,
-                            "Check DB Query result set"
-                            )
-        qresult = qresultset[0]
-        self.debug("Query result: %s" % qresult)
-        vmid = qresult[0]
-
-        self.debug("Fetching the global config value for instance.name")
-        configs = Configurations.list(
-                                      self.apiclient,
-                                      name="instance.name",
-                                      listall=True
-                                      )
-
-        config = configs[0]
-        instance_name = config.value
-        self.debug("Instance.name: %s" % instance_name)
-
-        #internal Name = i-<user ID>-<VM ID>- Instance_name
-        #internal_name = "i-" + str(account_id) + "-" + str(vmid) + "-" + instance_name
-        internal_name = "i-%s-%s-%s" %(str(account_id), str(vmid), instance_name)
-        self.debug("Internal_name : %s" % internal_name )
         self.assertEqual(
                         vm.instancename,
                         internal_name,
