@@ -34,7 +34,7 @@ import org.apache.cloudstack.acl.AclRole;
 import org.apache.cloudstack.acl.AclService;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.dao.AclGroupDao;
-import org.apache.cloudstack.acl.dao.AclRoleDao;
+import org.apache.cloudstack.acl.dao.AclPolicyDao;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
@@ -353,7 +353,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     AclRoleJoinDao _aclRoleJoinDao;
 
     @Inject
-    AclRoleDao _aclRoleDao;
+    AclPolicyDao _aclRoleDao;
 
     @Inject
     AclGroupJoinDao _aclGroupJoinDao;

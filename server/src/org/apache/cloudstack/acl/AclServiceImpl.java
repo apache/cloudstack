@@ -29,12 +29,11 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.dao.AclApiPermissionDao;
-import org.apache.cloudstack.acl.dao.AclEntityPermissionDao;
 import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
 import org.apache.cloudstack.acl.dao.AclGroupDao;
-import org.apache.cloudstack.acl.dao.AclGroupRoleMapDao;
-import org.apache.cloudstack.acl.dao.AclRoleDao;
-import org.apache.cloudstack.acl.dao.AclRolePermissionDao;
+import org.apache.cloudstack.acl.dao.AclGroupPolicyMapDao;
+import org.apache.cloudstack.acl.dao.AclPolicyDao;
+import org.apache.cloudstack.acl.dao.AclPolicyPermissionDao;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.context.CallContext;
 
@@ -78,7 +77,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     AccountDao _accountDao;
 
     @Inject
-    AclRoleDao _aclRoleDao;
+    AclPolicyDao _aclRoleDao;
 
     @Inject
     AclGroupDao _aclGroupDao;
@@ -87,7 +86,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     EntityManager _entityMgr;
 
     @Inject
-    AclGroupRoleMapDao _aclGroupRoleMapDao;
+    AclGroupPolicyMapDao _aclGroupPolicyMapDao;
 
     @Inject
     AclGroupAccountMapDao _aclGroupAccountMapDao;
@@ -96,10 +95,8 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     AclApiPermissionDao _apiPermissionDao;
 
     @Inject
-    AclRolePermissionDao _rolePermissionDao;
+    AclPolicyPermissionDao _policyPermissionDao;
 
-    @Inject
-    AclEntityPermissionDao _entityPermissionDao;
 
     public static HashMap<String, Class> entityClassMap = new HashMap<String, Class>();
 
@@ -142,11 +139,11 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
                 AclRole role = _aclRoleDao.persist(rvo);
                 if (parentRoleId != null) {
                     // copy parent role permissions
-                    List<AclRolePermissionVO> perms = _rolePermissionDao.listByRole(parentRoleId);
+                    List<AclRolePermissionVO> perms = _policyPermissionDao.listByRole(parentRoleId);
                     if (perms != null) {
                         for (AclRolePermissionVO perm : perms) {
                             perm.setAclRoleId(role.getId());
-                            _rolePermissionDao.persist(perm);
+                            _policyPermissionDao.persist(perm);
                         }
                     }
                 }
@@ -176,10 +173,10 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 // remove this role related entry in acl_group_role_map
-                List<AclGroupRoleMapVO> groupRoleMap = _aclGroupRoleMapDao.listByRoleId(role.getId());
+                List<AclGroupRoleMapVO> groupRoleMap = _aclGroupPolicyMapDao.listByRoleId(role.getId());
                 if (groupRoleMap != null) {
                     for (AclGroupRoleMapVO gr : groupRoleMap) {
-                        _aclGroupRoleMapDao.remove(gr.getId());
+                        _aclGroupPolicyMapDao.remove(gr.getId());
                     }
                 }
 
@@ -364,11 +361,11 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
                     }
                     _accountMgr.checkAccess(caller, null, true, role);
 
-                    AclGroupRoleMapVO grMap = _aclGroupRoleMapDao.findByGroupAndRole(groupId, roleId);
+                    AclGroupRoleMapVO grMap = _aclGroupPolicyMapDao.findByGroupAndRole(groupId, roleId);
                     if (grMap == null) {
                         // not there already
                         grMap = new AclGroupRoleMapVO(groupId, roleId);
-                        _aclGroupRoleMapDao.persist(grMap);
+                        _aclGroupPolicyMapDao.persist(grMap);
                     }
                 }
             }
@@ -404,10 +401,10 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
                     }
                     _accountMgr.checkAccess(caller, null, true, role);
 
-                    AclGroupRoleMapVO grMap = _aclGroupRoleMapDao.findByGroupAndRole(groupId, roleId);
+                    AclGroupRoleMapVO grMap = _aclGroupPolicyMapDao.findByGroupAndRole(groupId, roleId);
                     if (grMap != null) {
                         // not removed yet
-                        _aclGroupRoleMapDao.remove(grMap.getId());
+                        _aclGroupPolicyMapDao.remove(grMap.getId());
                     }
                 }
             }
@@ -537,10 +534,10 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 // remove this group related entry in acl_group_role_map
-                List<AclGroupRoleMapVO> groupRoleMap = _aclGroupRoleMapDao.listByGroupId(grp.getId());
+                List<AclGroupRoleMapVO> groupRoleMap = _aclGroupPolicyMapDao.listByGroupId(grp.getId());
                 if (groupRoleMap != null) {
                     for (AclGroupRoleMapVO gr : groupRoleMap) {
-                        _aclGroupRoleMapDao.remove(gr.getId());
+                        _aclGroupPolicyMapDao.remove(gr.getId());
                     }
                 }
 
@@ -567,7 +564,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         SearchBuilder<AclGroupAccountMapVO> groupSB = _aclGroupAccountMapDao.createSearchBuilder();
         groupSB.and("account", groupSB.entity().getAccountId(), Op.EQ);
 
-        GenericSearchBuilder<AclGroupRoleMapVO, Long> roleSB = _aclGroupRoleMapDao.createSearchBuilder(Long.class);
+        GenericSearchBuilder<AclGroupRoleMapVO, Long> roleSB = _aclGroupPolicyMapDao.createSearchBuilder(Long.class);
         roleSB.selectFields(roleSB.entity().getAclRoleId());
         roleSB.join("accountgroupjoin", groupSB, groupSB.entity().getAclGroupId(), roleSB.entity().getAclGroupId(),
                 JoinType.INNER);
@@ -575,7 +572,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         SearchCriteria<Long> roleSc = roleSB.create();
         roleSc.setJoinParameters("accountgroupjoin", "account", accountId);
 
-        List<Long> roleIds = _aclGroupRoleMapDao.customSearch(roleSc, null);
+        List<Long> roleIds = _aclGroupPolicyMapDao.customSearch(roleSc, null);
 
         SearchBuilder<AclRoleVO> sb = _aclRoleDao.createSearchBuilder();
         sb.and("ids", sb.entity().getId(), Op.IN);
@@ -591,7 +588,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         List<AclRole> roles = getAclRoles(accountId);
         AclRolePermission curPerm = null;
         for (AclRole role : roles) {
-            AclRolePermission perm = _rolePermissionDao.findByRoleEntityAndPermission(role.getId(), entityType, accessType, true);
+            AclRolePermission perm = _policyPermissionDao.findByRoleEntityAndPermission(role.getId(), entityType, accessType, true);
             if (perm == null)
                 continue;
             if (curPerm == null) {

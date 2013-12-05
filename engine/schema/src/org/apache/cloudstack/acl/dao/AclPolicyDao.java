@@ -16,10 +16,13 @@
 // under the License.
 package org.apache.cloudstack.acl.dao;
 
-import org.apache.cloudstack.acl.AclPolicyPermissionMapVO;
+import org.apache.cloudstack.acl.AclPolicy;
+import org.apache.cloudstack.acl.AclPolicyVO;
 
 import com.cloud.utils.db.GenericDao;
 
-public interface AclPolicyPermissionMapDao extends GenericDao<AclPolicyPermissionMapVO, Long> {
+public interface AclPolicyDao extends GenericDao<AclPolicyVO, Long> {
+
+    AclPolicy findByName(Long domainId, String policyName);
 
 }

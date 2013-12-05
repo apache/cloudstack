@@ -22,16 +22,16 @@ import javax.naming.ConfigurationException;
 
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.acl.AclRole;
-import org.apache.cloudstack.acl.AclRoleVO;
+import org.apache.cloudstack.acl.AclPolicy;
+import org.apache.cloudstack.acl.AclPolicyVO;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-public class AclRoleDaoImpl extends GenericDaoBase<AclRoleVO, Long> implements AclRoleDao {
-    private SearchBuilder<AclRoleVO> nameSearch;
+public class AclPolicyDaoImpl extends GenericDaoBase<AclPolicyVO, Long> implements AclPolicyDao {
+    private SearchBuilder<AclPolicyVO> nameSearch;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -47,8 +47,8 @@ public class AclRoleDaoImpl extends GenericDaoBase<AclRoleVO, Long> implements A
     }
 
     @Override
-    public AclRole findByName(Long domainId, String name) {
-        SearchCriteria<AclRoleVO> sc = nameSearch.create();
+    public AclPolicy findByName(Long domainId, String name) {
+        SearchCriteria<AclPolicyVO> sc = nameSearch.create();
         sc.setParameters("name", name);
         if (domainId != null) {
             sc.setParameters("domainId", domainId);
