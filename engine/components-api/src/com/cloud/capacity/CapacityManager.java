@@ -82,4 +82,13 @@ public interface CapacityManager {
      * @return true if the count of host's running VMs >= hypervisor limit
      */
     boolean checkIfHostReachMaxGuestLimit(Host host);
+
+    /**
+     * Check if specified host has capability to support cpu cores and speed freq
+     * @param hostId the host to be checked
+     * @param cpuNum cpu number to check
+     * @param cpuSpeed cpu Speed to check
+     * @return true if the count of host's running VMs >= hypervisor limit
+     */
+    boolean checkIfHostHasCpuCapability(long hostId, Integer cpuNum, Integer cpuSpeed);
 }

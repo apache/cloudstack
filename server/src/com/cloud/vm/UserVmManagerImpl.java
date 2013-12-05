@@ -1349,11 +1349,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     }
 
                     // #1 Check existing host has capacity
-                    if (!excludes.shouldAvoid(ApiDBUtils.findHostById(vmInstance.getHostId()))) {
-                        existingHostHasCapacity =
-                            _capacityMgr.checkIfHostHasCapacity(vmInstance.getHostId(), newServiceOffering.getSpeed() - currentServiceOffering.getSpeed(),
-                                (newServiceOffering.getRamSize() - currentServiceOffering.getRamSize()) * 1024L * 1024L, false,
-                                ApiDBUtils.getCpuOverprovisioningFactor(), 1f, false); // TO DO fill it with mem.
+                    if( !excludes.shouldAvoid(ApiDBUtils.findHostById(vmInstance.getHostId())) ){
+                        existingHostHasCapacity = _capacityMgr.checkIfHostHasCpuCapability(vmInstance.getHostId(), newCpu, newSpeed)
+                                && _capacityMgr.checkIfHostHasCapacity(vmInstance.getHostId(), newServiceOffering.getSpeed() - currentServiceOffering.getSpeed(),
+                                (newServiceOffering.getRamSize() - currentServiceOffering.getRamSize()) * 1024L * 1024L, false, ApiDBUtils.getCpuOverprovisioningFactor(), 1f, false); // TO DO fill it with mem.
                         excludes.addHost(vmInstance.getHostId());
                     }
 
