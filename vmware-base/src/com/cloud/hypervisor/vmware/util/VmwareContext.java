@@ -100,7 +100,7 @@ public class VmwareContext {
 		
 		registerOutstandingContext();
 		if(s_logger.isInfoEnabled())
-			s_logger.info("New VmwareContext object, current outstanding count: " + getOutstandingContextCount());
+            s_logger.info("New VmwareContext object: " + System.identityHashCode(this) + ", current outstanding count: " + getOutstandingContextCount());
 	}
 	
 	public boolean validate() {

@@ -83,8 +83,9 @@ public class VmwareContextPool {
 				VmwareContext context = l.remove(0);
 				context.setPoolInfo(this, poolKey);
 				
-				if(s_logger.isTraceEnabled())
-					s_logger.trace("Return a VmwareContext from the idle pool: " + poolKey + ". current pool size: " + l.size() + ", outstanding count: " + VmwareContext.getOutstandingContextCount());
+                if(s_logger.isInfoEnabled())
+                    s_logger.info("Return a VmwareContext from the idle pool: " + poolKey + ". current pool size: " + l.size() + ", " +
+                            "outstanding count: " + VmwareContext.getOutstandingContextCount() + ". context: " + System.identityHashCode(context));
 				return context;
 			}
 			
@@ -107,11 +108,11 @@ public class VmwareContextPool {
 				context.clearStockObjects();
 				l.add(context);
 				
-				if(s_logger.isTraceEnabled())
-					s_logger.trace("Recycle VmwareContext into idle pool: " + context.getPoolKey() + ", current idle pool size: " 
-						+ l.size() + ", outstanding count: " + VmwareContext.getOutstandingContextCount());
+                if(s_logger.isInfoEnabled())
+                    s_logger.info("Recycle VmwareContext into idle pool: " + context.getPoolKey() + ", current idle pool size: " 
+                            + l.size() + ", outstanding count: " + VmwareContext.getOutstandingContextCount() + ". context: " + System.identityHashCode(context));
 			} else {
-				if(s_logger.isTraceEnabled())
+				if(s_logger.isDebugEnabled())
 					s_logger.trace("VmwareContextPool queue exceeds limits, queue size: " + l.size());
 				context.close();
 			}
