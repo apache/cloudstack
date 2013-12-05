@@ -133,7 +133,9 @@
             trafficType.ovmnetworklabel = dictionary['label.network.label.display.for.blank.value'];
         if (trafficType.lxcnetworklabel == null || trafficType.lxcnetworklabel == 0)
             trafficType.lxcnetworklabel = dictionary['label.network.label.display.for.blank.value'];
-
+        if (trafficType.hypervnetworklabel == null || trafficType.hypervnetworklabel == 0)
+            trafficType.hypervnetworklabel = dictionary['label.network.label.display.for.blank.value'];
+                
         return trafficType;
     };
 
@@ -149,7 +151,9 @@
             array1.push("&ovmnetworklabel=" + labels.ovmnetworklabel);
         if (labels.lxcnetworklabel != dictionary['label.network.label.display.for.blank.value'])
             array1.push("&lxcnetworklabel=" + labels.lxcnetworklabel);
-
+        if (labels.hypervnetworklabel != dictionary['label.network.label.display.for.blank.value'])
+            array1.push("&hypervnetworklabel=" + labels.hypervnetworklabel);        
+        
         $.ajax({
             url: createURL('updateTrafficType' + array1.join("")),
             data: {
@@ -555,7 +559,11 @@
                                         isEditable: true
                                     },
                                     lxcnetworklabel: {
-                                        label: 'label.lxc.traffic.label',
+                                        label: 'LXC Traffic Label',
+                                        isEditable: true
+                                    },
+                                    hypervnetworklabel: {
+                                        label: 'HyperV Traffic Label',
                                         isEditable: true
                                     }
                                 }],
@@ -577,7 +585,8 @@
                                             selectedPublicNetworkObj.vmwarenetworklabel = trafficType.vmwarenetworklabel;
                                             selectedPublicNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
                                             selectedPublicNetworkObj.lxcnetworklabel = trafficType.lxcnetworklabel;
-
+                                            selectedPublicNetworkObj.hypervnetworklabel = trafficType.hypervnetworklabel;
+                                            
                                             args.response.success({
                                                 data: selectedPublicNetworkObj
                                             });
@@ -859,7 +868,11 @@
                                         isEditable: true
                                     },
                                     lxcnetworklabel: {
-                                        label: 'label.lxc.traffic.label',
+                                        label: 'LXC Traffic Label',
+                                        isEditable: true
+                                    },
+                                    hypervnetworklabel: {
+                                        label: 'HyperV Traffic Label',
                                         isEditable: true
                                     }
                                 }],
@@ -878,7 +891,9 @@
                                             selectedPublicNetworkObj.kvmnetworklabel = trafficType.kvmnetworklabel;
                                             selectedPublicNetworkObj.vmwarenetworklabel = trafficType.vmwarenetworklabel;
                                             selectedPublicNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
-
+                                            selectedPublicNetworkObj.lxcnetworklabel = trafficType.lxcnetworklabel;
+                                            selectedPublicNetworkObj.hypervnetworklabel = trafficType.hypervnetworklabel;
+                                            
                                             args.response.success({
                                                 data: selectedPublicNetworkObj
                                             });
@@ -1063,7 +1078,11 @@
                                         isEditable: true
                                     },
                                     lxcnetworklabel: {
-                                        label: 'label.lxc.traffic.label',
+                                        label: 'LXC Traffic Label',
+                                        isEditable: true
+                                    },
+                                    hypervnetworklabel: {
+                                        label: 'HyperV Traffic Label',
                                         isEditable: true
                                     }
                                 }],
@@ -1081,6 +1100,8 @@
                                             selectedManagementNetworkObj.vmwarenetworklabel = trafficType.vmwarenetworklabel;
                                             selectedManagementNetworkObj.ovmnetworklabel = trafficType.ovmnetworklabel;
                                             selectedManagementNetworkObj.lxcnetworklabel = trafficType.lxcnetworklabel;
+                                            selectedManagementNetworkObj.hypervnetworklabel = trafficType.hypervnetworklabel;
+                                            
                                             args.response.success({
                                                 data: selectedManagementNetworkObj
                                             });
@@ -1235,7 +1256,11 @@
                                         isEditable: true
                                     },
                                     lxcnetworklabel: {
-                                        label: 'label.lxc.traffic.label',
+                                        label: 'LXC Traffic Label',
+                                        isEditable: true
+                                    },
+                                    hypervnetworklabel: {
+                                        label: 'HyperV Traffic Label',
                                         isEditable: true
                                     }
                                 }],
@@ -1273,7 +1298,8 @@
                                             selectedPhysicalNetworkObj["vmwarenetworklabel"] = trafficType.vmwarenetworklabel;
                                             selectedPhysicalNetworkObj["ovmnetworklabel"] = trafficType.ovmnetworklabel;
                                             selectedPhysicalNetworkObj["lxcnetworklabel"] = trafficType.lxcnetworklabel;
-
+                                            selectedPhysicalNetworkObj["hypervnetworklabel"] = trafficType.hypervnetworklabel;                                            
+                                            
                                             args.response.success({
                                                 actionFilter: function() {
                                                     var allowedActions = ['edit', 'addVlanRange', 'removeVlanRange'];
