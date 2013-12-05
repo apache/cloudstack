@@ -592,7 +592,7 @@
                                 },
                                 action: function(args) {
                                     $.ajax({
-                                        url: createURL("createSnapshot&volumeid=" + args.context.volumes[0].id + "&quiescevm=" + args.context.quiescevm),
+                                        url: createURL("createSnapshot&volumeid=" + args.context.volumes[0].id + "&quiescevm=" + (args.data.quiescevm=='on')),
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
