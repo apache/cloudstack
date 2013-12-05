@@ -25,6 +25,7 @@ import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -115,6 +116,7 @@ public class CertServiceImpl implements CertService {
 
             validate(cert, key, password, chain);
             s_logger.debug("Certificate Validation succeeded");
+
             String fingerPrint = generateFingerPrint(parseCertificate(cert));
 
             Long accountId = CallContext.current().getCallingAccount().getId();
@@ -379,14 +381,17 @@ public class CertServiceImpl implements CertService {
             params = new PKIXBuilderParameters(anchors, target);
             params.setRevocationEnabled(false);
             params.addCertStore(CertStore.getInstance("Collection", new CollectionCertStoreParameters(certs)));
-            CertPathBuilder builder = CertPathBuilder.getInstance("PKIX");
+            CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
             builder.build(params);
+
         } catch (InvalidAlgorithmParameterException e) {
             throw new IllegalArgumentException("Invalid certificate chain", e);
         } catch (CertPathBuilderException e) {
             throw new IllegalArgumentException("Invalid certificate chain", e);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalArgumentException("Invalid certificate chain", e);
+        } catch (NoSuchProviderException e) {
+            throw new CloudRuntimeException("No provider for certificate validation", e);
         }
 
     }

@@ -33,7 +33,7 @@ public class SslCertDaoImpl extends GenericDaoBase<SslCertVO, Long> implements S
         listByAccountId = createSearchBuilder();
         listByAccountId.and("accountId", listByAccountId.entity().getAccountId(), SearchCriteria.Op.EQ);
         listByAccountId.done();
-    }
+   }
 
     @Override
     public List<SslCertVO> listByAccountId(Long accountId) {
