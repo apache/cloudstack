@@ -543,11 +543,29 @@ class TestSnapshots(cloudstackTestCase):
         #3. Verify snapshot is removed by calling List Snapshots API
         #4. Verify snapshot was removed from image store
 
+        self.debug("Creating volume under account: %s" % self.account.name)
+        volume = Volume.create(
+                               self.apiclient,
+                               self.services["volume"],
+                               zoneid=self.zone.id,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
+                               diskofferingid=self.disk_offering.id
+                               )
+        self.debug("Created volume: %s" % volume.id)
+        self.debug("Attaching volume to vm: %s" % self.virtual_machine.id)
+
+        self.virtual_machine.attach_volume(
+                                           self.apiclient,
+                                           volume
+                                           )
+        self.debug("Volume attached to vm")
+
         volumes = list_volumes(
                                self.apiclient,
                                virtualmachineid=self.virtual_machine.id,
                                type='DATADISK',
-                               listall=True
+                               id=volume.id
                                )
         self.assertEqual(
                             isinstance(volumes, list),
