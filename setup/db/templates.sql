@@ -37,7 +37,10 @@ INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created,
     VALUES (8, UUID(), 'routing-8', 'SystemVM Template (vSphere)', 0, now(), 'SYSTEM', 0, 32, 1, 'http://download.cloud.com/templates/4.2/systemvmtemplate-4.2-vh7.ova', '8fde62b1089e5844a9cd3b9b953f9596', 0, 'SystemVM Template (vSphere)', 'OVA', 15, 0, 1, 'VMware' );
 
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
-    VALUES (9, UUID(), 'routing-9', 'SystemVM Template (HyperV)', 0, now(), 'SYSTEM', 0, 32, 1, 'http://download.cloud.com/templates/4.2/systemvmtemplate-2013-06-12-master-xen.vhd.bz2', 'fb1b6e032a160d86f2c28feb5add6d83', 0, 'SystemVM Template (HyperV)', 'VHD', 15, 0, 1, 'Hyperv' );
+    VALUES (9, UUID(), 'routing-9', 'SystemVM Template (HyperV)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/4.3/systemvm64template-2013-12-04-hyperv.vhd.bz2', 'fb1b6e032a160d86f2c28feb5add6d83', 0, 'SystemVM Template (HyperV)', 'VHD', 15, 0, 1, 'Hyperv' );
+
+INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
+    VALUES (6, UUID(), 'centos64-x64', 'CentOS 6.4(64-bit) no GUI (Hyperv)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloud.com/releases/4.3/centos6_4_64bit.vhd.bz2', '89d124c4e7c93b88638b2a0e286c54f2', 0, 'CentOS 6.4 (64-bit) no GUI (Hyperv)', 'VHD', 182, 1, 1, 'Hyperv', 1);
 
 INSERT INTO `cloud`.`guest_os_category` (id, uuid, name) VALUES (1, UUID(), 'CentOS');
 INSERT INTO `cloud`.`guest_os_category` (id, uuid, name) VALUES (2, UUID(), 'Debian');
