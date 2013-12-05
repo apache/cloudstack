@@ -560,16 +560,39 @@
                             takeSnapshot: {
                                 label: 'label.action.take.snapshot',
                                 messages: {
-                                    confirm: function(args) {
-                                        return 'message.action.take.snapshot';
-                                    },
                                     notification: function(args) {
                                         return 'label.action.take.snapshot';
                                     }
                                 },
+                                createForm: {
+                                    title: 'label.action.take.snapshot',
+                                    desc: 'message.action.take.snapshot',
+                                    fields: {
+                                        quiescevm: {
+                                            label: 'Quiesce VM',
+                                            isBoolean: true,
+                                            isHidden: function(args) {
+                                                var hidden = true;
+                                                $.ajax({
+                                                    url: createURL('listStoragePools&id='+args.context.volumes[0].storageid),
+                                                    dataType: "json",
+                                                    async: false,
+                                                    success: function(json) {
+                                                        if (json.liststoragepoolsresponse.storagepool[0].storagecapabilities.VOLUME_SNAPSHOT_QUIESCEVM == 'true')
+                                                            hidden = false;
+                                                        else
+                                                            hidden = true;
+                                                    }
+                                                });
+
+                                                return hidden;
+                                            }
+                                        }
+                                    }
+                                },
                                 action: function(args) {
                                     $.ajax({
-                                        url: createURL("createSnapshot&volumeid=" + args.context.volumes[0].id),
+                                        url: createURL("createSnapshot&volumeid=" + args.context.volumes[0].id + "&quiescevm=" + args.context.quiescevm),
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
