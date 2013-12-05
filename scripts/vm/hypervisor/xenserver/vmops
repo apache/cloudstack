@@ -373,25 +373,6 @@ def deleteFile(session, args):
 
     return txt
 
-
-    
-def get_private_nic(session, args):
-    vms = session.xenapi.VM.get_all()
-    host_uuid = args.get('host_uuid')
-    host = session.xenapi.host.get_by_uuid(host_uuid)
-    piflist = session.xenapi.host.get_PIFs(host)
-    mgmtnic = 'eth0'
-    for pif in piflist:
-        pifrec = session.xenapi.PIF.get_record(pif)
-        network = pifrec.get('network')
-        nwrec = session.xenapi.network.get_record(network)
-        if nwrec.get('name_label') == 'cloud-guest':
-            return pifrec.get('device')
-        if pifrec.get('management'):
-            mgmtnic = pifrec.get('device')
-    
-    return mgmtnic
-
 def chain_name(vm_name):
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
         if vm_name.endswith('untagged'):
@@ -421,7 +402,6 @@ def can_bridge_firewall(session, args):
     except:
         return 'false'
 
-    host_uuid = args.get('host_uuid')
     try:
         util.pread2(['iptables', '-N', 'BRIDGE-FIREWALL'])
         util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
@@ -443,14 +423,12 @@ def can_bridge_firewall(session, args):
     except:
         util.SMlog('Chain BRIDGE-DEFAULT-FIREWALL already exists')
 
-    privnic = get_private_nic(session, args)
     result = 'true'
     try:
         util.pread2(['/bin/bash', '-c', 'iptables -n -L FORWARD | grep BRIDGE-FIREWALL'])
     except:
         try:
             util.pread2(['iptables', '-I', 'FORWARD', '-m', 'physdev', '--physdev-is-bridged', '-j', 'BRIDGE-FIREWALL'])
-            util.pread2(['iptables', '-A', 'FORWARD', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', privnic, '-j', 'ACCEPT'])
             util.pread2(['iptables', '-A', 'FORWARD', '-j', 'DROP'])
         except:
             return 'false'
@@ -774,6 +752,11 @@ def network_rules_vmSecondaryIp(session, args):
 
 @echo
 def default_network_rules_systemvm(session, args):
+    try:
+        util.pread2(['/bin/bash', '-c', 'iptables -n -L FORWARD | grep BRIDGE-FIREWALL'])
+    except:
+        can_bridge_firewall(session, args)
+
     vm_name = args.pop('vmName')
     try:
         vm = session.xenapi.VM.get_by_name_label(vm_name)
@@ -1463,6 +1446,12 @@ def network_rules(session, args):
     seqno = args.pop('seqno')
     sec_ips = args.get("secIps")
     deflated = 'false'
+
+    try:
+        util.pread2(['/bin/bash', '-c', 'iptables -n -L FORWARD | grep BRIDGE-FIREWALL'])
+    except:
+        can_bridge_firewall(session, args)
+
     if 'deflated' in args:
         deflated = args.pop('deflated')
     
