@@ -361,7 +361,8 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                     ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id, "memoryOvercommitRatio");
                     Float cpuOvercommitRatio = Float.parseFloat(cluster_detail_cpu.getValue());
                     Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
-                    if (_capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, true, cpuOvercommitRatio, memoryOvercommitRatio, true)) {
+                    if (_capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, true, cpuOvercommitRatio, memoryOvercommitRatio, true)
+                            && _capacityMgr.checkIfHostHasCpuCapability(host.getId(), offering.getCpu(), offering.getSpeed())) {
                         s_logger.debug("The last host of this VM is UP and has enough capacity");
                         s_logger.debug("Now checking for suitable pools under zone: " + host.getDataCenterId() + ", pod: " + host.getPodId() + ", cluster: " +
                             host.getClusterId());

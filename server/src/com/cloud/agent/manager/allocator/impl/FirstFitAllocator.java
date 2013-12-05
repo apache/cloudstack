@@ -286,8 +286,6 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
                 continue;
             }
 
-            boolean numCpusGood = host.getCpus().intValue() >= offering.getCpu();
-            boolean cpuFreqGood = host.getSpeed().intValue() >= offering.getSpeed();
             int cpu_requested = offering.getCpu() * offering.getSpeed();
             long ram_requested = offering.getRamSize() * 1024L * 1024L;
             Cluster cluster = _clusterDao.findById(host.getClusterId());
@@ -296,19 +294,18 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             Float cpuOvercommitRatio = Float.parseFloat(clusterDetailsCpuOvercommit.getValue());
             Float memoryOvercommitRatio = Float.parseFloat(clusterDetailsRamOvercommmt.getValue());
 
-            boolean hostHasCapacity =
-                _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio,
+            boolean hostHasCpuCapability = _capacityMgr.checkIfHostHasCpuCapability(host.getId(), offering.getCpu(), offering.getSpeed());
+            boolean hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio,
                     considerReservedCapacity);
 
-            if (numCpusGood && cpuFreqGood && hostHasCapacity) {
+            if (hostHasCpuCapability && hostHasCapacity) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Found a suitable host, adding to list: " + host.getId());
                 }
                 suitableHosts.add(host);
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Not using host " + host.getId() + "; numCpusGood: " + numCpusGood + "; cpuFreqGood: " + cpuFreqGood + ", host has capacity?" +
-                        hostHasCapacity);
+                    s_logger.debug("Not using host " + host.getId() + "; host has cpu capability? " + hostHasCpuCapability +  ", host has capacity?" + hostHasCapacity);
                 }
                 avoid.addHost(host.getId());
             }
