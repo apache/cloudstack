@@ -147,11 +147,20 @@
 
                             var $item = args.$item;
                             var $row = $detailView.data('list-view-row');
+                            var error = args.error;
 
                             notification.desc = messages.notification(args.messageArgs);
                             notification._custom = $.extend(args._custom ? args._custom : {}, {
                                 $detailView: $detailView
                             });
+
+                            if (error) {
+                                notification.interval = 1;
+                                notification.poll = function(args) {
+                                    cloudStack.dialog.notice({ message: error });
+                                    args.error(error);
+                                }
+                            }
 
                             cloudStack.ui.notifications.add(
                                 notification,
