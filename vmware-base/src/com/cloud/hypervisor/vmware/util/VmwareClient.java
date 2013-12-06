@@ -79,17 +79,19 @@ public class VmwareClient {
     }
 
     static {
-        try {
-            trustAllHttpsCertificates();
-            HostnameVerifier hv = new HostnameVerifier() {
-                @Override
-                public boolean verify(String urlHostName, SSLSession session) {
-                    return true;
-                }
-            };
-            HttpsURLConnection.setDefaultHostnameVerifier(hv);
-        } catch (Exception e) {
-        }
+    	try {
+			trustAllHttpsCertificates();
+	        HostnameVerifier hv = new HostnameVerifier() {
+	            @Override
+	            public boolean verify(String urlHostName, SSLSession session) {
+	                return true;
+	            }
+	        };
+	        HttpsURLConnection.setDefaultHostnameVerifier(hv);
+	        
+        	vimService = new VimService();
+		} catch (Exception e) {
+		}   	
     }
 
     private static void trustAllHttpsCertificates() throws Exception {
@@ -105,7 +107,7 @@ public class VmwareClient {
     }
 
     private ManagedObjectReference SVC_INST_REF = new ManagedObjectReference();
-    private VimService vimService;
+    private static VimService vimService;
     private VimPortType vimPort;
     private String serviceCookie;
     private final String SVC_INST_NAME = "ServiceInstance";
@@ -126,7 +128,6 @@ public class VmwareClient {
         SVC_INST_REF.setType(SVC_INST_NAME);
         SVC_INST_REF.setValue(SVC_INST_NAME);
 
-        vimService = new VimService();
         vimPort = vimService.getVimPort();
         Map<String, Object> ctxt = ((BindingProvider)vimPort).getRequestContext();
 
@@ -254,7 +255,7 @@ public class VmwareClient {
     public Object getDynamicProperty(ManagedObjectReference mor, String propertyName) throws Exception {
         List<String> props = new ArrayList<String>();
         props.add(propertyName);
-        List<ObjectContent> objContent = this.retrieveMoRefProperties(mor, props);
+        List<ObjectContent> objContent = retrieveMoRefProperties(mor, props);
 
         Object propertyValue = null;
         if (objContent != null && objContent.size() > 0) {
@@ -366,7 +367,7 @@ public class VmwareClient {
         pSpec.setType(objmor.getType());
         spec.getPropSet().add(pSpec);
 
-        ManagedObjectReference propertyCollector = this.getPropCol();
+        ManagedObjectReference propertyCollector = getPropCol();
         ManagedObjectReference filterSpecRef = vimPort.createFilter(propertyCollector, spec, true);
 
         boolean reached = false;
@@ -619,7 +620,7 @@ public class VmwareClient {
     }
 
     public int getVcenterSessionTimeout() {
-        return this.vCenterSessionTimeout;
+        return vCenterSessionTimeout;
     }
 
 }
