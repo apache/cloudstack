@@ -308,7 +308,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                     List<Host> suitableHosts = new ArrayList<Host>();
                     suitableHosts.add(host);
                     Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
-                            suitableHosts, suitableVolumeStoragePools, avoids, getPlannerUsage(planner,vmProfile, plan ,avoids));
+                            suitableHosts, suitableVolumeStoragePools, avoids, getPlannerUsage(planner,vmProfile, plan ,avoids), readyAndReusedVolumes);
                     if (potentialResources != null) {
                         Pod pod = _podDao.findById(host.getPodId());
                         Cluster cluster = _clusterDao.findById(host.getClusterId());
@@ -369,7 +369,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                             List<Host> suitableHosts = new ArrayList<Host>();
                             suitableHosts.add(host);
                             Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
-                                    suitableHosts, suitableVolumeStoragePools, avoids, getPlannerUsage(planner,vmProfile, plan ,avoids));
+                                    suitableHosts, suitableVolumeStoragePools, avoids, getPlannerUsage(planner,vmProfile, plan ,avoids), readyAndReusedVolumes);
                             if (potentialResources != null) {
                                 Pod pod = _podDao.findById(host.getPodId());
                                 Cluster cluster = _clusterDao.findById(host.getClusterId());
@@ -886,7 +886,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                 // choose the potential host and pool for the VM
                 if (!suitableVolumeStoragePools.isEmpty()) {
                     Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
-                            suitableHosts, suitableVolumeStoragePools, avoid, resourceUsageRequired);
+                            suitableHosts, suitableVolumeStoragePools, avoid, resourceUsageRequired, readyAndReusedVolumes);
 
                     if (potentialResources != null) {
                         Pod pod = _podDao.findById(clusterVO.getPodId());
@@ -1014,11 +1014,16 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
     }
     protected Pair<Host, Map<Volume, StoragePool>> findPotentialDeploymentResources(List<Host> suitableHosts,
             Map<Volume, List<StoragePool>> suitableVolumeStoragePools, ExcludeList avoid,
-            DeploymentPlanner.PlannerResourceUsage resourceUsageRequired) {
+            DeploymentPlanner.PlannerResourceUsage resourceUsageRequired, List<Volume> readyAndReusedVolumes) {
         s_logger.debug("Trying to find a potenial host and associated storage pools from the suitable host/pool lists for this VM");
 
         boolean hostCanAccessPool = false;
         boolean haveEnoughSpace = false;
+
+        if (readyAndReusedVolumes == null) {
+            readyAndReusedVolumes = new ArrayList<Volume>();
+        }
+
         Map<Volume, StoragePool> storage = new HashMap<Volume, StoragePool>();
         TreeSet<Volume> volumesOrderBySizeDesc = new TreeSet<Volume>(new Comparator<Volume>() {
             @Override
@@ -1042,7 +1047,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                 for (StoragePool potentialSPool : volumePoolList) {
                     if (hostCanAccessSPool(potentialHost, potentialSPool)) {
                         hostCanAccessPool = true;
-                        if (multipleVolume) {
+                        if (multipleVolume && !readyAndReusedVolumes.contains(vol)) {
                             List<Volume> requestVolumes = null;
                             if (volumeAllocationMap.containsKey(potentialSPool))
                                 requestVolumes = volumeAllocationMap.get(potentialSPool);
