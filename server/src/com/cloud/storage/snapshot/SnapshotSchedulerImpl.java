@@ -72,8 +72,8 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
 
     @Inject
     protected AsyncJobDao _asyncJobDao;
-    @Inject
     protected AsyncJobDispatcher _asyncDispatcher;
+    
     @Inject protected SnapshotDao             _snapshotDao;
     @Inject protected SnapshotScheduleDao     _snapshotScheduleDao;
     @Inject protected SnapshotPolicyDao       _snapshotPolicyDao;
@@ -86,7 +86,15 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     private Timer      _testClockTimer;
     private Date       _currentTimestamp;
     private TestClock  _testTimerTask;
-
+    
+    public AsyncJobDispatcher getAsyncJobDispatcher() {
+    	return _asyncDispatcher;
+    }
+    
+    public void setAsyncJobDispatcher(AsyncJobDispatcher dispatcher) {
+    	_asyncDispatcher = dispatcher;
+    }
+    
     private Date getNextScheduledTime(long policyId, Date currentTimestamp) {
         SnapshotPolicyVO policy = _snapshotPolicyDao.findById(policyId);
         Date nextTimestamp = null;

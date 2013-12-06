@@ -4122,6 +4122,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	return null;
     }
     
+    //
+    // TODO build a common pattern to reduce code duplication in following methods
+    // no time for this at current iteration
+    //
     public Outcome<VirtualMachine> startVmThroughJobQueue(final String vmUuid, 
     	final Map<VirtualMachineProfile.Param, Object> params, 
     	final DeploymentPlan planToDeploy) {
@@ -4166,7 +4170,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	        
 	            // Transaction syntax sugar has a cost here
 	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(vm.getId()));
+	            context.putContextParameter("jobId", new Long(workJob.getId()));
     		}
     	});
     	
@@ -4216,7 +4220,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		    	}
 		        
 	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(vm.getId()));
+	            context.putContextParameter("jobId", new Long(workJob.getId()));
     		}
 		});
 
@@ -4268,7 +4272,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		    	}
 		        
 	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(vm.getId()));
+	            context.putContextParameter("jobId", new Long(workJob.getId()));
     		}
 		});
 
@@ -4318,7 +4322,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
 		        }
 	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(vm.getId()));
+	            context.putContextParameter("jobId", new Long(workJob.getId()));
 	    	}
     	});
     	
@@ -4372,7 +4376,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
 		        }
 	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(vm.getId()));
+	            context.putContextParameter("jobId", new Long(workJob.getId()));
 	    	}
     	});
     	
@@ -4383,10 +4387,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         	VirtualMachine.PowerState.PowerOn, vm.getId(), destHostId);
     }
     
-    //
-    // TODO build a common pattern to reduce code duplication in following methods
-    // no time for this at current iteration
-    //
     public Outcome<VirtualMachine> migrateVmForScaleThroughJobQueue(
     	final String vmUuid, final long srcHostId, final DeployDestination dest, final Long newSvcOfferingId) {
     	
@@ -4429,7 +4429,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
 		        }
 	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(vm.getId()));
+	            context.putContextParameter("jobId", new Long(workJob.getId()));
 	    	}
     	});
     	
@@ -4481,7 +4481,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
 		        }
 	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(vm.getId()));
+	            context.putContextParameter("jobId", new Long(workJob.getId()));
 	    	}
     	});
     	
@@ -4531,7 +4531,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
 		        }
 	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(vm.getId()));
+	            context.putContextParameter("jobId", new Long(workJob.getId()));
 	    	}
     	});
     	
@@ -4581,7 +4581,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
 		        }
 	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(vm.getId()));
+	            context.putContextParameter("jobId", new Long(workJob.getId()));
 	    	}
     	});
     	
@@ -4631,7 +4631,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
 		        }
 	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(vm.getId()));
+	            context.putContextParameter("jobId", new Long(workJob.getId()));
 	    	}
     	});
     	
@@ -4683,7 +4683,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
 		        }
 	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(vm.getId()));
+	            context.putContextParameter("jobId", new Long(workJob.getId()));
 	    	}
     	});
     	
