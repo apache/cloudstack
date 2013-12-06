@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.domain.Domain;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -171,10 +172,12 @@ public class ActionEventUtils {
         // get the entity details for which ActionEvent is generated
         String entityType = null;
         String entityUuid = null;
-        CallContext context = CallContext.current();
-        if (context != null) {
-            entityType = (String)context.getContextParameter(EntityType);
-            entityUuid = (String)context.getContextParameter(EntityUuid);
+        Class entityKey = getEntityKey(eventType);
+        if (entityKey != null)
+        {
+            CallContext context = CallContext.current();
+            entityUuid = (String)context.getContextParameter(entityKey);
+            if (entityUuid != null) entityType = entityKey.getName();
         }
 
         org.apache.cloudstack.framework.events.Event event =
@@ -215,5 +218,23 @@ public class ActionEventUtils {
             return 0;
         }
         return account.getDomainId();
+    }
+
+    private static Class getEntityKey(String eventType)
+    {
+        if (eventType.startsWith("DOMAIN."))
+        {
+            return Domain.class;
+        }
+        else if (eventType.startsWith("ACCOUNT."))
+        {
+            return Account.class;
+        }
+        else if (eventType.startsWith("USER."))
+        {
+            return User.class;
+        }
+
+        return null;
     }
 }
