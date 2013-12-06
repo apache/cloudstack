@@ -20,7 +20,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclRole;
+import org.apache.cloudstack.acl.AclGroup;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.AclRoleResponse;
+import org.apache.cloudstack.api.response.AclGroupResponse;
+import org.apache.cloudstack.api.response.AclPolicyResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
@@ -38,10 +39,10 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 
-@APICommand(name = "revokePermissionFromAclRole", description = "Revoke api permission from an acl role", responseObject = AclRoleResponse.class)
-public class RevokePermissionFromAclRoleCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(RevokePermissionFromAclRoleCmd.class.getName());
-    private static final String s_name = "revokepermissionfromroleresponse";
+@APICommand(name = "attachAclPolicyToAclGroup", description = "attach acl policy to an acl group", responseObject = AclGroupResponse.class)
+public class AttachAclPolicyToAclGroupCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(AttachAclPolicyToAclGroupCmd.class.getName());
+    private static final String s_name = "attachaclpolicytoaclgroupresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -49,13 +50,13 @@ public class RevokePermissionFromAclRoleCmd extends BaseAsyncCmd {
 
 
     @ACL
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AclRoleResponse.class,
-            required = true, description = "The ID of the acl role")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AclGroupResponse.class,
+            required = true, description = "The ID of the acl group")
     private Long id;
 
     @ACL
-    @Parameter(name = ApiConstants.ACL_APIS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "comma separated list of apis granted to the acl role. ")
-    private List<String> apiList;
+    @Parameter(name = ApiConstants.ACL_POLICIES, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AclPolicyResponse.class, description = "comma separated list of acl policy id that are going to be applied to the acl group.")
+    private List<Long> policyIdList;
 
 
     /////////////////////////////////////////////////////
@@ -68,8 +69,8 @@ public class RevokePermissionFromAclRoleCmd extends BaseAsyncCmd {
     }
 
 
-    public List<String> getApiList() {
-        return apiList;
+    public List<Long> getPolicyIdList() {
+        return policyIdList;
     }
 
     /////////////////////////////////////////////////////
@@ -91,30 +92,30 @@ public class RevokePermissionFromAclRoleCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException,
             InsufficientCapacityException, ServerApiException {
-        CallContext.current().setEventDetails("Acl role Id: " + getId());
-        AclRole result = _aclService.revokeApiPermissionFromAclRole(id, apiList);
-        if (result != null) {
-            AclRoleResponse response = _responseGenerator.createAclRoleResponse(result);
+        CallContext.current().setEventDetails("Acl group Id: " + getId());
+        AclGroup result = _aclService.attachAclPoliciesToGroup(policyIdList, id);
+        if (result != null){
+            AclGroupResponse response = _responseGenerator.createAclGroupResponse(result);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to revoke permission from acl role " + getId());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add roles to acl group");
         }
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_ACL_ROLE_REVOKE;
+        return EventTypes.EVENT_ACL_GROUP_UPDATE;
     }
 
     @Override
     public String getEventDescription() {
-        return "revoking permission from acl role";
+        return "adding acl roles to acl group";
     }
 
     @Override
     public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.AclRole;
+        return ApiCommandJobType.AclGroup;
     }
 
 }

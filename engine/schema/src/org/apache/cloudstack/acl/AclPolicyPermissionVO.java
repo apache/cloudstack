@@ -97,6 +97,10 @@ public class AclPolicyPermissionVO implements AclPolicyPermission {
     }
 
 
+    public void setAclPolicyId(long aclPolicyId) {
+        this.aclPolicyId = aclPolicyId;
+    }
+
     @Override
     public String getEntityType() {
         return entityType;

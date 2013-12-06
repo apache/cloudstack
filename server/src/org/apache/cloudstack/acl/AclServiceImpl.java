@@ -18,15 +18,14 @@ package org.apache.cloudstack.acl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclPolicyPermission.Permission;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.dao.AclApiPermissionDao;
 import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
@@ -34,9 +33,10 @@ import org.apache.cloudstack.acl.dao.AclGroupDao;
 import org.apache.cloudstack.acl.dao.AclGroupPolicyMapDao;
 import org.apache.cloudstack.acl.dao.AclPolicyDao;
 import org.apache.cloudstack.acl.dao.AclPolicyPermissionDao;
-import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.api.ApiServerService;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -49,7 +49,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -77,7 +76,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     AccountDao _accountDao;
 
     @Inject
-    AclPolicyDao _aclRoleDao;
+    AclPolicyDao _aclPolicyDao;
 
     @Inject
     AclGroupDao _aclGroupDao;
@@ -97,6 +96,9 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     @Inject
     AclPolicyPermissionDao _policyPermissionDao;
 
+    @Inject
+    ApiServerService _apiServer;
+
 
     public static HashMap<String, Class> entityClassMap = new HashMap<String, Class>();
 
@@ -110,306 +112,88 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
 
     @DB
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_ROLE_CREATE, eventDescription = "Creating Acl Role", create = true)
-    public AclRole createAclRole(Long domainId, final String aclRoleName, final String description, final Long parentRoleId) {
-        Account caller = CallContext.current().getCallingAccount();
-        if (domainId == null) {
-            domainId = caller.getDomainId();
-        }
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_CREATE, eventDescription = "Creating Acl Group", create = true)
+    public AclGroup createAclGroup(Account caller, String aclGroupName, String description) {
+        Long domainId = caller.getDomainId();
+
         if (!_accountMgr.isRootAdmin(caller.getAccountId())) {
             // domain admin can only create role for his domain
             if (caller.getDomainId() != domainId.longValue()) {
-                throw new PermissionDeniedException("Can't create acl role in domain " + domainId + ", permission denied");
+                throw new PermissionDeniedException("Can't create acl group in domain " + domainId + ", permission denied");
             }
         }
         // check if the role is already existing
-        AclRole ro = _aclRoleDao.findByName(domainId, aclRoleName);
-        if (ro != null) {
+        AclGroup grp = _aclGroupDao.findByName(domainId, aclGroupName);
+        if (grp != null) {
             throw new InvalidParameterValueException(
-                    "Unable to create acl role with name " + aclRoleName
+                    "Unable to create acl group with name " + aclGroupName
                             + " already exisits for domain " + domainId);
         }
+        AclGroupVO rvo = new AclGroupVO(aclGroupName, description);
+        rvo.setAccountId(caller.getAccountId());
+        rvo.setDomainId(domainId);
 
-        final long domain_id = domainId;
-        AclRole role = Transaction.execute(new TransactionCallback<AclRole>() {
-            @Override
-            public AclRole doInTransaction(TransactionStatus status) {
-                AclRoleVO rvo = new AclRoleVO(aclRoleName, description);
-                rvo.setDomainId(domain_id);
-                AclRole role = _aclRoleDao.persist(rvo);
-                if (parentRoleId != null) {
-                    // copy parent role permissions
-                    List<AclRolePermissionVO> perms = _policyPermissionDao.listByRole(parentRoleId);
-                    if (perms != null) {
-                        for (AclRolePermissionVO perm : perms) {
-                            perm.setAclRoleId(role.getId());
-                            _policyPermissionDao.persist(perm);
-                        }
-                    }
-                }
-                return role;
-            }
-        });
-                
-
-        return role;
+        return _aclGroupDao.persist(rvo);
     }
 
     @DB
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_ROLE_DELETE, eventDescription = "Deleting Acl Role")
-    public boolean deleteAclRole(final long aclRoleId) {
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_DELETE, eventDescription = "Deleting Acl Group")
+    public boolean deleteAclGroup(final Long aclGroupId) {
         Account caller = CallContext.current().getCallingAccount();
         // get the Acl Role entity
-        final AclRole role = _aclRoleDao.findById(aclRoleId);
-        if (role == null) {
-            throw new InvalidParameterValueException("Unable to find acl role: " + aclRoleId
-                    + "; failed to delete acl role.");
+        final AclGroup grp = _aclGroupDao.findById(aclGroupId);
+        if (grp == null) {
+            throw new InvalidParameterValueException("Unable to find acl group: " + aclGroupId
+                    + "; failed to delete acl group.");
         }
         // check permissions
-        _accountMgr.checkAccess(caller, null, true, role);
+        _accountMgr.checkAccess(caller, null, true, grp);
 
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                // remove this role related entry in acl_group_role_map
-                List<AclGroupRoleMapVO> groupRoleMap = _aclGroupPolicyMapDao.listByRoleId(role.getId());
-                if (groupRoleMap != null) {
-                    for (AclGroupRoleMapVO gr : groupRoleMap) {
+                // remove this group related entry in acl_group_role_map
+                List<AclGroupPolicyMapVO> groupPolicyMap = _aclGroupPolicyMapDao.listByGroupId(grp.getId());
+                if (groupPolicyMap != null) {
+                    for (AclGroupPolicyMapVO gr : groupPolicyMap) {
                         _aclGroupPolicyMapDao.remove(gr.getId());
                     }
                 }
 
-                // remove this role related entry in acl_api_permission table
-                List<AclApiPermissionVO> roleApiMap = _apiPermissionDao.listByRoleId(role.getId());
-                if (roleApiMap != null) {
-                    for (AclApiPermissionVO roleApi : roleApiMap) {
-                        _apiPermissionDao.remove(roleApi.getId());
+                // remove this group related entry in acl_group_account table
+                List<AclGroupAccountMapVO> groupAcctMap = _aclGroupAccountMapDao.listByGroupId(grp.getId());
+                if (groupAcctMap != null) {
+                    for (AclGroupAccountMapVO grpAcct : groupAcctMap) {
+                        _aclGroupAccountMapDao.remove(grpAcct.getId());
                     }
                 }
 
-                // remove this role from acl_role table
-                _aclRoleDao.remove(aclRoleId);
+                // remove this group from acl_group table
+                _aclGroupDao.remove(aclGroupId);
             }
         });
 
         return true;
     }
 
-
-    @DB
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_ROLE_GRANT, eventDescription = "Granting permission to Acl Role")
-    public AclRole grantApiPermissionToAclRole(final long aclRoleId, final List<String> apiNames) {
-        Account caller = CallContext.current().getCallingAccount();
-        // get the Acl Role entity
-        AclRole role = _aclRoleDao.findById(aclRoleId);
-        if (role == null) {
-            throw new InvalidParameterValueException("Unable to find acl role: " + aclRoleId
-                    + "; failed to grant permission to role.");
-        }
-        // check permissions
-        _accountMgr.checkAccess(caller, null, true, role);
+    public List<AclGroup> listAclGroups(long accountId) {
 
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-                // add entries in acl_api_permission table
-                for (String api : apiNames) {
-                    AclApiPermissionVO perm = _apiPermissionDao.findByRoleAndApi(aclRoleId, api);
-                    if (perm == null) {
-                        // not there already
-                        perm = new AclApiPermissionVO(aclRoleId, api);
-                        _apiPermissionDao.persist(perm);
-                    }
-                }
-            }
-        });
-            
-        return role;
+        GenericSearchBuilder<AclGroupAccountMapVO, Long> groupSB = _aclGroupAccountMapDao.createSearchBuilder(Long.class);
+        groupSB.selectFields(groupSB.entity().getAclGroupId());
+        groupSB.and("account", groupSB.entity().getAccountId(), Op.EQ);
+        SearchCriteria<Long> groupSc = groupSB.create();
 
-    }
+        List<Long> groupIds = _aclGroupAccountMapDao.customSearch(groupSc, null);
 
-    @DB
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_ROLE_REVOKE, eventDescription = "Revoking permission from Acl Role")
-    public AclRole revokeApiPermissionFromAclRole(final long aclRoleId, final List<String> apiNames) {
-        Account caller = CallContext.current().getCallingAccount();
-        // get the Acl Role entity
-        AclRole role = _aclRoleDao.findById(aclRoleId);
-        if (role == null) {
-            throw new InvalidParameterValueException("Unable to find acl role: " + aclRoleId
-                    + "; failed to revoke permission from role.");
-        }
-        // check permissions
-        _accountMgr.checkAccess(caller, null, true, role);
+        SearchBuilder<AclGroupVO> sb = _aclGroupDao.createSearchBuilder();
+        sb.and("ids", sb.entity().getId(), Op.IN);
+        SearchCriteria<AclGroupVO> sc = sb.create();
+        sc.setParameters("ids", groupIds.toArray(new Object[groupIds.size()]));
+        List<AclGroupVO> groups = _aclGroupDao.search(sc, null);
 
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-                // remove entries from acl_api_permission table
-                for (String api : apiNames) {
-                    AclApiPermissionVO perm = _apiPermissionDao.findByRoleAndApi(aclRoleId, api);
-                    if (perm != null) {
-                        // not removed yet
-                        _apiPermissionDao.remove(perm.getId());
-                    }
-                }
-            }
-        });
-        return role;
-    }
-
-    @DB
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_GRANT, eventDescription = "Granting entity permission to Acl Group")
-    public AclGroup grantEntityPermissionToAclGroup(long aclGroupId, String entityType, long entityId, AccessType accessType) {
-        Account caller = CallContext.current().getCallingAccount();
-        // get the Acl Group entity
-        AclGroup group = _aclGroupDao.findById(aclGroupId);
-        if (group == null) {
-            throw new InvalidParameterValueException("Unable to find acl group: " + aclGroupId
-                    + "; failed to grant permission to group.");
-        }
-        // check permissions
-        _accountMgr.checkAccess(caller, null, true, group);
-
-        // get the entity and check permission
-        Class entityClass = entityClassMap.get(entityType);
-        if (entityClass == null) {
-            throw new InvalidParameterValueException("Entity type " + entityType + " permission granting is not supported yet");
-        }
-        ControlledEntity entity = (ControlledEntity)_entityMgr.findById(entityClass, entityId);
-        if (entity == null) {
-            throw new InvalidParameterValueException("Unable to find entity " + entityType + " by id: " + entityId);
-        }
-        _accountMgr.checkAccess(caller,null, true, entity);
-        
-        // add entry in acl_entity_permission table
-        AclEntityPermissionVO perm = _entityPermissionDao.findByGroupAndEntity(aclGroupId, entityType, entityId, accessType);
-        if (perm == null) {
-            // not there already
-            String entityUuid = String.valueOf(entityId);
-            if (entity instanceof Identity) {
-                entityUuid = ((Identity)entity).getUuid();
-            }
-            perm = new AclEntityPermissionVO(aclGroupId, entityType, entityId, entityUuid, accessType, true);
-            _entityPermissionDao.persist(perm);
-        }
-        return group;
-
-    }
-
-    @DB
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_REVOKE, eventDescription = "Revoking entity permission from Acl Group")
-    public AclGroup revokeEntityPermissionFromAclGroup(long aclGroupId, String entityType, long entityId, AccessType accessType) {
-        Account caller = CallContext.current().getCallingAccount();
-        // get the Acl Group entity
-        AclGroup group = _aclGroupDao.findById(aclGroupId);
-        if (group == null) {
-            throw new InvalidParameterValueException("Unable to find acl group: " + aclGroupId
-                    + "; failed to revoke permission from group.");
-        }
-        // check permissions
-        _accountMgr.checkAccess(caller, null, true, group);
-
-        // get the entity and check permission
-        Class entityClass = entityClassMap.get(entityType);
-        if (entityClass == null) {
-            throw new InvalidParameterValueException("Entity type " + entityType + " permission revoke is not supported yet");
-        }
-        ControlledEntity entity = (ControlledEntity)_entityMgr.findById(entityClass, entityId);
-        if (entity == null) {
-            throw new InvalidParameterValueException("Unable to find entity " + entityType + " by id: " + entityId);
-        }
-        _accountMgr.checkAccess(caller, null, true, entity);
-
-        // remove entry from acl_entity_permission table
-        AclEntityPermissionVO perm = _entityPermissionDao.findByGroupAndEntity(aclGroupId, entityType, entityId, accessType);
-        if (perm != null) {
-            // not removed yet
-            _entityPermissionDao.remove(perm.getId());
-        }
-        return group;
-    }
-
-    @DB
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_UPDATE, eventDescription = "Adding roles to acl group")
-    public AclGroup addAclRolesToGroup(final List<Long> roleIds, final Long groupId) {
-        final Account caller = CallContext.current().getCallingAccount();
-        // get the Acl Group entity
-        AclGroup group = _aclGroupDao.findById(groupId);
-        if (group == null) {
-            throw new InvalidParameterValueException("Unable to find acl group: " + groupId
-                    + "; failed to add roles to acl group.");
-        }
-        // check group permissions
-        _accountMgr.checkAccess(caller, null, true, group);
- 
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-                // add entries in acl_group_role_map table
-                for (Long roleId : roleIds) {
-                    // check role permissions
-                    AclRole role = _aclRoleDao.findById(roleId);
-                    if (role == null) {
-                        throw new InvalidParameterValueException("Unable to find acl role: " + roleId
-                                + "; failed to add roles to acl group.");
-                    }
-                    _accountMgr.checkAccess(caller, null, true, role);
-
-                    AclGroupRoleMapVO grMap = _aclGroupPolicyMapDao.findByGroupAndRole(groupId, roleId);
-                    if (grMap == null) {
-                        // not there already
-                        grMap = new AclGroupRoleMapVO(groupId, roleId);
-                        _aclGroupPolicyMapDao.persist(grMap);
-                    }
-                }
-            }
-        });
-
-        return group;
-    }
-
-    @DB
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_UPDATE, eventDescription = "Removing roles from acl group")
-    public AclGroup removeAclRolesFromGroup(final List<Long> roleIds, final Long groupId) {
-        final Account caller = CallContext.current().getCallingAccount();
-        // get the Acl Group entity
-        AclGroup group = _aclGroupDao.findById(groupId);
-        if (group == null) {
-            throw new InvalidParameterValueException("Unable to find acl group: " + groupId
-                    + "; failed to remove roles from acl group.");
-        }
-        // check group permissions
-        _accountMgr.checkAccess(caller, null, true, group);
-
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-                // add entries in acl_group_role_map table
-                for (Long roleId : roleIds) {
-                    // check role permissions
-                    AclRole role = _aclRoleDao.findById(roleId);
-                    if (role == null) {
-                        throw new InvalidParameterValueException("Unable to find acl role: " + roleId
-                                + "; failed to add roles to acl group.");
-                    }
-                    _accountMgr.checkAccess(caller, null, true, role);
-
-                    AclGroupRoleMapVO grMap = _aclGroupPolicyMapDao.findByGroupAndRole(groupId, roleId);
-                    if (grMap != null) {
-                        // not removed yet
-                        _aclGroupPolicyMapDao.remove(grMap.getId());
-                    }
-                }
-            }
-        });
-        return group;
+        return new ArrayList<AclGroup>(groups);
     }
 
     @DB
@@ -491,104 +275,350 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
 
     @DB
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_CREATE, eventDescription = "Creating Acl Group", create = true)
-    public AclGroup createAclGroup(Long domainId, String aclGroupName, String description) {
-        Account caller = CallContext.current().getCallingAccount();
-        if (domainId == null) {
-            domainId = caller.getDomainId(); // use caller's domain id
-        }
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_POLICY_CREATE, eventDescription = "Creating Acl Policy", create = true)
+    public AclPolicy createAclPolicy(Account caller, final String aclPolicyName, final String description, final Long parentPolicyId) {
+        Long domainId = caller.getDomainId();
+
         if (!_accountMgr.isRootAdmin(caller.getAccountId())) {
             // domain admin can only create role for his domain
             if (caller.getDomainId() != domainId.longValue()) {
-                throw new PermissionDeniedException("Can't create acl group in domain " + domainId + ", permission denied");
+                throw new PermissionDeniedException("Can't create acl role in domain " + domainId + ", permission denied");
             }
         }
         // check if the role is already existing
-        AclGroup grp = _aclGroupDao.findByName(domainId, aclGroupName);
-        if (grp != null) {
+        AclPolicy ro = _aclPolicyDao.findByName(domainId, aclPolicyName);
+        if (ro != null) {
             throw new InvalidParameterValueException(
-                    "Unable to create acl group with name " + aclGroupName
+                    "Unable to create acl policy with name " + aclPolicyName
                             + " already exisits for domain " + domainId);
         }
-        AclGroupVO rvo = new AclGroupVO(aclGroupName, description);
-        rvo.setDomainId(domainId);
 
-        return _aclGroupDao.persist(rvo);
+        final long account_id = caller.getAccountId();
+        final long domain_id = domainId;
+        AclPolicy role = Transaction.execute(new TransactionCallback<AclPolicy>() {
+            @Override
+            public AclPolicy doInTransaction(TransactionStatus status) {
+                AclPolicyVO rvo = new AclPolicyVO(aclPolicyName, description);
+                rvo.setAccountId(account_id);
+                rvo.setDomainId(domain_id);
+                AclPolicy role = _aclPolicyDao.persist(rvo);
+                if (parentPolicyId != null) {
+                    // copy parent role permissions
+                    List<AclPolicyPermissionVO> perms = _policyPermissionDao.listByPolicy(parentPolicyId);
+                    if (perms != null) {
+                        for (AclPolicyPermissionVO perm : perms) {
+                            perm.setAclPolicyId(role.getId());
+                            _policyPermissionDao.persist(perm);
+                        }
+                    }
+                }
+                return role;
+            }
+        });
+                
+
+        return role;
     }
 
     @DB
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_DELETE, eventDescription = "Deleting Acl Group")
-    public boolean deleteAclGroup(final Long aclGroupId) {
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_POLICY_DELETE, eventDescription = "Deleting Acl Policy")
+    public boolean deleteAclPolicy(final long aclPolicyId) {
         Account caller = CallContext.current().getCallingAccount();
-        // get the Acl Role entity
-        final AclGroup grp = _aclGroupDao.findById(aclGroupId);
-        if (grp == null) {
-            throw new InvalidParameterValueException("Unable to find acl group: " + aclGroupId
-                    + "; failed to delete acl group.");
+        // get the Acl Policy entity
+        final AclPolicy policy = _aclPolicyDao.findById(aclPolicyId);
+        if (policy == null) {
+            throw new InvalidParameterValueException("Unable to find acl policy: " + aclPolicyId
+                    + "; failed to delete acl policy.");
         }
         // check permissions
-        _accountMgr.checkAccess(caller, null, true, grp);
+        _accountMgr.checkAccess(caller, null, true, policy);
 
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                // remove this group related entry in acl_group_role_map
-                List<AclGroupRoleMapVO> groupRoleMap = _aclGroupPolicyMapDao.listByGroupId(grp.getId());
-                if (groupRoleMap != null) {
-                    for (AclGroupRoleMapVO gr : groupRoleMap) {
+                // remove this role related entry in acl_group_role_map
+                List<AclGroupPolicyMapVO> groupPolicyMap = _aclGroupPolicyMapDao.listByPolicyId(policy.getId());
+                if (groupPolicyMap != null) {
+                    for (AclGroupPolicyMapVO gr : groupPolicyMap) {
                         _aclGroupPolicyMapDao.remove(gr.getId());
                     }
                 }
 
-                // remove this group related entry in acl_group_account table
-                List<AclGroupAccountMapVO> groupAcctMap = _aclGroupAccountMapDao.listByGroupId(grp.getId());
-                if (groupAcctMap != null) {
-                    for (AclGroupAccountMapVO grpAcct : groupAcctMap) {
-                        _aclGroupAccountMapDao.remove(grpAcct.getId());
+                // remove this policy related entry in acl_policy_permission table
+                List<AclPolicyPermissionVO> policyPermMap = _policyPermissionDao.listByPolicy(policy.getId());
+                if (policyPermMap != null) {
+                    for (AclPolicyPermissionVO policyPerm : policyPermMap) {
+                        _policyPermissionDao.remove(policyPerm.getId());
                     }
                 }
 
-                // remove this group from acl_group table
-                _aclGroupDao.remove(aclGroupId);
+                // remove this role from acl_role table
+                _aclPolicyDao.remove(aclPolicyId);
             }
         });
 
         return true;
     }
 
+
     @Override
-    public List<AclRole> getAclRoles(long accountId) {
+    public List<AclPolicy> listAclPolicies(long accountId) {
 
         // static roles of the account
         SearchBuilder<AclGroupAccountMapVO> groupSB = _aclGroupAccountMapDao.createSearchBuilder();
         groupSB.and("account", groupSB.entity().getAccountId(), Op.EQ);
 
-        GenericSearchBuilder<AclGroupRoleMapVO, Long> roleSB = _aclGroupPolicyMapDao.createSearchBuilder(Long.class);
-        roleSB.selectFields(roleSB.entity().getAclRoleId());
-        roleSB.join("accountgroupjoin", groupSB, groupSB.entity().getAclGroupId(), roleSB.entity().getAclGroupId(),
+        GenericSearchBuilder<AclGroupPolicyMapVO, Long> policySB = _aclGroupPolicyMapDao.createSearchBuilder(Long.class);
+        policySB.selectFields(policySB.entity().getAclPolicyId());
+        policySB.join("accountgroupjoin", groupSB, groupSB.entity().getAclGroupId(), policySB.entity().getAclGroupId(),
                 JoinType.INNER);
-        roleSB.done();
-        SearchCriteria<Long> roleSc = roleSB.create();
-        roleSc.setJoinParameters("accountgroupjoin", "account", accountId);
+        policySB.done();
+        SearchCriteria<Long> policySc = policySB.create();
+        policySc.setJoinParameters("accountgroupjoin", "account", accountId);
 
-        List<Long> roleIds = _aclGroupPolicyMapDao.customSearch(roleSc, null);
+        List<Long> roleIds = _aclGroupPolicyMapDao.customSearch(policySc, null);
 
-        SearchBuilder<AclRoleVO> sb = _aclRoleDao.createSearchBuilder();
+        SearchBuilder<AclPolicyVO> sb = _aclPolicyDao.createSearchBuilder();
         sb.and("ids", sb.entity().getId(), Op.IN);
-        SearchCriteria<AclRoleVO> sc = sb.create();
+        SearchCriteria<AclPolicyVO> sc = sb.create();
         sc.setParameters("ids", roleIds.toArray(new Object[roleIds.size()]));
-        List<AclRoleVO> roles = _aclRoleDao.customSearch(sc, null);
+        List<AclPolicyVO> policies = _aclPolicyDao.customSearch(sc, null);
 
-        return new ArrayList<AclRole>(roles);
+        return new ArrayList<AclPolicy>(policies);
     }
 
+    @DB
     @Override
-    public AclRolePermission getAclRolePermission(long accountId, String entityType, AccessType accessType) {
-        List<AclRole> roles = getAclRoles(accountId);
-        AclRolePermission curPerm = null;
-        for (AclRole role : roles) {
-            AclRolePermission perm = _policyPermissionDao.findByRoleEntityAndPermission(role.getId(), entityType, accessType, true);
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_UPDATE, eventDescription = "Attaching policy to acl group")
+    public AclGroup attachAclPoliciesToGroup(final List<Long> policyIds, final Long groupId) {
+        final Account caller = CallContext.current().getCallingAccount();
+        // get the Acl Group entity
+        AclGroup group = _aclGroupDao.findById(groupId);
+        if (group == null) {
+            throw new InvalidParameterValueException("Unable to find acl group: " + groupId
+                    + "; failed to add roles to acl group.");
+        }
+        // check group permissions
+        _accountMgr.checkAccess(caller, null, true, group);
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                // add entries in acl_group_policy_map table
+                for (Long policyId : policyIds) {
+                    // check policy permissions
+                    AclPolicy policy = _aclPolicyDao.findById(policyId);
+                    if (policy == null) {
+                        throw new InvalidParameterValueException("Unable to find acl policy: " + policyId
+                                + "; failed to add policies to acl group.");
+                    }
+                    _accountMgr.checkAccess(caller, null, true, policy);
+
+                    AclGroupPolicyMapVO grMap = _aclGroupPolicyMapDao.findByGroupAndPolicy(groupId, policyId);
+                    if (grMap == null) {
+                        // not there already
+                        grMap = new AclGroupPolicyMapVO(groupId, policyId);
+                        _aclGroupPolicyMapDao.persist(grMap);
+                    }
+                }
+            }
+        });
+
+        return group;
+    }
+
+    @DB
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_UPDATE, eventDescription = "Removing policies from acl group")
+    public AclGroup removeAclPoliciesFromGroup(final List<Long> policyIds, final Long groupId) {
+        final Account caller = CallContext.current().getCallingAccount();
+        // get the Acl Group entity
+        AclGroup group = _aclGroupDao.findById(groupId);
+        if (group == null) {
+            throw new InvalidParameterValueException("Unable to find acl group: " + groupId
+                    + "; failed to remove roles from acl group.");
+        }
+        // check group permissions
+        _accountMgr.checkAccess(caller, null, true, group);
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                // add entries in acl_group_role_map table
+                for (Long policyId : policyIds) {
+                    // check policy permissions
+                    AclPolicy policy = _aclPolicyDao.findById(policyId);
+                    if (policy == null) {
+                        throw new InvalidParameterValueException("Unable to find acl policy: " + policyId
+                                + "; failed to add policies to acl group.");
+                    }
+                    _accountMgr.checkAccess(caller, null, true, policy);
+
+                    AclGroupPolicyMapVO grMap = _aclGroupPolicyMapDao.findByGroupAndPolicy(groupId, policyId);
+                    if (grMap != null) {
+                        // not removed yet
+                        _aclGroupPolicyMapDao.remove(grMap.getId());
+                    }
+                }
+            }
+        });
+        return group;
+    }
+
+    /*
+    @DB
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_POLICY_GRANT, eventDescription = "Granting permission to Acl Role")
+    public AclP addAclPermissionToAclPolicy(final long aclRoleId, final List<String> apiNames) {
+        Account caller = CallContext.current().getCallingAccount();
+        // get the Acl Role entity
+        AclRole role = _aclPolicyDao.findById(aclRoleId);
+        if (role == null) {
+            throw new InvalidParameterValueException("Unable to find acl role: " + aclRoleId
+                    + "; failed to grant permission to role.");
+        }
+        // check permissions
+        _accountMgr.checkAccess(caller, null, true, role);
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                // add entries in acl_api_permission table
+                for (String api : apiNames) {
+                    AclApiPermissionVO perm = _apiPermissionDao.findByRoleAndApi(aclRoleId, api);
+                    if (perm == null) {
+                        // not there already
+                        perm = new AclApiPermissionVO(aclRoleId, api);
+                        _apiPermissionDao.persist(perm);
+                    }
+                }
+            }
+        });
+            
+        return role;
+
+    }
+
+    @DB
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_POLICY_REVOKE, eventDescription = "Revoking permission from Acl Role")
+    public AclRole revokeApiPermissionFromAclRole(final long aclRoleId, final List<String> apiNames) {
+        Account caller = CallContext.current().getCallingAccount();
+        // get the Acl Role entity
+        AclRole role = _aclPolicyDao.findById(aclRoleId);
+        if (role == null) {
+            throw new InvalidParameterValueException("Unable to find acl role: " + aclRoleId
+                    + "; failed to revoke permission from role.");
+        }
+        // check permissions
+        _accountMgr.checkAccess(caller, null, true, role);
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                // remove entries from acl_api_permission table
+                for (String api : apiNames) {
+                    AclApiPermissionVO perm = _apiPermissionDao.findByRoleAndApi(aclRoleId, api);
+                    if (perm != null) {
+                        // not removed yet
+                        _apiPermissionDao.remove(perm.getId());
+                    }
+                }
+            }
+        });
+        return role;
+    }
+    */
+
+    @DB
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_POLICY_GRANT, eventDescription = "Granting acl permission to Acl Policy")
+    public AclPolicy addAclPermissionToAclPolicy(long aclPolicyId, String entityType, PermissionScope scope, Long scopeId, String action, Permission perm) {
+        Account caller = CallContext.current().getCallingAccount();
+        // get the Acl Policy entity
+        AclPolicy policy = _aclPolicyDao.findById(aclPolicyId);
+        if (policy == null) {
+            throw new InvalidParameterValueException("Unable to find acl policy: " + aclPolicyId
+                    + "; failed to add permission to policy.");
+        }
+        // check permissions
+        _accountMgr.checkAccess(caller, null, true, policy);
+
+        // get the entity and check permission
+        Class entityClass = entityClassMap.get(entityType);
+        if (entityClass == null) {
+            throw new InvalidParameterValueException("Entity type " + entityType + " permission granting is not supported yet");
+        }
+        if (scope == PermissionScope.RESOURCE && scopeId != null) {
+            ControlledEntity entity = (ControlledEntity)_entityMgr.findById(entityClass, scopeId);
+            if (entity == null) {
+                throw new InvalidParameterValueException("Unable to find entity " + entityType + " by id: " + scopeId);
+            }
+            _accountMgr.checkAccess(caller, null, true, entity);
+        }
+
+        // add entry in acl_policy_permission table
+        AclPolicyPermissionVO permit = _policyPermissionDao.findByPolicyAndEntity(aclPolicyId, entityType, scope, scopeId, action, perm);
+        if (permit == null) {
+            // not there already
+            Class<?> cmdClass = _apiServer.getCmdClass(action);
+            AccessType accessType = null;
+            if (BaseListCmd.class.isAssignableFrom(cmdClass)) {
+                accessType = AccessType.ListEntry;
+            }
+            permit = new AclPolicyPermissionVO(aclPolicyId, action, entityType, accessType,
+                    scope, scopeId, perm);
+            _policyPermissionDao.persist(permit);
+        }
+        return policy;
+
+    }
+
+    @DB
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ACL_POLICY_REVOKE, eventDescription = "Revoking acl permission from Acl Policy")
+    public AclPolicy removeAclPermissionFromAclPolicy(long aclPolicyId, String entityType, PermissionScope scope, Long scopeId, String action) {
+        Account caller = CallContext.current().getCallingAccount();
+        // get the Acl Policy entity
+        AclPolicy policy = _aclPolicyDao.findById(aclPolicyId);
+        if (policy == null) {
+            throw new InvalidParameterValueException("Unable to find acl policy: " + aclPolicyId
+                    + "; failed to revoke permission from policy.");
+        }
+        // check permissions
+        _accountMgr.checkAccess(caller, null, true, policy);
+
+        // get the entity and check permission
+        Class entityClass = entityClassMap.get(entityType);
+        if (entityClass == null) {
+            throw new InvalidParameterValueException("Entity type " + entityType + " permission revoke is not supported yet");
+        }
+        if (scope == PermissionScope.RESOURCE && scopeId != null) {
+            ControlledEntity entity = (ControlledEntity)_entityMgr.findById(entityClass, scopeId);
+            if (entity == null) {
+                throw new InvalidParameterValueException("Unable to find entity " + entityType + " by id: " + scopeId);
+            }
+            _accountMgr.checkAccess(caller, null, true, entity);
+        }
+
+        // remove entry from acl_entity_permission table
+        AclPolicyPermissionVO permit = _policyPermissionDao.findByPolicyAndEntity(aclPolicyId, entityType, scope, scopeId, action, null);
+        if (permit != null) {
+            // not removed yet
+            _policyPermissionDao.remove(permit.getId());
+        }
+        return policy;
+    }
+
+
+
+    @Override
+    public AclPolicyPermission getAclPolicyPermission(long accountId, String entityType, String action) {
+        List<AclPolicy> roles = listAclPolicies(accountId);
+        AclPolicyPermission curPerm = null;
+        for (AclPolicy role : roles) {
+            AclPolicyPermissionVO perm = _policyPermissionDao.findByPolicyAndEntity(role.getId(), entityType, null, null, action, Permission.Allow);
             if (perm == null)
                 continue;
             if (curPerm == null) {
@@ -602,66 +632,27 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         return curPerm;
     }
 
-    @Override
-    public List<AclGroup> getAclGroups(long accountId) {
 
-        GenericSearchBuilder<AclGroupAccountMapVO, Long> groupSB = _aclGroupAccountMapDao.createSearchBuilder(Long.class);
-        groupSB.selectFields(groupSB.entity().getAclGroupId());
-        groupSB.and("account", groupSB.entity().getAccountId(), Op.EQ);
-        SearchCriteria<Long> groupSc = groupSB.create();
-
-        List<Long> groupIds = _aclGroupAccountMapDao.customSearch(groupSc, null);
-
-        SearchBuilder<AclGroupVO> sb = _aclGroupDao.createSearchBuilder();
-        sb.and("ids", sb.entity().getId(), Op.IN);
-        SearchCriteria<AclGroupVO> sc = sb.create();
-        sc.setParameters("ids", groupIds.toArray(new Object[groupIds.size()]));
-        List<AclGroupVO> groups = _aclGroupDao.search(sc, null);
-
-        return new ArrayList<AclGroup>(groups);
-    }
 
     @Override
-    public Pair<List<Long>, List<Long>> getAclEntityPermission(long accountId, String entityType, AccessType accessType) {
-        List<AclGroup> groups = getAclGroups(accountId);
-        if (groups == null || groups.size() == 0) {
-            return new Pair<List<Long>, List<Long>>(new ArrayList<Long>(), new ArrayList<Long>());
-        }
-        Set<Long> allowedIds = new HashSet<Long>();
-        Set<Long> deniedIds = new HashSet<Long>();
-        for (AclGroup grp : groups) {
-            // get allowed id  and denied list for each group
-            List<Long> allowedIdList = _entityPermissionDao.findEntityIdByGroupAndPermission(grp.getId(), entityType, accessType, true);
-            if (allowedIdList != null) {
-                allowedIds.addAll(allowedIdList);
-            }
-            List<Long> deniedIdList = _entityPermissionDao.findEntityIdByGroupAndPermission(grp.getId(), entityType, accessType, false);
-            if (deniedIdList != null) {
-                deniedIds.addAll(deniedIdList);
-            }
-        }
-        return new Pair<List<Long>, List<Long>>(new ArrayList<Long>(allowedIds), new ArrayList<Long>(deniedIds))
-        ;
-    }
-
-    @Override
-    public boolean isAPIAccessibleForRoles(String apiName, List<AclRole> roles) {
+    public boolean isAPIAccessibleForPolicies(String apiName, List<AclPolicy> policies) {
 
         boolean accessible = false;
 
-        List<Long> roleIds = new ArrayList<Long>();
-        for (AclRole role : roles) {
-            roleIds.add(role.getId());
+        List<Long> policyIds = new ArrayList<Long>();
+        for (AclPolicy policy : policies) {
+            policyIds.add(policy.getId());
         }
 
-        SearchBuilder<AclApiPermissionVO> sb = _apiPermissionDao.createSearchBuilder();
-        sb.and("apiName", sb.entity().getApiName(), Op.EQ);
-        sb.and("roleId", sb.entity().getAclRoleId(), Op.IN);
+        SearchBuilder<AclPolicyPermissionVO> sb = _policyPermissionDao.createSearchBuilder();
+        sb.and("action", sb.entity().getAction(), Op.EQ);
+        sb.and("policyId", sb.entity().getAclPolicyId(), Op.IN);
+        sb.and("entityType", sb.entity().getEntityType(), Op.NULL);
 
-        SearchCriteria<AclApiPermissionVO> sc = sb.create();
-        sc.setParameters("roleId", roleIds.toArray(new Object[roleIds.size()]));
+        SearchCriteria<AclPolicyPermissionVO> sc = sb.create();
+        sc.setParameters("policyId", policyIds.toArray(new Object[policyIds.size()]));
 
-        List<AclApiPermissionVO> permissions = _apiPermissionDao.customSearch(sc, null);
+        List<AclPolicyPermissionVO> permissions = _policyPermissionDao.customSearch(sc, null);
 
         if (permissions != null && !permissions.isEmpty()) {
             accessible = true;
@@ -671,19 +662,19 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     }
 
     @Override
-    public List<AclRole> getEffectiveRoles(Account caller, ControlledEntity entity) {
+    public List<AclPolicy> getEffectivePolicies(Account caller, ControlledEntity entity) {
 
-        // Get the static Roles of the Caller
-        List<AclRole> roles = getAclRoles(caller.getId());
+        // Get the static Policies of the Caller
+        List<AclPolicy> policies = listAclPolicies(caller.getId());
 
         // add any dynamic roles w.r.t the entity
         if (caller.getId() == entity.getAccountId()) {
             // The caller owns the entity
-            AclRole owner = _aclRoleDao.findByName(Domain.ROOT_DOMAIN, "RESOURCE_OWNER");
-            roles.add(owner);
+            AclPolicy owner = _aclPolicyDao.findByName(Domain.ROOT_DOMAIN, "RESOURCE_OWNER");
+            policies.add(owner);
         }
 
-        return roles;
+        return policies;
     }
 
     @Override

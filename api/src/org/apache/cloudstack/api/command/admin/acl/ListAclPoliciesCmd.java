@@ -18,39 +18,41 @@ package org.apache.cloudstack.api.command.admin.acl;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseListDomainResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.AclRoleResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.AclPolicyResponse;
+import org.apache.cloudstack.api.response.ListResponse;
 
-import com.cloud.event.EventTypes;
-import com.cloud.user.Account;
 
-@APICommand(name = "deleteAclRole", description = "Deletes acl role", responseObject = SuccessResponse.class)
-public class DeleteAclRoleCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteAclRoleCmd.class.getName());
-    private static final String s_name = "deleteaclroleresponse";
+@APICommand(name = "listAclPolicies", description = "Lists acl policies", responseObject = AclPolicyResponse.class)
+public class ListAclPoliciesCmd extends BaseListDomainResourcesCmd {
+    public static final Logger s_logger = Logger.getLogger(ListAclPoliciesCmd.class.getName());
+
+    private static final String s_name = "listaclpoliciesresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @ACL
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, description = "The ID of the acl role.", required = true, entityType = AclRoleResponse.class)
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "lists acl policies by name")
+    private String aclPolicyName;
+
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, description = "list the acl policy by the id provided", entityType = AclPolicyResponse.class)
     private Long id;
 
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
+    public String getAclPolicyName() {
+        return aclPolicyName;
+    }
 
-    public Long getId() {
+
+    public Long getId(){
         return id;
     }
 
@@ -64,33 +66,17 @@ public class DeleteAclRoleCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
-    }
-
-    @Override
     public void execute(){
-        boolean result = _aclService.deleteAclRole(id);
-        if (result) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete acl role");
-        }
-    }
 
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_ACL_ROLE_DELETE;
-    }
+        ListResponse<AclPolicyResponse> response = _queryService.listAclPolicies(id, aclPolicyName, getDomainId(),
+                getStartIndex(), getPageSizeVal());
+        response.setResponseName(getCommandName());
+        setResponseObject(response);
 
-    @Override
-    public String getEventDescription() {
-        return "Deleting Acl role";
     }
 
     @Override
     public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.AclRole;
+        return ApiCommandJobType.AclPolicy;
     }
 }

@@ -35,4 +35,6 @@ public interface ApiServerService {
     public String getSerializedApiError(ServerApiException ex, Map<String, Object[]> apiCommandParams, String responseType);
 
     public String handleRequest(Map params, String responseType, StringBuffer auditTrailSb) throws ServerApiException;
+
+    public Class<?> getCmdClass(String cmdName);
 }

@@ -16,21 +16,20 @@
 // under the License.
 package org.apache.cloudstack.acl.dao;
 
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.AclPolicyPermission.Permission;
 import org.apache.cloudstack.acl.AclPolicyPermissionVO;
+import org.apache.cloudstack.acl.PermissionScope;
 
 import com.cloud.utils.db.GenericDaoBase;
 
 public class AclPolicyPermissionDaoImpl extends GenericDaoBase<AclPolicyPermissionVO, Long> implements
         AclPolicyPermissionDao {
 
-    public AclPolicyPermissionDaoImpl()
-    {
-
-    }
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -39,5 +38,16 @@ public class AclPolicyPermissionDaoImpl extends GenericDaoBase<AclPolicyPermissi
         return true;
     }
 
+    @Override
+    public List<AclPolicyPermissionVO> listByPolicy(long policyId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public AclPolicyPermissionVO findByPolicyAndEntity(long policyId, String entityType, PermissionScope scope, Long scopeId, String action, Permission perm) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 }

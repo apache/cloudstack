@@ -42,7 +42,7 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.AclGroupAccountMapVO;
-import org.apache.cloudstack.acl.AclRolePermission;
+import org.apache.cloudstack.acl.AclPolicyPermission;
 import org.apache.cloudstack.acl.AclService;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.PermissionScope;
@@ -50,7 +50,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
-import org.apache.cloudstack.acl.dao.AclRolePermissionDao;
+import org.apache.cloudstack.acl.dao.AclPolicyPermissionDao;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
@@ -264,7 +264,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private AclService _aclService;
 
     @Inject
-    private AclRolePermissionDao _aclRolePermissionDao;
+    private AclPolicyPermissionDao _aclPolicyPermissionDao;
 
     @Inject
     public com.cloud.region.ha.GlobalLoadBalancingRulesService _gslbService;
@@ -2391,17 +2391,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         } else {
             domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.SkipProjectResources);
             // get caller role permission on VM List
-            AclRolePermission rolePerm = _aclService.getAclRolePermission(caller.getId(), AclEntityType.VM.toString(), AccessType.ListEntry);
-            if (rolePerm == null) {
+            //TODO: this method needs to pass the entity type instead of current hard-code to VM for now. Also, api action name
+            // should be passed in caller context.
+            AclPolicyPermission policyPerm = _aclService.getAclPolicyPermission(caller.getId(), AclEntityType.VM.toString(), "listVirtualMachine");
+            if (policyPerm == null) {
                 // no list entry permission
-                throw new PermissionDeniedException("Caller has no role permission assigned to list VM");
+                throw new PermissionDeniedException("Caller has no policy permission assigned to list VM");
             }
             if (permittedAccounts.isEmpty()) {
                 // no account name is specified
-                if (rolePerm.getScope() == PermissionScope.ACCOUNT || !listAll) {
+                if (policyPerm.getScope() == PermissionScope.ACCOUNT || !listAll) {
                     // only resource owner can see it, only match account
                     permittedAccounts.add(caller.getId());
-                } else if (rolePerm.getScope() == PermissionScope.DOMAIN) {
+                } else if (policyPerm.getScope() == PermissionScope.DOMAIN) {
                     // match domain tree based on cmd.isRecursive flag or not
                     domainIdRecursiveListProject.first(caller.getDomainId());
                 }
@@ -2649,20 +2651,20 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (isRecursive) {
                 for (int i = 0; i < permittedDomains.size(); i++) {
                     Domain domain = _domainDao.findById(permittedDomains.get(i));
-                    aclSc.addOr("domainPath" + i, SearchCriteria.Op.LIKE, domain.getPath() + "%");
+                    aclSc.addOr("domainPath", SearchCriteria.Op.LIKE, domain.getPath() + "%");
                 }
             } else {
-                aclSc.addOr("domainIdIN", SearchCriteria.Op.IN, permittedDomains.toArray());
+                aclSc.addOr("domainId", SearchCriteria.Op.IN, permittedDomains.toArray());
             }
         }
         if (!permittedAccounts.isEmpty()) {
-            aclSc.addOr("accountIdIN", SearchCriteria.Op.IN, permittedAccounts.toArray());
+            aclSc.addOr("accountId", SearchCriteria.Op.IN, permittedAccounts.toArray());
         }
         if (!permittedResources.isEmpty()) {
-            aclSc.addOr("idIn", SearchCriteria.Op.IN, permittedResources.toArray());
+            aclSc.addOr("id", SearchCriteria.Op.IN, permittedResources.toArray());
         }
 
-        sc.addAnd("accountIdIn", SearchCriteria.Op.SC, aclSc);
+        sc.addAnd("accountId", SearchCriteria.Op.SC, aclSc);
     }
 
 }

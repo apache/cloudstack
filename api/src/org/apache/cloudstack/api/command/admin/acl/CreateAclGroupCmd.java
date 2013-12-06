@@ -44,6 +44,9 @@ public class CreateAclGroupCmd extends BaseAsyncCreateCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an account for the acl group. Must be used with domainId.")
+    private String accountName;
+
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, description = "domainId of the account owning the acl group", entityType = DomainResponse.class)
     private Long domainId;
 
@@ -58,6 +61,9 @@ public class CreateAclGroupCmd extends BaseAsyncCreateCmd {
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
 
+    public String getAccountName() {
+        return accountName;
+    }
 
     public String getDescription() {
         return description;
@@ -76,6 +82,7 @@ public class CreateAclGroupCmd extends BaseAsyncCreateCmd {
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
 
+
     @Override
     public String getCommandName() {
         return s_name;
@@ -84,19 +91,29 @@ public class CreateAclGroupCmd extends BaseAsyncCreateCmd {
     @Override
     public long getEntityOwnerId() {
         Account account = CallContext.current().getCallingAccount();
+        if ((account == null) || _accountService.isAdmin(account.getType())) {
+            if ((domainId != null) && (accountName != null)) {
+                Account userAccount = _responseGenerator.findAccountByNameDomain(accountName, domainId);
+                if (userAccount != null) {
+                    return userAccount.getId();
+                }
+            }
+        }
+
         if (account != null) {
             return account.getId();
         }
 
-        return Account.ACCOUNT_ID_SYSTEM;
-
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this
+                                          // command to SYSTEM so ERROR events
+                                          // are tracked
     }
 
     @Override
     public void execute() {
-        AclGroup role = _entityMgr.findById(AclGroup.class, getEntityId());
-        if (role != null) {
-            AclGroupResponse response = _responseGenerator.createAclGroupResponse(role);
+        AclGroup grp = _entityMgr.findById(AclGroup.class, getEntityId());
+        if (grp != null) {
+            AclGroupResponse response = _responseGenerator.createAclGroupResponse(grp);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
@@ -106,7 +123,8 @@ public class CreateAclGroupCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        AclGroup result = _aclService.createAclGroup(domainId, name, description);
+        Account account = CallContext.current().getCallingAccount();
+        AclGroup result = _aclService.createAclGroup(account, name, description);
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());

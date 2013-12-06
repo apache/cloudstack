@@ -106,7 +106,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
             }
 
             // get all Roles of this caller w.r.t the entity
-            List<AclRole> roles = _aclService.getEffectiveRoles(caller, entity);
+            List<AclRole> roles = _aclService.getEffectivePolicies(caller, entity);
             HashMap<AclRole, Boolean> rolePermissionMap = new HashMap<AclRole, Boolean>();
 
             for (AclRole role : roles) {

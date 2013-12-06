@@ -524,10 +524,9 @@ public class ApiConstants {
     public static final String SERVICE_STATE = "servicestate";
     public static final String ACL_ACCOUNT_IDS = "accountids";
     public static final String ACL_MEMBER_ACCOUNTS = "memberaccounts";
-    public static final String ACL_PARENT_ROLE_ID = "parentroleid";
-    public static final String ACL_PARENT_ROLE_NAME = "parentrolename";
-    public static final String ACL_ROLES = "roles";
-    public static final String ACL_ROLE_IDS = "roleids";
+    public static final String ACL_PARENT_POLICY_ID = "parentpolicyid";
+    public static final String ACL_PARENT_POLICY_NAME = "parentpolicyname";
+    public static final String ACL_POLICY_IDS = "policyids";
     public static final String ACL_POLICIES = "policies";
     public static final String ACL_APIS = "apis";
     public static final String ACL_GROUPS = "groups";

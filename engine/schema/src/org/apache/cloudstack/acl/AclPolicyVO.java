@@ -121,6 +121,10 @@ public class AclPolicyVO implements AclPolicy {
         return accountId;
     }
 
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
+    }
+
     public AclPolicy.PolicyType getPolicyType() {
         return policyType;
     }

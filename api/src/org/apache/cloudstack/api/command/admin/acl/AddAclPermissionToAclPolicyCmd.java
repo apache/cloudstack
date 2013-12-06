@@ -16,11 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.acl;
 
-
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclGroup;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.AclPolicy;
+import org.apache.cloudstack.acl.AclPolicyPermission.Permission;
+import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.AclGroupResponse;
+import org.apache.cloudstack.api.response.AclPolicyResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
@@ -38,10 +38,10 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 
-@APICommand(name = "grantPermissionToAclGroup", description = "grant entity permission to an acl group", responseObject = AclGroupResponse.class)
-public class GrantPermissionToAclGroupCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(GrantPermissionToAclGroupCmd.class.getName());
-    private static final String s_name = "grantpermissiontoaclgroupresponse";
+@APICommand(name = "addAclPermissionToAclPolicy", description = "Add Acl permission to an acl policy", responseObject = AclPolicyResponse.class)
+public class AddAclPermissionToAclPolicyCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(AddAclPermissionToAclPolicyCmd.class.getName());
+    private static final String s_name = "addaclpermissiontoaclpolicyresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -49,18 +49,23 @@ public class GrantPermissionToAclGroupCmd extends BaseAsyncCmd {
 
 
     @ACL
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AclGroupResponse.class,
-            required = true, description = "The ID of the acl group")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AclPolicyResponse.class,
+            required = true, description = "The ID of the acl policy")
     private Long id;
 
-    @Parameter(name = ApiConstants.ENTITY_TYPE, type = CommandType.STRING, required = true, description = "entity class simple name.")
+    @Parameter(name = ApiConstants.ACL_ACTION, type = CommandType.STRING, required = true, description = "action api name.")
+    private String action;
+
+    @Parameter(name = ApiConstants.ENTITY_TYPE, type = CommandType.STRING, required = false, description = "entity class simple name.")
     private String entityType;
 
-    @Parameter(name = ApiConstants.ENTITY_ID, type = CommandType.UUID, required = true, description = "The ID of the entity")
-    private Long entityId;
+    @Parameter(name = ApiConstants.ACL_SCOPE, type = CommandType.STRING,
+            required = false, description = "acl permission scope")
+    private String scope;
 
-    @Parameter(name = ApiConstants.ACCESS_TYPE, type = CommandType.STRING, required = true, description = "access type for the entity")
-    private String accessType;
+    @Parameter(name = ApiConstants.ACL_SCOPE_ID, type = CommandType.UUID, required = false, description = "The ID of the permission scope id")
+    private Long scopeId;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -71,22 +76,29 @@ public class GrantPermissionToAclGroupCmd extends BaseAsyncCmd {
         return id;
     }
 
+
+    public String getAction() {
+        return action;
+    }
+
     public String getEntityType() {
         return entityType;
     }
 
-    public Long getEntityId() {
-        return entityId;
+    public String getScope() {
+        return scope;
     }
 
-    public AccessType getAccessType() {
-        return AccessType.valueOf(accessType);
+    public Long getScopeId() {
+        return scopeId;
     }
 
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
+
+
 
     @Override
     public String getCommandName() {
@@ -102,30 +114,31 @@ public class GrantPermissionToAclGroupCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException,
             InsufficientCapacityException, ServerApiException {
-        CallContext.current().setEventDetails("Acl group Id: " + getId());
-        AclGroup result = _aclService.grantEntityPermissionToAclGroup(id, entityType, entityId, getAccessType());
-        if (result != null){
-            AclGroupResponse response = _responseGenerator.createAclGroupResponse(result);
+        CallContext.current().setEventDetails("Acl policy Id: " + getId());
+        // Only explicit ALLOW is supported for this release, no explicit deny
+        AclPolicy result = _aclService.addAclPermissionToAclPolicy(id, entityType, PermissionScope.valueOf(scope), scopeId, action, Permission.Allow);
+        if (result != null) {
+            AclPolicyResponse response = _responseGenerator.createAclPolicyResponse(result);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to grant permission to acl group");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to grant permission to acl policy " + getId());
         }
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_ACL_GROUP_GRANT;
+        return EventTypes.EVENT_ACL_POLICY_GRANT;
     }
 
     @Override
     public String getEventDescription() {
-        return "granting permission to acl group";
+        return "granting permission to acl policy";
     }
 
     @Override
     public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.AclGroup;
+        return ApiCommandJobType.AclPolicy;
     }
 
 }

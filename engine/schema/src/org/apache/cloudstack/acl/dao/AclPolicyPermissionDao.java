@@ -17,10 +17,19 @@
 package org.apache.cloudstack.acl.dao;
 
 
+import java.util.List;
+
+import org.apache.cloudstack.acl.AclPolicyPermission.Permission;
 import org.apache.cloudstack.acl.AclPolicyPermissionVO;
+import org.apache.cloudstack.acl.PermissionScope;
 
 import com.cloud.utils.db.GenericDao;
 
 public interface AclPolicyPermissionDao extends GenericDao<AclPolicyPermissionVO, Long> {
+
+    List<AclPolicyPermissionVO> listByPolicy(long policyId);
+
+    AclPolicyPermissionVO findByPolicyAndEntity(long policyId, String entityType, PermissionScope scope, Long scopeId, String action, Permission perm);
+
 
 }

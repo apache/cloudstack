@@ -50,6 +50,6 @@ public enum ApiCommandJobType {
     AffinityGroup,
     InternalLbVm,
     DedicatedGuestVlanRange,
-    AclRole,
+    AclPolicy,
     AclGroup
 }

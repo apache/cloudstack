@@ -16,11 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.acl;
 
-import java.util.List;
-
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclGroup;
+import org.apache.cloudstack.acl.AclPolicy;
+import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -29,8 +28,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.AclGroupResponse;
-import org.apache.cloudstack.api.response.AclRoleResponse;
+import org.apache.cloudstack.api.response.AclPolicyResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
@@ -39,10 +37,10 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 
-@APICommand(name = "removeAclRoleFromAclGroup", description = "remove acl role to an acl group", responseObject = AclGroupResponse.class)
-public class RemoveAclRoleFromAclGroupCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(RemoveAclRoleFromAclGroupCmd.class.getName());
-    private static final String s_name = "removeaclroletoaclgroupresponse";
+@APICommand(name = "removeAclPermissionFromAclPolicy", description = "Remove acl permission from an acl policy", responseObject = AclPolicyResponse.class)
+public class RemoveAclPermissionFromAclPolicyCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(RemoveAclPermissionFromAclPolicyCmd.class.getName());
+    private static final String s_name = "removeaclpermissionfromaclpolicyresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -50,13 +48,22 @@ public class RemoveAclRoleFromAclGroupCmd extends BaseAsyncCmd {
 
 
     @ACL
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AclGroupResponse.class,
-            required = true, description = "The ID of the acl group")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AclPolicyResponse.class,
+            required = true, description = "The ID of the acl policy")
     private Long id;
 
-    @ACL
-    @Parameter(name = ApiConstants.ACL_ROLES, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AclRoleResponse.class, description = "comma separated list of acl role id that are going to be applied to the acl group.")
-    private List<Long> roleIdList;
+    @Parameter(name = ApiConstants.ACL_ACTION, type = CommandType.STRING, required = true, description = "action api name.")
+    private String action;
+
+    @Parameter(name = ApiConstants.ENTITY_TYPE, type = CommandType.STRING, required = false, description = "entity class simple name.")
+    private String entityType;
+
+    @Parameter(name = ApiConstants.ACL_SCOPE, type = CommandType.STRING,
+            required = false, description = "acl permission scope")
+    private String scope;
+
+    @Parameter(name = ApiConstants.ACL_SCOPE_ID, type = CommandType.UUID, required = false, description = "The ID of the permission scope id")
+    private Long scopeId;
 
 
     /////////////////////////////////////////////////////
@@ -69,9 +76,22 @@ public class RemoveAclRoleFromAclGroupCmd extends BaseAsyncCmd {
     }
 
 
-    public List<Long> getRoleIdList() {
-        return roleIdList;
+    public String getAction() {
+        return action;
     }
+
+    public String getEntityType() {
+        return entityType;
+    }
+
+    public String getScope() {
+        return scope;
+    }
+
+    public Long getScopeId() {
+        return scopeId;
+    }
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -92,30 +112,30 @@ public class RemoveAclRoleFromAclGroupCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException,
             InsufficientCapacityException, ServerApiException {
-        CallContext.current().setEventDetails("Acl group Id: " + getId());
-        AclGroup result = _aclService.removeAclRolesFromGroup(roleIdList, id);
-        if (result != null){
-            AclGroupResponse response = _responseGenerator.createAclGroupResponse(result);
+        CallContext.current().setEventDetails("Acl policy Id: " + getId());
+        AclPolicy result = _aclService.removeAclPermissionFromAclPolicy(id, entityType, PermissionScope.valueOf(scope), scopeId, action);
+        if (result != null) {
+            AclPolicyResponse response = _responseGenerator.createAclPolicyResponse(result);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add roles to acl group");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove permission from acl policy " + getId());
         }
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_ACL_GROUP_UPDATE;
+        return EventTypes.EVENT_ACL_POLICY_REVOKE;
     }
 
     @Override
     public String getEventDescription() {
-        return "removing acl roles from acl group";
+        return "removing permission from acl policy";
     }
 
     @Override
     public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.AclGroup;
+        return ApiCommandJobType.AclPolicy;
     }
 
 }

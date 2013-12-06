@@ -26,7 +26,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.AclGroup;
-import org.apache.cloudstack.acl.AclRole;
+import org.apache.cloudstack.acl.AclPolicy;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -36,7 +36,7 @@ import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AclGroupResponse;
-import org.apache.cloudstack.api.response.AclRoleResponse;
+import org.apache.cloudstack.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -70,7 +70,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AclGroupJoinDao;
-import com.cloud.api.query.dao.AclRoleJoinDao;
+import com.cloud.api.query.dao.AclPolicyJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.api.query.dao.DataCenterJoinDao;
@@ -92,7 +92,7 @@ import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.AclGroupJoinVO;
-import com.cloud.api.query.vo.AclRoleJoinVO;
+import com.cloud.api.query.vo.AclPolicyJoinVO;
 import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.DataCenterJoinVO;
@@ -411,7 +411,7 @@ public class ApiDBUtils {
     static GlobalLoadBalancingRulesService _gslbService;
     static NetworkACLDao _networkACLDao;
     static AccountService _accountService;
-    static AclRoleJoinDao _aclRoleJoinDao;
+    static AclPolicyJoinDao _aclPolicyJoinDao;
     static AclGroupJoinDao _aclGroupJoinDao;
     static ResourceMetaDataService _resourceDetailsService;
 
@@ -527,7 +527,7 @@ public class ApiDBUtils {
     @Inject private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
     @Inject private AccountService accountService;
     @Inject
-    private AclRoleJoinDao aclRoleJoinDao;
+    private AclPolicyJoinDao aclPolicyJoinDao;
     @Inject
     private AclGroupJoinDao aclGroupJoinDao;
     @Inject private ConfigurationManager configMgr;
@@ -643,7 +643,7 @@ public class ApiDBUtils {
         _statsCollector = StatsCollector.getInstance();
         _networkACLDao = networkACLDao;
         _accountService = accountService;
-        _aclRoleJoinDao = aclRoleJoinDao;
+        _aclPolicyJoinDao = aclPolicyJoinDao;
         _aclGroupJoinDao = aclGroupJoinDao;
         _resourceDetailsService = resourceDetailsService;
     }
@@ -1698,16 +1698,16 @@ public class ApiDBUtils {
         return _affinityGroupJoinDao.setAffinityGroupResponse(resp, group);
     }
 
-    public static List<AclRoleJoinVO> newAclRoleView(AclRole role) {
-        return _aclRoleJoinDao.newAclRoleView(role);
+    public static List<AclPolicyJoinVO> newAclPolicyView(AclPolicy policy) {
+        return _aclPolicyJoinDao.newAclPolicyView(policy);
     }
 
-    public static AclRoleResponse newAclRoleResponse(AclRoleJoinVO role) {
-        return _aclRoleJoinDao.newAclRoleResponse(role);
+    public static AclPolicyResponse newAclPolicyResponse(AclPolicyJoinVO policy) {
+        return _aclPolicyJoinDao.newAclPolicyResponse(policy);
     }
 
-    public static AclRoleResponse fillAclRoleDetails(AclRoleResponse resp, AclRoleJoinVO role) {
-        return _aclRoleJoinDao.setAclRoleResponse(resp, role);
+    public static AclPolicyResponse fillAclPolicyDetails(AclPolicyResponse resp, AclPolicyJoinVO policy) {
+        return _aclPolicyJoinDao.setAclPolicyResponse(resp, policy);
     }
 
     public static List<AclGroupJoinVO> newAclGroupView(AclGroup group) {

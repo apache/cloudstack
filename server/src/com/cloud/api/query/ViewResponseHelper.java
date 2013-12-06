@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AclGroupResponse;
-import org.apache.cloudstack.api.response.AclRoleResponse;
+import org.apache.cloudstack.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -55,7 +55,7 @@ import org.apache.cloudstack.context.CallContext;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.AclGroupJoinVO;
-import com.cloud.api.query.vo.AclRoleJoinVO;
+import com.cloud.api.query.vo.AclPolicyJoinVO;
 import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.DataCenterJoinVO;
@@ -445,20 +445,20 @@ public class ViewResponseHelper {
         return new ArrayList<AffinityGroupResponse>(vrDataList.values());
     }
 
-    public static List<AclRoleResponse> createAclRoleResponses(List<AclRoleJoinVO> roles) {
-        Hashtable<Long, AclRoleResponse> vrDataList = new Hashtable<Long, AclRoleResponse>();
-        for (AclRoleJoinVO vr : roles) {
-            AclRoleResponse vrData = vrDataList.get(vr.getId());
+    public static List<AclPolicyResponse> createAclPolicyResponses(List<AclPolicyJoinVO> policies) {
+        Hashtable<Long, AclPolicyResponse> vrDataList = new Hashtable<Long, AclPolicyResponse>();
+        for (AclPolicyJoinVO vr : policies) {
+            AclPolicyResponse vrData = vrDataList.get(vr.getId());
             if (vrData == null) {
-                // first time encountering this Acl role
-                vrData = ApiDBUtils.newAclRoleResponse(vr);
+                // first time encountering this Acl policy
+                vrData = ApiDBUtils.newAclPolicyResponse(vr);
             } else {
                 // update vms
-                vrData = ApiDBUtils.fillAclRoleDetails(vrData, vr);
+                vrData = ApiDBUtils.fillAclPolicyDetails(vrData, vr);
             }
             vrDataList.put(vr.getId(), vrData);
         }
-        return new ArrayList<AclRoleResponse>(vrDataList.values());
+        return new ArrayList<AclPolicyResponse>(vrDataList.values());
     }
 
     public static List<AclGroupResponse> createAclGroupResponses(List<AclGroupJoinVO> groups) {

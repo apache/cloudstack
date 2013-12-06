@@ -96,6 +96,10 @@ public class AclGroupVO implements AclGroup {
         return accountId;
     }
 
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
+    }
+
     @Override
     public String getUuid() {
     	return uuid;

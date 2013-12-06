@@ -34,7 +34,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.AclGroup;
-import org.apache.cloudstack.acl.AclRole;
+import org.apache.cloudstack.acl.AclPolicy;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -46,7 +46,7 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AclGroupResponse;
-import org.apache.cloudstack.api.response.AclRoleResponse;
+import org.apache.cloudstack.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerRuleResponse;
@@ -155,7 +155,7 @@ import org.apache.cloudstack.usage.UsageTypes;
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.AclGroupJoinVO;
-import com.cloud.api.query.vo.AclRoleJoinVO;
+import com.cloud.api.query.vo.AclPolicyJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.api.query.vo.DataCenterJoinVO;
@@ -3709,11 +3709,11 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public AclRoleResponse createAclRoleResponse(AclRole role) {
-        List<AclRoleJoinVO> viewRoles = ApiDBUtils.newAclRoleView(role);
-        List<AclRoleResponse> listRoles = ViewResponseHelper.createAclRoleResponses(viewRoles);
-        assert listRoles != null && listRoles.size() == 1 : "There should be one acl role returned";
-        return listRoles.get(0);
+    public AclPolicyResponse createAclPolicyResponse(AclPolicy policy) {
+        List<AclPolicyJoinVO> viewPolicies = ApiDBUtils.newAclPolicyView(policy);
+        List<AclPolicyResponse> listPolicies = ViewResponseHelper.createAclPolicyResponses(viewPolicies);
+        assert listPolicies != null && listPolicies.size() == 1 : "There should be one acl policy returned";
+        return listPolicies.get(0);
     }
 
     @Override

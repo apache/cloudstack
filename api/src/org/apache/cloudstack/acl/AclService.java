@@ -18,77 +18,45 @@ package org.apache.cloudstack.acl;
 
 import java.util.List;
 
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.AclPolicyPermission.Permission;
 
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 
 public interface AclService {
 
-    /**
-     * Creates an acl role for the given domain.
-     *
-     * @param domainId
-     * @param name
-     * @param description
-     * @return AclRole
-     */
+    /* ACL group related interfaces */
+    AclGroup createAclGroup(Account caller, String aclGroupName, String description);
 
-    AclRole createAclRole(Long domainId, String aclRoleName, String description, Long parentRoleId);
+    boolean deleteAclGroup(Long aclGroupId);
 
-    /**
-     * Delete an acl role.
-     *
-     * @param aclRoleId
-     */
-    boolean deleteAclRole(long aclRoleId);
-
-    AclRole grantApiPermissionToAclRole(long aclRoleId, List<String> apiNames);
-
-    AclRole revokeApiPermissionFromAclRole(long aclRoleId, List<String> apiNames);
-
-    AclGroup addAclRolesToGroup(List<Long> roleIds, Long groupId);
-
-    AclGroup removeAclRolesFromGroup(List<Long> roleIds, Long groupId);
+    List<AclGroup> listAclGroups(long accountId);
 
     AclGroup addAccountsToGroup(List<Long> acctIds, Long groupId);
 
     AclGroup removeAccountsFromGroup(List<Long> acctIds, Long groupId);
 
-    AclGroup grantEntityPermissionToAclGroup(long aclGroupId, String entityType, long entityId, AccessType accessType);
+    /* ACL Policy related interfaces */
+    AclPolicy createAclPolicy(Account caller, String aclPolicyName, String description, Long parentPolicyId);
 
-    AclGroup revokeEntityPermissionFromAclGroup(long aclGroupId, String entityType, long entityId, AccessType accessType);
+    boolean deleteAclPolicy(long aclPolicyId);
 
-    /**
-     * Creates an acl group for the given domain.
-     *
-     * @param domainId
-     * @param name
-     * @param description
-     * @return AclGroup
-     */
+    List<AclPolicy> listAclPolicies(long accountId);
 
-    AclGroup createAclGroup(Long domainId, String aclGroupName, String description);
+    AclGroup attachAclPoliciesToGroup(List<Long> roleIds, Long groupId);
 
-    /**
-     * Delete an acl group.
-     *
-     * @param aclGroupId
-     */
-    boolean deleteAclGroup(Long aclGroupId);
+    AclGroup removeAclPoliciesFromGroup(List<Long> roleIds, Long groupId);
 
-    List<AclRole> getAclRoles(long accountId);
+    AclPolicy addAclPermissionToAclPolicy(long aclPolicyId, String entityType, PermissionScope scope, Long scopeId, String action, Permission perm);
 
-    List<AclGroup> getAclGroups(long accountId);
+    AclPolicy removeAclPermissionFromAclPolicy(long aclPolicyId, String entityType, PermissionScope scope, Long scopeId, String action);
 
-    AclRolePermission getAclRolePermission(long accountId, String entityType, AccessType accessType);
+    AclPolicyPermission getAclPolicyPermission(long accountId, String entityType, String action);
 
-    Pair<List<Long>, List<Long>> getAclEntityPermission(long accountId, String entityType, AccessType accessType);
+    boolean isAPIAccessibleForPolicies(String apiName, List<AclPolicy> policies);
 
-    boolean isAPIAccessibleForRoles(String apiName, List<AclRole> roles);
+    List<AclPolicy> getEffectivePolicies(Account caller, ControlledEntity entity);
 
-    List<AclRole> getEffectiveRoles(Account caller, ControlledEntity entity);
-
+    /* Visibility related interfaces */
     List<Long> getGrantedDomains(long accountId, AclEntityType entityType, String action);
 
     List<Long> getGrantedAccounts(long accountId, AclEntityType entityType, String action);

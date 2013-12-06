@@ -30,7 +30,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.AclGroup;
-import org.apache.cloudstack.acl.AclRole;
+import org.apache.cloudstack.acl.AclPolicy;
 import org.apache.cloudstack.acl.AclService;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.dao.AclGroupDao;
@@ -71,7 +71,7 @@ import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AclGroupResponse;
-import org.apache.cloudstack.api.response.AclRoleResponse;
+import org.apache.cloudstack.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -100,7 +100,7 @@ import org.apache.cloudstack.query.QueryService;
 
 import com.cloud.api.query.dao.AccountJoinDao;
 import com.cloud.api.query.dao.AclGroupJoinDao;
-import com.cloud.api.query.dao.AclRoleJoinDao;
+import com.cloud.api.query.dao.AclPolicyJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.api.query.dao.DataCenterJoinDao;
@@ -122,6 +122,7 @@ import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
 import com.cloud.api.query.vo.AclGroupJoinVO;
+import com.cloud.api.query.vo.AclPolicyJoinVO;
 import com.cloud.api.query.vo.AclRoleJoinVO;
 import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
@@ -350,10 +351,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     AffinityGroupDomainMapDao _affinityGroupDomainMapDao;
 
     @Inject
-    AclRoleJoinDao _aclRoleJoinDao;
+    AclPolicyJoinDao _aclPolicyJoinDao;
 
     @Inject
-    AclPolicyDao _aclRoleDao;
+    AclPolicyDao _aclPolicyDao;
 
     @Inject
     AclGroupJoinDao _aclGroupJoinDao;
@@ -3308,28 +3309,29 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     @Override
-    public ListResponse<AclRoleResponse> listAclRoles(Long aclRoleId, String aclRoleName, Long domainId, Long startIndex, Long pageSize) {
-        Pair<List<AclRoleJoinVO>, Integer> result = listAclRolesInternal(aclRoleId, aclRoleName, domainId, true, true, startIndex, pageSize);
-        ListResponse<AclRoleResponse> response = new ListResponse<AclRoleResponse>();
+    public ListResponse<AclPolicyResponse> listAclPolicies(Long aclPolicyId, String aclPolicyName, Long domainId, Long startIndex, Long pageSize) {
+        Pair<List<AclPolicyJoinVO>, Integer> result = listAclPoliciesInternal(aclPolicyId, aclPolicyName, domainId, true, true, startIndex, pageSize);
+        ListResponse<AclPolicyResponse> response = new ListResponse<AclPolicyResponse>();
 
-        List<AclRoleResponse> roleResponses = ViewResponseHelper.createAclRoleResponses(result.first());
+        List<AclPolicyResponse> roleResponses = ViewResponseHelper.createAclPolicyResponses(result.first());
         response.setResponses(roleResponses, result.second());
         return response;
     }
 
-    private Pair<List<AclRoleJoinVO>, Integer> listAclRolesInternal(Long aclRoleId, String aclRoleName, Long domainId, boolean isRecursive, boolean listAll, Long startIndex,
+    private Pair<List<AclPolicyJoinVO>, Integer> listAclPoliciesInternal(Long aclPolicyId, String aclPolicyName, Long domainId, boolean isRecursive, boolean listAll,
+            Long startIndex,
             Long pageSize) {
 
         Account caller = CallContext.current().getCallingAccount();
         Boolean listForDomain = false;
 
-        if (aclRoleId != null) {
-            AclRole role = _aclRoleDao.findById(aclRoleId);
-            if (role == null) {
-                throw new InvalidParameterValueException("Unable to find acl role by id " + aclRoleId);
+        if (aclPolicyId != null) {
+            AclPolicy policy = _aclPolicyDao.findById(aclPolicyId);
+            if (policy == null) {
+                throw new InvalidParameterValueException("Unable to find acl policy by id " + aclPolicyId);
             }
 
-            _accountMgr.checkAccess(caller, null, true, role);
+            _accountMgr.checkAccess(caller, null, true, policy);
         }
 
         if (domainId != null) {
@@ -3340,17 +3342,17 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
             _accountMgr.checkAccess(caller, domain);
 
-            if (aclRoleName != null) {
-                AclRole role = _aclRoleDao.findByName(domainId, aclRoleName);
-                if (role == null) {
-                    throw new InvalidParameterValueException("Unable to find acl role by name " + aclRoleName
+            if (aclPolicyName != null) {
+                AclPolicy policy = _aclPolicyDao.findByName(domainId, aclPolicyName);
+                if (policy == null) {
+                    throw new InvalidParameterValueException("Unable to find acl policy by name " + aclPolicyName
                             + " in domain " + domainId);
                 }
-                _accountMgr.checkAccess(caller, null, true, role);
+                _accountMgr.checkAccess(caller, null, true, policy);
             }
         }
 
-        if (aclRoleId == null) {
+        if (aclPolicyId == null) {
             if (_accountMgr.isAdmin(caller.getType()) && listAll && domainId == null) {
                 listForDomain = true;
                 isRecursive = true;
@@ -3365,7 +3367,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Filter searchFilter = new Filter(AclRoleJoinVO.class, "id", true, startIndex, pageSize);
 
 
-        SearchBuilder<AclRoleJoinVO> sb = _aclRoleJoinDao.createSearchBuilder();
+        SearchBuilder<AclPolicyJoinVO> sb = _aclPolicyJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct ids
 
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
@@ -3376,14 +3378,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             sb.and("path", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
         }
 
-        SearchCriteria<AclRoleJoinVO> sc = sb.create();
+        SearchCriteria<AclPolicyJoinVO> sc = sb.create();
 
-        if (aclRoleName != null) {
-            sc.setParameters("name", aclRoleName);
+        if (aclPolicyName != null) {
+            sc.setParameters("name", aclPolicyName);
         }
 
-        if (aclRoleId != null) {
-            sc.setParameters("id", aclRoleId);
+        if (aclPolicyId != null) {
+            sc.setParameters("id", aclPolicyId);
         }
 
         if (listForDomain) {
@@ -3396,21 +3398,21 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
 
-        // search role details by ids
-        Pair<List<AclRoleJoinVO>, Integer> uniqueRolePair = _aclRoleJoinDao.searchAndCount(sc, searchFilter);
+        // search policy details by ids
+        Pair<List<AclPolicyJoinVO>, Integer> uniqueRolePair = _aclPolicyJoinDao.searchAndCount(sc, searchFilter);
         Integer count = uniqueRolePair.second();
         if (count.intValue() == 0) {
             // empty result
             return uniqueRolePair;
         }
-        List<AclRoleJoinVO> uniqueRoles = uniqueRolePair.first();
+        List<AclPolicyJoinVO> uniqueRoles = uniqueRolePair.first();
         Long[] vrIds = new Long[uniqueRoles.size()];
         int i = 0;
-        for (AclRoleJoinVO v : uniqueRoles) {
+        for (AclPolicyJoinVO v : uniqueRoles) {
             vrIds[i++] = v.getId();
         }
-        List<AclRoleJoinVO> vrs = _aclRoleJoinDao.searchByIds(vrIds);
-        return new Pair<List<AclRoleJoinVO>, Integer>(vrs, count);
+        List<AclPolicyJoinVO> vrs = _aclPolicyJoinDao.searchByIds(vrIds);
+        return new Pair<List<AclPolicyJoinVO>, Integer>(vrs, count);
     }
 
     @Override

@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AclGroupResponse;
-import org.apache.cloudstack.api.response.AclRoleResponse;
+import org.apache.cloudstack.api.response.AclPolicyResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
@@ -39,10 +39,10 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 
-@APICommand(name = "addAclRoleToAclGroup", description = "add acl role to an acl group", responseObject = AclGroupResponse.class)
-public class AddAclRoleToAclGroupCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(AddAclRoleToAclGroupCmd.class.getName());
-    private static final String s_name = "addaclroletoaclgroupresponse";
+@APICommand(name = "removeAclPolicyFromAclGroup", description = "remove acl policy from an acl group", responseObject = AclGroupResponse.class)
+public class RemoveAclPolicyFromAclGroupCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(RemoveAclPolicyFromAclGroupCmd.class.getName());
+    private static final String s_name = "removeaclpolicyfromaclgroupresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -55,8 +55,8 @@ public class AddAclRoleToAclGroupCmd extends BaseAsyncCmd {
     private Long id;
 
     @ACL
-    @Parameter(name = ApiConstants.ACL_ROLES, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AclRoleResponse.class, description = "comma separated list of acl role id that are going to be applied to the acl group.")
-    private List<Long> roleIdList;
+    @Parameter(name = ApiConstants.ACL_POLICIES, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AclPolicyResponse.class, description = "comma separated list of acl policy id that are going to be applied to the acl group.")
+    private List<Long> policyIdList;
 
 
     /////////////////////////////////////////////////////
@@ -70,7 +70,7 @@ public class AddAclRoleToAclGroupCmd extends BaseAsyncCmd {
 
 
     public List<Long> getRoleIdList() {
-        return roleIdList;
+        return policyIdList;
     }
 
     /////////////////////////////////////////////////////
@@ -93,7 +93,7 @@ public class AddAclRoleToAclGroupCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException,
             InsufficientCapacityException, ServerApiException {
         CallContext.current().setEventDetails("Acl group Id: " + getId());
-        AclGroup result = _aclService.addAclRolesToGroup(roleIdList, id);
+        AclGroup result = _aclService.removeAclPoliciesFromGroup(policyIdList, id);
         if (result != null){
             AclGroupResponse response = _responseGenerator.createAclGroupResponse(result);
             response.setResponseName(getCommandName());
@@ -110,7 +110,7 @@ public class AddAclRoleToAclGroupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "adding acl roles to acl group";
+        return "removing acl roles from acl group";
     }
 
     @Override

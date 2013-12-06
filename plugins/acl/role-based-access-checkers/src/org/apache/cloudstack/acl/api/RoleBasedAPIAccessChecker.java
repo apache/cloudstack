@@ -54,10 +54,10 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
             throw new PermissionDeniedException("The account id=" + user.getAccountId() + "for user id=" + user.getId() + "is null");
         }
 
-        List<AclRole> roles = _aclService.getAclRoles(account.getAccountId());
+        List<AclRole> roles = _aclService.listAclPolicies(account.getAccountId());
 
 
-        boolean isAllowed = _aclService.isAPIAccessibleForRoles(commandName, roles);
+        boolean isAllowed = _aclService.isAPIAccessibleForPolicies(commandName, roles);
         if (!isAllowed) {
             throw new PermissionDeniedException("The API does not exist or is blacklisted. api: " + commandName);
         }

@@ -37,7 +37,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = {AclRoleJoinDao.class})
+@Local(value = {AclPolicyJoinDao.class})
 public class AclPolicyJoinDaoImpl extends GenericDaoBase<AclPolicyJoinVO, Long> implements AclPolicyJoinDao {
     public static final Logger s_logger = Logger.getLogger(AclPolicyJoinDaoImpl.class);
 
