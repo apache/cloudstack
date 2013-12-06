@@ -1517,7 +1517,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         vmMo.destroy();
 
                         // this.hostService.handleDatastoreAndVmdkDetach(iScsiName, storageHost, storagePort);
-                        this.hostService.removeManagedTargetsFromCluster(managedIqns);
+                        if (managedIqns != null && !managedIqns.isEmpty()) {
+                            this.hostService.removeManagedTargetsFromCluster(managedIqns);
+                        }
 
                         for (NetworkDetails netDetails : networks) {
                             if (netDetails.getGCTag() != null && netDetails.getGCTag().equalsIgnoreCase("true")) {
