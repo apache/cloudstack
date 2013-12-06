@@ -2054,8 +2054,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         Host host = _hostDao.findById(hostId);
+        Long poolId = null;
+        List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vm.getId());
+        for (VolumeVO rootVolumeOfVm : vols) {
+            StoragePoolVO rootDiskPool = _storagePoolDao.findById(rootVolumeOfVm.getPoolId());
+            if (rootDiskPool != null) {
+                poolId = rootDiskPool.getId();
+            }
+        }
 
-        DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, null, null);
+        DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), null, poolId, null);
         ExcludeList excludes = new ExcludeList();
         excludes.addHost(hostId);
 
