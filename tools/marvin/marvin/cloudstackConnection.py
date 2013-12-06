@@ -20,24 +20,24 @@ import urllib
 import base64
 import hmac
 import hashlib
-import logging
 import time
 import cloudstackException
 from cloudstackAPI import *
 import jsonHelper
-from requests import ConnectionError
-from requests import HTTPError
-from requests import Timeout
-from requests import RequestException
+from requests import (
+    ConnectionError,
+    HTTPError,
+    Timeout,
+    RequestException
+    )
 
 
 class cloudConnection(object):
 
     """ Connections to make API calls to the cloudstack management server
     """
-    def __init__(self, mgmtDet, asyncTimeout=3600, logging=None,
+    def __init__(self, mgmtDet, asyncTimeout=3600, logger=None,
                  path='client/api'):
-        self.loglevel()  # Turn off requests logs
         self.apiKey = mgmtDet.apiKey
         self.securityKey = mgmtDet.securityKey
         self.mgtSvr = mgmtDet.mgtSvrIp
@@ -46,7 +46,7 @@ class cloudConnection(object):
         self.passwd = mgmtDet.passwd
         self.certCAPath = mgmtDet.certCAPath
         self.certPath = mgmtDet.certPath
-        self.logging = logging
+        self.logger = logger
         self.path = path
         self.retries = 5
         self.mgtDetails = mgmtDet
@@ -66,13 +66,6 @@ class cloudConnection(object):
                                self.asyncTimeout,
                                self.logging,
                                self.path)
-
-    def loglevel(self, lvl=logging.WARNING):
-        """
-        Turns off the INFO/DEBUG logs from `requests`
-        """
-        requests_log = logging.getLogger("requests")
-        requests_log.setLevel(lvl)
 
     def poll(self, jobid, response):
         """
@@ -95,9 +88,9 @@ class cloudConnection(object):
                 return asyncResonse
 
             time.sleep(5)
-            if self.logging is not None:
-                self.logging.debug("job: %s still processing,"
-                                   " will timeout in %ds" % (jobid, timeout))
+            if self.logger is not None:
+                self.logger.debug("job: %s still processing,"
+                                  "will timeout in %ds" % (jobid, timeout))
             timeout = timeout - 5
 
         raise cloudstackException.cloudstackAPIException(
@@ -122,7 +115,7 @@ class cloudConnection(object):
         )
         signature = base64.encodestring(hmac.new(
             self.securityKey, hashStr, hashlib.sha1).digest()).strip()
-        self.logging.debug("Computed Signature by Marvin: %s" % signature)
+        self.logger.debug("Computed Signature by Marvin: %s" % signature)
         return signature
 
     def request(self, command, auth=True, payload={}, method='GET'):
@@ -186,7 +179,7 @@ class cloudConnection(object):
                     then try with default certs, \
                     we dont need to mention here the cert path
                     '''
-                    self.logging.debug("Creating CS connection over https \
+                    self.logger.debug("Creating CS connection over https \
                                         didnt worked with user provided certs \
                                             , so trying with no certs %s" % e)
                     if method == 'POST':
@@ -198,20 +191,20 @@ class cloudConnection(object):
                                                 params=payload,
                                                 verify=https_flag)
         except ConnectionError, c:
-            self.logging.debug("Connection refused. Reason: %s : %s"
-                               % (self.baseurl, c))
+            self.logger.debug("Connection refused. Reason: %s : %s" %
+                              (self.baseurl, c))
             raise c
         except HTTPError, h:
-            self.logging.debug("Http Error.Server returned error code: %s" % h)
+            self.logger.debug("Http Error.Server returned error code: %s" % h)
             raise h
         except Timeout, t:
-            self.logging.debug("Connection timed out with %s" % t)
+            self.logger.debug("Connection timed out with %s" % t)
             raise t
         except RequestException, r:
-            self.logging.debug("RequestException from server %s" % r)
+            self.logger.debug("RequestException from server %s" % r)
             raise r
         except Exception, e:
-            self.logging.debug("Error returned by server %s" % r)
+            self.logger.debug("Error returned by server %s" % r)
             raise e
         else:
             return response
@@ -265,16 +258,16 @@ class cloudConnection(object):
         @return:
         """
         cmdname, isAsync, payload = self.sanitizeCommand(cmd)
-        self.logging.debug("sending %s request: %s %s" % (method, cmdname,
-                                                          str(payload)))
+        self.logger.debug("sending %s request: %s %s" % (method, cmdname,
+                                                         str(payload)))
         response = self.request(cmdname,
                                 self.auth,
                                 payload=payload,
                                 method=method)
         if response is None:
             return None
-        self.logging.debug("Request: %s Response: %s" %
-                           (response.url, response.text))
+        self.logger.debug("Request: %s Response: %s" % (response.url,
+                                                        response.text))
         try:
             response = jsonHelper.getResultObj(response.json(), response_type)
         except TypeError:
