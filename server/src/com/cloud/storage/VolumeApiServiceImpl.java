@@ -584,6 +584,26 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             // check snapshot permissions
             _accountMgr.checkAccess(caller, null, true, snapshotCheck);
+
+            // one step operation - create volume in VM's cluster and attach it
+            // to the VM
+            Long vmId = cmd.getVirtualMachineId();
+            if (vmId != null) {
+                // Check that the virtual machine ID is valid and it's a user vm
+                UserVmVO vm = _userVmDao.findById(vmId);
+                if (vm == null || vm.getType() != VirtualMachine.Type.User) {
+                    throw new InvalidParameterValueException("Please specify a valid User VM.");
+                }
+
+                // Check that the VM is in the correct state
+                if (vm.getState() != State.Running && vm.getState() != State.Stopped) {
+                    throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
+                }
+
+                // permission check
+                _accountMgr.checkAccess(caller, null, false, vm);
+            }
+
         }
 
         // Check that the resource limit for primary storage won't be exceeded
@@ -682,9 +702,27 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         try {
             if (cmd.getSnapshotId() != null) {
-                volume = createVolumeFromSnapshot(volume, cmd.getSnapshotId());
+                volume = createVolumeFromSnapshot(volume, cmd.getSnapshotId(), cmd.getVirtualMachineId());
                 if (volume.getState() != Volume.State.Ready) {
                     created = false;
+                }
+
+                // if VM Id is provided, attach the volume to the VM
+                if (cmd.getVirtualMachineId() != null) {
+                    try {
+                        attachVolumeToVM(cmd.getVirtualMachineId(), volume.getId(), volume.getDeviceId());
+                    } catch (Exception ex) {
+                        StringBuilder message = new StringBuilder("Volume: ");
+                        message.append(volume.getUuid());
+                        message.append(" created successfully, but failed to attach the newly created volume to VM: ");
+                        message.append(cmd.getVirtualMachineId());
+                        message.append(" due to error: ");
+                        message.append(ex.getMessage());
+                        if (s_logger.isDebugEnabled()) {
+                            s_logger.debug(message, ex);
+                        }
+                        throw new CloudRuntimeException(message.toString());
+                    }
                 }
             }
             return volume;
@@ -701,10 +739,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    protected VolumeVO createVolumeFromSnapshot(VolumeVO volume, long snapshotId) throws StorageUnavailableException {
+    protected VolumeVO createVolumeFromSnapshot(VolumeVO volume, long snapshotId, Long vmId)
+            throws StorageUnavailableException {
         VolumeInfo createdVolume = null;
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
-        createdVolume = _volumeMgr.createVolumeFromSnapshot(volume, snapshot);
+
+        UserVmVO vm = null;
+        if (vmId != null) {
+            vm = _userVmDao.findById(vmId);
+        }
+        createdVolume = _volumeMgr.createVolumeFromSnapshot(volume, snapshot, vm);
 
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(), createdVolume.getDataCenterId(), createdVolume.getId(),
             createdVolume.getName(), createdVolume.getDiskOfferingId(), null, createdVolume.getSize(), Volume.class.getName(), createdVolume.getUuid());
@@ -986,11 +1030,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_ATTACH, eventDescription = "attaching volume", async = true)
     public Volume attachVolumeToVM(AttachVolumeCmd command) {
         Long vmId = command.getVirtualMachineId();
         Long volumeId = command.getId();
         Long deviceId = command.getDeviceId();
+        return attachVolumeToVM(vmId, volumeId, deviceId);
+    }
+
+
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_ATTACH, eventDescription = "attaching volume", async = true)
+    public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId) {
         Account caller = CallContext.current().getCallingAccount();
 
         // Check that the volume ID is valid
