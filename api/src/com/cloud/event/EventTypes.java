@@ -452,6 +452,9 @@ public class EventTypes {
     public static final String EVENT_CLEANUP_VM_RESERVATION = "VM.RESERVATION.CLEANUP";
 
     public static final String EVENT_UCS_ASSOCIATED_PROFILE = "UCS.ASSOCIATEPROFILE";
+    public static final String EVENT_UCS_INSTANTIATE_TEMPLATE_AND_ASSOCIATE = "UCS.TEMPLATEASSOCIATION";
+    public static final String EVENT_UCS_DISASSOCIATED_PROFILE = "UCS.DISASSOCIATEPROFILE";
+    public static final String EVENT_UCS_REFRESH_BLADES = "UCS.REFRESHBLADES";
 
     // Object store migration
     public static final String EVENT_MIGRATE_PREPARE_SECONDARY_STORAGE = "MIGRATE.PREPARE.SS";
