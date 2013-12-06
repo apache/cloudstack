@@ -534,18 +534,6 @@ def descSetupInBasicMode():
         cfg.value = v
         zs.globalConfig.append(cfg)
 
-    ''''add loggers'''
-    testClientLogger = logger()
-    testClientLogger.name = "TestClient"
-    testClientLogger.file = "/tmp/testclient.log"
-
-    testCaseLogger = logger()
-    testCaseLogger.name = "TestCase"
-    testCaseLogger.file = "/tmp/testcase.log"
-
-    zs.logger.append(testClientLogger)
-    zs.logger.append(testCaseLogger)
-
     return zs
 
 
@@ -669,18 +657,6 @@ def descSetupInEipMode():
         cfg.value = v
         zs.globalConfig.append(cfg)
 
-    ''''add loggers'''
-    testClientLogger = logger()
-    testClientLogger.name = "TestClient"
-    testClientLogger.file = "/tmp/testclient.log"
-
-    testCaseLogger = logger()
-    testCaseLogger.name = "TestCase"
-    testCaseLogger.file = "/tmp/testcase.log"
-
-    zs.logger.append(testClientLogger)
-    zs.logger.append(testCaseLogger)
-
     return zs
 
 
@@ -801,18 +777,6 @@ def descSetupInAdvancedMode():
         cfg.value = v
         zs.globalConfig.append(cfg)
 
-    ''''add loggers'''
-    testClientLogger = logger()
-    testClientLogger.name = "TestClient"
-    testClientLogger.file = "/tmp/testclient.log"
-
-    testCaseLogger = logger()
-    testCaseLogger.name = "TestCase"
-    testCaseLogger.file = "/tmp/testcase.log"
-
-    zs.logger.append(testClientLogger)
-    zs.logger.append(testCaseLogger)
-
     return zs
 
 '''sample code to generate setup configuration file'''
@@ -925,18 +889,6 @@ def descSetupInAdvancedsgMode():
         cfg.name = k
         cfg.value = v
         zs.globalConfig.append(cfg)
-
-    ''''add loggers'''
-    testClientLogger = logger()
-    testClientLogger.name = "TestClient"
-    testClientLogger.file = "/tmp/testclient.log"
-
-    testCaseLogger = logger()
-    testCaseLogger.name = "TestCase"
-    testCaseLogger.file = "/tmp/testcase.log"
-
-    zs.logger.append(testClientLogger)
-    zs.logger.append(testCaseLogger)
 
     return zs
 
