@@ -1135,59 +1135,62 @@
                                     }
                                 },
 
-				action: function(args) {
-				    if (isLdapEnabled()) {
-					alert(dictionary["error.could.not.change.your.password.because.ldap.is.enabled"]);
-					args.response.error({});
-				    } else {
-					cloudStack.dialog.createForm({
-					    noDialog: false,
-					    form: {
-						title: 'label.action.change.password',
-						fields: {
-						    newPassword: {
-							label: 'label.new.password',
-							isPassword: true,
-							validation: {
-							    required: true
-							},
-							id: 'newPassword'
-						    },
-						    'password-confirm': {
-							label: 'label.confirm.password',
-							validation: {
-							    required: true,
-							    equalTo: '#newPassword'
-							},
-							isPassword: true
-						    }
-						}
-					    }
-					})
-					var password = args.data.newPassword;
-					if (md5Hashed)
-					    password = $.md5(password);
+                                action: {
+                                    custom: function(args) {
+                                        var start = args.start;
+                                        var complete = args.complete;
+                                        var context = args.context;
 
-					var data = {
-					    id: args.context.users[0].id,
-					    password: password
-					};
-					$.ajax({
-					    url: createURL('updateUser'),
-					    data: data,
-					    type: "POST",
-					    success: function(json) {
-						args.response.success({
-						    data: json.updateuserresponse.user
-						});
-					    }
-					});
+                                        if (isLdapEnabled()) {
+                                            cloudStack.dialog.notice({ message: _l('error.could.not.change.your.password.because.ldap.is.enabled') });
+                                        } else {
+                                            cloudStack.dialog.createForm({
+                                                form: {
+                                                    title: 'label.action.change.password',
+                                                    fields: {
+                                                        newPassword: {
+                                                            label: 'label.new.password',
+                                                            isPassword: true,
+                                                            validation: {
+                                                                required: true
+                                                            },
+                                                            id: 'newPassword'
+                                                        },
+                                                        'password-confirm': {
+                                                            label: 'label.confirm.password',
+                                                            validation: {
+                                                                required: true,
+                                                                equalTo: '#newPassword'
+                                                            },
+                                                            isPassword: true
+                                                        }
+                                                    }
+                                                },
+                                                after: function(args) {
+                                                    start();
 
-				    }
-                                },
-                                notification: {
-                                    poll: function(args) {
-                                        args.complete();
+                                                    var password = args.data.newPassword;
+
+                                                    if (md5Hashed)
+                                                        password = $.md5(password);
+
+                                                    $.ajax({
+                                                        url: createURL('updateUser'),
+                                                        data: {
+                                                            id: context.users[0].id,
+                                                            password: password
+                                                        },
+                                                        type: "POST",
+                                                        success: function(json) {
+                                                            complete();
+                                                        },
+                                                        error: function(json) {
+                                                            complete({ error: parseXMLHttpResponse(json) });
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }
                                     }
                                 }
                             },
