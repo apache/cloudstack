@@ -21,7 +21,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
-
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 
 import com.cloud.utils.Pair;
@@ -43,7 +44,7 @@ public class SystemVmLoadScanner<T> {
     private final SystemVmLoadScanHandler<T> _scanHandler;
     private final ScheduledExecutorService _capacityScanScheduler;
     private final GlobalLock _capacityScanLock;
-
+    
     public SystemVmLoadScanner(SystemVmLoadScanHandler<T> scanHandler) {
         _scanHandler = scanHandler;
         _capacityScanScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory(scanHandler.getScanHandlerName()));
@@ -70,8 +71,16 @@ public class SystemVmLoadScanner<T> {
 
             @Override
             protected void runInContext() {
-                try {
+            	try {
+                	CallContext callContext = CallContext.current();
+                	assert(callContext != null);
+                	
+                	AsyncJobExecutionContext.registerPseudoExecutionContext(
+                		callContext.getCallingAccountId(), callContext.getCallingUserId());
+            		
                     reallyRun();
+                    
+                    AsyncJobExecutionContext.unregister();
                 } catch (Throwable e) {
                     s_logger.warn("Unexpected exception " + e.getMessage(), e);
                 }

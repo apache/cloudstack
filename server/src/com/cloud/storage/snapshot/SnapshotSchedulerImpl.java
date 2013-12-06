@@ -83,7 +83,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     protected VolumeDao _volsDao;
     @Inject
     protected ConfigurationDao _configDao;
-    @Inject
+
     protected AsyncJobDispatcher _asyncDispatcher;
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;    // 5 seconds
@@ -92,6 +92,14 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
     private Date _currentTimestamp;
     private TestClock _testTimerTask;
 
+    public AsyncJobDispatcher getAsyncJobDispatcher() {
+    	return _asyncDispatcher;
+    }
+    
+    public void setAsyncJobDispatcher(AsyncJobDispatcher dispatcher) {
+    	_asyncDispatcher = dispatcher;
+    }
+    
     private Date getNextScheduledTime(long policyId, Date currentTimestamp) {
         SnapshotPolicyVO policy = _snapshotPolicyDao.findById(policyId);
         Date nextTimestamp = null;
