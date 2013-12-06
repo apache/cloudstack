@@ -28,16 +28,9 @@ from optparse import OptionParser
 
 class deployDataCenters(object):
 
-    def __init__(self, cfgFile):
-        if not path.exists(cfgFile) \
-           and not path.exists(path.abspath(cfgFile)):
-            raise IOError("config file %s not found. please \
-                           specify a valid config file" % cfgFile)
-        self.configFile = cfgFile
-        '''
-        parsed configuration information
-        '''
-        self.config = None
+    def __init__(self, cfg, logger=None):
+        self.config = cfg
+        self.tcRunLogger = logger
 
     def addHosts(self, hosts, zoneId, podId, clusterId, hypervisor):
         if hosts is None:
@@ -507,51 +500,17 @@ class deployDataCenters(object):
         self.config.mgtSvr[0].securityKey = securityKey
         return apiKey, securityKey
 
-    def getCfg(self):
-        if self.config is not None:
-            return self.config
-        return None
-
     def loadCfg(self):
-        try:
-            self.config = configGenerator.getSetupConfig(self.configFile)
-        except:
-            raise cloudstackException.InvalidParameterException(
-                "Failed to load config %s" % self.configFile)
-
         ''' Retrieving Management Server Connection Details '''
         mgtDetails = self.config.mgtSvr[0]
         ''' Retrieving Database Connection Details'''
         dbSvrDetails = self.config.dbSvr
-        loggers = self.config.logger
-        testClientLogFile = None
-        self.testCaseLogFile = None
-        self.testResultLogFile = None
-        if loggers is not None and len(loggers) > 0:
-            for log in loggers:
-                if log.name == "TestClient":
-                    testClientLogFile = log.file
-                elif log.name == "TestCase":
-                    self.testCaseLogFile = log.file
-                elif log.name == "TestResult":
-                    self.testResultLogFile = log.file
-
-        testClientLogger = None
-        if testClientLogFile is not None:
-            testClientLogger = logging.getLogger("testclient.testengine.run")
-            fh = logging.FileHandler(testClientLogFile)
-            fh.setFormatter(logging.Formatter(
-                "%(asctime)s - %(levelname)s - %(name)s\ - %(message)s")
-            )
-            testClientLogger.addHandler(fh)
-            testClientLogger.setLevel(logging.INFO)
-        self.testClientLogger = testClientLogger
 
         self.testClient = \
             cloudstackTestClient.\
             cloudstackTestClient(mgtDetails,
                                  dbSvrDetails,
-                                 logging=self.testClientLogger)
+                                 logging=self.tcRunLogger)
 
         if mgtDetails.apiKey is None:
             mgtDetails.apiKey, mgtDetails.securityKey = self.registerApiKey()
@@ -560,8 +519,7 @@ class deployDataCenters(object):
                 cloudstackTestClient.cloudstackTestClient(
                     mgtDetails,
                     dbSvrDetails,
-                    logging=
-                    self.testClientLogger)
+                    logging=self.tcRunLogger)
 
         self.apiClient = self.testClient.getApiClient()
         """set hypervisor"""
@@ -606,7 +564,11 @@ if __name__ == "__main__":
                       ./datacenterCfg")
 
     (options, args) = parser.parse_args()
-    deploy = deployDataCenters(options.input)
+    from marvin.marvinLog import MarvinLog
+    cfg = configGenerator.getSetupConfig(options.input)
+    log_obj = MarvinLog("CSLog")
+    tcRunLogger = log_obj.setLogHandler("/tmp/debug.log")
+    deploy = deployDataCenters(cfg, tcRunLogger)
     deploy.deploy()
 
     """
