@@ -1633,7 +1633,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 Long vmId = volume.getInstanceId();
                 if ( vmId != null ) {
 	            UserVmVO userVm = _userVmDao.findById(vmId);
-                    if (userVm == null) {
+                    if (userVm != null) {
                         _userVmDao.loadDetails(userVm);
                         details.putAll(userVm.getDetails());
                     }
@@ -1643,11 +1643,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 details.putAll(cmd.getDetails());
             }
             if( !details.isEmpty()) {
-                List<VMTemplateDetailVO> tdetails = new ArrayList<VMTemplateDetailVO>();
-                for (String key : details.keySet()) {
-                    tdetails.add(new VMTemplateDetailVO(template.getId(), key, details.get(key)));
-                }
-                this._templateDetailsDao.saveDetails(tdetails);
+                privateTemplate.setDetails(details);
+                _tmpltDao.saveDetails(privateTemplate);
             }
 
             _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.template);
