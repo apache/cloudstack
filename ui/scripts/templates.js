@@ -625,7 +625,7 @@
                                         //zoneid: args.context.templates[0].zoneid //can't update template/ISO in only one zone. It always get updated in all zones.
                                     };
 
-                                    //if args.data.ispublic is undefined, do not pass ispublic to API call.
+                                    //if args.data.ispublic is undefined(i.e. checkbox is hidden), do not pass ispublic to API call.
                                     if (args.data.ispublic == "on") {
                                         $.extend(data, {
                                             ispublic: true
@@ -635,7 +635,7 @@
                                             ispublic: false
                                         });
                                     }
-                                    //if args.data.isfeatured is undefined, do not pass isfeatured to API call.
+                                    //if args.data.isfeatured is undefined(i.e. checkbox is hidden), do not pass isfeatured to API call.
                                     if (args.data.isfeatured == "on") {
                                         $.extend(data, {
                                             isfeatured: true
@@ -645,7 +645,7 @@
                                             isfeatured: false
                                         });
                                     }
-                                    //if args.data.isextractable is undefined, do not pass isextractable to API call.
+                                    //if args.data.isextractable is undefined(i.e. checkbox is hidden), do not pass isextractable to API call.
                                     if (args.data.isextractable == "on") {
                                         $.extend(data, {
                                             isextractable: true
@@ -1441,7 +1441,7 @@
                                         id: args.context.isos[0].id,
                                         //zoneid: args.context.isos[0].zoneid //can't update template/ISO in only one zone. It always get updated in all zones.
                                     };
-                                    //if args.data.ispublic is undefined, do not pass ispublic to API call.
+                                    //if args.data.ispublic is undefined(i.e. checkbox is hidden), do not pass ispublic to API call.
                                     if (args.data.ispublic == "on") {
                                         $.extend(data, {
                                             ispublic: true
@@ -1451,7 +1451,7 @@
                                             ispublic: false
                                         });
                                     }
-                                    //if args.data.isfeatured is undefined, do not pass isfeatured to API call.
+                                    //if args.data.isfeatured is undefined(i.e. checkbox is hidden), do not pass isfeatured to API call.
                                     if (args.data.isfeatured == "on") {
                                         $.extend(data, {
                                             isfeatured: true
@@ -1461,7 +1461,7 @@
                                             isfeatured: false
                                         });
                                     }
-                                    //if args.data.isextractable is undefined, do not pass isextractable to API call.
+                                    //if args.data.isextractable is undefined(i.e. checkbox is hidden), do not pass isextractable to API call.
                                     if (args.data.isextractable == "on") {
                                         $.extend(data, {
                                             isextractable: true
@@ -1701,7 +1701,12 @@
                                     isextractable: {
                                         label: 'extractable',
                                         isBoolean: true,
-                                        isEditable: true,
+                                        isEditable: function() {
+                                            if (isAdmin())
+                                                return true;
+                                            else
+                                                return false;
+                                        },
                                         converter: cloudStack.converters.toBooleanText
                                     },
                                     bootable: {
@@ -1717,7 +1722,12 @@
                                     isfeatured: {
                                         label: 'label.featured',
                                         isBoolean: true,
-                                        isEditable: true,
+                                        isEditable: function() {
+                                            if (isAdmin())
+                                                return true;
+                                            else
+                                                return false;
+                                        },
                                         converter: cloudStack.converters.toBooleanText
                                     },
                                     crossZones: {
