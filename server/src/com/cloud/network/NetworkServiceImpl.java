@@ -1471,7 +1471,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             isRecursive = true;
         }
 
-        Filter searchFilter = new Filter(NetworkVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(NetworkVO.class, "id", false, null, null);
         SearchBuilder<NetworkVO> sb = _networksDao.createSearchBuilder();
 
         if (forVpc != null) {
@@ -1590,7 +1590,35 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             networksToReturn = networksForDeploy;
         }
 
+        //Now apply pagination
+        //Most likely pageSize will never exceed int value, and we need integer to partition the listToReturn
+        boolean notNull = cmd.getStartIndex() != null && cmd.getPageSizeVal() != null;
+        if (notNull && cmd.getStartIndex() <= Integer.MAX_VALUE && cmd.getStartIndex() >= Integer.MIN_VALUE &&
+                cmd.getPageSizeVal() <= Integer.MAX_VALUE && cmd.getPageSizeVal() >= Integer.MIN_VALUE) {
+            int startIndex = cmd.getStartIndex().intValue() == 0 ? 0 : cmd.getStartIndex().intValue() - 1;
+            List<NetworkVO> wPagination = new ArrayList<NetworkVO>();
+            List<List<NetworkVO>> partitions = partitionNetworks(networksToReturn, cmd.getPageSizeVal().intValue());
+            if (startIndex< partitions.size()) {
+                wPagination = partitions.get(startIndex);
+            }
+            return wPagination;
+        }
+
         return networksToReturn;
+    }
+
+    private static List<List<NetworkVO>> partitionNetworks(List<NetworkVO> originalList,
+            int chunkSize) {
+        List<List<NetworkVO>> listOfChunks = new ArrayList<List<NetworkVO>>();
+        for (int i = 0; i < originalList.size() / chunkSize; i++) {
+            listOfChunks.add(originalList.subList(i * chunkSize, i * chunkSize
+                    + chunkSize));
+        }
+        if (originalList.size() % chunkSize != 0) {
+            listOfChunks.add(originalList.subList(originalList.size()
+                    - originalList.size() % chunkSize, originalList.size()));
+        }
+        return listOfChunks;
     }
 
     private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String guestIpType,
