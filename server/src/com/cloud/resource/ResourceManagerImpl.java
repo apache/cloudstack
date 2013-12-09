@@ -1279,7 +1279,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
             DetailVO guestOSDetail = _hostDetailsDao.findDetail(hostId, "guest.os.category.id");
 
-            if (guestOSCategory != null && !GuestOSCategoryVO.CATEGORY_NONE.equalsIgnoreCase(guestOSCategory.getName())) {
+            if (guestOSCategory != null) {
                 // Create/Update an entry for guest.os.category.id
                 if (guestOSDetail != null) {
                     guestOSDetail.setValue(String.valueOf(guestOSCategory.getId()));
