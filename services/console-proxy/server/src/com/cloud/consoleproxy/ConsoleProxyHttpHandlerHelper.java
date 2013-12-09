@@ -68,6 +68,8 @@ public class ConsoleProxyHttpHandlerHelper {
                     map.put("sessionref", param.getClientTunnelSession());
                 if (param.getTicket() != null)
                     map.put("ticket", param.getTicket());
+                if (param.getLocale() != null)
+                    map.put("locale", param.getLocale());
             }
         } else {
             // we no longer accept information from parameter other than token
@@ -85,5 +87,6 @@ public class ConsoleProxyHttpHandlerHelper {
         map.remove("consoleurl");
         map.remove("sessionref");
         map.remove("ticket");
+        map.remove("locale");
     }
 }
