@@ -48,6 +48,7 @@ class MarvinPlugin(Plugin):
         self.conf = None
         self.debugStream = sys.stdout
         self.testRunner = None
+        self.testResult = SUCCESS
         self.startTime = None
         self.testName = None
         self.tcRunLogger = None
@@ -122,7 +123,10 @@ class MarvinPlugin(Plugin):
     def startTest(self, test):
         """
         Currently used to record start time for tests
+        Dump Start Msg of TestCase to Log
         """
+        self.tcRunLogger.debug("::::::::::::STARTED : TC: " +
+                               str(self.testName) + " :::::::::::")
         self.startTime = time.time()
 
     def getErrorInfo(self, err):
@@ -141,6 +145,7 @@ class MarvinPlugin(Plugin):
         err_msg = self.getErrorInfo(err)
         self.tcRunLogger.fatal("%s: %s: %s" %
                                (EXCEPTION, self.testName, err_msg))
+        self.testResult = EXCEPTION
 
     def handleFailure(self, test, err):
         '''
@@ -149,6 +154,7 @@ class MarvinPlugin(Plugin):
         err_msg = self.getErrorInfo(err)
         self.tcRunLogger.fatal("%s: %s: %s" %
                                (FAILED, self.testName, err_msg))
+        self.testResult = FAILED
 
     def startMarvin(self):
         '''
@@ -186,10 +192,11 @@ class MarvinPlugin(Plugin):
             totTime = int(endTime - self.startTime)
             self.tcRunLogger.debug("TestCaseName: %s; Time Taken: "
                                    "%s Seconds; "
-                                   "StartTime: %s; EndTime: %s"
+                                   "StartTime: %s; EndTime: %s; Result: %s"
                                    % (self.testName, str(totTime),
                                       str(time.ctime(self.startTime)),
-                                      str(time.ctime(endTime))))
+                                      str(time.ctime(endTime)),
+                                      self.testResult))
 
     def _injectClients(self, test):
         setattr(test, "debug", self.tcRunLogger.debug)
