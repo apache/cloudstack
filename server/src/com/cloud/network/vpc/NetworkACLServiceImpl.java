@@ -23,6 +23,8 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.network.vpc.dao.VpcDao;
+import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -87,6 +89,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     VpcManager _vpcMgr;
     @Inject
     EntityManager _entityMgr;
+    @Inject
+    VpcDao _vpcDao;
 
     @Override
     public NetworkACL createNetworkACL(String name, String description, long vpcId) {
@@ -105,13 +109,19 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     }
 
     @Override
-    public Pair<List<? extends NetworkACL>, Integer> listNetworkACLs(Long id, String name, Long networkId, Long vpcId) {
+    public Pair<List<? extends NetworkACL>, Integer> listNetworkACLs(ListNetworkACLListsCmd cmd) {
+        Long id = cmd.getId();
+        String name = cmd.getName();
+        Long networkId = cmd.getNetworkId();
+        Long vpcId = cmd.getVpcId();
         SearchBuilder<NetworkACLVO> sb = _networkACLDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("name", sb.entity().getName(), Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), Op.IN);
 
-        if (networkId != null) {
+        Account caller = CallContext.current().getCallingAccount();
+
+        if(networkId != null){
             SearchBuilder<NetworkVO> network = _networkDao.createSearchBuilder();
             network.and("networkId", network.entity().getId(), Op.EQ);
             sb.join("networkJoin", network, sb.entity().getId(), network.entity().getNetworkACLId(), JoinBuilder.JoinType.INNER);
@@ -126,9 +136,44 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             sc.setParameters("name", name);
         }
 
-        if (vpcId != null) {
+        if(vpcId != null){
+            Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
+            if(vpc == null){
+                throw new InvalidParameterValueException("Unable to find VPC");
+            }
+            _accountMgr.checkAccess(caller, null, true, vpc);
             //Include vpcId 0 to list default ACLs
             sc.setParameters("vpcId", vpcId, 0);
+        } else {
+            //ToDo: Add accountId to network_acl table for permission check
+
+            // VpcId is not specified. Find permitted VPCs for the caller
+            // and list ACLs belonging to the permitted VPCs
+            List<Long> permittedAccounts = new ArrayList<Long>();
+            Long domainId = cmd.getDomainId();
+            boolean isRecursive = cmd.isRecursive();
+            String accountName = cmd.getAccountName();
+            Long projectId = cmd.getProjectId();
+            boolean listAll = cmd.listAll();
+            Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
+                    ListProjectResourcesCriteria>(domainId, isRecursive, null);
+            _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
+                    listAll, false);
+            domainId = domainIdRecursiveListProject.first();
+            isRecursive = domainIdRecursiveListProject.second();
+            ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+            SearchBuilder<VpcVO> sbVpc = _vpcDao.createSearchBuilder();
+            _accountMgr.buildACLSearchBuilder(sbVpc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            SearchCriteria<VpcVO> scVpc = sbVpc.create();
+            _accountMgr.buildACLSearchCriteria(scVpc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            List<VpcVO> vpcs = _vpcDao.search(scVpc, null);
+            List<Long> vpcIds = new ArrayList<Long>();
+            for (VpcVO vpc : vpcs) {
+                vpcIds.add(vpc.getId());
+            }
+            //Add vpc_id 0 to list default ACLs
+            vpcIds.add(0L);
+            sc.setParameters("vpcId", vpcIds.toArray());
         }
 
         if (networkId != null) {
@@ -419,20 +464,10 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         String protocol = cmd.getProtocol();
         String action = cmd.getAction();
         Map<String, String> tags = cmd.getTags();
-
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedAccounts = new ArrayList<Long>();
-
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
-            new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
-        Long domainId = domainIdRecursiveListProject.first();
-        Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter filter = new Filter(NetworkACLItemVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<NetworkACLItemVO> sb = _networkACLItemDao.createSearchBuilder();
-        //_accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("aclId", sb.entity().getAclId(), Op.EQ);
@@ -452,8 +487,14 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
         }
 
+        if(aclId == null){
+            //Join with network_acl table when aclId is not specified to list acl_items within permitted VPCs
+            SearchBuilder<NetworkACLVO> vpcSearch = _networkACLDao.createSearchBuilder();
+            vpcSearch.and("vpcId", vpcSearch.entity().getVpcId(), Op.IN);
+            sb.join("vpcSearch", vpcSearch, sb.entity().getAclId(), vpcSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+
         SearchCriteria<NetworkACLItemVO> sc = sb.create();
-        // _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -468,8 +509,48 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             sc.setParameters("trafficType", trafficType);
         }
 
-        if (aclId != null) {
+        if(aclId != null){
+            // Get VPC and check access
+            NetworkACL acl = _networkACLDao.findById(aclId);
+            if(acl.getVpcId() != 0){
+                Vpc vpc = _vpcDao.findById(acl.getVpcId());
+                if(vpc == null){
+                    throw new InvalidParameterValueException("Unable to find VPC associated with acl");
+                }
+                _accountMgr.checkAccess(caller, null, true, vpc);
+            }
             sc.setParameters("aclId", aclId);
+        } else {
+            //ToDo: Add accountId to network_acl_item table for permission check
+
+
+            // aclId is not specified
+            // List permitted VPCs and filter aclItems
+            List<Long> permittedAccounts = new ArrayList<Long>();
+            Long domainId = cmd.getDomainId();
+            boolean isRecursive = cmd.isRecursive();
+            String accountName = cmd.getAccountName();
+            Long projectId = cmd.getProjectId();
+            boolean listAll = cmd.listAll();
+            Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
+                    ListProjectResourcesCriteria>(domainId, isRecursive, null);
+            _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
+                    listAll, false);
+            domainId = domainIdRecursiveListProject.first();
+            isRecursive = domainIdRecursiveListProject.second();
+            ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+            SearchBuilder<VpcVO> sbVpc = _vpcDao.createSearchBuilder();
+            _accountMgr.buildACLSearchBuilder(sbVpc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            SearchCriteria<VpcVO> scVpc = sbVpc.create();
+            _accountMgr.buildACLSearchCriteria(scVpc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            List<VpcVO> vpcs = _vpcDao.search(scVpc, null);
+            List<Long> vpcIds = new ArrayList<Long>();
+            for (VpcVO vpc : vpcs) {
+                vpcIds.add(vpc.getId());
+            }
+            //Add vpc_id 0 to list acl_items in default ACL
+            vpcIds.add(0L);
+            sc.setJoinParameters("vpcSearch", "vpcId", vpcIds.toArray());
         }
 
         if (protocol != null) {
