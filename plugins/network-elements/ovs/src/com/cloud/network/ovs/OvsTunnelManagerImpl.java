@@ -19,6 +19,7 @@ package com.cloud.network.ovs;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 import javax.ejb.Local;
@@ -28,7 +29,6 @@ import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.AgentManager;
@@ -60,6 +60,7 @@ import com.cloud.network.ovs.dao.OvsTunnelInterfaceVO;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkDao;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkVO;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
@@ -103,28 +104,11 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
-		return true;
-	}
+        _executorPool = Executors.newScheduledThreadPool(10, new NamedThreadFactory("OVS"));
+        _cleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("OVS-Cleanup"));
 
-	@DB
-	protected OvsTunnelNetworkVO createTunnelRecord(long from, long to, long networkId, int key) {
-		OvsTunnelNetworkVO ta = null;
-		try {
-			ta = new OvsTunnelNetworkVO(from, to, key, networkId);
-			OvsTunnelNetworkVO lock = _tunnelNetworkDao.acquireInLockTable(Long
-					.valueOf(1));
-			if (lock == null) {
-				s_logger.warn("Cannot lock table ovs_tunnel_account");
-				return null;
-			}
-			_tunnelNetworkDao.persist(ta);
-			_tunnelNetworkDao.releaseFromLockTable(lock.getId());
-		} catch (EntityExistsException e) {
-			s_logger.debug("A record for the tunnel from " + from + " to " + to
-					+ " already exists");
-		}
-		return ta;
-	}
+        return true;
+    }
 
 	@DB
 	protected OvsTunnelInterfaceVO createInterfaceRecord(String ip,
@@ -163,14 +147,6 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 		return null;
 	}
 
-        if (_isEnabled) {
-            _executorPool = Executors.newScheduledThreadPool(10, new NamedThreadFactory("OVS"));
-            _cleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("OVS-Cleanup"));
-        }
-
-        return true;
-    }
-
     @DB
     protected OvsTunnelNetworkVO createTunnelRecord(long from, long to, long networkId, int key) {
         OvsTunnelNetworkVO ta = null;
@@ -189,37 +165,6 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         return ta;
     }
 
-    @DB
-    protected OvsTunnelInterfaceVO createInterfaceRecord(String ip, String netmask, String mac, long hostId, String label) {
-        OvsTunnelInterfaceVO ti = null;
-        try {
-            ti = new OvsTunnelInterfaceVO(ip, netmask, mac, hostId, label);
-            //TODO: Is locking really necessary here?
-            OvsTunnelInterfaceVO lock = _tunnelInterfaceDao.acquireInLockTable(Long.valueOf(1));
-            if (lock == null) {
-                s_logger.warn("Cannot lock table ovs_tunnel_account");
-                return null;
-            }
-            _tunnelInterfaceDao.persist(ti);
-            _tunnelInterfaceDao.releaseFromLockTable(lock.getId());
-        } catch (EntityExistsException e) {
-            s_logger.debug("A record for the interface for network " + label + " on host id " + hostId + " already exists");
-        }
-        return ti;
-    }
-
-    private String handleFetchInterfaceAnswer(Answer[] answers, Long hostId) {
-        OvsFetchInterfaceAnswer ans = (OvsFetchInterfaceAnswer)answers[0];
-        if (ans.getResult()) {
-            if (ans.getIp() != null && !("".equals(ans.getIp()))) {
-                OvsTunnelInterfaceVO ti = createInterfaceRecord(ans.getIp(), ans.getNetmask(), ans.getMac(), hostId, ans.getLabel());
-                return ti.getIp();
-            }
-        }
-        // Fetch interface failed!
-        s_logger.warn("Unable to fetch the IP address for the GRE tunnel endpoint" + ans.getDetails());
-        return null;
-    }
 
     private void handleCreateTunnelAnswer(Answer[] answers) {
         OvsCreateTunnelAnswer r = (OvsCreateTunnelAnswer)answers[0];
