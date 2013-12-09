@@ -28,7 +28,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.ClusterDetailsVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
@@ -38,7 +37,6 @@ import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.storage.Storage;
 import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
@@ -159,6 +157,8 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
                                 "GROUP BY cluster.cluster_id)  clusterList " +
                         "WHERE clusterList.ratio > clusterList.value; ";
 
+    private static final String  FIND_CLUSTER_CONSUMPTION_RATIO = "select ( (sum(capacity.used_capacity) + sum(capacity.reserved_capacity) + ?)/sum(capacity.total_capacity) ) " +
+            "from op_host_capacity capacity where cluster_id = ? and capacity_type = ?;";
 
 
     public CapacityDaoImpl() {
@@ -873,4 +873,26 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             s_logger.warn("Error updating CapacityVO", e);
         }
     }
+
+    @Override
+    public float findClusterConsumption(Long clusterId, short capacityType, long computeRequested){
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        StringBuilder sql = new StringBuilder(FIND_CLUSTER_CONSUMPTION_RATIO);
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+
+            pstmt.setLong(1, computeRequested);
+            pstmt.setLong(2, clusterId);
+            pstmt.setShort(3, capacityType);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                return rs.getFloat(1);
+            }
+        } catch (Exception e) {
+            s_logger.warn("Error checking cluster threshold", e);
+        }
+        return 0;
+    }
+
 }
