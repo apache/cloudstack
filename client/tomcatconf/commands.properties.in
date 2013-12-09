@@ -549,10 +549,6 @@ listSrxFirewalls=1
 listSrxFirewallNetworks=1
 
 #### Palo Alto firewall commands
-addExternalFirewall=1
-deleteExternalFirewall=1
-listExternalFirewalls=1
-
 addPaloAltoFirewall=1
 deletePaloAltoFirewall=1
 configurePaloAltoFirewall=1
