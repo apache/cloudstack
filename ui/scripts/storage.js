@@ -1920,7 +1920,7 @@
         if (jsonObj.hypervisor != "Ovm" && jsonObj.state == "Ready") {        	
         	if (jsonObj.hypervisor == 'KVM') { 
         		if (jsonObj.vmstate == 'Running') {        			
-        			if (g_KVMsnapshotenabled == true) { //"kvm.snapshot.enabled" flag should be taken to account only when snapshot is being created for Running vm (CLOUDSTACK-4428)
+        			if (g_kvmsnapshotenabled == true) { //"kvm.snapshot.enabled" flag should be taken to account only when snapshot is being created for Running vm (CLOUDSTACK-4428)
             			allowedActions.push("takeSnapshot");
         	            allowedActions.push("recurringSnapshot");
             		}         			
