@@ -394,7 +394,7 @@ class TestEgressFWRules(cloudstackTestCase):
             cleanup_resources(self.apiclient, reversed(self.cleanup))
             self.debug("Cleanup complete!")
         except Exception as e:
-            self.debug("Warning! Exception in tearDown: %s" % e)
+            self.fail("Warning! Cleanup failed: %s" % e)            
 
     @attr(tags = ["advanced"])
     def test_01_egress_fr1(self):
