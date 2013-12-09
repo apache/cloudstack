@@ -95,6 +95,17 @@ class MarvinPlugin(Plugin):
             return True
         return None
 
+    def wantFile(self, filename):
+        '''
+        Only python files will be used as test modules
+        '''
+        parts = filename.split(os.path.sep)
+        base, ext = os.path.splitext(parts[-1])
+        if ext == '.py':
+            return True
+        else:
+            return False
+
     def loadTestsFromTestCase(self, cls):
         if cls.__name__ != 'cloudstackTestCase':
             self.identifier = cls.__name__
