@@ -2184,7 +2184,7 @@
         } else if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
             allowedActions.push("restart");
-            if (jsonObj.hypervisor != 'KVM' || g_KVMsnapshotenabled == true)
+            if (jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true)
                 allowedActions.push("snapshot");
             allowedActions.push("destroy");            
             allowedActions.push("reset");
@@ -2214,7 +2214,7 @@
             allowedActions.push("start");
             allowedActions.push("destroy");
             allowedActions.push("reset");
-            if (jsonObj.hypervisor != 'KVM' || g_KVMsnapshotenabled == true)
+            if (jsonObj.hypervisor != 'KVM' || g_kvmsnapshotenabled == true)
                 allowedActions.push("snapshot");
             allowedActions.push("scaleUp");  //when vm is stopped, scaleUp is supported for all hypervisors 
             allowedActions.push("changeAffinity");
