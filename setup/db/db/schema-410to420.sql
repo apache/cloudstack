@@ -680,7 +680,7 @@ ALTER TABLE `cloud`.`user_vm` MODIFY user_data TEXT(32768);
 
 -- END: support for LXC
 
-CREATE TABLE `cloud`.`vm_snapshots` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_snapshots` (
   `id` bigint(20) unsigned NOT NULL auto_increment COMMENT 'Primary Key',
   `uuid` varchar(40) NOT NULL,
   `name` varchar(255) NOT NULL,
