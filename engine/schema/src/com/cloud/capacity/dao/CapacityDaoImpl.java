@@ -27,6 +27,9 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.dc.ClusterDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -161,19 +164,24 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     *     query from the configuration table
     *
     *     */
-    private static final String LIST_CLUSTERS_CROSSING_THRESHOLD =
-        "SELECT clusterList.cluster_id "
-            + "FROM (SELECT cluster.cluster_id cluster_id, ( (sum(cluster.used) + sum(cluster.reserved) + ?)/sum(cluster.total) ) ratio, cluster.configValue value "
-            + "FROM (SELECT capacity.cluster_id cluster_id, capacity.used_capacity used, capacity.reserved_capacity reserved, capacity.total_capacity * overcommit.value total, "
-            + "CASE (SELECT count(*) FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ? ) "
-            + "WHEN 1 THEN (CASE WHEN (SELECT details.value FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ?) is NULL "
-            + "THEN (SELECT config.value FROM `cloud`.`configuration` config WHERE config.name = ?)"
-            + "ELSE (SELECT details.value FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ? ) END )"
-            + "ELSE (    SELECT config.value FROM `cloud`.`configuration` config WHERE config.name = ?) " + "END configValue "
-            + "FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`cluster_details` overcommit ON overcommit.cluster_id = capacity.cluster_id "
-            + "WHERE capacity.data_center_id = ? AND capacity.capacity_type = ? AND capacity.total_capacity > 0 AND overcommit.name = ?) cluster " +
 
-            "GROUP BY cluster.cluster_id)  clusterList " + "WHERE clusterList.ratio > clusterList.value; ";
+    private static final String LIST_CLUSTERS_CROSSING_THRESHOLD = "SELECT clusterList.cluster_id " +
+                       "FROM (	SELECT cluster.cluster_id cluster_id, ( (sum(cluster.used) + sum(cluster.reserved) + ?)/sum(cluster.total) ) ratio, cluster.configValue value " +
+                                "FROM (	SELECT capacity.cluster_id cluster_id, capacity.used_capacity used, capacity.reserved_capacity reserved, capacity.total_capacity * overcommit.value total, " +
+                                            "CASE (SELECT count(*) FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ? ) " +
+                                                "WHEN 1 THEN (	CASE WHEN (SELECT details.value FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ?) is NULL " +
+                                                                    "THEN (SELECT config.value FROM `cloud`.`configuration` config WHERE config.name = ?)" +
+                                                                    "ELSE (SELECT details.value FROM `cloud`.`cluster_details` details WHERE details.cluster_id = capacity.cluster_id AND details.name = ? ) END )"  +
+                                                "ELSE (	SELECT config.value FROM `cloud`.`configuration` config WHERE config.name = ?) " +
+                                            "END configValue " +
+                                        "FROM `cloud`.`op_host_capacity` capacity INNER JOIN `cloud`.`cluster_details` overcommit ON overcommit.cluster_id = capacity.cluster_id " +
+                                        "WHERE capacity.data_center_id = ? AND capacity.capacity_type = ? AND capacity.total_capacity > 0 AND overcommit.name = ?) cluster " +
+
+                                "GROUP BY cluster.cluster_id)  clusterList " +
+                        "WHERE clusterList.ratio > clusterList.value; ";
+
+    private static final String  FIND_CLUSTER_CONSUMPTION_RATIO = "select ( (sum(capacity.used_capacity) + sum(capacity.reserved_capacity) + ?)/sum(capacity.total_capacity) ) " +
+            "from op_host_capacity capacity where cluster_id = ? and capacity_type = ?;";
 
     public CapacityDaoImpl() {
         _hostIdTypeSearch = createSearchBuilder();
@@ -883,4 +891,26 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             s_logger.warn("Error updating CapacityVO", e);
         }
     }
+
+    @Override
+    public float findClusterConsumption(Long clusterId, short capacityType, long computeRequested){
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        StringBuilder sql = new StringBuilder(FIND_CLUSTER_CONSUMPTION_RATIO);
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+
+            pstmt.setLong(1, computeRequested);
+            pstmt.setLong(2, clusterId);
+            pstmt.setShort(3, capacityType);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                return rs.getFloat(1);
+            }
+        } catch (Exception e) {
+            s_logger.warn("Error checking cluster threshold", e);
+        }
+        return 0;
+    }
+
 }

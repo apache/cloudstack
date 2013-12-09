@@ -36,6 +36,8 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.event.UsageEventVO;
 import com.cloud.uuididentity.UUIDManager;
+import com.cloud.capacity.Capacity;
+import com.cloud.exception.InsufficientServerCapacityException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -1306,6 +1308,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         int currentCpu = currentServiceOffering.getCpu();
         int currentMemory = currentServiceOffering.getRamSize();
         int currentSpeed = currentServiceOffering.getSpeed();
+        int memoryDiff = newMemory - currentMemory;
+        int cpuDiff =  newCpu*newSpeed - currentCpu*currentSpeed;
 
         // Don't allow to scale when (Any of the new values less than current values) OR (All current and new values are same)
         if ((newSpeed < currentSpeed || newMemory < currentMemory || newCpu < currentCpu) ||
@@ -1328,12 +1332,22 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vmInstance.getState().equals(State.Running)) {
             int retry = _scaleRetry;
             ExcludeList excludes = new ExcludeList();
+
+            // Check zone wide flag
             boolean enableDynamicallyScaleVm = EnableDynamicallyScaleVm.valueIn(vmInstance.getDataCenterId());
             if (!enableDynamicallyScaleVm) {
                 throw new PermissionDeniedException("Dynamically scaling virtual machines is disabled for this zone, please contact your admin");
             }
+
+            // Check vm flag
             if (!vmInstance.isDynamicallyScalable()) {
                 throw new CloudRuntimeException("Unable to Scale the vm: " + vmInstance.getUuid() + " as vm does not have tools to support dynamic scaling");
+            }
+
+            // Check disable threshold for cluster is not crossed
+            HostVO host = _hostDao.findById(vmInstance.getHostId());
+            if(_capacityMgr.checkIfClusterCrossesThreshold(host.getClusterId(), cpuDiff, memoryDiff)){
+                throw new CloudRuntimeException("Unable to scale vm: " + vmInstance.getUuid() + " due to insufficient resources");
             }
 
             while (retry-- != 0) { // It's != so that it can match -1.
@@ -1344,15 +1358,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     if (newCpu > currentCpu) {
                         _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.cpu, new Long(newCpu - currentCpu));
                     }
-                    if (newMemory > currentMemory) {
-                        _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long(newMemory - currentMemory));
+
+                    if (memoryDiff > 0) {
+                        _resourceLimitMgr.incrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long (memoryDiff));
                     }
 
                     // #1 Check existing host has capacity
                     if( !excludes.shouldAvoid(ApiDBUtils.findHostById(vmInstance.getHostId())) ){
                         existingHostHasCapacity = _capacityMgr.checkIfHostHasCpuCapability(vmInstance.getHostId(), newCpu, newSpeed)
-                                && _capacityMgr.checkIfHostHasCapacity(vmInstance.getHostId(), newServiceOffering.getSpeed() - currentServiceOffering.getSpeed(),
-                                (newServiceOffering.getRamSize() - currentServiceOffering.getRamSize()) * 1024L * 1024L, false, ApiDBUtils.getCpuOverprovisioningFactor(), 1f, false); // TO DO fill it with mem.
+                                && _capacityMgr.checkIfHostHasCapacity(vmInstance.getHostId(), cpuDiff,
+                                (memoryDiff) * 1024L * 1024L, false, _capacityMgr.getClusterOverProvisioningFactor(host.getClusterId(), Capacity.CAPACITY_TYPE_CPU),
+                                _capacityMgr.getClusterOverProvisioningFactor(host.getClusterId(), Capacity.CAPACITY_TYPE_MEMORY), false);
                         excludes.addHost(vmInstance.getHostId());
                     }
 
@@ -1392,8 +1408,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         if (newCpu > currentCpu) {
                             _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.cpu, new Long(newCpu - currentCpu));
                         }
-                        if (newMemory > currentMemory) {
-                            _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long(newMemory - currentMemory));
+
+                        if (memoryDiff > 0) {
+                            _resourceLimitMgr.decrementResourceCount(caller.getAccountId(), ResourceType.memory, new Long (memoryDiff));
                         }
                     }
                 }

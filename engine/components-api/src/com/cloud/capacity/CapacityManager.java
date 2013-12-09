@@ -91,4 +91,15 @@ public interface CapacityManager {
      * @return true if the count of host's running VMs >= hypervisor limit
      */
     boolean checkIfHostHasCpuCapability(long hostId, Integer cpuNum, Integer cpuSpeed);
+
+    /**
+     * Check if cluster will cross threshold if the cpu/memory requested are accomodated
+     * @param clusterId the clusterId to check
+     * @param cpuRequested cpu requested
+     * @param ramRequested cpu requested
+     * @return true if the customer crosses threshold, false otherwise
+     */
+    boolean checkIfClusterCrossesThreshold(Long clusterId, Integer cpuRequested, long ramRequested);
+
+    float getClusterOverProvisioningFactor(Long clusterId, short capacityType);
 }
