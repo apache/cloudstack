@@ -678,21 +678,60 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     }
 
     @Override
-    public List<Long> getGrantedDomains(long accountId, AclEntityType entityType, String action) {
-        // TODO Auto-generated method stub
-        return null;
+    public List<Long> getGrantedDomains(long accountId, String action) {
+        // Get the static Policies of the Caller
+        List<AclPolicy> policies = listAclPolicies(accountId);
+        // for each policy, find granted permission with Domain scope
+        List<Long> domainIds = new ArrayList<Long>();
+        for (AclPolicy policy : policies) {
+            List<AclPolicyPermissionVO> pp = _policyPermissionDao.listGrantedByActionAndScope(policy.getId(), action, PermissionScope.DOMAIN);
+            if (pp != null) {
+                for (AclPolicyPermissionVO p : pp) {
+                    if (p.getScopeId() != null) {
+                        domainIds.add(p.getScopeId());
+                    }
+                }
+            }
+        }
+        return domainIds;
     }
 
     @Override
-    public List<Long> getGrantedAccounts(long accountId, AclEntityType entityType, String action) {
-        // TODO Auto-generated method stub
-        return null;
+    public List<Long> getGrantedAccounts(long accountId, String action) {
+        // Get the static Policies of the Caller
+        List<AclPolicy> policies = listAclPolicies(accountId);
+        // for each policy, find granted permission with Account scope
+        List<Long> accountIds = new ArrayList<Long>();
+        for (AclPolicy policy : policies) {
+            List<AclPolicyPermissionVO> pp = _policyPermissionDao.listGrantedByActionAndScope(policy.getId(), action, PermissionScope.ACCOUNT);
+            if (pp != null) {
+                for (AclPolicyPermissionVO p : pp) {
+                    if (p.getScopeId() != null) {
+                        accountIds.add(p.getScopeId());
+                    }
+                }
+            }
+        }
+        return accountIds;
     }
 
     @Override
-    public List<Long> getGrantedResources(long accountId, AclEntityType entityType, String action) {
-        // TODO Auto-generated method stub
-        return null;
+    public List<Long> getGrantedResources(long accountId, String action) {
+        // Get the static Policies of the Caller
+        List<AclPolicy> policies = listAclPolicies(accountId);
+        // for each policy, find granted permission with Resource scope
+        List<Long> entityIds = new ArrayList<Long>();
+        for (AclPolicy policy : policies) {
+            List<AclPolicyPermissionVO> pp = _policyPermissionDao.listGrantedByActionAndScope(policy.getId(), action, PermissionScope.RESOURCE);
+            if (pp != null) {
+                for (AclPolicyPermissionVO p : pp) {
+                    if (p.getScopeId() != null) {
+                        entityIds.add(p.getScopeId());
+                    }
+                }
+            }
+        }
+        return entityIds;
     }
 
 }

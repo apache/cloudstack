@@ -2610,9 +2610,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // search for policy permissions associated with caller to get all his authorized domains, accounts, and resources
             // Assumption: if a domain is in grantedDomains, then all the accounts under this domain will not be returned in "grantedAccounts". Similarly, if an account
             // is in grantedAccounts, then all the resources owned by this account will not be returned in "grantedResources".
-            List<Long> grantedDomains = _aclService.getGrantedDomains(caller.getId(), AclEntityType.VM, action);
-            List<Long> grantedAccounts = _aclService.getGrantedAccounts(caller.getId(), AclEntityType.VM, action);
-            List<Long> grantedResources = _aclService.getGrantedResources(caller.getId(), AclEntityType.VM, action);
+            List<Long> grantedDomains = _aclService.getGrantedDomains(caller.getId(), action);
+            List<Long> grantedAccounts = _aclService.getGrantedAccounts(caller.getId(), action);
+            List<Long> grantedResources = _aclService.getGrantedResources(caller.getId(), action);
 
             if (domainId != null) {
                 // specific domain is specified
