@@ -23,7 +23,7 @@ public class ConsoleProxyClientParam {
 	private String clientHostPassword;
 	private String clientTag;
 	private String ticket;
-	
+	private String locale;
 	private String clientTunnelUrl;
 	private String clientTunnelSession;
 	
@@ -95,6 +95,14 @@ public class ConsoleProxyClientParam {
 	
 	public void setAjaxSessionId(String ajaxSessionId) {
 		this.ajaxSessionId = ajaxSessionId;
+	}
+
+	public String getLocale() {
+		return this.locale;
+	}
+
+	public void setLocale(String locale) {
+		this.locale = locale;
 	}
 
 	public String getClientMapKey() {

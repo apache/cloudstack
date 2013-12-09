@@ -69,22 +69,24 @@ public class ConsoleProxyHttpHandlerHelper {
                     map.put("sessionref", param.getClientTunnelSession());
                 if(param.getTicket() != null)
                     map.put("ticket", param.getTicket());
+                if(param.getLocale() != null)
+                    map.put("locale", param.getLocale());
             }
         } else {
-        	// we no longer accept information from parameter other than token 
-        	guardUserInput(map);
+               // we no longer accept information from parameter other than token 
+               guardUserInput(map);
         }
-        
         return map;
     }
-    
+
     private static void guardUserInput(Map<String, String> map) {
-    	map.remove("host");
-    	map.remove("port");
-    	map.remove("tag");
-    	map.remove("sid");
-    	map.remove("consoleurl");
-    	map.remove("sessionref");
-       	map.remove("ticket");
+        map.remove("host");
+        map.remove("port");
+        map.remove("tag");
+        map.remove("sid");
+        map.remove("consoleurl");
+        map.remove("sessionref");
+        map.remove("ticket");
+        map.remove("locale");
     }
 }

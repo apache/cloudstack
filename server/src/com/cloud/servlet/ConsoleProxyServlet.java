@@ -58,9 +58,10 @@ import com.cloud.utils.Ternary;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
-
+import com.cloud.vm.dao.UserVmDetailsDao;
 /**
  * Thumbnail access : /console?cmd=thumbnail&vm=xxx&w=xxx&h=xxx
  * Console access : /conosole?cmd=access&vm=xxx
@@ -77,8 +78,8 @@ public class ConsoleProxyServlet extends HttpServlet {
     @Inject VirtualMachineManager _vmMgr;
     @Inject ManagementServer _ms;
     @Inject IdentityService _identityService;
-    @Inject
-    EntityManager _entityMgr;
+    @Inject EntityManager _entityMgr;
+    @Inject UserVmDetailsDao _userVmDetailsDao;
 
     static ManagementServer s_ms;
 
@@ -389,6 +390,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 
         Ternary<String, String, String> parsedHostInfo = parseHostInfo(portInfo.first());
 
+        UserVmDetailVO details = _userVmDetailsDao.findDetail(vm.getId(), "keyboard");
         String sid = vm.getVncPassword();
         String tag = vm.getUuid();
         String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
@@ -399,6 +401,9 @@ public class ConsoleProxyServlet extends HttpServlet {
         param.setClientHostPassword(sid);
         param.setClientTag(tag);
         param.setTicket(ticket);
+        if (details != null) {
+            param.setLocale(details.getValue());
+        }
         if(parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
             param.setClientTunnelUrl(parsedHostInfo.second());
             param.setClientTunnelSession(parsedHostInfo.third());
