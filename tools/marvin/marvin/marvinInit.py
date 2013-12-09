@@ -129,7 +129,7 @@ class MarvinInit:
                                                           "exceptions.txt"
             tc_run_log = self.logFolderPath + "/runinfo.txt"
             self.__tcRunDebugFile = open(self.logFolderPath +
-                                         "/tcresults.txt", "w")
+                                         "/results.txt", "w")
 
             log_obj = MarvinLog("CSLog")
             self.__tcRunLogger = log_obj.setLogHandler(tc_run_log)
