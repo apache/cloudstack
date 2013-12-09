@@ -461,6 +461,7 @@ public class LibvirtVMDef {
         public void defFileBasedDisk(String filePath, String diskLabel, diskBus bus, diskFmtType diskFmtType) {
             _diskType = diskType.FILE;
             _deviceType = deviceType.DISK;
+            _diskCacheMode = diskCacheMode.NONE;
             _sourcePath = filePath;
             _diskLabel = diskLabel;
             _diskFmtType = diskFmtType;
@@ -488,6 +489,7 @@ public class LibvirtVMDef {
 
             _diskType = diskType.FILE;
             _deviceType = deviceType.DISK;
+            _diskCacheMode = diskCacheMode.NONE;
             _sourcePath = filePath;
             _diskLabel = getDevLabel(devId, bus);
             _diskFmtType = diskFmtType;
@@ -501,6 +503,7 @@ public class LibvirtVMDef {
             _sourcePath = volPath;
             _diskLabel = "hdc";
             _diskFmtType = diskFmtType.RAW;
+            _diskCacheMode = diskCacheMode.NONE;
             _bus = diskBus.IDE;
         }
 
@@ -508,6 +511,7 @@ public class LibvirtVMDef {
             _diskType = diskType.BLOCK;
             _deviceType = deviceType.DISK;
             _diskFmtType = diskFmtType.RAW;
+            _diskCacheMode = diskCacheMode.NONE;
             _sourcePath = diskName;
             _diskLabel = getDevLabel(devId, bus);
             _bus = bus;
@@ -517,6 +521,7 @@ public class LibvirtVMDef {
             _diskType = diskType.BLOCK;
             _deviceType = deviceType.DISK;
             _diskFmtType = diskFmtType.RAW;
+            _diskCacheMode = diskCacheMode.NONE;
             _sourcePath = diskName;
             _diskLabel = diskLabel;
             _bus = bus;
@@ -527,6 +532,7 @@ public class LibvirtVMDef {
             _diskType = diskType.NETWORK;
             _deviceType = deviceType.DISK;
             _diskFmtType = diskFmtType.RAW;
+            _diskCacheMode = diskCacheMode.NONE;
             _sourcePath = diskName;
             _sourceHost = sourceHost;
             _sourcePort = sourcePort;
@@ -542,6 +548,7 @@ public class LibvirtVMDef {
             _diskType = diskType.NETWORK;
             _deviceType = deviceType.DISK;
             _diskFmtType = diskFmtType.RAW;
+            _diskCacheMode = diskCacheMode.NONE;
             _sourcePath = diskName;
             _sourceHost = sourceHost;
             _sourcePort = sourcePort;
