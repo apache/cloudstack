@@ -19,6 +19,7 @@
 '''
 import logging
 import sys
+import time
 from marvin.codes import (NO,
                           YES
                           )
@@ -29,7 +30,7 @@ class MarvinLog:
     @Desc  : provides interface for logging to marvin
     @Input : logger_name : name for logger
     '''
-    logFormat = "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
+    logFormat = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
     _instance = None
 
     def __new__(cls, logger_name):
@@ -49,7 +50,7 @@ class MarvinLog:
     def setLogHandler(self, log_file_path, log_format=None,
                       log_level=logging.DEBUG):
         '''
-        @Desc:
+        @Desc: Adds the given Log handler to the current logger
         @Input: log_file_path: Log File Path as where to store the logs
                log_format : Format of log messages to be dumped
                log_level : Determines the level of logging for this logger
@@ -60,10 +61,10 @@ class MarvinLog:
             else:
                 stream = logging.StreamHandler(stream=sys.stdout)
 
-            if log_format is None:
+            if log_format is not None:
                 stream.setFormatter(log_format)
             else:
-                stream.setFormatter(cls.logFormat)
+                stream.setFormatter(self.__class__.logFormat)
             stream.setLevel(log_level)
             self.logger.addHandler(stream)
         except Exception, e:
