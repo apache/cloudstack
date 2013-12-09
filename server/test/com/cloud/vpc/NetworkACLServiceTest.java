@@ -21,6 +21,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.vpc.*;
 import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
@@ -28,6 +29,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.utils.component.ComponentContext;
+
 import junit.framework.TestCase;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.test.utils.SpringUtils;
@@ -67,6 +69,8 @@ public class NetworkACLServiceTest extends TestCase{
     NetworkACLDao _networkACLDao;
     @Inject
     NetworkACLItemDao _networkACLItemDao;
+    @Inject
+    VpcDao _vpcDao;
 
     private CreateNetworkACLCmd createACLItemCmd;
     private NetworkACLVO acl;
@@ -211,6 +215,11 @@ public class NetworkACLServiceTest extends TestCase{
         @Bean
         public VpcGatewayDao vpcGatewayDao () {
             return Mockito.mock(VpcGatewayDao.class);
+        }
+
+        @Bean
+        public VpcDao vpcDao () {
+            return Mockito.mock(VpcDao.class);
         }
 
 
