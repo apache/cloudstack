@@ -18,12 +18,9 @@ package com.cloud.network.element;
 
 import java.util.List;
 
-import com.cloud.api.commands.AddExternalFirewallCmd;
 import com.cloud.api.commands.AddPaloAltoFirewallCmd;
 import com.cloud.api.commands.ConfigurePaloAltoFirewallCmd;
-import com.cloud.api.commands.DeleteExternalFirewallCmd;
 import com.cloud.api.commands.DeletePaloAltoFirewallCmd;
-import com.cloud.api.commands.ListExternalFirewallsCmd;
 import com.cloud.api.commands.ListPaloAltoFirewallNetworksCmd;
 import com.cloud.api.commands.ListPaloAltoFirewallsCmd;
 import com.cloud.api.response.PaloAltoFirewallResponse;
@@ -72,17 +69,5 @@ public interface PaloAltoFirewallElementService  extends PluggableService {
     public List<? extends Network> listNetworks(ListPaloAltoFirewallNetworksCmd cmd);
 
     public PaloAltoFirewallResponse createPaloAltoFirewallResponse(ExternalFirewallDeviceVO fwDeviceVO);
-
-
-    @Deprecated // API helper function supported for backward compatibility
-    public Host addExternalFirewall(AddExternalFirewallCmd cmd);
-
-    @Deprecated // API helper function supported for backward compatibility
-    public boolean deleteExternalFirewall(DeleteExternalFirewallCmd cmd);
     
-    @Deprecated // API helper function supported for backward compatibility
-    public List<Host> listExternalFirewalls(ListExternalFirewallsCmd cmd);
-    
-    @Deprecated // API helper function supported for backward compatibility
-    public ExternalFirewallResponse createExternalFirewallResponse(Host externalFirewall);
 }
