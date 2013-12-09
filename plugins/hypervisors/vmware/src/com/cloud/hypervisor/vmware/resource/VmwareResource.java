@@ -45,6 +45,9 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.configuration.Config;
+import com.cloud.agent.api.routing.*;
+
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
@@ -362,10 +365,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected int _portsPerDvPortGroup;
     protected boolean _fullCloneFlag = false;
     protected boolean _instanceNameFlag = false;
+    protected boolean  _reserveCpu;
+    protected boolean  _reserveMem;
 
-    protected boolean _reserveCpu = false;
-
-    protected boolean _reserveMem = false;
     protected boolean _recycleHungWorker = false;
     protected DiskControllerType _rootDiskController = DiskControllerType.ide;
 
@@ -2700,7 +2702,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         vmMo.tearDownDevices(new Class<?>[] {VirtualEthernetCard.class});
                     vmMo.ensureScsiDeviceController();
                 } else {
-                    int ramMb = (int)(vmSpec.getMinRam() / (1024 * 1024));
                     Pair<ManagedObjectReference, DatastoreMO> rootDiskDataStoreDetails = null;
                     for (DiskTO vol : disks) {
                         if (vol.getType() == Volume.Type.ROOT) {
@@ -2717,9 +2718,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             dcMo.getMor(), false);
                     }
 
-                    if (!hyperHost.createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(), vmSpec.getMinSpeed(),
-                        vmSpec.getLimitCpuUse(), (int)(vmSpec.getMaxRam() / (1024 * 1024)), ramMb, translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value(),
-                        rootDiskDataStoreDetails.first(), false)) {
+                    if (!hyperHost.createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(),
+                            getReservedCpuMHZ(vmSpec), vmSpec.getLimitCpuUse(),(int)(vmSpec.getMaxRam()/(1024*1024)), getReservedMemoryMb(vmSpec),
+                            translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value(), rootDiskDataStoreDetails.first(), false)) {
                         throw new Exception("Failed to create VM. vmName: " + vmInternalCSName);
                     }
                 }
@@ -2743,11 +2744,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
-            int ramMb = (int)(vmSpec.getMinRam() / (1024 * 1024));
             String guestOsId = translateGuestOsIdentifier(vmSpec.getArch(), vmSpec.getOs()).value();
 
-            VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), vmSpec.getMinSpeed(), (int)(vmSpec.getMaxRam() / (1024 * 1024)), ramMb,
-                guestOsId, vmSpec.getLimitCpuUse());
+            VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(),
+                    getReservedCpuMHZ(vmSpec),(int) (vmSpec.getMaxRam()/(1024*1024)), getReservedMemoryMb(vmSpec),
+                    guestOsId, vmSpec.getLimitCpuUse());
 
             // Check for hotadd settings
             vmConfigSpec.setMemoryHotAddEnabled(vmMo.isMemoryHotAddSupported(guestOsId));
@@ -3001,6 +3002,26 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
         }
+    }
+
+    int getReservedMemoryMb(VirtualMachineTO vmSpec) {
+        if (vmSpec.getDetails().get(Config.VmwareReserveMem.key()).equalsIgnoreCase("true")) {
+              return  (int) (vmSpec.getMinRam() / (1024 * 1024));
+        }  else if (vmSpec.getMinRam() != vmSpec.getMaxRam()) {
+              s_logger.warn("memory overprovisioning factor is set to "+ (vmSpec.getMaxRam()/vmSpec.getMinRam())+" ignoring the flag vmware.reserve.mem");
+              return  (int) (vmSpec.getMinRam() / (1024 * 1024));
+        }
+        return 0;
+    }
+
+    int getReservedCpuMHZ(VirtualMachineTO vmSpec) {
+         if (vmSpec.getDetails().get(Config.VmwareReserveCpu.key()).equalsIgnoreCase("true")) {
+              return vmSpec.getMinSpeed();
+         }else if (vmSpec.getMinSpeed().intValue() != vmSpec.getMaxSpeed().intValue()) {
+              s_logger.warn("cpu overprovisioning factor is set to "+ (vmSpec.getMaxSpeed().intValue()/vmSpec.getMinSpeed().intValue())+" ignoring the flag vmware.reserve.cpu");
+              return vmSpec.getMinSpeed();
+         }
+         return 0;
     }
 
     // return the finalized disk chain for startup, from top to bottom

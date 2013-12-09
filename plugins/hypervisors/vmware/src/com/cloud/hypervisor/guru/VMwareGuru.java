@@ -27,8 +27,12 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -92,8 +96,8 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
 
-@Local(value = HypervisorGuru.class)
-public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
+@Local(value=HypervisorGuru.class)
+public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
     private static final Logger s_logger = Logger.getLogger(VMwareGuru.class);
 
     @Inject
@@ -121,11 +125,20 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject
     PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
     @Inject
-    ClusterManager _clusterMgr;
+    VMInstanceDao _vmDao;
+    @Inject
+    ClusterDao _clusterDao;
+    @Inject ClusterManager _clusterMgr;
 
     protected VMwareGuru() {
         super();
     }
+
+    static final ConfigKey<Boolean> VmwareReserveCpu = new ConfigKey<Boolean>(Boolean.class, "vmware.reserve.cpu", "Advanced", "false",
+            "Specify whether or not to reserve CPU when not overprovisioning, In case of cpu overprovisioning we will always reserve cpu.", true, ConfigKey.Scope.Cluster, null);
+
+    static final ConfigKey<Boolean> VmwareReserveMemory = new ConfigKey<Boolean>(Boolean.class, "vmware.reserve.cpu", "Advanced", "false",
+            "Specify whether or not to reserve memory when not overprovisioning, In case of memory overprovisioning we will always reserve memory.", true, ConfigKey.Scope.Cluster, null);
 
     @Override
     public HypervisorType getHypervisorType() {
@@ -187,7 +200,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
                 break;
             }
         }
-
+        long clusterId = _hostDao.findById( _vmDao.findById(vm.getId()).getHostId()).getClusterId();
+        details.put(Config.VmwareReserveCpu.key(), VmwareReserveCpu.valueIn(clusterId).toString());
+        details.put(Config.VmwareReserveMem.key(), VmwareReserveMemory.valueIn(clusterId).toString());
         to.setDetails(details);
 
         if (vm.getVirtualMachine() instanceof DomainRouterVO) {
@@ -435,5 +450,15 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru {
             }
         }
         return commands;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return VMwareGuru.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {VmwareReserveCpu, VmwareReserveMemory};
     }
 }

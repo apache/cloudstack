@@ -548,8 +548,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         params.put("vm.instancename.flag", _instanceNameFlag);
         params.put("service.console.name", _serviceConsoleName);
         params.put("management.portgroup.name", _managemetPortGroupName);
-        params.put("vmware.reserve.cpu", _reserveCpu);
-        params.put("vmware.reserve.mem", _reserveMem);
         params.put("vmware.root.disk.controller", _rootDiskController);
         params.put("vmware.recycle.hung.wokervm", _recycleHungWorker);
         params.put("ports.per.dvportgroup", _portsPerDvPortGroup);
