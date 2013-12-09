@@ -378,7 +378,8 @@ INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id,
 INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin role', UUID(), 1, 1, Now(), 'Static');
 INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin role', UUID(), 1, 1, Now(), 'Static');
 INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin role', UUID(), 1, 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (6, 'RESOURCE_OWNER', 'Resource owner role', UUID(), 1, 1, Now(), 'Dynamic');
+-- RESOURCE_OWNER dynamic policy we will handle that inside java logic
+-- INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (6, 'RESOURCE_OWNER', 'Resource owner role', UUID(), 1, 1, Now(), 'Dynamic');
 
 
 INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, account_id, created) VALUES (1, 'NORMAL', 'Domain user group', UUID(), 1, 1, Now());
@@ -386,6 +387,13 @@ INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, 
 INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, account_id, created) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin group', UUID(), 1, 1, Now());
 INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, account_id, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin group', UUID(), 1, 1, Now());
 INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, account_id, created) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin group', UUID(), 1, 1, Now());
+
+INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values(1, 1, Now());
+INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values(2, 2, Now());
+INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values(3, 3, Now());
+INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values(4, 4, Now());
+INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values(5, 5, Now());
+
 
 CREATE OR REPLACE VIEW `cloud`.`acl_policy_view` AS
     select 

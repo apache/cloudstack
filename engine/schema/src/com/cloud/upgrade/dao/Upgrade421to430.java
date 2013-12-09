@@ -63,7 +63,6 @@ public class Upgrade421to430 implements DbUpgrade {
     @Override
     public void performDataMigration(Connection conn) {
         populateACLGroupAccountMap(conn);
-        populateACLGroupPolicyMap(conn);
         //populateACLRoleBasedAPIPermission(conn);
     }
 
@@ -112,39 +111,6 @@ public class Upgrade421to430 implements DbUpgrade {
         s_logger.debug("Completed populate acl_group_account_map for existing accounts.");
     }
 
-    // populate acl_group_policy_map table for existing accounts
-    private void populateACLGroupPolicyMap(Connection conn) {
-        PreparedStatement sqlInsert = null;
-        ResultSet rs = null;
-
-        s_logger.debug("Populating acl_group_policy_map table for default groups and policies...");
-        try {
-            sqlInsert = conn
-                    .prepareStatement("INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values(?, ?, Now())");
-            for (int i = 1; i < 6; i++) {
-                // insert entry in acl_group_policy_map table, 1 to 1 mapping for default group and policy
-                sqlInsert.setLong(1, i);
-                sqlInsert.setLong(2, i);
-                sqlInsert.executeUpdate();
-            }
-        } catch (SQLException e) {
-            String msg = "Unable to populate acl_group_policy_map for default groups and policies." + e.getMessage();
-            s_logger.error(msg);
-            throw new CloudRuntimeException(msg, e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (sqlInsert != null) {
-                    sqlInsert.close();
-                }
-            } catch (SQLException e) {
-            }
-        }
-        s_logger.debug("Completed populate acl_group_policy_map for existing accounts.");
-    }
 
     private void populateACLRoleBasedAPIPermission(Connection conn) {
         // read the commands.properties.in and populate the table
