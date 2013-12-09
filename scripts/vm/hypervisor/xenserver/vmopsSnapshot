@@ -22,7 +22,11 @@
 
 import os, sys, time
 import XenAPIPlugin
-sys.path.append("/opt/xensource/sm/")
+if os.path.exists("/opt/xensource/sm"):
+    sys.path.extend(["/opt/xensource/sm/", "/usr/local/sbin/", "/sbin/"])
+if os.path.exists("/usr/lib/xcp/sm"):
+    sys.path.extend(["/usr/lib/xcp/sm/", "/usr/local/sbin/", "/sbin/"])
+
 import SR, VDI, SRCommand, util, lvutil
 from util import CommandException
 import vhdutil
@@ -35,7 +39,7 @@ import cleanup
 import stat
 import random
 
-VHD_UTIL = '/opt/xensource/bin/vhd-util'
+VHDUTIL = "vhd-util"
 VHD_PREFIX = 'VHD-'
 CLOUD_DIR = '/var/run/cloud_mount'
 
@@ -263,7 +267,7 @@ def getParentOfSnapshot(snapshotUuid, primarySRPath, isISCSI):
 
 def setParent(parent, child):
     try:
-        cmd = [VHD_UTIL, "modify", "-p", parent, "-n", child]
+        cmd = [VHDUTIL, "modify", "-p", parent, "-n", child]
         txt = util.pread2(cmd)
     except:
         errMsg = "Unexpected error while trying to set parent of " + child + " to " + parent 

@@ -68,7 +68,7 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
                     s_logger.debug("Console proxy is up, zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() +
                         ", private IP: " + proxy.getPrivateIpAddress());
 
-                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxy.getPodIdToDeployIn(), "Console proxy up in zone: " + dc.getName() +
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxy.getPodIdToDeployIn(), "Console proxy up in zone: " + dc.getName() +
                     ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " +
                     (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()), "Console proxy up (zone " + dc.getName() + ")");
                 break;
@@ -78,7 +78,7 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
                     s_logger.debug("Console proxy is down, zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() +
                         ", private IP: " + (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()));
 
-                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxy.getPodIdToDeployIn(), "Console proxy down in zone: " + dc.getName() +
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxy.getPodIdToDeployIn(), "Console proxy down in zone: " + dc.getName() +
                     ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " +
                     (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()), "Console proxy down (zone " + dc.getName() + ")");
                 break;
@@ -88,7 +88,7 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
                     s_logger.debug("Console proxy is rebooted, zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() +
                         ", private IP: " + (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()));
 
-                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxy.getPodIdToDeployIn(),
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxy.getPodIdToDeployIn(),
                     "Console proxy rebooted in zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() +
                         ", private IP: " + (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()), "Console proxy rebooted (zone " + dc.getName() +
                         ")");
@@ -99,7 +99,7 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
                     s_logger.debug("Console proxy creation failure, zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " +
                         proxy.getPublicIpAddress() + ", private IP: " + (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()));
 
-                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxy.getPodIdToDeployIn(),
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxy.getPodIdToDeployIn(),
                     "Console proxy creation failure. zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() +
                         ", private IP: " + (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()) + ", error details: " + args.getMessage(),
                     "Console proxy creation failure (zone " + dc.getName() + ")");
@@ -110,7 +110,7 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
                     s_logger.debug("Console proxy startup failure, zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " +
                         proxy.getPublicIpAddress() + ", private IP: " + (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()));
 
-                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxy.getPodIdToDeployIn(),
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxy.getPodIdToDeployIn(),
                     "Console proxy startup failure. zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() +
                         ", private IP: " + (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()) + ", error details: " + args.getMessage(),
                     "Console proxy startup failure (zone " + dc.getName() + ")");
@@ -122,7 +122,7 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
                         proxy.getPublicIpAddress() + ", private IP: " + (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()));
 
                 _alertMgr.sendAlert(
-                    AlertManager.ALERT_TYPE_CONSOLE_PROXY,
+                    AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY,
                     args.getZoneId(),
                     proxy.getPodIdToDeployIn(),
                     "Failed to open console proxy firewall port. zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " +
@@ -135,7 +135,7 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
                     s_logger.debug("Console proxy storage alert, zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " +
                         proxy.getPublicIpAddress() + ", private IP: " + proxy.getPrivateIpAddress() + ", message: " + args.getMessage());
 
-                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_STORAGE_MISC, args.getZoneId(), proxy.getPodIdToDeployIn(),
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_STORAGE_MISC, args.getZoneId(), proxy.getPodIdToDeployIn(),
                     "Console proxy storage issue. zone: " + dc.getName() + ", message: " + args.getMessage(), "Console proxy alert (zone " + dc.getName() + ")");
                 break;
         }

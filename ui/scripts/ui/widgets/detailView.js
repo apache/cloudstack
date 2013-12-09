@@ -46,11 +46,13 @@
 
         // Refresh detail view context
         if ($detailView) {
-            $.extend(
-                $detailView.data('view-args').context[
-                    $detailView.data('view-args').section
-                ][0], newData
-            );
+            var detailViewArgs = $detailView.data('view-args');
+            var listViewArgs = $listView.data('view-args');
+            var contextID = listViewArgs.sections && listViewArgs.sections[detailViewArgs.section].id ?
+                listViewArgs.sections[detailViewArgs.section].id :
+                detailViewArgs.section;
+
+            $.extend($detailView.data('view-args').context[contextID][0], newData);
         }
     };
 
@@ -93,7 +95,8 @@
                 var $detailViewElems = $detailView.find('ul.ui-tabs-nav, .detail-group').remove();
                 var viewArgs = $detailView.data('view-args');
                 var context = viewArgs.context;
-                var activeContextItem = viewArgs.section ? context[viewArgs.section][0] : null;
+                var activeContextItem = viewArgs.section && context[viewArgs.section] ?
+                    context[viewArgs.section][0] : null;
 
                 $detailView.tabs('destroy');
                 $detailView.data('view-args').jsonObj = newData;
@@ -144,11 +147,20 @@
 
                             var $item = args.$item;
                             var $row = $detailView.data('list-view-row');
+                            var error = args.error;
 
                             notification.desc = messages.notification(args.messageArgs);
                             notification._custom = $.extend(args._custom ? args._custom : {}, {
                                 $detailView: $detailView
                             });
+
+                            if (error) {
+                                notification.interval = 1;
+                                notification.poll = function(args) {
+                                    cloudStack.dialog.notice({ message: error });
+                                    args.error(error);
+                                }
+                            }
 
                             cloudStack.ui.notifications.add(
                                 notification,
@@ -1156,7 +1168,7 @@
             tab: targetTabID,
             id: args.id,
             jsonObj: jsonObj,
-            context: args.context,
+            context: $.extend(args.context, options),
             response: {
                 success: function(args) {
                     if (options.newData) {
@@ -1471,7 +1483,8 @@
         if ($target.closest('div.toolbar div.refresh').size()) {
             loadTabContent(
                 $target.closest('div.detail-view').find('div.detail-group:visible'),
-                $target.closest('div.detail-view').data('view-args')
+                $target.closest('div.detail-view').data('view-args'),
+                { refresh: true }
             );
 
             return false;

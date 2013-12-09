@@ -71,7 +71,7 @@ assignVirtualMachine=7
 migrateVirtualMachine=1
 migrateVirtualMachineWithVolume=1
 recoverVirtualMachine=7
-expungeVirtualMachine=1
+expungeVirtualMachine=7
 
 #### snapshot commands
 createSnapshot=15
@@ -246,6 +246,7 @@ deleteEvents=15
 listAlerts=3
 archiveAlerts=1
 deleteAlerts=1
+generateAlert=1
 
 #### system capacity commands
 listCapacity=3
@@ -501,6 +502,11 @@ listVpnConnections=15
 createVirtualRouterElement=7
 configureVirtualRouterElement=7
 listVirtualRouterElements=7
+
+#### ovs commands
+createOvsElement=7
+configureOvsElement=7
+listOvsElements=7
 
 #### usage commands
 generateUsageRecords=1

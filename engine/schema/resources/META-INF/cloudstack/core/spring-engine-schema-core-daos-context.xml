@@ -209,8 +209,7 @@
   <bean id="nicSecondaryIpDaoImpl" class="com.cloud.vm.dao.NicSecondaryIpDaoImpl" />
   <bean id="nicIpAliasDaoImpl" class="com.cloud.vm.dao.NicIpAliasDaoImpl" />
   <bean id="objectInDataStoreDaoImpl" class="org.apache.cloudstack.storage.db.ObjectInDataStoreDaoImpl" />
-  <bean id="ovsTunnelInterfaceDaoImpl" class="com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl" />
-  <bean id="ovsTunnelNetworkDaoImpl" class="com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl" />
+  <bean id="ovsProviderDaoImpl" class="com.cloud.network.dao.OvsProviderDaoImpl" />
   <bean id="physicalNetworkDaoImpl" class="com.cloud.network.dao.PhysicalNetworkDaoImpl" />
   <bean id="physicalNetworkIsolationMethodDaoImpl" class="com.cloud.network.dao.PhysicalNetworkIsolationMethodDaoImpl" />
   <bean id="physicalNetworkServiceProviderDaoImpl" class="com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl" />
@@ -323,7 +322,11 @@
   <bean id="FirewallRuleDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDaoImpl" />
   <bean id="UserIpAddressDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDaoImpl" />
   <bean id="RemoteAccessVpnDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.RemoteAccessVpnDetailsDaoImpl" />
-  
+  <bean id="VpcDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.VpcDetailsDaoImpl" />
+  <bean id="VpcGatewayDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.VpcGatewayDetailsDaoImpl" />
+  <bean id="NetworkACLListDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.NetworkACLListDetailsDaoImpl" />
+  <bean id="NetworkACLItemDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.NetworkACLItemDetailsDaoImpl" />
+
   <bean id="databaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker" />
 
 </beans>

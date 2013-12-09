@@ -36,6 +36,8 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
@@ -243,7 +245,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
         HostPodVO podVO = _podDao.findById(host.getPodId());
         String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
 
-        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host is down, " + hostDesc, "Host [" + hostDesc + "] is down." +
+        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host is down, " + hostDesc, "Host [" + hostDesc + "] is down." +
             ((sb != null) ? sb.toString() : ""));
 
         for (final VMInstanceVO vm : vms) {
@@ -317,13 +319,13 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                 s_logger.debug("VM does not require investigation so I'm marking it as Stopped: " + vm.toString());
             }
 
-            short alertType = AlertManager.ALERT_TYPE_USERVM;
+            AlertManager.AlertType alertType = AlertManager.AlertType.ALERT_TYPE_USERVM;
             if (VirtualMachine.Type.DomainRouter.equals(vm.getType())) {
-                alertType = AlertManager.ALERT_TYPE_DOMAIN_ROUTER;
+                alertType = AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER;
             } else if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-                alertType = AlertManager.ALERT_TYPE_CONSOLE_PROXY;
+                alertType = AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY;
             } else if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())) {
-                alertType = AlertManager.ALERT_TYPE_SSVM;
+                alertType = AlertManager.AlertType.ALERT_TYPE_SSVM;
             }
 
             if (!(_forceHA || vm.isHaEnabled())) {
@@ -415,13 +417,13 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             return null;
         }
 
-        short alertType = AlertManager.ALERT_TYPE_USERVM;
+        AlertManager.AlertType alertType = AlertManager.AlertType.ALERT_TYPE_USERVM;
         if (VirtualMachine.Type.DomainRouter.equals(vm.getType())) {
-            alertType = AlertManager.ALERT_TYPE_DOMAIN_ROUTER;
+            alertType = AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER;
         } else if (VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
-            alertType = AlertManager.ALERT_TYPE_CONSOLE_PROXY;
+            alertType = AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY;
         } else if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())) {
-            alertType = AlertManager.ALERT_TYPE_SSVM;
+            alertType = AlertManager.AlertType.ALERT_TYPE_SSVM;
         }
 
         HostVO host = _hostDao.findById(work.getHostId());

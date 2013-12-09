@@ -22,7 +22,10 @@
 
 import os, sys, time
 import XenAPIPlugin
-sys.path.extend(["/opt/xensource/sm/", "/usr/local/sbin/", "/sbin/"])
+if os.path.exists("/opt/xensource/sm"):
+    sys.path.extend(["/opt/xensource/sm/", "/usr/local/sbin/", "/sbin/"])
+if os.path.exists("/usr/lib/xcp/sm"):
+    sys.path.extend(["/usr/lib/xcp/sm/", "/usr/local/sbin/", "/sbin/"])
 import base64
 import hostvmstats
 import socket
@@ -48,7 +51,7 @@ def add_to_VCPUs_params_live(session, args):
     value = args['value']
     vmname = args['vmname']
     try:
-        cmd = ["bash", "/opt/xensource/bin/add_to_vcpus_params_live.sh", vmname, key, value]
+        cmd = ["bash", "/opt/cloud/bin/add_to_vcpus_params_live.sh", vmname, key, value]
         txt = util.pread2(cmd)
     except:
         return 'false'
@@ -67,7 +70,7 @@ def gethostvmstats(session, args):
 def setup_iscsi(session, args):
    uuid=args['uuid']
    try:
-       cmd = ["bash", "/opt/xensource/bin/setup_iscsi.sh", uuid]
+       cmd = ["bash", "/opt/cloud/bin/setup_iscsi.sh", uuid]
        txt = util.pread2(cmd)
    except:
        txt = ''
@@ -78,7 +81,7 @@ def setup_iscsi(session, args):
 def getgateway(session, args):
     mgmt_ip = args['mgmtIP']
     try:
-        cmd = ["bash", "/opt/xensource/bin/network_info.sh", "-g", mgmt_ip]
+        cmd = ["bash", "/opt/cloud/bin/network_info.sh", "-g", mgmt_ip]
         txt = util.pread2(cmd)
     except:
         txt = ''
@@ -89,7 +92,7 @@ def getgateway(session, args):
 def preparemigration(session, args):
     uuid = args['uuid']
     try:
-        cmd = ["/opt/xensource/bin/make_migratable.sh", uuid]
+        cmd = ["/opt/cloud/bin/make_migratable.sh", uuid]
         util.pread2(cmd)
         txt = 'success'
     except:
@@ -101,7 +104,7 @@ def preparemigration(session, args):
 @echo
 def setIptables(session, args):
     try:
-        cmd = ["/bin/bash", "/opt/xensource/bin/setupxenserver.sh"]
+        cmd = ["/bin/bash", "/opt/cloud/bin/setupxenserver.sh"]
         txt = util.pread2(cmd)
         txt = 'success'
     except:
@@ -130,7 +133,7 @@ def pingdomr(session, args):
 def kill_copy_process(session, args):
     namelabel = args['namelabel']
     try:
-        cmd = ["bash", "/opt/xensource/bin/kill_copy_process.sh", namelabel]
+        cmd = ["bash", "/opt/cloud/bin/kill_copy_process.sh", namelabel]
         txt = util.pread2(cmd)
     except:
         txt = 'false'
@@ -144,7 +147,7 @@ def pingxenserver(session, args):
 def pingtest(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/pingtest.sh")
+    cmd.insert(0, "/opt/cloud/bin/pingtest.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -159,7 +162,7 @@ def pingtest(session, args):
 def savePassword(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/save_password_to_domr.sh")
+    cmd.insert(0, "/opt/cloud/bin/save_password_to_domr.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -174,7 +177,7 @@ def savePassword(session, args):
 def saveDhcpEntry(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/dhcp_entry.sh")
+    cmd.insert(0, "/opt/cloud/bin/dhcp_entry.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -236,7 +239,7 @@ def setLinkLocalIP(session, args):
 def setFirewallRule(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/call_firewall.sh")
+    cmd.insert(0, "/opt/cloud/bin/call_firewall.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -251,7 +254,7 @@ def setFirewallRule(session, args):
 def routerProxy(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/router_proxy.sh")
+    cmd.insert(0, "/opt/cloud/bin/router_proxy.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -269,7 +272,7 @@ def routerProxy(session, args):
 def setLoadBalancerRule(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/call_loadbalancer.sh")
+    cmd.insert(0, "/opt/cloud/bin/call_loadbalancer.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
@@ -296,7 +299,7 @@ def configdnsmasq(session, args):
 def createipAlias(session, args):
     args = args['args']
     cmd = args.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/createipAlias.sh")
+    cmd.insert(0, "/opt/cloud/bin/createipAlias.sh")
     cmd.insert(0, "bin/bash")
     try:
        txt=util.pread2(cmd)
@@ -310,7 +313,7 @@ def createipAlias(session, args):
 def deleteipAlias(session, args):
     args = args['args']
     cmd = args.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/deleteipAlias.sh")
+    cmd.insert(0, "/opt/cloud/bin/deleteipAlias.sh")
     cmd.insert(0, "bin/bash")
     try:
        txt=util.pread2(cmd)
@@ -370,25 +373,6 @@ def deleteFile(session, args):
 
     return txt
 
-
-    
-def get_private_nic(session, args):
-    vms = session.xenapi.VM.get_all()
-    host_uuid = args.get('host_uuid')
-    host = session.xenapi.host.get_by_uuid(host_uuid)
-    piflist = session.xenapi.host.get_PIFs(host)
-    mgmtnic = 'eth0'
-    for pif in piflist:
-        pifrec = session.xenapi.PIF.get_record(pif)
-        network = pifrec.get('network')
-        nwrec = session.xenapi.network.get_record(network)
-        if nwrec.get('name_label') == 'cloud-guest':
-            return pifrec.get('device')
-        if pifrec.get('management'):
-            mgmtnic = pifrec.get('device')
-    
-    return mgmtnic
-
 def chain_name(vm_name):
     if vm_name.startswith('i-') or vm_name.startswith('r-'):
         if vm_name.endswith('untagged'):
@@ -418,7 +402,6 @@ def can_bridge_firewall(session, args):
     except:
         return 'false'
 
-    host_uuid = args.get('host_uuid')
     try:
         util.pread2(['iptables', '-N', 'BRIDGE-FIREWALL'])
         util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
@@ -440,14 +423,12 @@ def can_bridge_firewall(session, args):
     except:
         util.SMlog('Chain BRIDGE-DEFAULT-FIREWALL already exists')
 
-    privnic = get_private_nic(session, args)
     result = 'true'
     try:
         util.pread2(['/bin/bash', '-c', 'iptables -n -L FORWARD | grep BRIDGE-FIREWALL'])
     except:
         try:
             util.pread2(['iptables', '-I', 'FORWARD', '-m', 'physdev', '--physdev-is-bridged', '-j', 'BRIDGE-FIREWALL'])
-            util.pread2(['iptables', '-A', 'FORWARD', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', privnic, '-j', 'ACCEPT'])
             util.pread2(['iptables', '-A', 'FORWARD', '-j', 'DROP'])
         except:
             return 'false'
@@ -771,6 +752,11 @@ def network_rules_vmSecondaryIp(session, args):
 
 @echo
 def default_network_rules_systemvm(session, args):
+    try:
+        util.pread2(['/bin/bash', '-c', 'iptables -n -L FORWARD | grep BRIDGE-FIREWALL'])
+    except:
+        can_bridge_firewall(session, args)
+
     vm_name = args.pop('vmName')
     try:
         vm = session.xenapi.VM.get_by_name_label(vm_name)
@@ -1460,6 +1446,12 @@ def network_rules(session, args):
     seqno = args.pop('seqno')
     sec_ips = args.get("secIps")
     deflated = 'false'
+
+    try:
+        util.pread2(['/bin/bash', '-c', 'iptables -n -L FORWARD | grep BRIDGE-FIREWALL'])
+    except:
+        can_bridge_firewall(session, args)
+
     if 'deflated' in args:
         deflated = args.pop('deflated')
     
@@ -1616,7 +1608,7 @@ def network_rules(session, args):
 def bumpUpPriority(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/bumpUpPriority.sh")
+    cmd.insert(0, "/opt/cloud/bin/bumpUpPriority.sh")
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)

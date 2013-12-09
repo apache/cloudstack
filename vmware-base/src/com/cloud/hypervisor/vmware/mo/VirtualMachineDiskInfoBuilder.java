@@ -88,7 +88,7 @@ public class VirtualMachineDiskInfoBuilder {
         for (String backing : chain) {
             DatastoreFile file = new DatastoreFile(backing);
 
-            if (file.getFileBaseName().contains(diskBackingFileBaseName))
+            if (file.getFileBaseName().equals(diskBackingFileBaseName))
                 return true;
         }
 

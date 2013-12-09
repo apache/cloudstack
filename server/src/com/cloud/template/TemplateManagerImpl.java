@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -185,6 +186,7 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = {TemplateManager.class, TemplateApiService.class})
@@ -199,6 +201,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     VMTemplatePoolDao _tmpltPoolDao;
     @Inject
     VMTemplateZoneDao _tmpltZoneDao;
+    @Inject
+    protected UserVmDetailsDao _vmDetailsDao;
     @Inject
     protected VMTemplateDetailsDao _templateDetailsDao;
     @Inject
@@ -1264,18 +1268,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             updatedTemplate.setFeatured(isFeatured.booleanValue());
         }
 
-        if (isExtractable != null && caller.getType() == Account.ACCOUNT_TYPE_ADMIN) {// Only
-            // ROOT
-            // admins
-            // allowed
-            // to
-            // change
-            // this
-            // powerful
-            // attribute
-            updatedTemplate.setExtractable(isExtractable.booleanValue());
-        } else if (isExtractable != null && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
-            throw new InvalidParameterValueException("Only ROOT admins are allowed to modify this attribute.");
+        if(isExtractable != null){
+            // Only Root admins allowed to change it for templates
+            if(!template.getFormat().equals(ImageFormat.ISO) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN){
+                throw new InvalidParameterValueException("Only ROOT admins are allowed to modify this attribute.");
+            }else{
+            // For Isos normal user can change it, as their are no derivatives.
+                updatedTemplate.setExtractable(isExtractable.booleanValue());
+            }
         }
 
         _tmpltDao.update(template.getId(), updatedTemplate);
@@ -1628,13 +1628,23 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO template = _tmpltDao.persist(privateTemplate);
         // Increment the number of templates
         if (template != null) {
-            Map<String, String> detailsStr = cmd.getDetails();
-            if (detailsStr != null) {
-                List<VMTemplateDetailVO> details = new ArrayList<VMTemplateDetailVO>();
-                for (String key : detailsStr.keySet()) {
-                    details.add(new VMTemplateDetailVO(template.getId(), key, detailsStr.get(key)));
+            Map<String, String> details = new HashMap<String, String>();
+            if ( volume != null ) {
+                Long vmId = volume.getInstanceId();
+                if ( vmId != null ) {
+	            UserVmVO userVm = _userVmDao.findById(vmId);
+                    if (userVm != null) {
+                        _userVmDao.loadDetails(userVm);
+                        details.putAll(userVm.getDetails());
+                    }
                 }
-                _templateDetailsDao.saveDetails(details);
+            }
+            if(cmd.getDetails() != null) {
+                details.putAll(cmd.getDetails());
+            }
+            if( !details.isEmpty()) {
+                privateTemplate.setDetails(details);
+                _tmpltDao.saveDetails(privateTemplate);
             }
 
             _resourceLimitMgr.incrementResourceCount(templateOwner.getId(), ResourceType.template);

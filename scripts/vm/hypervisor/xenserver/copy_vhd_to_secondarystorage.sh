@@ -78,6 +78,7 @@ if [ $? -ne 0 ]; then
 fi
 
 vhdfile=$localmp/${vdiuuid}.vhd
+VHDUTIL="vhd-util"
 
 if [ $type == "nfs" -o $type == "ext" ]; then
   dd if=/var/run/sr-mount/$sruuid/${vdiuuid}.vhd of=$vhdfile bs=2M
@@ -94,7 +95,7 @@ elif [ $type == "lvmoiscsi" -o $type == "lvm" -o $type == "lvmohba" ]; then
     cleanup
     exit 0
   fi
-  size=$(vhd-util query -s -n /dev/VG_XenStorage-$sruuid/VHD-$vdiuuid)
+  size=$($VHDUTIL query -s -n /dev/VG_XenStorage-$sruuid/VHD-$vdiuuid)
   if [ $? -ne 0 ]; then
     echo "10#can not get physical size of /dev/VG_XenStorage-$sruuid/VHD-$vdiuuid"
     cleanup
@@ -112,7 +113,7 @@ elif [ $type == "lvmoiscsi" -o $type == "lvm" -o $type == "lvmohba" ]; then
   fi
 #in byte unit
   size=$((size<<21))
-  vhd-util modify -s $size -n $vhdfile
+  $VHDUTIL modify -s $size -n $vhdfile
   if [ $? -ne 0 ]; then
     rm -f $vhdfile
     echo "11#failed to change $vhdfile physical size"

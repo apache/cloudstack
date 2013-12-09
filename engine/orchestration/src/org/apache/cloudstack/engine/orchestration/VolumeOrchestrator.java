@@ -253,7 +253,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @DB
     @Override
-    public VolumeInfo createVolumeFromSnapshot(Volume volume, Snapshot snapshot) throws StorageUnavailableException {
+    public VolumeInfo createVolumeFromSnapshot(Volume volume, Snapshot snapshot, UserVm vm)
+            throws StorageUnavailableException {
         Account account = _entityMgr.findById(Account.class, volume.getAccountId());
 
         final HashSet<StoragePool> poolsToAvoid = new HashSet<StoragePool>();
@@ -266,17 +267,62 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         DataCenter dc = _entityMgr.findById(DataCenter.class, volume.getDataCenterId());
         DiskProfile dskCh = new DiskProfile(volume, diskOffering, snapshot.getHypervisorType());
 
-        // Determine what pod to store the volume in
-        while ((pod = findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
-            podsToAvoid.add(pod.first().getId());
+        String msg = "There are no available storage pools to store the volume in";
+
+        if(vm != null){
+            Pod podofVM = _entityMgr.findById(Pod.class, vm.getPodIdToDeployIn());
+            if(podofVM != null){
+                pod = new Pair<Pod, Long>(podofVM, podofVM.getId());
+            }
+        }
+
+        if(vm != null && pod != null){
+            //if VM is running use the hostId to find the clusterID. If it is stopped, refer the cluster where the ROOT volume of the VM exists.
+            Long hostId = null;
+            Long clusterId = null;
+            if(vm.getState() == State.Running){
+                hostId = vm.getHostId();
+                if(hostId != null){
+                    Host vmHost = _entityMgr.findById(Host.class, hostId);
+                    clusterId = vmHost.getClusterId();
+                }
+            }else{
+                List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
+                if (rootVolumesOfVm.size() != 1) {
+                    throw new CloudRuntimeException("The VM " + vm.getHostName() + " has more than one ROOT volume and is in an invalid state. Please contact Cloud Support.");
+                } else {
+                    VolumeVO rootVolumeOfVm = rootVolumesOfVm.get(0);
+                    StoragePoolVO rootDiskPool = _storagePoolDao.findById(rootVolumeOfVm.getPoolId());
+                    clusterId = (rootDiskPool == null ? null : rootDiskPool.getClusterId());
+                }
+            }
             // Determine what storage pool to store the volume in
-            while ((pool = findStoragePool(dskCh, dc, pod.first(), null, null, null, poolsToAvoid)) != null) {
+            while ((pool = findStoragePool(dskCh, dc, pod.first(), clusterId, hostId, vm, poolsToAvoid)) != null) {
                 break;
+            }
+
+            if (pool == null) {
+                //pool could not be found in the VM's pod/cluster.
+                if(s_logger.isDebugEnabled()){
+                    s_logger.debug("Could not find any storage pool to create Volume in the pod/cluster of the provided VM "+vm.getUuid());
+                }
+                StringBuilder addDetails = new StringBuilder(msg);
+                addDetails.append(", Could not find any storage pool to create Volume in the pod/cluster of the VM ");
+                addDetails.append(vm.getUuid());
+                msg = addDetails.toString();
+            }
+        }else{
+            // Determine what pod to store the volume in
+            while ((pod = findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
+                podsToAvoid.add(pod.first().getId());
+                // Determine what storage pool to store the volume in
+                while ((pool = findStoragePool(dskCh, dc, pod.first(), null, null, null, poolsToAvoid)) != null) {
+                    break;
+                }
             }
         }
 
         if (pool == null) {
-            String msg = "There are no available storage pools to store the volume in";
             s_logger.info(msg);
             throw new StorageUnavailableException(msg, -1);
         }
@@ -524,10 +570,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         vol = _volsDao.persist(vol);
 
         // Save usage event and update resource count for user vm volumes
-        if (vm instanceof UserVm) {
-
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, vol.getAccountId(), vol.getDataCenterId(), vol.getId(), vol.getName(), offering.getId(),
-                null, size, Volume.class.getName(), vol.getUuid());
+        if (vm.getType() == VirtualMachine.Type.User) {
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE,
+                vol.getAccountId(),
+                vol.getDataCenterId(),
+                vol.getId(),
+                vol.getName(),
+                offering.getId(),
+                null,
+                size,
+                Volume.class.getName(),
+                vol.getUuid());
 
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.volume);
             _resourceLimitMgr.incrementResourceCount(vm.getAccountId(), ResourceType.primary_storage, new Long(vol.getSize()));
@@ -564,7 +617,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         vol = _volsDao.persist(vol);
 
         // Create event and update resource count for volumes if vm is a user vm
-        if (vm instanceof UserVm) {
+        if (vm.getType() == VirtualMachine.Type.User) {
 
             Long offeringId = null;
 

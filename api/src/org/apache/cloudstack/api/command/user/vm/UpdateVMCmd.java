@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import org.apache.cloudstack.api.BaseCustomIdCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -36,7 +37,7 @@ import com.cloud.uservm.UserVm;
 @APICommand(name = "updateVirtualMachine", description = "Updates properties of a virtual machine. The VM has to be stopped and restarted for the "
     + "new properties to take effect. UpdateVirtualMachine does not first check whether the VM is stopped. "
     + "Therefore, stop the VM manually before issuing this call.", responseObject = UserVmResponse.class)
-public class UpdateVMCmd extends BaseCmd {
+public class UpdateVMCmd extends BaseCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVMCmd.class.getName());
     private static final String s_name = "updatevirtualmachineresponse";
 

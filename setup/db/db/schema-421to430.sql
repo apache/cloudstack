@@ -751,6 +751,56 @@ CREATE VIEW `cloud`.`domain_router_view` AS
         `cloud`.`async_job` ON async_job.instance_id = vm_instance.id
             and async_job.instance_type = 'DomainRouter'
             and async_job.job_status = 0;
+
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'management-server', "vmware.vcenter.session.timeout", "1200", "VMware client timeout in seconds", "1200", NULL,NULL,0);
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'management-server', "mgt.server.vendor", "ACS", "the vendor of management server", "ACS", NULL,NULL,0);
 
+ALTER TABLE `cloud_usage`.`usage_vm_instance` ADD COLUMN `cpu_speed` INT(10) UNSIGNED NULL  COMMENT 'speed per core in Mhz',
+    ADD COLUMN `cpu_cores` INT(10) UNSIGNED NULL  COMMENT 'number of cpu cores',
+    ADD COLUMN  `memory` INT(10) UNSIGNED NULL  COMMENT 'memory in MB';
+
+CREATE TABLE `cloud`.`vpc_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `vpc_id` bigint unsigned NOT NULL COMMENT 'VPC id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_vpc_details__vpc_id` FOREIGN KEY `fk_vpc_details__vpc_id`(`vpc_id`) REFERENCES `vpc`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE `cloud`.`vpc_gateway_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `vpc_gateway_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_vpc_gateway_details__vpc_gateway_id` FOREIGN KEY `fk_vpc_gateway_details__vpc_gateway_id`(`vpc_gateway_id`) REFERENCES `vpc_gateways`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`network_acl_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `network_acl_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_network_acl_details__network_acl_id` FOREIGN KEY `fk_network_acl_details__network_acl_id`(`network_acl_id`) REFERENCES `network_acl`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`network_acl_item_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `network_acl_item_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_network_acl_item_details__network_acl_item_id` FOREIGN KEY `fk_network_acl_item_details__network_acl_item_id`(`network_acl_item_id`) REFERENCES `network_acl_item`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+ALTER TABLE `cloud`.`alert` ADD COLUMN `name` varchar(255) DEFAULT NULL COMMENT 'name of the alert';
+
+UPDATE `cloud`.`hypervisor_capabilities` SET `max_data_volumes_limit`=13 WHERE `hypervisor_type`='Vmware';

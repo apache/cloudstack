@@ -339,10 +339,11 @@ public class HypervServerDiscoverer extends DiscovererBase implements Discoverer
             // TODO: does the resource have to create a connection?
             return resources;
         } catch (ConfigurationException e) {
-            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, "Unable to add " + uri.getHost(), "Error is " + e.getMessage());
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId, "Unable to add " + uri.getHost(), "Error is " + e.getMessage());
             s_logger.warn("Unable to instantiate " + uri.getHost(), e);
         } catch (UnknownHostException e) {
-            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, "Unable to add " + uri.getHost(), "Error is " + e.getMessage());
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, dcId, podId, "Unable to add " + uri.getHost(), "Error is " + e.getMessage());
+
             s_logger.warn("Unable to instantiate " + uri.getHost(), e);
         } catch (Exception e) {
             String msg = " can't setup agent, due to " + e.toString() + " - " + e.getMessage();

@@ -250,9 +250,6 @@
                             },
                             provider: {
                                 label: 'Provider'
-                            },
-                            RESOURCE_NAME: {
-                                label: 'Resource Name'
                             }
                         }],
                         dataProvider: function (args) {

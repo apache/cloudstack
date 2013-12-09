@@ -253,7 +253,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         long numToDecrement = (delta.length == 0) ? 1 : delta[0].longValue();
 
         if (!updateResourceCountForAccount(accountId, type, false, numToDecrement)) {
-            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, "Failed to decrement resource count of type " + type + " for account id=" +
+            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, "Failed to decrement resource count of type " + type + " for account id=" +
                 accountId, "Failed to decrement resource count of type " + type + " for account id=" + accountId +
                 "; use updateResourceCount API to recalculate/fix the problem");
         }
@@ -283,6 +283,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 value = accountResourceLimitMap.get(type);
             }
             if (value != null) {
+                if (value < 0) { // return unlimit if value is set to negative
+                    return max;
+                }
                 // convert the value from GiB to bytes in case of primary or secondary storage.
                 if (type == ResourceType.primary_storage || type == ResourceType.secondary_storage) {
                     value = value * ResourceType.bytesToGiB;
@@ -316,6 +319,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 value = accountResourceLimitMap.get(type);
             }
             if (value != null) {
+                if (value < 0) { // return unlimit if value is set to negative
+                    return max;
+                }
                 if (type == ResourceType.primary_storage || type == ResourceType.secondary_storage) {
                     value = value * ResourceType.bytesToGiB;
                 }
@@ -946,6 +952,53 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     @Override
     public long getResourceCount(Account account, ResourceType type) {
         return _resourceCountDao.getResourceCount(account.getId(), ResourceOwnerType.Account, type);
+    }
+
+    @Override
+    public void checkResourceLimit(Account account, ResourceType type, Boolean displayResource, long... count) throws ResourceAllocationException {
+
+        // By default its always on.
+        // TODO boilerplate code.
+        boolean displayflag = (displayResource == null) || (displayResource != null && displayResource);
+
+        if(displayflag){
+            checkResourceLimit(account, type, count);
+        }
+    }
+
+    @Override
+    public void incrementResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta) {
+
+        // 1. If its null assume displayResource = 1
+        // 2. If its not null then increment if displayResource = 1
+        if(displayResource == null || (displayResource != null && displayResource)){
+            incrementResourceCount(accountId, type, delta);
+        }
+    }
+
+    @Override
+    public void decrementResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta) {
+
+        // 1. If its null assume displayResource = 1
+        // 2. If its not null then decrement if displayResource = 1
+        if(displayResource == null || (displayResource != null && displayResource)){
+            decrementResourceCount(accountId, type, delta);
+        }
+    }
+
+    @Override
+    public void changeResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta) {
+
+        // meaning that the display flag is not changed so neither increment or decrement
+        if(displayResource == null) return;
+
+        // Increment because the display is turned on.
+        if(displayResource){
+        //            checkResourceLimit((Account)_accountDao.findById(accountId), type, delta);
+            incrementResourceCount(accountId, type, delta);
+        }else{
+            decrementResourceCount(accountId, type, delta);
+        }
     }
 
     protected class ResourceCountCheckTask extends ManagedContextRunnable {

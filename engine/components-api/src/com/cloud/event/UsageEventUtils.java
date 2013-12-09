@@ -153,11 +153,16 @@ public class UsageEventUtils {
         if (account == null)
             return;
 
+        // if an invalid zone is passed in, create event without zone UUID
+        String zoneUuid = null;
+        if (dc != null)
+          zoneUuid = dc.getUuid();
+
         Event event = new Event(Name, EventCategory.USAGE_EVENT.getName(), usageEventType, resourceType, resourceUUID);
 
         Map<String, String> eventDescription = new HashMap<String, String>();
         eventDescription.put("account", account.getUuid());
-        eventDescription.put("zone", dc.getUuid());
+        eventDescription.put("zone", zoneUuid);
         eventDescription.put("event", usageEventType);
         eventDescription.put("resource", resourceType);
         eventDescription.put("id", resourceUUID);

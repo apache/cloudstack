@@ -398,6 +398,8 @@ public class EventTypes {
     public static final String EVENT_EXTERNAL_NVP_CONTROLLER_ADD = "PHYSICAL.NVPCONTROLLER.ADD";
     public static final String EVENT_EXTERNAL_NVP_CONTROLLER_DELETE = "PHYSICAL.NVPCONTROLLER.DELETE";
     public static final String EVENT_EXTERNAL_NVP_CONTROLLER_CONFIGURE = "PHYSICAL.NVPCONTROLLER.CONFIGURE";
+    public static final String EVENT_EXTERNAL_OVS_CONTROLLER_ADD = "PHYSICAL.OVSCONTROLLER.ADD";
+    public static final String EVENT_EXTERNAL_OVS_CONTROLLER_DELETE = "PHYSICAL.OVSCONTROLLER.DELETE";
 
     // AutoScale
     public static final String EVENT_COUNTER_CREATE = "COUNTER.CREATE";
@@ -450,6 +452,10 @@ public class EventTypes {
     // Object store migration
     public static final String EVENT_MIGRATE_PREPARE_SECONDARY_STORAGE = "MIGRATE.PREPARE.SS";
 
+    //Alert generation
+    public static final String ALERT_GENERATE = "ALERT.GENERATE";
+
+    
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking

@@ -150,7 +150,7 @@ public class Link {
             pkgBuf.clear();
             engResult = sslEngine.wrap(buffers, pkgBuf);
             if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED && engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
-                engResult.getStatus() != SSLEngineResult.Status.OK) {
+                    engResult.getStatus() != SSLEngineResult.Status.OK) {
                 throw new IOException("SSL: SSLEngine return bad result! " + engResult);
             }
 
@@ -276,7 +276,7 @@ public class Link {
             appBuf = ByteBuffer.allocate(sslSession.getApplicationBufferSize() + 40);
             engResult = _sslEngine.unwrap(_readBuffer, appBuf);
             if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED && engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
-                engResult.getStatus() != SSLEngineResult.Status.OK) {
+                    engResult.getStatus() != SSLEngineResult.Status.OK) {
                 throw new IOException("SSL: SSLEngine return bad result! " + engResult);
             }
             if (remaining == _readBuffer.remaining()) {
@@ -404,10 +404,9 @@ public class Link {
         KeyStore ks = KeyStore.getInstance("JKS");
         TrustManager[] tms;
 
-        if (!isClient) {
+        File confFile = PropertiesUtil.findConfigFile("db.properties");
+        if (null != confFile && !isClient) {
             char[] passphrase = "vmops.com".toCharArray();
-            File confFile = PropertiesUtil.findConfigFile("db.properties");
-            /* This line may throw a NPE, but that's due to fail to find db.properities, meant some bugs in the other places */
             String confPath = confFile.getParent();
             String keystorePath = confPath + "/cloud.keystore";
             if (new File(keystorePath).exists()) {

@@ -27,6 +27,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.event.UsageEventVO;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -351,9 +352,29 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         }
     }
 
+    public boolean checkIfHostHasCpuCapability(long hostId, Integer cpuNum, Integer cpuSpeed){
+
+        // Check host can support the Cpu Number and Speed.
+        Host host = _hostDao.findById(hostId);
+        boolean isCpuNumGood = host.getCpus().intValue() >= cpuNum;
+        boolean isCpuSpeedGood = host.getSpeed().intValue() >= cpuSpeed;
+        if(isCpuNumGood && isCpuSpeedGood){
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Host: " + hostId + " has cpu capability (cpu:" +host.getCpus()+ ", speed:" + host.getSpeed() +
+                        ") to support requested CPU: " + cpuNum + " and requested speed: " + cpuSpeed);
+            }
+            return true;
+        }else{
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Host: " + hostId + " doesn't have cpu capability (cpu:" +host.getCpus()+ ", speed:" + host.getSpeed() +
+                        ") to support requested CPU: " + cpuNum + " and requested speed: " + cpuSpeed);
+            }
+            return false;
+        }
+    }
+
     @Override
-    public boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOvercommitRatio, float memoryOvercommitRatio,
-        boolean considerReservedCapacity) {
+    public boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOvercommitRatio, float memoryOvercommitRatio, boolean considerReservedCapacity) {
         boolean hasCapacity = false;
 
         if (s_logger.isDebugEnabled()) {
@@ -543,10 +564,10 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             ServiceOffering so = offeringsMap.get(vm.getServiceOfferingId());
             if (so.isDynamic()) {
                 usedMemory +=
-                    ((Integer.parseInt(vmDetails.get(ServiceOfferingVO.DynamicParameters.memory.name())) * 1024L * 1024L) / ramOvercommitRatio) *
+                    ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.memory.name())) * 1024L * 1024L) / ramOvercommitRatio) *
                         clusterRamOvercommitRatio;
                 usedCpu +=
-                    ((Integer.parseInt(vmDetails.get(ServiceOfferingVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(ServiceOfferingVO.DynamicParameters.cpuSpeed.name()))) / cpuOvercommitRatio) *
+                    ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name()))) / cpuOvercommitRatio) *
                         clusterCpuOvercommitRatio;
             } else {
                 usedMemory += ((so.getRamSize() * 1024L * 1024L) / ramOvercommitRatio) * clusterRamOvercommitRatio;

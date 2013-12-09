@@ -51,6 +51,10 @@ install_packages() {
   apt-get --no-install-recommends -q -y --force-yes install nfs-common
   # nfs irqbalance
   apt-get --no-install-recommends -q -y --force-yes install irqbalance
+  
+ # cifs client
+  apt-get --no-install-recommends -q -y --force-yes install samba-common
+  apt-get --no-install-recommends -q -y --force-yes install cifs-utils
 
   # vpn stuff
   apt-get --no-install-recommends -q -y --force-yes install xl2tpd bcrelay ppp ipsec-tools tdb-tools
@@ -70,6 +74,11 @@ install_packages() {
   echo "iptables-persistent iptables-persistent/autosave_v4 boolean true" | debconf-set-selections
   echo "iptables-persistent iptables-persistent/autosave_v6 boolean true" | debconf-set-selections
   apt-get --no-install-recommends -q -y --force-yes install iptables-persistent
+  
+  # Hyperv  kvp daemon
+  # Download the hv kvp daemon 
+  wget http://people.apache.org/~rajeshbattala/hv-kvp-daemon_3.1_amd64.deb
+  dpkg -i hv-kvp-daemon_3.1_amd64.deb
 
   # vmware tools
   apt-get --no-install-recommends -q -y --force-yes install open-vm-tools

@@ -19,6 +19,7 @@ package com.cloud.network;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.URI;
+
 import java.net.UnknownHostException;
 import java.security.InvalidParameterException;
 import java.sql.PreparedStatement;
@@ -109,6 +110,7 @@ import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkDomainVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.OvsProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
@@ -116,6 +118,7 @@ import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.NetworkElement;
+import com.cloud.network.element.OvsProviderVO;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.guru.NetworkGuru;
@@ -298,10 +301,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
     VpcDao _vpcDao;
     @Inject
     NetworkACLDao _networkACLDao;
-    @Inject
-    IpAddressManager _ipAddrMgr;
-    @Inject
-    EntityManager _entityMgr;
+	@Inject
+	OvsProviderDao _ovsProviderDao;
+	@Inject
+	IpAddressManager _ipAddrMgr;
+	@Inject
+	EntityManager _entityMgr;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -1471,7 +1476,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             isRecursive = true;
         }
 
-        Filter searchFilter = new Filter(NetworkVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Filter searchFilter = new Filter(NetworkVO.class, "id", false, null, null);
         SearchBuilder<NetworkVO> sb = _networksDao.createSearchBuilder();
 
         if (forVpc != null) {
@@ -1590,7 +1595,35 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             networksToReturn = networksForDeploy;
         }
 
+        //Now apply pagination
+        //Most likely pageSize will never exceed int value, and we need integer to partition the listToReturn
+        boolean notNull = cmd.getStartIndex() != null && cmd.getPageSizeVal() != null;
+        if (notNull && cmd.getStartIndex() <= Integer.MAX_VALUE && cmd.getStartIndex() >= Integer.MIN_VALUE &&
+                cmd.getPageSizeVal() <= Integer.MAX_VALUE && cmd.getPageSizeVal() >= Integer.MIN_VALUE) {
+            int startIndex = cmd.getStartIndex().intValue() == 0 ? 0 : cmd.getStartIndex().intValue() - 1;
+            List<NetworkVO> wPagination = new ArrayList<NetworkVO>();
+            List<List<NetworkVO>> partitions = partitionNetworks(networksToReturn, cmd.getPageSizeVal().intValue());
+            if (startIndex< partitions.size()) {
+                wPagination = partitions.get(startIndex);
+            }
+            return wPagination;
+        }
+
         return networksToReturn;
+    }
+
+    private static List<List<NetworkVO>> partitionNetworks(List<NetworkVO> originalList,
+            int chunkSize) {
+        List<List<NetworkVO>> listOfChunks = new ArrayList<List<NetworkVO>>();
+        for (int i = 0; i < originalList.size() / chunkSize; i++) {
+            listOfChunks.add(originalList.subList(i * chunkSize, i * chunkSize
+                    + chunkSize));
+        }
+        if (originalList.size() % chunkSize != 0) {
+            listOfChunks.add(originalList.subList(originalList.size()
+                    - originalList.size() % chunkSize, originalList.size()));
+        }
+        return listOfChunks;
     }
 
     private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String guestIpType,
@@ -2483,6 +2516,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
                     // add VirtualRouter as the default network service provider
                     addDefaultVirtualRouterToPhysicalNetwork(pNetwork.getId());
 
+                    if (pNetwork.getIsolationMethods().contains("GRE"))
+                        addDefaultOvsToPhysicalNetwork(pNetwork.getId());
+
                     // add security group provider to the physical network
                     addDefaultSecurityGroupProviderToPhysicalNetwork(pNetwork.getId());
 
@@ -2504,7 +2540,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         }
     }
 
-    @Override
+	@Override
     public Pair<List<? extends PhysicalNetwork>, Integer> searchPhysicalNetworks(Long id, Long zoneId, String keyword, Long startIndex, Long pageSize, String name) {
         Filter searchFilter = new Filter(PhysicalNetworkVO.class, "id", Boolean.TRUE, startIndex, pageSize);
         SearchCriteria<PhysicalNetworkVO> sc = _physicalNetworkDao.createSearchCriteria();
@@ -3727,6 +3763,23 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
         return nsp;
     }
+
+	private PhysicalNetworkServiceProvider addDefaultOvsToPhysicalNetwork(long physicalNetworkId) {
+		PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, Network.Provider.Ovs.getName(), null, null);
+		NetworkElement networkElement = _networkModel.getElementImplementingProvider(Network.Provider.Ovs.getName());
+		if (networkElement == null) {
+            throw new CloudRuntimeException("Unable to find the Network Element implementing the Ovs Provider");
+        }
+		OvsProviderVO element = _ovsProviderDao.findByNspId(nsp.getId());
+		if (element != null) {
+			s_logger.debug("There is already a Ovs element with service provider id "
+					+ nsp.getId());
+			return nsp;
+		}
+		element = new OvsProviderVO(nsp.getId());
+		_ovsProviderDao.persist(element);
+		return nsp;
+	}
 
     protected PhysicalNetworkServiceProvider addDefaultVpcVirtualRouterToPhysicalNetwork(long physicalNetworkId) {
 

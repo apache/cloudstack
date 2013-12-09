@@ -1077,7 +1077,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             if (snapshotType != Type.MANUAL) {
                 String msg = "Snapshot resource limit exceeded for account id : " + owner.getId() + ". Failed to create recurring snapshots";
                 s_logger.warn(msg);
-                _alertMgr.sendAlert(AlertManager.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg, "Snapshot resource limit exceeded for account id : " + owner.getId() +
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg, "Snapshot resource limit exceeded for account id : " + owner.getId() +
                     ". Failed to create recurring snapshots; please use updateResourceLimit to increase the limit");
             }
             throw e;

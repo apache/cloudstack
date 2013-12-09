@@ -39,6 +39,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
@@ -63,7 +64,7 @@ public interface VolumeOrchestrationService {
 
     String getVmNameOnVolume(Volume volume);
 
-    VolumeInfo createVolumeFromSnapshot(Volume volume, Snapshot snapshot) throws StorageUnavailableException;
+    VolumeInfo createVolumeFromSnapshot(Volume volume, Snapshot snapshot, UserVm vm) throws StorageUnavailableException;
 
     Volume migrateVolume(Volume volume, StoragePool destPool) throws StorageUnavailableException;
 

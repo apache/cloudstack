@@ -34,10 +34,6 @@ import com.cloud.vm.VirtualMachine;
 @DiscriminatorValue(value = "Service")
 @PrimaryKeyJoinColumn(name = "id")
 public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering {
-    public enum DynamicParameters {
-        cpuSpeed, cpuNumber, memory
-    };
-
     @Column(name = "cpu")
     private Integer cpu;
 
@@ -82,6 +78,11 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     // Call service offering dao to load it.
     @Transient
     Map<String, String> details;
+
+    // This flag is required to tell if the offering is dynamic once the cpu, memory and speed are set.
+    // In some cases cpu, memory and speed are set to non-null values even if the offering is dynamic.
+    @Transient
+    boolean isDynamic;
 
     protected ServiceOfferingVO() {
         super();
@@ -160,6 +161,20 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
             domainId,
             hostTag);
         this.deploymentPlanner = deploymentPlanner;
+    }
+
+    public ServiceOfferingVO(ServiceOfferingVO offering) {
+        super(offering.getId(), offering.getName(), offering.getDisplayText(), false, offering.getTags(), offering.isRecreatable(), offering.getUseLocalStorage(), offering.getSystemUse(), true, offering.getDomainId());
+        this.cpu = offering.getCpu();
+        this.ramSize = offering.getRamSize();
+        this.speed = offering.getSpeed();
+        this.rateMbps = offering.getRateMbps();
+        this.multicastRateMbps = offering.getMulticastRateMbps();
+        this.offerHA = offering.getOfferHA();
+        this.limitCpuUse = offering.getLimitCpuUse();
+        this.volatileVm = offering.getVolatileVm();
+        this.hostTag = offering.getHostTag();
+        this.vm_type = offering.getSystemVmType();
     }
 
     @Override
@@ -297,7 +312,10 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 
     @Override
     public boolean isDynamic() {
-        return cpu == null || speed == null || ramSize == null;
+        return cpu == null || speed == null || ramSize == null || isDynamic;
     }
 
+    public void setDynamicFlag(boolean isdynamic) {
+        this.isDynamic = isdynamic;
+    }
 }

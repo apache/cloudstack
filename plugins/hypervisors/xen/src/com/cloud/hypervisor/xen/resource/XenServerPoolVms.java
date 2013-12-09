@@ -51,9 +51,9 @@ public class XenServerPoolVms {
         return pv == null ? State.Stopped : pv.second(); // if a VM is absent on the cluster, it is effectively in stopped state.
     }
 
-    public void put(String clusterId, String hostUuid, String name, State state, String xstoolsversion) {
-        HashMap<String, Ternary<String, State, String>> vms = getClusterVmState(clusterId);
-        vms.put(name, new Ternary<String, State, String>(hostUuid, state, xstoolsversion));
+    public void put(String clusterId, String hostUuid, String name, State state, String platform){
+        HashMap<String, Ternary<String, State, String>> vms= getClusterVmState(clusterId);
+        vms.put(name, new Ternary<String, State, String>(hostUuid, state, platform));
     }
 
     public void put(String clusterId, String hostUuid, String name, State state) {

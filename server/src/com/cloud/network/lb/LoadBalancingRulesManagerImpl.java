@@ -1074,7 +1074,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             return null;
         }
 
-        return new LbSslCert(certVO.getCertificate(), certVO.getKey(), certVO.getChain(), certVO.getPassword(), lbCertMap.isRevoke());
+        return new LbSslCert(certVO.getCertificate(), certVO.getKey(), certVO.getPassword(), certVO.getChain(), certVO.getFingerPrint(), lbCertMap.isRevoke());
     }
 
     @Override
@@ -1124,11 +1124,6 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             LoadBalancerCertMapVO certMap = new LoadBalancerCertMapVO(lbRuleId, certId, false);
             _lbCertMapDao.persist(certMap);
             applyLoadBalancerConfig(loadBalancer.getId());
-            /*s_logger.warn("Failed to apply Ssl Cert to LB " + loadBalancer.getId());
-            CloudRuntimeException ex = new CloudRuntimeException(
-                    "Failed to apply Ssl Cert to LB " + loadBalancer.getId());
-            ex.addProxyObject(loadBalancer.getUuid(), "loadBalancerId");
-            throw ex;*/
             success = true;
         } catch (ResourceUnavailableException e) {
             if (isRollBackAllowedForProvider(loadBalancer)) {

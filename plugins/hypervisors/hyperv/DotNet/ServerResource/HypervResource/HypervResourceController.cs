@@ -23,7 +23,10 @@ using Microsoft.CSharp.RuntimeBinder;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
+using System.Collections.Specialized;
 using System.Collections.Generic;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -78,6 +81,31 @@ namespace HypervResource
         public ulong ParentPartitionMinMemoryMb;
         public string LocalSecondaryStoragePath;
         public string systemVmIso;
+
+        private string getPrimaryKey(string id)
+        {
+            return "primary_storage_" + id;
+        }
+
+        public string getPrimaryStorage(string id)
+        {
+            NameValueCollection settings = ConfigurationManager.AppSettings;
+            return settings.Get(getPrimaryKey(id));
+        }
+
+        public void setPrimaryStorage(string id, string path)
+        {
+            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+            KeyValueConfigurationCollection settings = config.AppSettings.Settings;
+            string key = getPrimaryKey(id);
+            if (settings[key] != null)
+            {
+                settings.Remove(key);
+            }
+            settings.Add(key, path);
+            config.Save(ConfigurationSaveMode.Modified);
+            ConfigurationManager.RefreshSection("appSettings");
+        }
     }
 
     /// <summary>
@@ -114,6 +142,7 @@ namespace HypervResource
 
         private static ILog logger = LogManager.GetLogger(typeof(HypervResourceController));
         private static string systemVmIso;
+        Dictionary<String, String> contextMap = new Dictionary<String, String>();
 
         public static void Initialize()
         {
@@ -175,7 +204,8 @@ namespace HypervResource
                 {
                     result = result,
                     details = "success - NOP",
-                    _reconnect = false
+                    _reconnect = false,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.SetupAnswer);
@@ -220,7 +250,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = result,
-                    details = details
+                    details = details,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.AttachAnswer);
@@ -264,7 +295,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = result,
-                    details = details
+                    details = details,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.DettachAnswer);
@@ -307,7 +339,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = result,
-                    details = details
+                    details = details,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.RebootAnswer);
@@ -369,7 +402,8 @@ namespace HypervResource
                 object ansContent = new
                     {
                         result = result,
-                        details = details
+                        details = details,
+                        contextMap = contextMap
                     };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
@@ -484,7 +518,8 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
-                    volume = volume
+                    volume = volume,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CreateAnswer);
             }
@@ -552,7 +587,8 @@ namespace HypervResource
                     result = result,
                     details = details,
                     templateSize = size,
-                    installPath = newCopyFileName
+                    installPath = newCopyFileName,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.PrimaryStorageDownloadAnswer);
             }
@@ -654,7 +690,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = true,
-                    details = "resource is alive"
+                    details = "resource is alive",
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CheckHealthAnswer);
             }
@@ -672,7 +709,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = true,
-                    details = "NOP, TODO: implement properly"
+                    details = "NOP, TODO: implement properly",
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CheckSshAnswer);
             }
@@ -700,7 +738,7 @@ namespace HypervResource
                 }
                 else
                 {
-                    state = EnabledState.ToString(sys.EnabledState); // TODO: V2 changes?
+                    state = EnabledState.ToCloudStackState(sys.EnabledState); // TODO: V2 changes?
                     result = true;
                 }
 
@@ -708,7 +746,8 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
-                    state = state
+                    state = state,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CheckVirtualMachineAnswer);
             }
@@ -725,7 +764,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = true,
-                    details = "Current implementation does not delete local path corresponding to storage pool!"
+                    details = "Current implementation does not delete local path corresponding to storage pool!",
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
             }
@@ -747,7 +787,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = true,
-                    details = "success - NOP"
+                    details = "success - NOP",
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
             }
@@ -772,7 +813,8 @@ namespace HypervResource
                     ansContent = new
                     {
                         result = result,
-                        details = details
+                        details = details,
+                        contextMap = contextMap
                     };
                     return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
                 }
@@ -815,7 +857,8 @@ namespace HypervResource
                     result = result,
                     details = details,
                     templateInfo = tInfo,
-                    poolInfo = poolInfo
+                    poolInfo = poolInfo,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.ModifyStoragePoolAnswer);
@@ -857,7 +900,8 @@ namespace HypervResource
                 object ansContent = new
                  {
                      result = false,
-                     details = "nothing to cleanup in our current implementation"
+                     details = "nothing to cleanup in our current implementation",
+                     contextMap = contextMap
                  };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
             }
@@ -874,7 +918,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = true,
-                    details = (string)null
+                    details = (string)null,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CheckNetworkAnswer);
             }
@@ -891,7 +936,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = true,
-                    details = (string)null
+                    details = (string)null,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.ReadyAnswer);
             }
@@ -924,7 +970,8 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
-                    vm = cmd.vm
+                    vm = cmd.vm,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.StartAnswer);
             }
@@ -956,9 +1003,70 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
-                    vm = cmd.vm
+                    vm = cmd.vm,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.StopAnswer);
+            }
+        }
+
+        // POST api/HypervResource/CreateObjectCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.CreateObjectCommand)]
+        public JContainer CreateObjectCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.CreateObjectCommand + cmd.ToString());
+
+                bool result = false;
+                string details = null;
+
+                try
+                {
+                    VolumeObjectTO volume = VolumeObjectTO.ParseJson(cmd.data);
+                    PrimaryDataStoreTO primary = volume.primaryDataStore;
+                    ulong volumeSize = volume.size;
+                    string volumeName = volume.name + ".vhdx";
+                    string volumePath = null;
+
+                    if (primary.isLocal)
+                    {
+                        volumePath = Path.Combine(primary.Path, volumeName);
+                    }
+                    else
+                    {
+                        volumePath = @"\\" + primary.uri.Host + primary.uri.LocalPath + @"\" + volumeName;
+                        volumePath = volumePath.Replace('/', '\\');
+                        Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
+                    }
+
+                    wmiCallsV2.CreateDynamicVirtualHardDisk(volumeSize, volumePath);
+                    if (File.Exists(volumePath))
+                    {
+                        result = true;
+                    }
+                    else
+                    {
+                        details = "Failed to create disk with name " + volumePath;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Test by providing wrong key
+                    details = CloudStackTypes.CreateObjectCommand + " failed on exception, " + ex.Message;
+                    logger.Error(details, ex);
+                }
+
+                object ansContent = new
+                {
+                    result = result,
+                    details = details,
+                    data = cmd.data,
+                    contextMap = contextMap
+                };
+
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CreateObjectAnswer);
             }
         }
 
@@ -976,7 +1084,8 @@ namespace HypervResource
                 {
                     result = true,
                     details = "success - NOP for MaintainCommand",
-                    _reconnect = false
+                    _reconnect = false,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.MaintainAnswer);
@@ -997,7 +1106,8 @@ namespace HypervResource
                 {
                     result = true,
                     details = "success - NOP for PingRoutingCommand",
-                    _reconnect = false
+                    _reconnect = false,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
@@ -1018,7 +1128,8 @@ namespace HypervResource
                 {
                     result = true,
                     details = "success - NOP for PingCommand",
-                    _reconnect = false
+                    _reconnect = false,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
@@ -1034,7 +1145,6 @@ namespace HypervResource
             {
                 logger.Info(CloudStackTypes.GetVmStatsCommand + cmd.ToString());
                 bool result = false;
-                string details = null;
                 JArray vmNamesJson = cmd.vmNames;
                 string[] vmNames = vmNamesJson.ToObject<string[]>();
                 Dictionary<string, VmStatsEntry> vmProcessorInfo = new Dictionary<string, VmStatsEntry>(vmNames.Length);
@@ -1061,9 +1171,9 @@ namespace HypervResource
 
                 object ansContent = new
                 {
-                    vmInfos = vmProcessorInfo,
+                    vmStatsMap = vmProcessorInfo,
                     result = result,
-                    details = details,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.GetVmStatsAnswer);
             }
@@ -1092,14 +1202,24 @@ namespace HypervResource
 
                     logger.Info(CloudStackTypes.CopyCommand + cmd.ToString());
 
+                    string destFile = null;
+                    if (destTemplateObjectTO != null && destTemplateObjectTO.primaryDataStore != null)
+                    {
+                        destFile = destTemplateObjectTO.FullFileName;
+                        if (!destTemplateObjectTO.primaryDataStore.isLocal)
+                        {
+                            PrimaryDataStoreTO primary = destTemplateObjectTO.primaryDataStore;
+                            Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
+                        }
+                    }
+
                     // Already exists?
-                    if (destTemplateObjectTO != null &&
-                        File.Exists(destTemplateObjectTO.FullFileName) &&
+                    if (destFile != null && File.Exists(destFile) &&
                         !String.IsNullOrEmpty(destTemplateObjectTO.checksum))
                     {
                         // TODO: checksum fails us, because it is of the compressed image.
                         // ASK: should we store the compressed or uncompressed version or is the checksum not calculated correctly?
-                        result = VerifyChecksum(destTemplateObjectTO.FullFileName, destTemplateObjectTO.checksum);
+                        result = VerifyChecksum(destFile, destTemplateObjectTO.checksum);
                     }
 
                     // Do we have to create a new one?
@@ -1112,8 +1232,6 @@ namespace HypervResource
                             // NFS provider download to primary storage?
                             if ((srcTemplateObjectTO.s3DataStoreTO != null || srcTemplateObjectTO.nfsDataStoreTO != null) && destTemplateObjectTO.primaryDataStore != null)
                             {
-                                string destFile = destTemplateObjectTO.FullFileName;
-
                                 if (File.Exists(destFile))
                                 {
                                     logger.Info("Deleting existing file " + destFile);
@@ -1187,7 +1305,7 @@ namespace HypervResource
                             {
                                 destVolumeObjectTO.format = srcTemplateObjectTO.format;
                             }
-                            string destFile = destVolumeObjectTO.FullFileName;
+                            destFile = destVolumeObjectTO.FullFileName;
                             string srcFile = srcTemplateObjectTO.FullFileName;
 
                             if (!File.Exists(srcFile))
@@ -1225,7 +1343,8 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
-                    newData = cmd.destTO 
+                    newData = cmd.destTO,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CopyCmdAnswer);
             }
@@ -1338,7 +1457,8 @@ namespace HypervResource
                     result = result,
                     details = details,
                     capacity = capacity,
-                    used = used
+                    used = used,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.GetStorageStatsAnswer);
             }
@@ -1399,7 +1519,8 @@ namespace HypervResource
                 {
                     result = result,
                     hostStats = hostStats,
-                    details = details
+                    details = details,
+                    contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.GetHostStatsAnswer);
             }
@@ -1415,14 +1536,15 @@ namespace HypervResource
                 logger.Info(CloudStackTypes.PrepareForMigrationCommand + cmd.ToString());
 
                 string details = null;
-                bool result = false;
+                bool result = true;
 
                 try
                 {
-                    details = "NOP - failure";
+                    details = "NOP - success";
                 }
                 catch (Exception sysEx)
                 {
+                    result = false;
                     details = CloudStackTypes.PrepareForMigrationCommand + " failed due to " + sysEx.Message;
                     logger.Error(details, sysEx);
                 }
@@ -1430,7 +1552,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = result,
-                    details = details
+                    details = details,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.PrepareForMigrationAnswer);
@@ -1451,7 +1574,10 @@ namespace HypervResource
 
                 try
                 {
-                    details = "NOP - failure";
+                    string vm = (string)cmd.vmName;
+                    string destination = (string)cmd.destIp;
+                    wmiCallsV2.MigrateVm(vm, destination);
+                    result = true;
                 }
                 catch (Exception sysEx)
                 {
@@ -1462,7 +1588,8 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = result,
-                    details = details
+                    details = details,
+                    contextMap = contextMap
                 };
 
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.MigrateAnswer);
@@ -1553,7 +1680,8 @@ namespace HypervResource
                         poolInfo = pi,
                         guid = pi.uuid,
                         dataCenter = strtRouteCmd.dataCenter,
-                        resourceType = StorageResourceType.STORAGE_POOL.ToString()  // TODO: check encoding
+                        resourceType = StorageResourceType.STORAGE_POOL.ToString(),  // TODO: check encoding
+                        contextMap = contextMap
                     };
                     JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.StartupStorageCommand, ansContent);
                     cmdArray.Add(ansObj);

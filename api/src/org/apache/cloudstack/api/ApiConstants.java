@@ -54,6 +54,7 @@ public class ApiConstants {
     public static final String CREATED = "created";
     public static final String CUSTOMIZED = "customized";
     public static final String CUSTOMIZED_IOPS = "customizediops";
+    public static final String CUSTOM_ID = "customid";
     public static final String MIN_IOPS = "miniops";
     public static final String MAX_IOPS = "maxiops";
     public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
@@ -71,6 +72,7 @@ public class ApiConstants {
     public static final String DISPLAY_VM = "displayvm";
     public static final String DISPLAY_OFFERING = "displayoffering";
     public static final String DISPLAY_VOLUME = "displayvolume";
+    public static final String CUSTOM_PARAMETERS = "customparameters";
     public static final String DNS1 = "dns1";
     public static final String DNS2 = "dns2";
     public static final String IP6_DNS1 = "ip6dns1";
@@ -407,10 +409,20 @@ public class ApiConstants {
     public static final String VSWITCH_TYPE_PUBLIC_TRAFFIC = "publicvswitchtype";
     public static final String VSWITCH_NAME_GUEST_TRAFFIC = "guestvswitchname";
     public static final String VSWITCH_NAME_PUBLIC_TRAFFIC = "publicvswitchname";
+    // Ovs controller
+    public static final String OVS_DEVICE_ID = "ovsdeviceid";
+    public static final String OVS_DEVICE_NAME = "ovsdevicename";
+	// OpenDaylight controller
+	public static final String ODL_DEVICE_ID = "odldeviceid";
+	public static final String ODL_DEVICE_NAME = "odldevicename";
+	public static final String ODL_TRANSPORT_ZONE_UUID = "transportzoneuuid";
+	public static final String ODL_GATEWAYSERVICE_UUID = "l3gatewayserviceuuid";
+
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_ID = "vsmdeviceid";
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_NAME = "vsmdevicename";
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_STATE = "vsmdevicestate";
-    // Would we need to have a capacity field for Cisco N1KV VSM? Max hosts managed by it perhaps? May remove this later.
+    // Would we need to have a capacity field for Cisco N1KV VSM? Max hosts managed by it perhaps? May remove this
+// later.
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_CAPACITY = "vsmdevicecapacity";
     public static final String CISCO_NEXUS_VSM_NAME = "vsmname";
     public static final String VSM_USERNAME = "vsmusername";
@@ -534,6 +546,7 @@ public class ApiConstants {
     public static final String FOR_DISPLAY = "fordisplay";
     public static final String PASSIVE = "passive";
     public static final String VERSION = "version";
+    public static final String START = "start";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

@@ -16,19 +16,21 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
+import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -41,7 +43,7 @@ import com.cloud.storage.Volume;
 @APICommand(name = "createVolume",
             responseObject = VolumeResponse.class,
             description = "Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.")
-public class CreateVolumeCmd extends BaseAsyncCreateCmd {
+public class CreateVolumeCmd extends BaseAsyncCreateCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVolumeCmd.class.getName());
     private static final String s_name = "createvolumeresponse";
 
@@ -50,7 +52,7 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ACCOUNT,
-               type = CommandType.STRING,
+               type = BaseCmd.CommandType.STRING,
                description = "the account associated with the disk volume. Must be used with the domainId parameter.")
     private String accountName;
 
@@ -98,6 +100,9 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.DISPLAY_VOLUME, type = CommandType.BOOLEAN, description = "an optional field, whether to display the volume to the end user or not.")
     private Boolean displayVolume;
 
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class, description = "the ID of the virtual machine; to be used with snapshot Id, VM to which the volume gets attached after creation")
+    private Long virtualMachineId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -144,6 +149,10 @@ public class CreateVolumeCmd extends BaseAsyncCreateCmd {
 
     public Boolean getDisplayVolume() {
         return displayVolume;
+    }
+
+    public Long getVirtualMachineId() {
+        return virtualMachineId;
     }
 
     /////////////////////////////////////////////////////

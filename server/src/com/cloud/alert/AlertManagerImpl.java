@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Timer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
@@ -32,17 +34,13 @@ import javax.mail.Authenticator;
 import javax.mail.Message.RecipientType;
 import javax.mail.MessagingException;
 import javax.mail.PasswordAuthentication;
+import javax.mail.SendFailedException;
 import javax.mail.Session;
 import javax.mail.URLName;
 import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
-import com.sun.mail.smtp.SMTPMessage;
-import com.sun.mail.smtp.SMTPSSLTransport;
-import com.sun.mail.smtp.SMTPTransport;
-
+import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -50,6 +48,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
 
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
@@ -70,7 +69,9 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.event.ActionEvent;
 import com.cloud.event.AlertGenerator;
+import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.network.dao.IPAddressDao;
@@ -79,8 +80,12 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
+import com.sun.mail.smtp.SMTPMessage;
+import com.sun.mail.smtp.SMTPSSLTransport;
+import com.sun.mail.smtp.SMTPTransport;
 
 @Local(value = {AlertManager.class})
 public class AlertManagerImpl extends ManagerBase implements AlertManager, Configurable {
@@ -132,6 +137,12 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     private double _localStorageCapacityThreshold = 0.75;
     Map<Short, Double> _capacityTypeThresholdMap = new HashMap<Short, Double>();
 
+    private final ExecutorService _executor;
+
+    public AlertManagerImpl() {
+        _executor = Executors.newCachedThreadPool(new NamedThreadFactory("Email-Alerts-Sender"));
+    }
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
@@ -151,12 +162,14 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         String smtpPassword = configs.get("alert.smtp.password");
         String emailSender = configs.get("alert.email.sender");
         String smtpDebugStr = configs.get("alert.smtp.debug");
+        int smtpTimeout = NumbersUtil.parseInt(configs.get("alert.smtp.timeout"), 30000);
+        int smtpConnectionTimeout = NumbersUtil.parseInt(configs.get("alert.smtp.connectiontimeout"), 30000);
         boolean smtpDebug = false;
         if (smtpDebugStr != null) {
             smtpDebug = Boolean.parseBoolean(smtpDebugStr);
         }
 
-        _emailAlert = new EmailAlert(emailAddresses, smtpHost, smtpPort, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
+        _emailAlert = new EmailAlert(emailAddresses, smtpHost, smtpPort, smtpConnectionTimeout, smtpTimeout, useAuth, smtpUsername, smtpPassword, emailSender, smtpDebug);
 
         String publicIPCapacityThreshold = _configDao.getValue(Config.PublicIpCapacityThreshold.key());
         String privateIPCapacityThreshold = _configDao.getValue(Config.PrivateIpCapacityThreshold.key());
@@ -216,10 +229,10 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     }
 
     @Override
-    public void clearAlert(short alertType, long dataCenterId, long podId) {
+    public void clearAlert(AlertType alertType, long dataCenterId, long podId) {
         try {
             if (_emailAlert != null) {
-                _emailAlert.clearAlert(alertType, dataCenterId, podId);
+                _emailAlert.clearAlert(alertType.getType(), dataCenterId, podId);
             }
         } catch (Exception ex) {
             s_logger.error("Problem clearing email alert", ex);
@@ -227,10 +240,10 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     }
 
     @Override
-    public void sendAlert(short alertType, long dataCenterId, Long podId, String subject, String body) {
+    public void sendAlert(AlertType alertType, long dataCenterId, Long podId, String subject, String body) {
 
         // publish alert
-        AlertGenerator.publishAlertOnEventBus(getAlertType(alertType), dataCenterId, podId, subject, body);
+        AlertGenerator.publishAlertOnEventBus(alertType.getName(), dataCenterId, podId, subject, body);
 
         // TODO:  queue up these messages and send them as one set of issues once a certain number of issues is reached?  If that's the case,
         //         shouldn't we have a type/severity as part of the API so that severe errors get sent right away?
@@ -246,67 +259,6 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         }
     }
 
-    private String getAlertType(short alertType) {
-        if (alertType == ALERT_TYPE_MEMORY) {
-            return "ALERT.MEMORY";
-        } else if (alertType == ALERT_TYPE_CPU) {
-            return "ALERT.MEMORY";
-        } else if (alertType == ALERT_TYPE_STORAGE) {
-            return "ALERT.STORAGE";
-        } else if (alertType == ALERT_TYPE_STORAGE_ALLOCATED) {
-            return "ALERT.STORAGE.ALLOCATED";
-        } else if (alertType == ALERT_TYPE_VIRTUAL_NETWORK_PUBLIC_IP) {
-            return "ALERT.NETWORK.PUBLICIP";
-        } else if (alertType == ALERT_TYPE_PRIVATE_IP) {
-            return "ALERT.NETWORK.PRIVATEIP";
-        } else if (alertType == ALERT_TYPE_SECONDARY_STORAGE) {
-            return "ALERT.STORAGE.SECONDARY";
-        } else if (alertType == ALERT_TYPE_HOST) {
-            return "ALERT.COMPUTE.HOST";
-        } else if (alertType == ALERT_TYPE_USERVM) {
-            return "ALERT.USERVM";
-        } else if (alertType == ALERT_TYPE_DOMAIN_ROUTER) {
-            return "ALERT.SERVICE.DOMAINROUTER";
-        } else if (alertType == ALERT_TYPE_CONSOLE_PROXY) {
-            return "ALERT.SERVICE.CONSOLEPROXY";
-        } else if (alertType == ALERT_TYPE_ROUTING) {
-            return "ALERT.NETWORK.ROUTING";
-        } else if (alertType == ALERT_TYPE_STORAGE_MISC) {
-            return "ALERT.STORAGE.MISC";
-        } else if (alertType == ALERT_TYPE_USAGE_SERVER) {
-            return "ALERT.USAGE";
-        } else if (alertType == ALERT_TYPE_MANAGMENT_NODE) {
-            return "ALERT.MANAGEMENT";
-        } else if (alertType == ALERT_TYPE_DOMAIN_ROUTER_MIGRATE) {
-            return "ALERT.NETWORK.DOMAINROUTERMIGRATE";
-        } else if (alertType == ALERT_TYPE_CONSOLE_PROXY_MIGRATE) {
-            return "ALERT.SERVICE.CONSOLEPROXYMIGRATE";
-        } else if (alertType == ALERT_TYPE_USERVM_MIGRATE) {
-            return "ALERT.USERVM.MIGRATE";
-        } else if (alertType == ALERT_TYPE_VLAN) {
-            return "ALERT.NETWORK.VLAN";
-        } else if (alertType == ALERT_TYPE_SSVM) {
-            return "ALERT.SERVICE.SSVM";
-        } else if (alertType == ALERT_TYPE_USAGE_SERVER_RESULT) {
-            return "ALERT.USAGE.RESULT";
-        } else if (alertType == ALERT_TYPE_STORAGE_DELETE) {
-            return "ALERT.STORAGE.DELETE";
-        } else if (alertType == ALERT_TYPE_UPDATE_RESOURCE_COUNT) {
-            return "ALERT.RESOURCE.COUNT";
-        } else if (alertType == ALERT_TYPE_USAGE_SANITY_RESULT) {
-            return "ALERT.USAGE.SANITY";
-        } else if (alertType == ALERT_TYPE_DIRECT_ATTACHED_PUBLIC_IP) {
-            return "ALERT.NETWORK.DIRECTPUBLICIP";
-        } else if (alertType == ALERT_TYPE_LOCAL_STORAGE) {
-            return "ALERT.STORAGE.LOCAL";
-        } else if (alertType == ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED) {
-            return "ALERT.RESOURCE.EXCEED";
-        }
-        return "UNKNOWN";
-    }
-
-    @Override
-    @DB
     public void recalculateCapacity() {
         // FIXME: the right way to do this is to register a listener (see RouterStatsListener, VMSyncListener)
         //        for the vm sync state.  The listener model has connects/disconnects to keep things in sync much better
@@ -590,8 +542,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         String msgContent = null;
         String totalStr;
         String usedStr;
-        String pctStr = formatPercent(usedCapacity / totalCapacity);
-        short alertType = -1;
+        String pctStr = formatPercent(usedCapacity/totalCapacity);
+        AlertType alertType = null;
         Long podId = pod == null ? null : pod.getId();
         Long clusterId = cluster == null ? null : cluster.getId();
 
@@ -603,21 +555,21 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 totalStr = formatBytesToMegabytes(totalCapacity);
                 usedStr = formatBytesToMegabytes(usedCapacity);
                 msgContent = "System memory is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
-                alertType = ALERT_TYPE_MEMORY;
+                alertType = AlertManager.AlertType.ALERT_TYPE_MEMORY;
                 break;
             case Capacity.CAPACITY_TYPE_CPU:
                 msgSubject = "System Alert: Low Unallocated CPU in cluster " + cluster.getName() + " pod " + pod.getName() + " of availability zone " + dc.getName();
                 totalStr = _dfWhole.format(totalCapacity);
                 usedStr = _dfWhole.format(usedCapacity);
                 msgContent = "Unallocated CPU is low, total: " + totalStr + " Mhz, used: " + usedStr + " Mhz (" + pctStr + "%)";
-                alertType = ALERT_TYPE_CPU;
+                alertType = AlertManager.AlertType.ALERT_TYPE_CPU;
                 break;
             case Capacity.CAPACITY_TYPE_STORAGE:
                 msgSubject = "System Alert: Low Available Storage in cluster " + cluster.getName() + " pod " + pod.getName() + " of availability zone " + dc.getName();
                 totalStr = formatBytesToMegabytes(totalCapacity);
                 usedStr = formatBytesToMegabytes(usedCapacity);
                 msgContent = "Available storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
-                alertType = ALERT_TYPE_STORAGE;
+                alertType = AlertManager.AlertType.ALERT_TYPE_STORAGE;
                 break;
             case Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED:
                 msgSubject =
@@ -626,7 +578,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 totalStr = formatBytesToMegabytes(totalCapacity);
                 usedStr = formatBytesToMegabytes(usedCapacity);
                 msgContent = "Unallocated storage space is low, total: " + totalStr + " MB, allocated: " + usedStr + " MB (" + pctStr + "%)";
-                alertType = ALERT_TYPE_STORAGE_ALLOCATED;
+                alertType = AlertManager.AlertType.ALERT_TYPE_STORAGE_ALLOCATED;
                 break;
             case Capacity.CAPACITY_TYPE_LOCAL_STORAGE:
                 msgSubject =
@@ -635,7 +587,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 totalStr = formatBytesToMegabytes(totalCapacity);
                 usedStr = formatBytesToMegabytes(usedCapacity);
                 msgContent = "Unallocated storage space is low, total: " + totalStr + " MB, allocated: " + usedStr + " MB (" + pctStr + "%)";
-                alertType = ALERT_TYPE_LOCAL_STORAGE;
+                alertType = AlertManager.AlertType.ALERT_TYPE_LOCAL_STORAGE;
                 break;
 
             //Pod Level
@@ -644,7 +596,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 totalStr = Double.toString(totalCapacity);
                 usedStr = Double.toString(usedCapacity);
                 msgContent = "Number of unallocated private IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
-                alertType = ALERT_TYPE_PRIVATE_IP;
+                alertType = AlertManager.AlertType.ALERT_TYPE_PRIVATE_IP;
                 break;
 
             //Zone Level
@@ -653,28 +605,28 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 totalStr = formatBytesToMegabytes(totalCapacity);
                 usedStr = formatBytesToMegabytes(usedCapacity);
                 msgContent = "Available secondary storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
-                alertType = ALERT_TYPE_SECONDARY_STORAGE;
+                alertType = AlertManager.AlertType.ALERT_TYPE_SECONDARY_STORAGE;
                 break;
             case Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP:
                 msgSubject = "System Alert: Number of unallocated virtual network public IPs is low in availability zone " + dc.getName();
                 totalStr = Double.toString(totalCapacity);
                 usedStr = Double.toString(usedCapacity);
                 msgContent = "Number of unallocated public IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
-                alertType = ALERT_TYPE_VIRTUAL_NETWORK_PUBLIC_IP;
+                alertType = AlertManager.AlertType.ALERT_TYPE_VIRTUAL_NETWORK_PUBLIC_IP;
                 break;
             case Capacity.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP:
                 msgSubject = "System Alert: Number of unallocated shared network IPs is low in availability zone " + dc.getName();
                 totalStr = Double.toString(totalCapacity);
                 usedStr = Double.toString(usedCapacity);
                 msgContent = "Number of unallocated shared network IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
-                alertType = ALERT_TYPE_DIRECT_ATTACHED_PUBLIC_IP;
+                alertType = AlertManager.AlertType.ALERT_TYPE_DIRECT_ATTACHED_PUBLIC_IP;
                 break;
             case Capacity.CAPACITY_TYPE_VLAN:
                 msgSubject = "System Alert: Number of unallocated VLANs is low in availability zone " + dc.getName();
                 totalStr = Double.toString(totalCapacity);
                 usedStr = Double.toString(usedCapacity);
                 msgContent = "Number of unallocated VLANs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
-                alertType = ALERT_TYPE_VLAN;
+                alertType = AlertManager.AlertType.ALERT_TYPE_VLAN;
                 break;
         }
 
@@ -729,9 +681,11 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         private final String _smtpUsername;
         private final String _smtpPassword;
         private final String _emailSender;
+        private int _smtpTimeout;
+        private int _smtpConnectionTimeout;
 
-        public EmailAlert(String[] recipientList, String smtpHost, int smtpPort, boolean smtpUseAuth, final String smtpUsername, final String smtpPassword,
-                String emailSender, boolean smtpDebug) {
+        public EmailAlert(String[] recipientList, String smtpHost, int smtpPort, int smtpConnectionTimeout, int smtpTimeout, boolean smtpUseAuth, final String smtpUsername,
+                final String smtpPassword, String emailSender, boolean smtpDebug) {
             if (recipientList != null) {
                 _recipientList = new InternetAddress[recipientList.length];
                 for (int i = 0; i < recipientList.length; i++) {
@@ -749,19 +703,27 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             _smtpUsername = smtpUsername;
             _smtpPassword = smtpPassword;
             _emailSender = emailSender;
+            _smtpTimeout = smtpTimeout;
+            _smtpConnectionTimeout = smtpConnectionTimeout;
 
             if (_smtpHost != null) {
                 Properties smtpProps = new Properties();
                 smtpProps.put("mail.smtp.host", smtpHost);
                 smtpProps.put("mail.smtp.port", smtpPort);
-                smtpProps.put("mail.smtp.auth", "" + smtpUseAuth);
+                smtpProps.put("mail.smtp.auth", ""+smtpUseAuth);
+                smtpProps.put("mail.smtp.timeout", _smtpTimeout);
+                smtpProps.put("mail.smtp.connectiontimeout", _smtpConnectionTimeout);
+
                 if (smtpUsername != null) {
                     smtpProps.put("mail.smtp.user", smtpUsername);
                 }
 
                 smtpProps.put("mail.smtps.host", smtpHost);
                 smtpProps.put("mail.smtps.port", smtpPort);
-                smtpProps.put("mail.smtps.auth", "" + smtpUseAuth);
+                smtpProps.put("mail.smtps.auth", ""+smtpUseAuth);
+                smtpProps.put("mail.smtps.timeout", _smtpTimeout);
+                smtpProps.put("mail.smtps.connectiontimeout", _smtpConnectionTimeout);
+
                 if (smtpUsername != null) {
                     smtpProps.put("mail.smtps.user", smtpUsername);
                 }
@@ -783,28 +745,32 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         }
 
         // TODO:  make sure this handles SSL transport (useAuth is true) and regular
-        public void sendAlert(short alertType, long dataCenterId, Long podId, Long clusterId, String subject, String content) throws MessagingException,
-            UnsupportedEncodingException {
-            s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " + podId + " // clusterId:: " + null +
-                " // message:: " + subject);
+        public void sendAlert(AlertType alertType, long dataCenterId, Long podId, Long clusterId, String subject, String content) throws MessagingException, UnsupportedEncodingException {
+            s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " +
+                podId + " // clusterId:: " + null + " // message:: " + subject);
             AlertVO alert = null;
-            if ((alertType != AlertManager.ALERT_TYPE_HOST) && (alertType != AlertManager.ALERT_TYPE_USERVM) && (alertType != AlertManager.ALERT_TYPE_DOMAIN_ROUTER) &&
-                (alertType != AlertManager.ALERT_TYPE_CONSOLE_PROXY) && (alertType != AlertManager.ALERT_TYPE_SSVM) &&
-                (alertType != AlertManager.ALERT_TYPE_STORAGE_MISC) && (alertType != AlertManager.ALERT_TYPE_MANAGMENT_NODE) &&
-                (alertType != AlertManager.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED)) {
-                alert = _alertDao.getLastAlert(alertType, dataCenterId, podId, clusterId);
+            if ((alertType != AlertManager.AlertType.ALERT_TYPE_HOST) &&
+                    (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM) &&
+                    (alertType != AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER) &&
+                    (alertType != AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY) &&
+                    (alertType != AlertManager.AlertType.ALERT_TYPE_SSVM) &&
+                    (alertType != AlertManager.AlertType.ALERT_TYPE_STORAGE_MISC) &&
+                    (alertType != AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE) &&
+                    (alertType != AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED)) {
+                alert = _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId, clusterId);
             }
 
             if (alert == null) {
                 // set up a new alert
                 AlertVO newAlert = new AlertVO();
-                newAlert.setType(alertType);
+                newAlert.setType(alertType.getType());
                 newAlert.setSubject(subject);
                 newAlert.setClusterId(clusterId);
                 newAlert.setPodId(podId);
                 newAlert.setDataCenterId(dataCenterId);
                 newAlert.setSentCount(1); // initialize sent count to 1 since we are now sending an alert
                 newAlert.setLastSent(new Date());
+                newAlert.setName(alertType.getName());
                 _alertDao.persist(newAlert);
             } else {
                 if (s_logger.isDebugEnabled()) {
@@ -831,11 +797,26 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 } else {
                     smtpTrans = new SMTPTransport(_smtpSession, new URLName("smtp", _smtpHost, _smtpPort, null, _smtpUsername, _smtpPassword));
                 }
-                smtpTrans.connect();
-                smtpTrans.sendMessage(msg, msg.getAllRecipients());
-                smtpTrans.close();
+                sendMessage(smtpTrans, msg);
             }
         }
+
+        private void sendMessage(final SMTPTransport smtpTrans, final SMTPMessage msg) {
+            _executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        smtpTrans.connect();
+                        smtpTrans.sendMessage(msg, msg.getAllRecipients());
+                        smtpTrans.close();
+                    } catch (SendFailedException e) {
+                        s_logger.error(" Failed to send email alert " + e);
+                    } catch (MessagingException e) {
+                        s_logger.error(" Failed to send email alert " + e);
+                    }
+                }
+            });
+         }
 
         public void clearAlert(short alertType, long dataCenterId, Long podId) {
             if (alertType != -1) {
@@ -866,5 +847,17 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {CPUCapacityThreshold, MemoryCapacityThreshold, StorageAllocatedCapacityThreshold, StorageCapacityThreshold};
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.ALERT_GENERATE, eventDescription = "generating alert", async=true)
+    public boolean generateAlert(AlertType alertType, long dataCenterId, Long podId, String msg) {
+        try {
+            sendAlert(alertType, dataCenterId, podId, msg, msg);
+            return true;
+        } catch (Exception ex) {
+            s_logger.warn("Failed to generate an alert of type=" + alertType + "; msg=" + msg);
+            return false;
+        }
     }
 }

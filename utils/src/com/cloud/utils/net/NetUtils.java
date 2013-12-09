@@ -1427,4 +1427,26 @@ public class NetUtils {
         SubnetUtils subnetUtils = new SubnetUtils(cidr);
         return subnetUtils.getInfo().isInRange(ipAddress);
     }
+
+    public static Boolean IsIpEqualToNetworkOrBroadCastIp(String requestedIp, String cidr, long size) {
+        assert (size < 32) : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
+
+        long ip = ip2Long(cidr);
+        long startNetMask = ip2Long(getCidrNetmask(size));
+
+        long start = (ip & startNetMask);
+        long end = start;
+
+        end = end >> (32 - size);
+
+        end++;
+        end = (end << (32 - size)) - 1;
+
+        long reqIp = ip2Long(requestedIp);
+        if (reqIp == start || reqIp == end) {
+            return true;
+        }
+        return false;
+    }
+
 }

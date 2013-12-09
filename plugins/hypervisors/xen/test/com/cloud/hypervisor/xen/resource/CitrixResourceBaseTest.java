@@ -158,6 +158,7 @@ public class CitrixResourceBaseTest {
         doReturn(1).when(vmSpec).getCpus();
         doNothing().when(vm).setVCPUsNumberLive(conn, 1L);
         doReturn(500).when(vmSpec).getMinSpeed();
+        doReturn(500).when(vmSpec).getMaxSpeed();
         doReturn(true).when(vmSpec).getLimitCpuUse();
         doReturn(null).when(_resource).callHostPlugin(conn, "vmops", "add_to_VCPUs_params_live", "key", "cap", "value", "99", "vmname", "i-2-3-VM");
         Map<String, String> args = mock(HashMap.class);

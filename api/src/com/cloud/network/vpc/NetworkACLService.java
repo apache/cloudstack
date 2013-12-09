@@ -19,6 +19,7 @@ package com.cloud.network.vpc;
 import java.util.List;
 
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 
 import com.cloud.exception.ResourceUnavailableException;
@@ -43,13 +44,10 @@ public interface NetworkACLService {
 
     /**
      * List NetworkACLs by Id/Name/Network or Vpc it belongs to
-     * @param id
-     * @param name
-     * @param networkId
-     * @param vpcId
+     * @param cmd
      * @return
      */
-    Pair<List<? extends NetworkACL>, Integer> listNetworkACLs(Long id, String name, Long networkId, Long vpcId);
+    Pair<List<? extends NetworkACL>,Integer> listNetworkACLs(ListNetworkACLListsCmd cmd);
 
     /**
      * Delete specified network ACL. Deletion fails if the list is not empty

@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -69,7 +70,7 @@ import com.cloud.uservm.UserVm;
 @APICommand(name = "deployVirtualMachine",
             description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.",
             responseObject = UserVmResponse.class)
-public class DeployVMCmd extends BaseAsyncCreateCmd {
+public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmd.class.getName());
 
     private static final String s_name = "deployvirtualmachineresponse";
@@ -229,29 +230,11 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                description = "an optional field, whether to the display the vm to the end user or not.")
     private Boolean displayVm;
 
-    @Parameter(name = ApiConstants.CPU_SPEED,
-               type = CommandType.INTEGER,
-               since = "4.3",
-               description = "optional field to specify the cpu speed when using dynamic compute offering.")
-    private Integer cpuSpeed;
-
-    @Parameter(name = ApiConstants.MEMORY,
-               type = CommandType.INTEGER,
-               since = "4.3",
-               description = "optional field to specify the memory when using dynamic compute offering")
-    private Integer memory;
-
-    @Parameter(name = ApiConstants.CPU_NUMBER,
-               type = CommandType.INTEGER,
-               since = "4.3",
-               description = "optional field to specify the number of cpu cores when using dynamic offering.")
-    private Integer cpuNumber;
-
-    @Parameter(name = ApiConstants.ROOT_DISK_SIZE,
-               type = CommandType.LONG,
-               since = "4.3",
-               description = "optional field to specify the number of cpu cores when using dynamic offering.")
-    private Long rootdisksize;
+    @Parameter(name = ApiConstants.CUSTOM_PARAMETERS,
+               type = CommandType.MAP,
+               since= "4.3",
+               description = "used to specify the custom parameters.")
+    private  Map customParameters;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -279,6 +262,21 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         return domainId;
     }
 
+    public Map<String, String> getCustomParameters() {
+        Map<String,String> customparameterMap = new HashMap<String, String>();
+        if (customParameters != null && customParameters.size() !=0){
+            Collection parameterCollection = customParameters.values();
+            Iterator iter = parameterCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> value = (HashMap<String, String>) iter.next();
+                for (String key : value.keySet()) {
+                    customparameterMap.put(key, value.get(key));
+                }
+            }
+        }
+        return customparameterMap;
+    }
+
     public String getGroup() {
         return group;
     }
@@ -291,21 +289,6 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         return displayVm;
     }
 
-    public Integer getMemory() {
-        return memory;
-    }
-
-    public Integer getCpuSpeed() {
-        return cpuSpeed;
-    }
-
-    public Integer getCpuNumber() {
-        return cpuNumber;
-    }
-
-    public Long getRootdisksize() {
-        return rootdisksize;
-    }
 
     public List<Long> getSecurityGroupIdList() {
         if (securityGroupNameList != null && securityGroupIdList != null) {
@@ -576,14 +559,14 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                     vm =
                         _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name, displayName,
                             diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard,
-                            getAffinityGroupIdList(), cpuSpeed, memory, cpuNumber, rootdisksize);
+                            getAffinityGroupIdList(), getCustomParameters(), getCustomId());
                 }
             } else {
                 if (zone.isSecurityGroupEnabled()) {
                     vm =
                         _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(), owner, name,
                             displayName, diskOfferingId, size, group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm,
-                            keyboard, getAffinityGroupIdList(), cpuSpeed, memory, cpuNumber, rootdisksize);
+                            keyboard, getAffinityGroupIdList(), getCustomParameters(), getCustomId());
 
                 } else {
                     if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
@@ -592,7 +575,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                     vm =
                         _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName, diskOfferingId, size,
                             group, getHypervisor(), getHttpMethod(), userData, sshKeyPairName, getIpToNetworkMap(), addrs, displayVm, keyboard, getAffinityGroupIdList(),
-                            cpuSpeed, memory, cpuNumber, rootdisksize);
+                            getCustomParameters(), getCustomId());
 
                 }
             }

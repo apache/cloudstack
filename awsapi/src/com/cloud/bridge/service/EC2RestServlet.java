@@ -58,6 +58,7 @@ import org.apache.axis2.databinding.ADBBean;
 import org.apache.axis2.databinding.ADBException;
 import org.apache.axis2.databinding.utils.writer.MTOMAwareXMLSerializer;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
@@ -103,7 +104,6 @@ import com.amazon.ec2.RunInstancesResponse;
 import com.amazon.ec2.StartInstancesResponse;
 import com.amazon.ec2.StopInstancesResponse;
 import com.amazon.ec2.TerminateInstancesResponse;
-
 import com.cloud.bridge.model.UserCredentialsVO;
 import com.cloud.bridge.persist.dao.CloudStackUserDaoImpl;
 import com.cloud.bridge.persist.dao.OfferingDaoImpl;
@@ -203,12 +203,16 @@ public class EC2RestServlet extends HttpServlet {
         if (null != propertiesFile) {
             logger.info("Use EC2 properties file: " + propertiesFile.getAbsolutePath());
             EC2Prop = new Properties();
+            FileInputStream ec2PropFile = null;
             try {
-                EC2Prop.load(new FileInputStream(propertiesFile));
+                ec2PropFile = new FileInputStream(propertiesFile);
+                EC2Prop.load(ec2PropFile);
             } catch (FileNotFoundException e) {
                 logger.warn("Unable to open properties file: " + propertiesFile.getAbsolutePath(), e);
             } catch (IOException e) {
                 logger.warn("Unable to read properties file: " + propertiesFile.getAbsolutePath(), e);
+            } finally {
+                IOUtils.closeQuietly(ec2PropFile);
             }
             String keystore = EC2Prop.getProperty("keystore");
             keystorePassword = EC2Prop.getProperty("keystorePass");
@@ -492,7 +496,7 @@ public class EC2RestServlet extends HttpServlet {
                 response.sendError(530, "Missing cert parameter");
                 return;
             }
-//            logger.debug( "SetCertificate cert: [" + certificate[0] + "]" );
+            // logger.debug( "SetCertificate cert: [" + certificate[0] + "]" );
 
             String[] accessKey = request.getParameterValues("AWSAccessKeyId");
             if (null == accessKey || 0 == accessKey.length) {
@@ -578,12 +582,12 @@ public class EC2RestServlet extends HttpServlet {
                  credentialDao.setCertificateId( accessKey[0], null );
 
                  */txn = TransactionLegacy.open(TransactionLegacy.AWSAPI_DB);
-                UserCredentialsVO user = ucDao.getByAccessKey(accessKey[0]);
-                user.setCertUniqueId(null);
-                ucDao.update(user.getId(), user);
-                response.setStatus(200);
-                endResponse(response, "User certificate deleted successfully");
-                txn.commit();
+                 UserCredentialsVO user = ucDao.getByAccessKey(accessKey[0]);
+                 user.setCertUniqueId(null);
+                 ucDao.update(user.getId(), user);
+                 response.setStatus(200);
+                 endResponse(response, "User certificate deleted successfully");
+                 txn.commit();
             } else
                 response.setStatus(404);
 
@@ -830,7 +834,7 @@ public class EC2RestServlet extends HttpServlet {
 
         // -> execute the request
         RevokeSecurityGroupIngressResponse EC2response =
-            EC2SoapServiceImpl.toRevokeSecurityGroupIngressResponse(ServiceProvider.getInstance().getEC2Engine().revokeSecurityGroup(EC2request));
+                EC2SoapServiceImpl.toRevokeSecurityGroupIngressResponse(ServiceProvider.getInstance().getEC2Engine().revokeSecurityGroup(EC2request));
         serializeResponse(response, EC2response);
     }
 
@@ -915,7 +919,7 @@ public class EC2RestServlet extends HttpServlet {
 
         // -> execute the request
         AuthorizeSecurityGroupIngressResponse EC2response =
-            EC2SoapServiceImpl.toAuthorizeSecurityGroupIngressResponse(ServiceProvider.getInstance().getEC2Engine().authorizeSecurityGroup(EC2request));
+                EC2SoapServiceImpl.toAuthorizeSecurityGroupIngressResponse(ServiceProvider.getInstance().getEC2Engine().authorizeSecurityGroup(EC2request));
         serializeResponse(response, EC2response);
     }
 
@@ -1012,7 +1016,7 @@ public class EC2RestServlet extends HttpServlet {
 
         // -> execute the request
         CreateSecurityGroupResponse EC2response =
-            EC2SoapServiceImpl.toCreateSecurityGroupResponse(ServiceProvider.getInstance().getEC2Engine().createSecurityGroup(groupName, groupDescription));
+                EC2SoapServiceImpl.toCreateSecurityGroupResponse(ServiceProvider.getInstance().getEC2Engine().createSecurityGroup(groupName, groupDescription));
         serializeResponse(response, EC2response);
     }
 
@@ -1028,7 +1032,7 @@ public class EC2RestServlet extends HttpServlet {
 
         // -> execute the request
         DeleteSecurityGroupResponse EC2response =
-            EC2SoapServiceImpl.toDeleteSecurityGroupResponse(ServiceProvider.getInstance().getEC2Engine().deleteSecurityGroup(groupName));
+                EC2SoapServiceImpl.toDeleteSecurityGroupResponse(ServiceProvider.getInstance().getEC2Engine().deleteSecurityGroup(groupName));
         serializeResponse(response, EC2response);
     }
 
@@ -1166,7 +1170,7 @@ public class EC2RestServlet extends HttpServlet {
 
         // -> execute the request
         ModifyImageAttributeResponse EC2response =
-            EC2SoapServiceImpl.toModifyImageAttributeResponse(ServiceProvider.getInstance().getEC2Engine().modifyImageAttribute(ec2request));
+                EC2SoapServiceImpl.toModifyImageAttributeResponse(ServiceProvider.getInstance().getEC2Engine().modifyImageAttribute(ec2request));
         serializeResponse(response, EC2response);
     }
 
@@ -1231,7 +1235,7 @@ public class EC2RestServlet extends HttpServlet {
 
         // -> execute the request
         ResetImageAttributeResponse EC2response =
-            EC2SoapServiceImpl.toResetImageAttributeResponse(ServiceProvider.getInstance().getEC2Engine().modifyImageAttribute(ec2request));
+                EC2SoapServiceImpl.toResetImageAttributeResponse(ServiceProvider.getInstance().getEC2Engine().modifyImageAttribute(ec2request));
         serializeResponse(response, EC2response);
     }
 
@@ -1443,7 +1447,7 @@ public class EC2RestServlet extends HttpServlet {
 
         // -> execute the request
         DescribeAvailabilityZonesResponse EC2response =
-            EC2SoapServiceImpl.toDescribeAvailabilityZonesResponse(ServiceProvider.getInstance().getEC2Engine().describeAvailabilityZones(EC2request));
+                EC2SoapServiceImpl.toDescribeAvailabilityZonesResponse(ServiceProvider.getInstance().getEC2Engine().describeAvailabilityZones(EC2request));
         serializeResponse(response, EC2response);
     }
 
@@ -1499,7 +1503,7 @@ public class EC2RestServlet extends HttpServlet {
         }
 
         DescribeImageAttributeResponse EC2response =
-            EC2SoapServiceImpl.toDescribeImageAttributeResponse(ServiceProvider.getInstance().getEC2Engine().describeImageAttribute(ec2request));
+                EC2SoapServiceImpl.toDescribeImageAttributeResponse(ServiceProvider.getInstance().getEC2Engine().describeImageAttribute(ec2request));
         serializeResponse(response, EC2response);
     }
 
@@ -1677,7 +1681,7 @@ public class EC2RestServlet extends HttpServlet {
 
         // -> execute the request
         DescribeInstanceAttributeResponse EC2response =
-            EC2SoapServiceImpl.toDescribeInstanceAttributeResponse(ServiceProvider.getInstance().getEC2Engine().describeInstances(EC2request));
+                EC2SoapServiceImpl.toDescribeInstanceAttributeResponse(ServiceProvider.getInstance().getEC2Engine().describeInstances(EC2request));
         serializeResponse(response, EC2response);
     }
 
@@ -1707,7 +1711,7 @@ public class EC2RestServlet extends HttpServlet {
 
         // -> execute the request
         ModifyInstanceAttributeResponse EC2response =
-            EC2SoapServiceImpl.toModifyInstanceAttributeResponse(ServiceProvider.getInstance().getEC2Engine().modifyInstanceAttribute(ec2Request));
+                EC2SoapServiceImpl.toModifyInstanceAttributeResponse(ServiceProvider.getInstance().getEC2Engine().modifyInstanceAttribute(ec2Request));
         serializeResponse(response, EC2response);
     }
 
@@ -1766,7 +1770,7 @@ public class EC2RestServlet extends HttpServlet {
         // -> execute the request
         EC2Engine engine = ServiceProvider.getInstance().getEC2Engine();
         DescribeVolumesResponse EC2response =
-            EC2SoapServiceImpl.toDescribeVolumesResponse(ServiceProvider.getInstance().getEC2Engine().describeVolumes(EC2request), engine);
+                EC2SoapServiceImpl.toDescribeVolumesResponse(ServiceProvider.getInstance().getEC2Engine().describeVolumes(EC2request), engine);
         serializeResponse(response, EC2response);
     }
 
@@ -1988,7 +1992,7 @@ public class EC2RestServlet extends HttpServlet {
      * parameter to see if the signature has expired and if so the request fails.
      */
     private boolean authenticateRequest(HttpServletRequest request, HttpServletResponse response) throws SignatureException, IOException, InstantiationException,
-        IllegalAccessException, ClassNotFoundException, SQLException, ParseException {
+    IllegalAccessException, ClassNotFoundException, SQLException, ParseException {
         String cloudSecretKey = null;
         String cloudAccessKey = null;
         String signature = null;

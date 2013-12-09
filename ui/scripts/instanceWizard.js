@@ -581,41 +581,64 @@
         ],
         action: function(args) {
             // Create a new VM!!!!
-            var array1 = [];
+            var deployVmData = {};
 
-            //step 1 : select zone
-            array1.push("&zoneId=" + args.data.zoneid);
+            //step 1 : select zone           
+            $.extend(deployVmData, {
+            	zoneid : args.data.zoneid
+            });
 
-            //step 2: select template
-            array1.push("&templateId=" + args.data.templateid);
-            array1.push("&hypervisor=" + selectedHypervisor);
+            //step 2: select template            
+            $.extend(deployVmData, {
+            	templateid : args.data.templateid
+            });
+                        
+            $.extend(deployVmData, {
+            	hypervisor : selectedHypervisor
+            });
            
             if (args.$wizard.find('input[name=rootDiskSize]').parent().css('display') != 'none')  {
-            	if (args.$wizard.find('input[name=rootDiskSize]').val().length > 0) {
-            	    array1.push("&rootdisksize=" + args.$wizard.find('input[name=rootDiskSize]').val());     
+            	if (args.$wizard.find('input[name=rootDiskSize]').val().length > 0) {            	      
+            		$.extend(deployVmData, {
+            			rootdisksize : args.$wizard.find('input[name=rootDiskSize]').val()
+            		});
             	}
             }
             
-            //step 3: select service offering
-            array1.push("&serviceOfferingId=" + args.data.serviceofferingid);
+            //step 3: select service offering           
+            $.extend(deployVmData, {
+            	serviceofferingid : args.data.serviceofferingid
+            });
             
             if (args.$wizard.find('input[name=compute-cpu-cores]').parent().parent().css('display') != 'none') {
-	            if (args.$wizard.find('input[name=compute-cpu-cores]').val().length > 0)  {   
-	            	array1.push("&cpunumber=" + args.$wizard.find('input[name=compute-cpu-cores]').val());
+	            if (args.$wizard.find('input[name=compute-cpu-cores]').val().length > 0)  {   	            	
+	            	$.extend(deployVmData, {
+	            	    'customparameters[0].cpuNumber' : args.$wizard.find('input[name=compute-cpu-cores]').val()
+	            	});
 	            }            
-	            if (args.$wizard.find('input[name=compute-cpu]').val().length > 0)  {          
-	            	array1.push("&cpuspeed=" + args.$wizard.find('input[name=compute-cpu]').val());
+	            if (args.$wizard.find('input[name=compute-cpu]').val().length > 0)  {    
+	            	$.extend(deployVmData, {
+	            	    'customparameters[0].cpuSpeed' : args.$wizard.find('input[name=compute-cpu]').val()
+	            	});
 	            }            
-	            if (args.$wizard.find('input[name=compute-memory]').val().length > 0)  {        
-	            	array1.push("&memory=" + args.$wizard.find('input[name=compute-memory]').val());
+	            if (args.$wizard.find('input[name=compute-memory]').val().length > 0)  {     
+	            	$.extend(deployVmData, {
+	            	    'customparameters[0].memory' : args.$wizard.find('input[name=compute-memory]').val()
+	            	});
 	            }               
             }
             
             //step 4: select disk offering
-            if (args.data.diskofferingid != null && args.data.diskofferingid != "0") {
-                array1.push("&diskOfferingId=" + args.data.diskofferingid);
-                if (selectedDiskOfferingObj.iscustomized == true)
-                    array1.push("&size=" + args.data.size);
+            if (args.data.diskofferingid != null && args.data.diskofferingid != "0") {                
+            	$.extend(deployVmData, {
+            		diskofferingid : args.data.diskofferingid
+            	});
+                
+                if (selectedDiskOfferingObj.iscustomized == true) {                    
+                	$.extend(deployVmData, {
+                		size : args.data.size
+                	});
+                }
             }
 
             //step 5: select an affinity group
@@ -629,8 +652,11 @@
                 checkedAffinityGroupIdArray = [];
             }
 
-            if (checkedAffinityGroupIdArray.length > 0)
-                array1.push("&affinitygroupids=" + checkedAffinityGroupIdArray.join(","));
+            if (checkedAffinityGroupIdArray.length > 0) {                
+            	$.extend(deployVmData, {
+            		affinitygroupids : checkedAffinityGroupIdArray.join(",")
+            	});
+            }
 
             //step 6: select network
             if (step6ContainerType == 'select-network' || step6ContainerType == 'select-advanced-sg') {
@@ -651,7 +677,7 @@
                 if (args.data["new-network"] == "create-new-network") {
                     var isCreateNetworkSuccessful = true;
 
-                    var data = {
+                    var createNetworkData = {
                         networkOfferingId: args.data["new-network-networkofferingid"],
                         name: args.data["new-network-name"],
                         displayText: args.data["new-network-name"],
@@ -660,7 +686,7 @@
 
                     $.ajax({
                         url: createURL('createNetwork'),
-                        data: data,
+                        data: createNetworkData,
                         async: false,
                         success: function(json) {
                             newNetwork = json.createnetworkresponse.network;
@@ -681,8 +707,9 @@
                 //create new network ends here
 
                 //add default network first
-                if (defaultNetworkId != null && defaultNetworkId.length > 0)
+                if (defaultNetworkId != null && defaultNetworkId.length > 0) {
                     array2.push(defaultNetworkId);
+                }
 
                 //then, add other checked networks
                 if (checkedNetworkIdArray.length > 0) {
@@ -691,8 +718,11 @@
                             array2.push(checkedNetworkIdArray[i]);
                     }
                 }
-
-                array1.push("&networkIds=" + array2.join(","));
+                
+                $.extend(deployVmData, {
+                	networkids : array2.join(",")
+                });                
+                
             } else if (step6ContainerType == 'select-security-group') {
                 var checkedSecurityGroupIdArray;
                 if (typeof(args.data["security-groups"]) == "object" && args.data["security-groups"].length != null) { //args.data["security-groups"] is an array of string, e.g. ["2375f8cc-8a73-4b8d-9b26-50885a25ffe0", "27c60d2a-de7f-4bb7-96e5-a602cec681df","c6301d77-99b5-4e8a-85e2-3ea2ab31c342"],
@@ -704,8 +734,11 @@
                     checkedSecurityGroupIdArray = [];
                 }
 
-                if (checkedSecurityGroupIdArray.length > 0)
-                    array1.push("&securitygroupids=" + checkedSecurityGroupIdArray.join(","));
+                if (checkedSecurityGroupIdArray.length > 0) {                    
+                	$.extend(deployVmData, {
+                		securitygroupids : checkedSecurityGroupIdArray.join(",")
+                	});
+                }
 
                 if (selectedZoneObj.networktype == "Advanced" && selectedZoneObj.securitygroupsenabled == true) { // Advanced SG-enabled zone
                     var array2 = [];
@@ -723,8 +756,9 @@
                     }
 
                     //add default network first
-                    if (defaultNetworkId != null && defaultNetworkId.length > 0 && defaultNetworkId != 'new-network')
+                    if (defaultNetworkId != null && defaultNetworkId.length > 0 && defaultNetworkId != 'new-network') {
                         array2.push(defaultNetworkId);
+                    }
 
                     //then, add other checked networks
                     if (checkedNetworkIdArray.length > 0) {
@@ -733,36 +767,51 @@
                                 array2.push(checkedNetworkIdArray[i]);
                         }
                     }
-
-                    array1.push("&networkIds=" + array2.join(","));
+                   
+                    $.extend(deployVmData, {
+                    	networkids : array2.join(",")
+                    });
                 }
             } else if (step6ContainerType == 'nothing-to-select') {
-                if (args.context.networks != null) { //from VPC tier
-                    array1.push("&networkIds=" + args.context.networks[0].id);
-                    array1.push("&domainid=" + args.context.vpc[0].domainid);
-
-                    if (args.context.vpc[0].account != null)
-                        array1.push("&account=" + args.context.vpc[0].account);
-                    else if (args.context.vpc[0].projectid != null)
-                        array1.push("&projectid=" + args.context.vpc[0].projectid);
+                if (args.context.networks != null) { //from VPC tier                   
+                    $.extend(deployVmData, {
+                    	networkids : args.context.networks[0].id
+                    });                                        
+                    $.extend(deployVmData, {
+                    	domainid : args.context.vpc[0].domainid
+                    });
+                    if (args.context.vpc[0].account != null) {                        
+                    	$.extend(deployVmData, {
+                    		account : args.context.vpc[0].account
+                    	});                    
+                    } else if (args.context.vpc[0].projectid != null) {                        
+                    	$.extend(deployVmData, {
+                    		projectid : args.context.vpc[0].projectid
+                    	});
+                    }
                 }
             }
 
             var displayname = args.data.displayname;
-            if (displayname != null && displayname.length > 0) {
-                array1.push("&displayname=" + todb(displayname));
-                array1.push("&name=" + todb(displayname));
+            if (displayname != null && displayname.length > 0) {                
+            	$.extend(deployVmData, {
+            		displayname : displayname
+            	});                                
+            	$.extend(deployVmData, {
+            		name : displayname
+            	});
             }
 
             var group = args.data.groupname;
-            if (group != null && group.length > 0)
-                array1.push("&group=" + todb(group));
-
-            //array1.push("&startVm=false");	//for testing only, comment it out before checking in
+            if (group != null && group.length > 0) {                
+            	$.extend(deployVmData, {
+            		group : group
+            	});
+            }
 
             $.ajax({
-                url: createURL("deployVirtualMachine" + array1.join("")),
-                dataType: "json",
+                url: createURL('deployVirtualMachine'),
+                data: deployVmData,
                 success: function(json) {
                     var jid = json.deployvirtualmachineresponse.jobid;
                     var vmid = json.deployvirtualmachineresponse.id;

@@ -98,7 +98,10 @@ class Account:
         cmd.lastname = services["lastname"]
 
         cmd.password = services["password"]
-        cmd.username = "-".join([services["username"], random_gen(id=apiclient.id)])
+
+        username = "-".join([services["username"], random_gen(id=apiclient.id)])
+        #  Trim username to 99 characters to prevent failure
+        cmd.username = username[:99] if len(username) > 99 else username
 
         if "accountUUID" in services:
             cmd.accountid =  "-".join([services["accountUUID"],random_gen()])
@@ -530,11 +533,15 @@ class VirtualMachine:
         cmd.id = volume.id
         return apiclient.detachVolume(cmd)
 
-    def add_nic(self, apiclient, networkId):
+    def add_nic(self, apiclient, networkId, ipaddress=None):
         """Add a NIC to a VM"""
         cmd = addNicToVirtualMachine.addNicToVirtualMachineCmd()
         cmd.virtualmachineid = self.id
         cmd.networkid = networkId
+
+        if ipaddress:
+            cmd.ipaddress = ipaddress
+
         return apiclient.addNicToVirtualMachine(cmd)
 
     def remove_nic(self, apiclient, nicId):

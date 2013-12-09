@@ -20,6 +20,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.network.vpc.dao.VpcDao;
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
@@ -86,6 +87,8 @@ public class NetworkACLServiceTest extends TestCase {
     NetworkACLItemDao _networkACLItemDao;
     @Inject
     EntityManager _entityMgr;
+    @Inject
+    VpcDao _vpcDao;
 
     private CreateNetworkACLCmd createACLItemCmd;
     private NetworkACLVO acl;
@@ -244,6 +247,11 @@ public class NetworkACLServiceTest extends TestCase {
         @Bean
         public VpcGatewayDao vpcGatewayDao() {
             return Mockito.mock(VpcGatewayDao.class);
+        }
+
+        @Bean
+        public VpcDao vpcDao () {
+            return Mockito.mock(VpcDao.class);
         }
 
         public static class Library implements TypeFilter {

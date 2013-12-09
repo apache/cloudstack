@@ -79,6 +79,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setIopsWriteRate(offering.getIopsWriteRate());
         offeringResponse.setDetails(ApiDBUtils.getResourceDetails(offering.getId(), ResourceObjectType.ServiceOffering));
         offeringResponse.setObjectName("serviceoffering");
+        offeringResponse.setIscutomized(offering.isDynamic());
 
         return offeringResponse;
     }

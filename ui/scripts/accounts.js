@@ -372,7 +372,59 @@
                                         data: data,
                                         async: true,
                                         success: function(json) {
-                                            //var resourcecounts= json.updateresourcecountresponse.resourcecount;   //do nothing
+                                            var resourcecounts= json.updateresourcecountresponse.resourcecount;                                               
+                                            //pop up API response in a dialog box since only updateResourceCount API returns resourcecount (listResourceLimits API does NOT return resourcecount)
+                                            var msg = '';
+                                            if (resourcecounts != null) {
+                                            	for (var i = 0; i < resourcecounts.length; i++) {                                            		
+                                            		switch (resourcecounts[i].resourcetype) {
+                                            		case '0':
+                                            			msg += 'Instance'; //vmLimit
+                                            			break;
+                                            		case '1':
+                                            			msg += 'Public IP'; //ipLimit
+                                            			break;
+                                            		case '2':
+                                            			msg += 'Volume'; //volumeLimit
+                                            			break;
+                                            		case '3':
+                                            		    msg += 'Snapshot'; //snapshotLimit
+                                            		    break;
+                                            		case '4':
+                                            			msg += 'Template'; //templateLimit
+                                            			break;
+                                            		case '5':                                            			
+                                            			continue; //resourcetype 5 is not in use. so, skip to next item.                                          			
+                                            			break;
+                                            		case '6':
+                                            			msg += 'Network'; //networkLimit
+                                            			break;
+                                            		case '7':
+                                            			msg += 'VPC'; //vpcLimit
+                                            			break;
+                                            		case '8':
+                                            			msg += 'CPU'; //cpuLimit
+                                            			break;
+                                            		case '9':
+                                            			msg += 'Memory'; //memoryLimit
+                                            			break;
+                                            		case '10':
+                                            			msg += 'Primary Storage'; //primaryStorageLimit
+                                            			break;
+                                            		case '11':
+                                            			msg += 'Secondary Storage'; //secondaryStorageLimit
+                                            			break;      
+                                            		}
+                                            		                                      		
+                                            		msg += ' Count: ' + resourcecounts[i].resourcecount + ' <br> ';
+                                            	}
+                                            }
+                                            
+                                            
+                                            cloudStack.dialog.notice({
+                                            	message: msg
+                                            });                                            
+                                            
                                             args.response.success();
                                         },
                                         error: function(json) {
@@ -1083,59 +1135,62 @@
                                     }
                                 },
 
-				action: function(args) {
-				    if (isLdapEnabled()) {
-					alert(dictionary["error.could.not.change.your.password.because.ldap.is.enabled"]);
-					args.response.error({});
-				    } else {
-					cloudStack.dialog.createForm({
-					    noDialog: false,
-					    form: {
-						title: 'label.action.change.password',
-						fields: {
-						    newPassword: {
-							label: 'label.new.password',
-							isPassword: true,
-							validation: {
-							    required: true
-							},
-							id: 'newPassword'
-						    },
-						    'password-confirm': {
-							label: 'label.confirm.password',
-							validation: {
-							    required: true,
-							    equalTo: '#newPassword'
-							},
-							isPassword: true
-						    }
-						}
-					    }
-					})
-					var password = args.data.newPassword;
-					if (md5Hashed)
-					    password = $.md5(password);
+                                action: {
+                                    custom: function(args) {
+                                        var start = args.start;
+                                        var complete = args.complete;
+                                        var context = args.context;
 
-					var data = {
-					    id: args.context.users[0].id,
-					    password: password
-					};
-					$.ajax({
-					    url: createURL('updateUser'),
-					    data: data,
-					    type: "POST",
-					    success: function(json) {
-						args.response.success({
-						    data: json.updateuserresponse.user
-						});
-					    }
-					});
+                                        if (isLdapEnabled()) {
+                                            cloudStack.dialog.notice({ message: _l('error.could.not.change.your.password.because.ldap.is.enabled') });
+                                        } else {
+                                            cloudStack.dialog.createForm({
+                                                form: {
+                                                    title: 'label.action.change.password',
+                                                    fields: {
+                                                        newPassword: {
+                                                            label: 'label.new.password',
+                                                            isPassword: true,
+                                                            validation: {
+                                                                required: true
+                                                            },
+                                                            id: 'newPassword'
+                                                        },
+                                                        'password-confirm': {
+                                                            label: 'label.confirm.password',
+                                                            validation: {
+                                                                required: true,
+                                                                equalTo: '#newPassword'
+                                                            },
+                                                            isPassword: true
+                                                        }
+                                                    }
+                                                },
+                                                after: function(args) {
+                                                    start();
 
-				    }
-                                },
-                                notification: {
-                                    poll: function(args) {
-                                        args.complete();
+                                                    var password = args.data.newPassword;
+
+                                                    if (md5Hashed)
+                                                        password = $.md5(password);
+
+                                                    $.ajax({
+                                                        url: createURL('updateUser'),
+                                                        data: {
+                                                            id: context.users[0].id,
+                                                            password: password
+                                                        },
+                                                        type: "POST",
+                                                        success: function(json) {
+                                                            complete();
+                                                        },
+                                                        error: function(json) {
+                                                            complete({ error: parseXMLHttpResponse(json) });
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }
                                     }
                                 }
                             },

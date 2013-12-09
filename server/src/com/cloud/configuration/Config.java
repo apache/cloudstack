@@ -41,6 +41,7 @@ import com.cloud.vm.snapshot.VMSnapshotManager;
 
 public enum Config {
 
+
     // Alert
 
     AlertEmailAddresses(
@@ -62,6 +63,9 @@ public enum Config {
             "Password for SMTP authentication (applies only if alert.smtp.useAuth is true).",
             null),
     AlertSMTPPort("Alert", ManagementServer.class, Integer.class, "alert.smtp.port", "465", "Port the SMTP server is listening on.", null),
+    AlertSMTPConnectionTimeout("Alert", ManagementServer.class, Integer.class, "alert.smtp.connectiontimeout", "30000",
+            "Socket connection timeout value in milliseconds. -1 for infinite timeout.", null),
+    AlertSMTPTimeout("Alert", ManagementServer.class, Integer.class, "alert.smtp.timeout", "30000", "Socket I/O timeout value in milliseconds. -1 for infinite timeout.", null),
     AlertSMTPUseAuth("Alert", ManagementServer.class, String.class, "alert.smtp.useAuth", null, "If true, use SMTP authentication when sending emails.", null),
     AlertSMTPUsername(
             "Alert",
@@ -291,14 +295,6 @@ public enum Config {
             "false",
             "Direct Network Dhcp Server should not send a default route",
             "true/false"),
-    OvsTunnelNetwork(
-            "Network",
-            ManagementServer.class,
-            Boolean.class,
-            "sdn.ovs.controller",
-            "false",
-            "Enable/Disable Open vSwitch SDN controller for L2-in-L3 overlay networks",
-            null),
     OvsTunnelNetworkDefaultLabel(
             "Network",
             ManagementServer.class,
@@ -699,7 +695,13 @@ public enum Config {
             "true",
             "Indicates whether or not to automatically reserver system VM standby capacity.",
             null),
-    SystemVMDefaultHypervisor("Advanced", ManagementServer.class, String.class, "system.vm.default.hypervisor", null, "Hypervisor type used to create system vm", null),
+    SystemVMDefaultHypervisor("Advanced",
+            ManagementServer.class,
+            String.class,
+            "system.vm.default.hypervisor",
+            null,
+            "Hypervisor type used to create system vm, valid values are: XenServer, KVM, VMware, Hyperv, VirtualBox, Parralels, BareMetal, Ovm, LXC, Any",
+            null),
     SystemVMRandomPassword(
             "Advanced",
             ManagementServer.class,

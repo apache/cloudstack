@@ -34,7 +34,7 @@ def echo(fn):
         return res
     return wrapped
 
-SWIFT = "/opt/xensource/bin/swift"
+SWIFT = "/opt/cloud/bin/swift"
 
 MAX_SEG_SIZE = 5 * 1024 * 1024 * 1024
 

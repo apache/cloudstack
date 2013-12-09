@@ -2769,7 +2769,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         // verify templateId parameter and specially handle it
         if (templateId != null) {
-            template = _templateDao.findById(templateId);
+            template = _templateDao.findByIdIncludingRemoved(templateId); // Done for backward compatibility - Bug-5221
             if (template == null) {
                 throw new InvalidParameterValueException("Please specify a valid template ID.");
             }// If ISO requested then it should be ISO.

@@ -75,6 +75,7 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
     public void removeDetail(long resourceId, String key) {
         if (key != null) {
             SearchCriteria<R> sc = AllFieldsSearch.create();
+            sc.setParameters("resourceId", resourceId);
             sc.setParameters("name", key);
             remove(sc);
         }

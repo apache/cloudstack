@@ -1167,6 +1167,10 @@ cloudStack.docs = {
         desc: 'Whether the template is extractable or not',
         externalLink: ''
     },
+    helpRegisterTemplateDynamicallyScalable: {
+        desc: 'Check this if the template contains XS/VMWare tools to support dynamic scaling of VM cpu/memory.',
+        externalLink: ''
+    },
     helpRegisterTemplatePasswordEnabled: {
         desc: 'Check this if the template has the password change script installed.',
         externalLink: ''
@@ -1177,6 +1181,10 @@ cloudStack.docs = {
     },
     helpRegisterTemplateFeatured: {
         desc: 'Check this to make the template more prominent for users. The template will appear in the Featured Templates list.',
+        externalLink: ''
+    },
+    helpRegisterTemplateRouting: {
+        desc: 'Check this if the template is used for deploying router.',
         externalLink: ''
     },
     // Upload volume

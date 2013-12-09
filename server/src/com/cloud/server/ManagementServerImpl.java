@@ -42,6 +42,8 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -57,6 +59,7 @@ import org.apache.cloudstack.api.command.admin.account.DisableAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.EnableAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.LockAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.alert.GenerateAlertCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.DeleteCounterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
@@ -135,9 +138,11 @@ import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.ListCapacityCmd;
 import org.apache.cloudstack.api.command.admin.resource.UploadCustomCertificateCmd;
+import org.apache.cloudstack.api.command.admin.router.ConfigureOvsElementCmd;
 import org.apache.cloudstack.api.command.admin.router.ConfigureVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.CreateVirtualRouterElementCmd;
 import org.apache.cloudstack.api.command.admin.router.DestroyRouterCmd;
+import org.apache.cloudstack.api.command.admin.router.ListOvsElementsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.router.ListVirtualRouterElementsCmd;
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
@@ -716,6 +721,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     AccountService _accountService;
     @Inject
     ConfigurationManager _configMgr;
+    @Inject
+    ServiceOfferingDao _offeringDao;
 
     @Inject
     DeploymentPlanningManager _dpMgr;
@@ -1063,12 +1070,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw ex;
         }
 
-        if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) &&
-            !vm.getHypervisorType().equals(HypervisorType.KVM) && !vm.getHypervisorType().equals(HypervisorType.Ovm)) {
+        if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware)
+                && !vm.getHypervisorType().equals(HypervisorType.KVM) && !vm.getHypervisorType().equals(HypervisorType.Ovm)
+                && !vm.getHypervisorType().equals(HypervisorType.Hyperv)) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(vm + " is not XenServer/VMware/KVM/OVM, cannot migrate this VM.");
+                s_logger.debug(vm + " is not XenServer/VMware/KVM/OVM/Hyperv, cannot migrate this VM.");
             }
-            throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support " + "XenServer/VMware/KVM/Ovm only");
+            throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support " +
+                    "XenServer/VMware/KVM/Ovm/Hyperv only");
         }
 
         long srcHostId = vm.getHostId();
@@ -2248,6 +2257,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Object id = cmd.getId();
         Object type = cmd.getType();
         Object keyword = cmd.getKeyword();
+        Object name = cmd.getName();
 
         Long zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), null);
         if (id != null) {
@@ -2266,6 +2276,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (type != null) {
             sc.addAnd("type", SearchCriteria.Op.EQ, type);
+        }
+        
+        if (name != null) {
+            sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
 
         sc.addAnd("archived", SearchCriteria.Op.EQ, false);
@@ -2851,6 +2865,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListSslCertsCmd.class);
         cmdList.add(AssignCertToLoadBalancerCmd.class);
         cmdList.add(RemoveCertFromLoadBalancerCmd.class);
+        cmdList.add(GenerateAlertCmd.class);
+	cmdList.add(ListOvsElementsCmd.class);
+	cmdList.add(ConfigureOvsElementCmd.class);
         return cmdList;
     }
 
@@ -3238,6 +3255,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Account caller = CallContext.current().getCallingAccount();
         boolean securityGroupsEnabled = false;
         boolean elasticLoadBalancerEnabled = false;
+        boolean KVMSnapshotEnabled = false;
         String supportELB = "false";
         List<NetworkVO> networks = _networkDao.listSecurityGroupEnabledNetworks();
         if (networks != null && !networks.isEmpty()) {
@@ -3253,6 +3271,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         long diskOffMaxSize = Long.valueOf(_configDao.getValue(Config.CustomDiskOfferingMaxSize.key()));
+        KVMSnapshotEnabled = Boolean.parseBoolean(_configDao.getValue("KVM.snapshot.enabled"));
 
         boolean userPublicTemplateEnabled = TemplateManager.AllowPublicUserTemplates.valueIn(caller.getId());
 
@@ -3276,6 +3295,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("allowusercreateprojects", _projectMgr.allowUserToCreateProject());
         capabilities.put("customDiskOffMaxSize", diskOffMaxSize);
         capabilities.put("regionSecondaryEnabled", regionSecondaryEnabled);
+        capabilities.put("KVMSnapshotEnabled", KVMSnapshotEnabled);
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);
@@ -3769,8 +3789,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (vmInstance.getHypervisorType() == HypervisorType.XenServer && vmInstance.getState().equals(State.Running)) {
             throw new InvalidParameterValueException("Dynamic Scaling operation is not permitted for this hypervisor on system vm");
         }
-        boolean result = _userVmMgr.upgradeVirtualMachine(cmd.getId(), cmd.getServiceOfferingId());
-        if (result) {
+        boolean result = _userVmMgr.upgradeVirtualMachine(cmd.getId(), cmd.getServiceOfferingId(), cmd.getCustomParameters());
+        if(result){
             VirtualMachine vm = _vmInstanceDao.findById(cmd.getId());
             return vm;
         } else {
@@ -3782,11 +3802,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public VirtualMachine upgradeSystemVM(UpgradeSystemVMCmd cmd) {
         Long systemVmId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
-        return upgradeStoppedSystemVm(systemVmId, serviceOfferingId);
+        return upgradeStoppedSystemVm(systemVmId, serviceOfferingId, cmd.getCustomParameters());
 
     }
 
-    private VirtualMachine upgradeStoppedSystemVm(Long systemVmId, Long serviceOfferingId) {
+    private VirtualMachine upgradeStoppedSystemVm(Long systemVmId, Long serviceOfferingId, Map<String, String> customparameters){
         Account caller = CallContext.current().getCallingAccount();
 
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(systemVmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
@@ -3797,9 +3817,24 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         _accountMgr.checkAccess(caller, null, true, systemVm);
 
         // Check that the specified service offering ID is valid
-        _itMgr.checkIfCanUpgrade(systemVm, serviceOfferingId);
+        ServiceOfferingVO newServiceOffering = _offeringDao.findById(serviceOfferingId);
+        ServiceOfferingVO currentServiceOffering = _offeringDao.findById(systemVmId,systemVm.getServiceOfferingId());
+        if (newServiceOffering.isDynamic()){
+            newServiceOffering.setDynamicFlag(true);
+            _userVmMgr.validateCustomParameters(newServiceOffering, customparameters);
+            newServiceOffering = _offeringDao.getcomputeOffering(newServiceOffering, customparameters);
+        }
+        _itMgr.checkIfCanUpgrade(systemVm, newServiceOffering);
 
         boolean result = _itMgr.upgradeVmDb(systemVmId, serviceOfferingId);
+
+        if (newServiceOffering.isDynamic()) {
+            //save the custom values to the database.
+            _userVmMgr.saveCustomOfferingDetails(systemVmId, newServiceOffering);
+        }
+        if (currentServiceOffering.isDynamic() && !newServiceOffering.isDynamic()) {
+            _userVmMgr.removeCustomOfferingDetails(systemVmId);
+        }
 
         if (result) {
             return _vmInstanceDao.findById(systemVmId);

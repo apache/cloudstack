@@ -146,6 +146,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
         //FIXME: profile should work on VirtualMachineEntity
         VMInstanceVO vm = _vmDao.findByUuid(vmEntityVO.getUuid());
         VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm);
+        vmProfile.setServiceOffering(_serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()));
         DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), vm.getPodIdToDeployIn(), null, null, null, null);
         if (planToDeploy != null && planToDeploy.getDataCenterId() != 0) {
             plan =

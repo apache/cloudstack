@@ -89,6 +89,7 @@ import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
+import org.apache.cloudstack.api.response.OvsProviderResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.PortableIpRangeResponse;
@@ -206,6 +207,7 @@ import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.OvsProvider;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
@@ -2725,6 +2727,22 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("virtualrouterelement");
         return response;
     }
+
+	@Override
+	public OvsProviderResponse createOvsProviderResponse(OvsProvider result) {
+
+		OvsProviderResponse response = new OvsProviderResponse();
+		response.setId(result.getUuid());
+		PhysicalNetworkServiceProvider nsp = ApiDBUtils
+				.findPhysicalNetworkServiceProviderById(result.getNspId());
+		if (nsp != null) {
+			response.setNspId(nsp.getUuid());
+		}
+		response.setEnabled(result.isEnabled());
+
+		response.setObjectName("ovselement");
+		return response;
+	}
 
     @Override
     public LBStickinessResponse createLBStickinessPolicyResponse(StickinessPolicy stickinessPolicy, LoadBalancer lb) {

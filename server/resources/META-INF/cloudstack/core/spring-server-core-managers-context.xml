@@ -116,6 +116,8 @@
 
     <bean id="identityServiceImpl" class="com.cloud.uuididentity.IdentityServiceImpl" />
 
+    <bean id="uUIDManagerImpl" class="com.cloud.uuididentity.UUIDManagerImpl" />
+
     <bean id="keystoreManagerImpl" class="com.cloud.keystore.KeystoreManagerImpl" />
 
     <bean id="loadBalancingRulesManagerImpl" class="com.cloud.network.lb.LoadBalancingRulesManagerImpl" >
@@ -158,7 +160,9 @@
 
     <bean id="snapshotManagerImpl" class="com.cloud.storage.snapshot.SnapshotManagerImpl" />
 
-    <bean id="snapshotSchedulerImpl" class="com.cloud.storage.snapshot.SnapshotSchedulerImpl" />
+    <bean id="snapshotSchedulerImpl" class="com.cloud.storage.snapshot.SnapshotSchedulerImpl" >
+        <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
+    </bean>
     <bean id="storageNetworkManagerImpl" class="com.cloud.network.StorageNetworkManagerImpl" />
     <bean id="taggedResourceManagerImpl" class="com.cloud.tags.TaggedResourceManagerImpl" />
     <bean id="resourceMetaDataManagerImpl" class="com.cloud.metadata.ResourceMetaDataManagerImpl" />

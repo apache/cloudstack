@@ -219,6 +219,7 @@
             },
 
             storageTrafficIPRange: function(args) {
+
                 var multiEditData = [];
                 var totalIndex = 0;
 
@@ -1838,25 +1839,15 @@
                         			if(s3stores != null && s3stores.length > 0) {                        				
                         				storageproviders.push({ id: 'S3', description: 'S3'}); //if (region-wide) S3 store exists already, only "S3" option should be included here. Any other type of store is not allowed to be created since cloudstack doesn't support multiple types of store at this point. 
                         			} else {
-                        				$.ajax({
-                                            url: createURL('listStorageProviders'),
-                                            data: {
-                                                type: 'image'
-                                            },
-                                            async: false,
-                                            success: function(json) {
-                                                var objs = json.liststorageprovidersresponse.dataStoreProvider;                                                
-                                                if (objs != null) {
-                                                    for (var i = 0; i < objs.length; i++) {    
-                                                    	storageproviders.push({
-                                                            id: objs[i].name,
-                                                            description: objs[i].name
-                                                        });
-                                                    }
-                                                }                                    
-                                            }
-                                        });
-                        				storageproviders.push({ id: 'SMB', description: 'SMB/cifs'}); //temporary, before Rajesh adds 'SMB' to listStorageProviders API response.                                        
+                        				/*                                                	  
+                                    	UI no longer gets providers from "listStorageProviders&type=image" because:
+                                    	(1) Not all of returned values are handled by UI (e.g. Provider "NetApp" is not handled by UI).
+                                    	(2) Provider "SMB" which is handled by UI is not returned from "listStorageProviders&type=image" 
+                                    	*/
+                        				storageproviders.push({ id: 'NFS', description: 'NFS'});
+                        				storageproviders.push({ id: 'SMB', description: 'SMB/cifs'});
+                        				storageproviders.push({ id: 'S3', description: 'S3'});
+                        				storageproviders.push({ id: 'Swift', description: 'Swift'});                        				
                         			}                        		                    			
                                     args.response.success({
                                         data: storageproviders
@@ -3031,6 +3022,100 @@
                                                         });
                                                         // ***** Virtual Router ***** (end) *****
 
+                                                         // ***** Ovs ***** (begin) *****
+                                                        var ovsProviderId =  null;
+                                                        $.ajax({
+                                                            url: createURL("listNetworkServiceProviders&name=Ovs&physicalNetworkId=" + thisPhysicalNetwork.id),
+                                                            dataType: "json",
+                                                            async: false,
+                                                            success: function (json) {
+                                                                var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+                                                                if (items != null && items.length > 0) {
+                                                                    ovsProviderId = items[0].id;
+                                                                }
+                                                            }
+                                                        });
+                                                        if (ovsProviderId != null) {
+                                                            var ovsElementId = null;
+                                                            $.ajax({
+                                                                url: createURL("listOvsElements&nspid=" + ovsProviderId),
+                                                                dataType: "json",
+                                                                async: false,
+                                                                success: function (json) {
+                                                                    var items = json.listovselementsresponse.ovselement;
+                                                                    if (items != null && items.length > 0) {
+                                                                        ovsElementId = items[0].id;
+                                                                    }
+                                                                }
+                                                            });
+                                                            if (ovsElementId != null) {
+                                                                $.ajax({
+                                                                    url: createURL("configureOvsElement&enabled=true&id=" + ovsElementId),
+                                                                    dataType: "json",
+                                                                    async: false,
+                                                                    success: function (json) {
+                                                                        var jobId = json.configureovselementresponse.jobid;
+                                                                        var enableOvsElementIntervalID = setInterval(function () {
+                                                                            $.ajax({
+                                                                                url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                                                dataType: "json",
+                                                                                success: function (json) {
+                                                                                    var result = json.queryasyncjobresultresponse;
+                                                                                    if (result.jobstatus == 0) {
+                                                                                        return; //Job has not completed
+                                                                                    } else {
+                                                                                        clearInterval(enableOvsElementIntervalID);
+
+                                                                                        if (result.jobstatus == 1) { //configureOvsElement succeeded
+                                                                                            $.ajax({
+                                                                                                url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + ovsProviderId),
+                                                                                                dataType: "json",
+                                                                                                async: false,
+                                                                                                success: function (json) {
+                                                                                                    var jobId = json.updatenetworkserviceproviderresponse.jobid;
+                                                                                                    var enableOvsProviderIntervalID = setInterval(function () {
+                                                                                                        $.ajax({
+                                                                                                            url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                                                                            dataType: "json",
+                                                                                                            success: function (json) {
+                                                                                                                var result = json.queryasyncjobresultresponse;
+                                                                                                                if (result.jobstatus == 0) {
+                                                                                                                    return; //Job has not completed
+                                                                                                                } else {
+                                                                                                                    clearInterval(enableOvsProviderIntervalID);
+
+                                                                                                                    if (result.jobstatus == 2) {
+                                                                                                                        alert("failed to enable Ovs Provider. Error: " + _s(result.jobresult.errortext));
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            },
+                                                                                                            error: function (XMLHttpResponse) {
+                                                                                                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                                                                                alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
+                                                                                                            }
+                                                                                                        });
+                                                                                                    }, g_queryAsyncJobResultInterval);
+                                                                                                }
+                                                                                            });
+                                                                                        } else if (result.jobstatus == 2) {
+                                                                                            alert("configureOvsElement failed. Error: " + _s(result.jobresult.errortext));
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                error: function (XMLHttpResponse) {
+                                                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                                                    alert("configureOvsElement failed. Error: " + errorMsg);
+                                                                                }
+                                                                            });
+                                                                        }, g_queryAsyncJobResultInterval);
+                                                                    }
+                                                                });
+                                                            }
+
+
+                                                        }
+                                                        // ***** Ovs ***** (end) *****
+
                                                         // ***** Internal LB ***** (begin) *****
                                                         var internalLbProviderId;
                                                         $.ajax({
@@ -3066,6 +3151,7 @@
                                                             return;
                                                         }
 
+                                                        var virtualRouterElementId;
                                                         $.ajax({
                                                             url: createURL("configureInternalLoadBalancerElement&enabled=true&id=" + internalLbElementId),
                                                             dataType: "json",
@@ -3129,6 +3215,202 @@
                                                                 }, g_queryAsyncJobResultInterval);
                                                             }
                                                         });
+                                                        // ***** Virtual Router ***** (end) *****
+
+                                                        // ***** Ovs ***** (begin) *****
+                                                        var ovsProviderId =  null;
+                                                        $.ajax({
+                                                            url: createURL("listNetworkServiceProviders&name=Ovs&physicalNetworkId=" + thisPhysicalNetwork.id),
+                                                            dataType: "json",
+                                                            async: false,
+                                                            success: function (json) {
+                                                                var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+                                                                if (items != null && items.length > 0) {
+                                                                    ovsProviderId = items[0].id;
+                                                                }
+                                                            }
+                                                        });
+                                                        if (ovsProviderId != null) {
+                                                            var ovsElementId = null;
+                                                            $.ajax({
+                                                                url: createURL("listOvsElements&nspid=" + ovsProviderId),
+                                                                dataType: "json",
+                                                                async: false,
+                                                                success: function (json) {
+                                                                    var items = json.listovselementsresponse.ovselement;
+                                                                    if (items != null && items.length > 0) {
+                                                                        ovsElementId = items[0].id;
+                                                                    }
+                                                                }
+                                                            });
+                                                            if (ovsElementId != null) {
+                                                                $.ajax({
+                                                                    url: createURL("configureOvsElement&enabled=true&id=" + ovsElementId),
+                                                                    dataType: "json",
+                                                                    async: false,
+                                                                    success: function (json) {
+                                                                        var jobId = json.configureovselementresponse.jobid;
+                                                                        var enableOvsElementIntervalID = setInterval(function () {
+                                                                            $.ajax({
+                                                                                url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                                                dataType: "json",
+                                                                                success: function (json) {
+                                                                                    var result = json.queryasyncjobresultresponse;
+                                                                                    if (result.jobstatus == 0) {
+                                                                                        return; //Job has not completed
+                                                                                    } else {
+                                                                                        clearInterval(enableOvsElementIntervalID);
+
+                                                                                        if (result.jobstatus == 1) { //configureOvsElement succeeded
+                                                                                            $.ajax({
+                                                                                                url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + ovsProviderId),
+                                                                                                dataType: "json",
+                                                                                                async: false,
+                                                                                                success: function (json) {
+                                                                                                    var jobId = json.updatenetworkserviceproviderresponse.jobid;
+                                                                                                    var enableOvsProviderIntervalID = setInterval(function () {
+                                                                                                        $.ajax({
+                                                                                                            url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                                                                            dataType: "json",
+                                                                                                            success: function (json) {
+                                                                                                                var result = json.queryasyncjobresultresponse;
+                                                                                                                if (result.jobstatus == 0) {
+                                                                                                                    return; //Job has not completed
+                                                                                                                } else {
+                                                                                                                    clearInterval(enableOvsProviderIntervalID);
+
+                                                                                                                    if (result.jobstatus == 2) {
+                                                                                                                        alert("failed to enable Ovs Provider. Error: " + _s(result.jobresult.errortext));
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            },
+                                                                                                            error: function (XMLHttpResponse) {
+                                                                                                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                                                                                alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
+                                                                                                            }
+                                                                                                        });
+                                                                                                    }, g_queryAsyncJobResultInterval);
+                                                                                                }
+                                                                                            });
+                                                                                        } else if (result.jobstatus == 2) {
+                                                                                            alert("configureOvsElement failed. Error: " + _s(result.jobresult.errortext));
+                                                                                        }
+                                                                                    }
+                                                                                },
+                                                                                error: function (XMLHttpResponse) {
+                                                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                                                    alert("configureOvsElement failed. Error: " + errorMsg);
+                                                                                }
+                                                                            });
+                                                                        }, g_queryAsyncJobResultInterval);
+                                                                    }
+                                                                });
+                                                            }
+
+
+                                                        }
+
+
+                                                        // ***** Ovs ***** (end) *****
+
+                                                        // ***** Internal LB ***** (begin) *****
+                                                        var internalLbProviderId;
+                                                        $.ajax({
+                                                            url: createURL("listNetworkServiceProviders&name=Internallbvm&physicalNetworkId=" + thisPhysicalNetwork.id),
+                                                            dataType: "json",
+                                                            async: false,
+                                                            success: function (json) {
+                                                                var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
+                                                                if (items != null && items.length > 0) {
+                                                                    internalLbProviderId = items[0].id;
+                                                                }
+                                                            }
+                                                        });
+                                                        if (internalLbProviderId == null) {
+                                                            alert("error: listNetworkServiceProviders API doesn't return internalLb provider ID");
+                                                            return;
+                                                        }
+
+                                                        var internalLbElementId;
+                                                        $.ajax({
+                                                            url: createURL("listInternalLoadBalancerElements&nspid=" + internalLbProviderId),
+                                                            dataType: "json",
+                                                            async: false,
+                                                            success: function (json) {
+                                                                var items = json.listinternalloadbalancerelementsresponse.internalloadbalancerelement;
+                                                                if (items != null && items.length > 0) {
+                                                                    internalLbElementId = items[0].id;
+                                                                }
+                                                            }
+                                                        });
+                                                        if (internalLbElementId == null) {
+                                                            alert("error: listInternalLoadBalancerElements API doesn't return Internal LB Element Id");
+                                                            return;
+                                                        }
+
+                                                        $.ajax({
+                                                            url: createURL("configureInternalLoadBalancerElement&enabled=true&id=" + internalLbElementId),
+                                                            dataType: "json",
+                                                            async: false,
+                                                            success: function (json) {
+                                                                var jobId = json.configureinternalloadbalancerelementresponse.jobid;
+                                                                var enableInternalLbElementIntervalID = setInterval(function () {
+                                                                    $.ajax({
+                                                                        url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                                        dataType: "json",
+                                                                        success: function (json) {
+                                                                            var result = json.queryasyncjobresultresponse;
+                                                                            if (result.jobstatus == 0) {
+                                                                                return; //Job has not completed
+                                                                            } else {
+                                                                                clearInterval(enableInternalLbElementIntervalID);
+
+                                                                                if (result.jobstatus == 1) { //configureVirtualRouterElement succeeded
+                                                                                    $.ajax({
+                                                                                        url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + internalLbProviderId),
+                                                                                        dataType: "json",
+                                                                                        async: false,
+                                                                                        success: function (json) {
+                                                                                            var jobId = json.updatenetworkserviceproviderresponse.jobid;
+                                                                                            var enableInternalLbProviderIntervalID = setInterval(function () {
+                                                                                                $.ajax({
+                                                                                                    url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                                                                    dataType: "json",
+                                                                                                    success: function (json) {
+                                                                                                        var result = json.queryasyncjobresultresponse;
+                                                                                                        if (result.jobstatus == 0) {
+                                                                                                            return; //Job has not completed
+                                                                                                        } else {
+                                                                                                            clearInterval(enableInternalLbProviderIntervalID);
+
+                                                                                                            if (result.jobstatus == 1) { //Internal LB has been enabled successfully
+                                                                                                                //don't need to do anything here
+                                                                                                            } else if (result.jobstatus == 2) {
+                                                                                                                alert("failed to enable Internal LB Provider. Error: " + _s(result.jobresult.errortext));
+                                                                                                            }
+                                                                                                        }
+                                                                                                    },
+                                                                                                    error: function (XMLHttpResponse) {
+                                                                                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                                                                        alert("failed to enable Internal LB Provider. Error: " + errorMsg);
+                                                                                                    }
+                                                                                                });
+                                                                                            }, g_queryAsyncJobResultInterval);
+                                                                                        }
+                                                                                    });
+                                                                                } else if (result.jobstatus == 2) {
+                                                                                    alert("configureVirtualRouterElement failed. Error: " + _s(result.jobresult.errortext));
+                                                                                }
+                                                                            }
+                                                                        },
+                                                                        error: function (XMLHttpResponse) {
+                                                                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                                            alert("configureVirtualRouterElement failed. Error: " + errorMsg);
+                                                                        }
+                                                                    });
+                                                                }, g_queryAsyncJobResultInterval);
+                                                            }
+                                                        });
                                                         // ***** Internal LB ***** (end) *****
 
                                                         if (args.data.zone.sgEnabled != true) { //Advanced SG-disabled zone
@@ -3138,7 +3420,7 @@
                                                                 url: createURL("listNetworkServiceProviders&name=VpcVirtualRouter&physicalNetworkId=" + thisPhysicalNetwork.id),
                                                                 dataType: "json",
                                                                 async: false,
-                                                                success: function(json) {
+                                                                success: function (json) {
                                                                     var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
                                                                     if (items != null && items.length > 0) {
                                                                         vpcVirtualRouterProviderId = items[0].id;
@@ -3155,7 +3437,7 @@
                                                                 url: createURL("listVirtualRouterElements&nspid=" + vpcVirtualRouterProviderId),
                                                                 dataType: "json",
                                                                 async: false,
-                                                                success: function(json) {
+                                                                success: function (json) {
                                                                     var items = json.listvirtualrouterelementsresponse.virtualrouterelement;
                                                                     if (items != null && items.length > 0) {
                                                                         vpcVirtualRouterElementId = items[0].id;
@@ -3171,13 +3453,13 @@
                                                                 url: createURL("configureVirtualRouterElement&enabled=true&id=" + vpcVirtualRouterElementId),
                                                                 dataType: "json",
                                                                 async: false,
-                                                                success: function(json) {
+                                                                success: function (json) {
                                                                     var jobId = json.configurevirtualrouterelementresponse.jobid;
-                                                                    var enableVpcVirtualRouterElementIntervalID = setInterval(function() {
+                                                                    var enableVpcVirtualRouterElementIntervalID = setInterval(function () {
                                                                         $.ajax({
                                                                             url: createURL("queryAsyncJobResult&jobId=" + jobId),
                                                                             dataType: "json",
-                                                                            success: function(json) {
+                                                                            success: function (json) {
                                                                                 var result = json.queryasyncjobresultresponse;
                                                                                 if (result.jobstatus == 0) {
                                                                                     return; //Job has not completed
@@ -3189,13 +3471,13 @@
                                                                                             url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + vpcVirtualRouterProviderId),
                                                                                             dataType: "json",
                                                                                             async: false,
-                                                                                            success: function(json) {
+                                                                                            success: function (json) {
                                                                                                 var jobId = json.updatenetworkserviceproviderresponse.jobid;
-                                                                                                var enableVpcVirtualRouterProviderIntervalID = setInterval(function() {
+                                                                                                var enableVpcVirtualRouterProviderIntervalID = setInterval(function () {
                                                                                                     $.ajax({
                                                                                                         url: createURL("queryAsyncJobResult&jobId=" + jobId),
                                                                                                         dataType: "json",
-                                                                                                        success: function(json) {
+                                                                                                        success: function (json) {
                                                                                                             var result = json.queryasyncjobresultresponse;
                                                                                                             if (result.jobstatus == 0) {
                                                                                                                 return; //Job has not completed
@@ -3209,7 +3491,7 @@
                                                                                                                 }
                                                                                                             }
                                                                                                         },
-                                                                                                        error: function(XMLHttpResponse) {
+                                                                                                        error: function (XMLHttpResponse) {
                                                                                                             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                                                                                             alert("failed to enable VPC Virtual Router Provider. Error: " + errorMsg);
                                                                                                         }
@@ -3222,7 +3504,7 @@
                                                                                     }
                                                                                 }
                                                                             },
-                                                                            error: function(XMLHttpResponse) {
+                                                                            error: function (XMLHttpResponse) {
                                                                                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                                                                 alert("configureVirtualRouterElement failed. Error: " + errorMsg);
                                                                             }
@@ -3231,7 +3513,7 @@
                                                                 }
                                                             });
                                                             // ***** VPC Virtual Router ***** (end) *****
-                                                        } else { //args.data.zone.sgEnabled == true  //Advanced SG-enabled zone
+                                                        } else { //args.data.zone.sgEnabled == true  //Advanced SG-enabled zone                                                         
                                                             message(dictionary['message.enabling.security.group.provider']);
 
                                                             // get network service provider ID of Security Group
@@ -3240,7 +3522,7 @@
                                                                 url: createURL("listNetworkServiceProviders&name=SecurityGroupProvider&physicalNetworkId=" + thisPhysicalNetwork.id),
                                                                 dataType: "json",
                                                                 async: false,
-                                                                success: function(json) {
+                                                                success: function (json) {
                                                                     var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;
                                                                     if (items != null && items.length > 0) {
                                                                         securityGroupProviderId = items[0].id;
@@ -3301,6 +3583,7 @@
                 },
 
                 addNetscalerProvider: function(args) {
+
                     if (selectedNetworkOfferingHavingNetscaler == true) {
                         message(dictionary['message.adding.Netscaler.provider']);
 
@@ -3971,7 +4254,6 @@
                             url = hostname;
                         url += "/" + dcName + "/" + clusterName;
                         array1.push("&url=" + todb(url));
-
                         clusterName = hostname + "/" + dcName + "/" + clusterName; //override clusterName
                     }
                     array1.push("&clustername=" + todb(clusterName));

@@ -18,14 +18,33 @@
 """ Component tests VM deployment in VPC network functionality
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-import datetime
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.integration.lib.base import (VirtualMachine,
+                                         NetworkOffering,
+                                         VpcOffering,
+                                         VPC,
+                                         NetworkACL,
+                                         PrivateGateway,
+                                         StaticRoute,
+                                         Router,
+                                         Network,
+                                         Account,
+                                         ServiceOffering,
+                                         PublicIPAddress,
+                                         NATRule,
+                                         StaticNATRule,
+                                         Configurations)
+
+from marvin.integration.lib.common import (get_domain,
+                                           get_zone,
+                                           get_template,
+                                           wait_for_cleanup,
+                                           get_free_vlan)
+
+from marvin.integration.lib.utils import cleanup_resources
+from marvin.cloudstackAPI import rebootRouter
+
 
 
 class Services:
@@ -105,18 +124,6 @@ class Services:
                                   # Max networks allowed as per hypervisor
                                   # Xenserver -> 5, VMWare -> 9
                                 },
-                         "lbrule": {
-                                    "name": "SSH",
-                                    "alg": "leastconn",
-                                    # Algorithm used for load balancing
-                                    "privateport": 22,
-                                    "publicport": 2222,
-                                    "openfirewall": False,
-                                    "startport": 22,
-                                    "endport": 2222,
-                                    "protocol": "TCP",
-                                    "cidrlist": '0.0.0.0/0',
-                                },
                          "natrule": {
                                     "privateport": 22,
                                     "publicport": 22,
@@ -132,11 +139,9 @@ class Services:
                                     # Any network (For creating FW rule)
                                     "protocol": "TCP"
                                 },
-                         "http_rule": {
-                                    "startport": 80,
-                                    "endport": 80,
+                         "icmp_rule": {
                                     "cidrlist": '0.0.0.0/0',
-                                    "protocol": "TCP"
+                                    "protocol": "ICMP"
                                 },
                          "virtual_machine": {
                                     "displayname": "Test VM",
@@ -1893,23 +1898,15 @@ class TestVMDeployVPC(cloudstackTestCase):
                                         network_1.id
                                         ))
 
-        nat_rule = NATRule.create(
-                                  self.apiclient,
-                                  vm_1,
-                                  self.services["natrule"],
-                                  ipaddressid=public_ip_1.ipaddress.id,
-                                  openfirewall=False,
-                                  networkid=network_1.id,
-                                  vpcid=vpc.id
-                                  )
-
-        self.debug("Adding NetwrokACl rules to make NAT rule accessible")
-        nwacl_nat = NetworkACL.create(
-                                         self.apiclient,
-                                         networkid=network_1.id,
-                                         services=self.services["natrule"],
-                                         traffictype='Ingress'
-                                         )
+        NATRule.create(
+                       self.apiclient,
+                       vm_1,
+                       self.services["natrule"],
+                       ipaddressid=public_ip_1.ipaddress.id,
+                       openfirewall=False,
+                       networkid=network_1.id,
+                       vpcid=vpc.id
+                       )
 
         self.debug("Associating public IP for network: %s" % network_1.name)
         public_ip_2 = PublicIPAddress.create(
@@ -1972,26 +1969,92 @@ class TestVMDeployVPC(cloudstackTestCase):
                                         network_2.id
                                         ))
 
-        self.debug("Adding NetworkACl rules to make PF accessible")
-        nwacl_lb = NetworkACL.create(
+        NATRule.create(
+                                  self.apiclient,
+                                  vm_3,
+                                  self.services["natrule"],
+                                  ipaddressid=public_ip_3.ipaddress.id,
+                                  openfirewall=False,
+                                  networkid=network_2.id,
+                                  vpcid=vpc.id
+                                  )
+
+        self.debug("Associating public IP for network: %s" % network_2.name)
+        public_ip_4 = PublicIPAddress.create(
                                 self.apiclient,
+                                accountid=self.account.name,
+                                zoneid=self.zone.id,
+                                domainid=self.account.domainid,
                                 networkid=network_2.id,
-                                services=self.services["lbrule"],
-                                traffictype='Ingress'
+                                vpcid=vpc.id
                                 )
+        self.debug("Associated %s with network %s" % (
+                                        public_ip_4.ipaddress.ipaddress,
+                                        network_2.id
+                                        ))
+        self.debug("Enabling static NAT for IP: %s" %
+                                            public_ip_4.ipaddress.ipaddress)
+        try:
+            StaticNATRule.enable(
+                              self.apiclient,
+                              ipaddressid=public_ip_4.ipaddress.id,
+                              virtualmachineid=vm_3.id,
+                              networkid=network_2.id
+                              )
+            self.debug("Static NAT enabled for IP: %s" %
+                                            public_ip_4.ipaddress.ipaddress)
+        except Exception as e:
+            self.fail("Failed to enable static NAT on IP: %s - %s" % (
+                                        public_ip_4.ipaddress.ipaddress, e))
+
+        public_ips = PublicIPAddress.list(
+                                    self.apiclient,
+                                    networkid=network_2.id,
+                                    listall=True,
+                                    isstaticnat=True,
+                                    account=self.account.name,
+                                    domainid=self.account.domainid
+                                  )
+        self.assertEqual(
+                         isinstance(public_ips, list),
+                         True,
+                         "List public Ip for network should list the Ip addr"
+                         )
+        self.assertEqual(
+                         public_ips[0].ipaddress,
+                         public_ip_4.ipaddress.ipaddress,
+                         "List public Ips %s for network should list the Ip addr %s"
+                         % (public_ips[0].ipaddress, public_ip_4.ipaddress.ipaddress )
+                         )
+
+        self.debug("Adding NetwrokACl rules to make NAT rule accessible with network %s" % network_1.id)
+        NetworkACL.create(
+                                         self.apiclient,
+                                         networkid=network_1.id,
+                                         services=self.services["natrule"],
+                                         traffictype='Ingress'
+                                         )
+
+        self.debug("Adding NetworkACl rules to make NAT rule accessible with network: %s" % network_2.id)
+        NetworkACL.create(
+                                         self.apiclient,
+                                         networkid=network_2.id,
+                                         services=self.services["natrule"],
+                                         traffictype='Ingress'
+                                         )
 
         self.debug(
             "Adding Egress rules to network to allow access to internet")
-        nwacl_internet_1 = NetworkACL.create(
+        NetworkACL.create(
                                 self.apiclient,
                                 networkid=network_1.id,
-                                services=self.services["http_rule"],
+                                services=self.services["icmp_rule"],
                                 traffictype='Egress'
                                 )
-        nwacl_internet_2 = NetworkACL.create(
+        NetworkACL.create(
                                 self.apiclient,
                                 networkid=network_2.id,
-                                services=self.services["http_rule"],
+                                services=self.services["icmp_rule"],
                                 traffictype='Egress'
                                 )
 
@@ -2023,165 +2086,6 @@ class TestVMDeployVPC(cloudstackTestCase):
         static_route = StaticRoute.create(
                                           self.apiclient,
                                           cidr='10.2.3.0/24',
-                                          gatewayid=private_gateway.id
-                                          )
-        self.debug("Check if the static route created successfully?")
-        static_routes = StaticRoute.list(
-                                       self.apiclient,
-                                       id=static_route.id,
-                                       listall=True
-                                       )
-        self.assertEqual(
-                        isinstance(static_routes, list),
-                        True,
-                        "List static route should return a valid response"
-                        )
-
-        self.debug("Associating public IP for network: %s" % network_2.name)
-        public_ip_5 = PublicIPAddress.create(
-                                self.apiclient,
-                                accountid=self.account.name,
-                                zoneid=self.zone.id,
-                                domainid=self.account.domainid,
-                                networkid=network_2.id,
-                                vpcid=vpc.id
-                                )
-        self.debug("Associated %s with network %s" % (
-                                        public_ip_5.ipaddress.ipaddress,
-                                        network_2.id
-                                        ))
-
-        nat_rule = NATRule.create(
-                                  self.apiclient,
-                                  vm_3,
-                                  self.services["natrule"],
-                                  ipaddressid=public_ip_5.ipaddress.id,
-                                  openfirewall=False,
-                                  networkid=network_2.id,
-                                  vpcid=vpc.id
-                                  )
-
-        self.debug("Adding NetworkACl rules to make NAT rule accessible")
-        nwacl_nat = NetworkACL.create(
-                                         self.apiclient,
-                                         networkid=network_2.id,
-                                         services=self.services["natrule"],
-                                         traffictype='Ingress'
-                                         )
-
-        self.debug("Associating public IP for network: %s" % network_2.name)
-        public_ip_6 = PublicIPAddress.create(
-                                self.apiclient,
-                                accountid=self.account.name,
-                                zoneid=self.zone.id,
-                                domainid=self.account.domainid,
-                                networkid=network_2.id,
-                                vpcid=vpc.id
-                                )
-        self.debug("Associated %s with network %s" % (
-                                        public_ip_6.ipaddress.ipaddress,
-                                        network_2.id
-                                        ))
-        self.debug("Enabling static NAT for IP: %s" %
-                                            public_ip_6.ipaddress.ipaddress)
-        try:
-            StaticNATRule.enable(
-                              self.apiclient,
-                              ipaddressid=public_ip_6.ipaddress.id,
-                              virtualmachineid=vm_3.id,
-                              networkid=network_2.id
-                              )
-            self.debug("Static NAT enabled for IP: %s" %
-                                            public_ip_6.ipaddress.ipaddress)
-        except Exception as e:
-            self.fail("Failed to enable static NAT on IP: %s - %s" % (
-                                        public_ip_6.ipaddress.ipaddress, e))
-
-        public_ips = PublicIPAddress.list(
-                                    self.apiclient,
-                                    networkid=network_2.id,
-                                    listall=True,
-                                    isstaticnat=True,
-                                    account=self.account.name,
-                                    domainid=self.account.domainid
-                                  )
-        self.assertEqual(
-                         isinstance(public_ips, list),
-                         True,
-                         "List public Ip for network should list the Ip addr"
-                         )
-        self.assertEqual(
-                         public_ips[0].ipaddress,
-                         public_ip_6.ipaddress.ipaddress,
-                         "List public Ips %s for network should list the Ip addr %s"
-                         % (public_ips[0].ipaddress, public_ip_6.ipaddress.ipaddress )
-                         )
-
-        self.debug("Associating public IP for network: %s" % vpc.name)
-        public_ip_7 = PublicIPAddress.create(
-                                self.apiclient,
-                                accountid=self.account.name,
-                                zoneid=self.zone.id,
-                                domainid=self.account.domainid,
-                                networkid=network_2.id,
-                                vpcid=vpc.id
-                                )
-        self.debug("Associated %s with network %s" % (
-                                        public_ip_7.ipaddress.ipaddress,
-                                        network_2.id
-                                        ))
-
-        self.debug("Adding NetwrokACl rules to make PF accessible")
-        nwacl_lb = NetworkACL.create(
-                                self.apiclient,
-                                networkid=network_2.id,
-                                services=self.services["lbrule"],
-                                traffictype='Ingress'
-                                )
-
-        self.debug(
-            "Adding Egress rules to network to allow access to internet")
-        nwacl_internet_3 = NetworkACL.create(
-                                self.apiclient,
-                                networkid=network_1.id,
-                                services=self.services["http_rule"],
-                                traffictype='Egress'
-                                )
-        nwacl_internet_4 = NetworkACL.create(
-                                self.apiclient,
-                                networkid=network_2.id,
-                                services=self.services["http_rule"],
-                                traffictype='Egress'
-                                )
-
-        vlan = get_free_vlan(self.api_client, self.zone.id)[1]
-        if vlan is None:
-            self.fail("Failed to get free vlan id in the zone")
-
-        self.debug("Creating private gateway in VPC: %s" % vpc.name)
-        private_gateway = PrivateGateway.create(
-                                                self.apiclient,
-                                                gateway='10.2.4.1',
-                                                ipaddress='10.2.4.2',
-                                                netmask='255.255.255.0',
-                                                vlan=vlan,
-                                                vpcid=vpc.id
-                                                )
-        self.debug("Check if the private gateway created successfully?")
-        gateways = PrivateGateway.list(
-                                       self.apiclient,
-                                       id=private_gateway.id,
-                                       listall=True
-                                       )
-        self.assertEqual(
-                        isinstance(gateways, list),
-                        True,
-                        "List private gateways should return a valid response"
-                        )
-        self.debug("Creating static route for this gateway")
-        static_route = StaticRoute.create(
-                                          self.apiclient,
-                                          cidr='10.2.4.0/24',
                                           gatewayid=private_gateway.id
                                           )
         self.debug("Check if the static route created successfully?")
@@ -2298,10 +2202,19 @@ class TestVMDeployVPC(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to delete network: %s, %s" % (network_1.name, e))
 
+        self.debug("Restaring the network 2 (%s) with cleanup=True" %
+                                                            network_2.name)
+        try:
+            network_2.restart(self.apiclient, cleanup=True)
+        except Exception as e:
+            self.fail(
+                "Failed to restart network: %s, %s" %
+                                                        (network_2.name, e))
+
         self.debug("Checking if we can SSH into VM_3?")
         try:
-            ssh_4 = vm_3.get_ssh_client(
-                                ipaddress=public_ip_5.ipaddress.ipaddress,
+            ssh_3 = vm_3.get_ssh_client(
+                                ipaddress=public_ip_3.ipaddress.ipaddress,
                                 reconnect=True,
                                 port=self.services["natrule"]["publicport"]
                                 )
@@ -2309,7 +2222,7 @@ class TestVMDeployVPC(cloudstackTestCase):
 
             self.debug("Verifying if we can ping to outside world from VM?")
             # Ping to outsite world
-            res = ssh_4.execute("ping -c 1 www.google.com")
+            res = ssh_3.execute("ping -c 1 www.google.com")
             # res = 64 bytes from maa03s17-in-f20.1e100.net (74.125.236.212):
             # icmp_req=1 ttl=57 time=25.9 ms
             # --- www.l.google.com ping statistics ---
@@ -2317,7 +2230,7 @@ class TestVMDeployVPC(cloudstackTestCase):
             # rtt min/avg/max/mdev = 25.970/25.970/25.970/0.000 ms
         except Exception as e:
             self.fail("Failed to SSH into VM - %s, %s" %
-                                        (public_ip_5.ipaddress.ipaddress, e))
+                                        (public_ip_3.ipaddress.ipaddress, e))
 
         result = str(res)
         self.assertEqual(
@@ -2326,20 +2239,20 @@ class TestVMDeployVPC(cloudstackTestCase):
                          "Ping to outside world from VM should be successful"
                          )
 
-        self.debug("Checking if we can SSH into VM_2?")
+        self.debug("Checking if we can SSH into VM_4?")
         try:
-            ssh_5 = vm_3.get_ssh_client(
-                                ipaddress=public_ip_6.ipaddress.ipaddress,
+            ssh_4 = vm_4.get_ssh_client(
+                                ipaddress=public_ip_4.ipaddress.ipaddress,
                                 reconnect=True,
                                 port=self.services["natrule"]["publicport"]
                                 )
             self.debug("SSH into VM is successfully")
 
             self.debug("Verifying if we can ping to outside world from VM?")
-            res = ssh_5.execute("ping -c 1 www.google.com")
+            res = ssh_4.execute("ping -c 1 www.google.com")
         except Exception as e:
             self.fail("Failed to SSH into VM - %s, %s" %
-                                        (public_ip_6.ipaddress.ipaddress, e))
+                                        (public_ip_4.ipaddress.ipaddress, e))
 
         result = str(res)
         self.assertEqual(
@@ -2369,15 +2282,13 @@ class TestVMDeployVPC(cloudstackTestCase):
                          None,
                          "List VPC network should not return a valid list"
                          )
-        networks = Network.list(
-                                self.apiclient,
-                                account=self.account.name,
-                                domainid=self.account.domainid
-                                )
-        self.assertEqual(
-                         networks,
-                         None,
-                         "List networks shall not return any response"
+
+        self.debug("Trying to list the networks in the account, this should fail as account does not exist now")
+        with self.assertRaises(Exception):
+            Network.list(
+                         self.apiclient,
+                         account=self.account.name,
+                         domainid=self.account.domainid
                          )
         return
 

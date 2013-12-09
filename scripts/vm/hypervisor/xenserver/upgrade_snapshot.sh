@@ -87,7 +87,7 @@ if [ $? -ne 0 ]; then
   exit 0
 fi
 
-VHDUTIL="/opt/xensource/bin/vhd-util"
+VHDUTIL="/opt/cloud/bin/vhd-util"
 
 upgradeSnapshot()
 {

@@ -36,6 +36,26 @@ namespace HypervResource
     {
         public static String CloudStackUserDataKey = "cloudstack-vm-userdata";
 
+        /// <summary>
+        /// Defines the migration types.
+        /// </summary>
+        public enum MigrationType
+        {
+            VirtualSystem = 32768,
+            Storage = 32769,
+            Staged = 32770,
+            VirtualSystemAndStorage = 32771
+        };
+
+        /// <summary>
+        /// Defines migration transport types.
+        /// </summary>
+        public enum TransportType
+        {
+            TCP = 5,
+            SMB = 32768
+        };
+
         public static void Initialize()
         {
             // Trigger assembly load into curren appdomain
@@ -266,7 +286,10 @@ namespace HypervResource
             {
                 string vhdFile = null;
                 string diskName = null;
+                string isoPath = null;
                 VolumeObjectTO volInfo = VolumeObjectTO.ParseJson(diskDrive.data);
+                TemplateObjectTO templateInfo = TemplateObjectTO.ParseJson(diskDrive.data);
+
                 if (volInfo != null)
                 {
                     // assert
@@ -286,13 +309,13 @@ namespace HypervResource
                         throw new ArgumentException(errMsg);
                     }
                     errMsg = vmName + ": Malformed PrimaryDataStore for disk " + diskDrive.ToString();
-                    if (String.IsNullOrEmpty(volInfo.primaryDataStore.path))
+                    if (String.IsNullOrEmpty(volInfo.primaryDataStore.Path))
                     {
                         logger.Error(errMsg);
                         throw new ArgumentException(errMsg);
                     }
-                    errMsg = vmName + ": Missing folder PrimaryDataStore for disk " + diskDrive.ToString() + ", missing path: " +  volInfo.primaryDataStore.path;
-                    if (!Directory.Exists(volInfo.primaryDataStore.path))
+                    errMsg = vmName + ": Missing folder PrimaryDataStore for disk " + diskDrive.ToString() + ", missing path: " +  volInfo.primaryDataStore.Path;
+                    if (!Directory.Exists(volInfo.primaryDataStore.Path))
                     {
                         logger.Error(errMsg);
                         throw new ArgumentException(errMsg);
@@ -306,6 +329,13 @@ namespace HypervResource
                         throw new ArgumentException(errMsg);
                     }
                     logger.Debug("Going to create " + vmName + " with attached voluem " + diskName + " at " + vhdFile);
+                }
+                else if (templateInfo != null && templateInfo.nfsDataStoreTO != null)
+                {
+                    NFSTO share = templateInfo.nfsDataStoreTO;
+                    Utils.ConnectToRemote(share.UncPath, share.Domain, share.User, share.Password);
+                    // The share is mapped, now attach the iso
+                    isoPath = Path.Combine(share.UncPath.Replace('/', Path.DirectorySeparatorChar), templateInfo.path);
                 }
 
                 string driveType = diskDrive.type;
@@ -333,6 +363,10 @@ namespace HypervResource
                 logger.DebugFormat("Create disk type {1} (Named: {0}), on vm {2} {3}", diskName, driveResourceType, vmName, 
                                         string.IsNullOrEmpty(vhdFile) ? " no disk to insert" : ", inserting disk" +vhdFile );
                 AddDiskDriveToVm(newVm, vhdFile, ideCtrllr, driveResourceType);
+                if (isoPath != null)
+                {
+                    AttachIso(vmName, isoPath);
+                }
             }
 
             String publicIpAddress = "";
@@ -431,7 +465,15 @@ namespace HypervResource
                 System.Threading.Thread.Sleep(90000);
                 SetState(newVm, RequiredState.Reset);
                 // wait for the second boot and then return with sucesss
-                pingResource(publicIpAddress);
+                //if publicIPAddress is empty or null don't ping the ip
+                if (publicIpAddress.Equals("") == true)
+                {
+                    System.Threading.Thread.Sleep(90000);
+                }
+                else
+                {
+                    pingResource(publicIpAddress);
+                }
             }
             logger.InfoFormat("Started VM {0}", vmName);
             return newVm;
@@ -850,7 +892,46 @@ namespace HypervResource
             }
             while (vm != null);
         }
-        
+
+        /// <summary>
+        /// Migrates a vm to the given destination host
+        /// </summary>
+        /// <param name="desplayName"></param>
+        /// <param name="destination host"></param>
+        public void MigrateVm(string vmName, string destination)
+        {
+            ComputerSystem vm = GetComputerSystem(vmName);
+            VirtualSystemMigrationSettingData migrationSettingData = VirtualSystemMigrationSettingData.CreateInstance();
+            VirtualSystemMigrationService service = GetVirtualisationSystemMigrationService();
+
+            IPAddress addr = IPAddress.Parse(destination);
+            IPHostEntry entry = Dns.GetHostEntry(addr);
+            string[] destinationHost = new string[] { destination };
+
+            migrationSettingData.LateBoundObject["MigrationType"] = MigrationType.VirtualSystem;
+            migrationSettingData.LateBoundObject["TransportType"] = TransportType.TCP;
+            migrationSettingData.LateBoundObject["DestinationIPAddressList"] = destinationHost;
+            string migrationSettings = migrationSettingData.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20);
+
+            ManagementPath jobPath;
+            var ret_val = service.MigrateVirtualSystemToHost(vm.Path, entry.HostName, migrationSettings, null, null, out jobPath);
+            if (ret_val == ReturnCode.Started)
+            {
+                MigrationJobCompleted(jobPath);
+            }
+            else if (ret_val != ReturnCode.Completed)
+            {
+                var errMsg = string.Format(
+                    "Failed migrating VM {0} (GUID {1}) due to {2}",
+                    vm.ElementName,
+                    vm.Name,
+                    ReturnCode.ToString(ret_val));
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+        }
+
         /// <summary>
         /// Create new storage media resources, e.g. hard disk images and ISO disk images
         /// see http://msdn.microsoft.com/en-us/library/hh859775(v=vs.85).aspx
@@ -1417,7 +1498,7 @@ namespace HypervResource
             // If the Job is done asynchronously
             if (ret_val == ReturnCode.Started)
             {
-                JobCompleted(jobPath);
+                StorageJobCompleted(jobPath);
             }
             else if (ret_val != ReturnCode.Completed)
             {
@@ -1467,6 +1548,21 @@ namespace HypervResource
             throw ex;
         }
 
+        public VirtualSystemMigrationService GetVirtualisationSystemMigrationService()
+        {
+
+            var virtSysMigSvcCollection = VirtualSystemMigrationService.GetInstances();
+            foreach (VirtualSystemMigrationService item in virtSysMigSvcCollection)
+            {
+                return item;
+            }
+
+            var errMsg = string.Format("No Hyper-V migration service subsystem on server");
+            var ex = new WmiException(errMsg);
+            logger.Error(errMsg, ex);
+            throw ex;
+        }
+
         /// <summary>
         /// Similar to http://msdn.microsoft.com/en-us/library/hh850031%28v=vs.85%29.aspx
         /// </summary>
@@ -1498,6 +1594,58 @@ namespace HypervResource
             }
 
             logger.DebugFormat("WMI job succeeded: {0}, Elapsed={1}", jobObj.Description, jobObj.ElapsedTime);
+        }
+
+        private static void MigrationJobCompleted(ManagementPath jobPath)
+        {
+            MigrationJob jobObj = null;
+            for (;;)
+            {
+                jobObj = new MigrationJob(jobPath);
+                if (jobObj.JobState != JobState.Starting && jobObj.JobState != JobState.Running)
+                {
+                    break;
+                }
+                logger.InfoFormat("In progress... {0}% completed.", jobObj.PercentComplete);
+                System.Threading.Thread.Sleep(1000);
+            }
+
+            if (jobObj.JobState != JobState.Completed)
+            {
+                var errMsg = string.Format(
+                    "Hyper-V Job failed, Error Code:{0}, Description: {1}",
+                    jobObj.ErrorCode,
+                    jobObj.ErrorDescription);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+        }
+
+        private static void StorageJobCompleted(ManagementPath jobPath)
+        {
+            StorageJob jobObj = null;
+            for (; ; )
+            {
+                jobObj = new StorageJob(jobPath);
+                if (jobObj.JobState != JobState.Starting && jobObj.JobState != JobState.Running)
+                {
+                    break;
+                }
+                logger.InfoFormat("In progress... {0}% completed.", jobObj.PercentComplete);
+                System.Threading.Thread.Sleep(1000);
+            }
+
+            if (jobObj.JobState != JobState.Completed)
+            {
+                var errMsg = string.Format(
+                    "Hyper-V Job failed, Error Code:{0}, Description: {1}",
+                    jobObj.ErrorCode,
+                    jobObj.ErrorDescription);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
         }
 
         public void GetProcessorResources(out uint cores, out uint mhz)

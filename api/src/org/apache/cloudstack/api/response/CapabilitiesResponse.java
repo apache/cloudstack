@@ -61,6 +61,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "time interval (in seconds) to reset api count")
     private Integer apiLimitInterval;
 
+    @SerializedName("kvmsnapshotenabled")
+    @Param(description = "true if snapshot is supported for KVM host, false otherwise")
+    private boolean KVMSnapshotEnabled;
+
     @SerializedName("apilimitmax")
     @Param(description = "Max allowed number of api requests within the specified interval")
     private Integer apiLimitMax;
@@ -95,6 +99,10 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setRegionSecondaryEnabled(boolean regionSecondaryEnabled) {
         this.regionSecondaryEnabled = regionSecondaryEnabled;
+    }
+
+    public void setKVMSnapshotEnabled(boolean KVMSnapshotEnabled) {
+        this.KVMSnapshotEnabled = KVMSnapshotEnabled;
     }
 
     public void setApiLimitInterval(Integer apiLimitInterval) {
