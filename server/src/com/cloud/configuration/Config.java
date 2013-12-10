@@ -550,6 +550,8 @@ public enum Config {
             return "VpcManager";
         } else if (_componentClass == SnapshotManager.class) {
             return "SnapshotManager";
+        } else if (_componentClass == VMSnapshotManager.class) {
+            return "VMSnapshotManager";
         } else {
             return "none";
         }
