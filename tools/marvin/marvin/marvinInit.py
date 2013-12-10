@@ -39,14 +39,16 @@ import sys
 import time
 import os
 import logging
+import string
+import random
 
 
 class MarvinInit:
-    def __init__(self, config_file, load_flag):
+    def __init__(self, config_file, load_flag, log_folder_path=None):
         self.__configFile = config_file
         self.__loadFlag = load_flag
         self.__parsedConfig = None
-        self.__logFolderPath = None
+        self.__logFolderPath = log_folder_path
         self.__tcRunLogger = None
         self.__testClient = None
         self.__tcRunDebugFile = None
@@ -111,15 +113,21 @@ class MarvinInit:
                      for a given test run are available under a given
                      timestamped folder
             '''
-            log_config = self.__parsedConfig.logger
             temp_path = "".join(str(time.time()).split("."))
-            if log_config is not None:
-                if log_config.LogFolderPath is not None:
-                    self.logFolderPath = log_config.LogFolderPath + temp_path
+            if self.__logFolderPath is None:
+                log_config = self.__parsedConfig.logger
+                if log_config is not None:
+                    if log_config.LogFolderPath is not None:
+                        self.logFolderPath = log_config.LogFolderPath + '/' + temp_path
+                    else:
+                        self.logFolderPath = temp_path
                 else:
                     self.logFolderPath = temp_path
             else:
-                self.logFolderPath = temp_path
+                self.logFolderPath = self.__logFolderPath + '/' + temp_path
+            if os.path.exists(self.logFolderPath):
+                self.logFolderPath = self.logFolderPath \
+                                     + ''.join(random.choice(string.ascii_uppercase + string.digits) for x in range(3))
             os.makedirs(self.logFolderPath)
             '''
             Log File Paths
