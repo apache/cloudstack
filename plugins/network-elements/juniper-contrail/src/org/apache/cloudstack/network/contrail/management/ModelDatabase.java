@@ -31,7 +31,7 @@ public class ModelDatabase {
     TreeSet<VirtualMachineModel> _vmTable;
     TreeSet<VirtualNetworkModel> _vnTable;
 
-    ModelDatabase() {
+    public ModelDatabase() {
         initDb();
     }
 
