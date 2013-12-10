@@ -3718,9 +3718,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Set<Provider> firewallProviderSet = new HashSet<Provider>();
             firewallProviderSet.add(firewallProvider);
             serviceProviderMap.put(Service.Firewall, firewallProviderSet);
-            if (!(firewallProvider.getName().equals(Provider.JuniperSRX.getName()) || firewallProvider.getName().equals(Provider.VirtualRouter.getName())) &&
+            if (!(firewallProvider.getName().equals(Provider.JuniperSRX.getName()) || firewallProvider.getName().equals(Provider.PaloAlto.getName()) || firewallProvider.getName().equals(Provider.VirtualRouter.getName())) &&
                 egressDefaultPolicy == false) {
-                throw new InvalidParameterValueException("Firewall egress with default policy " + egressDefaultPolicy + "is not supported by the provider " +
+                throw new InvalidParameterValueException("Firewall egress with default policy " + egressDefaultPolicy + " is not supported by the provider " +
                     firewallProvider.getName());
             }
         }

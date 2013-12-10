@@ -68,6 +68,7 @@ class MarvinPlugin(Plugin):
                 self.enabled = True
         self.configFile = options.config_file
         self.loadFlag = options.load
+        self.logFolderPath = options.log_folder_path
         self.conf = conf
         '''
         Initializes the marvin with required settings
@@ -87,6 +88,9 @@ class MarvinPlugin(Plugin):
         parser.add_option("--load", action="store_true", default=False,
                           dest="load",
                           help="Only load the deployment configuration given")
+        parser.add_option("--log-folder-path", action="store", default=None,
+                          dest="log_folder_path",
+                          help="Path to the folder where log files will be stored")
         Plugin.options(self, parser, env)
 
     def wantClass(self, cls):
@@ -165,7 +169,7 @@ class MarvinPlugin(Plugin):
         Creates a debugstream for tc debug log
         '''
         try:
-            obj_marvininit = MarvinInit(self.configFile, self.loadFlag)
+            obj_marvininit = MarvinInit(self.configFile, self.loadFlag, self.logFolderPath)
             if obj_marvininit.init() == SUCCESS:
                 self.testClient = obj_marvininit.getTestClient()
                 self.tcRunLogger = obj_marvininit.getLogger()

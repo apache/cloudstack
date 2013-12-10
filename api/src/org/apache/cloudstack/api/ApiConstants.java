@@ -502,6 +502,7 @@ public class ApiConstants {
     public static final String BAREMETAL_DISCOVER_NAME = "baremetaldiscovername";
     public static final String UCS_DN = "ucsdn";
     public static final String GSLB_PROVIDER = "gslbprovider";
+    public static final String EXCLUSIVE_GSLB_PROVIDER = "isexclusivegslbprovider";
     public static final String GSLB_PROVIDER_PUBLIC_IP = "gslbproviderpublicip";
     public static final String GSLB_PROVIDER_PRIVATE_IP = "gslbproviderprivateip";
     public static final String VM_SNAPSHOT_DESCRIPTION = "description";

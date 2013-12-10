@@ -269,4 +269,6 @@ public interface NetworkModel {
     boolean getExecuteInSeqNtwkElmtCmd();
 
     boolean isNetworkReadyForGc(long networkId);
+
+    boolean getNetworkEgressDefaultPolicy(Long networkId);
 }

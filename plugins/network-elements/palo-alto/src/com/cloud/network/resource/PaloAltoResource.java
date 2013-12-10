@@ -29,6 +29,7 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
@@ -55,6 +56,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.HTTP;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
@@ -462,11 +464,14 @@ public class PaloAltoResource implements ServerResource {
             String guestVlanSubnet = NetUtils.getCidrSubNet(guestVlanGateway, cidrSize);
 
             Long publicVlanTag = null;
-            if (ip.getBroadcastUri() != null && !ip.getBroadcastUri().equals("untagged")) {
-                try {
-                    publicVlanTag = Long.parseLong(ip.getBroadcastUri());
-                } catch (Exception e) {
-                    throw new ExecutionException("Could not parse public VLAN tag: " + ip.getBroadcastUri());
+            if (ip.getBroadcastUri() != null) {
+                String parsedVlanTag = parsePublicVlanTag(ip.getBroadcastUri());
+                if (!parsedVlanTag.equals("untagged")) {
+                    try {
+                        publicVlanTag = Long.parseLong(parsedVlanTag);
+                    } catch (Exception e) {
+                        throw new ExecutionException("Could not parse public VLAN tag: " + parsedVlanTag);
+                    }
                 }
             }
 
@@ -519,6 +524,9 @@ public class PaloAltoResource implements ServerResource {
     private void shutdownGuestNetwork(ArrayList<IPaloAltoCommand> cmdList, GuestNetworkType type, Long publicVlanTag, String sourceNatIpAddress, long privateVlanTag,
         String privateGateway, String privateSubnet, long privateCidrSize) throws ExecutionException {
         privateSubnet = privateSubnet + "/" + privateCidrSize;
+
+        // remove any orphaned egress rules if they exist...
+        removeOrphanedFirewallRules(cmdList, privateVlanTag);
 
         if (type.equals(GuestNetworkType.SOURCE_NAT)) {
             manageNetworkIsolation(cmdList, PaloAltoPrimative.DELETE, privateVlanTag, privateSubnet, privateGateway);
@@ -943,11 +951,16 @@ public class PaloAltoResource implements ServerResource {
         String dstNatName = genDstNatRuleName(publicIp, rule.getId());
 
         String publicInterfaceName;
-        String publicVlanTag = rule.getSrcVlanTag();
-        if (publicVlanTag == null || publicVlanTag.equals("untagged")) {
+        String publicVlanTag;
+        if (rule.getSrcVlanTag() == null) {
             publicInterfaceName = genPublicInterfaceName(new Long("9999"));
         } else {
-            publicInterfaceName = genPublicInterfaceName(new Long(publicVlanTag));
+            publicVlanTag = parsePublicVlanTag(rule.getSrcVlanTag());
+            if (publicVlanTag.equals("untagged")) {
+                publicInterfaceName = genPublicInterfaceName(new Long("9999"));
+            } else {
+                publicInterfaceName = genPublicInterfaceName(new Long(publicVlanTag));
+            }
         }
 
         switch (prim) {
@@ -1085,11 +1098,16 @@ public class PaloAltoResource implements ServerResource {
         String stcNatName = genStcNatRuleName(publicIp, rule.getId());
 
         String publicInterfaceName;
-        String publicVlanTag = rule.getSrcVlanTag();
-        if (publicVlanTag == null || publicVlanTag.equals("untagged")) {
+        String publicVlanTag;
+        if (rule.getSrcVlanTag() == null) {
             publicInterfaceName = genPublicInterfaceName(new Long("9999"));
         } else {
-            publicInterfaceName = genPublicInterfaceName(new Long(publicVlanTag));
+            publicVlanTag = parsePublicVlanTag(rule.getSrcVlanTag());
+            if (publicVlanTag.equals("untagged")) {
+                publicInterfaceName = genPublicInterfaceName(new Long("9999"));
+            } else {
+                publicInterfaceName = genPublicInterfaceName(new Long(publicVlanTag));
+            }
         }
 
         switch (prim) {
@@ -1170,13 +1188,20 @@ public class PaloAltoResource implements ServerResource {
     /*
      * Firewall rule implementation
      */
-
-    private String genFirewallRuleName(long id) {
+    private String genFirewallRuleName(long id) { // ingress
         return "policy_" + Long.toString(id);
+    }
+    private String genFirewallRuleName(long id, String vlan) { // egress
+        return "policy_"+Long.toString(id)+"_"+vlan;
     }
 
     public boolean manageFirewallRule(ArrayList<IPaloAltoCommand> cmdList, PaloAltoPrimative prim, FirewallRuleTO rule) throws ExecutionException {
-        String ruleName = genFirewallRuleName(rule.getId());
+        String ruleName;
+        if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
+            ruleName = genFirewallRuleName(rule.getId(), rule.getSrcVlanTag());
+        } else {
+            ruleName = genFirewallRuleName(rule.getId());
+        }
 
         switch (prim) {
 
@@ -1203,6 +1228,7 @@ public class PaloAltoResource implements ServerResource {
                 String serviceXML;
 
                 String protocol = rule.getProtocol();
+                String action = "allow";
 
                 // Only ICMP will use an Application, so others will be any.
                 if (protocol.equals(Protocol.ICMP.toString())) {
@@ -1232,11 +1258,23 @@ public class PaloAltoResource implements ServerResource {
                     serviceXML = "<member>any</member>";
                 }
 
-                if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) { // Network egress rule
+                // handle different types of fire wall rules (egress | ingress)
+                if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) { // Egress Rule
                     srcZone = _privateZone;
                     dstZone = _publicZone;
                     dstAddressXML = "<member>any</member>";
-                } else {
+
+                    // defaults to 'allow', the deny rules are as follows
+                    if (rule.getType() == FirewallRule.FirewallRuleType.System) {
+                        if (!rule.isDefaultEgressPolicy()) { // default of deny && system rule, so deny
+                            action = "deny";
+                        }
+                    } else {
+                        if (rule.isDefaultEgressPolicy()) { // default is allow && user rule, so deny
+                            action = "deny";
+                        }
+                    }
+                } else { // Ingress Rule
                     srcZone = _publicZone;
                     dstZone = _privateZone;
                     dstAddressXML = "<member>" + rule.getSrcIp() + "</member>";
@@ -1265,6 +1303,7 @@ public class PaloAltoResource implements ServerResource {
                     }
                 }
 
+                // build new rule xml
                 String xml = "";
                 xml += "<from><member>" + srcZone + "</member></from>";
                 xml += "<to><member>" + dstZone + "</member></to>";
@@ -1272,22 +1311,69 @@ public class PaloAltoResource implements ServerResource {
                 xml += "<destination>" + dstAddressXML + "</destination>";
                 xml += "<application>" + appXML + "</application>";
                 xml += "<service>" + serviceXML + "</service>";
-                xml += "<action>allow</action>";
+                xml += "<action>"+action+"</action>";
                 xml += "<negate-source>no</negate-source>";
                 xml += "<negate-destination>no</negate-destination>";
-                if (_threatProfile != null) { // add the threat profile if it exists
+                if (_threatProfile != null && action.equals("allow")) { // add the threat profile if it exists
                     xml += "<profile-setting><group><member>" + _threatProfile + "</member></group></profile-setting>";
                 }
-                if (_logProfile != null) { // add the log profile if it exists
+                if (_logProfile != null && action.equals("allow")) { // add the log profile if it exists
                     xml += "<log-setting>" + _logProfile + "</log-setting>";
                 }
 
+                boolean has_default = false;
+                String defaultEgressRule = "";
+                if (rule.getTrafficType() == FirewallRule.TrafficType.Egress) {
+                    // check if a default egress rule exists because it always has to be after the other rules.
+                    Map<String, String> e_params = new HashMap<String, String>();
+                    e_params.put("type", "config");
+                    e_params.put("action", "get");
+                    e_params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='policy_0_"+rule.getSrcVlanTag()+"']");
+                    String e_response = request(PaloAltoMethod.GET, e_params);
+                    has_default = (validResponse(e_response) && responseNotEmpty(e_response));
+    
+                    // there is an existing default rule, so we need to remove it and add it back after the new rule is added.
+                    if (has_default) {
+                        s_logger.debug("Moving the default egress rule after the new rule: "+ruleName);
+                        NodeList response_body;
+                        Document doc = getDocument(e_response);
+                        XPath xpath = XPathFactory.newInstance().newXPath();
+                        try {
+                            XPathExpression expr = xpath.compile("/response[@status='success']/result/entry/node()");
+                            response_body = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+                        } catch (XPathExpressionException e) {
+                            throw new ExecutionException(e.getCause().getMessage());
+                        }
+                        for (int i=0; i<response_body.getLength(); i++) {
+                            Node n = response_body.item(i);
+                            defaultEgressRule += nodeToString(n);
+                        }
+                        Map<String, String> dd_params = new HashMap<String, String>();
+                        dd_params.put("type", "config");
+                        dd_params.put("action", "delete");
+                        dd_params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='policy_0_"+rule.getSrcVlanTag()+"']");
+                        cmdList.add(new DefaultPaloAltoCommand(PaloAltoMethod.POST, dd_params));
+                    }
+                }
+    
+                // add the new rule...
                 Map<String, String> a_params = new HashMap<String, String>();
                 a_params.put("type", "config");
                 a_params.put("action", "set");
                 a_params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='" + ruleName + "']");
                 a_params.put("element", xml);
                 cmdList.add(new DefaultPaloAltoCommand(PaloAltoMethod.POST, a_params));
+
+                // add back the default rule
+                if (rule.getTrafficType() == FirewallRule.TrafficType.Egress && has_default) {
+                    Map<String, String> da_params = new HashMap<String, String>();
+                    da_params.put("type", "config");
+                    da_params.put("action", "set");
+                    da_params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='policy_0_"+rule.getSrcVlanTag()+"']");
+                    da_params.put("element", defaultEgressRule);
+                    cmdList.add(new DefaultPaloAltoCommand(PaloAltoMethod.POST, da_params));
+                    s_logger.debug("Completed move of the default egress rule after rule: "+ruleName);
+                }
 
                 return true;
 
@@ -1309,6 +1395,25 @@ public class PaloAltoResource implements ServerResource {
                 return false;
         }
     }
+
+    // remove orphaned rules if they exist...
+    public void removeOrphanedFirewallRules(ArrayList<IPaloAltoCommand> cmdList, long vlan) throws ExecutionException {
+        Map<String, String> params = new HashMap<String, String>();
+        params.put("type", "config");
+        params.put("action", "get");
+        params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[contains(@name, 'policy') and contains(@name, '"+Long.toString(vlan)+"')]");
+        String response = request(PaloAltoMethod.GET, params);
+        boolean has_orphans = (validResponse(response) && responseNotEmpty(response));
+
+        if (has_orphans) {
+            Map<String, String> d_params = new HashMap<String, String>();
+            d_params.put("type", "config");
+            d_params.put("action", "delete");
+            d_params.put("xpath", "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[contains(@name, 'policy') and contains(@name, '"+Long.toString(vlan)+"')]");
+            cmdList.add(new DefaultPaloAltoCommand(PaloAltoMethod.POST, d_params));
+        }
+    }
+
 
     /*
      * Usage
@@ -1935,6 +2040,10 @@ public class PaloAltoResource implements ServerResource {
         return ip.replace('.', '-').replace('/', '-');
     }
 
+    private String parsePublicVlanTag(String uri) {
+        return uri.replace("vlan://", "");
+    }
+
     private Protocol getProtocol(String protocolName) throws ExecutionException {
         protocolName = protocolName.toLowerCase();
 
@@ -1964,6 +2073,20 @@ public class PaloAltoResource implements ServerResource {
         }
     }
 
+    // return an xml node as a string
+    private String nodeToString(Node node) throws ExecutionException {
+        StringWriter sw = new StringWriter();
+        try {
+            Transformer t = TransformerFactory.newInstance().newTransformer();
+            t.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            t.transform(new DOMSource(node), new StreamResult(sw));
+        } catch (Throwable t) {
+            throw new ExecutionException("XML convert error when modifying PA config: "+t.getMessage());
+        }
+        return sw.toString();
+    }
+
+    // pretty printing of xml strings
     private String prettyFormat(String input) {
         int indent = 4;
         try {
@@ -1999,14 +2122,12 @@ public class PaloAltoResource implements ServerResource {
     @Override
     public void setName(String name) {
         // TODO Auto-generated method stub
-
     }
 
     //@Override
     @Override
     public void setConfigParams(Map<String, Object> params) {
         // TODO Auto-generated method stub
-
     }
 
     //@Override
@@ -2027,7 +2148,5 @@ public class PaloAltoResource implements ServerResource {
     @Override
     public void setRunLevel(int level) {
         // TODO Auto-generated method stub
-
     }
-
 }

@@ -70,3 +70,4 @@ deleteipAlias.sh=..,0755,/opt/cloud/bin
 ###add cloudstack plugin script for XCP
 cloudstack_plugins.conf=..,0644,/etc/xensource
 cloudstack_pluginlib.py=..,0755,/etc/xapi.d/plugins
+cloudlog=..,0644,/etc/logrotate.d

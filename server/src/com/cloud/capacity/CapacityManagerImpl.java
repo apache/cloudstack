@@ -27,7 +27,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.deploy.DeploymentClusterPlanner;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.event.UsageEventVO;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -94,6 +97,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.springframework.instrument.classloading.glassfish.GlassFishLoadTimeWeaver;
 
 @Local(value = CapacityManager.class)
 public class CapacityManagerImpl extends ManagerBase implements CapacityManager, StateListener<State, VirtualMachine.Event, VirtualMachine>, Listener, ResourceListener,
@@ -849,6 +853,50 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 _capacityDao.persist(capacity);
             }
         }
+
+    }
+
+    @Override
+    public float getClusterOverProvisioningFactor(Long clusterId, short capacityType){
+
+        String capacityOverProvisioningName = "";
+        if(capacityType == Capacity.CAPACITY_TYPE_CPU){
+            capacityOverProvisioningName = "cpuOvercommitRatio";
+        }else if(capacityType == Capacity.CAPACITY_TYPE_MEMORY){
+            capacityOverProvisioningName = "memoryOvercommitRatio";
+        }else{
+            throw new CloudRuntimeException("Invalid capacityType - " + capacityType);
+        }
+
+        ClusterDetailsVO clusterDetailCpu = _clusterDetailsDao.findDetail(clusterId, capacityOverProvisioningName);
+        Float clusterOverProvisioningRatio = Float.parseFloat(clusterDetailCpu.getValue());
+        return clusterOverProvisioningRatio;
+
+    }
+
+    @Override
+    public boolean checkIfClusterCrossesThreshold(Long clusterId, Integer cpuRequested, long ramRequested){
+
+        Float clusterCpuOverProvisioning = getClusterOverProvisioningFactor(clusterId, Capacity.CAPACITY_TYPE_CPU);
+        Float clusterMemoryOverProvisioning = getClusterOverProvisioningFactor(clusterId, Capacity.CAPACITY_TYPE_MEMORY);
+        Float clusterCpuCapacityDisableThreshold = DeploymentClusterPlanner.ClusterCPUCapacityDisableThreshold.valueIn(clusterId);
+        Float clusterMemoryCapacityDisableThreshold = DeploymentClusterPlanner.ClusterMemoryCapacityDisableThreshold.valueIn(clusterId);
+
+        float cpuConsumption = _capacityDao.findClusterConsumption(clusterId, Capacity.CAPACITY_TYPE_CPU, cpuRequested);
+        if(cpuConsumption/clusterCpuOverProvisioning > clusterCpuCapacityDisableThreshold){
+            s_logger.debug("Cluster: " +clusterId + " cpu consumption " + cpuConsumption/clusterCpuOverProvisioning
+                    + " crosses disable threshold " + clusterCpuCapacityDisableThreshold);
+            return true;
+        }
+
+        float memoryConsumption = _capacityDao.findClusterConsumption(clusterId, Capacity.CAPACITY_TYPE_MEMORY, ramRequested);
+        if(memoryConsumption/clusterMemoryOverProvisioning > clusterMemoryCapacityDisableThreshold){
+            s_logger.debug("Cluster: " +clusterId + " memory consumption " + memoryConsumption/clusterMemoryOverProvisioning
+                    + " crosses disable threshold " + clusterMemoryCapacityDisableThreshold);
+            return true;
+        }
+
+        return false;
 
     }
 

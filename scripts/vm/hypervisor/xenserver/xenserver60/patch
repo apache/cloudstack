@@ -75,3 +75,4 @@ ovs-pvlan-vm.sh=../../../network,0755,/opt/cloud/bin
 ovs-pvlan-cleanup.sh=../../../network,0755,/opt/cloud/bin
 ovs-get-dhcp-iface.sh=..,0755,/opt/cloud/bin
 ovs-get-bridge.sh=..,0755,/opt/cloud/bin
+cloudlog=..,0644,/etc/logrotate.d

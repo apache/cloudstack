@@ -39,6 +39,10 @@ from xml.dom.minidom import parseString
 import XenAPIPlugin
 sys.path.extend(["/opt/xensource/sm/"])
 import util
+import cloudstack_pluginlib as lib
+import logging
+
+lib.setup_logging("/var/log/cloud/s3xen.log")
 
 NULL = 'null'
 
@@ -102,7 +106,7 @@ def get_optional_key(map, key, default=''):
 
 def log(message):
 
-    util.SMlog('#### VMOPS %s ####' % message)
+    logging.debug('#### VMOPS %s ####' % message)
 
 
 def echo(fn):

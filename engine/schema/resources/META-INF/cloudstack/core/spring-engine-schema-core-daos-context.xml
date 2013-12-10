@@ -124,6 +124,7 @@
   <bean id="autoScalePolicyDaoImpl" class="com.cloud.network.as.dao.AutoScalePolicyDaoImpl" />
   <bean id="autoScaleVmGroupDaoImpl" class="com.cloud.network.as.dao.AutoScaleVmGroupDaoImpl" />
   <bean id="autoScaleVmGroupPolicyMapDaoImpl" class="com.cloud.network.as.dao.AutoScaleVmGroupPolicyMapDaoImpl" />
+  <bean id="autoScaleVmGroupVmMapDaoImpl" class="com.cloud.network.as.dao.AutoScaleVmGroupVmMapDaoImpl" />
   <bean id="autoScaleVmProfileDaoImpl" class="com.cloud.network.as.dao.AutoScaleVmProfileDaoImpl" />
   <bean id="capacityDaoImpl" class="com.cloud.capacity.dao.CapacityDaoImpl" />
   <bean id="certificateDaoImpl" class="com.cloud.certificate.dao.CertificateDaoImpl" />

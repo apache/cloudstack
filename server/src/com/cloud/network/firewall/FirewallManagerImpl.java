@@ -612,7 +612,6 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     @Override
     public boolean applyEgressFirewallRules(FirewallRule rule, Account caller) throws ResourceUnavailableException {
         List<FirewallRuleVO> rules = _firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), Purpose.Firewall, FirewallRule.TrafficType.Egress);
-        applyDefaultEgressFirewallRule(rule.getNetworkId(), true);
         return applyFirewallRules(rules, false, caller);
     }
 
@@ -646,12 +645,8 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
     }
 
     @Override
-    public boolean applyDefaultEgressFirewallRule(Long networkId, boolean defaultPolicy) throws ResourceUnavailableException {
+    public boolean applyDefaultEgressFirewallRule(Long networkId, boolean defaultPolicy, boolean add) throws ResourceUnavailableException {
 
-        if (defaultPolicy == false) {
-            //If default policy is false no need apply rules on backend because firewall provider blocks by default
-            return true;
-        }
         s_logger.debug("applying default firewall egress rules ");
 
         NetworkVO network = _networkDao.findById(networkId);
@@ -661,6 +656,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         FirewallRuleVO ruleVO =
             new FirewallRuleVO(null, null, null, null, "all", networkId, network.getAccountId(), network.getDomainId(), Purpose.Firewall, sourceCidr, null, null, null,
                 FirewallRule.TrafficType.Egress, FirewallRuleType.System);
+        ruleVO.setState(add ? State.Add : State.Revoke);
         List<FirewallRuleVO> rules = new ArrayList<FirewallRuleVO>();
         rules.add(ruleVO);
 

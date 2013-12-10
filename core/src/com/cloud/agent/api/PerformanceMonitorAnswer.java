@@ -14,17 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.dao;
+package com.cloud.agent.api;
 
-import java.util.List;
+public class PerformanceMonitorAnswer extends Answer {
+	public PerformanceMonitorAnswer() {
+	}
 
-import com.cloud.network.element.OvsProviderVO;
-import com.cloud.utils.db.GenericDao;
-
-public interface OvsProviderDao extends GenericDao<OvsProviderVO, Long> {
-	public OvsProviderVO findByNspId(long nspId);
-
-	public List<OvsProviderVO> listByEnabled(boolean enabled);
-
-	public OvsProviderVO findByIdAndEnabled(long id, boolean enabled);
+	public PerformanceMonitorAnswer(PerformanceMonitorCommand cmd,
+			boolean result, String details) {
+		super(cmd, result, details);
+	}
 }

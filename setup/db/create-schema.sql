@@ -152,6 +152,7 @@ DROP TABLE IF EXISTS `cloud`.`template_s3_ref`;
 DROP TABLE IF EXISTS `cloud`.`nicira_nvp_router_map`;
 DROP TABLE IF EXISTS `cloud`.`external_bigswitch_vns_devices`;
 DROP TABLE IF EXISTS `cloud`.`autoscale_vmgroup_policy_map`;
+DROP TABLE IF EXISTS `cloud`.`autoscale_vmgroup_vm_map`;
 DROP TABLE IF EXISTS `cloud`.`autoscale_policy_condition_map`;
 DROP TABLE IF EXISTS `cloud`.`autoscale_vmgroups`;
 DROP TABLE IF EXISTS `cloud`.`autoscale_vmprofiles`;

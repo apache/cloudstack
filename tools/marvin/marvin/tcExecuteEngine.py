@@ -22,14 +22,8 @@ import logging
 from functools import partial
 
 
-def testCaseLogger(message, logger=None):
-    if logger is not None:
-        logger.debug(message)
-
-
 class TestCaseExecuteEngine(object):
-    def __init__(self, testclient, config, testcaseLogFile=None,
-                 testResultLogFile=None):
+    def __init__(self, testclient, config, tc_logger=None, debug_stream=None):
         """
         Initialize the testcase execution engine, just the basics here
         @var testcaseLogFile: client log file
@@ -37,28 +31,10 @@ class TestCaseExecuteEngine(object):
         """
         self.testclient = testclient
         self.config = config
-        self.logformat =\
-            logging.Formatter(
-                "%(asctime)s - %(levelname)s - %(name)s - %(message)s")
+        self.tcRunLogger = tc_logger
+        self.debugStream = debug_stream
         self.loader = unittest.loader.TestLoader()
         self.suite = None
-
-        if testcaseLogFile is not None:
-            self.logfile = testcaseLogFile
-            self.logger = logging.getLogger("TestCaseExecuteEngine")
-            fh = logging.FileHandler(self.logfile)
-            fh.setFormatter(self.logformat)
-            self.logger.addHandler(fh)
-            self.logger.setLevel(logging.DEBUG)
-        if testResultLogFile is not None:
-            ch = logging.StreamHandler()
-            ch.setLevel(logging.ERROR)
-            ch.setFormatter(self.logformat)
-            self.logger.addHandler(ch)
-            fp = open(testResultLogFile, "w")
-            self.testResultLogFile = fp
-        else:
-            self.testResultLogFile = sys.stdout
 
     def loadTestsFromDir(self, testDirectory):
         """ Load the test suites from a package with multiple test files """
@@ -77,18 +53,11 @@ class TestCaseExecuteEngine(object):
             if isinstance(test, unittest.BaseTestSuite):
                 self.injectTestCase(test)
             else:
-                #logger bears the name of the test class
-                testcaselogger = logging.getLogger("%s" % (test))
-                fh = logging.FileHandler(self.logfile)
-                fh.setFormatter(self.logformat)
-                testcaselogger.addHandler(fh)
-                testcaselogger.setLevel(logging.DEBUG)
-
                 #inject testclient and logger into each unittest
+                self.tcRunLogger.name = test.__str__()
                 setattr(test, "testClient", self.testclient)
                 setattr(test, "config", self.config)
-                setattr(test, "debug", partial(testCaseLogger,
-                                               logger=testcaselogger))
+                setattr(test, "debug", self.tcRunLogger.debug)
                 setattr(test.__class__, "clstestclient", self.testclient)
                 if hasattr(test, "user"):
                     # attribute when test is entirely executed as user
@@ -98,5 +67,5 @@ class TestCaseExecuteEngine(object):
 
     def run(self):
         if self.suite:
-            unittest.TextTestRunner(stream=self.testResultLogFile,
+            unittest.TextTestRunner(stream=self.debugStream,
                                     verbosity=2).run(self.suite)

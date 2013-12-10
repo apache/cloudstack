@@ -2183,4 +2183,17 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
 
         return true;
     }
+
+    @Override
+    public boolean getNetworkEgressDefaultPolicy (Long networkId) {
+        NetworkVO network = _networksDao.findById(networkId);
+
+        if (network != null) {
+            NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+            return offering.getEgressDefaultPolicy();
+        } else {
+            InvalidParameterValueException ex = new InvalidParameterValueException("network with network id does not exist");
+            throw ex;
+        }
+    }
 }

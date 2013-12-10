@@ -161,12 +161,12 @@ public class MockablePaloAltoResource extends PaloAltoResource {
                     }
                 }
 
-                // get egress firewall rule | has_egress_fw_rule | policy_0
-                if (params.get("xpath").equals("/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='policy_0']")) {
+                // get egress firewall rule | has_egress_fw_rule | policy_0_3954
+                if (params.get("xpath").equals("/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='policy_0_3954']")) {
                     if (context.containsKey("has_egress_fw_rule") && context.get("has_egress_fw_rule").equals("true")) {
-                        response =
+                        response = 
                             "<response status=\"success\" code=\"19\"><result total-count=\"1\" count=\"1\">"
-                                + "<entry name=\"policy_0\" admin=\"admin\" time=\"2013/07/03 12:43:30\"><from admin=\"admin\" time=\"2013/07/03 12:43:30\">"
+                                + "<entry name=\"policy_0_3954\" admin=\"admin\" time=\"2013/07/03 12:43:30\"><from admin=\"admin\" time=\"2013/07/03 12:43:30\">"
                                 + "<member admin=\"admin\" time=\"2013/07/03 12:43:30\">trust</member></from><to><member>untrust</member></to><source><member>10.3.96.1/20</member>"
                                 + "</source><destination><member>any</member></destination><application><member>any</member></application><service><member>cs_tcp_80</member>"
                                 + "</service><action>allow</action><negate-source>no</negate-source><negate-destination>no</negate-destination></entry></result></response>";
@@ -188,6 +188,11 @@ public class MockablePaloAltoResource extends PaloAltoResource {
                     } else {
                         response = "<response status=\"success\" code=\"19\"><result/></response>";
                     }
+                }
+
+                // get default egress rule | policy_0_3954
+                if (params.get("xpath").equals("/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[contains(@name, 'policy') and contains(@name, '3954')]")) {
+                    response = "<response status=\"success\" code=\"19\"><result/></response>";
                 }
 
                 // get destination nat rule (port forwarding) | has_dst_nat_rule
@@ -292,7 +297,7 @@ public class MockablePaloAltoResource extends PaloAltoResource {
                 }
 
                 // add egress firewall rule
-                if (params.get("xpath").equals("/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='policy_0']")) {
+                if (params.get("xpath").equals("/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='policy_0_3954']")) {
                     response = "<response status=\"success\" code=\"20\"><msg>command succeeded</msg></response>";
                     context.put("has_egress_fw_rule", "true");
                 }
@@ -325,7 +330,7 @@ public class MockablePaloAltoResource extends PaloAltoResource {
             // action = 'delete'
             if (params.get("action").equals("delete")) {
                 // remove egress firewall rule
-                if (params.get("xpath").equals("/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='policy_0']")) {
+                if (params.get("xpath").equals("/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='policy_0_3954']")) {
                     response = "<response status=\"success\" code=\"20\"><msg>command succeeded</msg></response>";
                     context.remove("has_egress_fw_rule");
                 }

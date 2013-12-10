@@ -32,12 +32,9 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.commands.AddExternalFirewallCmd;
 import com.cloud.api.commands.AddPaloAltoFirewallCmd;
 import com.cloud.api.commands.ConfigurePaloAltoFirewallCmd;
-import com.cloud.api.commands.DeleteExternalFirewallCmd;
 import com.cloud.api.commands.DeletePaloAltoFirewallCmd;
-import com.cloud.api.commands.ListExternalFirewallsCmd;
 import com.cloud.api.commands.ListPaloAltoFirewallNetworksCmd;
 import com.cloud.api.commands.ListPaloAltoFirewallsCmd;
 import com.cloud.api.response.PaloAltoFirewallResponse;
@@ -294,84 +291,11 @@ public class PaloAltoExternalFirewallElement extends ExternalFirewallDeviceManag
     }
 
     @Override
-    @Deprecated
-    // should use more generic addNetworkDevice command to add firewall
-        public
-        Host addExternalFirewall(AddExternalFirewallCmd cmd) {
-        Long zoneId = cmd.getZoneId();
-        DataCenterVO zone = null;
-        PhysicalNetworkVO pNetwork = null;
-        HostVO fwHost = null;
-
-        zone = _dcDao.findById(zoneId);
-        if (zone == null) {
-            throw new InvalidParameterValueException("Could not find zone with ID: " + zoneId);
-        }
-
-        List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZone(zoneId);
-        if ((physicalNetworks == null) || (physicalNetworks.size() > 1)) {
-            throw new InvalidParameterValueException("There are no physical networks or multiple physical networks configured in zone with ID: " + zoneId +
-                " to add this device.");
-        }
-        pNetwork = physicalNetworks.get(0);
-
-        String deviceType = NetworkDevice.PaloAltoFirewall.getName();
-        ExternalFirewallDeviceVO fwDeviceVO =
-            addExternalFirewall(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceType, new PaloAltoResource());
-        if (fwDeviceVO != null) {
-            fwHost = _hostDao.findById(fwDeviceVO.getHostId());
-        }
-
-        return fwHost;
-    }
-
-    @Override
-    public boolean deleteExternalFirewall(DeleteExternalFirewallCmd cmd) {
-        return deleteExternalFirewall(cmd.getId());
-    }
-
-    @Override
-    @Deprecated
-    // should use more generic listNetworkDevice command
-        public
-        List<Host> listExternalFirewalls(ListExternalFirewallsCmd cmd) {
-        List<Host> firewallHosts = new ArrayList<Host>();
-        Long zoneId = cmd.getZoneId();
-        DataCenterVO zone = null;
-        PhysicalNetworkVO pNetwork = null;
-
-        if (zoneId != null) {
-            zone = _dcDao.findById(zoneId);
-            if (zone == null) {
-                throw new InvalidParameterValueException("Could not find zone with ID: " + zoneId);
-            }
-
-            List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZone(zoneId);
-            if ((physicalNetworks == null) || (physicalNetworks.size() > 1)) {
-                throw new InvalidParameterValueException("There are no physical networks or multiple physical networks configured in zone with ID: " + zoneId +
-                    " to add this device.");
-            }
-            pNetwork = physicalNetworks.get(0);
-        }
-
-        firewallHosts.addAll(listExternalFirewalls(pNetwork.getId(), NetworkDevice.PaloAltoFirewall.getName()));
-        return firewallHosts;
-    }
-
-    @Override
-    public ExternalFirewallResponse createExternalFirewallResponse(Host externalFirewall) {
-        return super.createExternalFirewallResponse(externalFirewall);
-    }
-
-    @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
-        cmdList.add(AddExternalFirewallCmd.class);
         cmdList.add(AddPaloAltoFirewallCmd.class);
         cmdList.add(ConfigurePaloAltoFirewallCmd.class);
-        cmdList.add(DeleteExternalFirewallCmd.class);
         cmdList.add(DeletePaloAltoFirewallCmd.class);
-        cmdList.add(ListExternalFirewallsCmd.class);
         cmdList.add(ListPaloAltoFirewallNetworksCmd.class);
         cmdList.add(ListPaloAltoFirewallsCmd.class);
         return cmdList;

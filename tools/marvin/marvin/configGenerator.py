@@ -93,11 +93,6 @@ class trafficType(object):
                 if 'vmware' in labeldict.keys() else None
             self.simulator = labeldict['simulator']\
                 if 'simulator' in labeldict.keys() else None
-        #{
-        #    'xen' : 'cloud-xen',
-        #    'kvm' : 'cloud-kvm',
-        #    'vmware' : 'cloud-vmware'
-        #}
 
 
 class pod(object):

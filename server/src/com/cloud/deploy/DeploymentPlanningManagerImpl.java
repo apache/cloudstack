@@ -19,8 +19,10 @@ package com.cloud.deploy;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TreeSet;
 
@@ -1119,6 +1121,12 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
         // for each volume find list of suitable storage pools by calling the
         // allocators
+        Set<Long> originalAvoidPoolSet = avoid.getPoolsToAvoid();
+        if (originalAvoidPoolSet == null) {
+            originalAvoidPoolSet = new HashSet<Long>();
+        }
+        Set<Long> poolsToAvoidOutput = new HashSet<Long>(originalAvoidPoolSet);
+
         for (VolumeVO toBeCreated : volumesTobeCreated) {
             s_logger.debug("Checking suitable pools for volume (Id, Type): (" + toBeCreated.getId() + "," + toBeCreated.getVolumeType().name() + ")");
 
@@ -1228,6 +1236,11 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                 }
             }
 
+            if (avoid.getPoolsToAvoid() != null) {
+                poolsToAvoidOutput.addAll(avoid.getPoolsToAvoid());
+                avoid.getPoolsToAvoid().retainAll(originalAvoidPoolSet);
+            }
+
             if (!foundPotentialPools) {
                 s_logger.debug("No suitable pools found for volume: " + toBeCreated + " under cluster: " + plan.getClusterId());
                 // No suitable storage pools found under this cluster for this
@@ -1237,6 +1250,13 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
                 suitableVolumeStoragePools.clear();
                 break;
             }
+        }
+
+        if (suitableVolumeStoragePools.values() != null) {
+            poolsToAvoidOutput.removeAll(suitableVolumeStoragePools.values());
+        }
+        if (avoid.getPoolsToAvoid() != null) {
+            avoid.getPoolsToAvoid().addAll(poolsToAvoidOutput);
         }
 
         if (suitableVolumeStoragePools.isEmpty()) {

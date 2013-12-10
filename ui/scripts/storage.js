@@ -70,6 +70,10 @@
                         add: {
                             label: 'label.add.volume',
 
+                            preFilter: function(args) {
+                                return !args.context.instances;
+                            },
+
                             messages: {
                                 confirm: function(args) {
                                     return 'message.add.volume';
@@ -252,6 +256,9 @@
                         uploadVolume: {
                             isHeader: true,
                             label: 'label.upload.volume',
+                            preFilter: function(args) {
+                                return !args.context.instances;
+                            },
                             messages: {
                                 notification: function() {
                                     return 'label.upload.volume';
@@ -1920,7 +1927,7 @@
         if (jsonObj.hypervisor != "Ovm" && jsonObj.state == "Ready") {        	
         	if (jsonObj.hypervisor == 'KVM') { 
         		if (jsonObj.vmstate == 'Running') {        			
-        			if (g_KVMsnapshotenabled == true) { //"kvm.snapshot.enabled" flag should be taken to account only when snapshot is being created for Running vm (CLOUDSTACK-4428)
+        			if (g_kvmsnapshotenabled == true) { //"kvm.snapshot.enabled" flag should be taken to account only when snapshot is being created for Running vm (CLOUDSTACK-4428)
             			allowedActions.push("takeSnapshot");
         	            allowedActions.push("recurringSnapshot");
             		}         			

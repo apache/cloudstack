@@ -14,17 +14,33 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.dao;
+package com.cloud.agent.api;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-import com.cloud.network.element.OvsProviderVO;
-import com.cloud.utils.db.GenericDao;
+public class PerformanceMonitorCommand extends Command {
 
-public interface OvsProviderDao extends GenericDao<OvsProviderVO, Long> {
-	public OvsProviderVO findByNspId(long nspId);
+	Map<String, String> params = new HashMap<String, String>();
 
-	public List<OvsProviderVO> listByEnabled(boolean enabled);
+	public PerformanceMonitorCommand() {
+	}
 
-	public OvsProviderVO findByIdAndEnabled(long id, boolean enabled);
+	public PerformanceMonitorCommand(Map<String, String> params, int wait) {
+		setWait(wait);
+		this.params = params;
+	}
+
+	@Override
+	public boolean executeInSequence() {
+		return false;
+	}
+
+	public Map<String, String> getParams() {
+		return params;
+	}
+
+	public void setParams(Map<String, String> params) {
+		this.params = params;
+	}
 }
