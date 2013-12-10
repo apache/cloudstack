@@ -70,6 +70,10 @@
                         add: {
                             label: 'label.add.volume',
 
+                            preFilter: function(args) {
+                                return !args.context.instances;
+                            },
+
                             messages: {
                                 confirm: function(args) {
                                     return 'message.add.volume';
@@ -252,6 +256,9 @@
                         uploadVolume: {
                             isHeader: true,
                             label: 'label.upload.volume',
+                            preFilter: function(args) {
+                                return !args.context.instances;
+                            },
                             messages: {
                                 notification: function() {
                                     return 'label.upload.volume';
