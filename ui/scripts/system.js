@@ -16374,7 +16374,7 @@
                                                             $form.find('.form-item[rel=sockettimeout]').css('display', 'inline-block');
 
                                                             $form.find('.form-item[rel=createNfsCache]').find('input').attr('checked', 'checked');
-                                                            $form.find('.form-item[rel=createNfsCache]').find('input').attr('disabled', 'disabled');  //Create NFS staging is required for S3 at this moment. So, disallow user to uncheck "Create NFS Secondary Staging" checkbox
+                                                            //$form.find('.form-item[rel=createNfsCache]').find('input').attr('disabled', 'disabled');  //This checkbox should not be disabled any more because NFS staging (of a zone) might already exist (from "NFS secondary storage => Prepare Object Store Migration => NFS staging")
                                                             $form.find('.form-item[rel=createNfsCache]').css('display', 'inline-block');
                                                             $form.find('.form-item[rel=nfsCacheZoneid]').css('display', 'inline-block');
                                                             $form.find('.form-item[rel=nfsCacheNfsServer]').css('display', 'inline-block');
