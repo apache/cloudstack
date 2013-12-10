@@ -110,6 +110,19 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         return new File[] {new File(script)};
     }
 
+    protected void closePstmts(List<PreparedStatement> pstmt2Close){
+        for(PreparedStatement pstmt : pstmt2Close) {
+            try {
+                if (pstmt != null && !pstmt.isClosed()) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+                // It's not possible to recover from this and we need to continue closing
+                e.printStackTrace();
+            }
+        }
+    }
+
     private void setupPhysicalNetworks(Connection conn) {
         /**
          * for each zone:
@@ -126,6 +139,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
          */
         PreparedStatement pstmt = null;
         ResultSet rs = null;
+        List<PreparedStatement> pstmt2Close = new ArrayList<PreparedStatement>();
         PreparedStatement pstmtUpdate = null;
         try {
             // Load all DataCenters
@@ -144,6 +158,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
             String vmwareGuestLabel = getNetworkLabelFromConfig(conn, "vmware.guest.vswitch");
 
             pstmt = conn.prepareStatement("SELECT id, domain_id, networktype, vnet, name, removed FROM `cloud`.`data_center`");
+            pstmt2Close.add(pstmt);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long zoneId = rs.getLong(1);
@@ -165,6 +180,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                 //check if public network needs to be created
                 boolean crtPbNtwk = false;
                 pstmt = conn.prepareStatement("SELECT * FROM `cloud`.`networks` where traffic_type=\"public\" and data_center_id=?");
+                pstmt2Close.add(pstmt);
                 pstmt.setLong(1, zoneId);
                 ResultSet rs1 = pstmt.executeQuery();
                 if (rs1.next()) {
@@ -174,6 +190,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                 //check if there are multiple guest networks configured using network_tags
                 PreparedStatement pstmt2 =
                     conn.prepareStatement("SELECT distinct tag FROM `cloud`.`network_tags` t JOIN `cloud`.`networks` n ON t.network_id = n.id WHERE n.data_center_id = ? and n.removed IS NULL");
+                pstmt2Close.add(pstmt2);
                 pstmt2.setLong(1, zoneId);
                 ResultSet rsTags = pstmt2.executeQuery();
                 if (rsTags.next()) {
@@ -185,6 +202,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                         PreparedStatement pstmt4 =
                             conn.prepareStatement("SELECT v.* FROM `cloud`.`op_dc_vnet_alloc` v JOIN `cloud`.`networks` n ON CONCAT('vlan://' , v.vnet) = " +
                                 "n.broadcast_uri WHERE v.taken IS NOT NULL AND v.data_center_id = ? AND n.removed IS NULL");
+                        pstmt2Close.add(pstmt4);
                         pstmt4.setLong(1, zoneId);
                         ResultSet rsVNet = pstmt4.executeQuery();
 
@@ -213,11 +231,11 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                                 "Cannot upgrade this setup since it uses guest vnet and will have multiple physical networks. Please check the logs for details on how to proceed");
                         }
                         rsVNet.close();
-                        pstmt4.close();
 
                         //Clean up any vnets that have no live networks/nics
                         pstmt4 =
                             conn.prepareStatement("SELECT v.id, v.vnet, v.reservation_id FROM `cloud`.`op_dc_vnet_alloc` v LEFT JOIN networks n ON CONCAT('vlan://' , v.vnet) = n.broadcast_uri WHERE v.taken IS NOT NULL AND v.data_center_id = ? AND n.broadcast_uri IS NULL AND n.removed IS NULL");
+                        pstmt2Close.add(pstmt4);
                         pstmt4.setLong(1, zoneId);
                         rsVNet = pstmt4.executeQuery();
                         while (rsVNet.next()) {
@@ -226,6 +244,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                             String reservationId = rsVNet.getString(3);
                             //does this vnet have any nic associated?
                             PreparedStatement pstmt5 = conn.prepareStatement("SELECT id, instance_id FROM `cloud`.`nics` where broadcast_uri = ? and removed IS NULL");
+                            pstmt2Close.add(pstmt5);
                             String uri = "vlan://" + vnetValue;
                             pstmt5.setString(1, uri);
                             ResultSet rsNic = pstmt5.executeQuery();
@@ -355,25 +374,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding PhysicalNetworks", e);
         } finally {
-            if (pstmtUpdate != null) {
-                try {
-                    pstmtUpdate.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (rs != null) {
-                try {
-                    rs.close();
-                } catch (SQLException e) {
-                }
-            }
-            if (pstmt != null) {
-                try {
-                    pstmt.close();
-                } catch (SQLException e) {
-                }
-            }
-
+            closePstmts(pstmt2Close);
         }
 
     }
@@ -428,10 +429,12 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
 
     private void encryptHostDetails(Connection conn) {
         s_logger.debug("Encrypting host details");
+        List<PreparedStatement> pstmt2Close = new ArrayList<PreparedStatement>();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             pstmt = conn.prepareStatement("select id, value from `cloud`.`host_details` where name = 'password'");
+            pstmt2Close.add(pstmt);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long id = rs.getLong(1);
@@ -441,6 +444,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                 }
                 String encryptedValue = DBEncryptionUtil.encrypt(value);
                 pstmt = conn.prepareStatement("update `cloud`.`host_details` set value=? where id=?");
+                pstmt2Close.add(pstmt);
                 pstmt.setBytes(1, encryptedValue.getBytes("UTF-8"));
                 pstmt.setLong(2, id);
                 pstmt.executeUpdate();
@@ -450,27 +454,20 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable encrypt host_details values ", e);
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+            closePstmts(pstmt2Close);
         }
         s_logger.debug("Done encrypting host details");
     }
 
     private void encryptVNCPassword(Connection conn) {
         s_logger.debug("Encrypting vm_instance vnc_password");
+        List<PreparedStatement> pstmt2Close = new ArrayList<PreparedStatement>();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             int numRows = 0;
             pstmt = conn.prepareStatement("select count(id) from `cloud`.`vm_instance`");
+            pstmt2Close.add(pstmt);
             rs = pstmt.executeQuery();
             if (rs.next()) {
                 numRows = rs.getInt(1);
@@ -480,6 +477,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
             int offset = 0;
             while (offset < numRows) {
                 pstmt = conn.prepareStatement("select id, vnc_password from `cloud`.`vm_instance` limit " + offset + ", 500");
+                pstmt2Close.add(pstmt);
                 rs = pstmt.executeQuery();
                 while (rs.next()) {
                     long id = rs.getLong(1);
@@ -502,32 +500,26 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable encrypt vm_instance vnc_password ", e);
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+            closePstmts(pstmt2Close);
         }
         s_logger.debug("Done encrypting vm_instance vnc_password");
     }
 
     private void encryptUserCredentials(Connection conn) {
         s_logger.debug("Encrypting user keys");
+        List<PreparedStatement> pstmt2Close = new ArrayList<PreparedStatement>();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             pstmt = conn.prepareStatement("select id, secret_key from `cloud`.`user`");
+            pstmt2Close.add(pstmt);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long id = rs.getLong(1);
                 String secretKey = rs.getString(2);
                 String encryptedSecretKey = DBEncryptionUtil.encrypt(secretKey);
                 pstmt = conn.prepareStatement("update `cloud`.`user` set secret_key=? where id=?");
+                pstmt2Close.add(pstmt);
                 if (encryptedSecretKey == null) {
                     pstmt.setNull(1, Types.VARCHAR);
                 } else {
@@ -541,32 +533,26 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable encrypt user secret key ", e);
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+            closePstmts(pstmt2Close);
         }
         s_logger.debug("Done encrypting user keys");
     }
 
     private void encryptVPNPassword(Connection conn) {
         s_logger.debug("Encrypting vpn_users password");
+        List<PreparedStatement> pstmt2Close = new ArrayList<PreparedStatement>();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             pstmt = conn.prepareStatement("select id, password from `cloud`.`vpn_users`");
+            pstmt2Close.add(pstmt);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long id = rs.getLong(1);
                 String password = rs.getString(2);
                 String encryptedpassword = DBEncryptionUtil.encrypt(password);
                 pstmt = conn.prepareStatement("update `cloud`.`vpn_users` set password=? where id=?");
+                pstmt2Close.add(pstmt);
                 if (encryptedpassword == null) {
                     pstmt.setNull(1, Types.VARCHAR);
                 } else {
@@ -580,16 +566,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable encrypt vpn_users password ", e);
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+            closePstmts(pstmt2Close);
         }
         s_logger.debug("Done encrypting vpn_users password");
     }
@@ -609,12 +586,14 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
     }
 
     private void createNetworkOfferingServices(Connection conn, String externalOfferingName) {
+        List<PreparedStatement> pstmt2Close = new ArrayList<PreparedStatement>();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             pstmt =
                 conn.prepareStatement("select id, dns_service, gateway_service, firewall_service, lb_service, userdata_service,"
                     + " vpn_service, dhcp_service, unique_name from `cloud`.`network_offerings` where traffic_type='Guest'");
+            pstmt2Close.add(pstmt);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 boolean sharedSourceNat = false;
@@ -689,6 +668,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                     pstmt =
                         conn.prepareStatement("INSERT INTO `cloud`.`ntwk_offering_service_map` (`network_offering_id`,"
                             + " `service`, `provider`, `created`) values (?,?,?, now())");
+                    pstmt2Close.add(pstmt);
                     pstmt.setLong(1, id);
                     pstmt.setString(2, service);
                     pstmt.setString(3, services.get(service));
@@ -697,6 +677,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
 
                 //update shared source nat and dedicated lb
                 pstmt = conn.prepareStatement("UPDATE `cloud`.`network_offerings` set shared_source_nat_service=?, dedicated_lb_service=? where id=?");
+                pstmt2Close.add(pstmt);
                 pstmt.setBoolean(1, sharedSourceNat);
                 pstmt.setBoolean(2, dedicatedLb);
                 pstmt.setLong(3, id);
@@ -706,29 +687,23 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create service/provider map for network offerings", e);
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+            closePstmts(pstmt2Close);
         }
     }
 
     private void updateDomainNetworkRef(Connection conn) {
+        List<PreparedStatement> pstmt2Close = new ArrayList<PreparedStatement>();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             // update subdomain access field for existing domain specific networks
             pstmt = conn.prepareStatement("select value from `cloud`.`configuration` where name='allow.subdomain.network.access'");
+            pstmt2Close.add(pstmt);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 boolean subdomainAccess = Boolean.valueOf(rs.getString(1));
                 pstmt = conn.prepareStatement("UPDATE `cloud`.`domain_network_ref` SET subdomain_access=?");
+                pstmt2Close.add(pstmt);
                 pstmt.setBoolean(1, subdomainAccess);
                 pstmt.executeUpdate();
                 s_logger.debug("Successfully updated subdomain_access field in network_domain table with value " + subdomainAccess);
@@ -736,10 +711,12 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
 
             // convert zone level 2.2.x networks to ROOT domain 3.0 access networks
             pstmt = conn.prepareStatement("select id from `cloud`.`networks` where shared=true and is_domain_specific=false and traffic_type='Guest'");
+            pstmt2Close.add(pstmt);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long networkId = rs.getLong(1);
                 pstmt = conn.prepareStatement("INSERT INTO `cloud`.`domain_network_ref` (domain_id, network_id, subdomain_access) VALUES (1, ?, 1)");
+                pstmt2Close.add(pstmt);
                 pstmt.setLong(1, networkId);
                 pstmt.executeUpdate();
                 s_logger.debug("Successfully converted zone specific network id=" + networkId + " to the ROOT domain level network with subdomain access set to true");
@@ -748,35 +725,29 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update domain network ref", e);
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+            closePstmts(pstmt2Close);
         }
     }
 
     protected void createNetworkServices(Connection conn) {
+        List<PreparedStatement> pstmt2Close = new ArrayList<PreparedStatement>();
         PreparedStatement pstmt = null;
-        ResultSet rs = null;
-        ResultSet rs1 = null;
+        ResultSet networkRs = null;
+        ResultSet offeringRs = null;
         try {
             pstmt = conn.prepareStatement("select id, network_offering_id from `cloud`.`networks` where traffic_type='Guest'");
-            rs = pstmt.executeQuery();
-            while (rs.next()) {
-                long networkId = rs.getLong(1);
-                long networkOfferingId = rs.getLong(2);
+            pstmt2Close.add(pstmt);
+            networkRs = pstmt.executeQuery();
+            while (networkRs.next()) {
+                long networkId = networkRs.getLong(1);
+                long networkOfferingId = networkRs.getLong(2);
                 pstmt = conn.prepareStatement("select service, provider from `cloud`.`ntwk_offering_service_map` where network_offering_id=?");
+                pstmt2Close.add(pstmt);
                 pstmt.setLong(1, networkOfferingId);
-                rs1 = pstmt.executeQuery();
-                while (rs1.next()) {
-                    String service = rs1.getString(1);
-                    String provider = rs1.getString(2);
+                offeringRs = pstmt.executeQuery();
+                while (offeringRs.next()) {
+                    String service = offeringRs.getString(1);
+                    String provider = offeringRs.getString(2);
                     pstmt = conn.prepareStatement("INSERT INTO `cloud`.`ntwk_service_map` (`network_id`, `service`, `provider`, `created`) values (?,?,?, now())");
                     pstmt.setLong(1, networkId);
                     pstmt.setString(2, service);
@@ -788,20 +759,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create service/provider map for networks", e);
         } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (rs1 != null) {
-                    rs1.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-            }
+            closePstmts(pstmt2Close);
         }
     }
 
@@ -826,6 +784,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
     }
 
     protected void updateReduntantRouters(Connection conn) {
+        List<PreparedStatement> pstmt2Close = new ArrayList<PreparedStatement>();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         ResultSet rs1 = null;
@@ -833,8 +792,10 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
             // get all networks that need to be updated to the redundant network offerings
             pstmt =
                 conn.prepareStatement("select ni.network_id, n.network_offering_id from `cloud`.`nics` ni, `cloud`.`networks` n where ni.instance_id in (select id from `cloud`.`domain_router` where is_redundant_router=1) and n.id=ni.network_id and n.traffic_type='Guest'");
+            pstmt2Close.add(pstmt);
             rs = pstmt.executeQuery();
             pstmt = conn.prepareStatement("select count(*) from `cloud`.`network_offerings`");
+            pstmt2Close.add(pstmt);
             rs1 = pstmt.executeQuery();
             long ntwkOffCount = 0;
             while (rs1.next()) {
@@ -843,6 +804,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
 
             s_logger.debug("Have " + ntwkOffCount + " networkOfferings");
             pstmt = conn.prepareStatement("CREATE TEMPORARY TABLE `cloud`.`network_offerings2` ENGINE=MEMORY SELECT * FROM `cloud`.`network_offerings` WHERE id=1");
+            pstmt2Close.add(pstmt);
             pstmt.executeUpdate();
 
             HashMap<Long, Long> newNetworkOfferingMap = new HashMap<Long, Long>();
@@ -856,10 +818,12 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                 if (!newNetworkOfferingMap.containsKey(networkOfferingId)) {
                     // clone the record to
                     pstmt = conn.prepareStatement("INSERT INTO `cloud`.`network_offerings2` SELECT * FROM `cloud`.`network_offerings` WHERE id=?");
+                    pstmt2Close.add(pstmt);
                     pstmt.setLong(1, networkOfferingId);
                     pstmt.executeUpdate();
 
                     pstmt = conn.prepareStatement("SELECT unique_name FROM `cloud`.`network_offerings` WHERE id=?");
+                    pstmt2Close.add(pstmt);
                     pstmt.setLong(1, networkOfferingId);
                     rs1 = pstmt.executeQuery();
                     String uniqueName = null;
@@ -868,6 +832,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                     }
 
                     pstmt = conn.prepareStatement("UPDATE `cloud`.`network_offerings2` SET id=?, redundant_router_service=1, unique_name=?, name=? WHERE id=?");
+                    pstmt2Close.add(pstmt);
                     ntwkOffCount = ntwkOffCount + 1;
                     newNetworkOfferingId = ntwkOffCount;
                     pstmt.setLong(1, newNetworkOfferingId);
@@ -877,9 +842,11 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                     pstmt.executeUpdate();
 
                     pstmt = conn.prepareStatement("INSERT INTO `cloud`.`network_offerings` SELECT * from `cloud`.`network_offerings2` WHERE id=" + newNetworkOfferingId);
+                    pstmt2Close.add(pstmt);
                     pstmt.executeUpdate();
 
                     pstmt = conn.prepareStatement("UPDATE `cloud`.`networks` SET network_offering_id=? where id=?");
+                    pstmt2Close.add(pstmt);
                     pstmt.setLong(1, newNetworkOfferingId);
                     pstmt.setLong(2, networkId);
                     pstmt.executeUpdate();
@@ -887,6 +854,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                     newNetworkOfferingMap.put(networkOfferingId, ntwkOffCount);
                 } else {
                     pstmt = conn.prepareStatement("UPDATE `cloud`.`networks` SET network_offering_id=? where id=?");
+                    pstmt2Close.add(pstmt);
                     newNetworkOfferingId = newNetworkOfferingMap.get(networkOfferingId);
                     pstmt.setLong(1, newNetworkOfferingId);
                     pstmt.setLong(2, networkId);
@@ -902,52 +870,46 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
             try {
                 pstmt = conn.prepareStatement("DROP TABLE `cloud`.`network_offerings2`");
                 pstmt.executeUpdate();
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (rs1 != null) {
-                    rs1.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
+                pstmt.close();
             } catch (SQLException e) {
             }
+            closePstmts(pstmt2Close);
         }
     }
 
     protected void updateHostCapacity(Connection conn) {
+        List<PreparedStatement> pstmt2Close = new ArrayList<PreparedStatement>();
         PreparedStatement pstmt = null;
         try {
             s_logger.debug("Updating op_host_capacity table, column capacity_state");
             pstmt =
                 conn.prepareStatement("UPDATE op_host_capacity, host SET op_host_capacity.capacity_state='Disabled' where host.id=op_host_capacity.host_id and op_host_capacity.capacity_type in (0,1) and host.resource_state='Disabled';");
+            pstmt2Close.add(pstmt);
             pstmt.executeUpdate();
+
             pstmt =
                 conn.prepareStatement("UPDATE op_host_capacity, cluster SET op_host_capacity.capacity_state='Disabled' where cluster.id=op_host_capacity.cluster_id and cluster.allocation_state='Disabled';");
+            pstmt2Close.add(pstmt);
             pstmt.executeUpdate();
+
             pstmt =
                 conn.prepareStatement("UPDATE op_host_capacity, host_pod_ref SET op_host_capacity.capacity_state='Disabled' where host_pod_ref.id=op_host_capacity.pod_id and host_pod_ref.allocation_state='Disabled';");
+            pstmt2Close.add(pstmt);
             pstmt.executeUpdate();
+
             pstmt =
                 conn.prepareStatement("UPDATE op_host_capacity, data_center SET op_host_capacity.capacity_state='Disabled' where data_center.id=op_host_capacity.data_center_id and data_center.allocation_state='Disabled';");
+            pstmt2Close.add(pstmt);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update op_host_capacity table. ", e);
         } finally {
-            try {
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-                throw new CloudRuntimeException("Unable to close statement for op_host_capacity table. ", e);
-            }
+            closePstmts(pstmt2Close);
         }
     }
 
     protected void switchAccountSpecificNetworksToIsolated(Connection conn) {
+        List<PreparedStatement> pstmt2Close = new ArrayList<PreparedStatement>();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         ResultSet rs1 = null;
@@ -955,16 +917,23 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
             //check if switch_to_isolated is present; if not - skip this part of the code
             try {
                 pstmt = conn.prepareStatement("select switch_to_isolated from `cloud`.`networks`");
+                pstmt2Close.add(pstmt);
                 rs = pstmt.executeQuery();
             } catch (Exception ex) {
                 s_logger.debug("switch_to_isolated field is not present in networks table");
+                if (pstmt != null) {
+                    pstmt.close();
+                }
                 return;
             }
 
             // get all networks that need to be updated to the isolated network offering
             pstmt = conn.prepareStatement("select id, network_offering_id from `cloud`.`networks` where switch_to_isolated=1");
+            pstmt2Close.add(pstmt);
             rs = pstmt.executeQuery();
+
             pstmt = conn.prepareStatement("select count(*) from `cloud`.`network_offerings`");
+            pstmt2Close.add(pstmt);
             rs1 = pstmt.executeQuery();
             long ntwkOffCount = 0;
             while (rs1.next()) {
@@ -973,6 +942,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
 
             s_logger.debug("Have " + ntwkOffCount + " networkOfferings");
             pstmt = conn.prepareStatement("CREATE TEMPORARY TABLE `cloud`.`network_offerings2` ENGINE=MEMORY SELECT * FROM `cloud`.`network_offerings` WHERE id=1");
+            pstmt2Close.add(pstmt);
             pstmt.executeUpdate();
 
             HashMap<Long, Long> newNetworkOfferingMap = new HashMap<Long, Long>();
@@ -986,10 +956,12 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                 if (!newNetworkOfferingMap.containsKey(networkOfferingId)) {
                     // clone the record to
                     pstmt = conn.prepareStatement("INSERT INTO `cloud`.`network_offerings2` SELECT * FROM `cloud`.`network_offerings` WHERE id=?");
+                    pstmt2Close.add(pstmt);
                     pstmt.setLong(1, networkOfferingId);
                     pstmt.executeUpdate();
 
                     pstmt = conn.prepareStatement("UPDATE `cloud`.`network_offerings2` SET id=?, guest_type='Isolated', unique_name=?, name=? WHERE id=?");
+                    pstmt2Close.add(pstmt);
                     ntwkOffCount = ntwkOffCount + 1;
                     newNetworkOfferingId = ntwkOffCount;
                     String uniqueName = "Isolated w/o source nat";
@@ -1000,9 +972,11 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                     pstmt.executeUpdate();
 
                     pstmt = conn.prepareStatement("INSERT INTO `cloud`.`network_offerings` SELECT * from `cloud`.`network_offerings2` WHERE id=" + newNetworkOfferingId);
+                    pstmt2Close.add(pstmt);
                     pstmt.executeUpdate();
 
                     pstmt = conn.prepareStatement("UPDATE `cloud`.`networks` SET network_offering_id=? where id=?");
+                    pstmt2Close.add(pstmt);
                     pstmt.setLong(1, newNetworkOfferingId);
                     pstmt.setLong(2, networkId);
                     pstmt.executeUpdate();
@@ -1010,6 +984,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                     newNetworkOfferingMap.put(networkOfferingId, ntwkOffCount);
                 } else {
                     pstmt = conn.prepareStatement("UPDATE `cloud`.`networks` SET network_offering_id=? where id=?");
+                    pstmt2Close.add(pstmt);
                     newNetworkOfferingId = newNetworkOfferingMap.get(networkOfferingId);
                     pstmt.setLong(1, newNetworkOfferingId);
                     pstmt.setLong(2, networkId);
@@ -1021,6 +996,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
 
             try {
                 pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`networks` DROP COLUMN `switch_to_isolated`");
+                pstmt2Close.add(pstmt);
                 pstmt.executeUpdate();
             } catch (Exception ex) {
                 // do nothing here
@@ -1032,15 +1008,10 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
             try {
                 pstmt = conn.prepareStatement("DROP TABLE `cloud`.`network_offerings2`");
                 pstmt.executeUpdate();
-                if (rs != null) {
-                    rs.close();
-                }
-
-                if (pstmt != null) {
-                    pstmt.close();
-                }
+                pstmt.close();
             } catch (SQLException e) {
             }
+            closePstmts(pstmt2Close);
         }
     }
 
@@ -1097,6 +1068,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
     }
 
     protected String fixNetworksWithExternalDevices(Connection conn) {
+        List<PreparedStatement> pstmt2Close = new ArrayList<PreparedStatement>();
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         ResultSet rs1 = null;
@@ -1106,11 +1078,13 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         try {
             pstmt =
                 conn.prepareStatement("select id from `cloud`.`data_center` where lb_provider='F5BigIp' or firewall_provider='JuniperSRX' or gateway_provider='JuniperSRX'");
+            pstmt2Close.add(pstmt);
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 zoneIds.add(rs.getLong(1));
             }
         } catch (SQLException e) {
+            closePstmts(pstmt2Close);
             throw new CloudRuntimeException("Unable to switch networks to the new network offering", e);
         }
 
@@ -1121,6 +1095,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
             try {
                 // Find the correct network offering
                 pstmt = conn.prepareStatement("select id, network_offering_id from `cloud`.`networks` where guest_type='Virtual' and data_center_id=?");
+                pstmt2Close.add(pstmt);
                 pstmt.setLong(1, zoneId);
                 rs = pstmt.executeQuery();
                 pstmt = conn.prepareStatement("select count(*) from `cloud`.`network_offerings`");
@@ -1131,6 +1106,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                 }
 
                 pstmt = conn.prepareStatement("CREATE TEMPORARY TABLE `cloud`.`network_offerings2` ENGINE=MEMORY SELECT * FROM `cloud`.`network_offerings` WHERE id=1");
+                pstmt2Close.add(pstmt);
                 pstmt.executeUpdate();
 
                 while (rs.next()) {
@@ -1142,11 +1118,13 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                         uniqueName = "Isolated with external providers";
                         // clone the record to
                         pstmt = conn.prepareStatement("INSERT INTO `cloud`.`network_offerings2` SELECT * FROM `cloud`.`network_offerings` WHERE id=?");
+                        pstmt2Close.add(pstmt);
                         pstmt.setLong(1, networkOfferingId);
                         pstmt.executeUpdate();
 
                         //set the new unique name
                         pstmt = conn.prepareStatement("UPDATE `cloud`.`network_offerings2` SET id=?, unique_name=?, name=? WHERE id=?");
+                        pstmt2Close.add(pstmt);
                         ntwkOffCount = ntwkOffCount + 1;
                         newNetworkOfferingId = ntwkOffCount;
                         pstmt.setLong(1, newNetworkOfferingId);
@@ -1158,9 +1136,11 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                         pstmt =
                             conn.prepareStatement("INSERT INTO `cloud`.`network_offerings` SELECT * from " + "`cloud`.`network_offerings2` WHERE id=" +
                                 newNetworkOfferingId);
+                        pstmt2Close.add(pstmt);
                         pstmt.executeUpdate();
 
                         pstmt = conn.prepareStatement("UPDATE `cloud`.`networks` SET network_offering_id=? where id=?");
+                        pstmt2Close.add(pstmt);
                         pstmt.setLong(1, newNetworkOfferingId);
                         pstmt.setLong(2, networkId);
                         pstmt.executeUpdate();
@@ -1168,6 +1148,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                         newNetworkOfferingMap.put(networkOfferingId, ntwkOffCount);
                     } else {
                         pstmt = conn.prepareStatement("UPDATE `cloud`.`networks` SET network_offering_id=? where id=?");
+                        pstmt2Close.add(pstmt);
                         newNetworkOfferingId = newNetworkOfferingMap.get(networkOfferingId);
                         pstmt.setLong(1, newNetworkOfferingId);
                         pstmt.setLong(2, networkId);
@@ -1183,15 +1164,10 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                 try {
                     pstmt = conn.prepareStatement("DROP TABLE `cloud`.`network_offerings2`");
                     pstmt.executeUpdate();
-                    if (rs != null) {
-                        rs.close();
-                    }
-
-                    if (pstmt != null) {
-                        pstmt.close();
-                    }
+                    pstmt.close();
                 } catch (SQLException e) {
                 }
+                closePstmts(pstmt2Close);
             }
         }
 
