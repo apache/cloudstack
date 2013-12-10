@@ -1279,15 +1279,15 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public TemplateResponse createTemplateUpdateResponse(VirtualMachineTemplate result) {
+    public TemplateResponse createTemplateUpdateResponse(ResponseView view, VirtualMachineTemplate result) {
         List<TemplateJoinVO> tvo = ApiDBUtils.newTemplateView(result);
-        List<TemplateResponse> listVrs = ViewResponseHelper.createTemplateUpdateResponse(tvo.toArray(new TemplateJoinVO[tvo.size()]));
+        List<TemplateResponse> listVrs = ViewResponseHelper.createTemplateUpdateResponse(view, tvo.toArray(new TemplateJoinVO[tvo.size()]));
         assert listVrs != null && listVrs.size() == 1 : "There should be one template returned";
         return listVrs.get(0);
     }
 
     @Override
-    public List<TemplateResponse> createTemplateResponses(VirtualMachineTemplate result, Long zoneId, boolean readyOnly) {
+    public List<TemplateResponse> createTemplateResponses(ResponseView view, VirtualMachineTemplate result, Long zoneId, boolean readyOnly) {
         List<TemplateJoinVO> tvo = null;
         if (zoneId == null || zoneId == -1) {
             tvo = ApiDBUtils.newTemplateView(result);
@@ -1295,18 +1295,18 @@ public class ApiResponseHelper implements ResponseGenerator {
             tvo = ApiDBUtils.newTemplateView(result, zoneId, readyOnly);
 
         }
-        return ViewResponseHelper.createTemplateResponse(tvo.toArray(new TemplateJoinVO[tvo.size()]));
+        return ViewResponseHelper.createTemplateResponse(view, tvo.toArray(new TemplateJoinVO[tvo.size()]));
     }
 
     @Override
-    public List<TemplateResponse> createTemplateResponses(long templateId, Long zoneId, boolean readyOnly) {
+    public List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long zoneId, boolean readyOnly) {
         VirtualMachineTemplate template = findTemplateById(templateId);
-        return createTemplateResponses(template, zoneId, readyOnly);
+        return createTemplateResponses(view, template, zoneId, readyOnly);
     }
 
 
     @Override
-    public List<TemplateResponse> createIsoResponses(VirtualMachineTemplate result, Long zoneId, boolean readyOnly) {
+    public List<TemplateResponse> createIsoResponses(ResponseView view, VirtualMachineTemplate result, Long zoneId, boolean readyOnly) {
         List<TemplateJoinVO> tvo = null;
         if (zoneId == null || zoneId == -1) {
             tvo = ApiDBUtils.newTemplateView(result);
@@ -1314,7 +1314,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             tvo = ApiDBUtils.newTemplateView(result, zoneId, readyOnly);
         }
 
-        return ViewResponseHelper.createIsoResponse(tvo.toArray(new TemplateJoinVO[tvo.size()]));
+        return ViewResponseHelper.createIsoResponse(view, tvo.toArray(new TemplateJoinVO[tvo.size()]));
     }
 
     /*
@@ -1653,7 +1653,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public List<TemplateResponse> createTemplateResponses(long templateId, Long snapshotId, Long volumeId, boolean readyOnly) {
+    public List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long snapshotId, Long volumeId, boolean readyOnly) {
         VolumeVO volume = null;
         if (snapshotId != null) {
             Snapshot snapshot = ApiDBUtils.findSnapshotById(snapshotId);
@@ -1661,15 +1661,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else {
             volume = findVolumeById(volumeId);
         }
-        return createTemplateResponses(templateId, volume.getDataCenterId(), readyOnly);
+        return createTemplateResponses(view, templateId, volume.getDataCenterId(), readyOnly);
     }
 
     @Override
-    public List<TemplateResponse> createTemplateResponses(long templateId, Long vmId) {
+    public List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long vmId) {
         UserVm vm = findUserVmById(vmId);
         Long hostId = (vm.getHostId() == null ? vm.getLastHostId() : vm.getHostId());
         Host host = findHostById(hostId);
-        return createTemplateResponses(templateId, host.getDataCenterId(), true);
+        return createTemplateResponses(view, templateId, host.getDataCenterId(), true);
     }
 
     @Override

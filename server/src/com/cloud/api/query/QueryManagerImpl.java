@@ -45,10 +45,12 @@ import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
+import org.apache.cloudstack.api.command.admin.iso.ListIsosCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
+import org.apache.cloudstack.api.command.admin.template.ListTemplatesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.volume.ListVolumesCmdByAdmin;
@@ -2748,7 +2750,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Pair<List<TemplateJoinVO>, Integer> result = searchForTemplatesInternal(cmd);
         ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
 
-        List<TemplateResponse> templateResponses = ViewResponseHelper.createTemplateResponse(result.first().toArray(
+        ResponseView respView = ResponseView.Restricted;
+        if (cmd instanceof ListTemplatesCmdByAdmin) {
+            respView = ResponseView.Full;
+        }
+
+        List<TemplateResponse> templateResponses = ViewResponseHelper.createTemplateResponse(respView, result.first().toArray(
                 new TemplateJoinVO[result.first().size()]));
         response.setResponses(templateResponses, result.second());
         return response;
@@ -3045,7 +3052,12 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Pair<List<TemplateJoinVO>, Integer> result = searchForIsosInternal(cmd);
         ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
 
-        List<TemplateResponse> templateResponses = ViewResponseHelper.createIsoResponse(result.first().toArray(
+        ResponseView respView = ResponseView.Restricted;
+        if (cmd instanceof ListIsosCmdByAdmin) {
+            respView = ResponseView.Full;
+        }
+
+        List<TemplateResponse> templateResponses = ViewResponseHelper.createIsoResponse(respView, result.first().toArray(
                 new TemplateJoinVO[result.first().size()]));
         response.setResponses(templateResponses, result.second());
         return response;

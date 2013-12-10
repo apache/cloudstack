@@ -378,24 +378,24 @@ public class ViewResponseHelper {
         return respList;
     }
 
-    public static List<TemplateResponse> createTemplateResponse(TemplateJoinVO... templates) {
+    public static List<TemplateResponse> createTemplateResponse(ResponseView view, TemplateJoinVO... templates) {
         Hashtable<String, TemplateResponse> vrDataList = new Hashtable<String, TemplateResponse>();
         for (TemplateJoinVO vr : templates) {
             TemplateResponse vrData = vrDataList.get(vr.getTempZonePair());
             if ( vrData == null ){
                 // first time encountering this volume
-                vrData = ApiDBUtils.newTemplateResponse(vr);
+                vrData = ApiDBUtils.newTemplateResponse(view, vr);
             }
             else{
                 // update tags
-                vrData = ApiDBUtils.fillTemplateDetails(vrData, vr);
+                vrData = ApiDBUtils.fillTemplateDetails(view, vrData, vr);
             }
             vrDataList.put(vr.getTempZonePair(), vrData);
         }
         return new ArrayList<TemplateResponse>(vrDataList.values());
     }
 
-    public static List<TemplateResponse> createTemplateUpdateResponse(TemplateJoinVO... templates) {
+    public static List<TemplateResponse> createTemplateUpdateResponse(ResponseView view, TemplateJoinVO... templates) {
         Hashtable<Long, TemplateResponse> vrDataList = new Hashtable<Long, TemplateResponse>();
         for (TemplateJoinVO vr : templates) {
             TemplateResponse vrData = vrDataList.get(vr.getId());
@@ -405,14 +405,14 @@ public class ViewResponseHelper {
             }
             else{
                 // update tags
-                vrData = ApiDBUtils.fillTemplateDetails(vrData, vr);
+                vrData = ApiDBUtils.fillTemplateDetails(view, vrData, vr);
             }
             vrDataList.put(vr.getId(), vrData);
         }
         return new ArrayList<TemplateResponse>(vrDataList.values());
     }
 
-    public static List<TemplateResponse> createIsoResponse(TemplateJoinVO... templates) {
+    public static List<TemplateResponse> createIsoResponse(ResponseView view, TemplateJoinVO... templates) {
         Hashtable<String, TemplateResponse> vrDataList = new Hashtable<String, TemplateResponse>();
         for (TemplateJoinVO vr : templates) {
             TemplateResponse vrData = vrDataList.get(vr.getTempZonePair());
@@ -422,7 +422,7 @@ public class ViewResponseHelper {
             }
             else{
                 // update tags
-                vrData = ApiDBUtils.fillTemplateDetails(vrData, vr);
+                vrData = ApiDBUtils.fillTemplateDetails(view, vrData, vr);
             }
             vrDataList.put(vr.getTempZonePair(), vrData);
         }

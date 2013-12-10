@@ -16,6 +16,27 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.GuestOSResponse;
+import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -26,28 +47,8 @@ import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCreateCmd;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.GuestOSResponse;
-import org.apache.cloudstack.api.response.SnapshotResponse;
-import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
 @APICommand(name = "createTemplate", responseObject = TemplateResponse.class, description = "Creates a template of a virtual machine. " + "The virtual machine must be in a STOPPED state. "
-        + "A template created from this command is automatically designated as a private template visible to the account that created it.")
+        + "A template created from this command is automatically designated as a private template visible to the account that created it.", responseView = ResponseView.Restricted)
         public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTemplateCmd.class.getName());
     private static final String s_name = "createtemplateresponse";
@@ -83,15 +84,15 @@ import java.util.Map;
 
     @Parameter(name = ApiConstants.SNAPSHOT_ID, type = CommandType.UUID, entityType = SnapshotResponse.class,
             description = "the ID of the snapshot the template is being created from. Either this parameter, or volumeId has to be passed in")
-    private Long snapshotId;
+    protected Long snapshotId;
 
     @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class,
             description = "the ID of the disk volume the template is being created from. Either this parameter, or snapshotId has to be passed in")
-    private Long volumeId;
+    protected Long volumeId;
 
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
             description="Optional, VM ID. If this presents, it is going to create a baremetal template for VM this ID refers to. This is only for VM whose hypervisor type is BareMetal")
-    private Long vmId;
+    protected Long vmId;
 
     @Parameter(name=ApiConstants.URL, type=CommandType.STRING, description="Optional, only for baremetal hypervisor. The directory name where template stored on CIFS server")
     private String url;
@@ -240,17 +241,17 @@ import java.util.Map;
         return ApiCommandJobType.Template;
     }
 
-    private boolean isBareMetal() {
-        return (this.getVmId() != null && this.getUrl() != null);
+    protected boolean isBareMetal() {
+        return (getVmId() != null && getUrl() != null);
     }
 
     @Override
     public void create() throws ResourceAllocationException {
         VirtualMachineTemplate template = null;
-        template = this._templateService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
+        template = _templateService.createPrivateTemplateRecord(this, _accountService.getAccount(getEntityOwnerId()));
         if (template != null) {
-            this.setEntityId(template.getId());
-            this.setEntityUuid(template.getUuid());
+            setEntityId(template.getId());
+            setEntityUuid(template.getUuid());
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
             "Failed to create a template");
@@ -262,21 +263,21 @@ import java.util.Map;
     public void execute() {
         CallContext.current().setEventDetails("Template Id: "+getEntityId()+((getSnapshotId() == null) ? " from volume Id: " + getVolumeId() : " from snapshot Id: " + getSnapshotId()));
         VirtualMachineTemplate template = null;
-        template = this._templateService.createPrivateTemplate(this);
+        template = _templateService.createPrivateTemplate(this);
 
         if (template != null){
             List<TemplateResponse> templateResponses;
             if (isBareMetal()) {
-                templateResponses = _responseGenerator.createTemplateResponses(template.getId(), vmId);
+                templateResponses = _responseGenerator.createTemplateResponses(ResponseView.Restricted, template.getId(), vmId);
             } else {
-                templateResponses = _responseGenerator.createTemplateResponses(template.getId(), snapshotId, volumeId, false);
+                templateResponses = _responseGenerator.createTemplateResponses(ResponseView.Restricted, template.getId(), snapshotId, volumeId, false);
             }
             TemplateResponse response = new TemplateResponse();
             if (templateResponses != null && !templateResponses.isEmpty()) {
                 response = templateResponses.get(0);
             }
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create private template");
         }

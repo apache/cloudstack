@@ -216,10 +216,6 @@ public interface ResponseGenerator {
 
     SnapshotPolicyResponse createSnapshotPolicyResponse(SnapshotPolicy policy);
 
-    //List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms);
-
-    //List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVm... userVms);
-
     List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, UserVm... userVms);
 
     List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, UserVm... userVms);
@@ -285,17 +281,13 @@ public interface ResponseGenerator {
 
     Host findHostById(Long hostId);
 
-    //List<TemplateResponse> createTemplateResponses(long templateId, long zoneId, boolean readyOnly);
-
     VpnUsersResponse createVpnUserResponse(VpnUser user);
 
     RemoteAccessVpnResponse createRemoteAccessVpnResponse(RemoteAccessVpn vpn);
 
-    List<TemplateResponse> createTemplateResponses(long templateId, Long zoneId, boolean readyOnly);
+    List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long zoneId, boolean readyOnly);
 
-    List<TemplateResponse> createTemplateResponses(long templateId, Long snapshotId, Long volumeId, boolean readyOnly);
-
-    //ListResponse<SecurityGroupResponse> createSecurityGroupResponses(List<? extends SecurityGroupRules> networkGroups);
+    List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long snapshotId, Long volumeId, boolean readyOnly);
 
     SecurityGroupResponse createSecurityGroupResponseFromSecurityGroupRule(List<? extends SecurityRule> SecurityRules);
 
@@ -309,11 +301,9 @@ public interface ResponseGenerator {
 
     EventResponse createEventResponse(Event event);
 
-    //List<EventResponse> createEventResponse(EventJoinVO... events);
+    TemplateResponse createTemplateUpdateResponse(ResponseView view, VirtualMachineTemplate result);
 
-    TemplateResponse createTemplateUpdateResponse(VirtualMachineTemplate result);
-
-    List<TemplateResponse> createTemplateResponses(VirtualMachineTemplate result, Long zoneId, boolean readyOnly);
+    List<TemplateResponse> createTemplateResponses(ResponseView view, VirtualMachineTemplate result, Long zoneId, boolean readyOnly);
 
     List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format);
 
@@ -327,20 +317,15 @@ public interface ResponseGenerator {
 
     UserResponse createUserResponse(User user);
 
-    //List<UserResponse> createUserResponse(UserAccountJoinVO... users);
-
     AccountResponse createUserAccountResponse(UserAccount user);
 
     Long getSecurityGroupId(String groupName, long accountId);
 
-    List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, Long zoneId, boolean readyOnly);
-
-    // List<TemplateResponse> createIsoResponses(long isoId, Long zoneId, boolean readyOnly);
-    //List<TemplateResponse> createIsoResponses(VirtualMachineTemplate iso, long zoneId, boolean readyOnly);
+    List<TemplateResponse> createIsoResponses(ResponseView view, VirtualMachineTemplate iso, Long zoneId, boolean readyOnly);
 
     ProjectResponse createProjectResponse(Project project);
 
-    List<TemplateResponse> createTemplateResponses(long templateId, Long vmId);
+    List<TemplateResponse> createTemplateResponses(ResponseView view, long templateId, Long vmId);
 
     FirewallResponse createFirewallResponse(FirewallRule fwRule);
 

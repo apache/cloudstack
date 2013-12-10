@@ -21,12 +21,15 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
@@ -36,12 +39,10 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
 
-@APICommand(name = "registerTemplate", description="Registers an existing template into the CloudStack cloud. ", responseObject=TemplateResponse.class)
+@APICommand(name = "registerTemplate", description = "Registers an existing template into the CloudStack cloud. ", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted)
 public class RegisterTemplateCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterTemplateCmd.class.getName());
 
@@ -93,7 +94,7 @@ public class RegisterTemplateCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
             required=true, description="the ID of the zone the template is to be hosted on")
-    private Long zoneId;
+    protected Long zoneId;
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
             description="an optional domainId. If the account parameter is used, domainId must also be used.")
@@ -245,10 +246,10 @@ public class RegisterTemplateCmd extends BaseCmd {
             VirtualMachineTemplate template = _templateService.registerTemplate(this);
             if (template != null){
                 ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-                List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(template, zoneId, false);
+                List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(ResponseView.Restricted, template, zoneId, false);
                 response.setResponses(templateResponses);
                 response.setResponseName(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to register template");
             }

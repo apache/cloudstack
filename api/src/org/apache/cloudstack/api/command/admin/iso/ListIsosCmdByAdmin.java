@@ -14,33 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.query.dao;
+package org.apache.cloudstack.api.command.admin.iso;
 
-import java.util.List;
-
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
 
-import com.cloud.api.query.vo.TemplateJoinVO;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.utils.db.GenericDao;
-
-public interface TemplateJoinDao extends GenericDao<TemplateJoinVO, Long> {
-
-    TemplateResponse newTemplateResponse(ResponseView view, TemplateJoinVO tmpl);
-
-    TemplateResponse newIsoResponse(TemplateJoinVO tmpl);
-
-    TemplateResponse newUpdateResponse(TemplateJoinVO tmpl);
-
-    TemplateResponse setTemplateResponse(ResponseView view, TemplateResponse tmplData, TemplateJoinVO tmpl);
-
-    List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate tmpl);
-
-    List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate tmpl, long zoneId, boolean readyOnly);
-
-    List<TemplateJoinVO> searchByTemplateZonePair(String... pairs);
-
-    List<TemplateJoinVO> listActiveTemplates(long storeId);
+@APICommand(name = "listIsos", description = "Lists all available ISO files.", responseObject = TemplateResponse.class, responseView = ResponseView.Full)
+public class ListIsosCmdByAdmin extends ListIsosCmd {
 
 }

@@ -24,15 +24,15 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
@@ -94,44 +94,34 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         activeTmpltSearch.done();
 
         // select distinct pair (template_id, zone_id)
-        this._count = "select count(distinct temp_zone_pair) from template_view WHERE ";
+        _count = "select count(distinct temp_zone_pair) from template_view WHERE ";
     }
 
 
 
-    private String getTemplateStatus(TemplateJoinVO template){
-        boolean isAdmin = false;
-        Account caller = CallContext.current().getCallingAccount();
-        if ((caller == null) || _accountService.isAdmin(caller.getType())) {
-            isAdmin = true;
-        }
-
-        // If the user is an Admin, add the template download status
+    private String getTemplateStatus(TemplateJoinVO template) {
         String templateStatus = null;
-        if (isAdmin || caller.getId() == template.getAccountId()) {
-            // add download status
-            if (template.getDownloadState() != Status.DOWNLOADED) {
-                templateStatus = "Processing";
-                if (template.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
-                    if (template.getDownloadPercent() == 100) {
-                        templateStatus = "Installing Template";
-                    } else {
-                        templateStatus = template.getDownloadPercent() + "% Downloaded";
-                    }
+        if (template.getDownloadState() != Status.DOWNLOADED) {
+            templateStatus = "Processing";
+            if (template.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
+                if (template.getDownloadPercent() == 100) {
+                    templateStatus = "Installing Template";
                 } else {
-                    templateStatus = template.getErrorString();
+                    templateStatus = template.getDownloadPercent() + "% Downloaded";
                 }
-            } else if (template.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
-                templateStatus = "Download Complete";
             } else {
-                templateStatus = "Successfully Installed";
+                templateStatus = template.getErrorString();
             }
+        } else if (template.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
+            templateStatus = "Download Complete";
+        } else {
+            templateStatus = "Successfully Installed";
         }
         return templateStatus;
     }
 
     @Override
-    public TemplateResponse newTemplateResponse(TemplateJoinVO template) {
+    public TemplateResponse newTemplateResponse(ResponseView view, TemplateJoinVO template) {
         TemplateResponse templateResponse = new TemplateResponse();
         templateResponse.setId(template.getUuid());
         templateResponse.setName(template.getName());
@@ -171,9 +161,11 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
 
 
         // If the user is an Admin, add the template download status
-        String templateStatus = getTemplateStatus(template);
-        if ( templateStatus != null ){
-            templateResponse.setStatus(templateStatus);
+        if (view == ResponseView.Full) {
+            String templateStatus = getTemplateStatus(template);
+            if (templateStatus != null) {
+                templateResponse.setStatus(templateStatus);
+            }
         }
 
         if ( template.getDataCenterId() > 0 ){
@@ -261,7 +253,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
 
 
     @Override
-    public TemplateResponse setTemplateResponse(TemplateResponse templateResponse, TemplateJoinVO template) {
+    public TemplateResponse setTemplateResponse(ResponseView view, TemplateResponse templateResponse, TemplateJoinVO template) {
 
         // update details map
         if (template.getDetailName() != null){

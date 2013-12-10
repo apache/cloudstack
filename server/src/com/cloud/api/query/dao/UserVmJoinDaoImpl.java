@@ -127,7 +127,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         }
         userVmResponse.setZoneId(userVm.getDataCenterUuid());
         userVmResponse.setZoneName(userVm.getDataCenterName());
-        if (view == ResponseView.Full || ((view == null) && ((caller == null) || (_accountMgr.isRootAdmin(caller.getId()))))) {
+        if (view == ResponseView.Full) {
             userVmResponse.setInstanceName(userVm.getInstanceName());
             userVmResponse.setHostId(userVm.getHostUuid());
             userVmResponse.setHostName(userVm.getHostName());

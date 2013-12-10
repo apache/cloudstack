@@ -18,11 +18,14 @@ package org.apache.cloudstack.api.command.user.iso;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
@@ -32,12 +35,10 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.template.VirtualMachineTemplate;
 
-@APICommand(name = "registerIso", responseObject=TemplateResponse.class, description="Registers an existing ISO into the CloudStack Cloud.")
+@APICommand(name = "registerIso", responseObject = TemplateResponse.class, description = "Registers an existing ISO into the CloudStack Cloud.", responseView = ResponseView.Restricted)
 public class RegisterIsoCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterIsoCmd.class.getName());
 
@@ -74,7 +75,7 @@ public class RegisterIsoCmd extends BaseCmd {
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
             required=true, description="the ID of the zone you wish to register the ISO to.")
-    private Long zoneId;
+    protected Long zoneId;
 
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.UUID, entityType = DomainResponse.class,
             description="an optional domainId. If the account parameter is used, domainId must also be used.")
@@ -150,7 +151,7 @@ public class RegisterIsoCmd extends BaseCmd {
     }
 
     public String getImageStoreUuid() {
-        return this.imageStoreUuid;
+        return imageStoreUuid;
     }
 
     public Boolean isDynamicallyScalable() {
@@ -181,10 +182,10 @@ public class RegisterIsoCmd extends BaseCmd {
         VirtualMachineTemplate template = _templateService.registerIso(this);
         if (template != null) {
             ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-            List<TemplateResponse> templateResponses = _responseGenerator.createIsoResponses(template, zoneId, false);
+            List<TemplateResponse> templateResponses = _responseGenerator.createIsoResponses(ResponseView.Restricted, template, zoneId, false);
             response.setResponses(templateResponses);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to register iso");
         }

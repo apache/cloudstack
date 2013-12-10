@@ -1664,8 +1664,8 @@ public class ApiDBUtils {
     }
 
 
-    public static TemplateResponse newTemplateResponse(TemplateJoinVO vr) {
-        return _templateJoinDao.newTemplateResponse(vr);
+    public static TemplateResponse newTemplateResponse(ResponseView view, TemplateJoinVO vr) {
+        return _templateJoinDao.newTemplateResponse(view, vr);
     }
 
 
@@ -1673,8 +1673,8 @@ public class ApiDBUtils {
         return _templateJoinDao.newIsoResponse(vr);
     }
 
-    public static TemplateResponse fillTemplateDetails(TemplateResponse vrData, TemplateJoinVO vr){
-        return _templateJoinDao.setTemplateResponse(vrData, vr);
+    public static TemplateResponse fillTemplateDetails(ResponseView view, TemplateResponse vrData, TemplateJoinVO vr) {
+        return _templateJoinDao.setTemplateResponse(view, vrData, vr);
     }
 
     public static List<TemplateJoinVO> newTemplateView(VirtualMachineTemplate vr){
