@@ -246,13 +246,17 @@ class VirtualMachine:
         if zone.securitygroupsenabled:
             list_security_groups = SecurityGroup.list(
                 apiclient,
+                account=cmd.account,
+                domainid=cmd.domainid,
                 securitygroupname="basic_sec_grp"
             )
 
             if not isinstance(list_security_groups, list):
                 basic_mode_security_group = SecurityGroup.create(
                     apiclient,
-                    {"name": "basic_sec_grp"}
+                    {"name": "basic_sec_grp"},
+                    cmd.account,
+                    cmd.domainid,
                 )
                 sec_grp_services = {
                     "protocol": "TCP",
