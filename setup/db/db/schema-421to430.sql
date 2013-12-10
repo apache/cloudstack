@@ -804,3 +804,13 @@ CREATE TABLE `cloud`.`network_acl_item_details` (
 ALTER TABLE `cloud`.`alert` ADD COLUMN `name` varchar(255) DEFAULT NULL COMMENT 'name of the alert';
 
 UPDATE `cloud`.`hypervisor_capabilities` SET `max_data_volumes_limit`=13 WHERE `hypervisor_type`='Vmware';
+
+CREATE TABLE `cloud`.`s2s_vpn_gateway_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `s2s_vpn_gateway_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_s2s_vpn_gateway_details__s2s_vpn_gateway_id` FOREIGN KEY `fk_s2s_vpn_gateway_details__s2s_vpn_gateway_id`(`s2s_vpn_gateway_id`) REFERENCES `s2s_vpn_gateway`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
