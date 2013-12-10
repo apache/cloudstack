@@ -623,7 +623,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 				List<AutoScaleVmGroupVO> asGroups = _asGroupDao.listAll();
 				for (AutoScaleVmGroupVO asGroup : asGroups) {
 					// check group state
-					if (asGroup.getState().equals("enabled")) {
+					if ((asGroup.getState().equals("enabled")) && (is_native(asGroup.getId()))) {
 						// check minimum vm of group
 						Integer currentVM = _asGroupVmDao.countByGroup(asGroup.getId());
 						if (currentVM < asGroup.getMinMembers()) {
@@ -733,7 +733,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 										}
 									}
 
-									String scaleAction = getAutoscaleAction(avgCounter, asGroup.getId(), currentVM);
+									String scaleAction = getAutoscaleAction(avgCounter, asGroup.getId(), currentVM, params);
 									if (scaleAction != null) {
 										s_logger.debug("[AutoScale] Doing scale action: " + scaleAction + " for group " + asGroup.getId());
 										if (scaleAction.equals("scaleup")) {
@@ -758,7 +758,21 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
 		}
 		
-		private String getAutoscaleAction(HashMap<Long, Double> avgCounter, long groupId, long currentVM) {
+		private boolean is_native(long groupId) {
+			List <AutoScaleVmGroupPolicyMapVO> vos = _asGroupPolicyDao.listByVmGroupId(groupId);
+			for (AutoScaleVmGroupPolicyMapVO vo : vos) {
+				List<AutoScalePolicyConditionMapVO> ConditionPolicies = _asConditionMapDao.findByPolicyId(vo.getPolicyId());
+				for (AutoScalePolicyConditionMapVO ConditionPolicy : ConditionPolicies) {
+					ConditionVO condition = _asConditionDao.findById(ConditionPolicy.getConditionId());
+					CounterVO counter = _asCounterDao.findById(condition.getCounterid());
+					if (counter.getSource() == Counter.Source.cpu || counter.getSource() == Counter.Source.memory)
+						return true;
+				}
+			}
+			return false;
+		}
+		
+		private String getAutoscaleAction(HashMap<Long, Double> avgCounter, long groupId, long currentVM, Map<String, String> params) {
 			
 			List<AutoScaleVmGroupPolicyMapVO> listMap = _asGroupPolicyDao.listByVmGroupId(groupId);
 			if ( (listMap == null) || (listMap.size() == 0) )
@@ -785,9 +799,19 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 							for (ConditionVO conditionVO : lstConditions) {
 								long thresholdValue = conditionVO.getThreshold();
 								Double thresholdPercent = (double)thresholdValue / 100;
-								Double sum = avgCounter.get(conditionVO.getCounterid());
-								Double avg = sum/ currentVM;
-										
+								CounterVO counterVO = _asCounterDao.findById(conditionVO.getCounterid());
+//								Double sum = avgCounter.get(conditionVO.getCounterid());
+								long counter_count=1;
+								do {
+									String counter_param = params.get("counter" + String.valueOf(counter_count));
+									Counter.Source counter_source = counterVO.getSource(); 
+									if (counter_param.equals(counter_source.toString()))
+										break;
+									counter_count++;
+								} while (1==1);
+								
+								Double sum = avgCounter.get(counter_count);
+								Double avg = sum / currentVM;
 								Operator op = conditionVO.getRelationalOperator();
 								boolean bConditionCheck = ((op == com.cloud.network.as.Condition.Operator.EQ) && (thresholdPercent == avg))
 										|| ((op == com.cloud.network.as.Condition.Operator.GE) && (avg >= thresholdPercent))
