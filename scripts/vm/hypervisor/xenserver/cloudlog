@@ -1,0 +1,12 @@
+/var/log/cloud/vmops.log {
+    daily
+    size 1M
+    rotate 20
+}
+
+/var/log/cloud/ovstunnel.log /var/log/cloud/ovs-pvlan.log /var/log/cloud/swiftxen.log /var/log/cloud/s3xen /var/log/cloud/storageplugin {
+    daily
+    size 1M
+    rotate 2
+}
+

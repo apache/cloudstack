@@ -29,13 +29,17 @@ if os.path.exists("/usr/lib/xcp/sm"):
 import util
 import socket
 import perfmon
+import cloudstack_pluginlib as lib
+import logging
+
+lib.setup_logging("/var/log/cloud/vmops.log")
 
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        util.SMlog("#### VMOPS enter  %s ####" % name )
+        logging.debug("#### VMOPS enter  %s ####" % name )
         res = fn(*v, **k)
-        util.SMlog("#### VMOPS exit  %s ####" % name )
+        logging.debug("#### VMOPS exit  %s ####" % name )
         return res
     return wrapped
 

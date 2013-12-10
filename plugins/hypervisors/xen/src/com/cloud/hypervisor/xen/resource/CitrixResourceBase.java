@@ -5379,7 +5379,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                 com.trilead.ssh2.Session session = sshConnection.openSession();
 
-                String cmd = "mkdir -p /opt/cloud/bin";
+                String cmd = "mkdir -p /opt/cloud/bin /var/log/cloud";
                 if (!SSHCmdHelper.sshExecuteCmd(sshConnection, cmd)) {
                     throw new CloudRuntimeException("Cannot create directory /opt/cloud/bin on XenServer hosts");
                 }
