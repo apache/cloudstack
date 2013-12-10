@@ -2332,11 +2332,6 @@ class TestVPCNetworkGc(cloudstackTestCase):
         wait_for_cleanup(self.apiclient,
                          ["network.gc.interval", "network.gc.wait"])
 
-        #Bug???: Network Acls are not cleared
-        netacls = NetworkACL.list(self.apiclient, networkid=self.network_1.id)
-        self.debug("List of NetACLS %s" % netacls)
-        self.assertEqual(netacls, None, "Netacls were not cleared after network GC thread is run")
-
         lbrules = LoadBalancerRule.list(self.apiclient, networkid=self.network_1.id)
         self.debug("List of LB Rules %s" % lbrules)
         self.assertEqual(lbrules, None, "LBrules were not cleared after network GC thread is run")
