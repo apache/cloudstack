@@ -85,3 +85,4 @@ configure-stamp
 engine/storage/integration-test/test-output
 tools/apidoc/log/
 log/
+scripts/vm/hypervisor/xenserver/vhd-util
