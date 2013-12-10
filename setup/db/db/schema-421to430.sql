@@ -806,3 +806,10 @@ ALTER TABLE `cloud`.`alert` ADD COLUMN `name` varchar(255) DEFAULT NULL COMMENT 
 UPDATE `cloud`.`hypervisor_capabilities` SET `max_data_volumes_limit`=13 WHERE `hypervisor_type`='Vmware';
 
 ALTER TABLE `cloud`.`external_load_balancer_devices` ADD COLUMN `is_exclusive_gslb_provider` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is acting exclusively as gslb service provider in the zone and can not be used for LB';
+
+DELETE FROM `cloud`.`configuration` WHERE `name` IN ("xen.update.url", "update.check.interval", "baremetal_dhcp_devices", "host.updates.enable");
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'VMSnapshotManager', "vmsnapshot.create.wait", "1800", "In second, timeout for create vm snapshot", NULL, NULL,NULL,0);
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'VMSnapshotManager', "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", NULL, NULL,NULL,0);
+
+UPDATE `cloud`.`configuration` SET `component` = 'VMSnapshotManager' WHERE `name` IN ("vmsnapshot.create.wait", "vmsnapshot.max");
