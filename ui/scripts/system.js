@@ -14787,7 +14787,7 @@
                                                 var items = [];
                                                 items.push({
                                                     id: "SMB",
-                                                    description: "SMB/cifs"
+                                                    description: "SMB/CIFS"
                                                 });
                                                 args.response.success({
                                                     data: items
@@ -16255,7 +16255,7 @@
                                                 	    description: 'NFS'
                                                 	}, {
                                                 	    id: 'SMB',
-                                                	    description: 'SMB/cifs'
+                                                	    description: 'SMB/CIFS'
                                                 	}, {
                                                 	    id: 'S3',
                                                 	    description: 'S3'
