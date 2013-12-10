@@ -57,6 +57,7 @@ public class ExternalLoadBalancerDeviceDaoImpl extends GenericDaoBase<ExternalLo
         allocationStateSearch.and("physicalNetworkId", allocationStateSearch.entity().getPhysicalNetworkId(), Op.EQ);
         allocationStateSearch.and("providerName", allocationStateSearch.entity().getProviderName(), Op.EQ);
         allocationStateSearch.and("allocationState", allocationStateSearch.entity().getAllocationState(), Op.EQ);
+        allocationStateSearch.and("exclusiveGslbProvider", allocationStateSearch.entity().getExclusiveGslbProvider(), Op.EQ);
         allocationStateSearch.done();
 
         deviceStatusSearch = createSearchBuilder();
@@ -99,6 +100,7 @@ public class ExternalLoadBalancerDeviceDaoImpl extends GenericDaoBase<ExternalLo
         sc.setParameters("physicalNetworkId", physicalNetworkId);
         sc.setParameters("providerName", provider_name);
         sc.setParameters("allocationState", state);
+        sc.setParameters("exclusiveGslbProvider", false);
         return search(sc, null);
     }
 

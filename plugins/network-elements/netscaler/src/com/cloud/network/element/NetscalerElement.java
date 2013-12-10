@@ -381,9 +381,14 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
         }
 
+        if (cmd.isExclusiveGslbProvider() && !cmd.isGslbProvider()) {
+            throw new InvalidParameterValueException("NetScaler can be provisioned to be exclusive GSLB service provider" +
+                    " only if its being configured as GSLB service provider also.");
+        }
+
         ExternalLoadBalancerDeviceVO lbDeviceVO =
             addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceName, new NetscalerResource(),
-                cmd.isGslbProvider(), cmd.getSitePublicIp(), cmd.getSitePrivateIp());
+                cmd.isGslbProvider(), cmd.isExclusiveGslbProvider(), cmd.getSitePublicIp(), cmd.getSitePrivateIp());
 
         return lbDeviceVO;
     }
@@ -605,6 +610,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         response.setObjectName("netscalerloadbalancer");
 
         response.setGslbProvider(lbDeviceVO.getGslbProvider());
+        response.setExclusiveGslbProvider(lbDeviceVO.getExclusiveGslbProvider());
         response.setGslbSitePublicIp(lbDeviceVO.getGslbSitePublicIP());
         response.setGslbSitePrivateIp(lbDeviceVO.getGslbSitePrivateIP());
 

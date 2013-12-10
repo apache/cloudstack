@@ -804,3 +804,5 @@ CREATE TABLE `cloud`.`network_acl_item_details` (
 ALTER TABLE `cloud`.`alert` ADD COLUMN `name` varchar(255) DEFAULT NULL COMMENT 'name of the alert';
 
 UPDATE `cloud`.`hypervisor_capabilities` SET `max_data_volumes_limit`=13 WHERE `hypervisor_type`='Vmware';
+
+ALTER TABLE `cloud`.`external_load_balancer_devices` ADD COLUMN `is_exclusive_gslb_provider` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is acting exclusively as gslb service provider in the zone and can not be used for LB';

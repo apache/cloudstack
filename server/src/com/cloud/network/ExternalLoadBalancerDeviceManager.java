@@ -47,7 +47,7 @@ public interface ExternalLoadBalancerDeviceManager extends Manager {
      * @return Host object for the device added
      */
     public ExternalLoadBalancerDeviceVO addExternalLoadBalancer(long physicalNetworkId, String url, String username, String password, String deviceName,
-        ServerResource resource, boolean gslbProvider, String gslbSitePublicIp, String gslbSitePrivateIp);
+        ServerResource resource, boolean gslbProvider, boolean exclusiveGslbProvider, String gslbSitePublicIp, String gslbSitePrivateIp);
 
     /**
      * deletes load balancer device added in to a physical network

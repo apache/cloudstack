@@ -75,6 +75,10 @@ public class NetscalerLoadBalancerResponse extends BaseResponse {
     @Param(description = "true if NetScaler device is provisioned to be a GSLB service provider")
     private Boolean isGslbProvider;
 
+    @SerializedName(ApiConstants.EXCLUSIVE_GSLB_PROVIDER)
+    @Param(description = "true if NetScaler device is provisioned exclusively to be a GSLB service provider")
+    private Boolean isExclusiveGslbProvider;
+
     @SerializedName(ApiConstants.GSLB_PROVIDER_PUBLIC_IP)
     @Param(description = "public IP of the NetScaler representing GSLB site")
     private String gslbSitePublicIp;
@@ -135,6 +139,10 @@ public class NetscalerLoadBalancerResponse extends BaseResponse {
 
     public void setGslbProvider(boolean isGslbProvider) {
         this.isGslbProvider = isGslbProvider;
+    }
+
+    public void setExclusiveGslbProvider(boolean isExclusiveGslbProvider) {
+        this.isExclusiveGslbProvider = isExclusiveGslbProvider;
     }
 
     public void setGslbSitePublicIp(String publicIP) {

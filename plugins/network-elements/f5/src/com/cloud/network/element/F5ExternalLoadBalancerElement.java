@@ -321,7 +321,8 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         pNetwork = physicalNetworks.get(0);
 
         String deviceType = NetworkDevice.F5BigIpLoadBalancer.getName();
-        lbDeviceVO = addExternalLoadBalancer(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceType, new F5BigIpResource(), false, null, null);
+        lbDeviceVO = addExternalLoadBalancer(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(),
+                deviceType, new F5BigIpResource(), false, false, null, null);
 
         if (lbDeviceVO != null) {
             lbHost = _hostDao.findById(lbDeviceVO.getHostId());
@@ -374,7 +375,8 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
             throw new InvalidParameterValueException("Invalid F5 load balancer device type");
         }
 
-        return addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceName, new F5BigIpResource(), false, null,
+        return addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(),
+                deviceName, new F5BigIpResource(), false, false, null,
             null);
 
     }
