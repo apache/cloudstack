@@ -24,13 +24,17 @@ import os, sys, time
 import XenAPIPlugin
 sys.path.extend(["/opt/xensource/sm/"])
 import util
+import cloudstack_pluginlib as lib
+import logging
+
+lib.setup_logging("/var/log/cloud/swiftxen.log")
 
 def echo(fn):
     def wrapped(*v, **k):
         name = fn.__name__
-        util.SMlog("#### VMOPS enter  %s ####" % name )
+        logging.debug("#### VMOPS enter  %s ####" % name )
         res = fn(*v, **k)
-        util.SMlog("#### VMOPS exit  %s ####" % name )
+        logging.debug("#### VMOPS exit  %s ####" % name )
         return res
     return wrapped
 
@@ -48,7 +52,7 @@ def upload(args):
     lfilename = args['lfilename']
     isISCSI = args['isISCSI']
     segment = 0
-    util.SMlog("#### VMOPS upload %s to swift ####", lfilename)
+    logging.debug("#### VMOPS upload %s to swift ####", lfilename)
     savedpath = os.getcwd()
     os.chdir(ldir)
     try :
@@ -85,7 +89,7 @@ def swift(session, args):
     elif op == 'delete' :
         cmd = ["st", "-A https://" + hostname + ":8080/auth/v1.0 -U " + account + ":" + username + " -K " + token + " delete " + rfilename]
     else :
-        util.SMlog("doesn't support swift operation  %s " % op )
+        logging.debug("doesn't support swift operation  %s " % op )
         return 'false'
     try:
         util.pread2(cmd)

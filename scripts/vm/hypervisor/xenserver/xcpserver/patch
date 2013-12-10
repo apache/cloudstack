@@ -64,3 +64,4 @@ getRouterStatus.sh=../../../../network/domr/,0755,/opt/cloud/bin
 bumpUpPriority.sh=../../../../network/domr/,0755,/opt/cloud/bin
 getDomRVersion.sh=../../../../network/domr/,0755,/opt/cloud/bin
 add_to_vcpus_params_live.sh=..,0755,/opt/cloud/bin
+cloudlog=..,0644,/etc/logrotate.d
