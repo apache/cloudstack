@@ -197,9 +197,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
     @Override
     @DB
-    public ExternalLoadBalancerDeviceVO addExternalLoadBalancer(long physicalNetworkId, String url,
-            String username, String password, final String deviceName, ServerResource resource, final boolean gslbProvider,
-            final String gslbSitePublicIp, final String gslbSitePrivateIp) {
+    public ExternalLoadBalancerDeviceVO addExternalLoadBalancer(long physicalNetworkId, String url, String username, String password, final String deviceName,
+        ServerResource resource, final boolean gslbProvider, final boolean exclusiveGslbProivider,
+        final String gslbSitePublicIp, final String gslbSitePrivateIp) {
 
         PhysicalNetworkVO pNetwork = null;
         final NetworkDevice ntwkDevice = NetworkDevice.getNetworkDevice(deviceName);
@@ -283,6 +283,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                         if (gslbProvider) {
                             lbDeviceVO.setGslbSitePublicIP(gslbSitePublicIp);
                             lbDeviceVO.setGslbSitePrivateIP(gslbSitePrivateIp);
+                            lbDeviceVO.setExclusiveGslbProvider(exclusiveGslbProivider);
                         }
                         _externalLoadBalancerDeviceDao.persist(lbDeviceVO);
                         DetailVO hostDetail = new DetailVO(host.getId(), ApiConstants.LOAD_BALANCER_DEVICE_ID, String.valueOf(lbDeviceVO.getId()));
@@ -527,9 +528,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                                     "&publicipvlan=" + publicIPVlanTag + "&publicipgateway=" + publicIPgateway;
                             ExternalLoadBalancerDeviceVO lbAppliance = null;
                             try {
-                                lbAppliance = addExternalLoadBalancer(physicalNetworkId, url, username, password,
-                                        createLbAnswer.getDeviceName(), createLbAnswer.getServerResource(), false,
-                                        null, null);
+                                lbAppliance =
+                                    addExternalLoadBalancer(physicalNetworkId, url, username, password, createLbAnswer.getDeviceName(),
+                                        createLbAnswer.getServerResource(), false, false, null, null);
                             } catch (Exception e) {
                                 s_logger.error("Failed to add load balancer appliance in to cloudstack due to " + e.getMessage()
                                         + ". So provisioned load balancer appliance will be destroyed.");

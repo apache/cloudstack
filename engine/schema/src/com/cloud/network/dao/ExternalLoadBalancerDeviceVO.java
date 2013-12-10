@@ -68,7 +68,10 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
     @Column(name="is_gslb_provider")
     private boolean gslbProvider;
 
-    @Column(name="gslb_site_publicip")
+    @Column(name = "is_exclusive_gslb_provider")
+    private boolean exclusiveGslbProvider;
+
+    @Column(name = "gslb_site_publicip")
     private String gslbSitePublicIP;
 
     @Column(name="gslb_site_privateip")
@@ -199,6 +202,14 @@ public class ExternalLoadBalancerDeviceVO implements InternalIdentity, Identity 
 
     public void setGslbProvider(boolean gslbProvider) {
         this.gslbProvider = gslbProvider;
+    }
+
+    public boolean getExclusiveGslbProvider() {
+        return exclusiveGslbProvider;
+    }
+
+    public void setExclusiveGslbProvider(boolean exclusiveGslbProvider) {
+        this.exclusiveGslbProvider = exclusiveGslbProvider;
     }
 
     public void setGslbSitePublicIP(String gslbSitePublicIP) {
