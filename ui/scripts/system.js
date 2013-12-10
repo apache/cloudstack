@@ -8805,19 +8805,21 @@
                                         var zoneObjs = json.listzonesresponse.zone;                                        
                                         if (zoneObjs != null) {
                                         	for (var i = 0; i < zoneObjs.length; i++) {
+                                        		var currentPage = 1;
                                         		$.ajax({
     	                                            url: createURL('listRouters'),
     	                                            data: {
-    	                                            	zoneid: zoneObjs[i].id
+    	                                            	zoneid: zoneObjs[i].id,
+    	                                            	listAll: true,
+                                            			page: currentPage,
+                                            	        pagesize: pageSize //global variable
     	                                            },
     	                                            async: false,
     	                                            success: function(json) {
     	                                            	if (json.listroutersresponse.count != undefined) {
-    	                                            		zoneObjs[i].routerCount = json.listroutersresponse.count;    
-    	                                            		    	                                            		
-    	                                            		var routerCountFromAllPages = zoneObjs[i].routerCount;                                                	
-    	                                                	var currentPage = 1;
-    	                                                	var routerCountFromFirstPageToCurrentPage = 0;  
+    	                                            		zoneObjs[i].routerCount = json.listroutersresponse.count;        	                                            		    	                                            		
+    	                                            		var routerCountFromAllPages = json.listroutersresponse.count;        
+    	                                                	var routerCountFromFirstPageToCurrentPage = json.listroutersresponse.router.length;  
     	                                                	var routerRequiresUpgrade = 0;    	                                                	                                                	
     	                                                	var callListApiWithPage = function() {                                                		
     	                                                		$.ajax({
@@ -8825,6 +8827,7 @@
     	                                                    		async: false,
     	                                                    		data: {    	                                                    			
     	                                                    			zoneid: zoneObjs[i].id,
+    	                                                    			listAll: true,
     	                                                    			page: currentPage,
     	                                                    	        pagesize: pageSize //global variable
     	                                                    		},
@@ -8843,7 +8846,10 @@
     	                                                    		}
     	                                        				});                                                		
     	                                                	}    	                                                	
-    	                                                	callListApiWithPage();                  	
+    	                                                	if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
+                                                				currentPage++;
+                                                				callListApiWithPage();
+                                                			}              	
     	                                                	zoneObjs[i].routerRequiresUpgrade = routerRequiresUpgrade;
     	                                            		
     	                                            	} else {
@@ -9024,26 +9030,29 @@
                                         var podObjs = json.listpodsresponse.pod;
                                         if (podObjs != null) {
                                             for (var i = 0; i < podObjs.length; i++) {
-                                                $.ajax({
+                                            	var currentPage = 1;
+                                            	$.ajax({
                                                     url: createURL('listRouters'),
                                                     data: {
-                                                        podid: podObjs[i].id
+                                                        podid: podObjs[i].id,
+                                                        listAll: true,
+                                                        page: currentPage,
+                                                        pagesize: pageSize //global variable
                                                     },
                                                     async: false,
                                                     success: function (json) {
                                                         if (json.listroutersresponse.count != undefined) {
                                                             podObjs[i].routerCount = json.listroutersresponse.count;
-
-                                                            var routerCountFromAllPages = podObjs[i].routerCount;
-                                                            var currentPage = 1;
-                                                            var routerCountFromFirstPageToCurrentPage = 0;
-                                                            var routerRequiresUpgrade = 0;
+                                                            var routerCountFromAllPages = json.listroutersresponse.count;                                                            
+                                                            var routerCountFromFirstPageToCurrentPage = json.listroutersresponse.router.length;
+                                                            var routerRequiresUpgrade = 0;                                                            
                                                             var callListApiWithPage = function () {
                                                                 $.ajax({
                                                                     url: createURL('listRouters'),
                                                                     async: false,
                                                                     data: {
                                                                         podid: podObjs[i].id,
+                                                                        listAll: true,
                                                                         page: currentPage,
                                                                         pagesize: pageSize //global variable
                                                                     },
@@ -9061,8 +9070,11 @@
                                                                         }
                                                                     }
                                                                 });
-                                                            }
-                                                            callListApiWithPage();
+                                                            }                                                                
+                                                            if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
+                                                                currentPage++;
+                                                                callListApiWithPage();
+                                                            }                                                            
                                                             podObjs[i].routerRequiresUpgrade = routerRequiresUpgrade;
 
                                                         } else {
@@ -9245,19 +9257,21 @@
                                         var clusterObjs = json.listclustersresponse.cluster;
                                         if (clusterObjs != null) {
                                             for (var i = 0; i < clusterObjs.length; i++) {
-                                                $.ajax({
+                                            	var currentPage = 1;
+                                            	$.ajax({
                                                     url: createURL('listRouters'),
                                                     data: {
-                                                        clusterid: clusterObjs[i].id
+                                                        clusterid: clusterObjs[i].id,
+                                                        listAll: true,
+                                                        page: currentPage,
+                                                        pagesize: pageSize //global variable
                                                     },
                                                     async: false,
                                                     success: function (json) {
                                                         if (json.listroutersresponse.count != undefined) {
                                                             clusterObjs[i].routerCount = json.listroutersresponse.count;
-
-                                                            var routerCountFromAllPages = clusterObjs[i].routerCount;
-                                                            var currentPage = 1;
-                                                            var routerCountFromFirstPageToCurrentPage = 0;
+                                                            var routerCountFromAllPages = json.listroutersresponse.count;                                                            
+                                                            var routerCountFromFirstPageToCurrentPage = json.listroutersresponse.router.length;
                                                             var routerRequiresUpgrade = 0;
                                                             var callListApiWithPage = function () {
                                                                 $.ajax({
@@ -9265,6 +9279,7 @@
                                                                     async: false,
                                                                     data: {
                                                                         clusterid: clusterObjs[i].id,
+                                                                        listAll: true,
                                                                         page: currentPage,
                                                                         pagesize: pageSize //global variable
                                                                     },
@@ -9283,7 +9298,10 @@
                                                                     }
                                                                 });
                                                             }
-                                                            callListApiWithPage();
+                                                            if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
+                                                                currentPage++;
+                                                                callListApiWithPage();
+                                                            }
                                                             clusterObjs[i].routerRequiresUpgrade = routerRequiresUpgrade;
 
                                                         } else {
