@@ -835,6 +835,15 @@ public class JuniperSrxResource implements ServerResource {
                 FirewallRule.FirewallRuleType type = rules[0].getType();
                 //getting
                 String guestCidr = rules[0].getGuestCidr();
+                List<String> cidrs = new ArrayList<String>();
+                cidrs.add(guestCidr);
+
+                List<Object[]> applications = new ArrayList<Object[]>();
+                Object[] application = new Object[3];
+                application[0] = Protocol.all;
+                application[1] = NetUtils.PORT_RANGE_MIN;
+                application[2] = NetUtils.PORT_RANGE_MAX;
+                applications.add(application);
 
                 for (String guestVlan : guestVlans) {
                     List<FirewallRuleTO> activeRulesForGuestNw = activeRules.get(guestVlan);
@@ -844,25 +853,24 @@ public class JuniperSrxResource implements ServerResource {
                     if (activeRulesForGuestNw.size() > 0 && type == FirewallRule.FirewallRuleType.User) {
                         addEgressSecurityPolicyAndApplications(SecurityPolicyType.SECURITYPOLICY_EGRESS, guestVlan, extractApplications(activeRulesForGuestNw),
                             extractCidrs(activeRulesForGuestNw), defaultEgressPolicy);
+
+                      /* Adding default policy rules are required because the order of rules is important.
+                       * Depending on the rules order the traffic accept/drop is performed
+                       */
+                        removeEgressSecurityPolicyAndApplications(SecurityPolicyType.SECURITYPOLICY_EGRESS_DEFAULT, guestVlan, cidrs, defaultEgressPolicy);
+                        addEgressSecurityPolicyAndApplications(SecurityPolicyType.SECURITYPOLICY_EGRESS_DEFAULT, guestVlan, applications, cidrs, defaultEgressPolicy);
                     }
 
-                    List<Object[]> applications = new ArrayList<Object[]>();
-                    Object[] application = new Object[3];
-                    application[0] = Protocol.all;
-                    application[1] = NetUtils.PORT_RANGE_MIN;
-                    application[2] = NetUtils.PORT_RANGE_MAX;
-                    applications.add(application);
-
-                    List<String> cidrs = new ArrayList<String>();
-                    cidrs.add(guestCidr);
                     //remove required with out comparing default policy  because in upgrade network offering we may required to delete
                     // the previously added rule
                     removeEgressSecurityPolicyAndApplications(SecurityPolicyType.SECURITYPOLICY_EGRESS_DEFAULT, guestVlan, cidrs, false);
-                    if (defaultEgressPolicy == true) {
-                        //add default egress security policy
-                        addEgressSecurityPolicyAndApplications(SecurityPolicyType.SECURITYPOLICY_EGRESS_DEFAULT, guestVlan, applications, cidrs, false);
+                    if (defaultEgressPolicy == true && type == FirewallRule.FirewallRuleType.System) {
+                        removeEgressSecurityPolicyAndApplications(SecurityPolicyType.SECURITYPOLICY_EGRESS_DEFAULT, guestVlan, cidrs, defaultEgressPolicy);
+                        if (activeRulesForGuestNw.size() > 0) {
+                            //add default egress security policy
+                            addEgressSecurityPolicyAndApplications(SecurityPolicyType.SECURITYPOLICY_EGRESS_DEFAULT, guestVlan, applications, cidrs, defaultEgressPolicy);
+                        }
                     }
-
                 }
                 commitConfiguration();
             } else {
@@ -2811,13 +2819,23 @@ public class JuniperSrxResource implements ServerResource {
                     xml = replaceXmlValue(xml, "src-address", srcAddrs);
                     dstAddrs = "<destination-address>any</destination-address>";
                     xml = replaceXmlValue(xml, "dst-address", dstAddrs);
-                    if (defaultEgressAction == true) {
-                        //configure block rules and default allow the traffic
-                        action = "<deny></deny>";
+                    if (type.equals(SecurityPolicyType.SECURITYPOLICY_EGRESS_DEFAULT)) {
+                        if (defaultEgressAction == false) {
+                            //for default policy is false add default deny rules
+                            action = "<deny></deny>";
+                        } else {
+                            action = "<permit></permit>";
+                        }
                     } else {
-                        action = "<permit></permit>";
+                        if (defaultEgressAction == true) {
+                            //configure egress rules to deny the traffic when default egress is allow
+                            action = "<deny></deny>";
+                        } else {
+                            action = "<permit></permit>";
+                        }
+
+                        xml = replaceXmlValue(xml, "action", action);
                     }
-                    xml = replaceXmlValue(xml, "action", action);
                 } else {
                     xml = replaceXmlValue(xml, "from-zone", fromZone);
                     xml = replaceXmlValue(xml, "to-zone", toZone);

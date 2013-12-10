@@ -1111,22 +1111,20 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         List<FirewallRuleVO> firewallEgressRulesToApply = _firewallDao.listByNetworkPurposeTrafficType(networkId, Purpose.Firewall, FirewallRule.TrafficType.Egress);
-        if (firewallEgressRulesToApply.size() == 0) {
-            NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-            //there are no egress rules then apply the default egress rule
-            DataCenter zone = _dcDao.findById(network.getDataCenterId());
-            if (offering.getEgressDefaultPolicy() &&
+        NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        //there are no egress rules then apply the default egress rule
+        DataCenter zone = _dcDao.findById(network.getDataCenterId());
+        if ( _networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall) &&
                 _networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall) &&
                 (network.getGuestType() == Network.GuestType.Isolated || (network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced))) {
-                // add default egress rule to accept the traffic
-                _firewallMgr.applyDefaultEgressFirewallRule(network.getId(), true);
-            }
-        } else {
-            if (!_firewallMgr.applyFirewallRules(firewallEgressRulesToApply, false, caller)) {
-                s_logger.warn("Failed to reapply firewall Egress rule(s) as a part of network id=" + networkId + " restart");
-                success = false;
-            }
+            // add default egress rule to accept the traffic
+            _firewallMgr.applyDefaultEgressFirewallRule(network.getId(), offering.getEgressDefaultPolicy(), true);
         }
+        if (!_firewallMgr.applyFirewallRules(firewallEgressRulesToApply, false, caller)) {
+            s_logger.warn("Failed to reapply firewall Egress rule(s) as a part of network id=" + networkId + " restart");
+            success = false;
+        }
+
 
         // apply port forwarding rules
         if (!_rulesMgr.applyPortForwardingRulesForNetwork(networkId, false, caller)) {
@@ -2694,6 +2692,21 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Releasing " + firewallEgressRules.size() + " firewall egress rules for network id=" + networkId + " as a part of shutdownNetworkRules");
         }
+
+        try {
+            // delete default egress rule
+            DataCenter zone = _dcDao.findById(network.getDataCenterId());
+            if ( _networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall) &&
+                    (network.getGuestType() == Network.GuestType.Isolated || (network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced))) {
+                // add default egress rule to accept the traffic
+                _firewallMgr.applyDefaultEgressFirewallRule(network.getId(), _networkModel.getNetworkEgressDefaultPolicy(networkId), false);
+            }
+
+        } catch (ResourceUnavailableException ex) {
+            s_logger.warn("Failed to cleanup firewall default egress rule as a part of shutdownNetworkRules due to ", ex);
+            success = false;
+        }
+
 
         for (FirewallRuleVO firewallRule : firewallEgressRules) {
             s_logger.trace("Marking firewall egress rule " + firewallRule + " with Revoke state");

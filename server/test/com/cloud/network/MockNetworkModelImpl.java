@@ -864,4 +864,9 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     public boolean isNetworkReadyForGc(long networkId) {
         return true;
     }
+
+    @Override
+    public boolean getNetworkEgressDefaultPolicy(Long networkId) {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
+    }
 }

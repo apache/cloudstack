@@ -246,6 +246,13 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 return true;
             }
 
+            if (rules != null && rules.size() == 1 ) {
+                // for VR no need to add default egress rule to DENY traffic
+                if (rules.get(0).getTrafficType() == FirewallRule.TrafficType.Egress && rules.get(0).getType() == FirewallRule.FirewallRuleType.System &&
+                        ! _networkMgr.getNetworkEgressDefaultPolicy(config.getId()))
+                    return true;
+            }
+
             if (!_routerMgr.applyFirewallRules(config, rules, routers)) {
                 throw new CloudRuntimeException("Failed to apply firewall rules in network " + config.getId());
             } else {
