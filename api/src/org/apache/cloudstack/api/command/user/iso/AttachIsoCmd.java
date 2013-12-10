@@ -46,11 +46,11 @@ public class AttachIsoCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = TemplateResponse.class,
             required=true, description="the ID of the ISO file")
-    private Long id;
+    protected Long id;
 
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType = UserVmResponse.class,
             required=true, description="the ID of the virtual machine")
-    private Long virtualMachineId;
+    protected Long virtualMachineId;
 
 
     /////////////////////////////////////////////////////
