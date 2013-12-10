@@ -3639,6 +3639,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
             rulesTO = new ArrayList<FirewallRuleTO>();
             for (FirewallRule rule : rules) {
+                _rulesDao.loadSourceCidrs((FirewallRuleVO)rule);
                 FirewallRule.TrafficType traffictype = rule.getTrafficType();
                 if(traffictype == FirewallRule.TrafficType.Ingress){
                     IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
