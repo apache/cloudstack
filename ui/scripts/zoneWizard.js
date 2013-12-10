@@ -1522,7 +1522,7 @@
                             	var items = []; 
                             	items.push({
                                     id: "SMB",
-                                    description: "SMB/cifs"
+                                    description: "SMB/CIFS"
                                 });
                             	args.response.success({
                                     data: items
@@ -1844,7 +1844,7 @@
                                     	(2) Provider "SMB" which is handled by UI is not returned from "listStorageProviders&type=image" 
                                     	*/
                         				storageproviders.push({ id: 'NFS', description: 'NFS'});
-                        				storageproviders.push({ id: 'SMB', description: 'SMB/cifs'});
+                        				storageproviders.push({ id: 'SMB', description: 'SMB/CIFS'});
                         				storageproviders.push({ id: 'S3', description: 'S3'});
                         				storageproviders.push({ id: 'Swift', description: 'Swift'});                        				
                         			}                        		                    			
