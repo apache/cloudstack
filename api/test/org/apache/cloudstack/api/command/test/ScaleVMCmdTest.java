@@ -16,22 +16,26 @@
 // under the License.
 package org.apache.cloudstack.api.command.test;
 
-import com.cloud.uservm.UserVm;
-import com.cloud.vm.UserVmService;
+import java.util.LinkedList;
+import java.util.List;
+
 import junit.framework.Assert;
 import junit.framework.TestCase;
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
 
-import org.apache.cloudstack.api.response.UserVmResponse;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
-import java.util.LinkedList;
-import java.util.List;
+
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
+import org.apache.cloudstack.api.response.UserVmResponse;
+
+import com.cloud.uservm.UserVm;
+import com.cloud.vm.UserVmService;
 
 public class ScaleVMCmdTest extends TestCase{
 
@@ -85,7 +89,7 @@ public class ScaleVMCmdTest extends TestCase{
         List<UserVmResponse> list = new LinkedList<UserVmResponse>();
         list.add(userVmResponse);
 
-        Mockito.when(responseGenerator.createUserVmResponse("virtualmachine", userVm)).thenReturn(
+        Mockito.when(responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", userVm)).thenReturn(
                 list);
 
         scaleVMCmd._userVmService = userVmService;

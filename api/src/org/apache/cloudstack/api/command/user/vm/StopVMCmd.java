@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -23,19 +25,17 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "stopVirtualMachine", responseObject = UserVmResponse.class, description = "Stops a virtual machine.")
+@APICommand(name = "stopVirtualMachine", responseObject = UserVmResponse.class, description = "Stops a virtual machine.", responseView = ResponseView.Restricted)
 public class StopVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(StopVMCmd.class.getName());
 
@@ -118,9 +118,9 @@ public class StopVMCmd extends BaseAsyncCmd {
         result = _userVmService.stopVirtualMachine(getId(), isForced());
 
         if (result != null) {
-            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
+            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to stop vm");
         }

@@ -18,16 +18,18 @@ package org.apache.cloudstack.api.command.user.vm;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -35,7 +37,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "destroyVirtualMachine", description="Destroys a virtual machine. Once destroyed, only the administrator can recover it.", responseObject=UserVmResponse.class)
+@APICommand(name = "destroyVirtualMachine", description = "Destroys a virtual machine. Once destroyed, only the administrator can recover it.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted)
 public class DestroyVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DestroyVMCmd.class.getName());
 
@@ -50,7 +52,7 @@ public class DestroyVMCmd extends BaseAsyncCmd {
     private Long id;
     
     
-    @Parameter(name=ApiConstants.EXPUNGE, type=CommandType.BOOLEAN, 
+    @Parameter(name=ApiConstants.EXPUNGE, type=CommandType.BOOLEAN,
             description="If true is passed, the vm is expunged immediately. False by default. Parameter can be passed to the call by ROOT/Domain admin only", since="4.2.1")
     private Boolean expunge;
     
@@ -65,7 +67,7 @@ public class DestroyVMCmd extends BaseAsyncCmd {
     public boolean getExpunge() {
         if (expunge == null) {
             return false;
-        } 
+        }
         return expunge;
     }
 
@@ -98,10 +100,12 @@ public class DestroyVMCmd extends BaseAsyncCmd {
         return  "destroying vm: " + getId();
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.VirtualMachine;
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }
@@ -113,12 +117,12 @@ public class DestroyVMCmd extends BaseAsyncCmd {
 
         UserVmResponse response = new UserVmResponse();
         if (result != null) {
-            List<UserVmResponse> responses =  _responseGenerator.createUserVmResponse("virtualmachine", result);
+            List<UserVmResponse> responses = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", result);
             if (responses != null && !responses.isEmpty()) {
                 response = responses.get(0);
             }
             response.setResponseName("virtualmachine");
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to destroy vm");
         }

@@ -19,18 +19,20 @@ package org.apache.cloudstack.api.command.admin.vm;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
@@ -106,9 +108,9 @@ public class AssignVMCmd extends BaseCmd  {
            if (userVm == null){
                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm");
            }
-           UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", userVm).get(0);
+            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", userVm).get(0);
            response.setResponseName(DeployVMCmd.getResultObjectName());
-           this.setResponseObject(response);
+           setResponseObject(response);
         }catch (Exception e){
             e.printStackTrace();
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm " + e.getMessage());

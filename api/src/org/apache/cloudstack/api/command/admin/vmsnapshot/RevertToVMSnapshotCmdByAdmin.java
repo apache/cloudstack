@@ -14,56 +14,29 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.user.vmsnapshot;
+package org.apache.cloudstack.api.command.admin.vmsnapshot;
 
 import java.util.logging.Logger;
 
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.vmsnapshot.RevertToVMSnapshotCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VMSnapshotResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
-import com.cloud.vm.snapshot.VMSnapshot;
 
-@APICommand(name = "revertToVMSnapshot", description = "Revert VM from a vmsnapshot.", responseObject = UserVmResponse.class, since = "4.2.0", responseView = ResponseView.Restricted)
-public class RevertToVMSnapshotCmd extends BaseAsyncCmd {
+@APICommand(name = "revertToVMSnapshot", description = "Revert VM from a vmsnapshot.", responseObject = UserVmResponse.class, since = "4.2.0", responseView = ResponseView.Full)
+public class RevertToVMSnapshotCmdByAdmin extends RevertToVMSnapshotCmd {
     public static final Logger s_logger = Logger
-            .getLogger(RevertToVMSnapshotCmd.class.getName());
-    private static final String s_name = "reverttovmsnapshotresponse";
+            .getLogger(RevertToVMSnapshotCmdByAdmin.class.getName());
 
-    @Parameter(name = ApiConstants.VM_SNAPSHOT_ID, type = CommandType.UUID, required = true,entityType=VMSnapshotResponse.class,description = "The ID of the vm snapshot")
-    private Long vmSnapShotId;
-
-    public Long getVmSnapShotId() {
-        return vmSnapShotId;
-    }
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    @Override
-    public long getEntityOwnerId() {
-        VMSnapshot vmSnapshot = _entityMgr.findById(VMSnapshot.class, getVmSnapShotId());
-        if (vmSnapshot != null) {
-            return vmSnapshot.getAccountId();
-        }
-        return Account.ACCOUNT_ID_SYSTEM;
-    }
 
     @Override
     public void execute() throws  ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException, ConcurrentOperationException {
@@ -71,7 +44,7 @@ public class RevertToVMSnapshotCmd extends BaseAsyncCmd {
                 "vmsnapshot id: " + getVmSnapShotId());
         UserVm result = _vmSnapshotService.revertToSnapshot(getVmSnapShotId());
         if (result != null) {
-            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted,
+            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full,
                     "virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
             setResponseObject(response);
@@ -80,14 +53,5 @@ public class RevertToVMSnapshotCmd extends BaseAsyncCmd {
         }
     }
 
-    @Override
-    public String getEventDescription() {
-        return "Revert from VM snapshot: " + getVmSnapShotId();
-    }
-
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_VM_SNAPSHOT_REVERT;
-    }
 
 }

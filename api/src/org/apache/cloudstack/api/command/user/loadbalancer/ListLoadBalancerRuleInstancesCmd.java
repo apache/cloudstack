@@ -17,22 +17,23 @@
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listLoadBalancerRuleInstances", description="List all virtual machine instances that are assigned to a load balancer rule.", responseObject=UserVmResponse.class)
+@APICommand(name = "listLoadBalancerRuleInstances", description = "List all virtual machine instances that are assigned to a load balancer rule.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted)
 public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger (ListLoadBalancerRuleInstancesCmd.class.getName());
 
@@ -78,7 +79,7 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
         List<UserVmResponse> vmResponses = new ArrayList<UserVmResponse>();
         if (result != null) {
-            vmResponses = _responseGenerator.createUserVmResponse("loadbalancerruleinstance", result.toArray(new UserVm[result.size()]));
+            vmResponses = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "loadbalancerruleinstance", result.toArray(new UserVm[result.size()]));
         }
 
         for (int i=0;i<result.size(); i++) {
@@ -86,6 +87,6 @@ public class ListLoadBalancerRuleInstancesCmd extends BaseListCmd {
         }
         response.setResponses(vmResponses);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

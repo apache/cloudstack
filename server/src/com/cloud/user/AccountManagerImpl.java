@@ -2325,6 +2325,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 //        }
 //    }
 
+    //TODO: deprecate this to use the new buildACLSearchParameters with permittedDomains, permittedAccounts, and permittedResources as return
     @Override
     public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long>
     permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject,

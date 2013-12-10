@@ -14,109 +14,31 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.user.vm;
+package org.apache.cloudstack.api.command.admin.vm;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiCommandJobType;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.command.user.vm.StartVMCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
 
-@APICommand(name = "startVirtualMachine", responseObject = UserVmResponse.class, description = "Starts a virtual machine.", responseView = ResponseView.Restricted)
-public class StartVMCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(StartVMCmd.class.getName());
+@APICommand(name = "startVirtualMachine", responseObject = UserVmResponse.class, description = "Starts a virtual machine.", responseView = ResponseView.Full)
+public class StartVMCmdByAdmin extends StartVMCmd {
+    public static final Logger s_logger = Logger.getLogger(StartVMCmdByAdmin.class.getName());
 
-    private static final String s_name = "startvirtualmachineresponse";
-
-    // ///////////////////////////////////////////////////
-    // ////////////// API parameters /////////////////////
-    // ///////////////////////////////////////////////////
-
-    @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType=UserVmResponse.class,
-            required = true, description = "The ID of the virtual machine")
-    private Long id;
-
-    @Parameter(name=ApiConstants.HOST_ID, type=CommandType.UUID, entityType=HostResponse.class,
-            description="destination Host ID to deploy the VM to - parameter available for root admin only", since="3.0.1")
-    private Long hostId;
-
-    // ///////////////////////////////////////////////////
-    // ///////////////// Accessors ///////////////////////
-    // ///////////////////////////////////////////////////
-
-    public Long getId() {
-        return id;
-    }
-
-    public Long getHostId() {
-        return hostId;
-    }
-
-    // ///////////////////////////////////////////////////
-    // ///////////// API Implementation///////////////////
-    // ///////////////////////////////////////////////////
-
-    @Override
-    public String getCommandName() {
-        return s_name;
-    }
-
-    public static String getResultObjectName() {
-        return "virtualmachine";
-    }
-
-    @Override
-    public long getEntityOwnerId() {
-        UserVm vm = _responseGenerator.findUserVmById(getId());
-        if (vm != null) {
-            return vm.getAccountId();
-        }
-
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are
-        // tracked
-    }
-
-    @Override
-    public String getEventType() {
-        return EventTypes.EVENT_VM_START;
-    }
-
-    @Override
-    public String getEventDescription() {
-        return "starting user vm: " + getId();
-    }
-
-    @Override
-    public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.VirtualMachine;
-    }
-
-    @Override
-    public Long getInstanceId() {
-        return getId();
-    }
 
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException {
@@ -127,7 +49,7 @@ public class StartVMCmd extends BaseAsyncCmd {
             result = _userVmService.startVirtualMachine(this);
 
             if (result != null) {
-                UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", result).get(0);
+                UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", result).get(0);
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {

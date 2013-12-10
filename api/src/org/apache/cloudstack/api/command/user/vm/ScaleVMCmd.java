@@ -16,23 +16,32 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import com.cloud.event.EventTypes;
-import com.cloud.exception.*;
-import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
-
-import org.apache.cloudstack.api.*;
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.context.CallContext;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import java.util.List;
+import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ManagementServerException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
+import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 
 
-@APICommand(name = "scaleVirtualMachine", description="Scales the virtual machine to a new service offering.", responseObject=SuccessResponse.class)
+@APICommand(name = "scaleVirtualMachine", description = "Scales the virtual machine to a new service offering.", responseObject = SuccessResponse.class, responseView = ResponseView.Restricted)
 public class ScaleVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ScaleVMCmd.class.getName());
     private static final String s_name = "scalevirtualmachineresponse";
@@ -115,10 +124,10 @@ public class ScaleVMCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         }
         if (result != null){
-            List<UserVmResponse> responseList = _responseGenerator.createUserVmResponse("virtualmachine", result);
+            List<UserVmResponse> responseList = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", result);
             UserVmResponse response = responseList.get(0);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to scale vm");
         }

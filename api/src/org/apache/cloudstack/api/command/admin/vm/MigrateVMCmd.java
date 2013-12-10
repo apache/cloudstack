@@ -16,18 +16,19 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vm;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -150,9 +151,9 @@ public class MigrateVMCmd extends BaseAsyncCmd {
                 migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), destStoragePool);
             }
             if (migratedVm != null) {
-                UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", (UserVm)migratedVm).get(0);
+                UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", (UserVm)migratedVm).get(0);
                 response.setResponseName(getCommandName());
-                this.setResponseObject(response);
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate vm");
             }

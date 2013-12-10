@@ -216,9 +216,9 @@ public interface ResponseGenerator {
 
     SnapshotPolicyResponse createSnapshotPolicyResponse(SnapshotPolicy policy);
 
-    List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms);
+    //List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms);
 
-    List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVm... userVms);
+    //List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVm... userVms);
 
     List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, UserVm... userVms);
 

@@ -19,27 +19,27 @@ package org.apache.cloudstack.api.command.user.vm;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 
 @APICommand(name = "resetSSHKeyForVirtualMachine", responseObject = UserVmResponse.class, description = "Resets the SSH Key for virtual machine. " +
-        "The virtual machine must be in a \"Stopped\" state. [async]")
+        "The virtual machine must be in a \"Stopped\" state. [async]", responseView = ResponseView.Restricted)
 public class ResetVMSSHKeyCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ResetVMSSHKeyCmd.class.getName());
@@ -108,6 +108,7 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd {
         return "resetting SSHKey for vm: " + getId();
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.VirtualMachine;
     }
@@ -128,6 +129,7 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd {
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
+    @Override
     public Long getInstanceId() {
         return getId();
     }
@@ -141,9 +143,9 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd {
         UserVm result = _userVmService.resetVMSSHKey(this);
 
         if (result != null) {
-            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
+            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reset vm SSHKey");
         }

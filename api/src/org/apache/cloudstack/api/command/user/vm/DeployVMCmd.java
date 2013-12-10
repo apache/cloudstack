@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -67,7 +68,7 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
 
-@APICommand(name = "deployVirtualMachine", description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject=UserVmResponse.class)
+@APICommand(name = "deployVirtualMachine", description = "Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted)
 public class DeployVMCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(DeployVMCmd.class.getName());
 
@@ -441,7 +442,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         }
 
         if (result != null) {
-            UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
+            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {

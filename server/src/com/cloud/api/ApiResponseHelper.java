@@ -1104,6 +1104,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
+    /*
     @Override
     public List<UserVmResponse> createUserVmResponse(String objectName, UserVm... userVms) {
         return createUserVmResponse(null, objectName, userVms);
@@ -1113,6 +1114,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public List<UserVmResponse> createUserVmResponse(String objectName, EnumSet<VMDetails> details, UserVm... userVms) {
         return createUserVmResponse(null, objectName, userVms);
     }
+    */
 
     @Override
     public List<UserVmResponse> createUserVmResponse(ResponseView view, String objectName, EnumSet<VMDetails> details, UserVm... userVms) {
