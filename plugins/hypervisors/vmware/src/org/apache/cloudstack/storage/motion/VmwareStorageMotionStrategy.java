@@ -105,7 +105,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
             }
         } catch (Exception e) {
             s_logger.error("copy failed", e);
-            errMsg = e.toString();
+            errMsg = e.getLocalizedMessage();
         }
 
         CopyCommandResult result = new CopyCommandResult(null, answer);

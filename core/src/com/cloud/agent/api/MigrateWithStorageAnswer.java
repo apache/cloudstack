@@ -25,7 +25,7 @@ public class MigrateWithStorageAnswer extends Answer {
     List<VolumeObjectTO> volumeTos;
 
     public MigrateWithStorageAnswer(MigrateWithStorageCommand cmd, Exception ex) {
-        super(cmd, ex);
+        super(cmd, false, ex.getLocalizedMessage());
         volumeTos = null;
     }
 
