@@ -15902,7 +15902,7 @@
                                                 }
                                             },
                                             nfsServer: {
-                                                label: 'label.nfs.server',
+                                                label: 'label.server', //change label from "NFS Server" to "Server" since this field is also shown when provider "SMB/CIFS" is elected.
                                                 docID: 'helpSecondaryStorageNFSServer',
                                                 validation: {
                                                     required: true
