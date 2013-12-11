@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.network.vpc.*;
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
@@ -51,13 +52,6 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NetworkACLServiceProvider;
-import com.cloud.network.vpc.NetworkACLItem;
-import com.cloud.network.vpc.NetworkACLItemDao;
-import com.cloud.network.vpc.NetworkACLItemVO;
-import com.cloud.network.vpc.NetworkACLManager;
-import com.cloud.network.vpc.NetworkACLManagerImpl;
-import com.cloud.network.vpc.NetworkACLVO;
-import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -93,6 +87,8 @@ public class NetworkACLManagerTest extends TestCase{
     NetworkModel _networkModel;
     @Inject
     List<NetworkACLServiceProvider> _networkAclElements;
+    @Inject
+    VpcService _vpcSvc;
 
     private NetworkACLVO acl;
     private NetworkACLItemVO aclItem;
@@ -217,6 +213,11 @@ public class NetworkACLManagerTest extends TestCase{
         @Bean
         public VpcGatewayDao vpcGatewayDao () {
             return Mockito.mock(VpcGatewayDao.class);
+        }
+
+        @Bean
+        public VpcService vpcService() {
+            return Mockito.mock(VpcService.class);
         }
 
         public static class Library implements TypeFilter {
