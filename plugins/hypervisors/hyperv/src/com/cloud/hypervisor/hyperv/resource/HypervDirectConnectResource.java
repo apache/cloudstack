@@ -28,7 +28,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.annotation.PostConstruct;
 import javax.ejb.Local;
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.http.HttpResponse;
@@ -57,6 +59,7 @@ import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupRoutingCommand.VmState;
@@ -91,9 +94,11 @@ import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.hyperv.manager.HypervManager;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
@@ -105,7 +110,9 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineName;
+import com.google.gson.Gson;
 
 /**
  * Implementation of dummy resource to be returned from discoverer.
@@ -136,6 +143,15 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
     private String _username;
     private String _password;
+
+    private static HypervManager s_hypervMgr;
+    @Inject HypervManager _hypervMgr;
+
+    @PostConstruct
+    void init() {
+        s_hypervMgr = _hypervMgr;
+    }
+
 
     @Override
     public final Type getType() {
@@ -367,9 +383,23 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         } else if (clazz == CheckS2SVpnConnectionsCommand.class) {
             answer = execute((CheckS2SVpnConnectionsCommand)cmd);
         } else if (clazz == SetStaticRouteCommand.class) {
-            answer = execute((SetStaticRouteCommand)cmd);
+            answer = execute((SetStaticRouteCommand) cmd);
         } else {
-            // Else send the cmd to hyperv agent.
+            if (clazz == StartCommand.class) {
+                VirtualMachineTO vmSpec = ((StartCommand)cmd).getVirtualMachine();
+                if (vmSpec.getType() != VirtualMachine.Type.User) {
+                    if (s_hypervMgr != null) {
+                        String secondary = s_hypervMgr.prepareSecondaryStorageStore(Long.parseLong(_zoneId));
+                        if (secondary != null) {
+                            ((StartCommand)cmd).setSecondaryStorage(secondary);
+                        }
+                    } else {
+                        s_logger.error("Hyperv manager isn't available. Couldn't check and copy the systemvm iso.");
+                    }
+                }
+            }
+
+            // Send the cmd to hyperv agent.
             String ansStr = postHttpRequest(s_gson.toJson(cmd), agentUri);
             if (ansStr == null) {
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -1576,19 +1606,22 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     @Override
     public final boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         /* todo: update, make consistent with the xen server equivalent. */
-        _guid = (String)params.get("guid");
-        _zoneId = (String)params.get("zone");
-        _podId = (String)params.get("pod");
-        _clusterId = (String)params.get("cluster");
-        _agentIp = (String)params.get("ipaddress"); // was agentIp
-        _name = name;
 
-        _clusterGuid = (String)params.get("cluster.guid");
-        _username = (String)params.get("url");
-        _password = (String)params.get("password");
-        _username = (String)params.get("username");
+        if (params != null) {
+            _guid = (String) params.get("guid");
+            _zoneId = (String) params.get("zone");
+            _podId = (String) params.get("pod");
+            _clusterId = (String) params.get("cluster");
+            _agentIp = (String) params.get("ipaddress"); // was agentIp
+            _name = name;
+    
+            _clusterGuid = (String) params.get("cluster.guid");
+            _username = (String) params.get("url");
+            _password = (String) params.get("password");
+            _username = (String) params.get("username");
+            _configureCalled = true;
+        }
 
-        _configureCalled = true;
         return true;
     }
 
