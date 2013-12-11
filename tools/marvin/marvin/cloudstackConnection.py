@@ -64,7 +64,7 @@ class cloudConnection(object):
     def __copy__(self):
         return cloudConnection(self.mgtDetails,
                                self.asyncTimeout,
-                               self.logging,
+                               self.logger,
                                self.path)
 
     def poll(self, jobid, response):
