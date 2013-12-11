@@ -19,9 +19,9 @@ package com.cloud.template;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -136,7 +136,6 @@ import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.Upload;
-import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -1697,7 +1696,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     public Long getTemplateSize(long templateId, long zoneId) {
         TemplateDataStoreVO templateStoreRef = _tmplStoreDao.findByTemplateZoneDownloadStatus(templateId, zoneId, VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
         if (templateStoreRef == null) {
-            throw new CloudRuntimeException("Template " + templateId + " has not been completely downloaded to zone " + zoneId);
+            // check if it is ready on image cache stores
+            templateStoreRef = _tmplStoreDao.findByTemplateZoneStagingDownloadStatus(templateId, zoneId,
+                    VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+            if (templateStoreRef == null) {
+                throw new CloudRuntimeException("Template " + templateId + " has not been completely downloaded to zone " + zoneId);
+            }
         }
         return templateStoreRef.getSize();
 
