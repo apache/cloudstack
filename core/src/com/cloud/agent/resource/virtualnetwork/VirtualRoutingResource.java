@@ -663,7 +663,7 @@ public class VirtualRoutingResource implements Manager {
         }
 
         final String result = routerProxy("checkbatchs2svpn.sh", routerIP, args);
-        if (result != null) {
+        if (result == null || result.isEmpty()) {
             return new CheckS2SVpnConnectionsAnswer(cmd, false, "CheckS2SVpnConneciontsCommand failed");
         }
         return new CheckS2SVpnConnectionsAnswer(cmd, true, result);
