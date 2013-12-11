@@ -20,6 +20,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.network.vpc.*;
 import com.cloud.network.vpc.dao.VpcDao;
 import junit.framework.TestCase;
 
@@ -49,16 +50,6 @@ import org.apache.cloudstack.test.utils.SpringUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.vpc.NetworkACLItem;
-import com.cloud.network.vpc.NetworkACLItemDao;
-import com.cloud.network.vpc.NetworkACLItemVO;
-import com.cloud.network.vpc.NetworkACLManager;
-import com.cloud.network.vpc.NetworkACLService;
-import com.cloud.network.vpc.NetworkACLServiceImpl;
-import com.cloud.network.vpc.NetworkACLVO;
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcManager;
-import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -89,6 +80,9 @@ public class NetworkACLServiceTest extends TestCase {
     EntityManager _entityMgr;
     @Inject
     VpcDao _vpcDao;
+    @Inject
+    VpcService _vpcSrv;
+
 
     private CreateNetworkACLCmd createACLItemCmd;
     private NetworkACLVO acl;
@@ -253,6 +247,12 @@ public class NetworkACLServiceTest extends TestCase {
         public VpcDao vpcDao () {
             return Mockito.mock(VpcDao.class);
         }
+
+        @Bean
+        public VpcService vpcService() {
+            return Mockito.mock(VpcService.class);
+        }
+
 
         public static class Library implements TypeFilter {
             @Override
