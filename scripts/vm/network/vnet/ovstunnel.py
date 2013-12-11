@@ -42,6 +42,10 @@ def setup_ovs_bridge(bridge, key, cs_host_id):
     #set gre_key to bridge
     res = lib.do_cmd([lib.VSCTL_PATH, "set", "bridge", bridge,
                                      "other_config:gre_key=%s" % key])
+
+    # enable stp
+    lib.do_cmd([lib.VSCTL_PATH, "set", "Bridge", bridge, "stp_enable=true"])
+
     logging.debug("Bridge has been manually created:%s" % res)
     if res:
 #        result = "FAILURE:%s" % res
