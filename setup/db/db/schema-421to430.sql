@@ -596,10 +596,34 @@ ALTER TABLE `cloud`.`user_vm_details` CHANGE `display_detail` `display` tinyint(
 ALTER TABLE `cloud`.`service_offering_details` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True if the detail can be displayed to the end user';
 ALTER TABLE `cloud`.`storage_pool_details` ADD COLUMN `display` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True if the detail can be displayed to the end user';
 
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.group.object', 'groupOfUniqueNames',
-'Sets the object type of groups within LDAP','groupOfUniqueNames',NULL,NULL,0);
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'ldap.group.user.uniquemember', 'uniquemember',
-'Sets the attribute for uniquemembers within a group','uniquemember',NULL,NULL,0);
+UPDATE `cloud`.`configuration` SET name='ldap.basedn' WHERE name='ldap.searchbase';
+UPDATE `cloud`.`configuration` SET name='ldap.bind.principal' WHERE name='ldap.dn' ;
+UPDATE `cloud`.`configuration` SET name='ldap.bind.password'  WHERE name='ldap.passwd';
+UPDATE `cloud`.`configuration` SET name='ldap.truststore.password' WHERE name='ldap.truststorepass' ;
+
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Secure', 'DEFAULT', 'management-server', 'ldap.bind.principal', NULL, 'Specifies the bind principal to use for bind to LDAP', NULL) ON DUPLICATE KEY UPDATE category='Secure';
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Secure', 'DEFAULT', 'management-server', 'ldap.bind.password', NULL, 'Specifies the password to use for binding to LDAP', NULL) ON DUPLICATE KEY UPDATE category='Secure';
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Secure', 'DEFAULT', 'management-server', 'ldap.username.attribute', 'uid', 'Sets the username attribute used within LDAP', 'uid') ON DUPLICATE KEY UPDATE category='Secure';
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Secure', 'DEFAULT', 'management-server', 'ldap.email.attribute', 'mail', 'Sets the email attribute used within LDAP', 'mail') ON DUPLICATE KEY UPDATE category='Secure';
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Secure', 'DEFAULT', 'management-server', 'ldap.firstname.attribute', 'givenname', 'Sets the firstname attribute used within LDAP', 'givenname') ON DUPLICATE KEY UPDATE category='Secure';
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Secure', 'DEFAULT', 'management-server', 'ldap.lastname.attribute', 'sn', 'Sets the lastname attribute used within LDAP', 'sn') ON DUPLICATE KEY UPDATE category='Secure';
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Secure', 'DEFAULT', 'management-server', 'ldap.user.object', 'inetOrgPerson', 'Sets the object type of users within LDAP', 'inetOrgPerson') ON DUPLICATE KEY UPDATE category='Secure';
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Secure', 'DEFAULT', 'management-server', 'ldap.basedn', NULL, 'Sets the basedn for LDAP', NULL) ON DUPLICATE KEY UPDATE category='Secure';
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Secure', 'DEFAULT', 'management-server', 'ldap.search.group.principle', NULL, 'Sets the principle of the group that users must be a member of', NULL) ON DUPLICATE KEY UPDATE category='Secure';
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Secure', 'DEFAULT', 'management-server', 'ldap.truststore', NULL, 'Sets the path to the truststore to use for LDAP SSL', NULL) ON DUPLICATE KEY UPDATE category='Secure';
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Secure', 'DEFAULT', 'management-server', 'ldap.truststore.password', NULL, 'Sets the password for the truststore', NULL) ON DUPLICATE KEY UPDATE category='Secure';
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Secure', 'DEFAULT', 'management-server', 'ldap.group.object', 'groupOfUniqueNames', 'Sets the object type of groups within LDAP', 'groupOfUniqueNames') ON DUPLICATE KEY UPDATE category='Secure';
+INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description, default_value) VALUES ('Secure', 'DEFAULT', 'management-server', 'ldap.group.user.uniquemember', 'uniquemember', 'Sets the attribute for uniquemembers within a group','uniquemember') ON DUPLICATE KEY UPDATE category='Secure';
+
+CREATE TABLE `cloud`.`ldap_configuration` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `hostname` varchar(255) NOT NULL COMMENT 'the hostname of the ldap server',
+  `port` int(10) COMMENT 'port that the ldap server is listening on',
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `cloud`.`ldap_configuration`(hostname) SELECT conf.value FROM `cloud`.`configuration` conf WHERE conf.name='ldap.hostname' ;
+UPDATE `cloud`.`ldap_configuration` SET port=(SELECT conf.value FROM `cloud`.`configuration` conf WHERE conf.name='ldap.port') WHERE hostname = (SELECT conf.value FROM `cloud` .`configuration` conf WHERE conf.name='ldap.hostname');
 
 UPDATE `cloud`.`volumes` SET display_volume=1 where id>0;
 
