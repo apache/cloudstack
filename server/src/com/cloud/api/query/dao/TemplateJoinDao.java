@@ -18,6 +18,9 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.api.response.TemplateResponse;
 
 import com.cloud.api.query.vo.TemplateJoinVO;
@@ -41,5 +44,7 @@ public interface TemplateJoinDao extends GenericDao<TemplateJoinVO, Long> {
     List<TemplateJoinVO> searchByTemplateZonePair(String... pairs);
 
     List<TemplateJoinVO> listActiveTemplates(long storeId);
+
+    public Pair<List<TemplateJoinVO>, Integer> searchIncludingRemovedAndCount(final SearchCriteria<TemplateJoinVO> sc, final Filter filter);
 
 }
