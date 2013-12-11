@@ -41,6 +41,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
@@ -77,6 +78,7 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
@@ -281,7 +283,7 @@ public class TemplateServiceImpl implements TemplateService {
         GlobalLock syncLock = GlobalLock.getInternLock(lockString);
         try {
             if (syncLock.lock(3)) {
-                try{
+                try {
                     Long zoneId = store.getScope().getScopeId();
 
                     Map<String, TemplateProp> templateInfos = listTemplate(store);
@@ -393,14 +395,20 @@ public class TemplateServiceImpl implements TemplateService {
                                 _templateDao.update(tmplt.getId(), tmlpt);
                                 associateTemplateToZone(tmplt.getId(), zoneId);
 
-
                             }
                         } else {
                             s_logger.info("Template Sync did not find " + uniqueName + " on image store " + storeId + ", may request download based on available hypervisor types");
                             if (tmpltStore != null) {
-                                s_logger.info("Removing leftover template " + uniqueName + " entry from template store table");
-                                // remove those leftover entries
-                                _vmTemplateStoreDao.remove(tmpltStore.getId());
+                                if (isRegionStore(store) && tmpltStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED
+                                        && tmpltStore.getState() == State.Ready
+                                        && tmpltStore.getInstallPath() == null) {
+                                    s_logger.info("Keep fake entry in template store table for migration of previous NFS to object store");
+                                }
+                                else {
+                                    s_logger.info("Removing leftover template " + uniqueName + " entry from template store table");
+                                    // remove those leftover entries
+                                    _vmTemplateStoreDao.remove(tmpltStore.getId());
+                                }
                             }
                         }
                     }
@@ -428,6 +436,17 @@ public class TemplateServiceImpl implements TemplateService {
                             if (!tmplt.isPublicTemplate() && !tmplt.isFeatured() && tmplt.getTemplateType() != TemplateType.SYSTEM) {
                                 s_logger.info("Skip sync downloading private template " + tmplt.getUniqueName() + " to a new image store");
                                 continue;
+                            }
+
+                            // if this is a region store, and there is already an DOWNLOADED entry there without install_path information, which
+                            // means that this is a duplicate entry from migration of previous NFS to staging.
+                            if (isRegionStore(store)) {
+                                TemplateDataStoreVO tmpltStore = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
+                                if (tmpltStore != null && tmpltStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED && tmpltStore.getState() == State.Ready
+                                        && tmpltStore.getInstallPath() == null) {
+                                    s_logger.info("Skip sync template for migration of previous NFS to object store");
+                                    continue;
+                                }
                             }
 
                             if (availHypers.contains(tmplt.getHypervisorType())) {
@@ -474,8 +493,7 @@ public class TemplateServiceImpl implements TemplateService {
 
                         }
                     }
-                }
-                finally{
+                } finally {
                     syncLock.unlock();
                 }
             }
