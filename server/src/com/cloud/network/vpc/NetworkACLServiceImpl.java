@@ -93,6 +93,9 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     @Inject
     VpcDao _vpcDao;
 
+    @Inject
+    VpcService _vpcSvc;
+
     @Override
     public NetworkACL createNetworkACL(String name, String description, long vpcId) {
         Account caller = CallContext.current().getCallingAccount();
@@ -239,8 +242,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
                 throw new InvalidParameterValueException("private gateway: "+privateGatewayId+" and ACL: "+aclId+" do not belong to the same VPC");
             }
         }
-
-        PrivateGateway privateGateway = _entityMgr.findById(PrivateGateway.class, privateGatewayId);
+        PrivateGateway privateGateway = _vpcSvc.getVpcPrivateGateway(gateway.getId());
         _accountMgr.checkAccess(caller, null, true, privateGateway);
 
         return  _networkAclMgr.replaceNetworkACLForPrivateGw(acl, privateGateway);
