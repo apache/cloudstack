@@ -91,6 +91,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     EntityManager _entityMgr;
     @Inject
     VpcDao _vpcDao;
+    @Inject
+    VpcService _vpcSvc;
 
     @Override
     public NetworkACL createNetworkACL(String name, String description, long vpcId) {
@@ -239,7 +241,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             }
         }
 
-        PrivateGateway privateGateway = _entityMgr.findById(PrivateGateway.class, privateGatewayId);
+        PrivateGateway privateGateway = _vpcSvc.getVpcPrivateGateway(gateway.getId());
         _accountMgr.checkAccess(caller, null, true, privateGateway);
 
         return _networkAclMgr.replaceNetworkACLForPrivateGw(acl, privateGateway);
