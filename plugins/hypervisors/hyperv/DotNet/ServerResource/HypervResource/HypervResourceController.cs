@@ -223,7 +223,7 @@ namespace HypervResource
                         Utils.ConnectToRemote(share.UncPath, share.Domain, share.User, share.Password);
 
                         // The share is mapped, now attach the iso
-                        string isoPath = Path.Combine(share.UncPath.Replace('/', Path.DirectorySeparatorChar), dataStore.path);
+                        string isoPath = Utils.NormalizePath(Path.Combine(share.UncPath, dataStore.path));
                         wmiCallsV2.AttachIso(vmName, isoPath);
                         result = true;
                     }
@@ -267,8 +267,7 @@ namespace HypervResource
                     {
                         NFSTO share = dataStore.nfsDataStoreTO;
                         // The share is mapped, now attach the iso
-                        string isoPath = Path.Combine(share.UncPath.Replace('/', Path.DirectorySeparatorChar),
-                            dataStore.path.Replace('/', Path.DirectorySeparatorChar));
+                        string isoPath = Utils.NormalizePath(Path.Combine(share.UncPath, dataStore.path));
                         wmiCallsV2.DetachDisk(vmName, isoPath);
                         result = true;
                     }
@@ -957,7 +956,7 @@ namespace HypervResource
                                 share.uri = new Uri(uriStr);
                                 string defaultDataPath = wmiCallsV2.GetDefaultDataRoot();
 
-                                string secondaryPath = Path.Combine(share.UncPath, "systemvm").Replace(@"/", @"\");
+                                string secondaryPath = Utils.NormalizePath(Path.Combine(share.UncPath, "systemvm"));
                                 string[] choices = choices = Directory.GetFiles(secondaryPath, "systemvm*.iso");
                                 if (choices.Length != 1)
                                 {
@@ -966,7 +965,7 @@ namespace HypervResource
                                 }
                                 else
                                 {
-                                    systemVmIsoPath = Path.Combine(defaultDataPath, Path.GetFileName(choices[0]));
+                                    systemVmIsoPath = Utils.NormalizePath(Path.Combine(defaultDataPath, Path.GetFileName(choices[0])));
                                     if (!File.Exists(systemVmIsoPath))
                                     {
                                         Utils.DownloadCifsFileToLocalFile(choices[0], share, systemVmIsoPath);
@@ -1057,7 +1056,7 @@ namespace HypervResource
                     else
                     {
                         volumePath = @"\\" + primary.uri.Host + primary.uri.LocalPath + @"\" + volumeName;
-                        volumePath = volumePath.Replace('/', '\\');
+                        volumePath = Utils.NormalizePath(volumePath);
                         Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
                     }
 
