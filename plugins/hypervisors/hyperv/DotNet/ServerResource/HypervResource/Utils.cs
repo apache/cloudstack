@@ -56,6 +56,16 @@ namespace HypervResource
             return objContent;
         }
 
+        public static string NormalizePath(string path)
+        {
+            if (!String.IsNullOrEmpty(path))
+            {
+                path = path.Replace('/', Path.DirectorySeparatorChar);
+            }
+
+            return path;
+        }
+
         /// <summary>
         /// Copy file on network share to local volume.
         /// </summary>
@@ -80,7 +90,7 @@ namespace HypervResource
                     if (filePathRelativeToShare.EndsWith(".iso") || filePathRelativeToShare.EndsWith(".vhd") || filePathRelativeToShare.EndsWith(".vhdx"))
                     {
                         dest = Path.Combine(cifsShareDetails.UncPath, filePathRelativeToShare);
-                        dest = dest.Replace('/', Path.DirectorySeparatorChar);
+                        dest = Utils.NormalizePath(dest);
                     }
                     // if the filePathRelativeToShare string don't have filename and only a dir point then find the vhd files in that folder and use
                     // In the clean setup, first copy command wont be having the filename it contains onlyu dir path.
@@ -117,7 +127,7 @@ namespace HypervResource
         {
             NETRESOURCE nr = new NETRESOURCE();
             nr.dwType = RESOURCETYPE_DISK;
-            nr.lpRemoteName = remoteUNC.Replace('/', Path.DirectorySeparatorChar);
+            nr.lpRemoteName = Utils.NormalizePath(remoteUNC);
             if (domain != null)
             {
                 username = domain + @"\" + username;

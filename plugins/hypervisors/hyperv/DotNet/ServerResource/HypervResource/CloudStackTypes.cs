@@ -160,7 +160,7 @@ namespace HypervResource
                 else
                 {
                     fileName = @"\\" + this.primaryDataStore.uri.Host + this.primaryDataStore.uri.LocalPath + @"\" + this.name;
-                    fileName = fileName.Replace(@"/", @"\");
+                    fileName = Utils.NormalizePath(fileName);
                 }
 
                 if (this.format != null)

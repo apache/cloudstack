@@ -335,7 +335,7 @@ namespace HypervResource
                     NFSTO share = templateInfo.nfsDataStoreTO;
                     Utils.ConnectToRemote(share.UncPath, share.Domain, share.User, share.Password);
                     // The share is mapped, now attach the iso
-                    isoPath = Path.Combine(share.UncPath.Replace('/', Path.DirectorySeparatorChar), templateInfo.path);
+                    isoPath = Utils.NormalizePath(Path.Combine(share.UncPath, templateInfo.path));
                 }
 
                 string driveType = diskDrive.type;
