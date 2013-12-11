@@ -24,6 +24,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
@@ -52,6 +53,8 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
 
     TemplateDataStoreVO findByTemplateZoneDownloadStatus(long templateId, Long zoneId,
             VMTemplateStorageResourceAssoc.Status... status);
+
+    TemplateDataStoreVO findByTemplateZoneStagingDownloadStatus(long templateId, Long zoneId, Status... status);
 
     TemplateDataStoreVO findByStoreTemplate(long storeId, long templateId);
 
