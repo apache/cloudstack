@@ -621,6 +621,8 @@ class TestVolumes(cloudstackTestCase):
                          )
         if hosts[0].hypervisor == "XenServer":
             self.virtual_machine.start(self.apiClient)
+            time.sleep(30)
+        return 
 
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"])
@@ -680,6 +682,8 @@ class TestVolumes(cloudstackTestCase):
 
         if hosts[0].hypervisor == "XenServer":
             self.virtual_machine.start(self.apiClient)
+            time.sleep(30)
+        return
 
     @attr(tags = ["advanced", "advancedns", "smoke","basic"])
     def test_09_delete_detached_volume(self):
