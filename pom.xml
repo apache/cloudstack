@@ -175,7 +175,7 @@
     <module>services</module>
     <module>maven-standard</module>
     <module>quickcloud</module>
-    <module>parents/checkstyle</module>
+    <module>build/checkstyle</module>
   </modules>
 
   <dependencyManagement>
@@ -445,15 +445,13 @@
     <outputDirectory>${basedir}/${cs.target.dir}/classes</outputDirectory>
     <testOutputDirectory>${basedir}/${cs.target.dir}/test-classes</testOutputDirectory>
     <plugins>
-	<!--
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>${cs.checkstyle.version}</version>
         <dependencies>
           <dependency>
             <groupId>org.apache.cloudstack</groupId>
-            <artifactId>checkstyle</artifactId>
+            <artifactId>build-checkstyle</artifactId>
             <version>${project.version}</version>
           </dependency>
         </dependencies>
@@ -475,7 +473,6 @@
           <excludes>**\/deps\/,**\/test\/,**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat</excludes>
         </configuration>
       </plugin>
-	  -->
     </plugins>
     <pluginManagement>
       <plugins>
@@ -753,6 +750,20 @@
       </plugins>
     </pluginManagement>
   </build>
+  <!--
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <configuration>
+          <configLocation>tooling/checkstyle.xml</configLocation>
+          <headerLocation>tooling/LICENSE.txt</headerLocation>
+        </configuration>
+      </plugin>
+    </plugins>  
+  </reporting>
+  -->
 
   <profiles>
     <profile>
