@@ -25,6 +25,7 @@ public class StartCommand extends Command {
     VirtualMachineTO vm;
     String hostIp;
     boolean executeInSequence = false;
+    String secondaryStorage;
 
     public VirtualMachineTO getVirtualMachine() {
         return vm;
@@ -42,9 +43,18 @@ public class StartCommand extends Command {
         this.vm = vm;
         this.hostIp = host.getPrivateIpAddress();
         this.executeInSequence = executeInSequence;
+        this.secondaryStorage = null;
     }
 
     public String getHostIp() {
         return this.hostIp;
+    }
+
+    public String getSecondaryStorage() {
+        return this.secondaryStorage;
+    }
+
+    public void setSecondaryStorage(String secondary) {
+        this.secondaryStorage = secondary;
     }
 }

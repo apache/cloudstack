@@ -141,7 +141,7 @@ namespace HypervResource
         public static HypervResourceControllerConfig config = new HypervResourceControllerConfig();
 
         private static ILog logger = LogManager.GetLogger(typeof(HypervResourceController));
-        private static string systemVmIso;
+        private string systemVmIso  = "";
         Dictionary<String, String> contextMap = new Dictionary<String, String>();
 
         public static void Initialize()
@@ -179,19 +179,6 @@ namespace HypervResource
 
                 try
                 {
-                    NFSTO share = new NFSTO();
-                    String uriStr = (String)cmd.secondaryStorage;
-                    share.uri = new Uri(uriStr);
-
-                    string systemVmIso = (string)cmd.systemVmIso;
-                    string defaultDataPath = wmiCallsV2.GetDefaultDataRoot();
-                    string isoPath = Path.Combine(defaultDataPath, Path.GetFileName(systemVmIso));
-                    if (!File.Exists(isoPath))
-                    {
-                        logger.Info("File " + isoPath + " not found. Copying it from the secondary share.");
-                        Utils.DownloadCifsFileToLocalFile(systemVmIso, share, isoPath);
-                    }
-                    HypervResourceController.systemVmIso = isoPath;
                     result = true;
                 }
                 catch (Exception sysEx)
@@ -957,7 +944,40 @@ namespace HypervResource
 
                 try
                 {
-                    wmiCallsV2.DeployVirtualMachine(cmd, systemVmIso);
+                    string systemVmIsoPath = systemVmIso;
+                    lock (systemVmIso)
+                    {
+                        systemVmIsoPath = systemVmIso;
+                        String uriStr = (String)cmd.secondaryStorage;
+                        if (!String.IsNullOrEmpty(uriStr))
+                        {
+                            if (String.IsNullOrEmpty(systemVmIsoPath) || !File.Exists(systemVmIsoPath))
+                            {
+                                NFSTO share = new NFSTO();
+                                share.uri = new Uri(uriStr);
+                                string defaultDataPath = wmiCallsV2.GetDefaultDataRoot();
+
+                                string secondaryPath = Path.Combine(share.UncPath, "systemvm").Replace(@"/", @"\");
+                                string[] choices = choices = Directory.GetFiles(secondaryPath, "systemvm*.iso");
+                                if (choices.Length != 1)
+                                {
+                                    String errMsg = "Couldn't locate the systemvm iso on " + secondaryPath;
+                                    logger.Debug(errMsg);
+                                }
+                                else
+                                {
+                                    systemVmIsoPath = Path.Combine(defaultDataPath, Path.GetFileName(choices[0]));
+                                    if (!File.Exists(systemVmIsoPath))
+                                    {
+                                        Utils.DownloadCifsFileToLocalFile(choices[0], share, systemVmIsoPath);
+                                    }
+                                    systemVmIso = systemVmIsoPath;
+                                }
+                            }
+                        }
+                    }
+
+                    wmiCallsV2.DeployVirtualMachine(cmd, systemVmIsoPath);
                     result = true;
                 }
                 catch (Exception wmiEx)

@@ -453,7 +453,10 @@ namespace HypervResource
             // call patch systemvm iso only for systemvms
             if (vmName.StartsWith("r-") || vmName.StartsWith("s-") || vmName.StartsWith("v-"))
             {
-                patchSystemVmIso(vmName, systemVmIso);
+                if (systemVmIso != null && systemVmIso.Length != 0)
+                {
+                    patchSystemVmIso(vmName, systemVmIso);
+                }
             }
 
             logger.DebugFormat("Starting VM {0}", vmName);
