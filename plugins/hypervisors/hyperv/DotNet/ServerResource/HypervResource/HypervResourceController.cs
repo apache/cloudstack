@@ -1232,13 +1232,19 @@ namespace HypervResource
                         }
                     }
 
-                    // Already exists?
+                    // Template already downloaded?
                     if (destFile != null && File.Exists(destFile) &&
                         !String.IsNullOrEmpty(destTemplateObjectTO.checksum))
                     {
                         // TODO: checksum fails us, because it is of the compressed image.
                         // ASK: should we store the compressed or uncompressed version or is the checksum not calculated correctly?
+                        logger.Debug(CloudStackTypes.CopyCommand + " calling VerifyChecksum to see if we already have the file at " + destFile);
                         result = VerifyChecksum(destFile, destTemplateObjectTO.checksum);
+                        if (!result)
+                        {
+                            result = true;
+                            logger.Debug(CloudStackTypes.CopyCommand + " existing file has different checksum " + destFile);
+                        }
                     }
 
                     // Do we have to create a new one?
@@ -1320,25 +1326,30 @@ namespace HypervResource
                         // Create volume from a template?
                         else if (srcTemplateObjectTO != null && destVolumeObjectTO != null)
                         {
-                            if (destVolumeObjectTO.format == null)
+                            // VolumeObjectTO guesses file extension based on existing files
+                            // this can be wrong if the previous file had a different file type
+                            var guessedDestFile = destVolumeObjectTO.FullFileName;
+                            if (File.Exists(guessedDestFile))
                             {
-                                destVolumeObjectTO.format = srcTemplateObjectTO.format;
+                                logger.Info("Deleting existing file " + guessedDestFile);
+                                File.Delete(guessedDestFile);
                             }
-                            destFile = destVolumeObjectTO.FullFileName;
-                            string srcFile = srcTemplateObjectTO.FullFileName;
 
+                            destVolumeObjectTO.format = srcTemplateObjectTO.format;
+                            destFile = destVolumeObjectTO.FullFileName;
+                            if (File.Exists(destFile))
+                            {
+                                logger.Info("Deleting existing file " + destFile);
+                                File.Delete(destFile);
+                            }
+
+                            string srcFile = srcTemplateObjectTO.FullFileName;
                             if (!File.Exists(srcFile))
                             {
                                 details = "Local template file missing from " + srcFile;
                             }
                             else
                             {
-                                if (File.Exists(destFile))
-                                {
-                                    logger.Info("Deleting existing file " + destFile);
-                                    File.Delete(destFile);
-                                }
-
                                 // TODO: thin provision instead of copying the full file.
                                 File.Copy(srcFile, destFile);
                                 newData = cmd.destTO;
@@ -1377,7 +1388,7 @@ namespace HypervResource
             {
                 return true;
             }
-            return true;
+            return false;
         }
 
         /// <summary>
