@@ -849,3 +849,13 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'VMSna
 UPDATE `cloud`.`configuration` SET `component` = 'VMSnapshotManager' WHERE `name` IN ("vmsnapshot.create.wait", "vmsnapshot.max");
 
 ALTER TABLE `cloud`.`external_load_balancer_devices` ADD COLUMN `is_exclusive_gslb_provider` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is acting exclusively as gslb service provider in the zone and can not be used for LB';
+
+CREATE TABLE `cloud`.`s2s_customer_gateway_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `s2s_customer_gateway_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_s2s_customer_gateway_details__s2s_customer_gateway_id` FOREIGN KEY `fk_s2s_customer_gateway_details__s2s_customer_gateway_id`(`s2s_customer_gateway_id`) REFERENCES `s2s_customer_gateway`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
