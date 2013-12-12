@@ -29,7 +29,7 @@ namespace CloudStack.Plugin.AgentShell
     static class Program
     {
         private static ILog logger = LogManager.GetLogger(typeof(Program));
-        private static string serviceName = "CloudStack ServerResource";
+        public static string serviceName = "CloudStack Hyper-V Agent";
 
         /// <summary>
         /// Application entry point allows service to run in console application or as a Windows service.
@@ -39,27 +39,27 @@ namespace CloudStack.Plugin.AgentShell
         {
             if (args.Length == 0)
             {
-                logger.InfoFormat("CloudStack ServerResource running as Windows Service");
+                logger.InfoFormat(serviceName + " running as Windows Service");
                 ServiceBase[] ServicesToRun = new ServiceBase[] { new AgentService() };
                 ServiceBase.Run(ServicesToRun);
             }
             else if (args.Length == 1)
             {
-                logger.DebugFormat("CloudStack ServerResource arg is ", args[0]);
+                logger.DebugFormat(serviceName + " arg is ", args[0]);
                 switch (args[0])
                 {
                     case "--install":
-                        logger.InfoFormat("Installing and running CloudStack ServerResource ");
+                        logger.InfoFormat("Installing and running " + serviceName);
                         InstallService();
                         StartService();
                         break;
                     case "--uninstall":
-                        logger.InfoFormat("stopping and uninstalling CloudStack ServerResource ");
+                        logger.InfoFormat("Stopping and uninstalling " + serviceName);
                         StopService();
                         UninstallService();
                         break;
                     case "--console":
-                        logger.InfoFormat("CloudStack ServerResource running as console app");
+                        logger.InfoFormat(serviceName + " is running as console application");
                         new AgentService().RunConsole(args);
                         break;
                     default:
