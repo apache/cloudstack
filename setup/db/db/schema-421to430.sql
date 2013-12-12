@@ -618,7 +618,7 @@ INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, 
 CREATE TABLE `cloud`.`ldap_configuration` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `hostname` varchar(255) NOT NULL COMMENT 'the hostname of the ldap server',
-  `port` int(10) COMMENT 'port that the ldap server is listening on',
+  `port` varchar(255) COMMENT 'port that the ldap server is listening on',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

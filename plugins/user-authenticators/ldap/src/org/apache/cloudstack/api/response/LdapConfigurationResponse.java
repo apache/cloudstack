@@ -28,7 +28,7 @@ public class LdapConfigurationResponse extends BaseResponse {
 
 	@SerializedName("port")
 	@Param(description = "port")
-	private int port;
+	private String port;
 
 	public LdapConfigurationResponse() {
 		super();
@@ -39,7 +39,7 @@ public class LdapConfigurationResponse extends BaseResponse {
 		this.hostname = hostname;
 	}
 
-	public LdapConfigurationResponse(final String hostname, final int port) {
+	public LdapConfigurationResponse(final String hostname, final String port) {
 		this.hostname = hostname;
 		this.port = port;
 	}
@@ -48,7 +48,7 @@ public class LdapConfigurationResponse extends BaseResponse {
 		return hostname;
 	}
 
-	public int getPort() {
+	public String getPort() {
 		return port;
 	}
 
@@ -56,7 +56,7 @@ public class LdapConfigurationResponse extends BaseResponse {
 		this.hostname = hostname;
 	}
 
-	public void setPort(final int port) {
+	public void setPort(final String port) {
 		this.port = port;
 	}
 }

@@ -23,26 +23,30 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.utils.db.Encrypt;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name = "ldap_configuration")
 public class LdapConfigurationVO implements InternalIdentity {
-	@Column(name = "hostname")
-	private String hostname;
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "id")
 	private Long id;
 
+    @Encrypt
+    @Column(name = "hostname")
+    private String hostname;
+
+    @Encrypt
 	@Column(name = "port")
-	private int port;
+	private String port;
 
 	public LdapConfigurationVO() {
 	}
 
-	public LdapConfigurationVO(final String hostname, final int port) {
+	public LdapConfigurationVO(final String hostname, final String port) {
 		this.hostname = hostname;
 		this.port = port;
 	}
@@ -56,7 +60,7 @@ public class LdapConfigurationVO implements InternalIdentity {
 		return id;
 	}
 
-	public int getPort() {
+	public String getPort() {
 		return port;
 	}
 
