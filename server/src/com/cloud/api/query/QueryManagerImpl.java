@@ -2793,7 +2793,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         TemplateFilter templateFilter = TemplateFilter.valueOf(cmd.getTemplateFilter());
         Long id = cmd.getId();
         Map<String, String> tags = cmd.getTags();
-        boolean showRemovedTmpl = cmd.getShowRemoved();
         Account caller = CallContext.current().getCallingAccount();
 
         boolean listAll = false;
@@ -2821,14 +2820,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         return searchForTemplatesInternal(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null,
                 cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, showDomr,
-                cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl);
+                cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags);
     }
 
     private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name,
             String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long pageSize,
             Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady,
             List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria,
-            Map<String, String> tags, boolean showRemovedTmpl) {
+            Map<String, String> tags) {
 
         // check if zone is configured, if not, just return empty list
         List<HypervisorType> hypers = null;
@@ -2851,11 +2850,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         // verify templateId parameter and specially handle it
         if (templateId != null) {
-            if(showRemovedTmpl){
-                template = _templateDao.findByIdIncludingRemoved(templateId);
-            } else {
-                template = _templateDao.findById(templateId);
-            }
+            template = _templateDao.findByIdIncludingRemoved(templateId); // Done for backward compatibility - Bug-5221
             if (template == null) {
                 throw new InvalidParameterValueException("Please specify a valid template ID.");
             }// If ISO requested then it should be ISO.
@@ -2872,11 +2867,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                         + template.getFormat() + " of the specified template id");
                 ex.addProxyObject(template.getUuid(), "templateId");
                 throw ex;
-            }
-            // If template is removed and showRemoved flag not turned -> throw exception. findbyId returns removed template as well above.
-            if ((template == null) || ((template.getRemoved() != null) && !showRemovedTmpl)){
-                s_logger.error("Please specify a valid template ID, template " + template.getUuid() + " is removed");
-                throw new InvalidParameterValueException("Please specify a valid template ID " + template.getUuid());
             }
 
             // if template is not public, perform permission check here
@@ -3061,13 +3051,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         // sc.addAnd("removed", SearchCriteria.Op.NULL);
 
         // search unique templates and find details by Ids
-        Pair<List<TemplateJoinVO>, Integer> uniqueTmplPair = null;
-        if(showRemovedTmpl){
-            uniqueTmplPair = _templateJoinDao.searchIncludingRemovedAndCount(sc, searchFilter);
-        } else {
-            uniqueTmplPair = _templateJoinDao.searchAndCount(sc, searchFilter);
-        }
-
+        Pair<List<TemplateJoinVO>, Integer> uniqueTmplPair = _templateJoinDao.searchAndCount(sc, searchFilter);
         Integer count = uniqueTmplPair.second();
         if (count.intValue() == 0) {
             // empty result
@@ -3104,7 +3088,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         TemplateFilter isoFilter = TemplateFilter.valueOf(cmd.getIsoFilter());
         Long id = cmd.getId();
         Map<String, String> tags = cmd.getTags();
-        boolean showRemovedISO = cmd.getShowRemoved();
         Account caller = CallContext.current().getCallingAccount();
 
         boolean listAll = false;
@@ -3131,7 +3114,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         return searchForTemplatesInternal(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true,
                 cmd.isBootable(), cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, true,
-                cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedISO);
+                cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags);
     }
 
     @Override

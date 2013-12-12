@@ -24,8 +24,6 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -445,12 +443,6 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         sc.setParameters("store_id", storeId);
         sc.setParameters("type", TemplateType.USER);
         return searchIncludingRemoved(sc, null, null, false);
-    }
-
-    public Pair<List<TemplateJoinVO>, Integer> searchIncludingRemovedAndCount(final SearchCriteria<TemplateJoinVO> sc, final Filter filter) {
-        List<TemplateJoinVO> objects = searchIncludingRemoved(sc, filter, null, false);
-        Integer count = getCount(sc);
-        return new Pair<List<TemplateJoinVO>, Integer>(objects, count);
     }
 
 
