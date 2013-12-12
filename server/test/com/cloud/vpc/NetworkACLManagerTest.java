@@ -22,10 +22,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.cloud.network.vpc.*;
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,6 +61,17 @@ import com.cloud.user.UserVO;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.network.vpc.NetworkACLManager;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcService;
+import com.cloud.network.vpc.NetworkACLVO;
+import com.cloud.network.vpc.NetworkACLItemVO;
+import com.cloud.network.vpc.VpcGatewayVO;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.NetworkACLManagerImpl;
+import com.cloud.network.vpc.NetworkACLItemDao;
+import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.VpcGateway;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -89,12 +98,12 @@ public class NetworkACLManagerTest extends TestCase {
     @Inject
     List<NetworkACLServiceProvider> _networkAclElements;
     @Inject
-    VpcService _vpcSrv;
+    VpcService _vpcSvc;
+    @Inject
+    VpcGatewayDao _vpcGatewayDao;
 
     private NetworkACLVO acl;
     private NetworkACLItemVO aclItem;
-
-    private static final Logger s_logger = Logger.getLogger(NetworkACLManagerTest.class);
 
     @Override
     @Before
@@ -121,6 +130,7 @@ public class NetworkACLManagerTest extends TestCase {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     public void testApplyACL() throws Exception {
         NetworkVO network = Mockito.mock(NetworkVO.class);
         Mockito.when(_networkDao.findById(Matchers.anyLong())).thenReturn(network);
@@ -129,6 +139,84 @@ public class NetworkACLManagerTest extends TestCase {
         Mockito.when(_networkAclElements.get(0).applyNetworkACLs(Matchers.any(Network.class), Matchers.anyList())).thenReturn(true);
         assertTrue(_aclMgr.applyACLToNetwork(1L));
     }
+
+    @Test
+    public void testApplyNetworkACL() throws Exception {
+        driveTestApplyNetworkACL(true, true, true);
+        driveTestApplyNetworkACL(false, false, true);
+        driveTestApplyNetworkACL(false, true, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void driveTestApplyNetworkACL(boolean result, boolean applyNetworkACLs, boolean applyACLToPrivateGw) throws Exception {
+        // In order to test ONLY our scope method, we mock the others
+        NetworkACLManager aclManager = Mockito.spy(_aclMgr);
+
+        // Prepare
+        // Reset mocked objects to reuse
+        Mockito.reset(_networkACLItemDao);
+
+        // Make sure it is handled
+        long aclId = 1L;
+        NetworkVO network = Mockito.mock(NetworkVO.class);
+        List<NetworkVO> networks = new ArrayList<NetworkVO>();
+        networks.add(network);
+        Mockito.when(_networkDao.listByAclId(Matchers.anyLong()))
+            .thenReturn(networks);
+        Mockito.when(_networkDao.findById(Matchers.anyLong())).thenReturn(network);
+        Mockito.when(_networkModel.isProviderSupportServiceInNetwork(Matchers.anyLong(),
+                Matchers.any(Network.Service.class), Matchers.any(Network.Provider.class)))
+                .thenReturn(true);
+        Mockito.when(_networkAclElements.get(0).applyNetworkACLs(Matchers.any(Network.class),
+                Matchers.anyList())).thenReturn(applyNetworkACLs);
+
+        // Make sure it applies ACL to private gateway
+        List<VpcGatewayVO> vpcGateways = new ArrayList<VpcGatewayVO>();
+        VpcGatewayVO vpcGateway = Mockito.mock(VpcGatewayVO.class);
+        PrivateGateway privateGateway = Mockito.mock(PrivateGateway.class);
+        Mockito.when(_vpcSvc.getVpcPrivateGateway(Mockito.anyLong())).thenReturn(privateGateway);
+        vpcGateways.add(vpcGateway);
+        Mockito.when(_vpcGatewayDao.listByAclIdAndType(aclId, VpcGateway.Type.Private))
+            .thenReturn(vpcGateways);
+
+        // Create 4 rules to test all 4 scenarios: only revoke should
+        // be deleted, only add should update
+        List<NetworkACLItemVO> rules = new ArrayList<NetworkACLItemVO>();
+        NetworkACLItemVO ruleActive = Mockito.mock(NetworkACLItemVO.class);
+        NetworkACLItemVO ruleStaged = Mockito.mock(NetworkACLItemVO.class);
+        NetworkACLItemVO rule2Revoke = Mockito.mock(NetworkACLItemVO.class);
+        NetworkACLItemVO rule2Add = Mockito.mock(NetworkACLItemVO.class);
+        Mockito.when(ruleActive.getState()).thenReturn(NetworkACLItem.State.Active);
+        Mockito.when(ruleStaged.getState()).thenReturn(NetworkACLItem.State.Staged);
+        Mockito.when(rule2Add.getState()).thenReturn(NetworkACLItem.State.Add);
+        Mockito.when(rule2Revoke.getState()).thenReturn(NetworkACLItem.State.Revoke);
+        rules.add(ruleActive);
+        rules.add(ruleStaged);
+        rules.add(rule2Add);
+        rules.add(rule2Revoke);
+
+        long revokeId = 8;
+        Mockito.when(rule2Revoke.getId()).thenReturn(revokeId);
+
+        long addId = 9;
+        Mockito.when(rule2Add.getId()).thenReturn(addId);
+        Mockito.when(_networkACLItemDao.findById(addId)).thenReturn(rule2Add);
+
+        Mockito.when(_networkACLItemDao.listByACL(aclId))
+            .thenReturn(rules);
+        // Mock methods to avoid
+        Mockito.doReturn(applyACLToPrivateGw).when(aclManager).applyACLToPrivateGw(privateGateway);
+
+        // Execute
+        assertEquals("Result was not congruent with applyNetworkACLs and applyACLToPrivateGw", result, aclManager.applyNetworkACL(aclId));
+
+        // Assert if conditions met, network ACL was applied
+        int timesProcessingDone = (applyNetworkACLs && applyACLToPrivateGw) ? 1 : 0;
+        Mockito.verify(_networkACLItemDao, Mockito.times(timesProcessingDone)).remove(revokeId);
+        Mockito.verify(rule2Add, Mockito.times(timesProcessingDone)).setState(NetworkACLItem.State.Active);
+        Mockito.verify(_networkACLItemDao, Mockito.times(timesProcessingDone)).update(addId, rule2Add);
+    }
+
 
     @Test
     public void testRevokeACLItem() throws Exception {
