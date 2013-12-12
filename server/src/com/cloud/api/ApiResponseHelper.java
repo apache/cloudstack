@@ -31,8 +31,6 @@ import java.util.TimeZone;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -149,6 +147,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.log4j.Logger;
 
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
@@ -288,7 +287,6 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
@@ -465,9 +463,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         if (snapshotInfo == null) {
-            s_logger.debug("Unable to find info for image store snapshot with uuid "+snapshot.getUuid());
+            s_logger.debug("Unable to find info for image store snapshot with uuid " + snapshot.getUuid());
             snapshotResponse.setRevertable(false);
-        }else{
+        } else {
             snapshotResponse.setRevertable(snapshotInfo.isRevertable());
         }
 
@@ -1704,8 +1702,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             short capacityType = capacity.getCapacityType();
 
             // If local storage then ignore
-            if ((capacityType == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED || capacityType == Capacity.CAPACITY_TYPE_STORAGE) &&
-                poolIdsToIgnore.contains(capacity.getHostOrPoolId())) {
+            if ((capacityType == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED || capacityType == Capacity.CAPACITY_TYPE_STORAGE)
+                    && poolIdsToIgnore.contains(capacity.getHostOrPoolId())) {
                 continue;
             }
 
@@ -2198,8 +2196,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 reservation = (NetUtils.long2Ip(startGuestIp) + "-" + NetUtils.long2Ip(startVmIp - 1));
             }
             if (startVmIp > startGuestIp + 1 && endVmIp < endGuestIp - 1) {
-                reservation =
-                    (NetUtils.long2Ip(startGuestIp) + "-" + NetUtils.long2Ip(startVmIp - 1) + " ,  " + NetUtils.long2Ip(endVmIp + 1) + "-" + NetUtils.long2Ip(endGuestIp));
+                reservation = (NetUtils.long2Ip(startGuestIp) + "-" + NetUtils.long2Ip(startVmIp - 1) + " ,  " + NetUtils.long2Ip(endVmIp + 1) + "-" + NetUtils.long2Ip(endGuestIp));
             }
         }
         response.setReservedIpRange(reservation);
@@ -2210,10 +2207,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setBroadcastUri(broadcastUri);
             String vlan = "N/A";
             switch (BroadcastDomainType.getSchemeValue(network.getBroadcastUri())) {
-                case Vlan:
-                case Vxlan:
-                    vlan = BroadcastDomainType.getValue(network.getBroadcastUri());
-                    break;
+            case Vlan:
+            case Vxlan:
+                vlan = BroadcastDomainType.getValue(network.getBroadcastUri());
+                break;
             }
             // return vlan information only to Root admin
             response.setVlan(vlan);
@@ -2626,8 +2623,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             CapabilityResponse capabilityResponse = new CapabilityResponse();
             capabilityResponse.setName(cap.getName());
             capabilityResponse.setObjectName("capability");
-            if (cap.getName().equals(Capability.SupportedLBIsolation.getName()) || cap.getName().equals(Capability.SupportedSourceNatTypes.getName()) ||
-                cap.getName().equals(Capability.RedundantRouter.getName())) {
+            if (cap.getName().equals(Capability.SupportedLBIsolation.getName()) || cap.getName().equals(Capability.SupportedSourceNatTypes.getName())
+                    || cap.getName().equals(Capability.RedundantRouter.getName())) {
                 capabilityResponse.setCanChoose(true);
             } else {
                 capabilityResponse.setCanChoose(false);
@@ -2641,8 +2638,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<ProviderResponse> serviceProvidersResponses = new ArrayList<ProviderResponse>();
         for (Network.Provider serviceProvider : serviceProviders) {
             // return only Virtual Router/JuniperSRX/CiscoVnmc as a provider for the firewall
-            if (service == Service.Firewall &&
-                !(serviceProvider == Provider.VirtualRouter || serviceProvider == Provider.JuniperSRX || serviceProvider == Provider.CiscoVnmc || serviceProvider == Provider.PaloAlto)) {
+            if (service == Service.Firewall
+                    && !(serviceProvider == Provider.VirtualRouter || serviceProvider == Provider.JuniperSRX || serviceProvider == Provider.CiscoVnmc || serviceProvider == Provider.PaloAlto)) {
                 continue;
             }
 
@@ -2734,8 +2731,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         OvsProviderResponse response = new OvsProviderResponse();
         response.setId(result.getUuid());
-        PhysicalNetworkServiceProvider nsp = ApiDBUtils
-            .findPhysicalNetworkServiceProviderById(result.getNspId());
+        PhysicalNetworkServiceProvider nsp = ApiDBUtils.findPhysicalNetworkServiceProviderById(result.getNspId());
         if (nsp != null) {
             response.setNspId(nsp.getUuid());
         }
@@ -3373,8 +3369,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             NetworkVO network = _entityMgr.findById(NetworkVO.class, usageRecord.getNetworkId().toString());
             usageRecResponse.setNetworkId(network.getUuid());
 
-        } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE ||
-            usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE) {
+        } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE
+                || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE) {
             //Device Type
             usageRecResponse.setType(usageRecord.getType());
             //VM Instance Id

@@ -30,6 +30,9 @@ import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.NetworkACLItemDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.NetworkACLListDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.RemoteAccessVpnDetailsDao;
+import org.apache.cloudstack.resourcedetail.dao.Site2SiteCustomerGatewayDetailsDao;
+import org.apache.cloudstack.resourcedetail.dao.Site2SiteVpnConnectionDetailsDao;
+import org.apache.cloudstack.resourcedetail.dao.Site2SiteVpnGatewayDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.VpcGatewayDetailsDao;
@@ -92,9 +95,14 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     NetworkACLListDetailsDao _networkACLListDetailsDao;
     @Inject
     NetworkACLItemDetailsDao _networkACLDetailsDao;
+    @Inject
+    Site2SiteVpnGatewayDetailsDao _vpnGatewayDetailsDao;
+    @Inject
+    Site2SiteCustomerGatewayDetailsDao _customerGatewayDetailsDao;
+    @Inject
+    Site2SiteVpnConnectionDetailsDao _vpnConnectionDetailsDao;
 
-    private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> s_daoMap =
-        new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
+    private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> s_daoMap = new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -115,6 +123,9 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         s_daoMap.put(ResourceObjectType.PrivateGateway, _vpcGatewayDetailsDao);
         s_daoMap.put(ResourceObjectType.NetworkACLList, _networkACLListDetailsDao);
         s_daoMap.put(ResourceObjectType.NetworkACL, _networkACLDetailsDao);
+        s_daoMap.put(ResourceObjectType.VpnGateway, _vpnGatewayDetailsDao);
+        s_daoMap.put(ResourceObjectType.CustomerGateway, _customerGatewayDetailsDao);
+        s_daoMap.put(ResourceObjectType.VpnConnection, _vpnConnectionDetailsDao);
 
         return true;
     }
