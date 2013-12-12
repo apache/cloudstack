@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.network.resource;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.security.cert.Certificate;
 import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.HashMap;
@@ -26,9 +29,14 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 
 import com.citrix.netscaler.nitro.resource.config.ssl.sslcertkey;
+import com.citrix.netscaler.nitro.resource.config.ssl.sslcertkey_sslvserver_binding;
+import com.citrix.netscaler.nitro.resource.config.ssl.sslcertlink;
 import com.citrix.netscaler.nitro.resource.config.ssl.sslvserver_sslcertkey_binding;
 import com.cloud.network.lb.LoadBalancingRule.LbSslCert;
+import com.cloud.utils.security.CertificateHelper;
 import com.cloud.utils.ssh.SshHelper;
+import com.google.common.collect.Lists;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.log4j.Logger;
 
 import com.citrix.netscaler.nitro.exception.nitro_exception;
@@ -119,6 +127,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.ExecutionException;
 import com.cloud.utils.net.NetUtils;
+import org.bouncycastle.openssl.PEMWriter;
 
 class NitroError {
     static final int NS_RESOURCE_EXISTS = 273;
@@ -664,25 +673,61 @@ public class NetscalerResource implements ServerResource {
 
                             }
 
-
-                            if(sslCert != null && lbProtocol.equals(NetUtils.SSL_PROTO)) {
-                                if ( sslCert.isRevoked() ){
+                            if (sslCert != null && lbProtocol.equalsIgnoreCase(NetUtils.SSL_PROTO)) {
+                                if (sslCert.isRevoked()) {
                                     deleteCert = true;
                                 } else{
 
-                                    String certName = generateSslCertName(srcIp, srcPort);
-                                    String keyName = generateSslKeyName(srcIp, srcPort);
-                                    String certKeyName = generateSslCertKeyName(srcIp, srcPort);
+                                    // If there is a chain, that should go first to the NS
 
-                                    if ( SSL.isSslCertKeyPresent(_netscalerService, certKeyName)){
-                                        SSL.deleteSslCertKey(_netscalerService, certKeyName);
+                                    String previousCertKeyName = null;
+
+                                    if ( sslCert.getChain() != null ) {
+                                        List<Certificate> chainList = CertificateHelper.parseChain(sslCert.getChain());
+                                        // go from ROOT to intermediate CAs
+                                        for ( Certificate intermediateCert : Lists.reverse(chainList)){
+
+                                            String fingerPrint=CertificateHelper.generateFingerPrint(intermediateCert);
+                                            String intermediateCertKeyName = generateSslCertKeyName(fingerPrint);
+                                            String intermediateCertFileName = intermediateCertKeyName + ".pem";
+
+                                            if (! SSL.isSslCertKeyPresent(_netscalerService, intermediateCertKeyName)) {
+                                                byte[] certData= intermediateCert.getEncoded();
+                                                StringWriter textWriter = new StringWriter();
+                                                PEMWriter pemWriter = new PEMWriter(textWriter);
+                                                pemWriter.writeObject(intermediateCert);
+                                                pemWriter.flush();
+
+                                                SSL.uploadCert(_ip, _username, _password, intermediateCertFileName, textWriter.toString().getBytes());
+                                                SSL.createSslCertKey(_netscalerService, intermediateCertFileName, null, intermediateCertKeyName, null);
+                                            }
+
+                                            if ( previousCertKeyName != null && ! SSL.certLinkExists(_netscalerService, intermediateCertKeyName, previousCertKeyName)){
+                                                SSL.linkCerts(_netscalerService, intermediateCertKeyName, previousCertKeyName);
+                                            }
+
+                                            previousCertKeyName = intermediateCertKeyName;
+                                        }
                                     }
 
+                                    String certFilename = generateSslCertName(sslCert.getFingerprint()) + ".pem"; //netscaler uses ".pem" format for "bundle" files
+                                    String keyFilename = generateSslKeyName(sslCert.getFingerprint()) + ".pem"; //netscaler uses ".pem" format for "bundle" files
+                                    String certKeyName = generateSslCertKeyName(sslCert.getFingerprint());
 
-                                    SSL.uploadCert(_ip, _username, _password, certName, sslCert.getCert().getBytes());
-                                    SSL.uploadKey(_ip, _username, _password, keyName, sslCert.getKey().getBytes());
+                                    ByteArrayOutputStream certDataStream = new ByteArrayOutputStream( );
+                                    certDataStream.write(sslCert.getCert().getBytes());
 
-                                    SSL.createSslCertKey(_netscalerService, certName, keyName, certKeyName, sslCert.getPassword());
+                                    if (! SSL.isSslCertKeyPresent(_netscalerService, certKeyName)) {
+
+                                        SSL.uploadCert(_ip, _username, _password, certFilename, certDataStream.toByteArray());
+                                        SSL.uploadKey(_ip, _username, _password, keyFilename, sslCert.getKey().getBytes());
+                                        SSL.createSslCertKey(_netscalerService, certFilename, keyFilename, certKeyName, sslCert.getPassword());
+                                    }
+
+                                    if (previousCertKeyName != null && ! SSL.certLinkExists(_netscalerService, certKeyName, previousCertKeyName)){
+                                        SSL.linkCerts(_netscalerService, certKeyName, previousCertKeyName);
+                                    }
+
                                     SSL.bindCertKeyToVserver(_netscalerService, certKeyName, nsVirtualServerName);
                                 }
 
@@ -773,18 +818,50 @@ public class NetscalerResource implements ServerResource {
                 }
                 if ( sslCert != null && deleteCert){
 
-                    String certName = generateSslCertName(srcIp, srcPort);
-                    String keyName = generateSslKeyName(srcIp, srcPort);
-                    String certKeyName = generateSslCertKeyName(srcIp, srcPort);
+                    String certFilename = generateSslCertName(sslCert.getFingerprint()) + ".pem"; //netscaler uses ".pem" format for "bundle" files
+                    String keyFilename = generateSslKeyName(sslCert.getFingerprint()) + ".pem"; //netscaler uses ".pem" format for "bundle" files
+                    String certKeyName = generateSslCertKeyName(sslCert.getFingerprint());
 
                     // unbind before deleting
-                    if ( nsVirtualServerExists(nsVirtualServerName) ){
+                    if (nsVirtualServerExists(nsVirtualServerName) &&
+                            SSL.isSslCertKeyPresent(_netscalerService, certKeyName) &&
+                            SSL.isBoundToVserver(_netscalerService, certKeyName, nsVirtualServerName)) {
                         SSL.unbindCertKeyFromVserver(_netscalerService, certKeyName, nsVirtualServerName);
                     }
 
-                    SSL.deleteSslCertKey(_netscalerService, certKeyName);
-                    SSL.deleteCertFile(_ip, _username, _password, certName);
-                    SSL.deleteKeyFile(_ip, _username, _password, keyName);
+                    if (SSL.isSslCertKeyPresent(_netscalerService, certKeyName)) {
+
+                        SSL.deleteSslCertKey(_netscalerService, certKeyName);
+                        SSL.deleteCertFile(_ip, _username, _password, certFilename);
+                        SSL.deleteKeyFile(_ip, _username, _password, keyFilename);
+                    }
+
+
+                    /*
+                     * Check and delete intermediate certs:
+                     * we can delete an intermediate cert if no other
+                     * cert references it as the athority
+                    */
+
+                    if ( sslCert.getChain() != null ) {
+                        List<Certificate> chainList = CertificateHelper.parseChain(sslCert.getChain());
+                        //go from intermediate CAs to ROOT
+                        for ( Certificate intermediateCert : chainList){
+
+                            String fingerPrint=CertificateHelper.generateFingerPrint(intermediateCert);
+                            String intermediateCertKeyName = generateSslCertKeyName(fingerPrint);
+                            String intermediateCertFileName = intermediateCertKeyName + ".pem";
+
+                            if (SSL.isSslCertKeyPresent(_netscalerService, intermediateCertKeyName) &&
+                                    ! SSL.isCaforCerts(_netscalerService, intermediateCertKeyName)) {
+                                SSL.deleteSslCertKey(_netscalerService, intermediateCertKeyName);
+                                SSL.deleteCertFile(_ip, _username, _password, intermediateCertFileName);
+                            }else {
+                                break;// if this cert has another certificate as a child then stop at this point because we need the whole chain
+                            }
+
+                        }
+                    }
                 }
 
             }
@@ -1737,7 +1814,7 @@ public class NetscalerResource implements ServerResource {
             return false;
         }
 
-        private static void deleteSslCertKey(nitro_service ns, String certKeyName) throws ExecutionException {
+       private static void deleteSslCertKey(nitro_service ns, String certKeyName) throws ExecutionException {
             try {
 
                 sslcertkey certkey = new sslcertkey();
@@ -1752,21 +1829,23 @@ public class NetscalerResource implements ServerResource {
 
         }
 
-        private static void deleteCertFile(String nsIp, String username, String password, String certName) throws Exception {
-            SshHelper.sshExecute(nsIp,SSH_PORT,username,null,password,"shell rm " + SSL_CERT_PATH + certName);
+        private static void deleteCertFile(String nsIp, String username, String password, String certFilename) throws Exception {
+            SshHelper.sshExecute(nsIp,SSH_PORT,username,null,password,"shell rm " + SSL_CERT_PATH + certFilename);
         }
 
-        private static void deleteKeyFile(String nsIp, String username, String password, String keyName) throws Exception {
-            SshHelper.sshExecute(nsIp,SSH_PORT,username,null,password,"shell rm " + SSL_CERT_PATH + keyName);
+        private static void deleteKeyFile(String nsIp, String username, String password, String keyFilename) throws Exception {
+            SshHelper.sshExecute(nsIp, SSH_PORT, username, null, password, "shell rm " + SSL_CERT_PATH + keyFilename);
         }
 
-        private static void createSslCertKey(nitro_service ns, String certName, String keyName, String certKeyName, String password) throws ExecutionException {
+        private static void createSslCertKey(nitro_service ns, String certFilename, String keyFilename, String certKeyName, String password) throws ExecutionException {
             s_logger.debug("Adding cert to netscaler");
             try {
                 sslcertkey certkey = new sslcertkey();
                 certkey.set_certkey(certKeyName);
-                certkey.set_cert(SSL_CERT_PATH + certName);
-                certkey.set_key(SSL_CERT_PATH + keyName);
+                certkey.set_cert(SSL_CERT_PATH + certFilename);
+
+                if ( keyFilename != null )
+                    certkey.set_key(SSL_CERT_PATH + keyFilename);
 
                 if( password != null ) {
                     certkey.set_passplain(password);
@@ -1832,19 +1911,18 @@ public class NetscalerResource implements ServerResource {
 
         }
 
-
-        private static void uploadCert(String nsIp, String user, String password, String certName, byte[] certData) throws ExecutionException {
+        private static void uploadCert(String nsIp, String user, String password, String certFilename, byte[] certData) throws ExecutionException {
             try {
-                SshHelper.scpTo(nsIp,SSH_PORT,user,null,password, SSL_CERT_PATH, certData, certName, null);
+                SshHelper.scpTo(nsIp,SSH_PORT,user,null,password, SSL_CERT_PATH, certData, certFilename, null);
             } catch (Exception e){
                 throw new ExecutionException("Failed to copy private key to device " + e.getMessage());
             }
         }
 
-        private static void uploadKey(String nsIp, String user, String password, String keyName, byte[] keyData) throws ExecutionException {
+        private static void uploadKey(String nsIp, String user, String password, String keyFilename, byte[] keyData) throws ExecutionException {
             try {
-                SshHelper.scpTo(nsIp, SSH_PORT, user, null, password, SSL_CERT_PATH, keyData, keyName, null);
-            }  catch (Exception e){
+                SshHelper.scpTo(nsIp, SSH_PORT, user, null, password, SSL_CERT_PATH, keyData, keyFilename, null);
+            } catch (Exception e) {
                 throw new ExecutionException("Failed to copy private key to device " + e.getMessage());
             }
         }
@@ -1853,7 +1931,7 @@ public class NetscalerResource implements ServerResource {
         private static void enableSslFeature(nitro_service ns) throws ExecutionException {
             try {
                 base_response result = ns.enable_features(new String[]{"SSL"});
-                if( result.errorcode != 0 )
+                if (result.errorcode != 0)
                     throw new ExecutionException("Unable to enable SSL on LB");
             } catch (nitro_exception e){
                 throw new ExecutionException("Failed to enable ssl feature on load balancer due to " + e.getMessage());
@@ -1880,7 +1958,80 @@ public class NetscalerResource implements ServerResource {
             }
         }
 
+        public static boolean certLinkExists(nitro_service ns, String userCertName, String caCertName) throws ExecutionException {
+            try {
+                // check if there is a link from userCertName to caCertName
 
+                sslcertkey userCert = sslcertkey.get(ns,userCertName);
+                String nsCaCert = userCert.get_linkcertkeyname();
+
+                if (nsCaCert != null && nsCaCert.equals(caCertName))
+                    return true;
+
+            } catch (nitro_exception e) {
+                throw new ExecutionException("Failed to check cert link on load balancer to " + e.getMessage());
+            } catch (Exception e) {
+                throw new ExecutionException("Failed to check cert link on load balancer due to " + e.getMessage());
+            }
+            return false;
+        }
+
+        public static void linkCerts(nitro_service ns, String userCertName, String caCertName) throws ExecutionException {
+            try {
+
+                // the assumption is that that both userCertName and caCertName are present on NS
+
+                sslcertkey caCert = sslcertkey.get(ns, caCertName);
+                sslcertkey userCert = sslcertkey.get(ns, userCertName);
+
+                sslcertkey linkResource = new sslcertkey();
+
+                // link user cert to CA cert
+                linkResource.set_certkey(userCert.get_certkey());
+                linkResource.set_linkcertkeyname(caCert.get_certkey());
+                sslcertkey.link(ns, linkResource);
+
+            } catch (nitro_exception e) {
+                throw new ExecutionException("Failed to check cert link on load balancer to " + e.getMessage());
+            } catch (Exception e) {
+                throw new ExecutionException("Failed to check cert link on load balancer due to " + e.getMessage());
+            }
+
+        }
+
+        public static boolean isCaforCerts(nitro_service ns, String caCertName) throws ExecutionException {
+            // check if this certificate  serves as a CA for other certificates
+            try {
+                sslcertlink[] childLinks = sslcertlink.get_filtered(ns,"linkcertkeyname:" + caCertName);
+                if(childLinks != null && childLinks.length > 0){
+                    return true;
+                }
+
+            } catch (nitro_exception e) {
+                throw new ExecutionException("Failed to check cert link on load balancer to " + e.getMessage());
+            } catch (Exception e) {
+                throw new ExecutionException("Failed to check cert link on load balancer due to " + e.getMessage());
+            }
+            return false;
+
+        }
+
+        public static boolean isBoundToVserver(nitro_service ns, String certKeyName, String nsVirtualServerName) throws ExecutionException {
+            try {
+
+                sslcertkey_sslvserver_binding[] cert_vs_binding = sslcertkey_sslvserver_binding.get_filtered(ns, certKeyName, "vservername:" + nsVirtualServerName);
+                if(cert_vs_binding != null && cert_vs_binding.length > 0){
+                    return true;
+                }
+
+            } catch (nitro_exception e) {
+                throw new ExecutionException("Failed to check cert link on load balancer to " + e.getMessage());
+            } catch (Exception e) {
+                throw new ExecutionException("Failed to check cert link on load balancer due to " + e.getMessage());
+            }
+            return false;
+
+        }
     }
 
 
@@ -3624,16 +3775,22 @@ public class NetscalerResource implements ServerResource {
         return counterName.replace(' ', '_');
     }
 
-    private String generateSslCertName(String srcIp, long srcPort) {
+    private String generateSslCertName(String fingerPrint) {
         // maximum length supported by NS is 31
-        return genObjectName("Cloud-Cert", srcIp, srcPort);
+        // the first 20 characters of the SHA-1 checksum are the unique id
+        String uniqueId = fingerPrint.replace(":","").substring(0,20);
+
+        return genObjectName("Cloud-Cert", uniqueId);
     }
 
-    private String generateSslKeyName(String srcIp, long srcPort) {
-        return genObjectName("Cloud-Key", srcIp, srcPort);
+    private String generateSslKeyName(String fingerPrint) {
+        String uniqueId = fingerPrint.replace(":","").substring(0,20);
+        return genObjectName("Cloud-Key", uniqueId);
     }
-    private String generateSslCertKeyName(String srcIp, long srcPort) {
-        return genObjectName("Cloud-CertKey", srcIp, srcPort);
+
+    private String generateSslCertKeyName(String fingerPrint){
+        String uniqueId = fingerPrint.replace(":","").substring(0,20);
+        return genObjectName("Cloud-Cert", uniqueId);
     }
 
     private String genObjectName(Object... args) {

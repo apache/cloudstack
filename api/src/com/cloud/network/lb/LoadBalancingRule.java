@@ -439,16 +439,17 @@ public class LoadBalancingRule {
     public static class LbSslCert {
         private String cert;
         private String key;
-        private String password=null;
-        private String chain=null;
+        private String password = null;
+        private String chain = null;
+        private String fingerprint = null;
         private boolean revoked;
 
-
-        public LbSslCert(String cert, String key, String password, String chain, boolean revoked) {
+        public LbSslCert(String cert, String key, String password, String chain, String fingerprint, boolean revoked) {
             this.cert = cert;
             this.key = key;
             this.password = password;
             this.chain = chain;
+            this.fingerprint = fingerprint;
             this.revoked = revoked;
         }
 
@@ -469,7 +470,11 @@ public class LoadBalancingRule {
             return chain;
         }
 
-        public boolean isRevoked(){
+        public String getFingerprint() {
+            return fingerprint;
+        }
+
+        public boolean isRevoked() {
             return revoked;
         }
     }

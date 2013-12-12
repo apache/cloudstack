@@ -16,14 +16,60 @@
 // under the License.
 package org.apache.cloudstack.network.lb;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Principal;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.security.cert.CertPathBuilder;
+import java.security.cert.CertPathBuilderException;
+import java.security.cert.CertStore;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CollectionCertStoreParameters;
+import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509CertSelector;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.ejb.Local;
+import javax.inject.Inject;
+
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.network.dao.*;
+import com.cloud.network.dao.LoadBalancerCertMapDao;
+import com.cloud.network.dao.LoadBalancerCertMapVO;
+import com.cloud.network.dao.LoadBalancerVO;
+import com.cloud.network.dao.SslCertDao;
+import com.cloud.network.dao.SslCertVO;
 import com.cloud.network.lb.CertService;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMReader;
+import org.bouncycastle.openssl.PasswordFinder;
 
 import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
 import org.apache.cloudstack.api.command.user.loadbalancer.ListSslCertsCmd;
@@ -37,30 +83,6 @@ import com.cloud.utils.db.DB;
 
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
-import org.bouncycastle.openssl.PasswordFinder;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.ejb.Local;
-import javax.inject.Inject;
-
-import java.io.IOException;
-import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.security.*;
-import java.security.cert.*;
-import java.security.cert.Certificate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 @Local(value = {CertService.class})
 public class CertServiceImpl implements  CertService {
@@ -68,10 +90,14 @@ public class CertServiceImpl implements  CertService {
     private static final Logger s_logger = Logger.getLogger(CertServiceImpl.class);
 
     @Inject AccountManager _accountMgr;
-    @Inject AccountDao _accountDao;
-    @Inject SslCertDao _sslCertDao;
-    @Inject LoadBalancerCertMapDao _lbCertDao;
-    @Inject EntityManager _entityMgr;
+    @Inject
+    AccountDao _accountDao;
+    @Inject
+    SslCertDao _sslCertDao;
+    @Inject
+    LoadBalancerCertMapDao _lbCertDao;
+    @Inject
+    EntityManager _entityMgr;
 
 
 
@@ -92,6 +118,7 @@ public class CertServiceImpl implements  CertService {
 
             validate(cert, key, password, chain);
             s_logger.debug("Certificate Validation succeeded");
+
             String fingerPrint = generateFingerPrint(parseCertificate(cert));
 
             Long accountId = CallContext.current().getCallingAccount().getId();
@@ -365,14 +392,17 @@ public class CertServiceImpl implements  CertService {
             params = new PKIXBuilderParameters(anchors, target);
             params.setRevocationEnabled(false);
             params.addCertStore(CertStore.getInstance("Collection", new CollectionCertStoreParameters(certs)));
-            CertPathBuilder builder = CertPathBuilder.getInstance("PKIX");
+            CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
             builder.build(params);
+
         } catch (InvalidAlgorithmParameterException e) {
             throw new IllegalArgumentException("Invalid certificate chain", e);
         } catch (CertPathBuilderException e) {
             throw new IllegalArgumentException("Invalid certificate chain", e);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalArgumentException("Invalid certificate chain", e);
+        } catch (NoSuchProviderException e) {
+            throw new CloudRuntimeException("No provider for certificate validation", e);
         }
 
     }
