@@ -1646,6 +1646,7 @@ namespace HypervResource
                 strtRouteCmd.storageNetmask = config.PrivateNetmask;
                 strtRouteCmd.storageMacAddress = config.PrivateMacAddress;
                 strtRouteCmd.gatewayIpAddress = config.GatewayIpAddress;
+                strtRouteCmd.hypervisorVersion = System.Environment.OSVersion.Version.ToString();
                 strtRouteCmd.caps = "hvm";
 
                 // Detect CPUs, speed, memory
