@@ -4088,16 +4088,21 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             }
         }
 
-        Long accountId = cmd.getAccountId();
-        if (accountId != null) {
-            params++;
-            routers = _routerDao.listBy(accountId);
-        }
-
         Long domainId = cmd.getDomainId();
-        if (domainId != null) {
+        if(domainId != null){
+            String accountName = cmd.getAccount();
+            //List by account, if account Name is specified along with domainId
+            if(accountName != null){
+                Account account = _accountMgr.getActiveAccountByName(accountName, domainId);
+                if(account == null){
+                    throw new InvalidParameterValueException("Account :"+accountName+" does not exist in domain: "+domainId);
+                }
+                routers = _routerDao.listBy(account.getId());
+            } else {
+            //List by domainId, account name not specified
+                routers = _routerDao.listByDomain(domainId);
+            }
             params++;
-            routers = _routerDao.listByDomain(domainId);
         }
 
         Long clusterId = cmd.getClusterId();
