@@ -18,15 +18,15 @@ package org.apache.cloudstack.api;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
-import org.apache.cloudstack.context.CallContext;
-
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
 
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 
-public class BaseListTemplateOrIsoPermissionsCmd extends BaseCmd {
+public abstract class BaseListTemplateOrIsoPermissionsCmd extends BaseCmd {
     public Logger s_logger = getLogger();
     protected String s_name = "listtemplatepermissionsresponse";
 
@@ -76,15 +76,13 @@ public class BaseListTemplateOrIsoPermissionsCmd extends BaseCmd {
         return Logger.getLogger(BaseUpdateTemplateOrIsoPermissionsCmd.class.getName());
     }
 
-    @Override
-    public void execute(){
+    protected void executeWithView(ResponseView view) {
         List<String> accountNames = _templateService.listTemplatePermissions(this);
 
-        Account account = CallContext.current().getCallingAccount();
-        boolean isAdmin = (_accountService.isAdmin(account.getType()));
-
-        TemplatePermissionsResponse response = _responseGenerator.createTemplatePermissionsResponse(accountNames, id, isAdmin);
+        TemplatePermissionsResponse response = _responseGenerator.createTemplatePermissionsResponse(view, accountNames, id);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
+
+
 }

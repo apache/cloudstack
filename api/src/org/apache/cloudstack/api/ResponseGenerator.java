@@ -307,7 +307,7 @@ public interface ResponseGenerator {
 
     List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format);
 
-    TemplatePermissionsResponse createTemplatePermissionsResponse(List<String> accountNames, Long id, boolean isAdmin);
+    TemplatePermissionsResponse createTemplatePermissionsResponse(ResponseView view, List<String> accountNames, Long id);
 
     AsyncJobResponse queryJobResult(QueryAsyncJobResultCmd cmd);
 

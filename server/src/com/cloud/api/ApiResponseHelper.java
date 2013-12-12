@@ -1877,11 +1877,11 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public TemplatePermissionsResponse createTemplatePermissionsResponse(List<String> accountNames, Long id, boolean isAdmin) {
+    public TemplatePermissionsResponse createTemplatePermissionsResponse(ResponseView view, List<String> accountNames, Long id) {
         Long templateOwnerDomain = null;
         VirtualMachineTemplate template = ApiDBUtils.findTemplateById(id);
         Account templateOwner = ApiDBUtils.findAccountById(template.getAccountId());
-        if (isAdmin) {
+        if (view == ResponseView.Full) {
             // FIXME: we have just template id and need to get template owner
             // from that
             if (templateOwner != null) {
@@ -1892,7 +1892,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         TemplatePermissionsResponse response = new TemplatePermissionsResponse();
         response.setId(template.getUuid());
         response.setPublicTemplate(template.isPublicTemplate());
-        if (isAdmin && (templateOwnerDomain != null)) {
+        if ((view == ResponseView.Full) && (templateOwnerDomain != null)) {
             Domain domain = ApiDBUtils.findDomainById(templateOwnerDomain);
             if (domain != null) {
                 response.setDomainId(domain.getUuid());
