@@ -862,7 +862,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             ImageFormat format = getTemplateFormat(srcFile.getName());
             String key = destData.getPath() + S3Utils.SEPARATOR + srcFile.getName();
             if (!s3.getSingleUpload(srcSize)){
-                mputFile(s3, srcFile, bucket, key); 
+                mputFile(s3, srcFile, bucket, key);
             } else{
                 putFile(s3, srcFile, bucket, key);
             }
@@ -1702,6 +1702,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     protected Answer execute(final DeleteCommand cmd) {
         DataTO obj = cmd.getData();
         DataObjectType objType = obj.getObjectType();
+        if (obj.getPath() == null) {
+            // account for those fake entries for NFS migration to object store
+            return new Answer(cmd, true, "Object with null install path does not exist on image store , no need to delete");
+        }
         switch (objType) {
         case TEMPLATE:
             return deleteTemplate(cmd);
