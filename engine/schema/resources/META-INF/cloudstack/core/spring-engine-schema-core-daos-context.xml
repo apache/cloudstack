@@ -328,7 +328,7 @@
   <bean id="NetworkACLListDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.NetworkACLListDetailsDaoImpl" />
   <bean id="NetworkACLItemDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.NetworkACLItemDetailsDaoImpl" />
   <bean id="Site2SiteVpnGatewayDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.Site2SiteVpnGatewayDetailsDaoImpl" />
-
+  <bean id="Site2SiteCustomerGatewayDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.Site2SiteCustomerGatewayDetailsDaoImpl" />
   <bean id="databaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker" />
 
 </beans>
