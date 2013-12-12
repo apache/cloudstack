@@ -189,25 +189,23 @@ public class StringUtils {
         return found > 0 ? found : end - start;
     }
 
-
-    public static Map<String, String> stringToMap(String s){
-        Map<String, String> map=new HashMap<String, String>();
+    public static Map<String, String> stringToMap(String s) {
+        Map<String, String> map = new HashMap<String, String>();
         String[] elements = s.split(";");
-        for (String parts: elements) {
+        for (String parts : elements) {
             String[] keyValue = parts.split(":");
             map.put(keyValue[0], keyValue[1]);
         }
         return map;
     }
 
-
-    public static String mapToString(Map<String, String> map){
+    public static String mapToString(Map<String, String> map) {
         String s = "";
-        for (Map.Entry<String, String> entry: map.entrySet()) {
-            s += entry.getKey() + ":" + entry.getValue() +";";
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            s += entry.getKey() + ":" + entry.getValue() + ";";
         }
         if (s.length() > 0) {
-            s = s.substring(0, s.length()-1);
+            s = s.substring(0, s.length() - 1);
         }
         return s;
     }

@@ -24,12 +24,12 @@ public class StopAnswer extends RebootAnswer {
     }
 
     public StopAnswer(StopCommand cmd, String details, String platform, boolean success) {
-        super(cmd,  details, success);
+        super(cmd, details, success);
         this.platform = platform;
     }
 
     public StopAnswer(StopCommand cmd, String details, boolean success) {
-        super(cmd,  details, success);
+        super(cmd, details, success);
         this.platform = null;
     }
 

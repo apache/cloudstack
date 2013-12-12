@@ -1203,7 +1203,7 @@ public class TransactionLegacy {
         final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/" + database, "cloud", "cloud");
         final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, connectionPool, null, null, false, true);
         return new PoolingDataSource(
-        /* connectionPool */poolableConnectionFactory.getPool());
+            /* connectionPool */poolableConnectionFactory.getPool());
     }
 
     /**

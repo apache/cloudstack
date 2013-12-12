@@ -31,28 +31,28 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
-public class iScsiAdmStorageAdaptor implements StorageAdaptor {
-    private static final Logger s_logger = Logger.getLogger(iScsiAdmStorageAdaptor.class);
+public class IscsiAdmStorageAdaptor implements StorageAdaptor {
+    private static final Logger s_logger = Logger.getLogger(IscsiAdmStorageAdaptor.class);
 
-    private static final Map<String, KVMStoragePool> _mapStorageUuidToStoragePool = new HashMap<String, KVMStoragePool>();
+    private static final Map<String, KVMStoragePool> MapStorageUuidToStoragePool = new HashMap<String, KVMStoragePool>();
 
     @Override
     public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType) {
-        iScsiAdmStoragePool storagePool = new iScsiAdmStoragePool(uuid, host, port, storagePoolType, this);
+        IscsiAdmStoragePool storagePool = new IscsiAdmStoragePool(uuid, host, port, storagePoolType, this);
 
-        _mapStorageUuidToStoragePool.put(uuid, storagePool);
+        MapStorageUuidToStoragePool.put(uuid, storagePool);
 
         return storagePool;
     }
 
     @Override
     public KVMStoragePool getStoragePool(String uuid) {
-        return _mapStorageUuidToStoragePool.get(uuid);
+        return MapStorageUuidToStoragePool.get(uuid);
     }
 
     @Override
     public boolean deleteStoragePool(String uuid) {
-        return _mapStorageUuidToStoragePool.remove(uuid) != null;
+        return MapStorageUuidToStoragePool.remove(uuid) != null;
     }
 
     @Override

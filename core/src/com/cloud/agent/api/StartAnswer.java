@@ -22,7 +22,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 
 public class StartAnswer extends Answer {
     VirtualMachineTO vm;
-    String host_guid;
+    String hostGuid;
     Map<String, String> _iqnToPath;
 
     protected StartAnswer() {
@@ -41,13 +41,13 @@ public class StartAnswer extends Answer {
     public StartAnswer(StartCommand cmd) {
         super(cmd, true, null);
         this.vm = cmd.getVirtualMachine();
-        this.host_guid = null;
+        this.hostGuid = null;
     }
 
     public StartAnswer(StartCommand cmd, String msg, String guid) {
         super(cmd, true, msg);
         this.vm = cmd.getVirtualMachine();
-        this.host_guid = guid;
+        this.hostGuid = guid;
     }
 
     public VirtualMachineTO getVirtualMachine() {
@@ -55,7 +55,7 @@ public class StartAnswer extends Answer {
     }
 
     public String getHost_guid() {
-        return host_guid;
+        return hostGuid;
     }
 
     public void setIqnToPath(Map<String, String> iqnToPath) {

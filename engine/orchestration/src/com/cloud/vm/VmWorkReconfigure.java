@@ -19,25 +19,25 @@ package com.cloud.vm;
 import com.cloud.offering.ServiceOffering;
 
 public class VmWorkReconfigure extends VmWork {
-	private static final long serialVersionUID = -4517030323758086615L;
-	
-	ServiceOffering newServiceOffering;
-	boolean sameHost;
-	
-    public VmWorkReconfigure(long userId, long accountId, long vmId, 
-    	ServiceOffering newServiceOffering, boolean sameHost) {
-    	
-    	super(userId, accountId, vmId);
-    	
-    	this.newServiceOffering = newServiceOffering;
-    	this.sameHost = sameHost;
+    private static final long serialVersionUID = -4517030323758086615L;
+
+    ServiceOffering newServiceOffering;
+    boolean sameHost;
+
+    public VmWorkReconfigure(long userId, long accountId, long vmId,
+            ServiceOffering newServiceOffering, boolean sameHost) {
+
+        super(userId, accountId, vmId);
+
+        this.newServiceOffering = newServiceOffering;
+        this.sameHost = sameHost;
     }
-    
+
     public ServiceOffering getNewServiceOffering() {
-    	return this.newServiceOffering;
+        return this.newServiceOffering;
     }
-    
+
     public boolean isSameHost() {
-    	return this.sameHost;
+        return this.sameHost;
     }
 }

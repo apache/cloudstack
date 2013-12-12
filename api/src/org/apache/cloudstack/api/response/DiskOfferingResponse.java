@@ -97,7 +97,8 @@ public class DiskOfferingResponse extends BaseResponse {
     @Param(description = "io requests write rate of the disk offering")
     private Long iopsWriteRate;
 
-    @SerializedName("cacheMode") @Param(description="the cache mode to use for this disk offering. none, writeback or writethrough")
+    @SerializedName("cacheMode")
+    @Param(description = "the cache mode to use for this disk offering. none, writeback or writethrough")
     private String cacheMode;
 
     @SerializedName("displayoffering")

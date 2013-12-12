@@ -45,6 +45,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
+import com.cloud.event.dao.UsageEventDetailsDao;
 import com.cloud.usage.dao.UsageDao;
 import com.cloud.usage.dao.UsageIPAddressDao;
 import com.cloud.usage.dao.UsageJobDao;
@@ -85,7 +86,6 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.event.dao.UsageEventDetailsDao;
 
 @Component
 @Local(value = {UsageManager.class})
@@ -102,37 +102,37 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private static final int USAGE_AGGREGATION_RANGE_MIN = 10;
 
     @Inject
-    private AccountDao m_accountDao;
+    private AccountDao _accountDao;
     @Inject
-    private UserStatisticsDao m_userStatsDao;
+    private UserStatisticsDao _userStatsDao;
     @Inject
-    private UsageDao m_usageDao;
+    private UsageDao _usageDao;
     @Inject
-    private UsageVMInstanceDao m_usageInstanceDao;
+    private UsageVMInstanceDao _usageInstanceDao;
     @Inject
-    private UsageIPAddressDao m_usageIPAddressDao;
+    private UsageIPAddressDao _usageIPAddressDao;
     @Inject
-    private UsageNetworkDao m_usageNetworkDao;
+    private UsageNetworkDao _usageNetworkDao;
     @Inject
-    private UsageVolumeDao m_usageVolumeDao;
+    private UsageVolumeDao _usageVolumeDao;
     @Inject
-    private UsageStorageDao m_usageStorageDao;
+    private UsageStorageDao _usageStorageDao;
     @Inject
-    private UsageLoadBalancerPolicyDao m_usageLoadBalancerPolicyDao;
+    private UsageLoadBalancerPolicyDao _usageLoadBalancerPolicyDao;
     @Inject
-    private UsagePortForwardingRuleDao m_usagePortForwardingRuleDao;
+    private UsagePortForwardingRuleDao _usagePortForwardingRuleDao;
     @Inject
-    private UsageNetworkOfferingDao m_usageNetworkOfferingDao;
+    private UsageNetworkOfferingDao _usageNetworkOfferingDao;
     @Inject
-    private UsageVPNUserDao m_usageVPNUserDao;
+    private UsageVPNUserDao _usageVPNUserDao;
     @Inject
-    private UsageSecurityGroupDao m_usageSecurityGroupDao;
+    private UsageSecurityGroupDao _usageSecurityGroupDao;
     @Inject
-    private UsageJobDao m_usageJobDao;
+    private UsageJobDao _usageJobDao;
     @Inject
-    private VmDiskStatisticsDao m_vmDiskStatsDao;
+    private VmDiskStatisticsDao _vmDiskStatsDao;
     @Inject
-    private UsageVmDiskDao m_usageVmDiskDao;
+    private UsageVmDiskDao _usageVmDiskDao;
     @Inject
     protected AlertManager _alertMgr;
     @Inject
@@ -142,25 +142,25 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     @Inject
     ConfigurationDao _configDao;
     @Inject
-    private UsageVMSnapshotDao m_usageVMSnapshotDao;
+    private UsageVMSnapshotDao _usageVMSnapshotDao;
 
-    private String m_version = null;
-    private final Calendar m_jobExecTime = Calendar.getInstance();
-    private int m_aggregationDuration = 0;
-    private int m_sanityCheckInterval = 0;
-    String m_hostname = null;
-    int m_pid = 0;
-    TimeZone m_usageTimezone = TimeZone.getTimeZone("GMT");;
-    private final GlobalLock m_heartbeatLock = GlobalLock.getInternLock("usage.job.heartbeat.check");
-    private List<UsageNetworkVO> usageNetworks = new ArrayList<UsageNetworkVO>();
-    private List<UsageVmDiskVO> usageVmDisks = new ArrayList<UsageVmDiskVO>();
+    private String _version = null;
+    private final Calendar _jobExecTime = Calendar.getInstance();
+    private int _aggregationDuration = 0;
+    private int _sanityCheckInterval = 0;
+    String _hostname = null;
+    int _pid = 0;
+    TimeZone _usageTimezone = TimeZone.getTimeZone("GMT");;
+    private final GlobalLock _heartbeatLock = GlobalLock.getInternLock("usage.job.heartbeat.check");
+    private final List<UsageNetworkVO> usageNetworks = new ArrayList<UsageNetworkVO>();
+    private final List<UsageVmDiskVO> usageVmDisks = new ArrayList<UsageVmDiskVO>();
 
-    private final ScheduledExecutorService m_executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-Job"));
-    private final ScheduledExecutorService m_heartbeatExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-HB"));
-    private final ScheduledExecutorService m_sanityExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-Sanity"));
-    private Future m_scheduledFuture = null;
-    private Future m_heartbeat = null;
-    private Future m_sanity = null;
+    private final ScheduledExecutorService _executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-Job"));
+    private final ScheduledExecutorService _heartbeatExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-HB"));
+    private final ScheduledExecutorService _sanityExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-Sanity"));
+    private Future _scheduledFuture = null;
+    private Future _heartbeat = null;
+    private Future _sanity = null;
 
     public UsageManagerImpl() {
     }
@@ -180,14 +180,14 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
 
         final Class<?> c = UsageServer.class;
-        m_version = c.getPackage().getImplementationVersion();
-        if (m_version == null) {
+        _version = c.getPackage().getImplementationVersion();
+        if (_version == null) {
             // TODO
             // throw new CloudRuntimeException("Unable to find the implementation version of this usage server");
         }
 
         if (s_logger.isInfoEnabled()) {
-            s_logger.info("Implementation Version is " + m_version);
+            s_logger.info("Implementation Version is " + _version);
         }
 
         Map<String, String> configs = _configDao.getConfiguration(params);
@@ -202,11 +202,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         String aggreagationTimeZone = configs.get("usage.aggregation.timezone");
         String sanityCheckInterval = configs.get("usage.sanity.check.interval");
         if (sanityCheckInterval != null) {
-            m_sanityCheckInterval = Integer.parseInt(sanityCheckInterval);
+            _sanityCheckInterval = Integer.parseInt(sanityCheckInterval);
         }
 
         if (aggreagationTimeZone != null && !aggreagationTimeZone.isEmpty()) {
-            m_usageTimezone = TimeZone.getTimeZone(aggreagationTimeZone);
+            _usageTimezone = TimeZone.getTimeZone(aggreagationTimeZone);
         }
         s_logger.debug("Usage stats aggregation time zone: " + aggreagationTimeZone);
 
@@ -224,32 +224,32 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             }
             int hourOfDay = Integer.parseInt(execTimeSegments[0]);
             int minutes = Integer.parseInt(execTimeSegments[1]);
-            m_jobExecTime.setTime(new Date());
+            _jobExecTime.setTime(new Date());
 
-            m_jobExecTime.set(Calendar.HOUR_OF_DAY, hourOfDay);
-            m_jobExecTime.set(Calendar.MINUTE, minutes);
-            m_jobExecTime.set(Calendar.SECOND, 0);
-            m_jobExecTime.set(Calendar.MILLISECOND, 0);
+            _jobExecTime.set(Calendar.HOUR_OF_DAY, hourOfDay);
+            _jobExecTime.set(Calendar.MINUTE, minutes);
+            _jobExecTime.set(Calendar.SECOND, 0);
+            _jobExecTime.set(Calendar.MILLISECOND, 0);
             if (execTimeZone != null && !execTimeZone.isEmpty()) {
-                m_jobExecTime.setTimeZone(TimeZone.getTimeZone(execTimeZone));
+                _jobExecTime.setTimeZone(TimeZone.getTimeZone(execTimeZone));
             }
 
             // if the hour to execute the job has already passed, roll the day forward to the next day
-            Date execDate = m_jobExecTime.getTime();
+            Date execDate = _jobExecTime.getTime();
             if (execDate.before(new Date())) {
-                m_jobExecTime.roll(Calendar.DAY_OF_YEAR, true);
+                _jobExecTime.roll(Calendar.DAY_OF_YEAR, true);
             }
 
             s_logger.debug("Execution Time: " + execDate.toString());
             Date currentDate = new Date(System.currentTimeMillis());
             s_logger.debug("Current Time: " + currentDate.toString());
 
-            m_aggregationDuration = Integer.parseInt(aggregationRange);
-            if (m_aggregationDuration < USAGE_AGGREGATION_RANGE_MIN) {
+            _aggregationDuration = Integer.parseInt(aggregationRange);
+            if (_aggregationDuration < USAGE_AGGREGATION_RANGE_MIN) {
                 s_logger.warn("Usage stats job aggregation range is to small, using the minimum value of " + USAGE_AGGREGATION_RANGE_MIN);
-                m_aggregationDuration = USAGE_AGGREGATION_RANGE_MIN;
+                _aggregationDuration = USAGE_AGGREGATION_RANGE_MIN;
             }
-            m_hostname = InetAddress.getLocalHost().getHostName() + "/" + InetAddress.getLocalHost().getHostAddress();
+            _hostname = InetAddress.getLocalHost().getHostName() + "/" + InetAddress.getLocalHost().getHostAddress();
         } catch (NumberFormatException ex) {
             throw new ConfigurationException("Unable to parse usage.stats.job.exec.time '" + execTime + "' or usage.stats.job.aggregation.range '" + aggregationRange +
                 "', please check configuration values");
@@ -257,7 +257,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             s_logger.error("Unhandled exception configuring UsageManger", e);
             throw new ConfigurationException("Unhandled exception configuring UsageManager " + e.toString());
         }
-        m_pid = Integer.parseInt(System.getProperty("pid"));
+        _pid = Integer.parseInt(System.getProperty("pid"));
         return true;
     }
 
@@ -268,27 +268,27 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
 
         // use the configured exec time and aggregation duration for scheduling the job
-        m_scheduledFuture =
-            m_executor.scheduleAtFixedRate(this, m_jobExecTime.getTimeInMillis() - System.currentTimeMillis(), m_aggregationDuration * 60 * 1000, TimeUnit.MILLISECONDS);
+        _scheduledFuture =
+            _executor.scheduleAtFixedRate(this, _jobExecTime.getTimeInMillis() - System.currentTimeMillis(), _aggregationDuration * 60 * 1000, TimeUnit.MILLISECONDS);
 
-        m_heartbeat =
-            m_heartbeatExecutor.scheduleAtFixedRate(new Heartbeat(), /* start in 15 seconds...*/15 * 1000, /* check database every minute*/60 * 1000,
+        _heartbeat =
+            _heartbeatExecutor.scheduleAtFixedRate(new Heartbeat(), /* start in 15 seconds...*/15 * 1000, /* check database every minute*/60 * 1000,
                 TimeUnit.MILLISECONDS);
 
-        if (m_sanityCheckInterval > 0) {
-            m_sanity = m_sanityExecutor.scheduleAtFixedRate(new SanityCheck(), 1, m_sanityCheckInterval, TimeUnit.DAYS);
+        if (_sanityCheckInterval > 0) {
+            _sanity = _sanityExecutor.scheduleAtFixedRate(new SanityCheck(), 1, _sanityCheckInterval, TimeUnit.DAYS);
         }
 
         TransactionLegacy usageTxn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
-            if (m_heartbeatLock.lock(3)) { // 3 second timeout
+            if (_heartbeatLock.lock(3)) { // 3 second timeout
                 try {
-                    UsageJobVO job = m_usageJobDao.getLastJob();
+                    UsageJobVO job = _usageJobDao.getLastJob();
                     if (job == null) {
-                        m_usageJobDao.createNewJob(m_hostname, m_pid, UsageJobVO.JOB_TYPE_RECURRING);
+                        _usageJobDao.createNewJob(_hostname, _pid, UsageJobVO.JOB_TYPE_RECURRING);
                     }
                 } finally {
-                    m_heartbeatLock.unlock();
+                    _heartbeatLock.unlock();
                 }
             } else {
                 if (s_logger.isTraceEnabled())
@@ -303,10 +303,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
     @Override
     public boolean stop() {
-        m_heartbeat.cancel(true);
-        m_scheduledFuture.cancel(true);
-        if (m_sanity != null) {
-            m_sanity.cancel(true);
+        _heartbeat.cancel(true);
+        _scheduledFuture.cancel(true);
+        if (_sanity != null) {
+            _sanity.cancel(true);
         }
         return true;
     }
@@ -327,27 +327,27 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
 
         // how about we update the job exec time when the job starts???
-        long execTime = m_jobExecTime.getTimeInMillis();
+        long execTime = _jobExecTime.getTimeInMillis();
         long now = System.currentTimeMillis() + 2000; // 2 second buffer since jobs can run a little early (though usually just by milliseconds)
 
         if (execTime < now) {
             // if exec time is in the past, calculate the next time the job will execute...if this is a one-off job that is a result
             // of scheduleParse() then don't update the next exec time...
-            m_jobExecTime.add(Calendar.MINUTE, m_aggregationDuration);
+            _jobExecTime.add(Calendar.MINUTE, _aggregationDuration);
         }
 
-        UsageJobVO job = m_usageJobDao.isOwner(m_hostname, m_pid);
+        UsageJobVO job = _usageJobDao.isOwner(_hostname, _pid);
         if (job != null) {
             // FIXME: we really need to do a better job of not missing any events...so we should some how
             //        keep track of the last time usage was run, then go from there...
             // For executing the job, we treat hourly and daily as special time ranges, using the previous full hour or the previous
             // full day.  Otherwise we just subtract off the aggregation range from the current time and use that as start date with
             // current time as end date.
-            Calendar cal = Calendar.getInstance(m_usageTimezone);
+            Calendar cal = Calendar.getInstance(_usageTimezone);
             cal.setTime(new Date());
             long startDate = 0;
             long endDate = 0;
-            if (m_aggregationDuration == DAILY_TIME) {
+            if (_aggregationDuration == DAILY_TIME) {
                 cal.roll(Calendar.DAY_OF_YEAR, false);
                 cal.set(Calendar.HOUR_OF_DAY, 0);
                 cal.set(Calendar.MINUTE, 0);
@@ -358,7 +358,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 cal.roll(Calendar.DAY_OF_YEAR, true);
                 cal.add(Calendar.MILLISECOND, -1);
                 endDate = cal.getTime().getTime();
-            } else if (m_aggregationDuration == HOURLY_TIME) {
+            } else if (_aggregationDuration == HOURLY_TIME) {
                 cal.roll(Calendar.HOUR_OF_DAY, false);
                 cal.set(Calendar.MINUTE, 0);
                 cal.set(Calendar.SECOND, 0);
@@ -370,7 +370,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 endDate = cal.getTime().getTime();
             } else {
                 endDate = cal.getTime().getTime(); // current time
-                cal.add(Calendar.MINUTE, -1 * m_aggregationDuration);
+                cal.add(Calendar.MINUTE, -1 * _aggregationDuration);
                 startDate = cal.getTime().getTime();
             }
 
@@ -390,7 +390,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Scheduling Usage job...");
         }
-        m_executor.schedule(this, 0, TimeUnit.MILLISECONDS);
+        _executor.schedule(this, 0, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -405,7 +405,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 endDateMillis = timeStart;
             }
 
-            long lastSuccess = m_usageJobDao.getLastJobSuccessDateMillis();
+            long lastSuccess = _usageJobDao.getLastJobSuccessDateMillis();
             if (lastSuccess != 0) {
                 startDateMillis = lastSuccess + 1; // 1 millisecond after
             }
@@ -419,11 +419,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 try {
                     jobUpdateTxn.start();
                     // everything seemed to work...set endDate as the last success date
-                    m_usageJobDao.updateJobSuccess(job.getId(), startDateMillis, endDateMillis, System.currentTimeMillis() - timeStart, success);
+                    _usageJobDao.updateJobSuccess(job.getId(), startDateMillis, endDateMillis, System.currentTimeMillis() - timeStart, success);
 
                     // create a new job if this is a recurring job
                     if (job.getJobType() == UsageJobVO.JOB_TYPE_RECURRING) {
-                        m_usageJobDao.createNewJob(m_hostname, m_pid, UsageJobVO.JOB_TYPE_RECURRING);
+                        _usageJobDao.createNewJob(_hostname, _pid, UsageJobVO.JOB_TYPE_RECURRING);
                     }
                     jobUpdateTxn.commit();
                 } finally {
@@ -449,7 +449,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             try {
                 Long limit = Long.valueOf(500);
                 Long offset = Long.valueOf(0);
-                Long lastAccountId = m_usageDao.getLastAccountId();
+                Long lastAccountId = _usageDao.getLastAccountId();
                 if (lastAccountId == null) {
                     lastAccountId = Long.valueOf(0);
                 }
@@ -457,11 +457,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 do {
                     Filter filter = new Filter(AccountVO.class, "id", true, offset, limit);
 
-                    accounts = m_accountDao.findActiveAccounts(lastAccountId, filter);
+                    accounts = _accountDao.findActiveAccounts(lastAccountId, filter);
 
                     if ((accounts != null) && !accounts.isEmpty()) {
                         // now update the accounts in the cloud_usage db
-                        m_usageDao.updateAccounts(accounts);
+                        _usageDao.updateAccounts(accounts);
                     }
                     offset = new Long(offset.longValue() + limit.longValue());
                 } while ((accounts != null) && !accounts.isEmpty());
@@ -472,11 +472,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 do {
                     Filter filter = new Filter(AccountVO.class, "id", true, offset, limit);
 
-                    accounts = m_accountDao.findRecentlyDeletedAccounts(lastAccountId, startDate, filter);
+                    accounts = _accountDao.findRecentlyDeletedAccounts(lastAccountId, startDate, filter);
 
                     if ((accounts != null) && !accounts.isEmpty()) {
                         // now update the accounts in the cloud_usage db
-                        m_usageDao.updateAccounts(accounts);
+                        _usageDao.updateAccounts(accounts);
                     }
                     offset = new Long(offset.longValue() + limit.longValue());
                 } while ((accounts != null) && !accounts.isEmpty());
@@ -487,11 +487,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 do {
                     Filter filter = new Filter(AccountVO.class, "id", true, offset, limit);
 
-                    accounts = m_accountDao.findNewAccounts(lastAccountId, filter);
+                    accounts = _accountDao.findNewAccounts(lastAccountId, filter);
 
                     if ((accounts != null) && !accounts.isEmpty()) {
                         // now copy the accounts to cloud_usage db
-                        m_usageDao.saveAccounts(accounts);
+                        _usageDao.saveAccounts(accounts);
                     }
                     offset = new Long(offset.longValue() + limit.longValue());
                 } while ((accounts != null) && !accounts.isEmpty());
@@ -500,21 +500,21 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 offset = Long.valueOf(0);
 
                 // get all the user stats to create usage records for the network usage
-                Long lastUserStatsId = m_usageDao.getLastUserStatsId();
+                Long lastUserStatsId = _usageDao.getLastUserStatsId();
                 if (lastUserStatsId == null) {
                     lastUserStatsId = Long.valueOf(0);
                 }
 
-                SearchCriteria<UserStatisticsVO> sc2 = m_userStatsDao.createSearchCriteria();
+                SearchCriteria<UserStatisticsVO> sc2 = _userStatsDao.createSearchCriteria();
                 sc2.addAnd("id", SearchCriteria.Op.LTEQ, lastUserStatsId);
                 do {
                     Filter filter = new Filter(UserStatisticsVO.class, "id", true, offset, limit);
 
-                    userStats = m_userStatsDao.search(sc2, filter);
+                    userStats = _userStatsDao.search(sc2, filter);
 
                     if ((userStats != null) && !userStats.isEmpty()) {
                         // now copy the accounts to cloud_usage db
-                        m_usageDao.updateUserStats(userStats);
+                        _usageDao.updateUserStats(userStats);
                     }
                     offset = new Long(offset.longValue() + limit.longValue());
                 } while ((userStats != null) && !userStats.isEmpty());
@@ -522,16 +522,16 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 // reset offset
                 offset = Long.valueOf(0);
 
-                sc2 = m_userStatsDao.createSearchCriteria();
+                sc2 = _userStatsDao.createSearchCriteria();
                 sc2.addAnd("id", SearchCriteria.Op.GT, lastUserStatsId);
                 do {
                     Filter filter = new Filter(UserStatisticsVO.class, "id", true, offset, limit);
 
-                    userStats = m_userStatsDao.search(sc2, filter);
+                    userStats = _userStatsDao.search(sc2, filter);
 
                     if ((userStats != null) && !userStats.isEmpty()) {
                         // now copy the accounts to cloud_usage db
-                        m_usageDao.saveUserStats(userStats);
+                        _usageDao.saveUserStats(userStats);
                     }
                     offset = new Long(offset.longValue() + limit.longValue());
                 } while ((userStats != null) && !userStats.isEmpty());
@@ -539,21 +539,21 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 // reset offset
                 offset = Long.valueOf(0);
 
-                // get all the vm network stats to create usage_vm_network records for the vm network usage
-                Long lastVmDiskStatsId = m_usageDao.getLastVmDiskStatsId();
+                // get all the vm network stats to create usage_VM_network records for the vm network usage
+                Long lastVmDiskStatsId = _usageDao.getLastVmDiskStatsId();
                 if (lastVmDiskStatsId == null) {
                     lastVmDiskStatsId = Long.valueOf(0);
                 }
-                SearchCriteria<VmDiskStatisticsVO> sc4 = m_vmDiskStatsDao.createSearchCriteria();
+                SearchCriteria<VmDiskStatisticsVO> sc4 = _vmDiskStatsDao.createSearchCriteria();
                 sc4.addAnd("id", SearchCriteria.Op.LTEQ, lastVmDiskStatsId);
                 do {
                     Filter filter = new Filter(VmDiskStatisticsVO.class, "id", true, offset, limit);
 
-                    vmDiskStats = m_vmDiskStatsDao.search(sc4, filter);
+                    vmDiskStats = _vmDiskStatsDao.search(sc4, filter);
 
                     if ((vmDiskStats != null) && !vmDiskStats.isEmpty()) {
                         // now copy the accounts to cloud_usage db
-                        m_usageDao.updateVmDiskStats(vmDiskStats);
+                        _usageDao.updateVmDiskStats(vmDiskStats);
                     }
                     offset = new Long(offset.longValue() + limit.longValue());
                 } while ((vmDiskStats != null) && !vmDiskStats.isEmpty());
@@ -561,16 +561,16 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 // reset offset
                 offset = Long.valueOf(0);
 
-                sc4 = m_vmDiskStatsDao.createSearchCriteria();
+                sc4 = _vmDiskStatsDao.createSearchCriteria();
                 sc4.addAnd("id", SearchCriteria.Op.GT, lastVmDiskStatsId);
                 do {
                     Filter filter = new Filter(VmDiskStatisticsVO.class, "id", true, offset, limit);
 
-                    vmDiskStats = m_vmDiskStatsDao.search(sc4, filter);
+                    vmDiskStats = _vmDiskStatsDao.search(sc4, filter);
 
                     if ((vmDiskStats != null) && !vmDiskStats.isEmpty()) {
                         // now copy the accounts to cloud_usage db
-                        m_usageDao.saveVmDiskStats(vmDiskStats);
+                        _usageDao.saveVmDiskStats(vmDiskStats);
                     }
                     offset = new Long(offset.longValue() + limit.longValue());
                 } while ((vmDiskStats != null) && !vmDiskStats.isEmpty());
@@ -610,9 +610,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 // TODO:  Fetch a maximum number of user stats and process them before moving on to the next range of user stats
 
                 // get user stats in order to compute network usage
-                networkStats = m_usageNetworkDao.getRecentNetworkStats();
+                networkStats = _usageNetworkDao.getRecentNetworkStats();
 
-                Calendar recentlyDeletedCal = Calendar.getInstance(m_usageTimezone);
+                Calendar recentlyDeletedCal = Calendar.getInstance(_usageTimezone);
                 recentlyDeletedCal.setTimeInMillis(startDateMillis);
                 recentlyDeletedCal.add(Calendar.MINUTE, -1 * THREE_DAYS_IN_MINUTES);
                 Date recentlyDeletedDate = recentlyDeletedCal.getTime();
@@ -621,7 +621,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 Map<String, UserStatisticsVO> aggregatedStats = new HashMap<String, UserStatisticsVO>();
                 int startIndex = 0;
                 do {
-                    userStats = m_userStatsDao.listActiveAndRecentlyDeleted(recentlyDeletedDate, startIndex, 500);
+                    userStats = _userStatsDao.listActiveAndRecentlyDeleted(recentlyDeletedDate, startIndex, 500);
 
                     if (userStats != null) {
                         for (UserStatisticsVO userStat : userStats) {
@@ -655,20 +655,20 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     createNetworkHelperEntry(aggregatedStats.get(key), currentNetworkStats, endDateMillis);
                     numAcctsProcessed++;
                 }
-                m_usageNetworkDao.saveUsageNetworks(usageNetworks);
+                _usageNetworkDao.saveUsageNetworks(usageNetworks);
 
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("created network stats helper entries for " + numAcctsProcessed + " accts");
                 }
 
                 // get vm disk stats in order to compute vm disk usage
-                vmDiskUsages = m_usageVmDiskDao.getRecentVmDiskStats();
+                vmDiskUsages = _usageVmDiskDao.getRecentVmDiskStats();
 
                 // Keep track of user stats for an account, across all of its public IPs
                 Map<String, VmDiskStatisticsVO> aggregatedDiskStats = new HashMap<String, VmDiskStatisticsVO>();
                 startIndex = 0;
                 do {
-                    vmDiskStats = m_vmDiskStatsDao.listActiveAndRecentlyDeleted(recentlyDeletedDate, startIndex, 500);
+                    vmDiskStats = _vmDiskStatsDao.listActiveAndRecentlyDeleted(recentlyDeletedDate, startIndex, 500);
 
                     if (vmDiskUsages != null) {
                         for (VmDiskStatisticsVO vmDiskStat : vmDiskStats) {
@@ -704,7 +704,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     createVmDiskHelperEntry(aggregatedDiskStats.get(key), currentVmDiskStats, endDateMillis);
                     numAcctsProcessed++;
                 }
-                m_usageVmDiskDao.saveUsageVmDisks(usageVmDisks);
+                _usageVmDiskDao.saveUsageVmDisks(usageVmDisks);
 
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("created vm disk stats helper entries for " + numAcctsProcessed + " accts");
@@ -721,12 +721,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 Date currentEndDate = endDate;
                 Date tempDate = endDate;
 
-                Calendar aggregateCal = Calendar.getInstance(m_usageTimezone);
+                Calendar aggregateCal = Calendar.getInstance(_usageTimezone);
 
                 while ((tempDate.after(startDate)) && ((tempDate.getTime() - startDate.getTime()) > 60000)) {
                     currentEndDate = tempDate;
                     aggregateCal.setTime(tempDate);
-                    aggregateCal.add(Calendar.MINUTE, -m_aggregationDuration);
+                    aggregateCal.add(Calendar.MINUTE, -_aggregationDuration);
                     tempDate = aggregateCal.getTime();
                 }
 
@@ -736,7 +736,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
                     do {
                         Filter filter = new Filter(AccountVO.class, "id", true, offset, limit);
-                        accounts = m_accountDao.listAll(filter);
+                        accounts = _accountDao.listAll(filter);
                         if ((accounts != null) && !accounts.isEmpty()) {
                             for (AccountVO account : accounts) {
                                 parsed = parseHelperTables(account, currentStartDate, currentEndDate);
@@ -757,15 +757,15 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     do {
                         Filter filter = new Filter(AccountVO.class, "id", true, offset, limit);
 
-                        accounts = m_accountDao.findRecentlyDeletedAccounts(null, recentlyDeletedDate, filter);
+                        accounts = _accountDao.findRecentlyDeletedAccounts(null, recentlyDeletedDate, filter);
 
                         if ((accounts != null) && !accounts.isEmpty()) {
                             for (AccountVO account : accounts) {
                                 parsed = parseHelperTables(account, currentStartDate, currentEndDate);
-                                List<Long> publicTemplates = m_usageDao.listPublicTemplatesByAccount(account.getId());
+                                List<Long> publicTemplates = _usageDao.listPublicTemplatesByAccount(account.getId());
                                 for (Long templateId : publicTemplates) {
                                     //mark public templates owned by deleted accounts as deleted
-                                    List<UsageStorageVO> storageVOs = m_usageStorageDao.listById(account.getId(), templateId, StorageTypes.TEMPLATE);
+                                    List<UsageStorageVO> storageVOs = _usageStorageDao.listById(account.getId(), templateId, StorageTypes.TEMPLATE);
                                     if (storageVOs.size() > 1) {
                                         s_logger.warn("More that one usage entry for storage: " + templateId + " assigned to account: " + account.getId() +
                                             "; marking them all as deleted...");
@@ -775,7 +775,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                                             s_logger.debug("deleting template: " + storageVO.getId() + " from account: " + storageVO.getAccountId());
                                         }
                                         storageVO.setDeleted(account.getRemoved());
-                                        m_usageStorageDao.update(storageVO);
+                                        _usageStorageDao.update(storageVO);
                                     }
                                 }
                                 numAcctsProcessed++;
@@ -786,7 +786,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
                     currentStartDate = new Date(currentEndDate.getTime() + 1);
                     aggregateCal.setTime(currentEndDate);
-                    aggregateCal.add(Calendar.MINUTE, m_aggregationDuration);
+                    aggregateCal.add(Calendar.MINUTE, _aggregationDuration);
                     currentEndDate = aggregateCal.getTime();
                 }
 
@@ -806,11 +806,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 usageTxn.rollback();
             } finally {
                 // everything seemed to work...set endDate as the last success date
-                m_usageJobDao.updateJobSuccess(job.getId(), startDateMillis, endDateMillis, System.currentTimeMillis() - timeStart, success);
+                _usageJobDao.updateJobSuccess(job.getId(), startDateMillis, endDateMillis, System.currentTimeMillis() - timeStart, success);
 
                 // create a new job if this is a recurring job
                 if (job.getJobType() == UsageJobVO.JOB_TYPE_RECURRING) {
-                    m_usageJobDao.createNewJob(m_hostname, m_pid, UsageJobVO.JOB_TYPE_RECURRING);
+                    _usageJobDao.createNewJob(_hostname, _pid, UsageJobVO.JOB_TYPE_RECURRING);
                 }
                 usageTxn.commit();
                 usageTxn.close();
@@ -1032,29 +1032,29 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         String vmName = event.getResourceName();
 
         if (EventTypes.EVENT_VM_START.equals(event.getType())) {
-            // create a new usage_vm_instance row for this VM
+            // create a new usage_VM_instance row for this VM
             try {
 
-                SearchCriteria<UsageVMInstanceVO> sc = m_usageInstanceDao.createSearchCriteria();
+                SearchCriteria<UsageVMInstanceVO> sc = _usageInstanceDao.createSearchCriteria();
                 sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, Long.valueOf(vmId));
                 sc.addAnd("endDate", SearchCriteria.Op.NULL);
                 sc.addAnd("usageType", SearchCriteria.Op.EQ, UsageTypes.RUNNING_VM);
-                List<UsageVMInstanceVO> usageInstances = m_usageInstanceDao.search(sc, null);
+                List<UsageVMInstanceVO> usageInstances = _usageInstanceDao.search(sc, null);
                 if (usageInstances != null) {
                     if (usageInstances.size() > 0) {
                         s_logger.error("found entries for a vm running with id: " + vmId + ", which are not stopped. Ending them all...");
                         for (UsageVMInstanceVO usageInstance : usageInstances) {
                             usageInstance.setEndDate(event.getCreateDate());
-                            m_usageInstanceDao.update(usageInstance);
+                            _usageInstanceDao.update(usageInstance);
                         }
                     }
                 }
 
-                sc = m_usageInstanceDao.createSearchCriteria();
+                sc = _usageInstanceDao.createSearchCriteria();
                 sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, Long.valueOf(vmId));
                 sc.addAnd("endDate", SearchCriteria.Op.NULL);
                 sc.addAnd("usageType", SearchCriteria.Op.EQ, UsageTypes.ALLOCATED_VM);
-                usageInstances = m_usageInstanceDao.search(sc, null);
+                usageInstances = _usageInstanceDao.search(sc, null);
                 if (usageInstances == null || (usageInstances.size() == 0)) {
                     s_logger.error("Cannot find allocated vm entry for a vm running with id: " + vmId);
                 } else if (usageInstances.size() == 1) {
@@ -1063,11 +1063,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                         //Service Offering changed after Vm creation
                         //End current Allocated usage and create new Allocated Vm entry with new soId
                         usageInstance.setEndDate(event.getCreateDate());
-                        m_usageInstanceDao.update(usageInstance);
+                        _usageInstanceDao.update(usageInstance);
                         usageInstance.setServiceOfferingId(soId);
                         usageInstance.setStartDate(event.getCreateDate());
                         usageInstance.setEndDate(null);
-                        m_usageInstanceDao.persist(usageInstance);
+                        _usageInstanceDao.persist(usageInstance);
                     }
                 }
 
@@ -1078,18 +1078,18 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 UsageVMInstanceVO usageInstanceNew =
                     new UsageVMInstanceVO(UsageTypes.RUNNING_VM, zoneId, event.getAccountId(), vmId, vmName, soId, templateId, hypervisorType, event.getCreateDate(),
                         null);
-                m_usageInstanceDao.persist(usageInstanceNew);
+                _usageInstanceDao.persist(usageInstanceNew);
             } catch (Exception ex) {
                 s_logger.error("Error saving usage instance for vm: " + vmId, ex);
             }
         } else if (EventTypes.EVENT_VM_STOP.equals(event.getType())) {
-            // find the latest usage_vm_instance row, update the stop date (should be null) to the event date
+            // find the latest usage_VM_instance row, update the stop date (should be null) to the event date
             // FIXME: search criteria needs to have some kind of type information so we distinguish between START/STOP and CREATE/DESTROY
-            SearchCriteria<UsageVMInstanceVO> sc = m_usageInstanceDao.createSearchCriteria();
+            SearchCriteria<UsageVMInstanceVO> sc = _usageInstanceDao.createSearchCriteria();
             sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, Long.valueOf(vmId));
             sc.addAnd("endDate", SearchCriteria.Op.NULL);
             sc.addAnd("usageType", SearchCriteria.Op.EQ, UsageTypes.RUNNING_VM);
-            List<UsageVMInstanceVO> usageInstances = m_usageInstanceDao.search(sc, null);
+            List<UsageVMInstanceVO> usageInstances = _usageInstanceDao.search(sc, null);
             if (usageInstances != null) {
                 if (usageInstances.size() > 1) {
                     s_logger.warn("found multiple entries for a vm running with id: " + vmId + ", ending them all...");
@@ -1098,14 +1098,14 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     usageInstance.setEndDate(event.getCreateDate());
                     // TODO: UsageVMInstanceVO should have an ID field and we should do updates through that field since we are really
                     //       updating one row at a time here
-                    m_usageInstanceDao.update(usageInstance);
+                    _usageInstanceDao.update(usageInstance);
                 }
             }
         } else if (EventTypes.EVENT_VM_CREATE.equals(event.getType())) {
             try {
                 Long templateId = event.getTemplateId();
                 String hypervisorType = event.getResourceType();
-                Long cpuCores= null;
+                Long cpuCores = null;
                 Long memory = null;
                 Long cpuSpeed = null;
 
@@ -1126,7 +1126,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
                 // add this VM to the usage helper table
                 UsageVMInstanceVO usageInstanceNew = new UsageVMInstanceVO(UsageTypes.ALLOCATED_VM, zoneId, event.getAccountId(), vmId, vmName,
-                        soId, templateId, hypervisorType, event.getCreateDate(), null);
+                    soId, templateId, hypervisorType, event.getCreateDate(), null);
                 if (cpuCores != null) {
                     usageInstanceNew.setCpuCores(cpuCores);
                 }
@@ -1136,38 +1136,38 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 if (memory != null) {
                     usageInstanceNew.setMemory(memory);
                 }
-                m_usageInstanceDao.persist(usageInstanceNew);
+                _usageInstanceDao.persist(usageInstanceNew);
             } catch (Exception ex) {
                 s_logger.error("Error saving usage instance for vm: " + vmId, ex);
             }
         } else if (EventTypes.EVENT_VM_DESTROY.equals(event.getType())) {
-            SearchCriteria<UsageVMInstanceVO> sc = m_usageInstanceDao.createSearchCriteria();
+            SearchCriteria<UsageVMInstanceVO> sc = _usageInstanceDao.createSearchCriteria();
             sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, Long.valueOf(vmId));
             sc.addAnd("endDate", SearchCriteria.Op.NULL);
             sc.addAnd("usageType", SearchCriteria.Op.EQ, UsageTypes.ALLOCATED_VM);
-            List<UsageVMInstanceVO> usageInstances = m_usageInstanceDao.search(sc, null);
+            List<UsageVMInstanceVO> usageInstances = _usageInstanceDao.search(sc, null);
             if (usageInstances != null) {
                 if (usageInstances.size() > 1) {
                     s_logger.warn("found multiple entries for a vm allocated with id: " + vmId + ", detroying them all...");
                 }
                 for (UsageVMInstanceVO usageInstance : usageInstances) {
                     usageInstance.setEndDate(event.getCreateDate());
-                    m_usageInstanceDao.update(usageInstance);
+                    _usageInstanceDao.update(usageInstance);
                 }
             }
         } else if (EventTypes.EVENT_VM_UPGRADE.equals(event.getType())) {
-            SearchCriteria<UsageVMInstanceVO> sc = m_usageInstanceDao.createSearchCriteria();
+            SearchCriteria<UsageVMInstanceVO> sc = _usageInstanceDao.createSearchCriteria();
             sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, Long.valueOf(vmId));
             sc.addAnd("endDate", SearchCriteria.Op.NULL);
             sc.addAnd("usageType", SearchCriteria.Op.EQ, UsageTypes.ALLOCATED_VM);
-            List<UsageVMInstanceVO> usageInstances = m_usageInstanceDao.search(sc, null);
+            List<UsageVMInstanceVO> usageInstances = _usageInstanceDao.search(sc, null);
             if (usageInstances != null) {
                 if (usageInstances.size() > 1) {
                     s_logger.warn("found multiple entries for a vm allocated with id: " + vmId + ", updating end_date for all of them...");
                 }
                 for (UsageVMInstanceVO usageInstance : usageInstances) {
                     usageInstance.setEndDate(event.getCreateDate());
-                    m_usageInstanceDao.update(usageInstance);
+                    _usageInstanceDao.update(usageInstance);
                 }
             }
 
@@ -1176,29 +1176,29 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             // add this VM to the usage helper table
             UsageVMInstanceVO usageInstanceNew =
                 new UsageVMInstanceVO(UsageTypes.ALLOCATED_VM, zoneId, event.getAccountId(), vmId, vmName, soId, templateId, hypervisorType, event.getCreateDate(), null);
-            m_usageInstanceDao.persist(usageInstanceNew);
+            _usageInstanceDao.persist(usageInstanceNew);
         } else if (EventTypes.EVENT_VM_DYNAMIC_SCALE.equals(event.getType())) {
             // Ending the running vm event
-            SearchCriteria<UsageVMInstanceVO> sc = m_usageInstanceDao.createSearchCriteria();
+            SearchCriteria<UsageVMInstanceVO> sc = _usageInstanceDao.createSearchCriteria();
             sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, Long.valueOf(vmId));
             sc.addAnd("endDate", SearchCriteria.Op.NULL);
             sc.addAnd("usageType", SearchCriteria.Op.EQ, UsageTypes.RUNNING_VM);
-            List<UsageVMInstanceVO> usageInstances = m_usageInstanceDao.search(sc, null);
+            List<UsageVMInstanceVO> usageInstances = _usageInstanceDao.search(sc, null);
             if (usageInstances != null) {
                 if (usageInstances.size() > 1) {
                     s_logger.warn("found multiple entries for a vm running with id: " + vmId + ", ending them all...");
                 }
                 for (UsageVMInstanceVO usageInstance : usageInstances) {
                     usageInstance.setEndDate(event.getCreateDate());
-                    m_usageInstanceDao.update(usageInstance);
+                    _usageInstanceDao.update(usageInstance);
                 }
             }
 
-            sc = m_usageInstanceDao.createSearchCriteria();
+            sc = _usageInstanceDao.createSearchCriteria();
             sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, Long.valueOf(vmId));
             sc.addAnd("endDate", SearchCriteria.Op.NULL);
             sc.addAnd("usageType", SearchCriteria.Op.EQ, UsageTypes.ALLOCATED_VM);
-            usageInstances = m_usageInstanceDao.search(sc, null);
+            usageInstances = _usageInstanceDao.search(sc, null);
             if (usageInstances == null || (usageInstances.size() == 0)) {
                 s_logger.error("Cannot find allocated vm entry for a vm running with id: " + vmId);
             } else if (usageInstances.size() == 1) {
@@ -1207,11 +1207,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     //Service Offering changed after Vm creation
                     //End current Allocated usage and create new Allocated Vm entry with new soId
                     usageInstance.setEndDate(event.getCreateDate());
-                    m_usageInstanceDao.update(usageInstance);
+                    _usageInstanceDao.update(usageInstance);
                     usageInstance.setServiceOfferingId(soId);
                     usageInstance.setStartDate(event.getCreateDate());
                     usageInstance.setEndDate(null);
-                    m_usageInstanceDao.persist(usageInstance);
+                    _usageInstanceDao.persist(usageInstance);
                 }
             }
 
@@ -1221,7 +1221,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             // add this VM to the usage helper table with new service offering Id
             UsageVMInstanceVO usageInstanceNew =
                 new UsageVMInstanceVO(UsageTypes.RUNNING_VM, zoneId, event.getAccountId(), vmId, vmName, soId, templateId, hypervisorType, event.getCreateDate(), null);
-            m_usageInstanceDao.persist(usageInstanceNew);
+            _usageInstanceDao.persist(usageInstanceNew);
         }
     }
 
@@ -1335,7 +1335,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("assigning ip address: " + ipAddress + " to account: " + event.getAccountId());
             }
-            Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
+            Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
             long zoneId = event.getZoneId();
             long id = event.getResourceId();
             long sourceNat = event.getSize();
@@ -1343,13 +1343,13 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             boolean isSystem = (event.getTemplateId() == null || event.getTemplateId() == 0) ? false : true;
             UsageIPAddressVO ipAddressVO =
                 new UsageIPAddressVO(id, event.getAccountId(), acct.getDomainId(), zoneId, ipAddress, isSourceNat, isSystem, event.getCreateDate(), null);
-            m_usageIPAddressDao.persist(ipAddressVO);
+            _usageIPAddressDao.persist(ipAddressVO);
         } else if (EventTypes.EVENT_NET_IP_RELEASE.equals(event.getType())) {
-            SearchCriteria<UsageIPAddressVO> sc = m_usageIPAddressDao.createSearchCriteria();
+            SearchCriteria<UsageIPAddressVO> sc = _usageIPAddressDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
             sc.addAnd("address", SearchCriteria.Op.EQ, ipAddress);
             sc.addAnd("released", SearchCriteria.Op.NULL);
-            List<UsageIPAddressVO> ipAddressVOs = m_usageIPAddressDao.search(sc, null);
+            List<UsageIPAddressVO> ipAddressVOs = _usageIPAddressDao.search(sc, null);
             if (ipAddressVOs.size() > 1) {
                 s_logger.warn("More that one usage entry for ip address: " + ipAddress + " assigned to account: " + event.getAccountId() +
                     "; marking them all as released...");
@@ -1359,7 +1359,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     s_logger.debug("releasing ip address: " + ipAddressVO.getAddress() + " from account: " + ipAddressVO.getAccountId());
                 }
                 ipAddressVO.setReleased(event.getCreateDate()); // there really shouldn't be more than one
-                m_usageIPAddressDao.update(ipAddressVO);
+                _usageIPAddressDao.update(ipAddressVO);
             }
         }
     }
@@ -1380,11 +1380,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
 
         if (EventTypes.EVENT_VOLUME_CREATE.equals(event.getType())) {
-            SearchCriteria<UsageVolumeVO> sc = m_usageVolumeDao.createSearchCriteria();
+            SearchCriteria<UsageVolumeVO> sc = _usageVolumeDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
             sc.addAnd("id", SearchCriteria.Op.EQ, volId);
             sc.addAnd("deleted", SearchCriteria.Op.NULL);
-            List<UsageVolumeVO> volumesVOs = m_usageVolumeDao.search(sc, null);
+            List<UsageVolumeVO> volumesVOs = _usageVolumeDao.search(sc, null);
             if (volumesVOs.size() > 0) {
                 //This is a safeguard to avoid double counting of volumes.
                 s_logger.error("Found duplicate usage entry for volume: " + volId + " assigned to account: " + event.getAccountId() + "; marking as deleted...");
@@ -1394,20 +1394,20 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     s_logger.debug("deleting volume: " + volumesVO.getId() + " from account: " + volumesVO.getAccountId());
                 }
                 volumesVO.setDeleted(event.getCreateDate());
-                m_usageVolumeDao.update(volumesVO);
+                _usageVolumeDao.update(volumesVO);
             }
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("create volume with id : " + volId + " for account: " + event.getAccountId());
             }
-            Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
+            Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
             UsageVolumeVO volumeVO = new UsageVolumeVO(volId, zoneId, event.getAccountId(), acct.getDomainId(), doId, templateId, size, event.getCreateDate(), null);
-            m_usageVolumeDao.persist(volumeVO);
+            _usageVolumeDao.persist(volumeVO);
         } else if (EventTypes.EVENT_VOLUME_DELETE.equals(event.getType())) {
-            SearchCriteria<UsageVolumeVO> sc = m_usageVolumeDao.createSearchCriteria();
+            SearchCriteria<UsageVolumeVO> sc = _usageVolumeDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
             sc.addAnd("id", SearchCriteria.Op.EQ, volId);
             sc.addAnd("deleted", SearchCriteria.Op.NULL);
-            List<UsageVolumeVO> volumesVOs = m_usageVolumeDao.search(sc, null);
+            List<UsageVolumeVO> volumesVOs = _usageVolumeDao.search(sc, null);
             if (volumesVOs.size() > 1) {
                 s_logger.warn("More that one usage entry for volume: " + volId + " assigned to account: " + event.getAccountId() + "; marking them all as deleted...");
             }
@@ -1416,7 +1416,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     s_logger.debug("deleting volume: " + volumesVO.getId() + " from account: " + volumesVO.getAccountId());
                 }
                 volumesVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
-                m_usageVolumeDao.update(volumesVO);
+                _usageVolumeDao.update(volumesVO);
             }
         }
     }
@@ -1445,22 +1445,22 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("create template with id : " + templateId + " for account: " + event.getAccountId());
             }
-            List<UsageStorageVO> storageVOs = m_usageStorageDao.listByIdAndZone(event.getAccountId(), templateId, StorageTypes.TEMPLATE, zoneId);
+            List<UsageStorageVO> storageVOs = _usageStorageDao.listByIdAndZone(event.getAccountId(), templateId, StorageTypes.TEMPLATE, zoneId);
             if (storageVOs.size() > 0) {
                 s_logger.warn("Usage entry for Template: " + templateId + " assigned to account: " + event.getAccountId() + "already exists in zone " + zoneId);
                 return;
             }
-            Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
+            Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
             UsageStorageVO storageVO =
                 new UsageStorageVO(templateId, zoneId, event.getAccountId(), acct.getDomainId(), StorageTypes.TEMPLATE, event.getTemplateId(), templateSize,
                     event.getVirtualSize(), event.getCreateDate(), null);
-            m_usageStorageDao.persist(storageVO);
+            _usageStorageDao.persist(storageVO);
         } else if (EventTypes.EVENT_TEMPLATE_DELETE.equals(event.getType())) {
             List<UsageStorageVO> storageVOs;
             if (zoneId != -1L) {
-                storageVOs = m_usageStorageDao.listByIdAndZone(event.getAccountId(), templateId, StorageTypes.TEMPLATE, zoneId);
+                storageVOs = _usageStorageDao.listByIdAndZone(event.getAccountId(), templateId, StorageTypes.TEMPLATE, zoneId);
             } else {
-                storageVOs = m_usageStorageDao.listById(event.getAccountId(), templateId, StorageTypes.TEMPLATE);
+                storageVOs = _usageStorageDao.listById(event.getAccountId(), templateId, StorageTypes.TEMPLATE);
             }
             if (storageVOs.size() > 1) {
                 s_logger.warn("More that one usage entry for storage: " + templateId + " assigned to account: " + event.getAccountId() +
@@ -1471,7 +1471,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     s_logger.debug("deleting template: " + storageVO.getId() + " from account: " + storageVO.getAccountId());
                 }
                 storageVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
-                m_usageStorageDao.update(storageVO);
+                _usageStorageDao.update(storageVO);
             }
         }
     }
@@ -1489,21 +1489,21 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("create iso with id : " + isoId + " for account: " + event.getAccountId());
             }
-            List<UsageStorageVO> storageVOs = m_usageStorageDao.listByIdAndZone(event.getAccountId(), isoId, StorageTypes.ISO, zoneId);
+            List<UsageStorageVO> storageVOs = _usageStorageDao.listByIdAndZone(event.getAccountId(), isoId, StorageTypes.ISO, zoneId);
             if (storageVOs.size() > 0) {
                 s_logger.warn("Usage entry for ISO: " + isoId + " assigned to account: " + event.getAccountId() + "already exists in zone " + zoneId);
                 return;
             }
-            Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
+            Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
             UsageStorageVO storageVO =
                 new UsageStorageVO(isoId, zoneId, event.getAccountId(), acct.getDomainId(), StorageTypes.ISO, null, isoSize, isoSize, event.getCreateDate(), null);
-            m_usageStorageDao.persist(storageVO);
+            _usageStorageDao.persist(storageVO);
         } else if (EventTypes.EVENT_ISO_DELETE.equals(event.getType())) {
             List<UsageStorageVO> storageVOs;
             if (zoneId != -1L) {
-                storageVOs = m_usageStorageDao.listByIdAndZone(event.getAccountId(), isoId, StorageTypes.ISO, zoneId);
+                storageVOs = _usageStorageDao.listByIdAndZone(event.getAccountId(), isoId, StorageTypes.ISO, zoneId);
             } else {
-                storageVOs = m_usageStorageDao.listById(event.getAccountId(), isoId, StorageTypes.ISO);
+                storageVOs = _usageStorageDao.listById(event.getAccountId(), isoId, StorageTypes.ISO);
             }
 
             if (storageVOs.size() > 1) {
@@ -1514,7 +1514,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     s_logger.debug("deleting iso: " + storageVO.getId() + " from account: " + storageVO.getAccountId());
                 }
                 storageVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
-                m_usageStorageDao.update(storageVO);
+                _usageStorageDao.update(storageVO);
             }
         }
     }
@@ -1533,12 +1533,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("create snapshot with id : " + snapId + " for account: " + event.getAccountId());
             }
-            Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
+            Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
             UsageStorageVO storageVO =
                 new UsageStorageVO(snapId, zoneId, event.getAccountId(), acct.getDomainId(), StorageTypes.SNAPSHOT, null, snapSize, event.getCreateDate(), null);
-            m_usageStorageDao.persist(storageVO);
+            _usageStorageDao.persist(storageVO);
         } else if (EventTypes.EVENT_SNAPSHOT_DELETE.equals(event.getType())) {
-            List<UsageStorageVO> storageVOs = m_usageStorageDao.listById(event.getAccountId(), snapId, StorageTypes.SNAPSHOT);
+            List<UsageStorageVO> storageVOs = _usageStorageDao.listById(event.getAccountId(), snapId, StorageTypes.SNAPSHOT);
             if (storageVOs.size() > 1) {
                 s_logger.warn("More that one usage entry for storage: " + snapId + " assigned to account: " + event.getAccountId() + "; marking them all as deleted...");
             }
@@ -1547,7 +1547,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     s_logger.debug("deleting snapshot: " + storageVO.getId() + " from account: " + storageVO.getAccountId());
                 }
                 storageVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
-                m_usageStorageDao.update(storageVO);
+                _usageStorageDao.update(storageVO);
             }
         }
     }
@@ -1563,15 +1563,15 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 s_logger.debug("Creating load balancer : " + id + " for account: " + event.getAccountId());
             }
             zoneId = event.getZoneId();
-            Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
+            Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
             UsageLoadBalancerPolicyVO lbVO = new UsageLoadBalancerPolicyVO(id, zoneId, event.getAccountId(), acct.getDomainId(), event.getCreateDate(), null);
-            m_usageLoadBalancerPolicyDao.persist(lbVO);
+            _usageLoadBalancerPolicyDao.persist(lbVO);
         } else if (EventTypes.EVENT_LOAD_BALANCER_DELETE.equals(event.getType())) {
-            SearchCriteria<UsageLoadBalancerPolicyVO> sc = m_usageLoadBalancerPolicyDao.createSearchCriteria();
+            SearchCriteria<UsageLoadBalancerPolicyVO> sc = _usageLoadBalancerPolicyDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
             sc.addAnd("deleted", SearchCriteria.Op.NULL);
-            List<UsageLoadBalancerPolicyVO> lbVOs = m_usageLoadBalancerPolicyDao.search(sc, null);
+            List<UsageLoadBalancerPolicyVO> lbVOs = _usageLoadBalancerPolicyDao.search(sc, null);
             if (lbVOs.size() > 1) {
                 s_logger.warn("More that one usage entry for load balancer policy: " + id + " assigned to account: " + event.getAccountId() +
                     "; marking them all as deleted...");
@@ -1581,7 +1581,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     s_logger.debug("deleting load balancer policy: " + lbVO.getId() + " from account: " + lbVO.getAccountId());
                 }
                 lbVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
-                m_usageLoadBalancerPolicyDao.update(lbVO);
+                _usageLoadBalancerPolicyDao.update(lbVO);
             }
         }
     }
@@ -1597,15 +1597,15 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 s_logger.debug("Creating port forwarding rule : " + id + " for account: " + event.getAccountId());
             }
             zoneId = event.getZoneId();
-            Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
+            Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
             UsagePortForwardingRuleVO pfVO = new UsagePortForwardingRuleVO(id, zoneId, event.getAccountId(), acct.getDomainId(), event.getCreateDate(), null);
-            m_usagePortForwardingRuleDao.persist(pfVO);
+            _usagePortForwardingRuleDao.persist(pfVO);
         } else if (EventTypes.EVENT_NET_RULE_DELETE.equals(event.getType())) {
-            SearchCriteria<UsagePortForwardingRuleVO> sc = m_usagePortForwardingRuleDao.createSearchCriteria();
+            SearchCriteria<UsagePortForwardingRuleVO> sc = _usagePortForwardingRuleDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
             sc.addAnd("deleted", SearchCriteria.Op.NULL);
-            List<UsagePortForwardingRuleVO> pfVOs = m_usagePortForwardingRuleDao.search(sc, null);
+            List<UsagePortForwardingRuleVO> pfVOs = _usagePortForwardingRuleDao.search(sc, null);
             if (pfVOs.size() > 1) {
                 s_logger.warn("More that one usage entry for port forwarding rule: " + id + " assigned to account: " + event.getAccountId() +
                     "; marking them all as deleted...");
@@ -1615,7 +1615,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     s_logger.debug("deleting port forwarding rule: " + pfVO.getId() + " from account: " + pfVO.getAccountId());
                 }
                 pfVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
-                m_usagePortForwardingRuleDao.update(pfVO);
+                _usagePortForwardingRuleDao.update(pfVO);
             }
         }
     }
@@ -1638,19 +1638,19 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 s_logger.debug("Creating networking offering: " + networkOfferingId + " for Vm: " + vmId + " for account: " + event.getAccountId());
             }
             zoneId = event.getZoneId();
-            Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
+            Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
             boolean isDefault = (event.getSize() == 1) ? true : false;
             UsageNetworkOfferingVO networkOffering =
                 new UsageNetworkOfferingVO(zoneId, event.getAccountId(), acct.getDomainId(), vmId, networkOfferingId, nicId, isDefault, event.getCreateDate(), null);
-            m_usageNetworkOfferingDao.persist(networkOffering);
+            _usageNetworkOfferingDao.persist(networkOffering);
         } else if (EventTypes.EVENT_NETWORK_OFFERING_DELETE.equals(event.getType()) || EventTypes.EVENT_NETWORK_OFFERING_REMOVE.equals(event.getType())) {
-            SearchCriteria<UsageNetworkOfferingVO> sc = m_usageNetworkOfferingDao.createSearchCriteria();
+            SearchCriteria<UsageNetworkOfferingVO> sc = _usageNetworkOfferingDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
             sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, vmId);
             sc.addAnd("nicId", SearchCriteria.Op.EQ, nicId);
             sc.addAnd("networkOfferingId", SearchCriteria.Op.EQ, networkOfferingId);
             sc.addAnd("deleted", SearchCriteria.Op.NULL);
-            List<UsageNetworkOfferingVO> noVOs = m_usageNetworkOfferingDao.search(sc, null);
+            List<UsageNetworkOfferingVO> noVOs = _usageNetworkOfferingDao.search(sc, null);
             if (noVOs.size() > 1) {
                 s_logger.warn("More that one usage entry for networking offering: " + networkOfferingId + " for Vm: " + vmId + " assigned to account: " +
                     event.getAccountId() + "; marking them all as deleted...");
@@ -1660,7 +1660,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     s_logger.debug("deleting network offering: " + noVO.getNetworkOfferingId() + " from Vm: " + noVO.getVmInstanceId());
                 }
                 noVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
-                m_usageNetworkOfferingDao.update(noVO);
+                _usageNetworkOfferingDao.update(noVO);
             }
         }
     }
@@ -1675,16 +1675,16 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Creating VPN user: " + userId + " for account: " + event.getAccountId());
             }
-            Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
+            Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
             String userName = event.getResourceName();
             UsageVPNUserVO vpnUser = new UsageVPNUserVO(zoneId, event.getAccountId(), acct.getDomainId(), userId, userName, event.getCreateDate(), null);
-            m_usageVPNUserDao.persist(vpnUser);
+            _usageVPNUserDao.persist(vpnUser);
         } else if (EventTypes.EVENT_VPN_USER_REMOVE.equals(event.getType())) {
-            SearchCriteria<UsageVPNUserVO> sc = m_usageVPNUserDao.createSearchCriteria();
+            SearchCriteria<UsageVPNUserVO> sc = _usageVPNUserDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
             sc.addAnd("userId", SearchCriteria.Op.EQ, userId);
             sc.addAnd("deleted", SearchCriteria.Op.NULL);
-            List<UsageVPNUserVO> vuVOs = m_usageVPNUserDao.search(sc, null);
+            List<UsageVPNUserVO> vuVOs = _usageVPNUserDao.search(sc, null);
             if (vuVOs.size() > 1) {
                 s_logger.warn("More that one usage entry for vpn user: " + userId + " assigned to account: " + event.getAccountId() + "; marking them all as deleted...");
             }
@@ -1693,7 +1693,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     s_logger.debug("deleting vpn user: " + vuVO.getUserId());
                 }
                 vuVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
-                m_usageVPNUserDao.update(vuVO);
+                _usageVPNUserDao.update(vuVO);
             }
         }
     }
@@ -1710,16 +1710,16 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 s_logger.debug("Assigning : security group" + sgId + " to Vm: " + vmId + " for account: " + event.getAccountId());
             }
             zoneId = event.getZoneId();
-            Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
+            Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
             UsageSecurityGroupVO securityGroup = new UsageSecurityGroupVO(zoneId, event.getAccountId(), acct.getDomainId(), vmId, sgId, event.getCreateDate(), null);
-            m_usageSecurityGroupDao.persist(securityGroup);
+            _usageSecurityGroupDao.persist(securityGroup);
         } else if (EventTypes.EVENT_SECURITY_GROUP_REMOVE.equals(event.getType())) {
-            SearchCriteria<UsageSecurityGroupVO> sc = m_usageSecurityGroupDao.createSearchCriteria();
+            SearchCriteria<UsageSecurityGroupVO> sc = _usageSecurityGroupDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
             sc.addAnd("vmInstanceId", SearchCriteria.Op.EQ, vmId);
             sc.addAnd("securityGroupId", SearchCriteria.Op.EQ, sgId);
             sc.addAnd("deleted", SearchCriteria.Op.NULL);
-            List<UsageSecurityGroupVO> sgVOs = m_usageSecurityGroupDao.search(sc, null);
+            List<UsageSecurityGroupVO> sgVOs = _usageSecurityGroupDao.search(sc, null);
             if (sgVOs.size() > 1) {
                 s_logger.warn("More that one usage entry for security group: " + sgId + " for Vm: " + vmId + " assigned to account: " + event.getAccountId() +
                     "; marking them all as deleted...");
@@ -1729,7 +1729,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     s_logger.debug("deleting security group: " + sgVO.getSecurityGroupId() + " from Vm: " + sgVO.getVmInstanceId());
                 }
                 sgVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
-                m_usageSecurityGroupDao.update(sgVO);
+                _usageSecurityGroupDao.update(sgVO);
             }
         }
     }
@@ -1742,10 +1742,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         Long accountId = event.getAccountId();
         long size = event.getSize();
         Date created = event.getCreateDate();
-        Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
+        Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
         Long domainId = acct.getDomainId();
         UsageVMSnapshotVO vsVO = new UsageVMSnapshotVO(volumeId, zoneId, accountId, domainId, vmId, offeringId, size, created, null);
-        m_usageVMSnapshotDao.persist(vsVO);
+        _usageVMSnapshotDao.persist(vsVO);
     }
 
     private class Heartbeat extends ManagedContextRunnable {
@@ -1753,7 +1753,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         protected void runInContext() {
             TransactionLegacy usageTxn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
             try {
-                if (!m_heartbeatLock.lock(3)) { // 3 second timeout
+                if (!_heartbeatLock.lock(3)) { // 3 second timeout
                     if (s_logger.isTraceEnabled())
                         s_logger.trace("Heartbeat lock is in use by others, returning true as someone else will take over the job if required");
                     return;
@@ -1761,24 +1761,24 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
                 try {
                     // check for one-off jobs
-                    UsageJobVO nextJob = m_usageJobDao.getNextImmediateJob();
+                    UsageJobVO nextJob = _usageJobDao.getNextImmediateJob();
                     if (nextJob != null) {
-                        if (m_hostname.equals(nextJob.getHost()) && (m_pid == nextJob.getPid().intValue())) {
+                        if (_hostname.equals(nextJob.getHost()) && (_pid == nextJob.getPid().intValue())) {
                             updateJob(nextJob.getId(), null, null, null, UsageJobVO.JOB_SCHEDULED);
                             scheduleParse();
                         }
                     }
 
-                    Long jobId = m_usageJobDao.checkHeartbeat(m_hostname, m_pid, m_aggregationDuration);
+                    Long jobId = _usageJobDao.checkHeartbeat(_hostname, _pid, _aggregationDuration);
                     if (jobId != null) {
                         // if I'm taking over the job...see how long it's been since the last job, and if it's more than the
                         // aggregation range...do a one off job to catch up.  However, only do this if we are more than half
                         // the aggregation range away from executing the next job
                         long now = System.currentTimeMillis();
-                        long timeToJob = m_jobExecTime.getTimeInMillis() - now;
+                        long timeToJob = _jobExecTime.getTimeInMillis() - now;
                         long timeSinceJob = 0;
-                        long aggregationDurationMillis = m_aggregationDuration * 60 * 1000;
-                        long lastSuccess = m_usageJobDao.getLastJobSuccessDateMillis();
+                        long aggregationDurationMillis = _aggregationDuration * 60 * 1000;
+                        long lastSuccess = _usageJobDao.getLastJobSuccessDateMillis();
                         if (lastSuccess > 0) {
                             timeSinceJob = now - lastSuccess;
                         }
@@ -1787,19 +1787,19 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                             if (timeToJob > (aggregationDurationMillis / 2)) {
                                 if (s_logger.isDebugEnabled()) {
                                     s_logger.debug("it's been " + timeSinceJob + " ms since last usage job and " + timeToJob +
-                                        " ms until next job, scheduling an immediate job to catch up (aggregation duration is " + m_aggregationDuration + " minutes)");
+                                        " ms until next job, scheduling an immediate job to catch up (aggregation duration is " + _aggregationDuration + " minutes)");
                                 }
                                 scheduleParse();
                             }
                         }
 
-                        boolean changeOwner = updateJob(jobId, m_hostname, Integer.valueOf(m_pid), new Date(), UsageJobVO.JOB_NOT_SCHEDULED);
+                        boolean changeOwner = updateJob(jobId, _hostname, Integer.valueOf(_pid), new Date(), UsageJobVO.JOB_NOT_SCHEDULED);
                         if (changeOwner) {
-                            deleteOneOffJobs(m_hostname, m_pid);
+                            deleteOneOffJobs(_hostname, _pid);
                         }
                     }
                 } finally {
-                    m_heartbeatLock.unlock();
+                    _heartbeatLock.unlock();
                 }
             } catch (Exception ex) {
                 s_logger.error("error in heartbeat", ex);
@@ -1816,12 +1816,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 txn.start();
 
                 // take over the job, setting our hostname/pid/heartbeat time
-                UsageJobVO job = m_usageJobDao.lockRow(jobId, Boolean.TRUE);
+                UsageJobVO job = _usageJobDao.lockRow(jobId, Boolean.TRUE);
                 if (!job.getHost().equals(hostname) || !job.getPid().equals(pid)) {
                     changeOwner = true;
                 }
 
-                UsageJobVO jobForUpdate = m_usageJobDao.createForUpdate();
+                UsageJobVO jobForUpdate = _usageJobDao.createForUpdate();
                 if (hostname != null) {
                     jobForUpdate.setHost(hostname);
                 }
@@ -1832,7 +1832,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     jobForUpdate.setHeartbeat(heartbeat);
                 }
                 jobForUpdate.setScheduled(scheduled);
-                m_usageJobDao.update(job.getId(), jobForUpdate);
+                _usageJobDao.update(job.getId(), jobForUpdate);
 
                 txn.commit();
             } catch (Exception dbEx) {
@@ -1844,15 +1844,15 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
         @DB
         protected void deleteOneOffJobs(String hostname, int pid) {
-            SearchCriteria<UsageJobVO> sc = m_usageJobDao.createSearchCriteria();
-            SearchCriteria<UsageJobVO> ssc = m_usageJobDao.createSearchCriteria();
+            SearchCriteria<UsageJobVO> sc = _usageJobDao.createSearchCriteria();
+            SearchCriteria<UsageJobVO> ssc = _usageJobDao.createSearchCriteria();
             ssc.addOr("host", SearchCriteria.Op.NEQ, hostname);
             ssc.addOr("pid", SearchCriteria.Op.NEQ, pid);
             sc.addAnd("host", SearchCriteria.Op.SC, ssc);
             sc.addAnd("endMillis", SearchCriteria.Op.EQ, Long.valueOf(0));
             sc.addAnd("jobType", SearchCriteria.Op.EQ, Integer.valueOf(UsageJobVO.JOB_TYPE_SINGLE));
             sc.addAnd("scheduled", SearchCriteria.Op.EQ, Integer.valueOf(0));
-            m_usageJobDao.expunge(sc);
+            _usageJobDao.expunge(sc);
         }
     }
 

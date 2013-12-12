@@ -47,7 +47,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
     private static final Logger s_logger = Logger.getLogger(ServiceInstanceModel.class);
 
     private String _uuid;
-    private String _fq_name;
+    private String _fqName;
     private String _projectId;
     private String _mgmtName;
     private String _leftName;
@@ -79,7 +79,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
         } else {
             parent_name = ContrailManager.VNC_ROOT_DOMAIN + ":" + ContrailManager.VNC_DEFAULT_PROJECT;
         }
-        _fq_name = parent_name + ":" + name;
+        _fqName = parent_name + ":" + name;
 
         _mgmtName = ContrailManager.VNC_ROOT_DOMAIN + ":" + ContrailManager.VNC_DEFAULT_PROJECT + ":" + ContrailManager.managementNetworkName;
         _left = left;
@@ -103,11 +103,11 @@ public class ServiceInstanceModel extends ModelObjectBase {
     }
 
     public String getQualifiedName() {
-        return _fq_name;
+        return _fqName;
     }
 
     public String getName() {
-        return _fq_name.substring(_fq_name.lastIndexOf(':') + 1);
+        return _fqName.substring(_fqName.lastIndexOf(':') + 1);
     }
 
     private void applyNetworkPolicy(ModelController controller, NetworkPolicy policy, VirtualNetwork left, VirtualNetwork right) {
@@ -139,7 +139,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
     public void build(ModelController controller, ServiceInstance siObj) {
         ApiConnector api = controller.getApiAccessor();
         _serviceInstance = siObj;
-        _fq_name = StringUtils.join(siObj.getQualifiedName(), ':');
+        _fqName = StringUtils.join(siObj.getQualifiedName(), ':');
         ServiceInstanceType props = siObj.getProperties();
         // TODO: read management network names and cache network objects.
         ObjectReference ref = siObj.getServiceTemplate().get(0);
@@ -174,7 +174,7 @@ public class ServiceInstanceModel extends ModelObjectBase {
             String clsname = o.getClass().getName();
             return ServiceInstanceModel.class.getName().compareTo(clsname);
         }
-        return _fq_name.compareTo(other._fq_name);
+        return _fqName.compareTo(other._fqName);
     }
 
     private ServiceInstance createServiceInstance(ModelController controller) {

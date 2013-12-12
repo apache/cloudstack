@@ -70,7 +70,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     @Inject
     protected DataCenterIpAddressDao _ipAllocDao = null;
     @Inject
-    protected DataCenterLinkLocalIpAddressDao _LinkLocalIpAllocDao = null;
+    protected DataCenterLinkLocalIpAddressDao _linkLocalIpAllocDao = null;
     @Inject
     protected DataCenterVnetDao _vnetAllocDao = null;
     @Inject
@@ -179,12 +179,12 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
     @Override
     public void releaseLinkLocalIpAddress(long nicId, String reservationId) {
-        _LinkLocalIpAllocDao.releaseIpAddress(nicId, reservationId);
+        _linkLocalIpAllocDao.releaseIpAddress(nicId, reservationId);
     }
 
     @Override
     public void releaseLinkLocalIpAddress(String ipAddress, long dcId, Long instanceId) {
-        _LinkLocalIpAllocDao.releaseIpAddress(ipAddress, dcId, instanceId);
+        _linkLocalIpAllocDao.releaseIpAddress(ipAddress, dcId, instanceId);
     }
 
     @Override
@@ -194,7 +194,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
     @Override
     public boolean deleteLinkLocalIpAddressByPod(long podId) {
-        return _LinkLocalIpAllocDao.deleteIpAddressByPod(podId);
+        return _linkLocalIpAllocDao.deleteIpAddressByPod(podId);
     }
 
     @Override
@@ -265,7 +265,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
     @Override
     public String allocateLinkLocalIpAddress(long dcId, long podId, long instanceId, String reservationId) {
-        DataCenterLinkLocalIpAddressVO vo = _LinkLocalIpAllocDao.takeIpAddress(dcId, podId, instanceId, reservationId);
+        DataCenterLinkLocalIpAddressVO vo = _linkLocalIpAllocDao.takeIpAddress(dcId, podId, instanceId, reservationId);
         if (vo == null) {
             return null;
         }
@@ -294,7 +294,7 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
     @Override
     public void addLinkLocalIpAddress(long dcId, long podId, String start, String end) {
-        _LinkLocalIpAllocDao.addIpRange(dcId, podId, start, end);
+        _linkLocalIpAllocDao.addIpRange(dcId, podId, start, end);
     }
 
     @Override

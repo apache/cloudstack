@@ -33,9 +33,9 @@ import streamer.PipelineImpl;
  * "RFB 003.007\n". We need to send response packet with supported protocol
  * version, e.g. "RFB 003.003\n".
  */
-public class Vnc_3_3_Hello extends OneTimeSwitch {
+public class Vnc33Hello extends OneTimeSwitch {
 
-    public Vnc_3_3_Hello(String id) {
+    public Vnc33Hello(String id) {
         super(id);
     }
 
@@ -92,7 +92,7 @@ public class Vnc_3_3_Hello extends OneTimeSwitch {
         InputStreamSource inputStreamSource = new InputStreamSource("source", is);
         OutputStreamSink outputStreamSink = new OutputStreamSink("mainSink", mainOS);
 
-        Vnc_3_3_Hello hello = new Vnc_3_3_Hello("hello");
+        Vnc33Hello hello = new Vnc33Hello("hello");
 
         Pipeline pipeline = new PipelineImpl("test");
 

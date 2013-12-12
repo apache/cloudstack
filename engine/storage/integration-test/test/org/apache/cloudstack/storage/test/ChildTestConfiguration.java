@@ -98,14 +98,14 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
 
 @Configuration
 @ComponentScan(basePackageClasses = {NicDaoImpl.class, VMInstanceDaoImpl.class, VMTemplateHostDaoImpl.class, VolumeHostDaoImpl.class, VolumeDaoImpl.class,
-                   VMTemplatePoolDaoImpl.class, ResourceTagsDaoImpl.class, VMTemplateDaoImpl.class, MockStorageMotionStrategy.class, ConfigurationDaoImpl.class,
-                   ClusterDaoImpl.class, HostPodDaoImpl.class, VMTemplateZoneDaoImpl.class, VMTemplateDetailsDaoImpl.class, HostDetailsDaoImpl.class,
-                   HostTagsDaoImpl.class, HostTransferMapDaoImpl.class, DataCenterIpAddressDaoImpl.class, DataCenterLinkLocalIpAddressDaoImpl.class,
-                   DataCenterVnetDaoImpl.class, PodVlanDaoImpl.class, DataCenterDetailsDaoImpl.class, DiskOfferingDaoImpl.class, StoragePoolHostDaoImpl.class,
-                   UserVmDaoImpl.class, UserVmDetailsDaoImpl.class, ServiceOfferingDaoImpl.class, CapacityDaoImpl.class, SnapshotDaoImpl.class, VMSnapshotDaoImpl.class,
-                   OCFS2ManagerImpl.class, ClusterDetailsDaoImpl.class, SecondaryStorageVmDaoImpl.class, ConsoleProxyDaoImpl.class, StoragePoolWorkDaoImpl.class,
-                   StorageCacheManagerImpl.class, UserDaoImpl.class, DataCenterDaoImpl.class, StoragePoolDetailsDaoImpl.class, DomainDaoImpl.class,
-                   DownloadMonitorImpl.class, AccountDaoImpl.class, ActionEventUtils.class, EventDaoImpl.class},
+    VMTemplatePoolDaoImpl.class, ResourceTagsDaoImpl.class, VMTemplateDaoImpl.class, MockStorageMotionStrategy.class, ConfigurationDaoImpl.class,
+    ClusterDaoImpl.class, HostPodDaoImpl.class, VMTemplateZoneDaoImpl.class, VMTemplateDetailsDaoImpl.class, HostDetailsDaoImpl.class,
+    HostTagsDaoImpl.class, HostTransferMapDaoImpl.class, DataCenterIpAddressDaoImpl.class, DataCenterLinkLocalIpAddressDaoImpl.class,
+    DataCenterVnetDaoImpl.class, PodVlanDaoImpl.class, DataCenterDetailsDaoImpl.class, DiskOfferingDaoImpl.class, StoragePoolHostDaoImpl.class,
+    UserVmDaoImpl.class, UserVmDetailsDaoImpl.class, ServiceOfferingDaoImpl.class, CapacityDaoImpl.class, SnapshotDaoImpl.class, VMSnapshotDaoImpl.class,
+    OCFS2ManagerImpl.class, ClusterDetailsDaoImpl.class, SecondaryStorageVmDaoImpl.class, ConsoleProxyDaoImpl.class, StoragePoolWorkDaoImpl.class,
+    StorageCacheManagerImpl.class, UserDaoImpl.class, DataCenterDaoImpl.class, StoragePoolDetailsDaoImpl.class, DomainDaoImpl.class,
+    DownloadMonitorImpl.class, AccountDaoImpl.class, ActionEventUtils.class, EventDaoImpl.class},
                includeFilters = {@Filter(value = Library.class, type = FilterType.CUSTOM)},
                useDefaultFilters = false)
 public class ChildTestConfiguration extends TestConfiguration {

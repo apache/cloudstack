@@ -153,30 +153,30 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
     String _publicNetworkName;
     String _guestNetworkName;
     boolean _canBridgeFirewall;
-    static boolean _isHeartBeat = false;
+    static boolean s_isHeartBeat = false;
     List<String> _bridges = null;
     private final Map<String, Pair<Long, Long>> _vmNetworkStats = new ConcurrentHashMap<String, Pair<Long, Long>>();
-    private static String _ovsAgentPath = "/opt/ovs-agent-latest";
+    private static String s_ovsAgentPath = "/opt/ovs-agent-latest";
 
     // TODO vmsync {
-    static HashMap<String, State> _stateMaps;
+    static HashMap<String, State> s_stateMaps;
     protected HashMap<String, State> _vms = new HashMap<String, State>(50);
     static {
-        _stateMaps = new HashMap<String, State>();
-        _stateMaps.put("RUNNING", State.Running);
-        _stateMaps.put("DOWN", State.Stopped);
-        _stateMaps.put("ERROR", State.Error);
-        _stateMaps.put("SUSPEND", State.Stopped);
+        s_stateMaps = new HashMap<String, State>();
+        s_stateMaps.put("RUNNING", State.Running);
+        s_stateMaps.put("DOWN", State.Stopped);
+        s_stateMaps.put("ERROR", State.Error);
+        s_stateMaps.put("SUSPEND", State.Stopped);
     }
     // TODO vmsync }
 
-    static HashMap<String, PowerState> _powerStateMaps;
+    static HashMap<String, PowerState> s_powerStateMaps;
     static {
-        _powerStateMaps = new HashMap<String, PowerState>();
-        _powerStateMaps.put("RUNNING", PowerState.PowerOn);
-        _powerStateMaps.put("DOWN", PowerState.PowerOff);
-        _powerStateMaps.put("ERROR", PowerState.PowerUnknown);
-        _powerStateMaps.put("SUSPEND", PowerState.PowerOff);
+        s_powerStateMaps = new HashMap<String, PowerState>();
+        s_powerStateMaps.put("RUNNING", PowerState.PowerOn);
+        s_powerStateMaps.put("DOWN", PowerState.PowerOff);
+        s_powerStateMaps.put("ERROR", PowerState.PowerUnknown);
+        s_powerStateMaps.put("SUSPEND", PowerState.PowerOff);
     }
 
     @Override
@@ -259,7 +259,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         }
 
         /* set to false so each time ModifyStoragePoolCommand will re-setup heartbeat*/
-        _isHeartBeat = false;
+        s_isHeartBeat = false;
 
         /*
         try {
@@ -369,9 +369,9 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
             }
 
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Copying " + script.getPath() + " to " + _ovsAgentPath + " on " + _ip + " with permission 0644");
+                s_logger.debug("Copying " + script.getPath() + " to " + s_ovsAgentPath + " on " + _ip + " with permission 0644");
             }
-            scp.put(script.getPath(), _ovsAgentPath, "0644");
+            scp.put(script.getPath(), s_ovsAgentPath, "0644");
         }
 
         sshConnection = SSHCmdHelper.acquireAuthorizedConnection(_ip, _username, _password);
@@ -409,7 +409,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         try {
             OvmHost.ping(_conn);
             HashMap<String, State> newStates = sync();
-            return new PingRoutingCommand(getType(), id, newStates, this.getHostVmStateReport());
+            return new PingRoutingCommand(getType(), id, newStates, getHostVmStateReport());
         } catch (XmlRpcException e) {
             s_logger.debug("Check agent status failed", e);
             return null;
@@ -454,13 +454,13 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 
     private void setupHeartBeat(String poolUuid) {
         try {
-            if (!_isHeartBeat) {
+            if (!s_isHeartBeat) {
                 OvmHost.setupHeartBeat(_conn, poolUuid, _ip);
-                _isHeartBeat = true;
+                s_isHeartBeat = true;
             }
         } catch (Exception e) {
             s_logger.debug("setup heart beat for " + _ip + " failed", e);
-            _isHeartBeat = false;
+            s_isHeartBeat = false;
         }
     }
 
@@ -786,7 +786,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
     }
 
     private State toState(String vmName, String s) {
-        State state = _stateMaps.get(s);
+        State state = s_stateMaps.get(s);
         if (state == null) {
             s_logger.debug("Unkown state " + s + " for " + vmName);
             state = State.Unknown;
@@ -795,7 +795,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
     }
 
     private PowerState toPowerState(String vmName, String s) {
-        PowerState state = _powerStateMaps.get(s);
+        PowerState state = s_powerStateMaps.get(s);
         if (state == null) {
             s_logger.debug("Unkown state " + s + " for " + vmName);
             state = PowerState.PowerUnknown;

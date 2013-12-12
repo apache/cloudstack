@@ -4,9 +4,9 @@
 // regarding copyright ownership.  The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// the License.  You may obtain a copy of the License at
+// with the License.  You may obtain a copy of the License at
 //
-// http://www.apache.org/licenses/LICENSE-2.0
+//   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
@@ -14,14 +14,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.utils.ssh;
+package com.cloud.agent.api.storage;
 
-import com.cloud.utils.SerialVersionUID;
+import com.cloud.agent.api.Command;
 
-public class sshException extends Exception {
-    private static final long serialVersionUID = SerialVersionUID.sshException;
+public abstract class SsCommand extends Command {
+    private String secUrl;
 
-    public sshException(String msg) {
-        super(msg);
+    public SsCommand() {
     }
+
+    protected SsCommand(SsCommand that) {
+        this.secUrl = that.secUrl;
+    }
+
+    public SsCommand(String secUrl) {
+        this.secUrl = secUrl;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
+
+    public String getSecUrl() {
+        return secUrl;
+    }
+
+    public void setSecUrl(String secUrl) {
+        this.secUrl = secUrl;
+    }
+
 }

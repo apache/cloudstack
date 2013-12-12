@@ -27,30 +27,30 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value={AutoScaleVmGroupVmMapDao.class})
+@Local(value = {AutoScaleVmGroupVmMapDao.class})
 public class AutoScaleVmGroupVmMapDaoImpl extends GenericDaoBase<AutoScaleVmGroupVmMapVO, Long> implements AutoScaleVmGroupVmMapDao {
 
-	@Override
-	public Integer countByGroup(long vmGroupId) {
+    @Override
+    public Integer countByGroup(long vmGroupId) {
 
-		SearchCriteria<AutoScaleVmGroupVmMapVO> sc = createSearchCriteria();
-		sc.addAnd("vmGroupId", SearchCriteria.Op.EQ, vmGroupId);
-		return getCount(sc);
-	}
+        SearchCriteria<AutoScaleVmGroupVmMapVO> sc = createSearchCriteria();
+        sc.addAnd("vmGroupId", SearchCriteria.Op.EQ, vmGroupId);
+        return getCount(sc);
+    }
 
-	@Override
-	public List<AutoScaleVmGroupVmMapVO> listByGroup(long vmGroupId) {
-		SearchCriteria<AutoScaleVmGroupVmMapVO> sc = createSearchCriteria();
-		sc.addAnd("vmGroupId", SearchCriteria.Op.EQ, vmGroupId);
-		return listBy(sc);
-	}
+    @Override
+    public List<AutoScaleVmGroupVmMapVO> listByGroup(long vmGroupId) {
+        SearchCriteria<AutoScaleVmGroupVmMapVO> sc = createSearchCriteria();
+        sc.addAnd("vmGroupId", SearchCriteria.Op.EQ, vmGroupId);
+        return listBy(sc);
+    }
 
-	@Override
-	public int remove(long vmGroupId, long vmId) {
-		SearchCriteria<AutoScaleVmGroupVmMapVO> sc = createSearchCriteria();
-		sc.addAnd("vmGroupId", SearchCriteria.Op.EQ, vmGroupId);
-		sc.addAnd("instanceId", SearchCriteria.Op.EQ, vmId);
-		return remove(sc);
-	}
+    @Override
+    public int remove(long vmGroupId, long vmId) {
+        SearchCriteria<AutoScaleVmGroupVmMapVO> sc = createSearchCriteria();
+        sc.addAnd("vmGroupId", SearchCriteria.Op.EQ, vmGroupId);
+        sc.addAnd("instanceId", SearchCriteria.Op.EQ, vmId);
+        return remove(sc);
+    }
 
 }

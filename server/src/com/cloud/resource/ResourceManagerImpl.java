@@ -120,7 +120,6 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.org.Managed;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.GuestOSCategoryVO;
-import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -155,7 +154,7 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SSHCmdHelper;
-import com.cloud.utils.ssh.sshException;
+import com.cloud.utils.ssh.SshException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
@@ -223,8 +222,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         return _discoverers;
     }
 
-    public void setDiscoverers(List<? extends Discoverer> _discoverers) {
-        this._discoverers = _discoverers;
+    public void setDiscoverers(List<? extends Discoverer> discoverers) {
+        _discoverers = discoverers;
     }
 
     @Inject
@@ -2066,7 +2065,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
                 try {
                     SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloudstack-agent restart");
-                } catch (sshException e) {
+                } catch (SshException e) {
                     return false;
                 }
             }

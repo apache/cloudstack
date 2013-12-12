@@ -158,8 +158,8 @@ public class DownloadCommand extends AbstractDownloadCommand implements Internal
         return _store;
     }
 
-    public void setDataStore(DataStoreTO _store) {
-        this._store = _store;
+    public void setDataStore(DataStoreTO store) {
+        this._store = store;
     }
 
     public String getInstallPath() {

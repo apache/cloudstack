@@ -68,9 +68,10 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
                     s_logger.debug("Console proxy is up, zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() +
                         ", private IP: " + proxy.getPrivateIpAddress());
 
-                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxy.getPodIdToDeployIn(), "Console proxy up in zone: " + dc.getName() +
-                    ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " +
-                    (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()), "Console proxy up (zone " + dc.getName() + ")");
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxy.getPodIdToDeployIn(),
+                    "Console proxy up in zone: " + dc.getName() +
+                        ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " +
+                        (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()), "Console proxy up (zone " + dc.getName() + ")");
                 break;
 
             case ConsoleProxyAlertEventArgs.PROXY_DOWN:
@@ -78,9 +79,10 @@ public class ConsoleProxyAlertAdapter extends AdapterBase implements AlertAdapte
                     s_logger.debug("Console proxy is down, zone: " + dc.getName() + ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() +
                         ", private IP: " + (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()));
 
-                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxy.getPodIdToDeployIn(), "Console proxy down in zone: " + dc.getName() +
-                    ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " +
-                    (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()), "Console proxy down (zone " + dc.getName() + ")");
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY, args.getZoneId(), proxy.getPodIdToDeployIn(),
+                    "Console proxy down in zone: " + dc.getName() +
+                        ", proxy: " + proxy.getHostName() + ", public IP: " + proxy.getPublicIpAddress() + ", private IP: " +
+                        (proxy.getPrivateIpAddress() == null ? "N/A" : proxy.getPrivateIpAddress()), "Console proxy down (zone " + dc.getName() + ")");
                 break;
 
             case ConsoleProxyAlertEventArgs.PROXY_REBOOTED:

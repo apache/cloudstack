@@ -61,8 +61,8 @@ public class CreatePrivateTemplateAnswer extends Answer {
         _virtualSize = virtualSize;
     }
 
-    public void setphysicalSize(long _physicalSize) {
-        this._physicalSize = _physicalSize;
+    public void setphysicalSize(long physicalSize) {
+        this._physicalSize = physicalSize;
     }
 
     public long getphysicalSize() {

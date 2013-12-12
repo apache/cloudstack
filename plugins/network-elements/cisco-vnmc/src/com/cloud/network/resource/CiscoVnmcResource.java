@@ -78,10 +78,10 @@ public class CiscoVnmcResource implements ServerResource {
     private CiscoVnmcConnectionImpl _connection;
 
     public void setConnection(CiscoVnmcConnectionImpl connection) {
-        this._connection = connection;
+        _connection = connection;
     }
 
-    private final Logger s_logger = Logger.getLogger(CiscoVnmcResource.class);
+    private static final Logger s_logger = Logger.getLogger(CiscoVnmcResource.class);
 
     @Override
     public Answer executeRequest(Command cmd) {

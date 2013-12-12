@@ -39,11 +39,11 @@ public class CapacityManagerTest {
     ClusterDetailsDao ClusterDetailsDao = mock(com.cloud.dc.ClusterDetailsDao.class);
     CapacityManagerImpl capMgr;
     private ServiceOfferingVO svo = mock(ServiceOfferingVO.class);
-    private CapacityVO cvo_cpu = mock(CapacityVO.class);
-    private CapacityVO cvo_ram = mock(CapacityVO.class);
+    private CapacityVO cvoCpu = mock(CapacityVO.class);
+    private CapacityVO cvoRam = mock(CapacityVO.class);
     private VirtualMachine vm = mock(VirtualMachine.class);
-    private ClusterDetailsVO cluster_detail_cpu = mock(ClusterDetailsVO.class);
-    private ClusterDetailsVO cluster_detail_ram = mock(ClusterDetailsVO.class);
+    private ClusterDetailsVO clusterDetailCpu = mock(ClusterDetailsVO.class);
+    private ClusterDetailsVO clusterDetailRam = mock(ClusterDetailsVO.class);
 
     public CapacityManagerImpl setUp() {
         CapacityManagerImpl capMgr = new CapacityManagerImpl();
@@ -59,18 +59,18 @@ public class CapacityManagerTest {
         when(vm.getHostId()).thenReturn(1l);
         when(vm.getServiceOfferingId()).thenReturn(2l);
         when(SOfferingDao.findById(anyLong(), anyLong())).thenReturn(svo);
-        when(CDao.findByHostIdType(anyLong(), eq(Capacity.CAPACITY_TYPE_CPU))).thenReturn(cvo_cpu);
-        when(CDao.findByHostIdType(anyLong(), eq(Capacity.CAPACITY_TYPE_MEMORY))).thenReturn(cvo_ram);
-        when(cvo_cpu.getUsedCapacity()).thenReturn(500l);
-        when(cvo_cpu.getTotalCapacity()).thenReturn(2000l);
-        when(cvo_ram.getUsedCapacity()).thenReturn(3000l);
-        when(cvo_ram.getTotalCapacity()).thenReturn((long)1024 * 1024 * 1024);
+        when(CDao.findByHostIdType(anyLong(), eq(Capacity.CAPACITY_TYPE_CPU))).thenReturn(cvoCpu);
+        when(CDao.findByHostIdType(anyLong(), eq(Capacity.CAPACITY_TYPE_MEMORY))).thenReturn(cvoRam);
+        when(cvoCpu.getUsedCapacity()).thenReturn(500l);
+        when(cvoCpu.getTotalCapacity()).thenReturn(2000l);
+        when(cvoRam.getUsedCapacity()).thenReturn(3000l);
+        when(cvoRam.getTotalCapacity()).thenReturn((long)1024 * 1024 * 1024);
         when(svo.getCpu()).thenReturn(500);
         when(svo.getRamSize()).thenReturn(512);
-        when(cvo_cpu.getReservedCapacity()).thenReturn(0l);
-        when(cvo_ram.getReservedCapacity()).thenReturn(0l);
-        when(cluster_detail_ram.getValue()).thenReturn("1.5");
-        when(cluster_detail_cpu.getValue()).thenReturn("2");
+        when(cvoCpu.getReservedCapacity()).thenReturn(0l);
+        when(cvoRam.getReservedCapacity()).thenReturn(0l);
+        when(clusterDetailRam.getValue()).thenReturn("1.5");
+        when(clusterDetailCpu.getValue()).thenReturn("2");
         when(CDao.update(anyLong(), isA(CapacityVO.class))).thenReturn(true);
         boolean hasCapacity = capMgr.checkIfHostHasCapacity(1l, 500, 1024 * 1024 * 1024, false, 2, 2, false);
         Assert.assertTrue(hasCapacity);

@@ -26,7 +26,7 @@ public interface AutoScalePolicyConditionMapDao extends GenericDao<AutoScalePoli
 
     public boolean isConditionInUse(Long conditionId);
 
-	boolean removeByAutoScalePolicyId(long id);
+    boolean removeByAutoScalePolicyId(long id);
 
-	List<AutoScalePolicyConditionMapVO> findByPolicyId(long id);
+    List<AutoScalePolicyConditionMapVO> findByPolicyId(long id);
 }

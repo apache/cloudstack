@@ -376,7 +376,7 @@ public class ApiCommand {
 
     // Send api command to the server
     public void sendCommand(HttpClient client, Connection conn) {
-        if (TestCaseEngine._printUrl == true) {
+        if (TestCaseEngine.s_printUrl == true) {
             s_logger.info("url is " + this.command);
         }
 
@@ -440,7 +440,7 @@ public class ApiCommand {
                     }
                 }
 
-                if (TestCaseEngine._printUrl == true) {
+                if (TestCaseEngine.s_printUrl == true) {
                     s_logger.info("Response code is " + this.responseCode);
                 }
             } catch (Exception ex) {

@@ -40,7 +40,7 @@ public class ClientPacketSniffer extends PacketSniffer {
 //    new Pair("Client UNKNOWN PACKET (ERROR)",   ".*"),
     // @formatter:on
 
-        };
+    };
 
     public ClientPacketSniffer(String id) {
         super(id, clientRegexps);

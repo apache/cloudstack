@@ -42,7 +42,7 @@ public class BridgeVifDriver extends VifDriverBase {
     private static final Logger s_logger = Logger.getLogger(BridgeVifDriver.class);
     private int _timeout;
 
-    private static final Object _vnetBridgeMonitor = new Object();
+    private final Object _vnetBridgeMonitor = new Object();
     private String _modifyVlanPath;
     private String _modifyVxlanPath;
     private String bridgeNameSchema;

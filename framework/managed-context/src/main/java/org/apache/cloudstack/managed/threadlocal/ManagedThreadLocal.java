@@ -35,7 +35,7 @@ public class ManagedThreadLocal<T> extends ThreadLocal<T> {
         }
     };
 
-    private static boolean VALIDATE_CONTEXT = false;
+    private static boolean s_validateContext = false;
     private static final Logger log = LoggerFactory.getLogger(ManagedThreadLocal.class);
 
     @SuppressWarnings("unchecked")
@@ -70,13 +70,13 @@ public class ManagedThreadLocal<T> extends ThreadLocal<T> {
     }
 
     private static void validateInContext(Object tl) {
-        if (VALIDATE_CONTEXT && !ManagedContextUtils.isInContext()) {
+        if (s_validateContext && !ManagedContextUtils.isInContext()) {
             String msg = "Using a managed thread local in a non managed context this WILL cause errors at runtime. TL [" + tl + "]";
             log.error(msg, new IllegalStateException(msg));
         }
     }
 
     public static void setValidateInContext(boolean validate) {
-        VALIDATE_CONTEXT = validate;
+        s_validateContext = validate;
     }
 }

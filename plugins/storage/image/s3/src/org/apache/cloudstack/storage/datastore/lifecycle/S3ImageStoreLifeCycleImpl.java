@@ -60,8 +60,8 @@ public class S3ImageStoreLifeCycleImpl implements ImageStoreLifeCycle {
         return _discoverers;
     }
 
-    public void setDiscoverers(List<? extends Discoverer> _discoverers) {
-        this._discoverers = _discoverers;
+    public void setDiscoverers(List<? extends Discoverer> discoverers) {
+        this._discoverers = discoverers;
     }
 
     public S3ImageStoreLifeCycleImpl() {

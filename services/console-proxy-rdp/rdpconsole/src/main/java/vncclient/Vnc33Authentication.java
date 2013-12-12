@@ -33,7 +33,7 @@ import streamer.OneTimeSwitch;
 import streamer.Pipeline;
 import streamer.PipelineImpl;
 
-public class Vnc_3_3_Authentication extends OneTimeSwitch {
+public class Vnc33Authentication extends OneTimeSwitch {
 
     /**
      * Password to use when authentication is required.
@@ -49,11 +49,11 @@ public class Vnc_3_3_Authentication extends OneTimeSwitch {
      */
     protected int stage = 0;
 
-    public Vnc_3_3_Authentication(String id) {
+    public Vnc33Authentication(String id) {
         super(id);
     }
 
-    public Vnc_3_3_Authentication(String id, String password) {
+    public Vnc33Authentication(String id, String password) {
         super(id);
         this.password = password;
     }
@@ -265,7 +265,7 @@ public class Vnc_3_3_Authentication extends OneTimeSwitch {
         Element source = new MockSource("source") {
             {
                 bufs = ByteBuffer.convertByteArraysToByteBuffers(
-                // Request authentication and send 16 byte challenge
+                    // Request authentication and send 16 byte challenge
                     new byte[] {0, 0, 0, RfbConstants.VNC_AUTH, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
                     // Respond to challenge with AUTH_OK
                     new byte[] {0, 0, 0, RfbConstants.VNC_AUTH_OK});
@@ -273,7 +273,7 @@ public class Vnc_3_3_Authentication extends OneTimeSwitch {
         };
 
         Element mainSink = new FakeSink("mainSink");
-        final Vnc_3_3_Authentication auth = new Vnc_3_3_Authentication("auth", password);
+        final Vnc33Authentication auth = new Vnc33Authentication("auth", password);
         Element initSink = new MockSink("initSink") {
             {
                 // Expect encoded password

@@ -17,7 +17,6 @@
 package vncclient;
 
 import java.awt.event.InputEvent;
-import java.awt.event.MouseEvent;
 
 import streamer.BaseElement;
 import streamer.ByteBuffer;

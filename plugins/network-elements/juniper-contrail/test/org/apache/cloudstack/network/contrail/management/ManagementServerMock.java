@@ -116,10 +116,10 @@ public class ManagementServerMock {
     private DataCenterVO _zone;
     private PhysicalNetwork _znet;
 
-    private long _host_id = -1L;
+    private long _hostId = -1L;
 
     // TODO: Use the name parameter to retrieve the @Parameter annotation.
-    static void setParameter(BaseCmd cmd, String name, BaseCmd.CommandType field_type, Object value) {
+    static void setParameter(BaseCmd cmd, String name, BaseCmd.CommandType fieldType, Object value) {
         Class<?> cls = cmd.getClass();
         Field field;
         try {
@@ -129,7 +129,7 @@ public class ManagementServerMock {
             return;
         }
         field.setAccessible(true);
-        switch (field_type) {
+        switch (fieldType) {
             case STRING:
                 try {
                     field.set(cmd, value);
@@ -169,11 +169,11 @@ public class ManagementServerMock {
 
     private void createHost() {
         HostVO host =
-            new HostVO(_host_id, "aa01", Type.BaremetalDhcp, "192.168.1.1", "255.255.255.0", null, null, null, null, null, null, null, null, null, null,
+            new HostVO(_hostId, "aa01", Type.BaremetalDhcp, "192.168.1.1", "255.255.255.0", null, null, null, null, null, null, null, null, null, null,
                 UUID.randomUUID().toString(), Status.Up, "1.0", null, null, _zone.getId(), null, 0, 0, "aa", 0, StoragePoolType.NetworkFilesystem);
         host.setResourceState(ResourceState.Enabled);
         _hostDao.persist(host);
-        _host_id = host.getId();
+        _hostId = host.getId();
     }
 
     private void createPublicVlanIpRange() {
@@ -241,7 +241,7 @@ public class ManagementServerMock {
             new UserVmVO(id, name, name, tmpl.getId(), HypervisorType.XenServer, tmpl.getGuestOSId(), false, false, _zone.getDomainId(), Account.ACCOUNT_ID_SYSTEM,
                 small.getId(), null, name, null);
         vm.setState(com.cloud.vm.VirtualMachine.State.Running);
-        vm.setHostId(_host_id);
+        vm.setHostId(_hostId);
         vm.setDataCenterId(network.getDataCenterId());
         _userVmDao.persist(vm);
 
@@ -256,7 +256,7 @@ public class ManagementServerMock {
     }
 
     private void deleteHost() {
-        _hostDao.remove(_host_id);
+        _hostDao.remove(_hostId);
 
     }
 

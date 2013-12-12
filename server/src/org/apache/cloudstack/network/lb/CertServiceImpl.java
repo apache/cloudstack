@@ -238,27 +238,27 @@ public class CertServiceImpl implements CertService {
         return certResponseList;
     }
 
-    private void validate(String _cert, String _key, String _password, String _chain) {
+    private void validate(String certInput, String keyInput, String password, String chainInput) {
         Certificate cert;
         PrivateKey key;
         List<Certificate> chain = null;
 
         try {
-            cert = parseCertificate(_cert);
-            key = parsePrivateKey(_key, _password);
+            cert = parseCertificate(certInput);
+            key = parsePrivateKey(keyInput, password);
 
-            if (_chain != null) {
-                chain = parseChain(_chain);
+            if (chainInput != null) {
+                chain = parseChain(chainInput);
             }
 
         } catch (IOException e) {
             throw new IllegalArgumentException("Parsing certificate/key failed: " + e.getMessage(), e);
         }
 
-        validateCert(cert, _chain != null ? true : false);
+        validateCert(cert, chainInput != null ? true : false);
         validateKeys(cert.getPublicKey(), key);
 
-        if (_chain != null)
+        if (chainInput != null)
             validateChain(chain, cert);
     }
 
@@ -289,7 +289,7 @@ public class CertServiceImpl implements CertService {
         return response;
     }
 
-    private void validateCert(Certificate cert, boolean chain_present) {
+    private void validateCert(Certificate cert, boolean chainPresent) {
 
         if (!(cert instanceof X509Certificate))
             throw new IllegalArgumentException("Invalid certificate format. Expected X509 certificate");
@@ -300,7 +300,7 @@ public class CertServiceImpl implements CertService {
             throw new IllegalArgumentException("Certificate expired or not valid", e);
         }
 
-        if (!chain_present) {
+        if (!chainPresent) {
             PublicKey pubKey = cert.getPublicKey();
             try {
                 cert.verify(pubKey);
@@ -482,7 +482,7 @@ public class CertServiceImpl implements CertService {
 
     public static class KeyPassword implements PasswordFinder {
 
-        boolean password_requested = false;
+        boolean passwordRequested = false;
         char[] password;
 
         KeyPassword(char[] word) {
@@ -491,12 +491,12 @@ public class CertServiceImpl implements CertService {
 
         @Override
         public char[] getPassword() {
-            password_requested = true;
+            passwordRequested = true;
             return password;
         }
 
         public boolean getPasswordRequested() {
-            return password_requested;
+            return passwordRequested;
         }
     }
 }

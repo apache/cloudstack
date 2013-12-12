@@ -72,10 +72,10 @@ public class Upgrade218to22 implements DbUpgrade {
     }
 
     protected long insertNetworkOffering(Connection conn, String name, String displayText, String trafficType, boolean systemOnly, boolean defaultNetworkOffering,
-        String availability, boolean dns_service, boolean gateway_service, boolean firewall_service, boolean lb_service, boolean userdata_service, boolean vpn_service,
-        boolean dhcp_service) {
+        String availability, boolean dnsService, boolean gatewayService, boolean firewallService, boolean lbService, boolean userdataService, boolean vpnService,
+        boolean dhcpService) {
         String insertSql =
-            "INSERT INTO network_offerings (name, display_text, nw_rate, mc_rate, concurrent_connections, traffic_type, tags, system_only, specify_vlan, service_offering_id, created, removed, `default`, availability, dns_service, gateway_service, firewall_service, lb_service, userdata_service, vpn_service, dhcp_service) "
+            "INSERT INTO network_offerings (name, display_text, nw_rate, mc_rate, concurrent_connections, traffic_type, tags, system_only, specify_vlan, service_offering_id, created, removed, `default`, availability, dnsService, gatewayService, firewallService, lbService, userdataService, vpnService, dhcpService) "
                 + "VALUES (?,    ?,            NULL,    NULL,    NULL,                   ?,            NULL, ?,           0,            NULL,                now(),   NULL,    ?,       ?,            ?,           ?,               ?,                ?,          ?,                ?,           ?)";
         try {
             PreparedStatement pstmt = conn.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS);
@@ -86,13 +86,13 @@ public class Upgrade218to22 implements DbUpgrade {
             pstmt.setBoolean(i++, systemOnly);
             pstmt.setBoolean(i++, defaultNetworkOffering);
             pstmt.setString(i++, availability);
-            pstmt.setBoolean(i++, dns_service);
-            pstmt.setBoolean(i++, gateway_service);
-            pstmt.setBoolean(i++, firewall_service);
-            pstmt.setBoolean(i++, lb_service);
-            pstmt.setBoolean(i++, userdata_service);
-            pstmt.setBoolean(i++, vpn_service);
-            pstmt.setBoolean(i++, dhcp_service);
+            pstmt.setBoolean(i++, dnsService);
+            pstmt.setBoolean(i++, gatewayService);
+            pstmt.setBoolean(i++, firewallService);
+            pstmt.setBoolean(i++, lbService);
+            pstmt.setBoolean(i++, userdataService);
+            pstmt.setBoolean(i++, vpnService);
+            pstmt.setBoolean(i++, dhcpService);
             pstmt.executeUpdate();
             ResultSet rs = pstmt.getGeneratedKeys();
             rs.next();

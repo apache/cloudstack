@@ -79,19 +79,19 @@ public class VmwareClient {
     }
 
     static {
-    	try {
-			trustAllHttpsCertificates();
-	        HostnameVerifier hv = new HostnameVerifier() {
-	            @Override
-	            public boolean verify(String urlHostName, SSLSession session) {
-	                return true;
-	            }
-	        };
-	        HttpsURLConnection.setDefaultHostnameVerifier(hv);
-	        
-        	vimService = new VimService();
-		} catch (Exception e) {
-		}   	
+        try {
+            trustAllHttpsCertificates();
+            HostnameVerifier hv = new HostnameVerifier() {
+                @Override
+                public boolean verify(String urlHostName, SSLSession session) {
+                    return true;
+                }
+            };
+            HttpsURLConnection.setDefaultHostnameVerifier(hv);
+
+            vimService = new VimService();
+        } catch (Exception e) {
+        }
     }
 
     private static void trustAllHttpsCertificates() throws Exception {
@@ -106,11 +106,11 @@ public class VmwareClient {
         javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
     }
 
-    private ManagedObjectReference SVC_INST_REF = new ManagedObjectReference();
+    private final ManagedObjectReference svcInstRef = new ManagedObjectReference();
     private static VimService vimService;
     private VimPortType vimPort;
     private String serviceCookie;
-    private final String SVC_INST_NAME = "ServiceInstance";
+    private final static String SVC_INST_NAME = "ServiceInstance";
     private int vCenterSessionTimeout = 1200000; // Timeout in milliseconds
 
     private boolean isConnected = false;
@@ -125,8 +125,8 @@ public class VmwareClient {
      *             the exception
      */
     public void connect(String url, String userName, String password) throws Exception {
-        SVC_INST_REF.setType(SVC_INST_NAME);
-        SVC_INST_REF.setValue(SVC_INST_NAME);
+        svcInstRef.setType(SVC_INST_NAME);
+        svcInstRef.setValue(SVC_INST_NAME);
 
         vimPort = vimService.getVimPort();
         Map<String, Object> ctxt = ((BindingProvider)vimPort).getRequestContext();
@@ -137,7 +137,7 @@ public class VmwareClient {
         ctxt.put("com.sun.xml.internal.ws.request.timeout", vCenterSessionTimeout);
         ctxt.put("com.sun.xml.internal.ws.connect.timeout", vCenterSessionTimeout);
 
-        ServiceContent serviceContent = vimPort.retrieveServiceContent(SVC_INST_REF);
+        ServiceContent serviceContent = vimPort.retrieveServiceContent(svcInstRef);
 
         // Extract a cookie. See vmware sample program com.vmware.httpfileaccess.GetVMFiles
         Map<String, List<String>> headers = (Map<String, List<String>>)((BindingProvider)vimPort).getResponseContext().get(MessageContext.HTTP_RESPONSE_HEADERS);
@@ -177,7 +177,7 @@ public class VmwareClient {
     public ServiceContent getServiceContent() {
 
         try {
-            return vimPort.retrieveServiceContent(SVC_INST_REF);
+            return vimPort.retrieveServiceContent(svcInstRef);
         } catch (RuntimeFaultFaultMsg e) {
         }
         return null;

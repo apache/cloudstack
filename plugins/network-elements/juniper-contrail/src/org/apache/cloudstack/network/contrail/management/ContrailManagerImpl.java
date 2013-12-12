@@ -248,8 +248,8 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
     }
 
     @Override
-    public String getPhysicalNetworkName(PhysicalNetworkVO phys_net) {
-        String physname = phys_net.getName();
+    public String getPhysicalNetworkName(PhysicalNetworkVO physNet) {
+        String physname = physNet.getName();
         physname = physname.replaceAll("\\s", "").replace("_", "");
         return physname;
     }
@@ -358,7 +358,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         final TrafficType[] ttypes = {TrafficType.Control,    // maps to __link_local__
             TrafficType.Management, // maps to ip-fabric
             TrafficType.Public, TrafficType.Storage        // maps to ip-fabric
-            };
+        };
 
         for (int i = 0; i < ttypes.length; i++) {
             List<NetworkVO> phys_nets;
@@ -619,16 +619,16 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
     }
 
     @Override
-    public String getVifNameByVmName(String vm_name, Integer device_id) {
-        String vif_name = vm_name + "-" + device_id.toString();
+    public String getVifNameByVmName(String vmName, Integer deviceId) {
+        String vif_name = vmName + "-" + deviceId.toString();
         return vif_name;
     }
 
     @Override
-    public String getVifNameByVmUuid(String vm_uuid, Integer device_id) {
-        VMInstanceVO vm = _vmInstanceDao.findByUuid(vm_uuid);
+    public String getVifNameByVmUuid(String vmUuid, Integer deviceId) {
+        VMInstanceVO vm = _vmInstanceDao.findByUuid(vmUuid);
         if (vm != null) {
-            return vm.getInstanceName() + "-" + device_id.toString();
+            return vm.getInstanceName() + "-" + deviceId.toString();
         }
         return null;
     }

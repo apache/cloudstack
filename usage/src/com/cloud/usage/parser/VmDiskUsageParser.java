@@ -41,8 +41,8 @@ import com.cloud.utils.db.SearchCriteria;
 public class VmDiskUsageParser {
     public static final Logger s_logger = Logger.getLogger(VmDiskUsageParser.class.getName());
 
-    private static UsageDao m_usageDao;
-    private static UsageVmDiskDao m_usageVmDiskDao;
+    private static UsageDao s_usageDao;
+    private static UsageVmDiskDao s_usageVmDiskDao;
 
     @Inject
     private UsageDao _usageDao;
@@ -51,8 +51,8 @@ public class VmDiskUsageParser {
 
     @PostConstruct
     void init() {
-        m_usageDao = _usageDao;
-        m_usageVmDiskDao = _usageVmDiskDao;
+        s_usageDao = _usageDao;
+        s_usageVmDiskDao = _usageVmDiskDao;
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
@@ -66,10 +66,10 @@ public class VmDiskUsageParser {
 
         // - query usage_disk table for all entries for userId with
         // event_date in the given range
-        SearchCriteria<UsageVmDiskVO> sc = m_usageVmDiskDao.createSearchCriteria();
+        SearchCriteria<UsageVmDiskVO> sc = s_usageVmDiskDao.createSearchCriteria();
         sc.addAnd("accountId", SearchCriteria.Op.EQ, account.getId());
         sc.addAnd("eventTimeMillis", SearchCriteria.Op.BETWEEN, startDate.getTime(), endDate.getTime());
-        List<UsageVmDiskVO> usageVmDiskVOs = m_usageVmDiskDao.search(sc, null);
+        List<UsageVmDiskVO> usageVmDiskVOs = s_usageVmDiskDao.search(sc, null);
 
         Map<String, VmDiskInfo> vmDiskUsageByZone = new HashMap<String, VmDiskInfo>();
 
@@ -164,7 +164,7 @@ public class VmDiskUsageParser {
             }
         }
 
-        m_usageDao.saveUsageRecords(usageRecords);
+        s_usageDao.saveUsageRecords(usageRecords);
 
         return true;
     }

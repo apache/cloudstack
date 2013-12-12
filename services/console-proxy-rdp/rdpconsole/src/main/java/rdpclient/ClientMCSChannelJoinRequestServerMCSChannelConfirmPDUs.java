@@ -34,7 +34,7 @@ import streamer.PipelineImpl;
  *
  * @see http://msdn.microsoft.com/en-us/library/cc240686.aspx
  */
-public class ClientMCSChannelJoinRequest_ServerMCSChannelConfirmPDUs extends OneTimeSwitch {
+public class ClientMCSChannelJoinRequestServerMCSChannelConfirmPDUs extends OneTimeSwitch {
 
     private static final int MCS_CHANNEL_CONFIRM_PDU = 15;
 
@@ -43,7 +43,7 @@ public class ClientMCSChannelJoinRequest_ServerMCSChannelConfirmPDUs extends One
 
     protected RdpState state;
 
-    public ClientMCSChannelJoinRequest_ServerMCSChannelConfirmPDUs(String id, int[] channels, RdpState state) {
+    public ClientMCSChannelJoinRequestServerMCSChannelConfirmPDUs(String id, int[] channels, RdpState state) {
         super(id);
         this.channels = channels;
         this.state = state;
@@ -206,7 +206,7 @@ public class ClientMCSChannelJoinRequest_ServerMCSChannelConfirmPDUs extends One
 
         RdpState rdpState = new RdpState();
         MockSource source = new MockSource("source", ByteBuffer.convertByteArraysToByteBuffers(serverResponsePacket, new byte[] {1, 2, 3}));
-        Element todo = new ClientMCSChannelJoinRequest_ServerMCSChannelConfirmPDUs("channels", new int[] {1007}, rdpState);
+        Element todo = new ClientMCSChannelJoinRequestServerMCSChannelConfirmPDUs("channels", new int[] {1007}, rdpState);
         Element x224 = new ClientX224DataPdu("x224");
         Element tpkt = new ClientTpkt("tpkt");
         Element sink = new MockSink("sink", ByteBuffer.convertByteArraysToByteBuffers(clientRequestPacket));

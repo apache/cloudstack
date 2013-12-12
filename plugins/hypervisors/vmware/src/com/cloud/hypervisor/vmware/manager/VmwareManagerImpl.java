@@ -904,7 +904,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
     }
 
-    protected final int DEFAULT_DOMR_SSHPORT = 3922;
+    protected final static int DEFAULT_DOMR_SSHPORT = 3922;
 
     protected boolean shutdownRouterVM(DomainRouterVO router) {
         if (s_logger.isDebugEnabled()) {

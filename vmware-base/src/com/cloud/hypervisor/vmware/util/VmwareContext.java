@@ -57,10 +57,10 @@ import com.cloud.utils.ActionDelegate;
 public class VmwareContext {
     private static final Logger s_logger = Logger.getLogger(VmwareContext.class);
 
-    private static int MAX_CONNECT_RETRY = 5;
-    private static int CONNECT_RETRY_INTERVAL = 1000;
+    private static final int MAX_CONNECT_RETRY = 5;
+    private static final int CONNECT_RETRY_INTERVAL = 1000;
 
-    private final int _CHUNKSIZE = 1 * 1024 * 1024;        // 1M
+    private static final int ChunkSize = 1 * 1024 * 1024;        // 1M
 
     private final VmwareClient _vimClient;
     private final String _serverAddress;
@@ -327,7 +327,7 @@ public class VmwareContext {
 
         InputStream in = conn.getInputStream();
         OutputStream out = new FileOutputStream(new File(localFileFullName));
-        byte[] buf = new byte[_CHUNKSIZE];
+        byte[] buf = new byte[ChunkSize];
         int len = 0;
         while ((len = in.read(buf)) > 0) {
             out.write(buf, 0, len);
@@ -349,7 +349,7 @@ public class VmwareContext {
         try {
             out = conn.getOutputStream();
             in = new FileInputStream(localFile);
-            byte[] buf = new byte[_CHUNKSIZE];
+            byte[] buf = new byte[ChunkSize];
             int len = 0;
             while ((len = in.read(buf)) > 0) {
                 out.write(buf, 0, len);
@@ -381,7 +381,7 @@ public class VmwareContext {
         conn.setDoOutput(true);
         conn.setUseCaches(false);
 
-        conn.setChunkedStreamingMode(_CHUNKSIZE);
+        conn.setChunkedStreamingMode(ChunkSize);
         conn.setRequestMethod(httpMethod);
         conn.setRequestProperty("Connection", "Keep-Alive");
         conn.setRequestProperty("Content-Type", "application/x-vnd.vmware-streamVmdk");
@@ -393,7 +393,7 @@ public class VmwareContext {
         try {
             bos = new BufferedOutputStream(conn.getOutputStream());
             is = new BufferedInputStream(new FileInputStream(localFileName));
-            int bufferSize = _CHUNKSIZE;
+            int bufferSize = ChunkSize;
             byte[] buffer = new byte[bufferSize];
             while (true) {
                 int bytesRead = is.read(buffer, 0, bufferSize);
@@ -438,7 +438,7 @@ public class VmwareContext {
             in = conn.getInputStream();
             out = new FileOutputStream(new File(localFileName));
 
-            byte[] buf = new byte[_CHUNKSIZE];
+            byte[] buf = new byte[ChunkSize];
             int len = 0;
             while ((len = in.read(buf)) > 0) {
                 out.write(buf, 0, len);
@@ -464,7 +464,7 @@ public class VmwareContext {
         InputStream in = conn.getInputStream();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        byte[] buf = new byte[_CHUNKSIZE];
+        byte[] buf = new byte[ChunkSize];
         int len = 0;
         while ((len = in.read(buf)) > 0) {
             out.write(buf, 0, len);

@@ -31,10 +31,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import netapp.manage.NaAPIFailedException;
-import netapp.manage.NaAuthenticationException;
 import netapp.manage.NaElement;
 import netapp.manage.NaException;
-import netapp.manage.NaProtocolException;
 import netapp.manage.NaServer;
 
 import org.apache.log4j.Logger;
@@ -208,10 +206,7 @@ public class NetappManagerImpl extends ManagerBase implements NetappManager {
      * @param volName -- name of volume to destroy
      * @throws ResourceInUseException
      * @throws NaException
-     * @throws IOException
-     * @throws NaProtocolException
      * @throws NaAPIFailedException
-     * @throws NaAuthenticationException
      */
     @Override
     @DB

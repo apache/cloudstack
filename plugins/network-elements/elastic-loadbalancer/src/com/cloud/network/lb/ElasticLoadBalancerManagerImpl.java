@@ -205,8 +205,8 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
     NicDao _nicDao;
 
     String _instance;
-    static final private String _elbVmNamePrefix = "l";
-    static final private String _systemVmType = "elbvm";
+    static final private String ElbVmNamePrefix = "l";
+    static final private String SystemVmType = "elbvm";
 
     boolean _enabled;
     TrafficType _frontendTrafficType = TrafficType.Guest;
@@ -496,7 +496,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
                 }
 
                 elbVm =
-                    new DomainRouterVO(id, _elasticLbVmOffering.getId(), vrProvider.getId(), VirtualMachineName.getSystemVmName(id, _instance, _elbVmNamePrefix),
+                    new DomainRouterVO(id, _elasticLbVmOffering.getId(), vrProvider.getId(), VirtualMachineName.getSystemVmName(id, _instance, ElbVmNamePrefix),
                         template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), false, 0, false,
                         RedundantState.UNKNOWN, _elasticLbVmOffering.getOfferHA(), false, VirtualMachine.Type.ElasticLoadBalancerVm, null);
                 elbVm.setRole(Role.LB);
@@ -779,7 +779,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         DataCenter dc = dest.getDataCenter();
 
         StringBuilder buf = profile.getBootArgsBuilder();
-        buf.append(" template=domP type=" + _systemVmType);
+        buf.append(" template=domP type=" + SystemVmType);
         buf.append(" name=").append(profile.getHostName());
         NicProfile controlNic = null;
         String defaultDns1 = null;

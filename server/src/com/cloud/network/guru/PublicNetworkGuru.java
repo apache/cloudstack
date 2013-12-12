@@ -74,11 +74,11 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject
     IpAddressManager _ipAddrMgr;
 
-    private static final TrafficType[] _trafficTypes = {TrafficType.Public};
+    private static final TrafficType[] TrafficTypes = {TrafficType.Public};
 
     @Override
     public boolean isMyTrafficType(TrafficType type) {
-        for (TrafficType t : _trafficTypes) {
+        for (TrafficType t : TrafficTypes) {
             if (t == type) {
                 return true;
             }
@@ -88,7 +88,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public TrafficType[] getSupportedTrafficType() {
-        return _trafficTypes;
+        return TrafficTypes;
     }
 
     protected boolean canHandle(NetworkOffering offering) {

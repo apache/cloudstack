@@ -101,7 +101,7 @@ public interface LoadBalancingRulesService {
 
     boolean applyLoadBalancerConfig(long lbRuleId) throws ResourceUnavailableException;
 
-    boolean assignCertToLoadBalancer(long lbRuleId, Long CertId);
+    boolean assignCertToLoadBalancer(long lbRuleId, Long certId);
 
     boolean removeCertFromLoadBalancer(long lbRuleId);
 
@@ -145,7 +145,7 @@ public interface LoadBalancingRulesService {
 
     List<? extends HealthCheckPolicy> searchForLBHealthCheckPolicies(ListLBHealthCheckPoliciesCmd cmd);
 
-    LoadBalancer findById(long LoadBalancer);
+    LoadBalancer findById(long loadBalancer);
 
     public void updateLBHealthChecks(Scheme scheme) throws ResourceUnavailableException;
 

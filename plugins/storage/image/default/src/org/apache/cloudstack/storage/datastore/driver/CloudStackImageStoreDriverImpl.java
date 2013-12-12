@@ -95,7 +95,7 @@ public class CloudStackImageStoreDriverImpl extends BaseImageStoreDriverImpl {
         }
         if (_sslCopy) {
             hostname = ipAddress.replace(".", "-");
-            if(_ssvmUrlDomain != null && _ssvmUrlDomain.length() > 0){
+            if (_ssvmUrlDomain != null && _ssvmUrlDomain.length() > 0) {
                 hostname = hostname + "." + _ssvmUrlDomain;
             } else {
                 hostname = hostname + ".realhostip.com";

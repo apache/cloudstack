@@ -24,7 +24,6 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.dc.DataCenterVO;
-import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.StoragePool;
@@ -61,7 +60,6 @@ public interface TemplateManager {
      * @param srcSecStore
      * @param destZone
      * @return true if success
-     * @throws InternalErrorException
      * @throws StorageUnavailableException
      * @throws ResourceAllocationException
      */

@@ -3161,28 +3161,28 @@ public class Upgrade410to420 implements DbUpgrade {
         }
     }
 
-    private static void upgradeResourceCountforAccount(Connection conn, Long account_id, Long domain_id, String type, Long resource_count) throws SQLException {
+    private static void upgradeResourceCountforAccount(Connection conn, Long accountId, Long domainId, String type, Long resourceCount) throws SQLException {
         //update or insert into resource_count table.
         PreparedStatement pstmt = null;
         pstmt =
             conn.prepareStatement("INSERT INTO `cloud`.`resource_count` (account_id, type, count) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), count=?");
-        pstmt.setLong(1, account_id);
+        pstmt.setLong(1, accountId);
         pstmt.setString(2, type);
-        pstmt.setLong(3, resource_count);
-        pstmt.setLong(4, resource_count);
+        pstmt.setLong(3, resourceCount);
+        pstmt.setLong(4, resourceCount);
         pstmt.executeUpdate();
         pstmt.close();
     }
 
-    private static void upgradeResourceCountforDomain(Connection conn, Long domain_id, String type, Long resource_count) throws SQLException {
+    private static void upgradeResourceCountforDomain(Connection conn, Long domainId, String type, Long resourceCount) throws SQLException {
         //update or insert into resource_count table.
         PreparedStatement pstmt = null;
         pstmt =
             conn.prepareStatement("INSERT INTO `cloud`.`resource_count` (domain_id, type, count) VALUES (?,?,?) ON DUPLICATE KEY UPDATE id=LAST_INSERT_ID(id), count=?");
-        pstmt.setLong(1, domain_id);
+        pstmt.setLong(1, domainId);
         pstmt.setString(2, type);
-        pstmt.setLong(3, resource_count);
-        pstmt.setLong(4, resource_count);
+        pstmt.setLong(3, resourceCount);
+        pstmt.setLong(4, resourceCount);
         pstmt.executeUpdate();
         pstmt.close();
     }

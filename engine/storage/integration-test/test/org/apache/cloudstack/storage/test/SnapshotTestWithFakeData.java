@@ -43,7 +43,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
-import org.mockito.Mockito;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -208,7 +207,7 @@ public class SnapshotTestWithFakeData {
         Snapshot.Type snapshotType = Snapshot.Type.RECURRING;
         SnapshotVO snapshotVO =
             new SnapshotVO(dcId, 2, 1, 1L, 1L, UUID.randomUUID().toString(), (short)snapshotType.ordinal(), snapshotType.name(), 100, Hypervisor.HypervisorType.XenServer);
-        return this.snapshotDao.persist(snapshotVO);
+        return snapshotDao.persist(snapshotVO);
     }
 
     private SnapshotVO createSnapshotInDb(Long volumeId) {
@@ -216,7 +215,7 @@ public class SnapshotTestWithFakeData {
         SnapshotVO snapshotVO =
             new SnapshotVO(dcId, 2, 1, volumeId, 1L, UUID.randomUUID().toString(), (short)snapshotType.ordinal(), snapshotType.name(), 100,
                 Hypervisor.HypervisorType.XenServer);
-        return this.snapshotDao.persist(snapshotVO);
+        return snapshotDao.persist(snapshotVO);
     }
 
     private VolumeInfo createVolume(Long templateId, DataStore store) {
@@ -246,8 +245,8 @@ public class SnapshotTestWithFakeData {
         pool.setPodId(podId);
         pool.setScope(ScopeType.CLUSTER);
         pool.setStorageProviderName(DataStoreProvider.DEFAULT_PRIMARY);
-        pool = this.primaryDataStoreDao.persist(pool);
-        DataStore store = this.dataStoreManager.getPrimaryDataStore(pool.getId());
+        pool = primaryDataStoreDao.persist(pool);
+        DataStore store = dataStoreManager.getPrimaryDataStore(pool.getId());
         return store;
     }
 

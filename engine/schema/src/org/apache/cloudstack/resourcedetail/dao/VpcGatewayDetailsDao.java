@@ -24,4 +24,3 @@ import com.cloud.utils.db.GenericDao;
 public interface VpcGatewayDetailsDao extends GenericDao<VpcGatewayDetailVO, Long>, ResourceDetailsDao<VpcGatewayDetailVO> {
 
 }
-

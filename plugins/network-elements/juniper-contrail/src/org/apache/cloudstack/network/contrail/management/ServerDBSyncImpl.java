@@ -93,7 +93,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
     DBSyncGeneric _dbSync;
     Class<?>[] _vncClasses;
     // Read-Write (true) or Read-Only mode.
-    boolean _rw_mode;
+    boolean _rwMode;
     private final ReentrantLock _lockSyncMode = new ReentrantLock();
 
     ServerDBSyncImpl() {
@@ -122,7 +122,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
 
                 /* lock the sync mode*/
                 _lockSyncMode.lock();
-                _rw_mode = syncMode == DBSyncGeneric.SYNC_MODE_UPDATE;
+                _rwMode = syncMode == DBSyncGeneric.SYNC_MODE_UPDATE;
                 _dbSync.setSyncMode(syncMode);
 
                 if (_dbSync.getSyncMode() == DBSyncGeneric.SYNC_MODE_CHECK) {
@@ -501,7 +501,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
         VirtualNetworkModel vnModel = new VirtualNetworkModel(dbNet, dbNet.getUuid(), _manager.getCanonicalName(dbNet), dbNet.getTrafficType());
         vnModel.build(_manager.getModelController(), dbNet);
 
-        if (_rw_mode) {
+        if (_rwMode) {
             try {
                 if (!vnModel.verify(_manager.getModelController())) {
                     vnModel.update(_manager.getModelController());
@@ -571,7 +571,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
         VirtualNetworkModel vnModel = new VirtualNetworkModel(dbn, vnet.getUuid(), _manager.getCanonicalName(dbn), dbn.getTrafficType());
         vnModel.build(_manager.getModelController(), dbn);
 
-        if (_rw_mode) {
+        if (_rwMode) {
             if (current != null) {
                 FloatingIpPoolModel fipPoolModel = current.getFipPoolModel();
                 if (fipPoolModel != null) {
@@ -643,7 +643,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
         vmModel.build(_manager.getModelController(), dbVm);
         buildNicResources(vmModel, dbVm, syncLogMesg);
 
-        if (_rw_mode) {
+        if (_rwMode) {
             try {
                 vmModel.update(_manager.getModelController());
             } catch (InternalErrorException ex) {
@@ -695,7 +695,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
     public void deleteVirtualMachine(VirtualMachine vncVm, StringBuffer syncLogMesg) {
         final ApiConnector api = _manager.getApiConnector();
         syncLogMesg.append("VM# DB:none; VNC: " + vncVm.getName() + "/" + vncVm.getUuid() + "; action: delete\n");
-        if (!_rw_mode) {
+        if (!_rwMode) {
             return;
         }
         try {
@@ -758,7 +758,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
         }
 
         VirtualMachineModel current = _manager.getDatabase().lookupVirtualMachine(vncVm.getUuid());
-        if (_rw_mode) {
+        if (_rwMode) {
             if (current != null) {
                 _manager.getDatabase().getVirtualMachines().remove(current);
             }
@@ -903,7 +903,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
     public void deleteServiceInstance(ServiceInstance siObj, StringBuffer logMsg) {
         final ApiConnector api = _manager.getApiConnector();
         s_logger.debug("delete " + siObj.getQualifiedName());
-        if (!_rw_mode) {
+        if (!_rwMode) {
             return;
         }
         try {
@@ -946,7 +946,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
             List<ServiceInstance> siList = (List<ServiceInstance>)api.list(ServiceInstance.class, null);
             java.util.Collections.sort(siList, new ServiceInstanceComparator());
             DBSyncGeneric.SyncStats stats = new DBSyncGeneric.SyncStats();
-            _dbSync.syncCollections(ServiceInstance.class, _manager.getDatabase().getServiceInstances(), siList, _rw_mode, stats);
+            _dbSync.syncCollections(ServiceInstance.class, _manager.getDatabase().getServiceInstances(), siList, _rwMode, stats);
             inSync = stats.create == 0 && stats.delete == 0;
         } catch (Exception ex) {
             s_logger.warn("synchronize service-instances", ex);

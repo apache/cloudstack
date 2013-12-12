@@ -34,7 +34,7 @@ public interface ServiceOfferingDao extends GenericDao<ServiceOfferingVO, Long> 
 
     List<ServiceOfferingVO> findServiceOfferingByDomainId(Long domainId);
 
-    List<ServiceOfferingVO> findSystemOffering(Long domainId, Boolean isSystem, String vm_type);
+    List<ServiceOfferingVO> findSystemOffering(Long domainId, Boolean isSystem, String vmType);
 
     ServiceOfferingVO persistDeafultServiceOffering(ServiceOfferingVO offering);
 

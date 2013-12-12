@@ -40,7 +40,12 @@ import javax.mail.URLName;
 import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.alert.AlertService.AlertType;
+import org.apache.log4j.Logger;
+
+import com.sun.mail.smtp.SMTPMessage;
+import com.sun.mail.smtp.SMTPSSLTransport;
+import com.sun.mail.smtp.SMTPTransport;
+
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -48,7 +53,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
 
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
@@ -81,11 +85,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
-import com.sun.mail.smtp.SMTPMessage;
-import com.sun.mail.smtp.SMTPSSLTransport;
-import com.sun.mail.smtp.SMTPTransport;
 
 @Local(value = {AlertManager.class})
 public class AlertManagerImpl extends ManagerBase implements AlertManager, Configurable {
@@ -94,8 +94,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     private static final long INITIAL_CAPACITY_CHECK_DELAY = 30L * 1000L; // thirty seconds expressed in milliseconds
 
-    private static final DecimalFormat _dfPct = new DecimalFormat("###.##");
-    private static final DecimalFormat _dfWhole = new DecimalFormat("########");
+    private static final DecimalFormat DfPct = new DecimalFormat("###.##");
+    private static final DecimalFormat DfWhole = new DecimalFormat("########");
 
     private EmailAlert _emailAlert;
     @Inject
@@ -259,6 +259,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         }
     }
 
+    @Override
     public void recalculateCapacity() {
         // FIXME: the right way to do this is to register a listener (see RouterStatsListener, VMSyncListener)
         //        for the vm sync state.  The listener model has connects/disconnects to keep things in sync much better
@@ -542,7 +543,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         String msgContent = null;
         String totalStr;
         String usedStr;
-        String pctStr = formatPercent(usedCapacity/totalCapacity);
+        String pctStr = formatPercent(usedCapacity / totalCapacity);
         AlertType alertType = null;
         Long podId = pod == null ? null : pod.getId();
         Long clusterId = cluster == null ? null : cluster.getId();
@@ -559,8 +560,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 break;
             case Capacity.CAPACITY_TYPE_CPU:
                 msgSubject = "System Alert: Low Unallocated CPU in cluster " + cluster.getName() + " pod " + pod.getName() + " of availability zone " + dc.getName();
-                totalStr = _dfWhole.format(totalCapacity);
-                usedStr = _dfWhole.format(usedCapacity);
+                totalStr = DfWhole.format(totalCapacity);
+                usedStr = DfWhole.format(usedCapacity);
                 msgContent = "Unallocated CPU is low, total: " + totalStr + " Mhz, used: " + usedStr + " Mhz (" + pctStr + "%)";
                 alertType = AlertManager.AlertType.ALERT_TYPE_CPU;
                 break;
@@ -684,7 +685,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         private int _smtpTimeout;
         private int _smtpConnectionTimeout;
 
-        public EmailAlert(String[] recipientList, String smtpHost, int smtpPort, int smtpConnectionTimeout, int smtpTimeout, boolean smtpUseAuth, final String smtpUsername,
+        public EmailAlert(String[] recipientList, String smtpHost, int smtpPort, int smtpConnectionTimeout, int smtpTimeout, boolean smtpUseAuth,
+                final String smtpUsername,
                 final String smtpPassword, String emailSender, boolean smtpDebug) {
             if (recipientList != null) {
                 _recipientList = new InternetAddress[recipientList.length];
@@ -710,7 +712,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 Properties smtpProps = new Properties();
                 smtpProps.put("mail.smtp.host", smtpHost);
                 smtpProps.put("mail.smtp.port", smtpPort);
-                smtpProps.put("mail.smtp.auth", ""+smtpUseAuth);
+                smtpProps.put("mail.smtp.auth", "" + smtpUseAuth);
                 smtpProps.put("mail.smtp.timeout", _smtpTimeout);
                 smtpProps.put("mail.smtp.connectiontimeout", _smtpConnectionTimeout);
 
@@ -720,7 +722,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
                 smtpProps.put("mail.smtps.host", smtpHost);
                 smtpProps.put("mail.smtps.port", smtpPort);
-                smtpProps.put("mail.smtps.auth", ""+smtpUseAuth);
+                smtpProps.put("mail.smtps.auth", "" + smtpUseAuth);
                 smtpProps.put("mail.smtps.timeout", _smtpTimeout);
                 smtpProps.put("mail.smtps.connectiontimeout", _smtpConnectionTimeout);
 
@@ -745,18 +747,19 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         }
 
         // TODO:  make sure this handles SSL transport (useAuth is true) and regular
-        public void sendAlert(AlertType alertType, long dataCenterId, Long podId, Long clusterId, String subject, String content) throws MessagingException, UnsupportedEncodingException {
+        public void sendAlert(AlertType alertType, long dataCenterId, Long podId, Long clusterId, String subject, String content) throws MessagingException,
+            UnsupportedEncodingException {
             s_alertsLogger.warn(" alertType:: " + alertType + " // dataCenterId:: " + dataCenterId + " // podId:: " +
                 podId + " // clusterId:: " + null + " // message:: " + subject);
             AlertVO alert = null;
             if ((alertType != AlertManager.AlertType.ALERT_TYPE_HOST) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_SSVM) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_STORAGE_MISC) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE) &&
-                    (alertType != AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED)) {
+                (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM) &&
+                (alertType != AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER) &&
+                (alertType != AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY) &&
+                (alertType != AlertManager.AlertType.ALERT_TYPE_SSVM) &&
+                (alertType != AlertManager.AlertType.ALERT_TYPE_STORAGE_MISC) &&
+                (alertType != AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE) &&
+                (alertType != AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED)) {
                 alert = _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId, clusterId);
             }
 
@@ -816,7 +819,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                     }
                 }
             });
-         }
+        }
 
         public void clearAlert(short alertType, long dataCenterId, Long podId) {
             if (alertType != -1) {
@@ -831,12 +834,12 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     }
 
     private static String formatPercent(double percentage) {
-        return _dfPct.format(percentage * 100);
+        return DfPct.format(percentage * 100);
     }
 
     private static String formatBytesToMegabytes(double bytes) {
         double megaBytes = (bytes / (1024 * 1024));
-        return _dfWhole.format(megaBytes);
+        return DfWhole.format(megaBytes);
     }
 
     @Override
@@ -850,7 +853,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.ALERT_GENERATE, eventDescription = "generating alert", async=true)
+    @ActionEvent(eventType = EventTypes.ALERT_GENERATE, eventDescription = "generating alert", async = true)
     public boolean generateAlert(AlertType alertType, long dataCenterId, Long podId, String msg) {
         try {
             sendAlert(alertType, dataCenterId, podId, msg, msg);

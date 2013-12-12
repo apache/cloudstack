@@ -165,7 +165,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     private int _consoleProxyPort = ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT;
 
-    private int _mgmt_port = 8250;
+    private int _mgmtPort = 8250;
 
     private List<ConsoleProxyAllocator> _consoleProxyAllocators;
 
@@ -241,9 +241,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private int _capacityPerProxy = ConsoleProxyManager.DEFAULT_PROXY_CAPACITY;
     private int _standbyCapacity = ConsoleProxyManager.DEFAULT_STANDBY_CAPACITY;
 
-    private boolean _use_lvm;
-    private boolean _use_storage_vm;
-    private boolean _disable_rp_filter = false;
+    private boolean _useLvm;
+    private boolean _useStorageVm;
+    private boolean _disableRpFilter = false;
     private String _instance;
 
     private int _proxySessionTimeoutValue = DEFAULT_PROXY_SESSION_TIMEOUT;
@@ -959,7 +959,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             TemplateDataStoreVO templateHostRef = _vmTemplateStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dataCenterId, Status.DOWNLOADED);
 
             if (templateHostRef != null) {
-                List<Pair<Long, Integer>> l = _consoleProxyDao.getDatacenterStoragePoolHostInfo(dataCenterId, _use_lvm);
+                List<Pair<Long, Integer>> l = _consoleProxyDao.getDatacenterStoragePoolHostInfo(dataCenterId, _useLvm);
                 if (l != null && l.size() > 0 && l.get(0).second().intValue() > 0) {
                     return true;
                 } else {
@@ -982,7 +982,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     private boolean isZoneHostReady(ZoneHostInfo zoneHostInfo) {
         int expectedFlags = 0;
-        if (_use_storage_vm) {
+        if (_useStorageVm) {
             expectedFlags = RunningHostInfoAgregator.ZoneHostInfo.ROUTING_HOST_MASK;
         } else {
             expectedFlags = RunningHostInfoAgregator.ZoneHostInfo.ALL_HOST_MASK;
@@ -1232,17 +1232,17 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         value = configs.get(Config.ConsoleProxyDisableRpFilter.key());
         if (value != null && value.equalsIgnoreCase("true")) {
-            _disable_rp_filter = true;
+            _disableRpFilter = true;
         }
 
         value = configs.get(Config.SystemVMUseLocalStorage.key());
         if (value != null && value.equalsIgnoreCase("true")) {
-            _use_lvm = true;
+            _useLvm = true;
         }
 
         value = configs.get("secondary.storage.vm");
         if (value != null && value.equalsIgnoreCase("true")) {
-            _use_storage_vm = true;
+            _useStorageVm = true;
         }
 
         if (s_logger.isInfoEnabled()) {
@@ -1260,7 +1260,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         Map<String, String> agentMgrConfigs = _configDao.getConfiguration("AgentManager", params);
 
         value = agentMgrConfigs.get("port");
-        _mgmt_port = NumbersUtil.parseInt(value, 8250);
+        _mgmtPort = NumbersUtil.parseInt(value, 8250);
 
         _listener = new ConsoleProxyListener(new VmBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr, _agentMgr, _ms));
         _agentMgr.registerForHostEvents(_listener, true, true, false);
@@ -1328,7 +1328,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=consoleproxy");
         buf.append(" host=").append(ClusterManager.ManagementHostIPAdr.value());
-        buf.append(" port=").append(_mgmt_port);
+        buf.append(" port=").append(_mgmtPort);
         buf.append(" name=").append(profile.getVirtualMachine().getHostName());
         if (_sslEnabled) {
             buf.append(" premium=true");
@@ -1337,7 +1337,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         buf.append(" pod=").append(dest.getPod().getId());
         buf.append(" guid=Proxy.").append(profile.getId());
         buf.append(" proxy_vm=").append(profile.getId());
-        if (_disable_rp_filter) {
+        if (_disableRpFilter) {
             buf.append(" disable_rp_filter=true");
         }
 

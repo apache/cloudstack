@@ -46,9 +46,9 @@ import com.cloud.user.UserVO;
 import com.cloud.utils.component.PluggableService;
 
 public class ApiDiscoveryTest {
-    private static APIChecker _apiChecker = mock(APIChecker.class);
-    private static PluggableService _pluggableService = mock(PluggableService.class);
-    private static ApiDiscoveryServiceImpl _discoveryService = new ApiDiscoveryServiceImpl();
+    private static APIChecker s_apiChecker = mock(APIChecker.class);
+    private static PluggableService s_pluggableService = mock(PluggableService.class);
+    private static ApiDiscoveryServiceImpl s_discoveryService = new ApiDiscoveryServiceImpl();
 
     private static Class<?> testCmdClass = ListApisCmd.class;
     private static User testUser;
@@ -65,23 +65,23 @@ public class ApiDiscoveryTest {
         testApiAsync = false;
         testUser = new UserVO();
 
-        _discoveryService._apiAccessCheckers = mock(List.class);
-        _discoveryService._services = mock(List.class);
+        s_discoveryService._apiAccessCheckers = mock(List.class);
+        s_discoveryService._services = mock(List.class);
 
-        when(_apiChecker.checkAccess(any(User.class), anyString())).thenReturn(true);
-        when(_pluggableService.getCommands()).thenReturn(new ArrayList<Class<?>>());
-        when(_discoveryService._apiAccessCheckers.iterator()).thenReturn(Arrays.asList(_apiChecker).iterator());
-        when(_discoveryService._services.iterator()).thenReturn(Arrays.asList(_pluggableService).iterator());
+        when(s_apiChecker.checkAccess(any(User.class), anyString())).thenReturn(true);
+        when(s_pluggableService.getCommands()).thenReturn(new ArrayList<Class<?>>());
+        when(s_discoveryService._apiAccessCheckers.iterator()).thenReturn(Arrays.asList(s_apiChecker).iterator());
+        when(s_discoveryService._services.iterator()).thenReturn(Arrays.asList(s_pluggableService).iterator());
 
         Set<Class<?>> cmdClasses = new HashSet<Class<?>>();
         cmdClasses.add(ListApisCmd.class);
-        _discoveryService.start();
-        _discoveryService.cacheResponseMap(cmdClasses);
+        s_discoveryService.start();
+        s_discoveryService.cacheResponseMap(cmdClasses);
     }
 
     @Test
     public void verifyListSingleApi() throws Exception {
-        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)_discoveryService.listApis(testUser, testApiName);
+        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)s_discoveryService.listApis(testUser, testApiName);
         ApiDiscoveryResponse response = responses.getResponses().get(0);
         assertTrue("No. of response items should be one", responses.getCount() == 1);
         assertEquals("Error in api name", testApiName, response.getName());
@@ -92,7 +92,7 @@ public class ApiDiscoveryTest {
 
     @Test
     public void verifyListApis() throws Exception {
-        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)_discoveryService.listApis(testUser, null);
+        ListResponse<ApiDiscoveryResponse> responses = (ListResponse<ApiDiscoveryResponse>)s_discoveryService.listApis(testUser, null);
         assertTrue("No. of response items > 1", responses.getCount() == 1);
         for (ApiDiscoveryResponse response : responses.getResponses()) {
             assertFalse("API name is empty", response.getName().isEmpty());

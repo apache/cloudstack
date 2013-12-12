@@ -28,28 +28,28 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 public class LibvirtConnection {
     private static final Logger s_logger = Logger.getLogger(LibvirtConnection.class);
-    static private Map<String, Connect> _connections = new HashMap<String, Connect>();
+    static private Map<String, Connect> s_connections = new HashMap<String, Connect>();
 
-    static private Connect _connection;
-    static private String _hypervisorURI;
+    static private Connect s_connection;
+    static private String s_hypervisorURI;
 
     static public Connect getConnection() throws LibvirtException {
-        return getConnection(_hypervisorURI);
+        return getConnection(s_hypervisorURI);
     }
 
     static public Connect getConnection(String hypervisorURI) throws LibvirtException {
-        Connect conn = _connections.get(hypervisorURI);
+        Connect conn = s_connections.get(hypervisorURI);
 
         if (conn == null) {
             conn = new Connect(hypervisorURI, false);
-            _connections.put(hypervisorURI, conn);
+            s_connections.put(hypervisorURI, conn);
         } else {
             try {
                 conn.getVersion();
             } catch (LibvirtException e) {
                 s_logger.debug("Connection with libvirtd is broken, due to " + e.getMessage());
                 conn = new Connect(hypervisorURI, false);
-                _connections.put(hypervisorURI, conn);
+                s_connections.put(hypervisorURI, conn);
             }
         }
 
@@ -80,7 +80,7 @@ public class LibvirtConnection {
     }
 
     static void initialize(String hypervisorURI) {
-        _hypervisorURI = hypervisorURI;
+        s_hypervisorURI = hypervisorURI;
     }
 
     static String getHypervisorURI(String hypervisorType) {

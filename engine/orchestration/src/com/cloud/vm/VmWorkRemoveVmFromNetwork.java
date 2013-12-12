@@ -21,23 +21,23 @@ import java.net.URI;
 import com.cloud.network.Network;
 
 public class VmWorkRemoveVmFromNetwork extends VmWork {
-	private static final long serialVersionUID = -5070392905642149925L;
+    private static final long serialVersionUID = -5070392905642149925L;
 
-	Network network;
-	URI broadcastUri;
-	
-	public VmWorkRemoveVmFromNetwork(long userId, long accountId, long vmId, Network network, URI broadcastUri) {
-    	super(userId, accountId, vmId);
-    	
-    	this.network = network;
-    	this.broadcastUri = broadcastUri;
-	}
-	
-	public Network getNetwork() {
-		return this.network;
-	}
-	
-	public URI getBroadcastUri() {
-		return this.broadcastUri;
-	}
+    Network network;
+    URI broadcastUri;
+
+    public VmWorkRemoveVmFromNetwork(long userId, long accountId, long vmId, Network network, URI broadcastUri) {
+        super(userId, accountId, vmId);
+
+        this.network = network;
+        this.broadcastUri = broadcastUri;
+    }
+
+    public Network getNetwork() {
+        return this.network;
+    }
+
+    public URI getBroadcastUri() {
+        return this.broadcastUri;
+    }
 }

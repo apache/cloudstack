@@ -42,8 +42,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
-import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
-import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.NetworkACLItemDao;
@@ -84,7 +82,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 public class TaggedResourceManagerImpl extends ManagerBase implements TaggedResourceService {
     public static final Logger s_logger = Logger.getLogger(TaggedResourceManagerImpl.class);
 
-    private static Map<ResourceObjectType, GenericDao<?, Long>> _daoMap = new HashMap<ResourceObjectType, GenericDao<?, Long>>();
+    private static Map<ResourceObjectType, GenericDao<?, Long>> s_daoMap = new HashMap<ResourceObjectType, GenericDao<?, Long>>();
 
     @Inject
     AccountManager _accountMgr;
@@ -140,38 +138,32 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     VpcGatewayDao _vpcGatewayDao;
     @Inject
     NetworkACLDao _networkACLListDao;
-    @Inject
-    Site2SiteVpnGatewayDao _vpnGatewayDao;
-    @Inject
-    Site2SiteCustomerGatewayDao _customerGatewayDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _daoMap.put(ResourceObjectType.UserVm, _userVmDao);
-        _daoMap.put(ResourceObjectType.Volume, _volumeDao);
-        _daoMap.put(ResourceObjectType.Template, _templateDao);
-        _daoMap.put(ResourceObjectType.ISO, _templateDao);
-        _daoMap.put(ResourceObjectType.Snapshot, _snapshotDao);
-        _daoMap.put(ResourceObjectType.Network, _networkDao);
-        _daoMap.put(ResourceObjectType.LoadBalancer, _lbDao);
-        _daoMap.put(ResourceObjectType.PortForwardingRule, _pfDao);
-        _daoMap.put(ResourceObjectType.FirewallRule, _firewallDao);
-        _daoMap.put(ResourceObjectType.SecurityGroup, _securityGroupDao);
-        _daoMap.put(ResourceObjectType.PublicIpAddress, _publicIpDao);
-        _daoMap.put(ResourceObjectType.Project, _projectDao);
-        _daoMap.put(ResourceObjectType.Vpc, _vpcDao);
-        _daoMap.put(ResourceObjectType.Nic, _nicDao);
-        _daoMap.put(ResourceObjectType.NetworkACL, _networkACLItemDao);
-        _daoMap.put(ResourceObjectType.StaticRoute, _staticRouteDao);
-        _daoMap.put(ResourceObjectType.VMSnapshot, _vmSnapshotDao);
-        _daoMap.put(ResourceObjectType.RemoteAccessVpn, _vpnDao);
-        _daoMap.put(ResourceObjectType.Zone, _dataCenterDao);
-        _daoMap.put(ResourceObjectType.ServiceOffering, _serviceOffDao);
-        _daoMap.put(ResourceObjectType.Storage, _storagePoolDao);
-        _daoMap.put(ResourceObjectType.PrivateGateway, _vpcGatewayDao);
-        _daoMap.put(ResourceObjectType.NetworkACLList, _networkACLListDao);
-        _daoMap.put(ResourceObjectType.VpnGateway, _vpnGatewayDao);
-        _daoMap.put(ResourceObjectType.CustomerGateway, _customerGatewayDao);
+        s_daoMap.put(ResourceObjectType.UserVm, _userVmDao);
+        s_daoMap.put(ResourceObjectType.Volume, _volumeDao);
+        s_daoMap.put(ResourceObjectType.Template, _templateDao);
+        s_daoMap.put(ResourceObjectType.ISO, _templateDao);
+        s_daoMap.put(ResourceObjectType.Snapshot, _snapshotDao);
+        s_daoMap.put(ResourceObjectType.Network, _networkDao);
+        s_daoMap.put(ResourceObjectType.LoadBalancer, _lbDao);
+        s_daoMap.put(ResourceObjectType.PortForwardingRule, _pfDao);
+        s_daoMap.put(ResourceObjectType.FirewallRule, _firewallDao);
+        s_daoMap.put(ResourceObjectType.SecurityGroup, _securityGroupDao);
+        s_daoMap.put(ResourceObjectType.PublicIpAddress, _publicIpDao);
+        s_daoMap.put(ResourceObjectType.Project, _projectDao);
+        s_daoMap.put(ResourceObjectType.Vpc, _vpcDao);
+        s_daoMap.put(ResourceObjectType.Nic, _nicDao);
+        s_daoMap.put(ResourceObjectType.NetworkACL, _networkACLItemDao);
+        s_daoMap.put(ResourceObjectType.StaticRoute, _staticRouteDao);
+        s_daoMap.put(ResourceObjectType.VMSnapshot, _vmSnapshotDao);
+        s_daoMap.put(ResourceObjectType.RemoteAccessVpn, _vpnDao);
+        s_daoMap.put(ResourceObjectType.Zone, _dataCenterDao);
+        s_daoMap.put(ResourceObjectType.ServiceOffering, _serviceOffDao);
+        s_daoMap.put(ResourceObjectType.Storage, _storagePoolDao);
+        s_daoMap.put(ResourceObjectType.PrivateGateway, _vpcGatewayDao);
+        s_daoMap.put(ResourceObjectType.NetworkACLList, _networkACLListDao);
 
         return true;
     }
@@ -188,7 +180,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
 
     @Override
     public long getResourceId(String resourceId, ResourceObjectType resourceType) {
-        GenericDao<?, Long> dao = _daoMap.get(resourceType);
+        GenericDao<?, Long> dao = s_daoMap.get(resourceType);
         if (dao == null) {
             throw new CloudRuntimeException("Dao is not loaded for the resource type " + resourceType);
         }
@@ -221,7 +213,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     private Pair<Long, Long> getAccountDomain(long resourceId, ResourceObjectType resourceType) {
 
         Pair<Long, Long> pair = null;
-        GenericDao<?, Long> dao = _daoMap.get(resourceType);
+        GenericDao<?, Long> dao = s_daoMap.get(resourceType);
         Class<?> claz = DbUtil.getEntityBeanType(dao);
         while (claz != null && claz != Object.class) {
             try {
@@ -316,7 +308,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
 
     @Override
     public String getUuid(String resourceId, ResourceObjectType resourceType) {
-        GenericDao<?, Long> dao = _daoMap.get(resourceType);
+        GenericDao<?, Long> dao = s_daoMap.get(resourceType);
         Class<?> claz = DbUtil.getEntityBeanType(dao);
 
         String identiyUUId = null;

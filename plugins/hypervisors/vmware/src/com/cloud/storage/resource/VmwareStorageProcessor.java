@@ -92,7 +92,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     private VmwareStorageMount mountService;
     private VmwareResource resource;
     private Integer _timeout;
-    protected Integer _shutdown_waitMs;
+    protected Integer _shutdownWaitMs;
     private final Gson _gson;
     private final StorageLayer _storage = new JavaStorageLayer();
 
@@ -103,7 +103,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         this.mountService = mountService;
         _timeout = timeout;
         this.resource = resource;
-        _shutdown_waitMs = shutdownWaitMs;
+        _shutdownWaitMs = shutdownWaitMs;
         _gson = GsonHelper.getGsonLogger();
     }
 
@@ -1455,7 +1455,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                         // tear down all devices first before we destroy the VM to avoid accidently delete disk backing files
                         if (VmwareResource.getVmState(vmMo) != State.Stopped) {
-                            vmMo.safePowerOff(_shutdown_waitMs);
+                            vmMo.safePowerOff(_shutdownWaitMs);
                         }
 
                         // call this before calling detachAllDisksExcept

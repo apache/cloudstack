@@ -61,7 +61,7 @@ public interface ContrailManager {
 
     public void findInfrastructureNetworks(PhysicalNetworkVO phys, List<NetworkVO> dbList);
 
-    public String getPhysicalNetworkName(PhysicalNetworkVO phys_net);
+    public String getPhysicalNetworkName(PhysicalNetworkVO physNet);
 
     public String getCanonicalName(Network net);
 
@@ -93,9 +93,9 @@ public interface ContrailManager {
 
     public boolean isSystemDefaultNetwork(NetworkVO dbNet);
 
-    public String getVifNameByVmName(String vm_name, Integer device_id);
+    public String getVifNameByVmName(String vmName, Integer deviceId);
 
-    public String getVifNameByVmUuid(String vm_uuid, Integer device_id);
+    public String getVifNameByVmUuid(String vmUuid, Integer deviceId);
 
     public ApiConnector getApiConnector();
 

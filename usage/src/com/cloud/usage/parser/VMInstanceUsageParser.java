@@ -41,8 +41,8 @@ import com.cloud.utils.Pair;
 public class VMInstanceUsageParser {
     public static final Logger s_logger = Logger.getLogger(VMInstanceUsageParser.class.getName());
 
-    private static UsageDao m_usageDao;
-    private static UsageVMInstanceDao m_usageInstanceDao;
+    private static UsageDao s_usageDao;
+    private static UsageVMInstanceDao s_usageInstanceDao;
 
     @Inject
     private UsageDao _usageDao;;
@@ -51,8 +51,8 @@ public class VMInstanceUsageParser {
 
     @PostConstruct
     void init() {
-        m_usageDao = _usageDao;
-        m_usageInstanceDao = _usageInstanceDao;
+        s_usageDao = _usageDao;
+        s_usageInstanceDao = _usageInstanceDao;
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
@@ -68,7 +68,7 @@ public class VMInstanceUsageParser {
         //     - look for an entry for accountId with end date in the given range
         //     - look for an entry for accountId with end date null (currently running vm or owned IP)
         //     - look for an entry for accountId with start date before given range *and* end date after given range
-        List<UsageVMInstanceVO> usageInstances = m_usageInstanceDao.getUsageRecords(account.getId(), startDate, endDate);
+        List<UsageVMInstanceVO> usageInstances = s_usageInstanceDao.getUsageRecords(account.getId(), startDate, endDate);
 //ToDo: Add domainID for getting usage records
 
         // This map has both the running time *and* the usage amount.
@@ -180,7 +180,7 @@ public class VMInstanceUsageParser {
         UsageVO usageRecord =
             new UsageVO(Long.valueOf(zoneId), account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), Long.valueOf(vmId),
                 vmName, Long.valueOf(serviceOfferingId), Long.valueOf(templateId), Long.valueOf(vmId), startDate, endDate, hypervisorType);
-        m_usageDao.persist(usageRecord);
+        s_usageDao.persist(usageRecord);
     }
 
     private static class VMInfo {

@@ -54,7 +54,7 @@ public class ConsoleProxy implements Runnable {
             myScript.add(command);
             myScript.execute();
             long begin = System.currentTimeMillis();
-            wgetInt process = new wgetInt();
+            WgetInt process = new WgetInt();
             String response = myScript.execute(process);
             long end = process.getEnd();
             if (response != null) {
@@ -73,7 +73,7 @@ public class ConsoleProxy implements Runnable {
         }
     }
 
-    public class wgetInt extends OutputInterpreter {
+    public class WgetInt extends OutputInterpreter {
         private long end;
 
         public long getEnd() {

@@ -223,10 +223,10 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     private StoragePoolType poolType;
 
     @Column(name = "volume_id")
-    private long volume_id;
+    private long volumeId;
 
     @Column(name = "volume_uuid")
-    private String volume_uuid;
+    private String volumeUuid;
 
     @Column(name = "volume_device_id")
     private Long volumeDeviceId = null;
@@ -640,8 +640,8 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
         return poolType;
     }
 
-    public long getVolume_id() {
-        return volume_id;
+    public long getVolumeId() {
+        return volumeId;
     }
 
     public Long getVolumeDeviceId() {
@@ -813,7 +813,7 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     }
 
     public String getVolume_uuid() {
-        return volume_uuid;
+        return volumeUuid;
     }
 
     public String getSecurityGroupUuid() {

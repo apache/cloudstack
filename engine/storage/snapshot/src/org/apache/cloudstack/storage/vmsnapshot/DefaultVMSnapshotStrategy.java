@@ -236,9 +236,9 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         }
     }
 
-    protected void finalizeDelete(VMSnapshotVO vmSnapshot, List<VolumeObjectTO> VolumeTOs) {
+    protected void finalizeDelete(VMSnapshotVO vmSnapshot, List<VolumeObjectTO> volumeTOs) {
         // update volumes path
-        updateVolumePath(VolumeTOs);
+        updateVolumePath(volumeTOs);
 
         // update children's parent snapshots
         List<VMSnapshotVO> children = vmSnapshotDao.listByParent(vmSnapshot.getId());
@@ -258,9 +258,9 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         vmSnapshotDao.persist(vmSnapshot);
     }
 
-    protected void finalizeCreate(VMSnapshotVO vmSnapshot, List<VolumeObjectTO> VolumeTOs) {
+    protected void finalizeCreate(VMSnapshotVO vmSnapshot, List<VolumeObjectTO> volumeTOs) {
         // update volumes path
-        updateVolumePath(VolumeTOs);
+        updateVolumePath(volumeTOs);
 
         vmSnapshot.setCurrent(true);
 

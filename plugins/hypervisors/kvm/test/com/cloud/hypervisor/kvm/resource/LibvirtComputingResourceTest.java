@@ -250,14 +250,14 @@ public class LibvirtComputingResourceTest {
         Mockito.when(domain.interfaceStats(Matchers.anyString())).thenAnswer(new Answer<DomainInterfaceStats>() {
             // increment with less than a KB, so this should be less than 1 KB
             final static int increment = 1000;
-            int rx_bytes = 1000;
-            int tx_bytes = 1000;
+            int rxBytes = 1000;
+            int txBytes = 1000;
 
             @Override
             public DomainInterfaceStats answer(InvocationOnMock invocation) throws Throwable {
                 DomainInterfaceStats domainInterfaceStats = new DomainInterfaceStats();
-                domainInterfaceStats.rx_bytes = (this.rx_bytes += increment);
-                domainInterfaceStats.tx_bytes = (this.tx_bytes += increment);
+                domainInterfaceStats.rx_bytes = (rxBytes += increment);
+                domainInterfaceStats.tx_bytes = (txBytes += increment);
                 return domainInterfaceStats;
 
             }
@@ -268,15 +268,15 @@ public class LibvirtComputingResourceTest {
             // a little less than a KB
             final static int increment = 1000;
 
-            int rd_bytes = 0;
-            int wr_bytes = 1024;
+            int rdBytes = 0;
+            int wrBytes = 1024;
 
             @Override
             public DomainBlockStats answer(InvocationOnMock invocation) throws Throwable {
                 DomainBlockStats domainBlockStats = new DomainBlockStats();
 
-                domainBlockStats.rd_bytes = (rd_bytes += increment);
-                domainBlockStats.wr_bytes = (wr_bytes += increment);
+                domainBlockStats.rd_bytes = (rdBytes += increment);
+                domainBlockStats.wr_bytes = (wrBytes += increment);
                 return domainBlockStats;
             }
 

@@ -106,7 +106,7 @@ public class VMSnapshotManagerTest {
     HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     int _vmSnapshotMax = 10;
 
-    private static long TEST_VM_ID = 3L;
+    private static final long TEST_VM_ID = 3L;
     @Mock
     UserVmVO vmMock;
     @Mock

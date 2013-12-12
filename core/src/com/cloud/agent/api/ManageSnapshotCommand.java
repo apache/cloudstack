@@ -22,8 +22,8 @@ import com.cloud.storage.StoragePool;
 public class ManageSnapshotCommand extends Command {
     // XXX: Should be an enum
     // XXX: Anyway there is something called inheritance in Java
-    public static String CREATE_SNAPSHOT = "-c";
-    public static String DESTROY_SNAPSHOT = "-d";
+    public static final String CREATE_SNAPSHOT = "-c";
+    public static final String DESTROY_SNAPSHOT = "-d";
 
     private String _commandSwitch;
 

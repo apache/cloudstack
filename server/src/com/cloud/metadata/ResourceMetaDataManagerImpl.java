@@ -30,8 +30,6 @@ import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.NetworkACLItemDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.NetworkACLListDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.RemoteAccessVpnDetailsDao;
-import org.apache.cloudstack.resourcedetail.dao.Site2SiteCustomerGatewayDetailsDao;
-import org.apache.cloudstack.resourcedetail.dao.Site2SiteVpnGatewayDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.VpcGatewayDetailsDao;
@@ -94,36 +92,29 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     NetworkACLListDetailsDao _networkACLListDetailsDao;
     @Inject
     NetworkACLItemDetailsDao _networkACLDetailsDao;
-    @Inject
-    Site2SiteVpnGatewayDetailsDao _vpnGatewayDetailsDao;
-    @Inject
-    Site2SiteCustomerGatewayDetailsDao _customerGatewayDetailsDao;
-    
 
-    private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> _daoMap =
-            new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
+    private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> s_daoMap =
+        new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        _daoMap.put(ResourceObjectType.UserVm, _userVmDetailDao);
-        _daoMap.put(ResourceObjectType.Volume, _volumeDetailDao);
-        _daoMap.put(ResourceObjectType.Template, _templateDetailsDao);
-        _daoMap.put(ResourceObjectType.Network, _networkDetailsDao);
-        _daoMap.put(ResourceObjectType.Nic, _nicDetailDao);
-        _daoMap.put(ResourceObjectType.ServiceOffering, _serviceOfferingDetailsDao);
-        _daoMap.put(ResourceObjectType.Zone, _dcDetailsDao);
-        _daoMap.put(ResourceObjectType.Storage, _storageDetailsDao);
-        _daoMap.put(ResourceObjectType.FirewallRule, _firewallRuleDetailsDao);
-        _daoMap.put(ResourceObjectType.PublicIpAddress, _userIpAddressDetailsDao);
-        _daoMap.put(ResourceObjectType.PortForwardingRule, _firewallRuleDetailsDao);
-        _daoMap.put(ResourceObjectType.LoadBalancer, _firewallRuleDetailsDao);
-        _daoMap.put(ResourceObjectType.RemoteAccessVpn, _vpnDetailsDao);
-        _daoMap.put(ResourceObjectType.Vpc, _vpcDetailsDao);
-        _daoMap.put(ResourceObjectType.PrivateGateway, _vpcGatewayDetailsDao);
-        _daoMap.put(ResourceObjectType.NetworkACLList, _networkACLListDetailsDao);
-        _daoMap.put(ResourceObjectType.NetworkACL, _networkACLDetailsDao);
-        _daoMap.put(ResourceObjectType.VpnGateway, _vpnGatewayDetailsDao);
-        _daoMap.put(ResourceObjectType.CustomerGateway, _customerGatewayDetailsDao);
+        s_daoMap.put(ResourceObjectType.UserVm, _userVmDetailDao);
+        s_daoMap.put(ResourceObjectType.Volume, _volumeDetailDao);
+        s_daoMap.put(ResourceObjectType.Template, _templateDetailsDao);
+        s_daoMap.put(ResourceObjectType.Network, _networkDetailsDao);
+        s_daoMap.put(ResourceObjectType.Nic, _nicDetailDao);
+        s_daoMap.put(ResourceObjectType.ServiceOffering, _serviceOfferingDetailsDao);
+        s_daoMap.put(ResourceObjectType.Zone, _dcDetailsDao);
+        s_daoMap.put(ResourceObjectType.Storage, _storageDetailsDao);
+        s_daoMap.put(ResourceObjectType.FirewallRule, _firewallRuleDetailsDao);
+        s_daoMap.put(ResourceObjectType.PublicIpAddress, _userIpAddressDetailsDao);
+        s_daoMap.put(ResourceObjectType.PortForwardingRule, _firewallRuleDetailsDao);
+        s_daoMap.put(ResourceObjectType.LoadBalancer, _firewallRuleDetailsDao);
+        s_daoMap.put(ResourceObjectType.RemoteAccessVpn, _vpnDetailsDao);
+        s_daoMap.put(ResourceObjectType.Vpc, _vpcDetailsDao);
+        s_daoMap.put(ResourceObjectType.PrivateGateway, _vpcGatewayDetailsDao);
+        s_daoMap.put(ResourceObjectType.NetworkACLList, _networkACLListDetailsDao);
+        s_daoMap.put(ResourceObjectType.NetworkACL, _networkACLDetailsDao);
 
         return true;
     }
@@ -182,11 +173,11 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
                 throw new UnsupportedOperationException("ResourceType " + resourceType + " doesn't support metadata");
             }
             this.resourceType = resourceType;
-            ResourceDetailsDao<?> dao = _daoMap.get(resourceType);
+            ResourceDetailsDao<?> dao = s_daoMap.get(resourceType);
             if (dao == null) {
                 throw new UnsupportedOperationException("ResourceType " + resourceType + " doesn't support metadata");
             }
-            this.dao = (ResourceDetailsDao) _daoMap.get(resourceType);
+            this.dao = (ResourceDetailsDao)s_daoMap.get(resourceType);
         }
 
         private void removeDetail(long resourceId, String key) {

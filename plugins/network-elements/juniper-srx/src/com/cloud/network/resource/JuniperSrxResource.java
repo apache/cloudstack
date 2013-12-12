@@ -104,7 +104,7 @@ public class JuniperSrxResource implements ServerResource {
     private UsageFilter _usageFilterVlanOutput;
     private UsageFilter _usageFilterIPInput;
     private UsageFilter _usageFilterIPOutput;
-    private final Logger s_logger = Logger.getLogger(JuniperSrxResource.class);
+    private static final Logger s_logger = Logger.getLogger(JuniperSrxResource.class);
 
     private enum SrxXml {
         LOGIN("login.xml"),
@@ -173,7 +173,7 @@ public class JuniperSrxResource implements ServerResource {
 
         private final String scriptsDir = "scripts/network/juniper";
         private final String xml;
-        private final Logger s_logger = Logger.getLogger(JuniperSrxResource.class);
+        private static final Logger s_logger = Logger.getLogger(JuniperSrxResource.class);
 
         private SrxXml(String filename) {
             xml = getXml(filename);
@@ -854,9 +854,9 @@ public class JuniperSrxResource implements ServerResource {
                         addEgressSecurityPolicyAndApplications(SecurityPolicyType.SECURITYPOLICY_EGRESS, guestVlan, extractApplications(activeRulesForGuestNw),
                             extractCidrs(activeRulesForGuestNw), defaultEgressPolicy);
 
-                      /* Adding default policy rules are required because the order of rules is important.
-                       * Depending on the rules order the traffic accept/drop is performed
-                       */
+                        /* Adding default policy rules are required because the order of rules is important.
+                         * Depending on the rules order the traffic accept/drop is performed
+                         */
                         removeEgressSecurityPolicyAndApplications(SecurityPolicyType.SECURITYPOLICY_EGRESS_DEFAULT, guestVlan, cidrs, defaultEgressPolicy);
                         addEgressSecurityPolicyAndApplications(SecurityPolicyType.SECURITYPOLICY_EGRESS_DEFAULT, guestVlan, applications, cidrs, defaultEgressPolicy);
                     }

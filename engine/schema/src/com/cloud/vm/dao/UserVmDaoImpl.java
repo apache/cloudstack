@@ -82,7 +82,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL AND (state = 'Running' OR state = 'Stopped') "
             + "GROUP BY pod_id HAVING count(id) > 0 ORDER BY count(id) DESC";
 
-    private static String VM_DETAILS = "select vm_instance.id, "
+    private static final String VM_DETAILS = "select vm_instance.id, "
         + "account.id, account.account_name, account.type, domain.name, instance_group.id, instance_group.name,"
         + "data_center.id, data_center.name, data_center.is_security_group_enabled, host.id, host.name, "
         + "vm_template.id, vm_template.name, vm_template.display_text, iso.id, iso.name, "
@@ -223,7 +223,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         vo.setUserData(userData);
         vo.setDisplayVm(displayVm);
         vo.setDynamicallyScalable(isDynamicallyScalable);
-        if (customId != null){
+        if (customId != null) {
             vo.setUuid(customId);
         }
 

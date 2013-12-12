@@ -412,11 +412,11 @@ public class ApiConstants {
     // Ovs controller
     public static final String OVS_DEVICE_ID = "ovsdeviceid";
     public static final String OVS_DEVICE_NAME = "ovsdevicename";
-	// OpenDaylight controller
-	public static final String ODL_DEVICE_ID = "odldeviceid";
-	public static final String ODL_DEVICE_NAME = "odldevicename";
-	public static final String ODL_TRANSPORT_ZONE_UUID = "transportzoneuuid";
-	public static final String ODL_GATEWAYSERVICE_UUID = "l3gatewayserviceuuid";
+    // OpenDaylight controller
+    public static final String ODL_DEVICE_ID = "odldeviceid";
+    public static final String ODL_DEVICE_NAME = "odldevicename";
+    public static final String ODL_TRANSPORT_ZONE_UUID = "transportzoneuuid";
+    public static final String ODL_GATEWAYSERVICE_UUID = "l3gatewayserviceuuid";
 
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_ID = "vsmdeviceid";
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_NAME = "vsmdevicename";

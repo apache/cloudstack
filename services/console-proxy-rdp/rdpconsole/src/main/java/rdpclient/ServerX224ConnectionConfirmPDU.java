@@ -206,7 +206,7 @@ public class ServerX224ConnectionConfirmPDU extends OneTimeSwitch {
         // 03 00 00 13 0e d0 00 00 12 34 00 03 00 08 00 05 00 00 00
         byte[] packet = new byte[] {
 
-        0x03, // -> TPKT Header: TPKT version = 3
+            0x03, // -> TPKT Header: TPKT version = 3
             0x00, // TPKT Header: Reserved = 0
             0x00, 0x13, // TPKT Header: Packet length - (total = 19 bytes)
             0x0e, // X.224: Length indicator (14 bytes)

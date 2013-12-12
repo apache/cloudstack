@@ -154,14 +154,14 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     @Inject
     ConfigurationServer _configServer;
 
-    List<NetworkElement> _networkElements;
+    List<NetworkElement> networkElements;
 
     public List<NetworkElement> getNetworkElements() {
-        return _networkElements;
+        return networkElements;
     }
 
-    public void setNetworkElements(List<NetworkElement> _networkElements) {
-        this._networkElements = _networkElements;
+    public void setNetworkElements(List<NetworkElement> networkElements) {
+        this.networkElements = networkElements;
     }
 
     @Inject
@@ -200,7 +200,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     NetworkOfferingDetailsDao _ntwkOffDetailsDao;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
-    static Long _privateOfferingId = null;
+    static Long s_privateOfferingId = null;
 
     SearchBuilder<IPAddressVO> IpAddressSearch;
     SearchBuilder<NicVO> NicForTrafficTypeSearch;
@@ -226,7 +226,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     @Override
     public NetworkElement getElementImplementingProvider(String providerName) {
         String elementName = s_providerToNetworkElementMap.get(providerName);
-        NetworkElement element = AdapterBase.getAdapterByName(_networkElements, elementName);
+        NetworkElement element = AdapterBase.getAdapterByName(networkElements, elementName);
         return element;
     }
 
@@ -296,7 +296,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
                         ex.addProxyObject(ipAddrUuid, "networkId");
                         throw ex;
                     }
-               }
+                }
                 ipToServices.put(ip, services);
 
                 // if IP in allocating state then it will not have any rules attached so skip IPAssoc to network service
@@ -433,9 +433,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         NetworkElement oldElement = getElementImplementingProvider(oldProvider.getName());
         NetworkElement newElement = getElementImplementingProvider(newProvider.getName());
         if (oldElement instanceof IpDeployingRequester && newElement instanceof IpDeployingRequester) {
-        	IpDeployer oldIpDeployer = ((IpDeployingRequester)oldElement).getIpDeployer(network);
-        	IpDeployer newIpDeployer = ((IpDeployingRequester)newElement).getIpDeployer(network);
-			// FIXME: I ignored this check
+            IpDeployer oldIpDeployer = ((IpDeployingRequester)oldElement).getIpDeployer(network);
+            IpDeployer newIpDeployer = ((IpDeployingRequester)newElement).getIpDeployer(network);
+            // FIXME: I ignored this check
         } else {
             throw new InvalidParameterException("Ip cannot be applied for new provider!");
         }
@@ -1654,7 +1654,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     @Override
     public boolean isPrivateGateway(Nic guestNic) {
         Network network = getNetwork(guestNic.getNetworkId());
-        if (network.getTrafficType() != TrafficType.Guest || network.getNetworkOfferingId() != _privateOfferingId.longValue()) {
+        if (network.getTrafficType() != TrafficType.Guest || network.getNetworkOfferingId() != s_privateOfferingId.longValue()) {
             return false;
         }
         return true;
@@ -1929,7 +1929,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
         NetworkOfferingVO privateGatewayNetworkOffering = new NetworkOfferingVO(NetworkOffering.SystemPrivateGatewayNetworkOffering, GuestType.Isolated);
         privateGatewayNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(privateGatewayNetworkOffering);
         _systemNetworks.put(NetworkOffering.SystemPrivateGatewayNetworkOffering, privateGatewayNetworkOffering);
-        _privateOfferingId = privateGatewayNetworkOffering.getId();
+        s_privateOfferingId = privateGatewayNetworkOffering.getId();
 
         IpAddressSearch = _ipAddressDao.createSearchBuilder();
         IpAddressSearch.and("accountId", IpAddressSearch.entity().getAllocatedToAccountId(), Op.EQ);
@@ -1958,7 +1958,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     public boolean start() {
         // populate s_serviceToImplementedProvidersMap & s_providerToNetworkElementMap with current _networkElements
         // Need to do this in start() since _networkElements are not completely configured until then.
-        for (NetworkElement element : _networkElements) {
+        for (NetworkElement element : networkElements) {
             Map<Service, Map<Capability, String>> capabilities = element.getCapabilities();
             Provider implementedProvider = element.getProvider();
             if (implementedProvider != null) {
@@ -2185,7 +2185,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
-    public boolean getNetworkEgressDefaultPolicy (Long networkId) {
+    public boolean getNetworkEgressDefaultPolicy(Long networkId) {
         NetworkVO network = _networksDao.findById(networkId);
 
         if (network != null) {

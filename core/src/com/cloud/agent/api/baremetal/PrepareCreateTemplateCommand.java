@@ -18,7 +18,7 @@ package com.cloud.agent.api.baremetal;
 
 import com.cloud.agent.api.Command;
 
-public class prepareCreateTemplateCommand extends Command {
+public class PrepareCreateTemplateCommand extends Command {
     String ip;
     String mac;
     String netMask;
@@ -31,7 +31,7 @@ public class prepareCreateTemplateCommand extends Command {
         return true;
     }
 
-    public prepareCreateTemplateCommand(String ip, String mac, String netMask, String gateway, String dns, String template) {
+    public PrepareCreateTemplateCommand(String ip, String mac, String netMask, String gateway, String dns, String template) {
         this.ip = ip;
         this.mac = mac;
         this.netMask = netMask;

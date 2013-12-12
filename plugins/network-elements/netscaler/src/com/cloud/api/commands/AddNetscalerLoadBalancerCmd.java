@@ -86,9 +86,9 @@ public class AddNetscalerLoadBalancerCmd extends BaseAsyncCmd {
     private String gslbSitePrivateIp;
 
     @Parameter(name = ApiConstants.EXCLUSIVE_GSLB_PROVIDER,
-            type = CommandType.BOOLEAN,
-            required = false,
-            description = "true if NetScaler device being added is for providing GSLB service exclusively and can not be used for LB")
+               type = CommandType.BOOLEAN,
+               required = false,
+               description = "true if NetScaler device being added is for providing GSLB service exclusively and can not be used for LB")
     private Boolean isExclusiveGslbProvider;
 
     /////////////////////////////////////////////////////

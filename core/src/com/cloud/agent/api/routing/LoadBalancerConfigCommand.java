@@ -46,12 +46,12 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
         this.vpcId = vpcId;
     }
 
-    public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers, String PublicIp, String GuestIp, String PrivateIp, NicTO nic, Long vpcId, String maxconn,
+    public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers, String publicIp, String guestIp, String privateIp, NicTO nic, Long vpcId, String maxconn,
             boolean keepAliveEnabled) {
         this.loadBalancers = loadBalancers;
-        this.lbStatsPublicIP = PublicIp;
-        this.lbStatsPrivateIP = PrivateIp;
-        this.lbStatsGuestIP = GuestIp;
+        this.lbStatsPublicIP = publicIp;
+        this.lbStatsPrivateIP = privateIp;
+        this.lbStatsGuestIP = guestIp;
         this.nic = nic;
         this.vpcId = vpcId;
         this.maxconn = maxconn;

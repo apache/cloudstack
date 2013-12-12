@@ -121,7 +121,7 @@ public class ServiceProvider extends ManagerBase {
         long mhostId = 0;
         if (mhost != null)
             mhostId = mhost.getId() != null ? mhost.getId().longValue() : 0L;
-            return mhostId;
+        return mhostId;
     }
 
     /**

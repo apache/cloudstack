@@ -690,7 +690,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private LoadBalancerDao _loadbalancerDao;
     @Inject
     private HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
-    private List<HostAllocator> _hostAllocators;
+    private List<HostAllocator> hostAllocators;
     private List<StoragePoolAllocator> _storagePoolAllocators;
     @Inject
     private ResourceTagDao _resourceTagDao;
@@ -748,8 +748,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return _planners;
     }
 
-    public void setPlanners(List<DeploymentPlanner> _planners) {
-        this._planners = _planners;
+    public void setPlanners(List<DeploymentPlanner> planners) {
+        this._planners = planners;
     }
 
     @Inject
@@ -792,11 +792,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     public List<HostAllocator> getHostAllocators() {
-        return _hostAllocators;
+        return hostAllocators;
     }
 
-    public void setHostAllocators(List<HostAllocator> _hostAllocators) {
-        this._hostAllocators = _hostAllocators;
+    public void setHostAllocators(List<HostAllocator> hostAllocators) {
+        this.hostAllocators = hostAllocators;
     }
 
     @Override
@@ -1071,13 +1071,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware)
-                && !vm.getHypervisorType().equals(HypervisorType.KVM) && !vm.getHypervisorType().equals(HypervisorType.Ovm)
-                && !vm.getHypervisorType().equals(HypervisorType.Hyperv)) {
+            && !vm.getHypervisorType().equals(HypervisorType.KVM) && !vm.getHypervisorType().equals(HypervisorType.Ovm)
+            && !vm.getHypervisorType().equals(HypervisorType.Hyperv)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(vm + " is not XenServer/VMware/KVM/OVM/Hyperv, cannot migrate this VM.");
             }
             throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support " +
-                    "XenServer/VMware/KVM/Ovm/Hyperv only");
+                "XenServer/VMware/KVM/Ovm/Hyperv only");
         }
 
         long srcHostId = vm.getHostId();
@@ -1176,7 +1176,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
-        for (HostAllocator allocator : _hostAllocators) {
+        for (HostAllocator allocator : hostAllocators) {
             if (canMigrateWithStorage) {
                 suitableHosts = allocator.allocateTo(vmProfile, plan, Host.Type.Routing, excludes, allHosts, HostAllocator.RETURN_UPTO_ALL, false);
             } else {
@@ -2277,7 +2277,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (type != null) {
             sc.addAnd("type", SearchCriteria.Op.EQ, type);
         }
-        
+
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.EQ, name);
         }
@@ -2866,8 +2866,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(AssignCertToLoadBalancerCmd.class);
         cmdList.add(RemoveCertFromLoadBalancerCmd.class);
         cmdList.add(GenerateAlertCmd.class);
-	cmdList.add(ListOvsElementsCmd.class);
-	cmdList.add(ConfigureOvsElementCmd.class);
+        cmdList.add(ListOvsElementsCmd.class);
+        cmdList.add(ConfigureOvsElementCmd.class);
         return cmdList;
     }
 
@@ -3790,7 +3790,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Dynamic Scaling operation is not permitted for this hypervisor on system vm");
         }
         boolean result = _userVmMgr.upgradeVirtualMachine(cmd.getId(), cmd.getServiceOfferingId(), cmd.getCustomParameters());
-        if(result){
+        if (result) {
             VirtualMachine vm = _vmInstanceDao.findById(cmd.getId());
             return vm;
         } else {
@@ -3806,7 +3806,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     }
 
-    private VirtualMachine upgradeStoppedSystemVm(Long systemVmId, Long serviceOfferingId, Map<String, String> customparameters){
+    private VirtualMachine upgradeStoppedSystemVm(Long systemVmId, Long serviceOfferingId, Map<String, String> customparameters) {
         Account caller = CallContext.current().getCallingAccount();
 
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(systemVmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
@@ -3818,8 +3818,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         // Check that the specified service offering ID is valid
         ServiceOfferingVO newServiceOffering = _offeringDao.findById(serviceOfferingId);
-        ServiceOfferingVO currentServiceOffering = _offeringDao.findById(systemVmId,systemVm.getServiceOfferingId());
-        if (newServiceOffering.isDynamic()){
+        ServiceOfferingVO currentServiceOffering = _offeringDao.findById(systemVmId, systemVm.getServiceOfferingId());
+        if (newServiceOffering.isDynamic()) {
             newServiceOffering.setDynamicFlag(true);
             _userVmMgr.validateCustomParameters(newServiceOffering, customparameters);
             newServiceOffering = _offeringDao.getcomputeOffering(newServiceOffering, customparameters);

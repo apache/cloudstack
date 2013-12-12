@@ -346,14 +346,14 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @DB()
-    protected List<T> search(SearchCriteria<T> sc, final Filter filter, final Boolean lock, final boolean cache, final boolean enable_query_cache) {
+    protected List<T> search(SearchCriteria<T> sc, final Filter filter, final Boolean lock, final boolean cache, final boolean enableQueryCache) {
         if (_removed != null) {
             if (sc == null) {
                 sc = createSearchCriteria();
             }
             sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
         }
-        return searchIncludingRemoved(sc, filter, lock, cache, enable_query_cache);
+        return searchIncludingRemoved(sc, filter, lock, cache, enableQueryCache);
     }
 
     @Override
@@ -362,13 +362,13 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @Override
-    public List<T> searchIncludingRemoved(SearchCriteria<T> sc, final Filter filter, final Boolean lock, final boolean cache, final boolean enable_query_cache) {
+    public List<T> searchIncludingRemoved(SearchCriteria<T> sc, final Filter filter, final Boolean lock, final boolean cache, final boolean enableQueryCache) {
         String clause = sc != null ? sc.getWhereClause() : null;
         if (clause != null && clause.length() == 0) {
             clause = null;
         }
 
-        final StringBuilder str = createPartialSelectSql(sc, clause != null, enable_query_cache);
+        final StringBuilder str = createPartialSelectSql(sc, clause != null, enableQueryCache);
         if (clause != null) {
             str.append(clause);
         }
@@ -896,11 +896,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @DB()
-    protected List<T> listBy(final SearchCriteria<T> sc, final Filter filter, final boolean enable_query_cache) {
+    protected List<T> listBy(final SearchCriteria<T> sc, final Filter filter, final boolean enableQueryCache) {
         if (_removed != null) {
             sc.addAnd(_removed.second().field.getName(), SearchCriteria.Op.NULL);
         }
-        return listIncludingRemovedBy(sc, filter, enable_query_cache);
+        return listIncludingRemovedBy(sc, filter, enableQueryCache);
     }
 
     @DB()
@@ -909,8 +909,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @DB()
-    protected List<T> listIncludingRemovedBy(final SearchCriteria<T> sc, final Filter filter, final boolean enable_query_cache) {
-        return searchIncludingRemoved(sc, filter, null, false, enable_query_cache);
+    protected List<T> listIncludingRemovedBy(final SearchCriteria<T> sc, final Filter filter, final boolean enableQueryCache) {
+        return searchIncludingRemoved(sc, filter, null, false, enableQueryCache);
     }
 
     @DB()
@@ -1194,8 +1194,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @DB()
-    protected StringBuilder createPartialSelectSql(SearchCriteria<?> sc, final boolean whereClause, final boolean enable_query_cache) {
-        StringBuilder sql = new StringBuilder(enable_query_cache ? _partialQueryCacheSelectSql.first() : _partialSelectSql.first());
+    protected StringBuilder createPartialSelectSql(SearchCriteria<?> sc, final boolean whereClause, final boolean enableQueryCache) {
+        StringBuilder sql = new StringBuilder(enableQueryCache ? _partialQueryCacheSelectSql.first() : _partialSelectSql.first());
         if (sc != null && !sc.isSelectAll()) {
             sql.delete(7, sql.indexOf(" FROM"));
             sc.getSelect(sql, 7);
@@ -1281,8 +1281,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @Override
     @DB()
-    public List<T> search(final SearchCriteria<T> sc, final Filter filter, final boolean enable_query_cache) {
-        return search(sc, filter, null, false, enable_query_cache);
+    public List<T> search(final SearchCriteria<T> sc, final Filter filter, final boolean enableQueryCache) {
+        return search(sc, filter, null, false, enableQueryCache);
     }
 
     @Override

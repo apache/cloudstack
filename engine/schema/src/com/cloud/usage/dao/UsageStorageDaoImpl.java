@@ -89,7 +89,7 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
     }
 
     @Override
-    public void removeBy(long accountId, long volId, int storage_type) {
+    public void removeBy(long accountId, long volId, int storageType) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         PreparedStatement pstmt = null;
         try {
@@ -98,7 +98,7 @@ public class UsageStorageDaoImpl extends GenericDaoBase<UsageStorageVO, Long> im
             pstmt = txn.prepareAutoCloseStatement(sql);
             pstmt.setLong(1, accountId);
             pstmt.setLong(2, volId);
-            pstmt.setInt(3, storage_type);
+            pstmt.setInt(3, storageType);
             pstmt.executeUpdate();
             txn.commit();
         } catch (Exception e) {

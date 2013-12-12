@@ -26,9 +26,9 @@ import org.apache.log4j.Logger;
 public class BuildGuestNetwork {
 
     public static final Logger s_logger = Logger.getLogger(BuildGuestNetwork.class.getClass());
-    private static final int _apiPort = 8096;
-    private static final int _developerPort = 8080;
-    private static final String _apiUrl = "/client/api";
+    private static final int ApiPort = 8096;
+    private static final int DeveloperPort = 8080;
+    private static final String ApiUrl = "/client/api";
     private static int numVM = 1;
     private static long zoneId = -1L;
     private static long templateId = 3;
@@ -65,8 +65,8 @@ public class BuildGuestNetwork {
             }
         }
 
-        final String server = host + ":" + _apiPort + "/";
-        final String developerServer = host + ":" + _developerPort + _apiUrl;
+        final String server = host + ":" + ApiPort + "/";
+        final String developerServer = host + ":" + DeveloperPort + ApiUrl;
         s_logger.info("Starting test in " + numThreads + " thread(s). Each thread is launching " + numVM + " VMs");
 
         for (int i = 0; i < numThreads; i++) {

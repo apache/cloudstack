@@ -180,8 +180,8 @@ public class DummyResource implements ServerResource {
         return true;
     }
 
-    public void setParams(Map<String, Object> _params) {
-        this._params = _params;
+    public void setParams(Map<String, Object> params) {
+        this._params = params;
     }
 
     @Override

@@ -36,7 +36,7 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
 
     public enum DiskCacheMode {
         NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough");
-        
+
         private final String _diskCacheMode;
 
         DiskCacheMode(String cacheMode) {

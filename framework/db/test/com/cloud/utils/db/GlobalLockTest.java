@@ -28,7 +28,7 @@ import com.cloud.utils.Profiler;
 @ContextConfiguration(locations = "classpath:/testContext.xml")
 public class GlobalLockTest {
     public static final Logger s_logger = Logger.getLogger(GlobalLockTest.class);
-    private final static GlobalLock _workLock = GlobalLock.getInternLock("SecurityGroupWork");
+    private final static GlobalLock WorkLock = GlobalLock.getInternLock("SecurityGroupWork");
 
     public static class Worker implements Runnable {
         int id = 0;
@@ -47,7 +47,7 @@ public class GlobalLockTest {
             try {
                 Profiler p = new Profiler();
                 p.start();
-                locked = _workLock.lock(timeoutSeconds);
+                locked = WorkLock.lock(timeoutSeconds);
                 p.stop();
                 System.out.println("Thread " + id + " waited " + p.getDuration() + " ms, locked=" + locked);
                 if (locked) {
@@ -56,7 +56,7 @@ public class GlobalLockTest {
             } catch (InterruptedException e) {
             } finally {
                 if (locked) {
-                    boolean unlocked = _workLock.unlock();
+                    boolean unlocked = WorkLock.unlock();
                     System.out.println("Thread " + id + "  unlocked=" + unlocked);
                 }
             }

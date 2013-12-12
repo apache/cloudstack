@@ -32,10 +32,10 @@ import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 
 public class Coder {
-    private static Gson _gson;
-    private static Gson _mapGson;
+    private static Gson s_gson;
+    private static Gson s_mapGson;
 
-    public static Object[] EMPTY_PARAMS = new Object[0];
+    public static Object[] s_emptyParams = new Object[0];
 
     private static class MapDecoder implements JsonDeserializer<Map<String, String>> {
         @Override
@@ -59,26 +59,26 @@ public class Coder {
     static {
         GsonBuilder _builder = new GsonBuilder();
         _builder.registerTypeAdapter(Map.class, new MapDecoder());
-        _mapGson = _builder.create();
-        _gson = new Gson();
+        s_mapGson = _builder.create();
+        s_gson = new Gson();
     }
 
     public static String toJson(Object obj) {
-        return _gson.toJson(obj);
+        return s_gson.toJson(obj);
     }
 
     public static <T> T fromJson(String str, Class<T> clz) {
-        return _gson.fromJson(str, clz);
+        return s_gson.fromJson(str, clz);
     }
 
     @SuppressWarnings("unchecked")
     public static Map<String, String> mapFromJson(String str) {
-        return _mapGson.fromJson(str, Map.class);
+        return s_mapGson.fromJson(str, Map.class);
     }
 
     public static List<String> listFromJson(String str) {
         Type listType = new TypeToken<List<String>>() {
         }.getType();
-        return _gson.fromJson(str, listType);
+        return s_gson.fromJson(str, listType);
     }
 }

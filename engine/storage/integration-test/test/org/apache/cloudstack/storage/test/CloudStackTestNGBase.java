@@ -74,7 +74,7 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
         "primary-storage-want-to-add", "devcloud-secondary-storage", "s3-accesskey", "s3-secretkey", "s3-endpoint", "s3-template-bucket", "s3-usehttps",
         "image-install-path", "primary-storage-uuid-want-to-add", "script-path", "hypervisor"})
     protected void setup(String hostuuid, String gateway, String cidr, String hostIp, String templateUrl, String localStorageUuid, String primaryStorage,
-        String secondaryStorage, String s3_accessKey, String s3_secretKey, String s3_endpoint, String s3_template_bucket, String s3_usehttps, String imageInstallPath,
+        String secondaryStorage, String s3AccessKey, String s3SecretKey, String s3Endpoint, String s3TemplateBucket, String s3Usehttps, String imageInstallPath,
         String primaryStorageUuid, String scriptPath, String hypervisor) {
         this.hostGuid = hostuuid;
         this.hostGateway = gateway;
@@ -88,11 +88,11 @@ public class CloudStackTestNGBase extends AbstractTestNGSpringContextTests {
         this.hypervisor = HypervisorType.getType(hypervisor);
         this.setSecondaryStorage(secondaryStorage);
         // set S3 parameters
-        this.s3AccessKey = s3_accessKey;
-        this.s3SecretKey = s3_secretKey;
-        this.s3EndPoint = s3_endpoint;
-        this.s3TemplateBucket = s3_template_bucket;
-        this.s3UseHttps = Boolean.parseBoolean(s3_usehttps);
+        this.s3AccessKey = s3AccessKey;
+        this.s3SecretKey = s3SecretKey;
+        this.s3EndPoint = s3Endpoint;
+        this.s3TemplateBucket = s3TemplateBucket;
+        this.s3UseHttps = Boolean.parseBoolean(s3Usehttps);
         this.scriptPath = scriptPath;
         if (this.scriptPath != null) {
             System.setProperty("paths.script", this.getScriptPath());

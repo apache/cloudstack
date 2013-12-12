@@ -96,7 +96,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.NicDao;
 
-@Local(value=HypervisorGuru.class)
+@Local(value = HypervisorGuru.class)
 public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
     private static final Logger s_logger = Logger.getLogger(VMwareGuru.class);
 
@@ -128,17 +128,20 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     VMInstanceDao _vmDao;
     @Inject
     ClusterDao _clusterDao;
-    @Inject ClusterManager _clusterMgr;
+    @Inject
+    ClusterManager _clusterMgr;
 
     protected VMwareGuru() {
         super();
     }
 
     static final ConfigKey<Boolean> VmwareReserveCpu = new ConfigKey<Boolean>(Boolean.class, "vmware.reserve.cpu", "Advanced", "false",
-            "Specify whether or not to reserve CPU when not overprovisioning, In case of cpu overprovisioning we will always reserve cpu.", true, ConfigKey.Scope.Cluster, null);
+        "Specify whether or not to reserve CPU when not overprovisioning, In case of cpu overprovisioning we will always reserve cpu.", true, ConfigKey.Scope.Cluster,
+        null);
 
     static final ConfigKey<Boolean> VmwareReserveMemory = new ConfigKey<Boolean>(Boolean.class, "vmware.reserve.cpu", "Advanced", "false",
-            "Specify whether or not to reserve memory when not overprovisioning, In case of memory overprovisioning we will always reserve memory.", true, ConfigKey.Scope.Cluster, null);
+        "Specify whether or not to reserve memory when not overprovisioning, In case of memory overprovisioning we will always reserve memory.", true,
+        ConfigKey.Scope.Cluster, null);
 
     @Override
     public HypervisorType getHypervisorType() {
@@ -200,7 +203,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 break;
             }
         }
-        long clusterId = _hostDao.findById( _vmDao.findById(vm.getId()).getHostId()).getClusterId();
+        long clusterId = _hostDao.findById(_vmDao.findById(vm.getId()).getHostId()).getClusterId();
         details.put(Config.VmwareReserveCpu.key(), VmwareReserveCpu.valueIn(clusterId).toString());
         details.put(Config.VmwareReserveMem.key(), VmwareReserveMemory.valueIn(clusterId).toString());
         to.setDetails(details);

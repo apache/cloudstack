@@ -59,9 +59,9 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
     @Column(name = "quiet_time", updatable = true, nullable = false)
     private int quietTime;
 
-	@Column(name = "last_quiet_time", updatable = true)
-	@Temporal(value = TemporalType.TIMESTAMP)
-	private Date lastQuiteTime;
+    @Column(name = "last_quiet_time", updatable = true)
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date lastQuiteTime;
 
     @Column(name = "action", updatable = false, nullable = false)
     private String action;
@@ -75,14 +75,14 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
     public AutoScalePolicyVO() {
     }
 
-	public AutoScalePolicyVO(long domainId, long accountId, int duration,
-			int quietTime, Date lastQuiteTime, String action) {
+    public AutoScalePolicyVO(long domainId, long accountId, int duration,
+            int quietTime, Date lastQuiteTime, String action) {
         this.uuid = UUID.randomUUID().toString();
         this.domainId = domainId;
         this.accountId = accountId;
         this.duration = duration;
         this.quietTime = quietTime;
-		this.lastQuiteTime = lastQuiteTime;
+        this.lastQuiteTime = lastQuiteTime;
         this.action = action;
     }
 
@@ -121,10 +121,10 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
         return quietTime;
     }
 
-	@Override
-	public Date getLastQuiteTime() {
-		return lastQuiteTime;
-	}
+    @Override
+    public Date getLastQuiteTime() {
+        return lastQuiteTime;
+    }
 
     @Override
     public String getAction() {
@@ -147,7 +147,7 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
         this.quietTime = quietTime;
     }
 
-	public void setLastQuiteTime(Date lastQuiteTime) {
-		this.lastQuiteTime = lastQuiteTime;
-	}
+    public void setLastQuiteTime(Date lastQuiteTime) {
+        this.lastQuiteTime = lastQuiteTime;
+    }
 }

@@ -567,10 +567,10 @@ public class SqlGenerator {
         return sql.toString();
     }
 
-    public Pair<StringBuilder, Attribute[]> buildSelectSql(boolean enable_query_cache) {
+    public Pair<StringBuilder, Attribute[]> buildSelectSql(boolean enableQueryCache) {
         StringBuilder sql = new StringBuilder("SELECT ");
 
-        sql.append(enable_query_cache ? "SQL_CACHE " : "");
+        sql.append(enableQueryCache ? "SQL_CACHE " : "");
 
         ArrayList<Attribute> attrs = new ArrayList<Attribute>();
 

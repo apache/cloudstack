@@ -840,16 +840,16 @@ public class XenServerConnectionPool {
         }
 
         @Override
-        protected Map dispatch(String method_call, Object[] method_params) throws XmlRpcException, XenAPIException {
-            if (method_call.equals("session.local_logout") || method_call.equals("session.slave_local_login_with_password") || method_call.equals("session.logout")) {
-                return super.dispatch(method_call, method_params);
+        protected Map dispatch(String methodCall, Object[] methodParams) throws XmlRpcException, XenAPIException {
+            if (methodCall.equals("session.local_logout") || methodCall.equals("session.slave_local_login_with_password") || methodCall.equals("session.logout")) {
+                return super.dispatch(methodCall, methodParams);
             }
 
-            if (method_call.equals("session.login_with_password")) {
+            if (methodCall.equals("session.login_with_password")) {
                 int retries = 0;
                 while (retries++ < _retries) {
                     try {
-                        return super.dispatch(method_call, method_params);
+                        return super.dispatch(methodCall, methodParams);
                     } catch (XmlRpcException e) {
                         Throwable cause = e.getCause();
                         if (cause == null || !(cause instanceof SocketException)) {
@@ -870,21 +870,21 @@ public class XenServerConnectionPool {
                 int retries = 0;
                 while (retries++ < _retries) {
                     try {
-                        return super.dispatch(method_call, method_params);
+                        return super.dispatch(methodCall, methodParams);
                     } catch (Types.SessionInvalid e) {
-                        s_logger.debug("Session is invalid for method: " + method_call + " due to " + e.getMessage() + ".  Reconnecting...retry=" + retries);
+                        s_logger.debug("Session is invalid for method: " + methodCall + " due to " + e.getMessage() + ".  Reconnecting...retry=" + retries);
                         if (retries >= _retries) {
                             removeConnect(_poolUuid);
                             throw e;
                         }
                         loginWithPassword(this, _username, _password, APIVersion.latest().toString());
-                        method_params[0] = getSessionReference();
+                        methodParams[0] = getSessionReference();
                     } catch (XmlRpcClientException e) {
-                        s_logger.debug("XmlRpcClientException for method: " + method_call + " due to " + e.getMessage());
+                        s_logger.debug("XmlRpcClientException for method: " + methodCall + " due to " + e.getMessage());
                         removeConnect(_poolUuid);
                         throw e;
                     } catch (XmlRpcException e) {
-                        s_logger.debug("XmlRpcException for method: " + method_call + " due to " + e.getMessage() + ".  Reconnecting...retry=" + retries);
+                        s_logger.debug("XmlRpcException for method: " + methodCall + " due to " + e.getMessage() + ".  Reconnecting...retry=" + retries);
                         if (retries >= _retries) {
                             removeConnect(_poolUuid);
                             throw e;
@@ -895,7 +895,7 @@ public class XenServerConnectionPool {
                             throw e;
                         }
                     } catch (Types.HostIsSlave e) {
-                        s_logger.debug("HostIsSlave Exception for method: " + method_call + " due to " + e.getMessage() + ".  Reconnecting...retry=" + retries);
+                        s_logger.debug("HostIsSlave Exception for method: " + methodCall + " due to " + e.getMessage() + ".  Reconnecting...retry=" + retries);
                         removeConnect(_poolUuid);
                         throw e;
                     }

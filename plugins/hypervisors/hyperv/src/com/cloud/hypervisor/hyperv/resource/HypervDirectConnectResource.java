@@ -112,7 +112,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineName;
-import com.google.gson.Gson;
 
 /**
  * Implementation of dummy resource to be returned from discoverer.
@@ -128,12 +127,12 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     private String _clusterId;
     private String _guid;
     private String _agentIp;
-    private int _port = DEFAULT_AGENT_PORT;
-    protected final long _ops_timeout = 900000;  // 15 minutes time out to time
+    private final int _port = DEFAULT_AGENT_PORT;
+    protected final long _opsTimeout = 900000;  // 15 minutes time out to time
 
     protected final int _retry = 24;
     protected final int _sleep = 10000;
-    protected final int DEFAULT_DOMR_SSHPORT = 3922;
+    protected static final int DEFAULT_DOMR_SSHPORT = 3922;
 
     private String _clusterGuid;
 
@@ -145,13 +144,13 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     private String _password;
 
     private static HypervManager s_hypervMgr;
-    @Inject HypervManager _hypervMgr;
+    @Inject
+    HypervManager _hypervMgr;
 
     @PostConstruct
     void init() {
         s_hypervMgr = _hypervMgr;
     }
-
 
     @Override
     public final Type getType() {
@@ -383,7 +382,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         } else if (clazz == CheckS2SVpnConnectionsCommand.class) {
             answer = execute((CheckS2SVpnConnectionsCommand)cmd);
         } else if (clazz == SetStaticRouteCommand.class) {
-            answer = execute((SetStaticRouteCommand) cmd);
+            answer = execute((SetStaticRouteCommand)cmd);
         } else {
             if (clazz == StartCommand.class) {
                 VirtualMachineTO vmSpec = ((StartCommand)cmd).getVirtualMachine();
@@ -633,7 +632,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                         if (s_logger.isDebugEnabled())
                             s_logger.debug("Run domr script " + cmd);
                         Pair<Boolean, String> result2 = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null,
-                        // TODO need to find the dev index inside router based on IP address
+                            // TODO need to find the dev index inside router based on IP address
                             cmd);
                         if (s_logger.isDebugEnabled())
                             s_logger.debug("result: " + result2.first() + ", output: " + result2.second());
@@ -960,14 +959,16 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         String args = " -v " + vmIpAddress;
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Run command on domain router " + controlIp + ", /opt/cloud/bin/savepassword.sh " + args + " -p " + StringUtils.getMaskedPasswordForDisplay(cmd.getPassword()));
+            s_logger.debug("Run command on domain router " + controlIp + ", /opt/cloud/bin/savepassword.sh " + args + " -p " +
+                StringUtils.getMaskedPasswordForDisplay(cmd.getPassword()));
         }
 
         args += " -p " + password;
 
         try {
 
-            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/savepassword.sh " + args);
+            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/savepassword.sh " +
+                args);
 
             if (!result.first()) {
                 s_logger.error("savepassword command on domain router " + controlIp + " failed, message: " + result.second());
@@ -1608,17 +1609,17 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         /* todo: update, make consistent with the xen server equivalent. */
 
         if (params != null) {
-            _guid = (String) params.get("guid");
-            _zoneId = (String) params.get("zone");
-            _podId = (String) params.get("pod");
-            _clusterId = (String) params.get("cluster");
-            _agentIp = (String) params.get("ipaddress"); // was agentIp
+            _guid = (String)params.get("guid");
+            _zoneId = (String)params.get("zone");
+            _podId = (String)params.get("pod");
+            _clusterId = (String)params.get("cluster");
+            _agentIp = (String)params.get("ipaddress"); // was agentIp
             _name = name;
-    
-            _clusterGuid = (String) params.get("cluster.guid");
-            _username = (String) params.get("url");
-            _password = (String) params.get("password");
-            _username = (String) params.get("username");
+
+            _clusterGuid = (String)params.get("cluster.guid");
+            _username = (String)params.get("url");
+            _password = (String)params.get("password");
+            _username = (String)params.get("username");
             _configureCalled = true;
         }
 
@@ -1659,7 +1660,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         // at least have tried _retry times, this is to coordinate with system
         // VM patching/rebooting time that may need
         int retry = _retry;
-        while (System.currentTimeMillis() - startTick <= _ops_timeout || --retry > 0) {
+        while (System.currentTimeMillis() - startTick <= _opsTimeout || --retry > 0) {
             SocketChannel sch = null;
             try {
                 s_logger.info("Trying to connect to " + ipAddress);

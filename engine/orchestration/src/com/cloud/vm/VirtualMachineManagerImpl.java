@@ -273,14 +273,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     ConfigDepot _configDepot;
 
-    protected List<HostAllocator> _hostAllocators;
+    protected List<HostAllocator> hostAllocators;
 
     public List<HostAllocator> getHostAllocators() {
-        return _hostAllocators;
+        return hostAllocators;
     }
 
-    public void setHostAllocators(List<HostAllocator> _hostAllocators) {
-        this._hostAllocators = _hostAllocators;
+    public void setHostAllocators(List<HostAllocator> hostAllocators) {
+        this.hostAllocators = hostAllocators;
     }
 
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -699,6 +699,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params)
         throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+
         advanceStart(vmUuid, params, null);
     }
 
@@ -964,15 +965,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 s_logger.info("The guru did not like the answers so stopping " + vm);
                             }
 
-                            StopCommand cmd = new StopCommand(vm,  ExecuteInSequence.value());
-                            StopAnswer answer = (StopAnswer) _agentMgr.easySend(destHostId, cmd);
-                            if ( answer != null ) {
+                            StopCommand cmd = new StopCommand(vm, ExecuteInSequence.value());
+                            StopAnswer answer = (StopAnswer)_agentMgr.easySend(destHostId, cmd);
+                            if (answer != null) {
                                 if (vm.getType() == VirtualMachine.Type.User) {
                                     String platform = answer.getPlatform();
                                     if (platform != null) {
                                         UserVmVO userVm = _userVmDao.findById(vm.getId());
                                         _userVmDao.loadDetails(userVm);
-                                        userVm.setDetail("platform",  platform);
+                                        userVm.setDetail("platform", platform);
                                         _userVmDao.saveDetails(userVm);
                                     }
                                 }
@@ -1128,14 +1129,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         VirtualMachine vm = profile.getVirtualMachine();
         StopCommand stop = new StopCommand(vm, ExecuteInSequence.value());
         try {
-            StopAnswer answer = (StopAnswer) _agentMgr.send(vm.getHostId(), stop);
-            if ( answer != null ) {
+            StopAnswer answer = (StopAnswer)_agentMgr.send(vm.getHostId(), stop);
+            if (answer != null) {
                 if (vm.getType() == VirtualMachine.Type.User) {
                     String platform = answer.getPlatform();
                     if (platform != null) {
                         UserVmVO userVm = _userVmDao.findById(vm.getId());
                         _userVmDao.loadDetails(userVm);
-                        userVm.setDetail("platform",  platform);
+                        userVm.setDetail("platform", platform);
                         _userVmDao.saveDetails(userVm);
                     }
                 }
@@ -1368,13 +1369,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         StopAnswer answer = null;
         try {
             answer = (StopAnswer)_agentMgr.send(vm.getHostId(), stop);
-            if ( answer != null ) {
+            if (answer != null) {
                 if (vm.getType() == VirtualMachine.Type.User) {
                     String platform = answer.getPlatform();
-                    if ( platform != null) {
+                    if (platform != null) {
                         UserVmVO userVm = _userVmDao.findById(vm.getId());
                         _userVmDao.loadDetails(userVm);
-                        userVm.setDetail("platform",  platform);
+                        userVm.setDetail("platform", platform);
                         _userVmDao.saveDetails(userVm);
                     }
                 }
@@ -1515,7 +1516,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         return true;
     }
-    
+
     @Override
     public void storageMigration(String vmUuid, StoragePool destPool) {
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
@@ -2129,7 +2130,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public boolean isVirtualMachineUpgradable(VirtualMachine vm, ServiceOffering offering) {
         boolean isMachineUpgradable = true;
-        for (HostAllocator allocator : _hostAllocators) {
+        for (HostAllocator allocator : hostAllocators) {
             isMachineUpgradable = allocator.isVirtualMachineUpgradable(vm, offering);
             if (isMachineUpgradable)
                 continue;
@@ -2570,11 +2571,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 vm.getHostId() + "] stopped due to storage failure.");
         }
         // track platform info
-        if( info.platform != null && !info.platform.isEmpty() ) {
+        if (info.platform != null && !info.platform.isEmpty()) {
             if (vm.getType() == VirtualMachine.Type.User) {
                 UserVmVO userVm = _userVmDao.findById(vm.getId());
                 _userVmDao.loadDetails(userVm);
-                userVm.setDetail("platform",  info.platform);
+                userVm.setDetail("platform", info.platform);
                 _userVmDao.saveDetails(userVm);
             }
         }
@@ -2972,7 +2973,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             this.vm = vm;
             hostUuid = host;
             this.platform = platform;
-            
+
         }
 
         public AgentVmInfo(String name, VMInstanceVO vm, State state, String host) {
@@ -2986,7 +2987,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         public String getHostUuid() {
             return hostUuid;
         }
-        
+
         public String getPlatform() {
             return platform;
         }
@@ -3777,8 +3778,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ClusterDeltaSyncInterval, StartRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait, VmOpLockStateRetry,
-                VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval};
+        return new ConfigKey<?>[] {ClusterDeltaSyncInterval, StartRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait,
+            VmOpLockStateRetry,
+            VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval};
     }
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
@@ -3832,10 +3834,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private void handlePowerOnReportWithNoPendingJobsOnVM(VMInstanceVO vm) {
         //
-        // 	1) handle left-over transitional VM states
-        //	2) handle out of band VM live migration
-        //	3) handle out of sync stationary states, marking VM from Stopped to Running with
-        //	   alert messages
+        //  1) handle left-over transitional VM states
+        //  2) handle out of band VM live migration
+        //  3) handle out of sync stationary states, marking VM from Stopped to Running with
+        //     alert messages
         //
         switch (vm.getState()) {
             case Starting:
@@ -3897,8 +3899,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private void handlePowerOffReportWithNoPendingJobsOnVM(VMInstanceVO vm) {
 
-        // 	1) handle left-over transitional VM states
-        //	2) handle out of sync stationary states, schedule force-stop to release resources
+        //  1) handle left-over transitional VM states
+        //  2) handle out of sync stationary states, schedule force-stop to release resources
         //
         switch (vm.getState()) {
             case Starting:
@@ -3933,8 +3935,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         // VMs in expunging state (this need to be handled specially)
         //
         // checking condition
-        //	1) no pending VmWork job
-        //	2) on hostId host and host is UP
+        //  1) no pending VmWork job
+        //  2) on hostId host and host is UP
         //
         // When host is UP, soon or later we will get a report from the host about the VM,
         // however, if VM is missing from the host report (it may happen in out of band changes
@@ -4136,65 +4138,65 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
         return null;
     }
-    
+
     //
     // TODO build a common pattern to reduce code duplication in following methods
     // no time for this at current iteration
     //
     public Outcome<VirtualMachine> startVmThroughJobQueue(final String vmUuid,
-    	final Map<VirtualMachineProfile.Param, Object> params,
-    	final DeploymentPlan planToDeploy) {
-        
-    	final CallContext context = CallContext.current();
+        final Map<VirtualMachineProfile.Param, Object> params,
+        final DeploymentPlan planToDeploy) {
+
+        final CallContext context = CallContext.current();
         final User callingUser = context.getCallingUser();
         final Account callingAccount = context.getCallingAccount();
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
-    		@Override
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-    	    	VmWorkJobVO workJob = null;
-    	    	
-    	        _vmDao.lockRow(vm.getId(), true);
-    	        List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance,
-    	        	vm.getId(), VmWorkStart.class.getName());
-    	        
-    	        if (pendingWorkJobs.size() > 0) {
-    	            assert (pendingWorkJobs.size() == 1);
-    	            workJob = pendingWorkJobs.get(0);
-    	        } else {
-    	            workJob = new VmWorkJobVO(context.getContextId());
+                VmWorkJobVO workJob = null;
 
-    	            workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
-    	            workJob.setCmd(VmWorkStart.class.getName());
+                _vmDao.lockRow(vm.getId(), true);
+                List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(VirtualMachine.Type.Instance,
+                    vm.getId(), VmWorkStart.class.getName());
 
-    	            workJob.setAccountId(callingAccount.getId());
-    	            workJob.setUserId(callingUser.getId());
-    	            workJob.setStep(VmWorkJobVO.Step.Starting);
-    	            workJob.setVmType(vm.getType());
-    	            workJob.setVmInstanceId(vm.getId());
+                if (pendingWorkJobs.size() > 0) {
+                    assert (pendingWorkJobs.size() == 1);
+                    workJob = pendingWorkJobs.get(0);
+                } else {
+                    workJob = new VmWorkJobVO(context.getContextId());
 
-    	            // save work context info (there are some duplications)
-    	            VmWorkStart workInfo = new VmWorkStart(callingUser.getId(), callingAccount.getId(), vm.getId());
-    	            workInfo.setPlan(planToDeploy);
-    	            workInfo.setParams(params);
-    	            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+                    workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
+                    workJob.setCmd(VmWorkStart.class.getName());
 
-    	            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
-    	    	}
-    	        
-	            // Transaction syntax sugar has a cost here
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
-    		}
-    	});
-    	
-    	final long jobId = (Long)context.getContextParameter("jobId");
-    	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
-    	
+                    workJob.setAccountId(callingAccount.getId());
+                    workJob.setUserId(callingUser.getId());
+                    workJob.setStep(VmWorkJobVO.Step.Starting);
+                    workJob.setVmType(vm.getType());
+                    workJob.setVmInstanceId(vm.getId());
+
+                    // save work context info (there are some duplications)
+                    VmWorkStart workInfo = new VmWorkStart(callingUser.getId(), callingAccount.getId(), vm.getId());
+                    workInfo.setPlan(planToDeploy);
+                    workInfo.setParams(params);
+                    workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+                    _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
+                }
+
+                // Transaction syntax sugar has a cost here
+                context.putContextParameter("workJob", workJob);
+                context.putContextParameter("jobId", new Long(workJob.getId()));
+            }
+        });
+
+        final long jobId = (Long)context.getContextParameter("jobId");
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
+
         return new VmStateSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
-        	VirtualMachine.PowerState.PowerOn, vm.getId(), null);
+            VirtualMachine.PowerState.PowerOn, vm.getId(), null);
     }
 
     public Outcome<VirtualMachine> stopVmThroughJobQueue(final String vmUuid, final boolean cleanup) {
@@ -4203,49 +4205,49 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final User user = context.getCallingUser();
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
-    	
-    	Transaction.execute(new TransactionCallbackNoReturn () {
-    		@Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-		        _vmDao.lockRow(vm.getId(), true);
-		
-		        List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
-	        		VirtualMachine.Type.Instance, vm.getId(),
-	        		VmWorkStop.class.getName());
-		
-		        VmWorkJobVO workJob = null;
-		        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
-		            assert (pendingWorkJobs.size() == 1);
-		            workJob = pendingWorkJobs.get(0);
-		        } else {
-		            workJob = new VmWorkJobVO(context.getContextId());
-		
-		            workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
-		            workJob.setCmd(VmWorkStop.class.getName());
-		
-		            workJob.setAccountId(account.getId());
-		            workJob.setUserId(user.getId());
-		            workJob.setStep(VmWorkJobVO.Step.Prepare);
-		            workJob.setVmType(vm.getType());
-		            workJob.setVmInstanceId(vm.getId());
-		
-		            // save work context info (there are some duplications)
-		            VmWorkStop workInfo = new VmWorkStop(user.getId(), account.getId(), vm.getId(), cleanup);
-		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-		
-		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
-		    	}
-		        
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
-    		}
-		});
 
-    	final long jobId = (Long)context.getContextParameter("jobId");
-    	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
-    	
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                _vmDao.lockRow(vm.getId(), true);
+
+                List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
+                    VirtualMachine.Type.Instance, vm.getId(),
+                    VmWorkStop.class.getName());
+
+                VmWorkJobVO workJob = null;
+                if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+                    assert (pendingWorkJobs.size() == 1);
+                    workJob = pendingWorkJobs.get(0);
+                } else {
+                    workJob = new VmWorkJobVO(context.getContextId());
+
+                    workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
+                    workJob.setCmd(VmWorkStop.class.getName());
+
+                    workJob.setAccountId(account.getId());
+                    workJob.setUserId(user.getId());
+                    workJob.setStep(VmWorkJobVO.Step.Prepare);
+                    workJob.setVmType(vm.getType());
+                    workJob.setVmInstanceId(vm.getId());
+
+                    // save work context info (there are some duplications)
+                    VmWorkStop workInfo = new VmWorkStop(user.getId(), account.getId(), vm.getId(), cleanup);
+                    workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+                    _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
+                }
+
+                context.putContextParameter("workJob", workJob);
+                context.putContextParameter("jobId", new Long(workJob.getId()));
+            }
+        });
+
+        final long jobId = (Long)context.getContextParameter("jobId");
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
+
         return new VmStateSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
-        	VirtualMachine.PowerState.PowerOff, vm.getId(), null);
+            VirtualMachine.PowerState.PowerOff, vm.getId(), null);
     }
 
     public Outcome<VirtualMachine> rebootVmThroughJobQueue(final String vmUuid,
@@ -4256,49 +4258,49 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final User user = context.getCallingUser();
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
-    	
-    	Transaction.execute(new TransactionCallbackNoReturn () {
-    		@Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-		        _vmDao.lockRow(vm.getId(), true);
-		
-		        List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
-	        		VirtualMachine.Type.Instance, vm.getId(),
-	        		VmWorkReboot.class.getName());
-		
-		        VmWorkJobVO workJob = null;
-		        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
-		            assert (pendingWorkJobs.size() == 1);
-		            workJob = pendingWorkJobs.get(0);
-		        } else {
-		            workJob = new VmWorkJobVO(context.getContextId());
-		
-		            workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
-		            workJob.setCmd(VmWorkReboot.class.getName());
-		
-		            workJob.setAccountId(account.getId());
-		            workJob.setUserId(user.getId());
-		            workJob.setStep(VmWorkJobVO.Step.Prepare);
-		            workJob.setVmType(vm.getType());
-		            workJob.setVmInstanceId(vm.getId());
-		
-		            // save work context info (there are some duplications)
-		            VmWorkReboot workInfo = new VmWorkReboot(user.getId(), account.getId(), vm.getId(), params);
-		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-		
-		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
-		    	}
-		        
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
-    		}
-		});
 
-    	final long jobId = (Long)context.getContextParameter("jobId");
-    	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
-    	
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                _vmDao.lockRow(vm.getId(), true);
+
+                List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
+                    VirtualMachine.Type.Instance, vm.getId(),
+                    VmWorkReboot.class.getName());
+
+                VmWorkJobVO workJob = null;
+                if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+                    assert (pendingWorkJobs.size() == 1);
+                    workJob = pendingWorkJobs.get(0);
+                } else {
+                    workJob = new VmWorkJobVO(context.getContextId());
+
+                    workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
+                    workJob.setCmd(VmWorkReboot.class.getName());
+
+                    workJob.setAccountId(account.getId());
+                    workJob.setUserId(user.getId());
+                    workJob.setStep(VmWorkJobVO.Step.Prepare);
+                    workJob.setVmType(vm.getType());
+                    workJob.setVmInstanceId(vm.getId());
+
+                    // save work context info (there are some duplications)
+                    VmWorkReboot workInfo = new VmWorkReboot(user.getId(), account.getId(), vm.getId(), params);
+                    workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+                    _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
+                }
+
+                context.putContextParameter("workJob", workJob);
+                context.putContextParameter("jobId", new Long(workJob.getId()));
+            }
+        });
+
+        final long jobId = (Long)context.getContextParameter("jobId");
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
+
         return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
-        	vm.getId());
+            vm.getId());
     }
 
     public Outcome<VirtualMachine> migrateVmThroughJobQueue(final String vmUuid, final long srcHostId, final DeployDestination dest) {
@@ -4308,48 +4310,48 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
-    		@Override
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-	
-		        _vmDao.lockRow(vm.getId(), true);
-		
-		        List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
-		        	VirtualMachine.Type.Instance, vm.getId(),
-		        	VmWorkMigrate.class.getName());
-		
-		        VmWorkJobVO workJob = null;
-		        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
-		            assert (pendingWorkJobs.size() == 1);
-		            workJob = pendingWorkJobs.get(0);
-		        } else {
-		                    
-		            workJob = new VmWorkJobVO(context.getContextId());
-		
-		            workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
-		            workJob.setCmd(VmWorkMigrate.class.getName());
-		
-		            workJob.setAccountId(account.getId());
-		            workJob.setUserId(user.getId());
-		            workJob.setVmType(vm.getType());
-		            workJob.setVmInstanceId(vm.getId());
-		
-		            // save work context info (there are some duplications)
-		            VmWorkMigrate workInfo = new VmWorkMigrate(user.getId(), account.getId(), vm.getId(), srcHostId, dest);
-		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-		
-		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
-		        }
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
-	    	}
-    	});
-    	
-    	final long jobId = (Long)context.getContextParameter("jobId");
-    	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
-    	
+
+                _vmDao.lockRow(vm.getId(), true);
+
+                List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
+                    VirtualMachine.Type.Instance, vm.getId(),
+                    VmWorkMigrate.class.getName());
+
+                VmWorkJobVO workJob = null;
+                if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+                    assert (pendingWorkJobs.size() == 1);
+                    workJob = pendingWorkJobs.get(0);
+                } else {
+
+                    workJob = new VmWorkJobVO(context.getContextId());
+
+                    workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
+                    workJob.setCmd(VmWorkMigrate.class.getName());
+
+                    workJob.setAccountId(account.getId());
+                    workJob.setUserId(user.getId());
+                    workJob.setVmType(vm.getType());
+                    workJob.setVmInstanceId(vm.getId());
+
+                    // save work context info (there are some duplications)
+                    VmWorkMigrate workInfo = new VmWorkMigrate(user.getId(), account.getId(), vm.getId(), srcHostId, dest);
+                    workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+                    _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
+                }
+                context.putContextParameter("workJob", workJob);
+                context.putContextParameter("jobId", new Long(workJob.getId()));
+            }
+        });
+
+        final long jobId = (Long)context.getContextParameter("jobId");
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
+
         return new VmStateSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
-        	VirtualMachine.PowerState.PowerOn, vm.getId(), vm.getPowerHostId());
+            VirtualMachine.PowerState.PowerOn, vm.getId(), vm.getPowerHostId());
     }
 
     public Outcome<VirtualMachine> migrateVmWithStorageThroughJobQueue(
@@ -4362,51 +4364,51 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
-    		@Override
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-	
-		        _vmDao.lockRow(vm.getId(), true);
-		
-		        List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
-		        	VirtualMachine.Type.Instance, vm.getId(),
-		        	VmWorkMigrateWithStorage.class.getName());
-		
-		        VmWorkJobVO workJob = null;
-		        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
-		            assert (pendingWorkJobs.size() == 1);
-		            workJob = pendingWorkJobs.get(0);
-		        } else {
-		                    
-		            workJob = new VmWorkJobVO(context.getContextId());
-		
-		            workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
-		            workJob.setCmd(VmWorkMigrate.class.getName());
-		
-		            workJob.setAccountId(account.getId());
-		            workJob.setUserId(user.getId());
-		            workJob.setVmType(vm.getType());
-		            workJob.setVmInstanceId(vm.getId());
-		
-		            // save work context info (there are some duplications)
-		            VmWorkMigrateWithStorage workInfo = new VmWorkMigrateWithStorage(user.getId(), account.getId(), vm.getId(),
-		            	srcHostId, destHostId, volumeToPool);
-		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-		
-		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
-		        }
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
-	    	}
-    	});
-    	
-    	final long jobId = (Long)context.getContextParameter("jobId");
-    	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
-    	
+
+                _vmDao.lockRow(vm.getId(), true);
+
+                List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
+                    VirtualMachine.Type.Instance, vm.getId(),
+                    VmWorkMigrateWithStorage.class.getName());
+
+                VmWorkJobVO workJob = null;
+                if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+                    assert (pendingWorkJobs.size() == 1);
+                    workJob = pendingWorkJobs.get(0);
+                } else {
+
+                    workJob = new VmWorkJobVO(context.getContextId());
+
+                    workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
+                    workJob.setCmd(VmWorkMigrate.class.getName());
+
+                    workJob.setAccountId(account.getId());
+                    workJob.setUserId(user.getId());
+                    workJob.setVmType(vm.getType());
+                    workJob.setVmInstanceId(vm.getId());
+
+                    // save work context info (there are some duplications)
+                    VmWorkMigrateWithStorage workInfo = new VmWorkMigrateWithStorage(user.getId(), account.getId(), vm.getId(),
+                        srcHostId, destHostId, volumeToPool);
+                    workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+                    _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
+                }
+                context.putContextParameter("workJob", workJob);
+                context.putContextParameter("jobId", new Long(workJob.getId()));
+            }
+        });
+
+        final long jobId = (Long)context.getContextParameter("jobId");
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
+
         return new VmStateSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
-        	VirtualMachine.PowerState.PowerOn, vm.getId(), destHostId);
+            VirtualMachine.PowerState.PowerOn, vm.getId(), destHostId);
     }
-    
+
     public Outcome<VirtualMachine> migrateVmForScaleThroughJobQueue(
         final String vmUuid, final long srcHostId, final DeployDestination dest, final Long newSvcOfferingId) {
 
@@ -4416,47 +4418,47 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
-    		@Override
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-	
-		        _vmDao.lockRow(vm.getId(), true);
-		
-		        List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
-		        	VirtualMachine.Type.Instance, vm.getId(),
-		        	VmWorkMigrateForScale.class.getName());
-		
-		        VmWorkJobVO workJob = null;
-		        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
-		            assert (pendingWorkJobs.size() == 1);
-		            workJob = pendingWorkJobs.get(0);
-		        } else {
-		                    
-		            workJob = new VmWorkJobVO(context.getContextId());
-		
-		            workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
-		            workJob.setCmd(VmWorkMigrate.class.getName());
-		
-		            workJob.setAccountId(account.getId());
-		            workJob.setUserId(user.getId());
-		            workJob.setVmType(vm.getType());
-		            workJob.setVmInstanceId(vm.getId());
-		
-		            // save work context info (there are some duplications)
-		            VmWorkMigrateForScale workInfo = new VmWorkMigrateForScale(user.getId(), account.getId(), vm.getId(),
-		            	srcHostId, dest, newSvcOfferingId);
-		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-		
-		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
-		        }
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
-	    	}
-    	});
-    	
-    	final long jobId = (Long)context.getContextParameter("jobId");
-    	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
-    	
+
+                _vmDao.lockRow(vm.getId(), true);
+
+                List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
+                    VirtualMachine.Type.Instance, vm.getId(),
+                    VmWorkMigrateForScale.class.getName());
+
+                VmWorkJobVO workJob = null;
+                if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+                    assert (pendingWorkJobs.size() == 1);
+                    workJob = pendingWorkJobs.get(0);
+                } else {
+
+                    workJob = new VmWorkJobVO(context.getContextId());
+
+                    workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
+                    workJob.setCmd(VmWorkMigrate.class.getName());
+
+                    workJob.setAccountId(account.getId());
+                    workJob.setUserId(user.getId());
+                    workJob.setVmType(vm.getType());
+                    workJob.setVmInstanceId(vm.getId());
+
+                    // save work context info (there are some duplications)
+                    VmWorkMigrateForScale workInfo = new VmWorkMigrateForScale(user.getId(), account.getId(), vm.getId(),
+                        srcHostId, dest, newSvcOfferingId);
+                    workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+                    _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
+                }
+                context.putContextParameter("workJob", workJob);
+                context.putContextParameter("jobId", new Long(workJob.getId()));
+            }
+        });
+
+        final long jobId = (Long)context.getContextParameter("jobId");
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
+
         return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
     }
 
@@ -4469,47 +4471,47 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
-    		@Override
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-	
-		        _vmDao.lockRow(vm.getId(), true);
-		
-		        List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
-		        	VirtualMachine.Type.Instance, vm.getId(),
-		        	VmWorkStorageMigration.class.getName());
-		
-		        VmWorkJobVO workJob = null;
-		        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
-		            assert (pendingWorkJobs.size() == 1);
-		            workJob = pendingWorkJobs.get(0);
-		        } else {
-		                    
-		            workJob = new VmWorkJobVO(context.getContextId());
-		
-		            workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
-		            workJob.setCmd(VmWorkStorageMigration.class.getName());
-		
-		            workJob.setAccountId(account.getId());
-		            workJob.setUserId(user.getId());
-		            workJob.setVmType(vm.getType());
-		            workJob.setVmInstanceId(vm.getId());
-		
-		            // save work context info (there are some duplications)
-		            VmWorkStorageMigration workInfo = new VmWorkStorageMigration(user.getId(), account.getId(), vm.getId(),
-		            	destPool);
-		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-		
-		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
-		        }
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
-	    	}
-    	});
-    	
-    	final long jobId = (Long)context.getContextParameter("jobId");
-    	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
-    	
+
+                _vmDao.lockRow(vm.getId(), true);
+
+                List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
+                    VirtualMachine.Type.Instance, vm.getId(),
+                    VmWorkStorageMigration.class.getName());
+
+                VmWorkJobVO workJob = null;
+                if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+                    assert (pendingWorkJobs.size() == 1);
+                    workJob = pendingWorkJobs.get(0);
+                } else {
+
+                    workJob = new VmWorkJobVO(context.getContextId());
+
+                    workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
+                    workJob.setCmd(VmWorkStorageMigration.class.getName());
+
+                    workJob.setAccountId(account.getId());
+                    workJob.setUserId(user.getId());
+                    workJob.setVmType(vm.getType());
+                    workJob.setVmInstanceId(vm.getId());
+
+                    // save work context info (there are some duplications)
+                    VmWorkStorageMigration workInfo = new VmWorkStorageMigration(user.getId(), account.getId(), vm.getId(),
+                        destPool);
+                    workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+                    _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
+                }
+                context.putContextParameter("workJob", workJob);
+                context.putContextParameter("jobId", new Long(workJob.getId()));
+            }
+        });
+
+        final long jobId = (Long)context.getContextParameter("jobId");
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
+
         return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
     }
 
@@ -4520,47 +4522,47 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final User user = context.getCallingUser();
         final Account account = context.getCallingAccount();
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
-    		@Override
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-	
-		        _vmDao.lockRow(vm.getId(), true);
-		
-		        List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
-		        	VirtualMachine.Type.Instance, vm.getId(),
-		        	VmWorkAddVmToNetwork.class.getName());
-		
-		        VmWorkJobVO workJob = null;
-		        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
-		            assert (pendingWorkJobs.size() == 1);
-		            workJob = pendingWorkJobs.get(0);
-		        } else {
-		                    
-		            workJob = new VmWorkJobVO(context.getContextId());
-		
-		            workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
-		            workJob.setCmd(VmWorkAddVmToNetwork.class.getName());
-		
-		            workJob.setAccountId(account.getId());
-		            workJob.setUserId(user.getId());
-		            workJob.setVmType(vm.getType());
-		            workJob.setVmInstanceId(vm.getId());
-		
-		            // save work context info (there are some duplications)
-		            VmWorkAddVmToNetwork workInfo = new VmWorkAddVmToNetwork(user.getId(), account.getId(), vm.getId(),
-		            	network, requested);
-		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-		
-		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
-		        }
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
-	    	}
-    	});
-    	
-    	final long jobId = (Long)context.getContextParameter("jobId");
-    	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
-    	
+
+                _vmDao.lockRow(vm.getId(), true);
+
+                List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
+                    VirtualMachine.Type.Instance, vm.getId(),
+                    VmWorkAddVmToNetwork.class.getName());
+
+                VmWorkJobVO workJob = null;
+                if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+                    assert (pendingWorkJobs.size() == 1);
+                    workJob = pendingWorkJobs.get(0);
+                } else {
+
+                    workJob = new VmWorkJobVO(context.getContextId());
+
+                    workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
+                    workJob.setCmd(VmWorkAddVmToNetwork.class.getName());
+
+                    workJob.setAccountId(account.getId());
+                    workJob.setUserId(user.getId());
+                    workJob.setVmType(vm.getType());
+                    workJob.setVmInstanceId(vm.getId());
+
+                    // save work context info (there are some duplications)
+                    VmWorkAddVmToNetwork workInfo = new VmWorkAddVmToNetwork(user.getId(), account.getId(), vm.getId(),
+                        network, requested);
+                    workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+                    _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
+                }
+                context.putContextParameter("workJob", workJob);
+                context.putContextParameter("jobId", new Long(workJob.getId()));
+            }
+        });
+
+        final long jobId = (Long)context.getContextParameter("jobId");
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
+
         return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
     }
 
@@ -4571,47 +4573,47 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final User user = context.getCallingUser();
         final Account account = context.getCallingAccount();
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
-    		@Override
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-	
-		        _vmDao.lockRow(vm.getId(), true);
-		
-		        List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
-		        	VirtualMachine.Type.Instance, vm.getId(),
-		        	VmWorkRemoveNicFromVm.class.getName());
-		
-		        VmWorkJobVO workJob = null;
-		        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
-		            assert (pendingWorkJobs.size() == 1);
-		            workJob = pendingWorkJobs.get(0);
-		        } else {
-		                    
-		            workJob = new VmWorkJobVO(context.getContextId());
-		
-		            workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
-		            workJob.setCmd(VmWorkRemoveNicFromVm.class.getName());
-		
-		            workJob.setAccountId(account.getId());
-		            workJob.setUserId(user.getId());
-		            workJob.setVmType(vm.getType());
-		            workJob.setVmInstanceId(vm.getId());
-		
-		            // save work context info (there are some duplications)
-		            VmWorkRemoveNicFromVm workInfo = new VmWorkRemoveNicFromVm(user.getId(), account.getId(), vm.getId(),
-		            	nic);
-		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-		
-		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
-		        }
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
-	    	}
-    	});
-    	
-    	final long jobId = (Long)context.getContextParameter("jobId");
-    	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
-    	
+
+                _vmDao.lockRow(vm.getId(), true);
+
+                List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
+                    VirtualMachine.Type.Instance, vm.getId(),
+                    VmWorkRemoveNicFromVm.class.getName());
+
+                VmWorkJobVO workJob = null;
+                if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+                    assert (pendingWorkJobs.size() == 1);
+                    workJob = pendingWorkJobs.get(0);
+                } else {
+
+                    workJob = new VmWorkJobVO(context.getContextId());
+
+                    workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
+                    workJob.setCmd(VmWorkRemoveNicFromVm.class.getName());
+
+                    workJob.setAccountId(account.getId());
+                    workJob.setUserId(user.getId());
+                    workJob.setVmType(vm.getType());
+                    workJob.setVmInstanceId(vm.getId());
+
+                    // save work context info (there are some duplications)
+                    VmWorkRemoveNicFromVm workInfo = new VmWorkRemoveNicFromVm(user.getId(), account.getId(), vm.getId(),
+                        nic);
+                    workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+                    _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
+                }
+                context.putContextParameter("workJob", workJob);
+                context.putContextParameter("jobId", new Long(workJob.getId()));
+            }
+        });
+
+        final long jobId = (Long)context.getContextParameter("jobId");
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
+
         return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
     }
 
@@ -4622,47 +4624,47 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final User user = context.getCallingUser();
         final Account account = context.getCallingAccount();
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
-    		@Override
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-	
-		        _vmDao.lockRow(vm.getId(), true);
-		
-		        List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
-		        	VirtualMachine.Type.Instance, vm.getId(),
-		        	VmWorkRemoveVmFromNetwork.class.getName());
-		
-		        VmWorkJobVO workJob = null;
-		        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
-		            assert (pendingWorkJobs.size() == 1);
-		            workJob = pendingWorkJobs.get(0);
-		        } else {
-		                    
-		            workJob = new VmWorkJobVO(context.getContextId());
-		
-		            workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
-		            workJob.setCmd(VmWorkRemoveVmFromNetwork.class.getName());
-		
-		            workJob.setAccountId(account.getId());
-		            workJob.setUserId(user.getId());
-		            workJob.setVmType(vm.getType());
-		            workJob.setVmInstanceId(vm.getId());
-		
-		            // save work context info (there are some duplications)
-		            VmWorkRemoveVmFromNetwork workInfo = new VmWorkRemoveVmFromNetwork(user.getId(), account.getId(), vm.getId(),
-		            	network, broadcastUri);
-		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-		
-		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
-		        }
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
-	    	}
-    	});
-    	
-    	final long jobId = (Long)context.getContextParameter("jobId");
-    	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
-    	
+
+                _vmDao.lockRow(vm.getId(), true);
+
+                List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
+                    VirtualMachine.Type.Instance, vm.getId(),
+                    VmWorkRemoveVmFromNetwork.class.getName());
+
+                VmWorkJobVO workJob = null;
+                if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+                    assert (pendingWorkJobs.size() == 1);
+                    workJob = pendingWorkJobs.get(0);
+                } else {
+
+                    workJob = new VmWorkJobVO(context.getContextId());
+
+                    workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
+                    workJob.setCmd(VmWorkRemoveVmFromNetwork.class.getName());
+
+                    workJob.setAccountId(account.getId());
+                    workJob.setUserId(user.getId());
+                    workJob.setVmType(vm.getType());
+                    workJob.setVmInstanceId(vm.getId());
+
+                    // save work context info (there are some duplications)
+                    VmWorkRemoveVmFromNetwork workInfo = new VmWorkRemoveVmFromNetwork(user.getId(), account.getId(), vm.getId(),
+                        network, broadcastUri);
+                    workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+                    _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
+                }
+                context.putContextParameter("workJob", workJob);
+                context.putContextParameter("jobId", new Long(workJob.getId()));
+            }
+        });
+
+        final long jobId = (Long)context.getContextParameter("jobId");
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
+
         return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
     }
 
@@ -4675,47 +4677,47 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
-    		@Override
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-	
-		        _vmDao.lockRow(vm.getId(), true);
-		
-		        List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
-		        	VirtualMachine.Type.Instance, vm.getId(),
-		        	VmWorkReconfigure.class.getName());
-		
-		        VmWorkJobVO workJob = null;
-		        if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
-		            assert (pendingWorkJobs.size() == 1);
-		            workJob = pendingWorkJobs.get(0);
-		        } else {
-		                    
-		            workJob = new VmWorkJobVO(context.getContextId());
-		
-		            workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
-		            workJob.setCmd(VmWorkReconfigure.class.getName());
-		
-		            workJob.setAccountId(account.getId());
-		            workJob.setUserId(user.getId());
-		            workJob.setVmType(vm.getType());
-		            workJob.setVmInstanceId(vm.getId());
-		
-		            // save work context info (there are some duplications)
-		            VmWorkReconfigure workInfo = new VmWorkReconfigure(user.getId(), account.getId(), vm.getId(),
-		            		oldServiceOffering, reconfiguringOnExistingHost);
-		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
-		
-		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
-		        }
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
-	    	}
-    	});
-    	
-    	final long jobId = (Long)context.getContextParameter("jobId");
-    	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
-    	
+
+                _vmDao.lockRow(vm.getId(), true);
+
+                List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
+                    VirtualMachine.Type.Instance, vm.getId(),
+                    VmWorkReconfigure.class.getName());
+
+                VmWorkJobVO workJob = null;
+                if (pendingWorkJobs != null && pendingWorkJobs.size() > 0) {
+                    assert (pendingWorkJobs.size() == 1);
+                    workJob = pendingWorkJobs.get(0);
+                } else {
+
+                    workJob = new VmWorkJobVO(context.getContextId());
+
+                    workJob.setDispatcher(VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER);
+                    workJob.setCmd(VmWorkReconfigure.class.getName());
+
+                    workJob.setAccountId(account.getId());
+                    workJob.setUserId(user.getId());
+                    workJob.setVmType(vm.getType());
+                    workJob.setVmInstanceId(vm.getId());
+
+                    // save work context info (there are some duplications)
+                    VmWorkReconfigure workInfo = new VmWorkReconfigure(user.getId(), account.getId(), vm.getId(),
+                        oldServiceOffering, reconfiguringOnExistingHost);
+                    workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+                    _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
+                }
+                context.putContextParameter("workJob", workJob);
+                context.putContextParameter("jobId", new Long(workJob.getId()));
+            }
+        });
+
+        final long jobId = (Long)context.getContextParameter("jobId");
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
+
         return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
     }
 

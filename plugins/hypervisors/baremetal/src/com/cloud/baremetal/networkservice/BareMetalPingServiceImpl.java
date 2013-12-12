@@ -41,7 +41,7 @@ import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand.BootDev;
 import com.cloud.agent.api.baremetal.PreparePxeServerAnswer;
 import com.cloud.agent.api.baremetal.PreparePxeServerCommand;
-import com.cloud.agent.api.baremetal.prepareCreateTemplateCommand;
+import com.cloud.agent.api.baremetal.PrepareCreateTemplateCommand;
 import com.cloud.baremetal.database.BaremetalPxeDao;
 import com.cloud.baremetal.database.BaremetalPxeVO;
 import com.cloud.baremetal.networkservice.BaremetalPxeManager.BaremetalPxeType;
@@ -148,7 +148,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
         }
 
         try {
-            prepareCreateTemplateCommand cmd = new prepareCreateTemplateCommand(ip, mac, mask, gateway, dns, templateUrl);
+            PrepareCreateTemplateCommand cmd = new PrepareCreateTemplateCommand(ip, mac, mask, gateway, dns, templateUrl);
             Answer ans = _agentMgr.send(pxeServerId, cmd);
             return ans.getResult();
         } catch (Exception e) {

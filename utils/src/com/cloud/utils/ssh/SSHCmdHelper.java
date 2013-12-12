@@ -62,7 +62,7 @@ public class SSHCmdHelper {
             try {
                 if (sshExecuteCmdOneShot(sshConnection, cmd))
                     return true;
-            } catch (sshException e) {
+            } catch (SshException e) {
                 continue;
             }
         }
@@ -77,7 +77,7 @@ public class SSHCmdHelper {
         for (int i = 0; i < nTimes; i++) {
             try {
                 return sshExecuteCmdOneShotWithExitCode(sshConnection, cmd);
-            } catch (sshException e) {
+            } catch (SshException e) {
                 continue;
             }
         }
@@ -88,7 +88,7 @@ public class SSHCmdHelper {
         return sshExecuteCmd(sshConnection, cmd, 3);
     }
 
-    public static int sshExecuteCmdOneShotWithExitCode(com.trilead.ssh2.Connection sshConnection, String cmd) throws sshException {
+    public static int sshExecuteCmdOneShotWithExitCode(com.trilead.ssh2.Connection sshConnection, String cmd) throws SshException {
         s_logger.debug("Executing cmd: " + cmd);
         Session sshSession = null;
         try {
@@ -98,7 +98,7 @@ public class SSHCmdHelper {
             Thread.sleep(1000);
 
             if (sshSession == null) {
-                throw new sshException("Cannot open ssh session");
+                throw new SshException("Cannot open ssh session");
             }
 
             sshSession.execCommand(cmd);
@@ -109,7 +109,7 @@ public class SSHCmdHelper {
             byte[] buffer = new byte[8192];
             while (true) {
                 if (stdout == null || stderr == null) {
-                    throw new sshException("stdout or stderr of ssh session is null");
+                    throw new SshException("stdout or stderr of ssh session is null");
                 }
 
                 if ((stdout.available() == 0) && (stderr.available() == 0)) {
@@ -143,14 +143,14 @@ public class SSHCmdHelper {
             return sshSession.getExitStatus();
         } catch (Exception e) {
             s_logger.debug("Ssh executed failed", e);
-            throw new sshException("Ssh executed failed " + e.getMessage());
+            throw new SshException("Ssh executed failed " + e.getMessage());
         } finally {
             if (sshSession != null)
                 sshSession.close();
         }
     }
 
-    public static boolean sshExecuteCmdOneShot(com.trilead.ssh2.Connection sshConnection, String cmd) throws sshException {
+    public static boolean sshExecuteCmdOneShot(com.trilead.ssh2.Connection sshConnection, String cmd) throws SshException {
         return sshExecuteCmdOneShotWithExitCode(sshConnection, cmd) == 0;
     }
 }

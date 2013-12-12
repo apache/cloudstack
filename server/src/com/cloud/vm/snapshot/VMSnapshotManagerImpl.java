@@ -182,8 +182,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
         if (state == null) {
             VMSnapshot.State[] status =
-                {VMSnapshot.State.Ready, VMSnapshot.State.Creating, VMSnapshot.State.Allocated, VMSnapshot.State.Error, VMSnapshot.State.Expunging,
-                    VMSnapshot.State.Reverting};
+            {VMSnapshot.State.Ready, VMSnapshot.State.Creating, VMSnapshot.State.Allocated, VMSnapshot.State.Error, VMSnapshot.State.Expunging,
+                VMSnapshot.State.Reverting};
             sc.setParameters("status", (Object[])status);
         } else {
             sc.setParameters("state", state);

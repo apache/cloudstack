@@ -139,7 +139,6 @@ public interface ResourceLimitService {
      */
     public long getResourceCount(Account account, ResourceType type);
 
-
     /**
      * Checks if a limit has been exceeded for an account depending on the displayResource flag
      *
@@ -152,7 +151,6 @@ public interface ResourceLimitService {
      * @throws ResourceAllocationException
      */
     void checkResourceLimit(Account account, ResourceType type, Boolean displayResource, long... count) throws ResourceAllocationException;
-
 
     /**
      * Increments the resource count  depending on the displayResource flag

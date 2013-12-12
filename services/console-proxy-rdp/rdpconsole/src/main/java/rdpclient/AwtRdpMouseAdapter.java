@@ -17,7 +17,6 @@
 package rdpclient;
 
 import java.awt.event.InputEvent;
-import java.awt.event.MouseEvent;
 
 import streamer.BaseElement;
 import streamer.ByteBuffer;
@@ -28,58 +27,58 @@ import common.MouseOrder;
  * @see http://msdn.microsoft.com/en-us/library/cc240594.aspx
  */
 public class AwtRdpMouseAdapter extends BaseElement {
-    public static int FASTPATH_INPUT_EVENT_MOUSE = 0x01;
+    public static final int FASTPATH_INPUT_EVENT_MOUSE = 0x01;
 
     /**
      * Event is a mouse wheel rotation. The only valid flags in a wheel rotation
      * event are PTRFLAGS_WHEEL_NEGATIVE and the WheelRotationMask; all other
      * pointer flags are ignored.
      */
-    public static int PTRFLAGS_WHEEL = 0x0200;
+    public static final int PTRFLAGS_WHEEL = 0x0200;
 
     /**
      * Wheel rotation value (contained in the WheelRotationMask bit field) is
      * negative and MUST be sign-extended before injection at the server.
      */
-    public static int PTRFLAGS_WHEEL_NEGATIVE = 0x0100;
+    public static final int PTRFLAGS_WHEEL_NEGATIVE = 0x0100;
 
     /**
      * Bit field describing the number of rotation units the mouse wheel was
      * rotated. The value is negative if the PTRFLAGS_WHEEL_NEGATIVE flag is set.
      */
-    public static int WHEEL_ROTATION_MASK = 0x01FF;
+    public static final int WHEEL_ROTATION_MASK = 0x01FF;
 
     /**
      * Indicates that the mouse position MUST be updated to the location specified
      * by the xPos and yPos fields.
      */
-    public static int PTRFLAGS_MOVE = 0x0800;
+    public static final int PTRFLAGS_MOVE = 0x0800;
 
     /**
      * Indicates that a click event has occurred at the position specified by the
      * xPos and yPos fields. The button flags indicate which button has been
      * clicked and at least one of these flags MUST be set.
      */
-    public static int PTRFLAGS_DOWN = 0x8000;
+    public static final int PTRFLAGS_DOWN = 0x8000;
 
     /**
      * Mouse button 1 (left button) was clicked or released. If the PTRFLAGS_DOWN
      * flag is set, then the button was clicked, otherwise it was released.
      */
-    public static int PTRFLAGS_BUTTON1 = 0x1000;
+    public static final int PTRFLAGS_BUTTON1 = 0x1000;
 
     /**
      * Mouse button 2 (right button) was clicked or released. If the PTRFLAGS_DOWN
      * flag is set, then the button was clicked, otherwise it was released.
      */
-    public static int PTRFLAGS_BUTTON2 = 0x2000;
+    public static final int PTRFLAGS_BUTTON2 = 0x2000;
 
     /**
      * Mouse button 3 (middle button or wheel) was clicked or released. If the
      * PTRFLAGS_DOWN flag is set, then the button was clicked, otherwise it was
      * released.
      */
-    public static int PTRFLAGS_BUTTON3 = 0x4000;
+    public static final int PTRFLAGS_BUTTON3 = 0x4000;
 
     public AwtRdpMouseAdapter(String id) {
         super(id);

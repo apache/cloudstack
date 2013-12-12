@@ -455,7 +455,6 @@ public class EventTypes {
     //Alert generation
     public static final String ALERT_GENERATE = "ALERT.GENERATE";
 
-    
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking

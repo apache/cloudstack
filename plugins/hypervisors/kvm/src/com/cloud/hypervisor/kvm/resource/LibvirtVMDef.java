@@ -23,8 +23,8 @@ import java.util.Map;
 
 public class LibvirtVMDef {
     private String _hvsType;
-    private static long _libvirtVersion;
-    private static long _qemuVersion;
+    private static long s_libvirtVersion;
+    private static long s_qemuVersion;
     private String _domName;
     private String _domUUID;
     private String _desc;
@@ -665,8 +665,8 @@ public class LibvirtVMDef {
             diskBuilder.append("/>\n");
 
             if ((_deviceType != deviceType.CDROM) &&
-                (_libvirtVersion >= 9008) &&
-                (_qemuVersion >= 1001000) &&
+                (s_libvirtVersion >= 9008) &&
+                (s_qemuVersion >= 1001000) &&
                 (((_bytesReadRate != null) && (_bytesReadRate > 0)) || ((_bytesWriteRate != null) && (_bytesWriteRate > 0)) ||
                     ((_iopsReadRate != null) && (_iopsReadRate > 0)) || ((_iopsWriteRate != null) && (_iopsWriteRate > 0)))) { // not CDROM, from libvirt 0.9.8 and QEMU 1.1.0
                 diskBuilder.append("<iotune>\n");
@@ -866,7 +866,7 @@ public class LibvirtVMDef {
             if (_model != null) {
                 netBuilder.append("<model type='" + _model + "'/>\n");
             }
-            if ((_libvirtVersion >= 9004) && (_networkRateKBps > 0)) { // supported from libvirt 0.9.4
+            if ((s_libvirtVersion >= 9004) && (_networkRateKBps > 0)) { // supported from libvirt 0.9.4
                 netBuilder.append("<bandwidth>\n");
                 netBuilder.append("<inbound average='" + _networkRateKBps + "' peak='" + _networkRateKBps + "'/>\n");
                 netBuilder.append("<outbound average='" + _networkRateKBps + "' peak='" + _networkRateKBps + "'/>\n");
@@ -1113,11 +1113,11 @@ public class LibvirtVMDef {
     }
 
     public void setLibvirtVersion(long libvirtVersion) {
-        _libvirtVersion = libvirtVersion;
+        s_libvirtVersion = libvirtVersion;
     }
 
     public void setQemuVersion(long qemuVersion) {
-        _qemuVersion = qemuVersion;
+        s_qemuVersion = qemuVersion;
     }
 
     public void setDomainName(String domainName) {

@@ -56,7 +56,6 @@ import com.cloud.agent.api.storage.Proxy;
 import com.cloud.configuration.Config;
 import com.cloud.storage.RegisterVolumePayload;
 import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.VMTemplateDao;

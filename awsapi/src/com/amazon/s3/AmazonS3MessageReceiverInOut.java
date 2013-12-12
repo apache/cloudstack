@@ -59,7 +59,7 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
 
                     getBucketLoggingStatusResponse33 =
 
-                    skel.getBucketLoggingStatus(wrappedParam);
+                        skel.getBucketLoggingStatus(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), getBucketLoggingStatusResponse33, false);
                 } else
@@ -73,7 +73,7 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
 
                     copyObjectResponse35 =
 
-                    skel.copyObject(wrappedParam);
+                        skel.copyObject(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), copyObjectResponse35, false);
                 } else
@@ -87,7 +87,7 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
 
                     getBucketAccessControlPolicyResponse37 =
 
-                    skel.getBucketAccessControlPolicy(wrappedParam);
+                        skel.getBucketAccessControlPolicy(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), getBucketAccessControlPolicyResponse37, false);
                 } else
@@ -101,7 +101,7 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
 
                     listBucketResponse39 =
 
-                    skel.listBucket(wrappedParam);
+                        skel.listBucket(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), listBucketResponse39, false);
                 } else
@@ -115,7 +115,7 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
 
                     putObjectResponse41 =
 
-                    skel.putObject(wrappedParam);
+                        skel.putObject(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), putObjectResponse41, false);
                 } else
@@ -129,7 +129,7 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
 
                     createBucketResponse43 =
 
-                    skel.createBucket(wrappedParam);
+                        skel.createBucket(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), createBucketResponse43, false);
                 } else
@@ -143,7 +143,7 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
 
                     listAllMyBucketsResponse45 =
 
-                    skel.listAllMyBuckets(wrappedParam);
+                        skel.listAllMyBuckets(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), listAllMyBucketsResponse45, false);
                 } else
@@ -157,7 +157,7 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
 
                     getObjectResponse47 =
 
-                    skel.getObject(wrappedParam);
+                        skel.getObject(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), getObjectResponse47, false);
                 } else
@@ -171,7 +171,7 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
 
                     deleteBucketResponse49 =
 
-                    skel.deleteBucket(wrappedParam);
+                        skel.deleteBucket(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteBucketResponse49, false);
                 } else
@@ -185,7 +185,7 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
 
                     setBucketLoggingStatusResponse51 =
 
-                    skel.setBucketLoggingStatus(wrappedParam);
+                        skel.setBucketLoggingStatus(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), setBucketLoggingStatusResponse51, false);
                 } else
@@ -199,7 +199,7 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
 
                     getObjectAccessControlPolicyResponse53 =
 
-                    skel.getObjectAccessControlPolicy(wrappedParam);
+                        skel.getObjectAccessControlPolicy(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), getObjectAccessControlPolicyResponse53, false);
                 } else
@@ -213,7 +213,7 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
 
                     deleteObjectResponse55 =
 
-                    skel.deleteObject(wrappedParam);
+                        skel.deleteObject(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), deleteObjectResponse55, false);
                 } else
@@ -227,7 +227,7 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
 
                     setBucketAccessControlPolicyResponse57 =
 
-                    skel.setBucketAccessControlPolicy(wrappedParam);
+                        skel.setBucketAccessControlPolicy(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), setBucketAccessControlPolicyResponse57, false);
                 } else
@@ -241,7 +241,7 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
 
                     setObjectAccessControlPolicyResponse59 =
 
-                    skel.setObjectAccessControlPolicy(wrappedParam);
+                        skel.setObjectAccessControlPolicy(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), setObjectAccessControlPolicyResponse59, false);
                 } else
@@ -255,7 +255,7 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
 
                     putObjectInlineResponse61 =
 
-                    skel.putObjectInline(wrappedParam);
+                        skel.putObjectInline(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), putObjectInlineResponse61, false);
                 } else
@@ -269,7 +269,7 @@ public class AmazonS3MessageReceiverInOut extends org.apache.axis2.receivers.Abs
 
                     getObjectExtendedResponse63 =
 
-                    skel.getObjectExtended(wrappedParam);
+                        skel.getObjectExtended(wrappedParam);
 
                     envelope = toEnvelope(getSOAPFactory(msgContext), getObjectExtendedResponse63, false);
 

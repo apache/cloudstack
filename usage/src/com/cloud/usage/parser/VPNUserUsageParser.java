@@ -41,8 +41,8 @@ import com.cloud.utils.Pair;
 public class VPNUserUsageParser {
     public static final Logger s_logger = Logger.getLogger(VPNUserUsageParser.class.getName());
 
-    private static UsageDao m_usageDao;
-    private static UsageVPNUserDao m_usageVPNUserDao;
+    private static UsageDao s_usageDao;
+    private static UsageVPNUserDao s_usageVPNUserDao;
 
     @Inject
     private UsageDao _usageDao;
@@ -51,8 +51,8 @@ public class VPNUserUsageParser {
 
     @PostConstruct
     void init() {
-        m_usageDao = _usageDao;
-        m_usageVPNUserDao = _usageVPNUserDao;
+        s_usageDao = _usageDao;
+        s_usageVPNUserDao = _usageVPNUserDao;
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
@@ -63,7 +63,7 @@ public class VPNUserUsageParser {
             endDate = new Date();
         }
 
-        List<UsageVPNUserVO> usageVUs = m_usageVPNUserDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
+        List<UsageVPNUserVO> usageVUs = s_usageVPNUserDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
 
         if (usageVUs.isEmpty()) {
             s_logger.debug("No VPN user usage events for this period");
@@ -147,7 +147,7 @@ public class VPNUserUsageParser {
         UsageVO usageRecord =
             new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), null, null, null, null, userId, null,
                 startDate, endDate);
-        m_usageDao.persist(usageRecord);
+        s_usageDao.persist(usageRecord);
     }
 
     private static class VUInfo {

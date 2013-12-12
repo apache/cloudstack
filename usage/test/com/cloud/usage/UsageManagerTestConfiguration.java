@@ -64,12 +64,12 @@ import com.cloud.user.dao.UserStatisticsDaoImpl;
 
 @Configuration
 @ComponentScan(basePackageClasses = {AccountDaoImpl.class, UsageDaoImpl.class, UsageJobDaoImpl.class, UsageVMInstanceDaoImpl.class, UsageIPAddressDaoImpl.class,
-                   UsageNetworkDaoImpl.class, UsageVolumeDaoImpl.class, UsageStorageDaoImpl.class, UsageLoadBalancerPolicyDaoImpl.class,
-                   UsagePortForwardingRuleDaoImpl.class, UsageNetworkOfferingDaoImpl.class, UsageVPNUserDaoImpl.class, UsageVmDiskDaoImpl.class,
-                   UsageSecurityGroupDaoImpl.class, ConfigurationDaoImpl.class, UsageManagerImpl.class, VMInstanceUsageParser.class, IPAddressUsageParser.class,
-                   LoadBalancerUsageParser.class, NetworkOfferingUsageParser.class, NetworkUsageParser.class, PortForwardingUsageParser.class,
-                   SecurityGroupUsageParser.class, StorageUsageParser.class, VmDiskUsageParser.class, VolumeUsageParser.class, VPNUserUsageParser.class,
-                   UserStatisticsDaoImpl.class},
+    UsageNetworkDaoImpl.class, UsageVolumeDaoImpl.class, UsageStorageDaoImpl.class, UsageLoadBalancerPolicyDaoImpl.class,
+    UsagePortForwardingRuleDaoImpl.class, UsageNetworkOfferingDaoImpl.class, UsageVPNUserDaoImpl.class, UsageVmDiskDaoImpl.class,
+    UsageSecurityGroupDaoImpl.class, ConfigurationDaoImpl.class, UsageManagerImpl.class, VMInstanceUsageParser.class, IPAddressUsageParser.class,
+    LoadBalancerUsageParser.class, NetworkOfferingUsageParser.class, NetworkUsageParser.class, PortForwardingUsageParser.class,
+    SecurityGroupUsageParser.class, StorageUsageParser.class, VmDiskUsageParser.class, VolumeUsageParser.class, VPNUserUsageParser.class,
+    UserStatisticsDaoImpl.class},
                includeFilters = {@Filter(value = Library.class, type = FilterType.CUSTOM)},
                useDefaultFilters = false)
 public class UsageManagerTestConfiguration {

@@ -39,7 +39,7 @@ import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.baremetal.PreparePxeServerAnswer;
 import com.cloud.agent.api.baremetal.PreparePxeServerCommand;
-import com.cloud.agent.api.baremetal.prepareCreateTemplateCommand;
+import com.cloud.agent.api.baremetal.PrepareCreateTemplateCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
@@ -47,7 +47,7 @@ import com.cloud.vm.VirtualMachine.State;
 
 public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
     private static final Logger s_logger = Logger.getLogger(BaremetalPingPxeResource.class);
-    private static final String _name = "BaremetalPingPxeResource";
+    private static final String Name = "BaremetalPingPxeResource";
     String _storageServer;
     String _pingDir;
     String _share;
@@ -175,7 +175,7 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
         }
     }
 
-    protected Answer execute(prepareCreateTemplateCommand cmd) {
+    protected Answer execute(PrepareCreateTemplateCommand cmd) {
         com.trilead.ssh2.Connection sshConnection = new com.trilead.ssh2.Connection(_ip, 22);
         try {
             sshConnection.connect(null, 60000, 60000);
@@ -207,8 +207,8 @@ public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof PreparePxeServerCommand) {
             return execute((PreparePxeServerCommand)cmd);
-        } else if (cmd instanceof prepareCreateTemplateCommand) {
-            return execute((prepareCreateTemplateCommand)cmd);
+        } else if (cmd instanceof PrepareCreateTemplateCommand) {
+            return execute((PrepareCreateTemplateCommand)cmd);
         } else if (cmd instanceof VmDataCommand) {
             return execute((VmDataCommand)cmd);
         } else {

@@ -16,18 +16,15 @@
 // under the License.
 package com.cloud.netapp;
 
-import java.io.IOException;
 import java.rmi.ServerException;
 import java.util.HashMap;
 import java.util.List;
 
-import netapp.manage.NaException;
-
 import org.apache.log4j.Logger;
 
 public class NetappDefaultAllocatorImpl implements NetappAllocator {
-    private static HashMap<String, Integer> _poolNameToLastVolumeIdAllocated = new HashMap<String, Integer>();
-    private NetappManager _netappMgr;
+    private static HashMap<String, Integer> s_poolNameToLastVolumeIdAllocated = new HashMap<String, Integer>();
+    private final NetappManager _netappMgr;
     public static final Logger s_logger = Logger.getLogger(NetappDefaultAllocatorImpl.class.getName());
 
     public NetappDefaultAllocatorImpl(NetappManager netappMgr) {
@@ -67,8 +64,6 @@ public class NetappDefaultAllocatorImpl implements NetappAllocator {
      * @param poolName
      * @param lunSizeGb
      * @return -- the selected volume to create the lun on
-     * @throws IOException
-     * @throws NaException
      */
     @Override
     public synchronized NetappVolumeVO chooseVolumeFromPool(String poolName, long lunSizeGb) {
@@ -81,14 +76,14 @@ public class NetappDefaultAllocatorImpl implements NetappAllocator {
         }
 
         //get the index of the record from the map
-        if (_poolNameToLastVolumeIdAllocated.get(poolName) == null) {
+        if (s_poolNameToLastVolumeIdAllocated.get(poolName) == null) {
             pos = 0;
         } else {
-            pos = _poolNameToLastVolumeIdAllocated.get(poolName);
+            pos = s_poolNameToLastVolumeIdAllocated.get(poolName);
         }
 
         //update for RR effect
-        _poolNameToLastVolumeIdAllocated.put(poolName, (pos + 1) % volumesOnPoolAscending.size());
+        s_poolNameToLastVolumeIdAllocated.put(poolName, (pos + 1) % volumesOnPoolAscending.size());
 
         //now iterate over the records
         Object[] volumesOnPoolAscendingArray = volumesOnPoolAscending.toArray();

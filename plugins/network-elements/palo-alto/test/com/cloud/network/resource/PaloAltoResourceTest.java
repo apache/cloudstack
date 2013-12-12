@@ -52,48 +52,48 @@ import com.cloud.utils.exception.ExecutionException;
 
 public class PaloAltoResourceTest {
     // configuration data
-    private String _test_name = "PaloAltoTestDevice";
-    private String _test_zoneId = "TestZone";
-    private String _test_ip = "192.168.80.2";
-    private String _test_username = "admin";
-    private String _test_password = "admin";
-    private String _test_publicInterface = "ethernet1/1";
-    private String _test_privateInterface = "ethernet1/2";
-    private String _test_publicZone = "untrust";
-    private String _test_privateZone = "trust";
-    private String _test_virtualRouter = "default";
+    private String _testName = "PaloAltoTestDevice";
+    private String _testZoneId = "TestZone";
+    private String _testIp = "192.168.80.2";
+    private String _testUsername = "admin";
+    private String _testPassword = "admin";
+    private String _testPublicInterface = "ethernet1/1";
+    private String _testPrivateInterface = "ethernet1/2";
+    private String _testPublicZone = "untrust";
+    private String _testPrivateZone = "trust";
+    private String _testVirtualRouter = "default";
 
     MockablePaloAltoResource _resource;
-    Map<String, Object> _resource_params;
+    Map<String, Object> _resourceParams;
     HashMap<String, String> _context;
 
     @Before
     public void setUp() {
         _resource = new MockablePaloAltoResource();
-        _resource_params = new HashMap<String, Object>(); // params to be passed to configure()
-        _resource_params.put("name", _test_name);
-        _resource_params.put("zoneId", _test_zoneId);
-        _resource_params.put("ip", _test_ip);
-        _resource_params.put("username", _test_username);
-        _resource_params.put("password", _test_password);
-        _resource_params.put("publicinterface", _test_publicInterface);
-        _resource_params.put("privateinterface", _test_privateInterface);
-        _resource_params.put("publicnetwork", _test_publicZone);
-        _resource_params.put("privatenetwork", _test_privateZone);
-        _resource_params.put("pavr", _test_virtualRouter);
-        _resource_params.put("guid", "aaaaa-bbbbb-ccccc");
+        _resourceParams = new HashMap<String, Object>(); // params to be passed to configure()
+        _resourceParams.put("name", _testName);
+        _resourceParams.put("zoneId", _testZoneId);
+        _resourceParams.put("ip", _testIp);
+        _resourceParams.put("username", _testUsername);
+        _resourceParams.put("password", _testPassword);
+        _resourceParams.put("publicinterface", _testPublicInterface);
+        _resourceParams.put("privateinterface", _testPrivateInterface);
+        _resourceParams.put("publicnetwork", _testPublicZone);
+        _resourceParams.put("privatenetwork", _testPrivateZone);
+        _resourceParams.put("pavr", _testVirtualRouter);
+        _resourceParams.put("guid", "aaaaa-bbbbb-ccccc");
 
         _context = new HashMap<String, String>(); // global context
-        _context.put("name", _test_name);
-        _context.put("zone_id", _test_zoneId);
-        _context.put("ip", _test_ip);
-        _context.put("username", _test_username);
-        _context.put("password", _test_password);
-        _context.put("public_interface", _test_publicInterface);
-        _context.put("private_interface", _test_privateInterface);
-        _context.put("public_zone", _test_publicZone);
-        _context.put("private_zone", _test_privateZone);
-        _context.put("pa_vr", _test_virtualRouter);
+        _context.put("name", _testName);
+        _context.put("zone_id", _testZoneId);
+        _context.put("ip", _testIp);
+        _context.put("username", _testUsername);
+        _context.put("password", _testPassword);
+        _context.put("public_interface", _testPublicInterface);
+        _context.put("private_interface", _testPrivateInterface);
+        _context.put("public_zone", _testPublicZone);
+        _context.put("private_zone", _testPrivateZone);
+        _context.put("pa_vr", _testVirtualRouter);
         // --
         _context.put("public_using_ethernet", "true");
         _context.put("private_using_ethernet", "true");
@@ -115,7 +115,7 @@ public class PaloAltoResourceTest {
         }
         _context.remove("has_management_profile");
         _resource.setMockContext(_context);
-        _resource.configure("PaloAltoResource", _resource_params);
+        _resource.configure("PaloAltoResource", _resourceParams);
     }
 
     @Test
@@ -124,7 +124,7 @@ public class PaloAltoResourceTest {
             System.out.println("\nTEST: resourceConfigureWithManagementProfile");
             System.out.println("---------------------------------------------------");
         }
-        _resource.configure("PaloAltoResource", _resource_params);
+        _resource.configure("PaloAltoResource", _resourceParams);
     }
 
     @Test(expected = ConfigurationException.class)
@@ -136,7 +136,7 @@ public class PaloAltoResourceTest {
         _context.put("firewall_has_pending_changes", "true");
         _context.remove("has_management_profile");
         _resource.setMockContext(_context);
-        _resource.configure("PaloAltoResource", _resource_params);
+        _resource.configure("PaloAltoResource", _resourceParams);
     }
 
     @Test(expected = ConfigurationException.class)
@@ -148,7 +148,7 @@ public class PaloAltoResourceTest {
         _context.put("simulate_commit_failure", "true");
         _context.remove("has_management_profile");
         _resource.setMockContext(_context);
-        _resource.configure("PaloAltoResource", _resource_params);
+        _resource.configure("PaloAltoResource", _resourceParams);
     }
 
     @Test
@@ -157,7 +157,7 @@ public class PaloAltoResourceTest {
             System.out.println("\nTEST: testInitialization");
             System.out.println("---------------------------------------------------");
         }
-        _resource.configure("PaloAltoResource", _resource_params);
+        _resource.configure("PaloAltoResource", _resourceParams);
 
         StartupCommand[] sc = _resource.initialize();
         assertTrue(sc.length == 1);
@@ -174,7 +174,7 @@ public class PaloAltoResourceTest {
             System.out.println("\nTEST: implementGuestNetwork");
             System.out.println("---------------------------------------------------");
         }
-        _resource.configure("PaloAltoResource", _resource_params);
+        _resource.configure("PaloAltoResource", _resourceParams);
 
         IpAddressTO ip = new IpAddressTO(Long.valueOf("1"), "192.168.80.102", true, false, true, "untagged", null, null, null, 100, false);
         IpAddressTO[] ips = new IpAddressTO[1];
@@ -201,7 +201,7 @@ public class PaloAltoResourceTest {
         _context.put("has_src_nat_rule", "true");
         _context.put("has_isolation_fw_rule", "true");
         _resource.setMockContext(_context);
-        _resource.configure("PaloAltoResource", _resource_params);
+        _resource.configure("PaloAltoResource", _resourceParams);
 
         IpAddressTO ip = new IpAddressTO(Long.valueOf("1"), "192.168.80.102", false, false, true, "untagged", null, null, null, 100, false);
         IpAddressTO[] ips = new IpAddressTO[1];
@@ -227,7 +227,7 @@ public class PaloAltoResourceTest {
         _context.put("has_isolation_fw_rule", "true");
         _context.put("has_service_tcp_80", "true");
         _resource.setMockContext(_context);
-        _resource.configure("PaloAltoResource", _resource_params);
+        _resource.configure("PaloAltoResource", _resourceParams);
 
         long vlanId = 3954;
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
@@ -257,7 +257,7 @@ public class PaloAltoResourceTest {
         _context.put("has_service_tcp_80", "true");
         _context.put("has_ingress_fw_rule", "true");
         _resource.setMockContext(_context);
-        _resource.configure("PaloAltoResource", _resource_params);
+        _resource.configure("PaloAltoResource", _resourceParams);
 
         long vlanId = 3954;
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
@@ -284,7 +284,7 @@ public class PaloAltoResourceTest {
         _context.put("has_isolation_fw_rule", "true");
         _context.put("has_service_tcp_80", "true");
         _resource.setMockContext(_context);
-        _resource.configure("PaloAltoResource", _resource_params);
+        _resource.configure("PaloAltoResource", _resourceParams);
 
         long vlanId = 3954;
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
@@ -315,7 +315,7 @@ public class PaloAltoResourceTest {
         _context.put("has_service_tcp_80", "true");
         _context.put("has_egress_fw_rule", "true");
         _resource.setMockContext(_context);
-        _resource.configure("PaloAltoResource", _resource_params);
+        _resource.configure("PaloAltoResource", _resourceParams);
 
         long vlanId = 3954;
         List<FirewallRuleTO> rules = new ArrayList<FirewallRuleTO>();
@@ -344,7 +344,7 @@ public class PaloAltoResourceTest {
         _context.put("has_isolation_fw_rule", "true");
         _context.put("has_service_tcp_80", "true");
         _resource.setMockContext(_context);
-        _resource.configure("PaloAltoResource", _resource_params);
+        _resource.configure("PaloAltoResource", _resourceParams);
 
         long vlanId = 3954;
         List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
@@ -372,7 +372,7 @@ public class PaloAltoResourceTest {
         _context.put("has_service_tcp_80", "true");
         _context.put("has_stc_nat_rule", "true");
         _resource.setMockContext(_context);
-        _resource.configure("PaloAltoResource", _resource_params);
+        _resource.configure("PaloAltoResource", _resourceParams);
 
         long vlanId = 3954;
         List<StaticNatRuleTO> rules = new ArrayList<StaticNatRuleTO>();
@@ -399,7 +399,7 @@ public class PaloAltoResourceTest {
         _context.put("has_isolation_fw_rule", "true");
         _context.put("has_service_tcp_80", "true");
         _resource.setMockContext(_context);
-        _resource.configure("PaloAltoResource", _resource_params);
+        _resource.configure("PaloAltoResource", _resourceParams);
 
         long vlanId = 3954;
         List<PortForwardingRuleTO> rules = new ArrayList<PortForwardingRuleTO>();
@@ -427,7 +427,7 @@ public class PaloAltoResourceTest {
         _context.put("has_service_tcp_80", "true");
         _context.put("has_dst_nat_rule", "true");
         _resource.setMockContext(_context);
-        _resource.configure("PaloAltoResource", _resource_params);
+        _resource.configure("PaloAltoResource", _resourceParams);
 
         long vlanId = 3954;
         List<PortForwardingRuleTO> rules = new ArrayList<PortForwardingRuleTO>();

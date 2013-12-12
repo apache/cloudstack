@@ -36,7 +36,7 @@ import com.cloud.network.Network;
 @APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class)
 public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworksCmd.class.getName());
-    private static final String _name = "listnetworksresponse";
+    private static final String Name = "listnetworksresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -149,7 +149,7 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     /////////////////////////////////////////////////////
     @Override
     public String getCommandName() {
-        return _name;
+        return Name;
     }
 
     @Override

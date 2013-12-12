@@ -41,8 +41,8 @@ import com.cloud.utils.Pair;
 public class LoadBalancerUsageParser {
     public static final Logger s_logger = Logger.getLogger(LoadBalancerUsageParser.class.getName());
 
-    private static UsageDao m_usageDao;
-    private static UsageLoadBalancerPolicyDao m_usageLoadBalancerPolicyDao;
+    private static UsageDao s_usageDao;
+    private static UsageLoadBalancerPolicyDao s_usageLoadBalancerPolicyDao;
 
     @Inject
     private UsageDao _usageDao;
@@ -51,8 +51,8 @@ public class LoadBalancerUsageParser {
 
     @PostConstruct
     void init() {
-        m_usageDao = _usageDao;
-        m_usageLoadBalancerPolicyDao = _usageLoadBalancerPolicyDao;
+        s_usageDao = _usageDao;
+        s_usageLoadBalancerPolicyDao = _usageLoadBalancerPolicyDao;
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
@@ -68,7 +68,7 @@ public class LoadBalancerUsageParser {
         //     - look for an entry for accountId with end date in the given range
         //     - look for an entry for accountId with end date null (currently running vm or owned IP)
         //     - look for an entry for accountId with start date before given range *and* end date after given range
-        List<UsageLoadBalancerPolicyVO> usageLBs = m_usageLoadBalancerPolicyDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
+        List<UsageLoadBalancerPolicyVO> usageLBs = s_usageLoadBalancerPolicyDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
 
         if (usageLBs.isEmpty()) {
             s_logger.debug("No load balancer usage events for this period");
@@ -152,7 +152,7 @@ public class LoadBalancerUsageParser {
         UsageVO usageRecord =
             new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), null, null, null, null, lbId, null,
                 startDate, endDate);
-        m_usageDao.persist(usageRecord);
+        s_usageDao.persist(usageRecord);
     }
 
     private static class LBInfo {

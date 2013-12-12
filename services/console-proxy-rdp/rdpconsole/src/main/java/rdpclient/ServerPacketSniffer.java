@@ -41,7 +41,7 @@ public class ServerPacketSniffer extends PacketSniffer {
 //  new Pair("Server FastPath update with flags or continuation",  ".*"),
   // @formatter:on
 
-        };
+    };
 
     public ServerPacketSniffer(String id) {
         super(id, serverRegexps);

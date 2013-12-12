@@ -44,12 +44,12 @@ public class VncClient extends PipelineImpl {
         canvas.addKeyListener(keyEventSource);
 
         add(
-        // Handshake
+            // Handshake
 
-        // RFB protocol version exchanger
-        new Vnc_3_3_Hello("hello"),
-        // Authenticator
-            new Vnc_3_3_Authentication("auth", password),
+            // RFB protocol version exchanger
+            new Vnc33Hello("hello"),
+            // Authenticator
+            new Vnc33Authentication("auth", password),
             // Initializer
             new VncInitializer("init", true, screen),
 

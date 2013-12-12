@@ -36,10 +36,11 @@ import java.util.concurrent.Executor;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.xml.DOMConfigurator;
 
-import com.cloud.consoleproxy.util.Logger;
-import com.cloud.utils.PropertiesUtil;
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpServer;
+
+import com.cloud.consoleproxy.util.Logger;
+import com.cloud.utils.PropertiesUtil;
 
 /**
  *
@@ -51,7 +52,7 @@ public class ConsoleProxy {
     public static final int KEYBOARD_RAW = 0;
     public static final int KEYBOARD_COOKED = 1;
 
-    public static int VIEWER_LINGER_SECONDS = 180;
+    public static final int VIEWER_LINGER_SECONDS = 180;
 
     public static Object context;
 
@@ -195,8 +196,8 @@ public class ConsoleProxy {
             Object result;
             try {
                 result =
-                        authMethod.invoke(ConsoleProxy.context, param.getClientHostAddress(), String.valueOf(param.getClientHostPort()), param.getClientTag(),
-                                param.getClientHostPassword(), param.getTicket(), new Boolean(reauthentication));
+                    authMethod.invoke(ConsoleProxy.context, param.getClientHostAddress(), String.valueOf(param.getClientHostPort()), param.getClientTag(),
+                        param.getClientHostPassword(), param.getTicket(), new Boolean(reauthentication));
             } catch (IllegalAccessException e) {
                 s_logger.error("Unable to invoke authenticateConsoleAccess due to IllegalAccessException" + " for vm: " + param.getClientTag(), e);
                 authResult.setSuccess(false);
@@ -390,7 +391,7 @@ public class ConsoleProxy {
             } finally {
                 try {
                     confs.close();
-                }  catch (IOException ioex) {
+                } catch (IOException ioex) {
                     s_logger.error(ioex.toString(), ioex);
                 }
             }
@@ -417,7 +418,7 @@ public class ConsoleProxy {
                 viewer.initClient(param);
             } else if (!param.getClientHostPassword().equals(viewer.getClientHostPassword())) {
                 s_logger.warn("Bad sid detected(VNC port may be reused). sid in session: " + viewer.getClientHostPassword() + ", sid in request: " +
-                        param.getClientHostPassword());
+                    param.getClientHostPassword());
                 viewer.initClient(param);
             }
         }
@@ -456,7 +457,7 @@ public class ConsoleProxy {
                 }
 
                 if (param.getClientHostPassword() == null || param.getClientHostPassword().isEmpty() ||
-                        !param.getClientHostPassword().equals(viewer.getClientHostPassword()))
+                    !param.getClientHostPassword().equals(viewer.getClientHostPassword()))
                     throw new AuthenticationException("Cannot use the existing viewer " + viewer + ": bad sid");
 
                 if (!viewer.isFrontEndAlive()) {

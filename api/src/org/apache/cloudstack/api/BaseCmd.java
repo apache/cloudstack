@@ -94,7 +94,7 @@ public abstract class BaseCmd {
     public static final DateFormat INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
     public static final DateFormat NEW_INPUT_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     public static Pattern newInputDateFormat = Pattern.compile("[\\d]+-[\\d]+-[\\d]+ [\\d]+:[\\d]+:[\\d]+");
-    private static final DateFormat _outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    private static final DateFormat s_outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 
     private Object _responseObject = null;
     private Map<String, String> fullUrlParams;
@@ -191,12 +191,11 @@ public abstract class BaseCmd {
     public InternalLoadBalancerVMService _internalLbSvc;
     @Inject
     public NetworkModel _ntwkModel;
-    @Inject 
+    @Inject
     public AlertService _alertSvc;
-    
-    public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-    ResourceAllocationException, NetworkRuleConflictException;
 
+    public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
+        ResourceAllocationException, NetworkRuleConflictException;
 
     public void configure() {
     }
@@ -258,8 +257,8 @@ public abstract class BaseCmd {
             return "";
         }
         String formattedString = null;
-        synchronized (_outputFormat) {
-            formattedString = _outputFormat.format(date);
+        synchronized (s_outputFormat) {
+            formattedString = s_outputFormat.format(date);
         }
         return formattedString;
     }

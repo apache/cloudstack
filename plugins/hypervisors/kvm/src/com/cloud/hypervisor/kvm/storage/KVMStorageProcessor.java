@@ -102,8 +102,8 @@ import com.cloud.utils.script.Script;
 
 public class KVMStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(KVMStorageProcessor.class);
-    private KVMStoragePoolManager storagePoolMgr;
-    private LibvirtComputingResource resource;
+    private final KVMStoragePoolManager storagePoolMgr;
+    private final LibvirtComputingResource resource;
     private StorageLayer storageLayer;
     private String _createTmplPath;
     private String _manageSnapshotPath;
@@ -460,7 +460,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             KVMPhysicalDisk disk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), volume.getPath());
             String tmpltPath = secondaryStorage.getLocalPath() + File.separator + templateFolder;
-            this.storageLayer.mkdirs(tmpltPath);
+            storageLayer.mkdirs(tmpltPath);
             String templateName = UUID.randomUUID().toString();
 
             if (primary.getType() != StoragePoolType.RBD) {
@@ -512,14 +512,14 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             Map<String, Object> params = new HashMap<String, Object>();
-            params.put(StorageLayer.InstanceConfigKey, this.storageLayer);
+            params.put(StorageLayer.InstanceConfigKey, storageLayer);
             Processor qcow2Processor = new QCOW2Processor();
 
             qcow2Processor.configure("QCOW2 Processor", params);
 
             FormatInfo info = qcow2Processor.process(tmpltPath, null, templateName);
 
-            TemplateLocation loc = new TemplateLocation(this.storageLayer, tmpltPath);
+            TemplateLocation loc = new TemplateLocation(storageLayer, tmpltPath);
             loc.create(1, true, templateName);
             loc.addFormat(info);
             loc.save();
@@ -738,7 +738,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             Domain vm = null;
             if (vmName != null) {
                 try {
-                    vm = this.resource.getDomain(conn, vmName);
+                    vm = resource.getDomain(conn, vmName);
                     state = vm.getInfo().state;
                 } catch (LibvirtException e) {
                     s_logger.trace("Ignoring libvirt error.", e);
@@ -754,7 +754,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                  * libvirt on RHEL6 doesn't handle resume event emitted from
                  * qemu
                  */
-                vm = this.resource.getDomain(conn, vmName);
+                vm = resource.getDomain(conn, vmName);
                 state = vm.getInfo().state;
                 if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
                     vm.resume();
@@ -808,12 +808,12 @@ public class KVMStorageProcessor implements StorageProcessor {
             isoXml = iso.toString();
         }
 
-        List<DiskDef> disks = this.resource.getDisks(conn, vmName);
+        List<DiskDef> disks = resource.getDisks(conn, vmName);
         String result = attachOrDetachDevice(conn, true, vmName, isoXml);
         if (result == null && !isAttach) {
             for (DiskDef disk : disks) {
                 if (disk.getDeviceType() == DiskDef.deviceType.CDROM) {
-                    this.resource.cleanupDisk(disk);
+                    resource.cleanupDisk(disk);
                 }
             }
 
@@ -1027,7 +1027,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
-    protected static MessageFormat SnapshotXML = new MessageFormat("   <domainsnapshot>" + "       <name>{0}</name>" + "          <domain>"
+    protected static final MessageFormat SnapshotXML = new MessageFormat("   <domainsnapshot>" + "       <name>{0}</name>" + "          <domain>"
         + "            <uuid>{1}</uuid>" + "        </domain>" + "    </domainsnapshot>");
 
     @Override
@@ -1043,7 +1043,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             Domain vm = null;
             if (vmName != null) {
                 try {
-                    vm = this.resource.getDomain(conn, vmName);
+                    vm = resource.getDomain(conn, vmName);
                     state = vm.getInfo().state;
                 } catch (LibvirtException e) {
                     s_logger.trace("Ignoring libvirt error.", e);
@@ -1064,7 +1064,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                  * libvirt on RHEL6 doesn't handle resume event emitted from
                  * qemu
                  */
-                vm = this.resource.getDomain(conn, vmName);
+                vm = resource.getDomain(conn, vmName);
                 state = vm.getInfo().state;
                 if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
                     vm.resume();
@@ -1105,7 +1105,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     }
                 } else {
                     /* VM is not running, create a snapshot by ourself */
-                    final Script command = new Script(_manageSnapshotPath, this._cmdsTimeout, s_logger);
+                    final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
                     command.add("-c", disk.getPath());
                     command.add("-n", snapshotName);
                     String result = command.execute();

@@ -51,6 +51,14 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NetworkACLServiceProvider;
+import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.NetworkACLItemDao;
+import com.cloud.network.vpc.NetworkACLItemVO;
+import com.cloud.network.vpc.NetworkACLManager;
+import com.cloud.network.vpc.NetworkACLManagerImpl;
+import com.cloud.network.vpc.NetworkACLVO;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.tags.dao.ResourceTagDao;
@@ -308,7 +316,6 @@ public class NetworkACLManagerTest extends TestCase {
         public VpcService vpcService() {
             return Mockito.mock(VpcService.class);
         }
-
 
         public static class Library implements TypeFilter {
             @Override

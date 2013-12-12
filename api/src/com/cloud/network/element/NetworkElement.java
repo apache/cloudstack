@@ -22,7 +22,6 @@ import java.util.Set;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -67,7 +66,6 @@ public interface NetworkElement extends Adapter {
      * @return
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
-     * @throws InsufficientNetworkCapacityException
      */
     boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
         ResourceUnavailableException, InsufficientCapacityException;

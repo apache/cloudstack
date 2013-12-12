@@ -40,8 +40,8 @@ import com.cloud.user.AccountVO;
 public class VMSnapshotUsageParser {
     public static final Logger s_logger = Logger.getLogger(VMSnapshotUsageParser.class.getName());
 
-    private static UsageDao m_usageDao;
-    private static UsageVMSnapshotDao m_usageVMSnapshotDao;
+    private static UsageDao s_usageDao;
+    private static UsageVMSnapshotDao s_usageVMSnapshotDao;
 
     @Inject
     private UsageDao _usageDao;
@@ -50,8 +50,8 @@ public class VMSnapshotUsageParser {
 
     @PostConstruct
     void init() {
-        m_usageDao = _usageDao;
-        m_usageVMSnapshotDao = _usageVMSnapshotDao;
+        s_usageDao = _usageDao;
+        s_usageVMSnapshotDao = _usageVMSnapshotDao;
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
@@ -62,7 +62,7 @@ public class VMSnapshotUsageParser {
             endDate = new Date();
         }
 
-        List<UsageVMSnapshotVO> usageUsageVMSnapshots = m_usageVMSnapshotDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate);
+        List<UsageVMSnapshotVO> usageUsageVMSnapshots = s_usageVMSnapshotDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate);
 
         if (usageUsageVMSnapshots.isEmpty()) {
             s_logger.debug("No VM snapshot usage events for this period");
@@ -79,7 +79,7 @@ public class VMSnapshotUsageParser {
                 unprocessedUsage.put(key, usageRec);
                 continue;
             }
-            UsageVMSnapshotVO previousEvent = m_usageVMSnapshotDao.getPreviousUsageRecord(usageRec);
+            UsageVMSnapshotVO previousEvent = s_usageVMSnapshotDao.getPreviousUsageRecord(usageRec);
             if (previousEvent == null || previousEvent.getSize() == 0) {
                 unprocessedUsage.put(key, usageRec);
                 continue;
@@ -96,11 +96,11 @@ public class VMSnapshotUsageParser {
             createUsageRecord(UsageTypes.VM_SNAPSHOT, duration, previousCreated, createDate, account, volId, zoneId, previousEvent.getDiskOfferingId(), vmId,
                 previousEvent.getSize());
             previousEvent.setProcessed(new Date());
-            m_usageVMSnapshotDao.update(previousEvent);
+            s_usageVMSnapshotDao.update(previousEvent);
 
             if (usageRec.getSize() == 0) {
                 usageRec.setProcessed(new Date());
-                m_usageVMSnapshotDao.update(usageRec);
+                s_usageVMSnapshotDao.update(usageRec);
             } else
                 unprocessedUsage.put(key, usageRec);
         }
@@ -148,7 +148,7 @@ public class VMSnapshotUsageParser {
         UsageVO usageRecord =
             new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), vmId, null, doId, null, volId, size,
                 startDate, endDate);
-        m_usageDao.persist(usageRecord);
+        s_usageDao.persist(usageRecord);
     }
 
 }

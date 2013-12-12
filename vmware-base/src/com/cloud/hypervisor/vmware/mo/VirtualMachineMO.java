@@ -111,7 +111,7 @@ import com.cloud.utils.script.Script;
 
 public class VirtualMachineMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineMO.class);
-    private static final ExecutorService _monitorServiceExecutor = Executors.newCachedThreadPool(new NamedThreadFactory("VM-Question-Monitor"));
+    private static final ExecutorService MonitorServiceExecutor = Executors.newCachedThreadPool(new NamedThreadFactory("VM-Question-Monitor"));
     private ManagedObjectReference _vmEnvironmentBrowser = null;
 
     public VirtualMachineMO(VmwareContext context, ManagedObjectReference morVm) {
@@ -1238,7 +1238,7 @@ public class VirtualMachineMO extends BaseMO {
         // Monitor VM questions
         final Boolean[] flags = {false};
         final VirtualMachineMO vmMo = this;
-        Future<?> future = _monitorServiceExecutor.submit(new Runnable() {
+        Future<?> future = MonitorServiceExecutor.submit(new Runnable() {
             @Override
             public void run() {
                 s_logger.info("VM Question monitor started...");
@@ -2334,7 +2334,7 @@ public class VirtualMachineMO extends BaseMO {
         // Monitor VM questions
         final Boolean[] flags = {false};
         final VirtualMachineMO vmMo = this;
-        Future<?> future = _monitorServiceExecutor.submit(new Runnable() {
+        Future<?> future = MonitorServiceExecutor.submit(new Runnable() {
             @Override
             public void run() {
                 s_logger.info("VM Question monitor started...");

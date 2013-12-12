@@ -27,10 +27,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.deploy.DeploymentClusterPlanner;
-import com.cloud.deploy.DeploymentPlanner;
-import com.cloud.event.UsageEventVO;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.ConfigDepot;
@@ -57,6 +53,8 @@ import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.deploy.DeploymentClusterPlanner;
+import com.cloud.event.UsageEventVO;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -86,6 +84,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmVO;
@@ -97,7 +96,6 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.springframework.instrument.classloading.glassfish.GlassFishLoadTimeWeaver;
 
 @Local(value = CapacityManager.class)
 public class CapacityManagerImpl extends ManagerBase implements CapacityManager, StateListener<State, VirtualMachine.Event, VirtualMachine>, Listener, ResourceListener,
@@ -356,29 +354,31 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         }
     }
 
-    public boolean checkIfHostHasCpuCapability(long hostId, Integer cpuNum, Integer cpuSpeed){
+    @Override
+    public boolean checkIfHostHasCpuCapability(long hostId, Integer cpuNum, Integer cpuSpeed) {
 
         // Check host can support the Cpu Number and Speed.
         Host host = _hostDao.findById(hostId);
         boolean isCpuNumGood = host.getCpus().intValue() >= cpuNum;
         boolean isCpuSpeedGood = host.getSpeed().intValue() >= cpuSpeed;
-        if(isCpuNumGood && isCpuSpeedGood){
+        if (isCpuNumGood && isCpuSpeedGood) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Host: " + hostId + " has cpu capability (cpu:" +host.getCpus()+ ", speed:" + host.getSpeed() +
-                        ") to support requested CPU: " + cpuNum + " and requested speed: " + cpuSpeed);
+                s_logger.debug("Host: " + hostId + " has cpu capability (cpu:" + host.getCpus() + ", speed:" + host.getSpeed() +
+                    ") to support requested CPU: " + cpuNum + " and requested speed: " + cpuSpeed);
             }
             return true;
-        }else{
+        } else {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Host: " + hostId + " doesn't have cpu capability (cpu:" +host.getCpus()+ ", speed:" + host.getSpeed() +
-                        ") to support requested CPU: " + cpuNum + " and requested speed: " + cpuSpeed);
+                s_logger.debug("Host: " + hostId + " doesn't have cpu capability (cpu:" + host.getCpus() + ", speed:" + host.getSpeed() +
+                    ") to support requested CPU: " + cpuNum + " and requested speed: " + cpuSpeed);
             }
             return false;
         }
     }
 
     @Override
-    public boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOvercommitRatio, float memoryOvercommitRatio, boolean considerReservedCapacity) {
+    public boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOvercommitRatio, float memoryOvercommitRatio,
+        boolean considerReservedCapacity) {
         boolean hasCapacity = false;
 
         if (s_logger.isDebugEnabled()) {
@@ -857,14 +857,14 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     }
 
     @Override
-    public float getClusterOverProvisioningFactor(Long clusterId, short capacityType){
+    public float getClusterOverProvisioningFactor(Long clusterId, short capacityType) {
 
         String capacityOverProvisioningName = "";
-        if(capacityType == Capacity.CAPACITY_TYPE_CPU){
+        if (capacityType == Capacity.CAPACITY_TYPE_CPU) {
             capacityOverProvisioningName = "cpuOvercommitRatio";
-        }else if(capacityType == Capacity.CAPACITY_TYPE_MEMORY){
+        } else if (capacityType == Capacity.CAPACITY_TYPE_MEMORY) {
             capacityOverProvisioningName = "memoryOvercommitRatio";
-        }else{
+        } else {
             throw new CloudRuntimeException("Invalid capacityType - " + capacityType);
         }
 
@@ -875,7 +875,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     }
 
     @Override
-    public boolean checkIfClusterCrossesThreshold(Long clusterId, Integer cpuRequested, long ramRequested){
+    public boolean checkIfClusterCrossesThreshold(Long clusterId, Integer cpuRequested, long ramRequested) {
 
         Float clusterCpuOverProvisioning = getClusterOverProvisioningFactor(clusterId, Capacity.CAPACITY_TYPE_CPU);
         Float clusterMemoryOverProvisioning = getClusterOverProvisioningFactor(clusterId, Capacity.CAPACITY_TYPE_MEMORY);
@@ -883,16 +883,16 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         Float clusterMemoryCapacityDisableThreshold = DeploymentClusterPlanner.ClusterMemoryCapacityDisableThreshold.valueIn(clusterId);
 
         float cpuConsumption = _capacityDao.findClusterConsumption(clusterId, Capacity.CAPACITY_TYPE_CPU, cpuRequested);
-        if(cpuConsumption/clusterCpuOverProvisioning > clusterCpuCapacityDisableThreshold){
-            s_logger.debug("Cluster: " +clusterId + " cpu consumption " + cpuConsumption/clusterCpuOverProvisioning
-                    + " crosses disable threshold " + clusterCpuCapacityDisableThreshold);
+        if (cpuConsumption / clusterCpuOverProvisioning > clusterCpuCapacityDisableThreshold) {
+            s_logger.debug("Cluster: " + clusterId + " cpu consumption " + cpuConsumption / clusterCpuOverProvisioning
+                + " crosses disable threshold " + clusterCpuCapacityDisableThreshold);
             return true;
         }
 
         float memoryConsumption = _capacityDao.findClusterConsumption(clusterId, Capacity.CAPACITY_TYPE_MEMORY, ramRequested);
-        if(memoryConsumption/clusterMemoryOverProvisioning > clusterMemoryCapacityDisableThreshold){
-            s_logger.debug("Cluster: " +clusterId + " memory consumption " + memoryConsumption/clusterMemoryOverProvisioning
-                    + " crosses disable threshold " + clusterMemoryCapacityDisableThreshold);
+        if (memoryConsumption / clusterMemoryOverProvisioning > clusterMemoryCapacityDisableThreshold) {
+            s_logger.debug("Cluster: " + clusterId + " memory consumption " + memoryConsumption / clusterMemoryOverProvisioning
+                + " crosses disable threshold " + clusterMemoryCapacityDisableThreshold);
             return true;
         }
 

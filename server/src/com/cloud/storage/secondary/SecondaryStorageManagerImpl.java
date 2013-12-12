@@ -92,7 +92,6 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
@@ -168,7 +167,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     private static final int STARTUP_DELAY = 60000; // 60 seconds
 
-    private int _mgmt_port = 8250;
+    private int _mgmtPort = 8250;
 
     private List<SecondaryStorageVmAllocator> _ssVmAllocators;
 
@@ -825,7 +824,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         Map<String, String> agentMgrConfigs = _configDao.getConfiguration("AgentManager", params);
 
         value = agentMgrConfigs.get("port");
-        _mgmt_port = NumbersUtil.parseInt(value, 8250);
+        _mgmtPort = NumbersUtil.parseInt(value, 8250);
 
         _listener = new SecondaryStorageListener(this, _agentMgr);
         _agentMgr.registerForHostEvents(_listener, true, false, true);
@@ -1017,7 +1016,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=secstorage");
         buf.append(" host=").append(ClusterManager.ManagementHostIPAdr.value());
-        buf.append(" port=").append(_mgmt_port);
+        buf.append(" port=").append(_mgmtPort);
         buf.append(" name=").append(profile.getVirtualMachine().getHostName());
 
         buf.append(" zone=").append(dest.getDataCenter().getId());
@@ -1381,6 +1380,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Inject
     public void setSecondaryStorageVmAllocators(List<SecondaryStorageVmAllocator> ssVmAllocators) {
-        this._ssVmAllocators = ssVmAllocators;
+        _ssVmAllocators = ssVmAllocators;
     }
 }

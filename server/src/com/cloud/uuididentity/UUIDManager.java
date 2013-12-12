@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.uuididentity;
 
-import org.apache.cloudstack.api.Identity;
 
 public interface UUIDManager {
 

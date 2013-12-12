@@ -269,8 +269,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return _discoverers;
     }
 
-    public void setDiscoverers(List<StoragePoolDiscoverer> _discoverers) {
-        this._discoverers = _discoverers;
+    public void setDiscoverers(List<StoragePoolDiscoverer> discoverers) {
+        this._discoverers = discoverers;
     }
 
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;

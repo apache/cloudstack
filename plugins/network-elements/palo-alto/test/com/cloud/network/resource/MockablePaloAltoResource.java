@@ -54,7 +54,31 @@ public class MockablePaloAltoResource extends PaloAltoResource {
                     if (context.containsKey("public_using_ethernet") && context.get("public_using_ethernet").equals("true")) {
                         context.put("public_interface_type", "ethernet");
                         response =
-                            "<response status=\"success\" code=\"19\"><result total-count=\"1\" count=\"1\"><entry name=\"ethernet1/1\" admin=\"admin\" time=\"2013/06/18 13:33:56\"><layer3 admin=\"admin\" time=\"2013/06/18 13:33:56\"><ipv6><neighbor-discovery><router-advertisement><enable>no</enable><min-interval>200</min-interval><max-interval>600</max-interval><hop-limit>64</hop-limit><reachable-time>unspecified</reachable-time><retransmission-timer>unspecified</retransmission-timer><lifetime>1800</lifetime><managed-flag>no</managed-flag><other-flag>no</other-flag><enable-consistency-check>no</enable-consistency-check><link-mtu>unspecified</link-mtu></router-advertisement><enable-dad>no</enable-dad><reachable-time>30</reachable-time><ns-interval>1</ns-interval><dad-attempts>1</dad-attempts></neighbor-discovery><enabled>no</enabled><interface-id>EUI-64</interface-id></ipv6><untagged-sub-interface>no</untagged-sub-interface><units admin=\"admin\" time=\"2013/06/18 13:33:56\"><entry name=\"ethernet1/1.9999\" admin=\"admin\" time=\"2013/06/18 13:33:56\"><ipv6><neighbor-discovery><router-advertisement><enable>no</enable><min-interval>200</min-interval><max-interval>600</max-interval><hop-limit>64</hop-limit><reachable-time>unspecified</reachable-time><retransmission-timer>unspecified</retransmission-timer><lifetime>1800</lifetime><managed-flag>no</managed-flag><other-flag>no</other-flag><enable-consistency-check>no</enable-consistency-check><link-mtu>unspecified</link-mtu></router-advertisement><enable-dad>no</enable-dad><reachable-time>30</reachable-time><ns-interval>1</ns-interval><dad-attempts>1</dad-attempts></neighbor-discovery><enabled>no</enabled><interface-id>EUI-64</interface-id></ipv6><ip admin=\"admin\" time=\"2013/06/18 13:33:56\"><entry name=\"192.168.80.254/24\"/></ip><adjust-tcp-mss>no</adjust-tcp-mss><tag>3033</tag></entry></units></layer3><link-speed>auto</link-speed><link-duplex>auto</link-duplex><link-state>auto</link-state></entry></result></response>";
+                            "<response status=\"success\" code=\"19\"><result total-count=\"1\" count=\"1\"><entry name=\"ethernet1/1\" admin=\"admin\" time=\"2013/06/18 "
+                                +
+                                "13:33:56\"><layer3 admin=\"admin\" time=\"2013/06/18 13:33:56\"><ipv6><neighbor-discovery><router-advertisement><enable>no</enable>"
+                                +
+                                "<min-interval>200</min-interval><max-interval>600</max-interval><hop-limit>64</hop-limit><reachable-time>unspecified</reachable-time>"
+                                +
+                                "<retransmission-timer>unspecified</retransmission-timer><lifetime>1800</lifetime><managed-flag>no</managed-flag>"
+                                +
+                                "<other-flag>no</other-flag><enable-consistency-check>no</enable-consistency-check><link-mtu>unspecified</link-mtu></router-advertisement>"
+                                +
+                                "<enable-dad>no</enable-dad><reachable-time>30</reachable-time><ns-interval>1</ns-interval><dad-attempts>1</dad-attempts></neighbor-discovery>"+
+                                "<enabled>no</enabled><interface-id>EUI-64</interface-id></ipv6><untagged-sub-interface>no</untagged-sub-interface>"
+                                +
+                                "<units admin=\"admin\" time=\"2013/06/18 13:33:56\"><entry name=\"ethernet1/1.9999\" admin=\"admin\" time=\"2013/06/18 13:33:56\">"
+                                +
+                                "<ipv6><neighbor-discovery><router-advertisement><enable>no</enable><min-interval>200</min-interval><max-interval>600</max-interval>"
+                                +
+                                "<hop-limit>64</hop-limit><reachable-time>unspecified</reachable-time><retransmission-timer>unspecified</retransmission-timer><lifetime>"
+                                +
+                                "1800</lifetime><managed-flag>no</managed-flag><other-flag>no</other-flag><enable-consistency-check>no</enable-consistency-check>" +
+                                "<link-mtu>unspecified</link-mtu></router-advertisement><enable-dad>no</enable-dad><reachable-time>30</reachable-time><ns-interval>" +
+                                "1</ns-interval><dad-attempts>1</dad-attempts></neighbor-discovery><enabled>no</enabled><interface-id>EUI-64</interface-id></ipv6>" +
+                                "<ip admin=\"admin\" time=\"2013/06/18 13:33:56\"><entry name=\"192.168.80.254/24\"/></ip><adjust-tcp-mss>no</adjust-tcp-mss>" +
+                                "<tag>3033</tag></entry></units></layer3><link-speed>auto</link-speed><link-duplex>auto</link-duplex><link-state>auto</link-state>" +
+                                "</entry></result></response>";
                     } else {
                         response = "<response status=\"success\" code=\"19\"><result/></response>";
                     }
@@ -164,7 +188,7 @@ public class MockablePaloAltoResource extends PaloAltoResource {
                 // get egress firewall rule | has_egress_fw_rule | policy_0_3954
                 if (params.get("xpath").equals("/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='policy_0_3954']")) {
                     if (context.containsKey("has_egress_fw_rule") && context.get("has_egress_fw_rule").equals("true")) {
-                        response = 
+                        response =
                             "<response status=\"success\" code=\"19\"><result total-count=\"1\" count=\"1\">"
                                 + "<entry name=\"policy_0_3954\" admin=\"admin\" time=\"2013/07/03 12:43:30\"><from admin=\"admin\" time=\"2013/07/03 12:43:30\">"
                                 + "<member admin=\"admin\" time=\"2013/07/03 12:43:30\">trust</member></from><to><member>untrust</member></to><source><member>10.3.96.1/20</member>"
@@ -191,7 +215,8 @@ public class MockablePaloAltoResource extends PaloAltoResource {
                 }
 
                 // get default egress rule | policy_0_3954
-                if (params.get("xpath").equals("/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[contains(@name, 'policy') and contains(@name, '3954')]")) {
+                if (params.get("xpath").equals(
+                    "/config/devices/entry/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[contains(@name, 'policy') and contains(@name, '3954')]")) {
                     response = "<response status=\"success\" code=\"19\"><result/></response>";
                 }
 

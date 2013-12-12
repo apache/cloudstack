@@ -43,7 +43,7 @@ import com.cloud.user.Account;
 public class ListStorageNetworkIpRangeCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListStorageNetworkIpRangeCmd.class);
 
-    String s_name = "liststoragenetworkiprangeresponse";
+    String _name = "liststoragenetworkiprangeresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -105,7 +105,7 @@ public class ListStorageNetworkIpRangeCmd extends BaseListCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return _name;
     }
 
     @Override

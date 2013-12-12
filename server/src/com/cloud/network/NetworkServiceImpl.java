@@ -294,19 +294,19 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
     @Inject
     InternalLoadBalancerElementService _internalLbElementSvc;
     @Inject
-    DataCenterVnetDao _datacneter_vnet;
+    DataCenterVnetDao _datacneterVnet;
     @Inject
     AccountGuestVlanMapDao _accountGuestVlanMapDao;
     @Inject
     VpcDao _vpcDao;
     @Inject
     NetworkACLDao _networkACLDao;
-	@Inject
-	OvsProviderDao _ovsProviderDao;
-	@Inject
-	IpAddressManager _ipAddrMgr;
-	@Inject
-	EntityManager _entityMgr;
+    @Inject
+    OvsProviderDao _ovsProviderDao;
+    @Inject
+    IpAddressManager _ipAddrMgr;
+    @Inject
+    EntityManager _entityMgr;
 
     int _cidrLimit;
     boolean _allowSubdomainNetworkAccess;
@@ -1599,11 +1599,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         //Most likely pageSize will never exceed int value, and we need integer to partition the listToReturn
         boolean notNull = cmd.getStartIndex() != null && cmd.getPageSizeVal() != null;
         if (notNull && cmd.getStartIndex() <= Integer.MAX_VALUE && cmd.getStartIndex() >= Integer.MIN_VALUE &&
-                cmd.getPageSizeVal() <= Integer.MAX_VALUE && cmd.getPageSizeVal() >= Integer.MIN_VALUE) {
+            cmd.getPageSizeVal() <= Integer.MAX_VALUE && cmd.getPageSizeVal() >= Integer.MIN_VALUE) {
             int startIndex = cmd.getStartIndex().intValue() == 0 ? 0 : cmd.getStartIndex().intValue() - 1;
             List<NetworkVO> wPagination = new ArrayList<NetworkVO>();
             List<List<NetworkVO>> partitions = partitionNetworks(networksToReturn, cmd.getPageSizeVal().intValue());
-            if (startIndex< partitions.size()) {
+            if (startIndex < partitions.size()) {
                 wPagination = partitions.get(startIndex);
             }
             return wPagination;
@@ -1613,15 +1613,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
     }
 
     private static List<List<NetworkVO>> partitionNetworks(List<NetworkVO> originalList,
-            int chunkSize) {
+        int chunkSize) {
         List<List<NetworkVO>> listOfChunks = new ArrayList<List<NetworkVO>>();
         for (int i = 0; i < originalList.size() / chunkSize; i++) {
             listOfChunks.add(originalList.subList(i * chunkSize, i * chunkSize
-                    + chunkSize));
+                + chunkSize));
         }
         if (originalList.size() % chunkSize != 0) {
             listOfChunks.add(originalList.subList(originalList.size()
-                    - originalList.size() % chunkSize, originalList.size()));
+                - originalList.size() % chunkSize, originalList.size()));
         }
         return listOfChunks;
     }
@@ -2540,7 +2540,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         }
     }
 
-	@Override
+    @Override
     public Pair<List<? extends PhysicalNetwork>, Integer> searchPhysicalNetworks(Long id, Long zoneId, String keyword, Long startIndex, Long pageSize, String name) {
         Filter searchFilter = new Filter(PhysicalNetworkVO.class, "id", Boolean.TRUE, startIndex, pageSize);
         SearchCriteria<PhysicalNetworkVO> sc = _physicalNetworkDao.createSearchCriteria();
@@ -2639,7 +2639,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             removeVnets = getVnetsToremove(network, vnetranges);
 
             //computing vnets to add
-            vnetsInDb.addAll(_datacneter_vnet.listVnetsByPhysicalNetworkAndDataCenter(network.getDataCenterId(), network.getId()));
+            vnetsInDb.addAll(_datacneterVnet.listVnetsByPhysicalNetworkAndDataCenter(network.getDataCenterId(), network.getId()));
             tempVnets.addAll(vnetsInDb);
             for (Pair<Integer, Integer> vlan : vnetranges) {
                 for (i = vlan.first(); i <= vlan.second(); i++) {
@@ -2681,7 +2681,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
                         s_logger.debug("removing vnet range " + removeVnetsFinal.toString() + " for the physicalNetwork id= " + network.getId() + " and zone id=" +
                             network.getDataCenterId() + " as a part of updatePhysicalNetwork call");
                         //deleteVnets  takes a list of strings to be removed. each string is a vnet.
-                        _datacneter_vnet.deleteVnets(TransactionLegacy.currentTxn(), network.getDataCenterId(), network.getId(), removeVnetsFinal);
+                        _datacneterVnet.deleteVnets(TransactionLegacy.currentTxn(), network.getDataCenterId(), network.getId(), removeVnetsFinal);
                     }
                     _physicalNetworkDao.update(network.getId(), network);
                 }
@@ -2717,7 +2717,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
                 // since adding a range adds each VNI to the database, need only check min/max
                 for (String vnet : VnetRange) {
                     s_logger.debug("Looking to see if VNI " + vnet + " already exists on another network in zone " + network.getDataCenterId());
-                    List<DataCenterVnetVO> vnis = _datacneter_vnet.findVnet(network.getDataCenterId(), vnet);
+                    List<DataCenterVnetVO> vnis = _datacneterVnet.findVnet(network.getDataCenterId(), vnet);
                     if (vnis != null && !vnis.isEmpty()) {
                         for (DataCenterVnetVO vni : vnis) {
                             if (vni.getPhysicalNetworkId() != network.getId()) {
@@ -2791,13 +2791,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         int i;
         List<String> removeVnets = new ArrayList<String>();
         HashSet<String> vnetsInDb = new HashSet<String>();
-        vnetsInDb.addAll(_datacneter_vnet.listVnetsByPhysicalNetworkAndDataCenter(network.getDataCenterId(), network.getId()));
+        vnetsInDb.addAll(_datacneterVnet.listVnetsByPhysicalNetworkAndDataCenter(network.getDataCenterId(), network.getId()));
         //remove all the vnets from vnets in db to check if there are any vnets that are not there in given list.
         //remove all the vnets not in the list of vnets passed by the user.
         if (vnetRanges.size() == 0) {
             //this implies remove all vlans.
             removeVnets.addAll(vnetsInDb);
-            int allocated_vnets = _datacneter_vnet.countAllocatedVnets(network.getId());
+            int allocated_vnets = _datacneterVnet.countAllocatedVnets(network.getId());
             if (allocated_vnets > 0) {
                 throw new InvalidParameterValueException("physicalnetwork " + network.getId() + " has " + allocated_vnets + " vnets in use");
             }
@@ -2820,8 +2820,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             String[] range = vnet.split("-");
             Integer start = Integer.parseInt(range[0]);
             Integer end = Integer.parseInt(range[1]);
-            _datacneter_vnet.lockRange(network.getDataCenterId(), network.getId(), start, end);
-            List<DataCenterVnetVO> result = _datacneter_vnet.listAllocatedVnetsInRange(network.getDataCenterId(), network.getId(), start, end);
+            _datacneterVnet.lockRange(network.getDataCenterId(), network.getId(), start, end);
+            List<DataCenterVnetVO> result = _datacneterVnet.listAllocatedVnetsInRange(network.getDataCenterId(), network.getId(), start, end);
             if (!result.isEmpty()) {
                 throw new InvalidParameterValueException("physicalnetwork " + network.getId() + " has allocated vnets in the range " + start + "-" + end);
 
@@ -3048,7 +3048,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         // Verify guest vlans in the range don't belong to a network of a different account
         for (int i = startVlan; i <= endVlan; i++) {
             List<DataCenterVnetVO> allocatedVlans =
-                _datacneter_vnet.listAllocatedVnetsInRange(physicalNetwork.getDataCenterId(), physicalNetwork.getId(), startVlan, endVlan);
+                _datacneterVnet.listAllocatedVnetsInRange(physicalNetwork.getDataCenterId(), physicalNetwork.getId(), startVlan, endVlan);
             if (allocatedVlans != null && !allocatedVlans.isEmpty()) {
                 for (DataCenterVnetVO allocatedVlan : allocatedVlans) {
                     if (allocatedVlan.getAccountId() != vlanOwner.getAccountId()) {
@@ -3098,7 +3098,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
                     List<Integer> vlanTokens2 = getVlanFromRange(guestVlanMaps.get(i + 1).getGuestVlanRange());
                     // Range extends 2 vlan ranges, both to the right and left
                     if (endVlan == (vlanTokens2.get(0).intValue() - 1) & guestVlanMaps.get(i + 1).getAccountId() == vlanOwnerId) {
-                        _datacneter_vnet.releaseDedicatedGuestVlans(guestVlanMaps.get(i + 1).getId());
+                        _datacneterVnet.releaseDedicatedGuestVlans(guestVlanMaps.get(i + 1).getId());
                         _accountGuestVlanMapDao.remove(guestVlanMaps.get(i + 1).getId());
                         updatedVlanRange = vlanTokens1.get(0).intValue() + "-" + vlanTokens2.get(1).intValue();
                         break;
@@ -3122,9 +3122,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         // For every guest vlan set the corresponding account guest vlan map id
         List<Integer> finaVlanTokens = getVlanFromRange(accountGuestVlanMapVO.getGuestVlanRange());
         for (int i = finaVlanTokens.get(0).intValue(); i <= finaVlanTokens.get(1).intValue(); i++) {
-            List<DataCenterVnetVO> dataCenterVnet = _datacneter_vnet.findVnet(physicalNetwork.getDataCenterId(), physicalNetworkId, ((Integer)i).toString());
+            List<DataCenterVnetVO> dataCenterVnet = _datacneterVnet.findVnet(physicalNetwork.getDataCenterId(), physicalNetworkId, ((Integer)i).toString());
             dataCenterVnet.get(0).setAccountGuestVlanMapId(accountGuestVlanMapVO.getId());
-            _datacneter_vnet.update(dataCenterVnet.get(0).getId(), dataCenterVnet.get(0));
+            _datacneterVnet.update(dataCenterVnet.get(0).getId(), dataCenterVnet.get(0));
         }
         return accountGuestVlanMapVO;
     }
@@ -3236,7 +3236,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         }
 
         // Remove dedication for the guest vlan
-        _datacneter_vnet.releaseDedicatedGuestVlans(dedicatedGuestVlan.getId());
+        _datacneterVnet.releaseDedicatedGuestVlans(dedicatedGuestVlan.getId());
         if (_accountGuestVlanMapDao.remove(dedicatedGuestVlanRangeId)) {
             return true;
         } else {
@@ -3764,22 +3764,22 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         return nsp;
     }
 
-	private PhysicalNetworkServiceProvider addDefaultOvsToPhysicalNetwork(long physicalNetworkId) {
-		PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, Network.Provider.Ovs.getName(), null, null);
-		NetworkElement networkElement = _networkModel.getElementImplementingProvider(Network.Provider.Ovs.getName());
-		if (networkElement == null) {
+    private PhysicalNetworkServiceProvider addDefaultOvsToPhysicalNetwork(long physicalNetworkId) {
+        PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, Network.Provider.Ovs.getName(), null, null);
+        NetworkElement networkElement = _networkModel.getElementImplementingProvider(Network.Provider.Ovs.getName());
+        if (networkElement == null) {
             throw new CloudRuntimeException("Unable to find the Network Element implementing the Ovs Provider");
         }
-		OvsProviderVO element = _ovsProviderDao.findByNspId(nsp.getId());
-		if (element != null) {
-			s_logger.debug("There is already a Ovs element with service provider id "
-					+ nsp.getId());
-			return nsp;
-		}
-		element = new OvsProviderVO(nsp.getId());
-		_ovsProviderDao.persist(element);
-		return nsp;
-	}
+        OvsProviderVO element = _ovsProviderDao.findByNspId(nsp.getId());
+        if (element != null) {
+            s_logger.debug("There is already a Ovs element with service provider id "
+                + nsp.getId());
+            return nsp;
+        }
+        element = new OvsProviderVO(nsp.getId());
+        _ovsProviderDao.persist(element);
+        return nsp;
+    }
 
     protected PhysicalNetworkServiceProvider addDefaultVpcVirtualRouterToPhysicalNetwork(long physicalNetworkId) {
 

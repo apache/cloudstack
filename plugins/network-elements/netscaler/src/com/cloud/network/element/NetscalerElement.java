@@ -383,7 +383,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
         if (cmd.isExclusiveGslbProvider() && !cmd.isGslbProvider()) {
             throw new InvalidParameterValueException("NetScaler can be provisioned to be exclusive GSLB service provider" +
-                    " only if its being configured as GSLB service provider also.");
+                " only if its being configured as GSLB service provider also.");
         }
 
         ExternalLoadBalancerDeviceVO lbDeviceVO =

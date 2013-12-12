@@ -114,9 +114,9 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implem
     }
 
     @Override
-    public VMSnapshotVO findByName(Long vm_id, String name) {
+    public VMSnapshotVO findByName(Long vmId, String name) {
         SearchCriteria<VMSnapshotVO> sc = AllFieldsSearch.create();
-        sc.setParameters("vm_id", vm_id);
+        sc.setParameters("vm_id", vmId);
         sc.setParameters("display_name", name);
         return null;
     }

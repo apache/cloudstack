@@ -41,12 +41,12 @@ import com.cloud.utils.script.Script;
 
 public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
 
-    private String _ip;
-    private String _username;
-    private String _password;
+    private final String _ip;
+    private final String _username;
+    private final String _password;
     private String _cookie;
 
-    private final Logger s_logger = Logger.getLogger(CiscoVnmcConnectionImpl.class);
+    private static final Logger s_logger = Logger.getLogger(CiscoVnmcConnectionImpl.class);
 
     private enum VnmcXml {
         LOGIN("login.xml", "mgmt-controller"),
@@ -108,13 +108,12 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
         ASSIGN_ASA1000V("assoc-asa1000v.xml", "resource-mgr"),
         UNASSIGN_ASA1000V("disassoc-asa1000v.xml", "resource-mgr");
 
-        private String scriptsDir = "scripts/network/cisco";
+        private final String scriptsDir = "scripts/network/cisco";
         private String xml;
         private String service;
-        private final Logger s_logger = Logger.getLogger(CiscoVnmcConnectionImpl.class);
 
         private VnmcXml(String filename, String service) {
-            this.xml = getXml(filename);
+            xml = getXml(filename);
             this.service = service;
         }
 
@@ -153,9 +152,9 @@ public class CiscoVnmcConnectionImpl implements CiscoVnmcConnection {
     }
 
     public CiscoVnmcConnectionImpl(String hostIp, String userName, String password) {
-        this._ip = hostIp;
-        this._username = userName;
-        this._password = password;
+        _ip = hostIp;
+        _username = userName;
+        _password = password;
 
     }
 

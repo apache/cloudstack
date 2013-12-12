@@ -1015,7 +1015,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setPublicEndPort(Integer.toString(fwRule.getSourcePortEnd()));
         List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(fwRule.getId());
         response.setCidrList(StringUtils.join(cidrs, ","));
-        
+
         Network guestNtwk = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
         response.setNetworkId(guestNtwk.getUuid());
 
@@ -2380,10 +2380,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setPublicIpAddressId(ip.getUuid());
             response.setPublicIpAddress(ip.getAddress().addr());
         }
-        
+
         Network network = ApiDBUtils.findNetworkById(fwRule.getNetworkId());
         response.setNetworkId(network.getUuid());
-        
+
         FirewallRule.State state = fwRule.getState();
         String stateToSet = state.toString();
         if (state.equals(FirewallRule.State.Revoke)) {
@@ -2728,21 +2728,21 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
-	@Override
-	public OvsProviderResponse createOvsProviderResponse(OvsProvider result) {
+    @Override
+    public OvsProviderResponse createOvsProviderResponse(OvsProvider result) {
 
-		OvsProviderResponse response = new OvsProviderResponse();
-		response.setId(result.getUuid());
-		PhysicalNetworkServiceProvider nsp = ApiDBUtils
-				.findPhysicalNetworkServiceProviderById(result.getNspId());
-		if (nsp != null) {
-			response.setNspId(nsp.getUuid());
-		}
-		response.setEnabled(result.isEnabled());
+        OvsProviderResponse response = new OvsProviderResponse();
+        response.setId(result.getUuid());
+        PhysicalNetworkServiceProvider nsp = ApiDBUtils
+            .findPhysicalNetworkServiceProviderById(result.getNspId());
+        if (nsp != null) {
+            response.setNspId(nsp.getUuid());
+        }
+        response.setEnabled(result.isEnabled());
 
-		response.setObjectName("ovselement");
-		return response;
-	}
+        response.setObjectName("ovselement");
+        return response;
+    }
 
     @Override
     public LBStickinessResponse createLBStickinessPolicyResponse(StickinessPolicy stickinessPolicy, LoadBalancer lb) {
@@ -3013,7 +3013,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setState(result.getState().toString());
         response.setSourceNat(result.getSourceNat());
 
-        NetworkACL acl =  ApiDBUtils.findByNetworkACLId(result.getNetworkACLId());
+        NetworkACL acl = ApiDBUtils.findByNetworkACLId(result.getNetworkACLId());
         if (acl != null) {
             response.setAclId(acl.getUuid());
         }
@@ -3736,7 +3736,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public PortableIpResponse createPortableIPResponse(PortableIp portableIp) {
         PortableIpResponse response = new PortableIpResponse();
         response.setAddress(portableIp.getAddress());
-        Long accountId =  portableIp.getAllocatedInDomainId();
+        Long accountId = portableIp.getAllocatedInDomainId();
         if (accountId != null) {
             Account account = ApiDBUtils.findAccountById(accountId);
             response.setAllocatedToAccountId(account.getAccountName());

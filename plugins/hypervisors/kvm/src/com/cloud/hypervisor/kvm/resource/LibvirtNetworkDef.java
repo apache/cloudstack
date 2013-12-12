@@ -35,14 +35,14 @@ public class LibvirtNetworkDef {
     private String _brIPAddr;
     private String _brNetMask;
     private final List<IPRange> ipranges = new ArrayList<IPRange>();
-    private final List<dhcpMapping> dhcpMaps = new ArrayList<dhcpMapping>();
+    private final List<DhcpMapping> dhcpMaps = new ArrayList<DhcpMapping>();
 
-    public static class dhcpMapping {
+    public static class DhcpMapping {
         String _mac;
         String _name;
         String _ip;
 
-        public dhcpMapping(String mac, String name, String ip) {
+        public DhcpMapping(String mac, String name, String ip) {
             _mac = mac;
             _name = name;
             _ip = ip;
@@ -100,7 +100,7 @@ public class LibvirtNetworkDef {
     }
 
     public void adddhcpMapping(String mac, String host, String ip) {
-        dhcpMapping map = new dhcpMapping(mac, host, ip);
+        DhcpMapping map = new DhcpMapping(mac, host, ip);
         dhcpMaps.add(map);
     }
 
@@ -153,7 +153,7 @@ public class LibvirtNetworkDef {
                 for (IPRange ip : ipranges) {
                     netBuilder.append("<range start='" + ip._start + "'" + " end='" + ip._end + "'/>\n");
                 }
-                for (dhcpMapping map : dhcpMaps) {
+                for (DhcpMapping map : dhcpMaps) {
                     netBuilder.append("<host mac='" + map._mac + "' name='" + map._name + "' ip='" + map._ip + "'/>\n");
                 }
                 netBuilder.append("</dhcp>\n");

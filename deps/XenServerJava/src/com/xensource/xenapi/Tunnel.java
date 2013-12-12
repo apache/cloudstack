@@ -28,7 +28,6 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 package com.xensource.xenapi;
 
 import com.xensource.xenapi.Types.BadServerResponse;
@@ -61,14 +60,14 @@ public class Tunnel extends XenAPIObject {
      * For internal use only.
      */
     Tunnel(String ref) {
-       this.ref = ref;
+        this.ref = ref;
     }
 
     /**
      * @return The XenAPI reference (OpaqueRef) to this object.
      */
     public String toWireString() {
-       return this.ref;
+        return this.ref;
     }
 
     /**
@@ -79,7 +78,7 @@ public class Tunnel extends XenAPIObject {
     {
         if (obj != null && obj instanceof Tunnel)
         {
-            Tunnel other = (Tunnel) obj;
+            Tunnel other = (Tunnel)obj;
             return other.ref.equals(this.ref);
         } else
         {
@@ -111,8 +110,8 @@ public class Tunnel extends XenAPIObject {
         /**
          * Convert a tunnel.Record to a Map
          */
-        public Map<String,Object> toMap() {
-            Map<String,Object> map = new HashMap<String,Object>();
+        public Map<String, Object> toMap() {
+            Map<String, Object> map = new HashMap<String, Object>();
             map.put("uuid", this.uuid == null ? "" : this.uuid);
             map.put("access_PIF", this.accessPIF == null ? new PIF("OpaqueRef:NULL") : this.accessPIF);
             map.put("transport_PIF", this.transportPIF == null ? new PIF("OpaqueRef:NULL") : this.transportPIF);
@@ -149,15 +148,15 @@ public class Tunnel extends XenAPIObject {
      * @return all fields from the object
      */
     public Tunnel.Record getRecord(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "tunnel.get_record";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toTunnelRecord(result);
+        return Types.toTunnelRecord(result);
     }
 
     /**
@@ -167,15 +166,15 @@ public class Tunnel extends XenAPIObject {
      * @return reference to the object
      */
     public static Tunnel getByUuid(Connection c, String uuid) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "tunnel.get_by_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toTunnel(result);
+        return Types.toTunnel(result);
     }
 
     /**
@@ -184,15 +183,15 @@ public class Tunnel extends XenAPIObject {
      * @return value of the field
      */
     public String getUuid(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "tunnel.get_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -201,15 +200,15 @@ public class Tunnel extends XenAPIObject {
      * @return value of the field
      */
     public PIF getAccessPIF(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "tunnel.get_access_PIF";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toPIF(result);
+        return Types.toPIF(result);
     }
 
     /**
@@ -218,15 +217,15 @@ public class Tunnel extends XenAPIObject {
      * @return value of the field
      */
     public PIF getTransportPIF(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "tunnel.get_transport_PIF";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toPIF(result);
+        return Types.toPIF(result);
     }
 
     /**
@@ -235,15 +234,15 @@ public class Tunnel extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getStatus(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "tunnel.get_status";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+        return Types.toMapOfStringString(result);
     }
 
     /**
@@ -252,15 +251,15 @@ public class Tunnel extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getOtherConfig(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "tunnel.get_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+        return Types.toMapOfStringString(result);
     }
 
     /**
@@ -269,9 +268,9 @@ public class Tunnel extends XenAPIObject {
      * @param status New value to set
      */
     public void setStatus(Connection c, Map<String, String> status) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "tunnel.set_status";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(status)};
@@ -286,9 +285,9 @@ public class Tunnel extends XenAPIObject {
      * @param value Value to add
      */
     public void addToStatus(Connection c, String key, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "tunnel.add_to_status";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
@@ -302,9 +301,9 @@ public class Tunnel extends XenAPIObject {
      * @param key Key to remove
      */
     public void removeFromStatus(Connection c, String key) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "tunnel.remove_from_status";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
@@ -318,9 +317,9 @@ public class Tunnel extends XenAPIObject {
      * @param otherConfig New value to set
      */
     public void setOtherConfig(Connection c, Map<String, String> otherConfig) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "tunnel.set_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(otherConfig)};
@@ -335,9 +334,9 @@ public class Tunnel extends XenAPIObject {
      * @param value Value to add
      */
     public void addToOtherConfig(Connection c, String key, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "tunnel.add_to_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
@@ -351,9 +350,9 @@ public class Tunnel extends XenAPIObject {
      * @param key Key to remove
      */
     public void removeFromOtherConfig(Connection c, String key) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "tunnel.remove_from_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
@@ -369,12 +368,12 @@ public class Tunnel extends XenAPIObject {
      * @return Task
      */
     public static Task createAsync(Connection c, PIF transportPIF, Network network) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException,
-       Types.OpenvswitchNotActive,
-       Types.TransportPifNotConfigured,
-       Types.IsTunnelAccessPif {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException,
+        Types.OpenvswitchNotActive,
+        Types.TransportPifNotConfigured,
+        Types.IsTunnelAccessPif {
         String method_call = "Async.tunnel.create";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(transportPIF), Marshalling.toXMLRPC(network)};
@@ -391,18 +390,18 @@ public class Tunnel extends XenAPIObject {
      * @return The reference of the created tunnel object
      */
     public static Tunnel create(Connection c, PIF transportPIF, Network network) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException,
-       Types.OpenvswitchNotActive,
-       Types.TransportPifNotConfigured,
-       Types.IsTunnelAccessPif {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException,
+        Types.OpenvswitchNotActive,
+        Types.TransportPifNotConfigured,
+        Types.IsTunnelAccessPif {
         String method_call = "tunnel.create";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(transportPIF), Marshalling.toXMLRPC(network)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toTunnel(result);
+        return Types.toTunnel(result);
     }
 
     /**
@@ -411,9 +410,9 @@ public class Tunnel extends XenAPIObject {
      * @return Task
      */
     public Task destroyAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.tunnel.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -427,9 +426,9 @@ public class Tunnel extends XenAPIObject {
      *
      */
     public void destroy(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "tunnel.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -443,15 +442,15 @@ public class Tunnel extends XenAPIObject {
      * @return references to all objects
      */
     public static Set<Tunnel> getAll(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "tunnel.get_all";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfTunnel(result);
+        return Types.toSetOfTunnel(result);
     }
 
     /**
@@ -460,15 +459,15 @@ public class Tunnel extends XenAPIObject {
      * @return records of all objects
      */
     public static Map<Tunnel, Tunnel.Record> getAllRecords(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "tunnel.get_all_records";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfTunnelTunnelRecord(result);
+        return Types.toMapOfTunnelTunnelRecord(result);
     }
 
 }

@@ -72,10 +72,10 @@ public class NetUtils {
     public final static int DEFAULT_AUTOSCALE_VM_DESTROY_TIME = 2 * 60; // Grace period before Vm is destroyed
     public final static int DEFAULT_AUTOSCALE_POLICY_INTERVAL_TIME = 30;
     public final static int DEFAULT_AUTOSCALE_POLICY_QUIET_TIME = 5 * 60;
-    private final static Random _rand = new Random(System.currentTimeMillis());
+    private final static Random s_rand = new Random(System.currentTimeMillis());
 
     public static long createSequenceBasedMacAddress(long macAddress) {
-        return macAddress | 0x060000000000l | (((long)_rand.nextInt(32768) << 25) & 0x00fffe000000l);
+        return macAddress | 0x060000000000l | (((long)s_rand.nextInt(32768) << 25) & 0x00fffe000000l);
     }
 
     public static String getHostName() {
@@ -702,7 +702,7 @@ public class NetUtils {
         //e.g., cidr = 192.168.10.0, size = /24, avoid = 192.168.10.1, 192.168.10.20, 192.168.10.254
         // range = 2^8 - 1 - 3 = 252
         range = range - avoid.size();
-        int next = _rand.nextInt(range); //note: nextInt excludes last value
+        int next = s_rand.nextInt(range); //note: nextInt excludes last value
         long ip = startIp + next;
         for (Long avoidable : avoid) {
             if (ip >= avoidable) {
@@ -1234,9 +1234,9 @@ public class NetUtils {
         String startIp = ips[0];
         IPv6Address start = IPv6Address.fromString(startIp);
         BigInteger gap = countIp6InRange(ip6Range);
-        BigInteger next = new BigInteger(gap.bitLength(), _rand);
+        BigInteger next = new BigInteger(gap.bitLength(), s_rand);
         while (next.compareTo(gap) >= 0) {
-            next = new BigInteger(gap.bitLength(), _rand);
+            next = new BigInteger(gap.bitLength(), s_rand);
         }
         BigInteger startInt = convertIPv6AddressToBigInteger(start);
         BigInteger resultInt = startInt.add(next);

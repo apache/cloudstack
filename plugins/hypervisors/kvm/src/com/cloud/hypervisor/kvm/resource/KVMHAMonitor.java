@@ -42,7 +42,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
             this._storagePool.put(pool._poolUUID, pool);
         }
         this._hostIP = host;
-        KVMHABase._heartBeatPath = scriptPath;
+        KVMHABase.s_heartBeatPath = scriptPath;
     }
 
     public void addStoragePool(NfsStoragePool pool) {
@@ -109,7 +109,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
                     String result = null;
                     for (int i = 0; i < 5; i++) {
-                        Script cmd = new Script(_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
+                        Script cmd = new Script(s_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
                         cmd.add("-i", primaryStoragePool._poolIp);
                         cmd.add("-p", primaryStoragePool._poolMountSourcePath);
                         cmd.add("-m", primaryStoragePool._mountDestPath);
@@ -124,7 +124,7 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
 
                     if (result != null) {
                         s_logger.warn("write heartbeat failed: " + result + "; reboot the host");
-                        Script cmd = new Script(_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
+                        Script cmd = new Script(s_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
                         cmd.add("-i", primaryStoragePool._poolIp);
                         cmd.add("-p", primaryStoragePool._poolMountSourcePath);
                         cmd.add("-m", primaryStoragePool._mountDestPath);

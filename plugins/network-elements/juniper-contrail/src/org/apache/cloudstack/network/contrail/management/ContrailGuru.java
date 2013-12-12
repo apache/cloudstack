@@ -70,7 +70,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
     NicDao _nicDao;
 
     private static final Logger s_logger = Logger.getLogger(ContrailGuru.class);
-    private static final TrafficType[] _trafficTypes = {TrafficType.Guest};
+    private static final TrafficType[] TrafficTypes = {TrafficType.Guest};
 
     private boolean canHandle(NetworkOffering offering) {
         return (offering.getName().equals(ContrailManager.offeringName));
@@ -303,12 +303,12 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public TrafficType[] getSupportedTrafficType() {
-        return _trafficTypes;
+        return TrafficTypes;
     }
 
     @Override
     public boolean isMyTrafficType(TrafficType type) {
-        for (TrafficType t : _trafficTypes) {
+        for (TrafficType t : TrafficTypes) {
             if (t == type) {
                 return true;
             }

@@ -20,8 +20,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.cloud.network.vpc.*;
-import com.cloud.network.vpc.dao.VpcDao;
 import junit.framework.TestCase;
 
 import org.apache.log4j.Logger;
@@ -50,7 +48,19 @@ import org.apache.cloudstack.test.utils.SpringUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.NetworkACLItemDao;
+import com.cloud.network.vpc.NetworkACLItemVO;
+import com.cloud.network.vpc.NetworkACLManager;
+import com.cloud.network.vpc.NetworkACLService;
+import com.cloud.network.vpc.NetworkACLServiceImpl;
+import com.cloud.network.vpc.NetworkACLVO;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcService;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
@@ -82,7 +92,6 @@ public class NetworkACLServiceTest extends TestCase {
     VpcDao _vpcDao;
     @Inject
     VpcService _vpcSrv;
-
 
     private CreateNetworkACLCmd createACLItemCmd;
     private NetworkACLVO acl;
@@ -244,7 +253,7 @@ public class NetworkACLServiceTest extends TestCase {
         }
 
         @Bean
-        public VpcDao vpcDao () {
+        public VpcDao vpcDao() {
             return Mockito.mock(VpcDao.class);
         }
 
@@ -252,7 +261,6 @@ public class NetworkACLServiceTest extends TestCase {
         public VpcService vpcService() {
             return Mockito.mock(VpcService.class);
         }
-
 
         public static class Library implements TypeFilter {
             @Override

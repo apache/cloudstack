@@ -828,7 +828,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
                     HostPodVO podVO = _podDao.findById(host.getPodId());
                     String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
-                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host in ALERT state, " + hostDesc, "In availability zone " + host.getDataCenterId()
+                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host in ALERT state, " + hostDesc,
+                        "In availability zone " + host.getDataCenterId()
                             + ", host is in alert state: " + host.getId() + "-" + host.getName());
                 }
             } else {

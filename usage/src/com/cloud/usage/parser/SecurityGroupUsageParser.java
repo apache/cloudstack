@@ -41,8 +41,8 @@ import com.cloud.utils.Pair;
 public class SecurityGroupUsageParser {
     public static final Logger s_logger = Logger.getLogger(SecurityGroupUsageParser.class.getName());
 
-    private static UsageDao m_usageDao;
-    private static UsageSecurityGroupDao m_usageSecurityGroupDao;
+    private static UsageDao s_usageDao;
+    private static UsageSecurityGroupDao s_usageSecurityGroupDao;
 
     @Inject
     private UsageDao _usageDao;
@@ -51,8 +51,8 @@ public class SecurityGroupUsageParser {
 
     @PostConstruct
     void init() {
-        m_usageDao = _usageDao;
-        m_usageSecurityGroupDao = _usageSecurityGroupDao;
+        s_usageDao = _usageDao;
+        s_usageSecurityGroupDao = _usageSecurityGroupDao;
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
@@ -68,7 +68,7 @@ public class SecurityGroupUsageParser {
         //     - look for an entry for accountId with end date in the given range
         //     - look for an entry for accountId with end date null (currently running vm or owned IP)
         //     - look for an entry for accountId with start date before given range *and* end date after given range
-        List<UsageSecurityGroupVO> usageSGs = m_usageSecurityGroupDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
+        List<UsageSecurityGroupVO> usageSGs = s_usageSecurityGroupDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
 
         if (usageSGs.isEmpty()) {
             s_logger.debug("No SecurityGroup usage events for this period");
@@ -152,7 +152,7 @@ public class SecurityGroupUsageParser {
         UsageVO usageRecord =
             new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), vmId, null, null, null, sgId, null,
                 startDate, endDate);
-        m_usageDao.persist(usageRecord);
+        s_usageDao.persist(usageRecord);
     }
 
     private static class SGInfo {

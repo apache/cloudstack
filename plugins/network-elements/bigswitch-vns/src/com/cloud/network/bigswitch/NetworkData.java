@@ -17,20 +17,20 @@
 package com.cloud.network.bigswitch;
 
 public class NetworkData {
-    private Network network;
+    private final Network network;
 
     public Network getNetwork() {
-        return this.network;
+        return network;
     }
 
     public NetworkData() {
-        this.network = new Network();
+        network = new Network();
     }
 
     public class Network {
         private String id;
         private String name;
-        private String tenant_id;
+        private String tenantId;
         private int vlan;
         private String gateway;
         private String state;
@@ -43,20 +43,20 @@ public class NetworkData {
             this.id = id;
         }
 
-        public String getDisplay_name() {
+        public String getDisplayName() {
             return name;
         }
 
-        public void setDisplay_name(String display_name) {
-            this.name = display_name;
+        public void setDisplay_name(String displayName) {
+            name = displayName;
         }
 
-        public String getTenant_id() {
-            return tenant_id;
+        public String getTenantId() {
+            return tenantId;
         }
 
-        public void setTenant_id(String tenant_id) {
-            this.tenant_id = tenant_id;
+        public void setTenantId(String tenantId) {
+            this.tenantId = tenantId;
         }
 
         public int getVlan() {

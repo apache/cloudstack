@@ -42,8 +42,8 @@ import com.cloud.utils.Pair;
 public class StorageUsageParser {
     public static final Logger s_logger = Logger.getLogger(StorageUsageParser.class.getName());
 
-    private static UsageDao m_usageDao;
-    private static UsageStorageDao m_usageStorageDao;
+    private static UsageDao s_usageDao;
+    private static UsageStorageDao s_usageStorageDao;
 
     @Inject
     private UsageDao _usageDao;
@@ -52,8 +52,8 @@ public class StorageUsageParser {
 
     @PostConstruct
     void init() {
-        m_usageDao = _usageDao;
-        m_usageStorageDao = _usageStorageDao;
+        s_usageDao = _usageDao;
+        s_usageStorageDao = _usageStorageDao;
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
@@ -69,7 +69,7 @@ public class StorageUsageParser {
         //     - look for an entry for accountId with end date in the given range
         //     - look for an entry for accountId with end date null (currently running vm or owned IP)
         //     - look for an entry for accountId with start date before given range *and* end date after given range
-        List<UsageStorageVO> usageUsageStorages = m_usageStorageDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
+        List<UsageStorageVO> usageUsageStorages = s_usageStorageDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
 
         if (usageUsageStorages.isEmpty()) {
             s_logger.debug("No Storage usage events for this period");
@@ -183,7 +183,7 @@ public class StorageUsageParser {
         UsageVO usageRecord =
             new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", usage_type, new Double(usage), null, null, null, tmplSourceId,
                 storageId, size, virtualSize, startDate, endDate);
-        m_usageDao.persist(usageRecord);
+        s_usageDao.persist(usageRecord);
     }
 
     private static class StorageInfo {

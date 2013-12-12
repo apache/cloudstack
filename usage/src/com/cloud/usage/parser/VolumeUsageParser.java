@@ -41,8 +41,8 @@ import com.cloud.utils.Pair;
 public class VolumeUsageParser {
     public static final Logger s_logger = Logger.getLogger(VolumeUsageParser.class.getName());
 
-    private static UsageDao m_usageDao;
-    private static UsageVolumeDao m_usageVolumeDao;
+    private static UsageDao s_usageDao;
+    private static UsageVolumeDao s_usageVolumeDao;
 
     @Inject
     private UsageDao _usageDao;
@@ -51,8 +51,8 @@ public class VolumeUsageParser {
 
     @PostConstruct
     void init() {
-        m_usageDao = _usageDao;
-        m_usageVolumeDao = _usageVolumeDao;
+        s_usageDao = _usageDao;
+        s_usageVolumeDao = _usageVolumeDao;
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
@@ -68,7 +68,7 @@ public class VolumeUsageParser {
         //     - look for an entry for accountId with end date in the given range
         //     - look for an entry for accountId with end date null (currently running vm or owned IP)
         //     - look for an entry for accountId with start date before given range *and* end date after given range
-        List<UsageVolumeVO> usageUsageVols = m_usageVolumeDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
+        List<UsageVolumeVO> usageUsageVols = s_usageVolumeDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
 
         if (usageUsageVols.isEmpty()) {
             s_logger.debug("No volume usage events for this period");
@@ -164,7 +164,7 @@ public class VolumeUsageParser {
         UsageVO usageRecord =
             new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), null, null, doId, templateId, volId,
                 size, startDate, endDate);
-        m_usageDao.persist(usageRecord);
+        s_usageDao.persist(usageRecord);
     }
 
     private static class VolInfo {

@@ -199,21 +199,21 @@ public class VirtualMachineModel extends ModelObjectBase {
 
     boolean isActiveInstance(VMInstanceVO instance) {
         switch (instance.getState()) {
-        case Migrating:
-        case Starting:
-        case Running:
-        case Shutdowned:
-        case Stopped:
-        case Stopping:
-            return true;
+            case Migrating:
+            case Starting:
+            case Running:
+            case Shutdowned:
+            case Stopped:
+            case Stopping:
+                return true;
 
-        case Destroyed:
-        case Error:
-        case Expunging:
-            return false;
+            case Destroyed:
+            case Error:
+            case Expunging:
+                return false;
 
-        default:
-            s_logger.warn("Unknown VMInstance state " + instance.getState().getDescription());
+            default:
+                s_logger.warn("Unknown VMInstance state " + instance.getState().getDescription());
         }
         return true;
     }
@@ -257,17 +257,17 @@ public class VirtualMachineModel extends ModelObjectBase {
             String tag;
 
             switch (nic.getDeviceId()) {
-            case 0:
-                tag = "management";
-                break;
-            case 1:
-                tag = "left";
-                break;
-            case 2:
-                tag = "right";
-                break;
-            default:
-                tag = null;
+                case 0:
+                    tag = "management";
+                    break;
+                case 1:
+                    tag = "left";
+                    break;
+                case 2:
+                    tag = "right";
+                    break;
+                default:
+                    tag = null;
             }
 
             VMInterfaceModel vmiModel = getVMInterface(nic.getUuid());

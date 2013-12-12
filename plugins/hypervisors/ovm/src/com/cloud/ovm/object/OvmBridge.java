@@ -42,7 +42,7 @@ public class OvmBridge extends OvmObject {
     }
 
     public static List<String> getAllBridges(Connection c) throws XmlRpcException {
-        String res = (String)c.call("OvmNetwork.getAllBridges", Coder.EMPTY_PARAMS);
+        String res = (String)c.call("OvmNetwork.getAllBridges", Coder.s_emptyParams);
         return Coder.listFromJson(res);
     }
 

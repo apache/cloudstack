@@ -301,7 +301,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _ovsPvlanDhcpHostPath;
     private String _ovsPvlanVmPath;
     private String _routerProxyPath;
-	private String _ovsTunnelPath;
+    private String _ovsTunnelPath;
     private String _host;
     private String _dcId;
     private String _pod;
@@ -311,9 +311,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private long _hvVersion;
     private long _kernelVersion;
     private KVMHAMonitor _monitor;
-    private final String _SSHKEYSPATH = "/root/.ssh";
-    private final String _SSHPRVKEYPATH = _SSHKEYSPATH + File.separator + "id_rsa.cloud";
-    private final String _SSHPUBKEYPATH = _SSHKEYSPATH + File.separator + "id_rsa.pub.cloud";
+    private static final String SSHKEYSPATH = "/root/.ssh";
+    private static final String SSHPRVKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.cloud";
+    private static final String SSHPUBKEYPATH = SSHKEYSPATH + File.separator + "id_rsa.pub.cloud";
     private String _mountPoint = "/mnt";
     StorageLayer _storage;
     private KVMStoragePoolManager _storagePoolMgr;
@@ -355,7 +355,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return null;
     }
 
-    protected static MessageFormat SnapshotXML = new MessageFormat("   <domainsnapshot>" + "       <name>{0}</name>" + "          <domain>"
+    protected static final MessageFormat SnapshotXML = new MessageFormat("   <domainsnapshot>" + "       <name>{0}</name>" + "          <domain>"
         + "            <uuid>{1}</uuid>" + "        </domain>" + "    </domainsnapshot>");
 
     protected HypervisorType _hypervisorType;
@@ -374,13 +374,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String _privateIp;
     protected String _pool;
     protected String _localGateway;
-    private boolean _can_bridge_firewall;
+    private boolean _canBridgeFirewall;
     protected String _localStoragePath;
     protected String _localStorageUUID;
     protected String _guestCpuMode;
     protected String _guestCpuModel;
     private final Map<String, String> _pifs = new HashMap<String, String>();
-    private final Map<String, vmStats> _vmStats = new ConcurrentHashMap<String, vmStats>();
+    private final Map<String, VmStats> _vmStats = new ConcurrentHashMap<String, VmStats>();
 
     protected boolean _disconnected = true;
     protected int _timeout;
@@ -607,10 +607,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find the security_group.py");
         }
 
-	_ovsTunnelPath = Script.findScript(networkScriptsDir, "ovstunnel.py");
-	if (_ovsTunnelPath == null) {
-		throw new ConfigurationException("Unable to find the ovstunnel.py");
-	}
+        _ovsTunnelPath = Script.findScript(networkScriptsDir, "ovstunnel.py");
+        if (_ovsTunnelPath == null) {
+            throw new ConfigurationException("Unable to find the ovstunnel.py");
+        }
 
         _routerProxyPath = Script.findScript("scripts/network/domr/", "router_proxy.sh");
         if (_routerProxyPath == null) {
@@ -816,7 +816,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         s_logger.debug("Found pif: " + _pifs.get("private") + " on " + _privBridgeName + ", pif: " + _pifs.get("public") + " on " + _publicBridgeName);
 
-        _can_bridge_firewall = can_bridge_firewall(_pifs.get("public"));
+        _canBridgeFirewall = can_bridge_firewall(_pifs.get("public"));
 
         _localGateway = Script.runSimpleBashScript("ip route |grep default|awk '{print $3}'");
         if (_localGateway == null) {
@@ -1284,17 +1284,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return execute((SetMonitorServiceCommand)cmd);
             } else if (cmd instanceof CheckOnHostCommand) {
                 return execute((CheckOnHostCommand)cmd);
-	    } else if (cmd instanceof OvsFetchInterfaceCommand) {
-		return execute((OvsFetchInterfaceCommand) cmd);
-		} else if (cmd instanceof OvsSetupBridgeCommand) {
-			return execute((OvsSetupBridgeCommand) cmd);
-		} else if (cmd instanceof OvsDestroyBridgeCommand) {
-			return execute((OvsDestroyBridgeCommand) cmd);
-		} else if (cmd instanceof OvsCreateTunnelCommand) {
-			return execute((OvsCreateTunnelCommand) cmd);
-		} else if (cmd instanceof OvsDestroyTunnelCommand) {
-			return execute((OvsDestroyTunnelCommand) cmd);
-		} else {
+            } else if (cmd instanceof OvsFetchInterfaceCommand) {
+                return execute((OvsFetchInterfaceCommand)cmd);
+            } else if (cmd instanceof OvsSetupBridgeCommand) {
+                return execute((OvsSetupBridgeCommand)cmd);
+            } else if (cmd instanceof OvsDestroyBridgeCommand) {
+                return execute((OvsDestroyBridgeCommand)cmd);
+            } else if (cmd instanceof OvsCreateTunnelCommand) {
+                return execute((OvsCreateTunnelCommand)cmd);
+            } else if (cmd instanceof OvsDestroyTunnelCommand) {
+                return execute((OvsDestroyTunnelCommand)cmd);
+            } else {
                 s_logger.warn("Unsupported command ");
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -1304,173 +1304,173 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private OvsFetchInterfaceAnswer execute(OvsFetchInterfaceCommand cmd) {
-    	String label = cmd.getLabel();
-    	s_logger.debug("Will look for network with name-label:" + label);
-    	try {
-    		String ipadd = Script.runSimpleBashScript("ifconfig " + label + " | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'");
-    		String mask = Script.runSimpleBashScript("ifconfig " + label + " | grep 'inet addr:' | cut -d: -f4");
-    		String mac = Script.runSimpleBashScript("ifconfig " + label + " | grep HWaddr | awk -F \" \" '{print $5}'");
-			return new OvsFetchInterfaceAnswer(cmd, true, "Interface " + label
-					+ " retrieved successfully", ipadd, mask, mac);
+        String label = cmd.getLabel();
+        s_logger.debug("Will look for network with name-label:" + label);
+        try {
+            String ipadd = Script.runSimpleBashScript("ifconfig " + label + " | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}'");
+            String mask = Script.runSimpleBashScript("ifconfig " + label + " | grep 'inet addr:' | cut -d: -f4");
+            String mac = Script.runSimpleBashScript("ifconfig " + label + " | grep HWaddr | awk -F \" \" '{print $5}'");
+            return new OvsFetchInterfaceAnswer(cmd, true, "Interface " + label
+                + " retrieved successfully", ipadd, mask, mac);
 
-		} catch (Exception e) {
-			s_logger.warn("Caught execption when fetching interface", e);
-			return new OvsFetchInterfaceAnswer(cmd, false, "EXCEPTION:"
-					+ e.getMessage());
-    	}
+        } catch (Exception e) {
+            s_logger.warn("Caught execption when fetching interface", e);
+            return new OvsFetchInterfaceAnswer(cmd, false, "EXCEPTION:"
+                + e.getMessage());
+        }
 
     }
 
-	private Answer execute(OvsSetupBridgeCommand cmd) {
-		findOrCreateTunnelNetwork(cmd.getKey());
-		configureTunnelNetwork(cmd.getNetworkId(), cmd.getHostId(),
-				cmd.getKey());
-		s_logger.debug("OVS Bridge configured");
-		return new Answer(cmd, true, null);
-	}
+    private Answer execute(OvsSetupBridgeCommand cmd) {
+        findOrCreateTunnelNetwork(cmd.getKey());
+        configureTunnelNetwork(cmd.getNetworkId(), cmd.getHostId(),
+            cmd.getKey());
+        s_logger.debug("OVS Bridge configured");
+        return new Answer(cmd, true, null);
+    }
 
-	private Answer execute(OvsDestroyBridgeCommand cmd) {
-		destroyTunnelNetwork(cmd.getKey());
-		s_logger.debug("OVS Bridge destroyed");
-		return new Answer(cmd, true, null);
-	}
+    private Answer execute(OvsDestroyBridgeCommand cmd) {
+        destroyTunnelNetwork(cmd.getKey());
+        s_logger.debug("OVS Bridge destroyed");
+        return new Answer(cmd, true, null);
+    }
 
-	private synchronized void destroyTunnelNetwork(int key) {
-		try {
-			findOrCreateTunnelNetwork(key);
-			String bridge = "OVSTunnel" + key;
-			Script cmd = new Script(_ovsTunnelPath, _timeout, s_logger);
-			cmd.add("destroy_ovs_bridge");
-			cmd.add("--bridge", bridge);
-			String result = cmd.execute();
-			if (result != null) {
-				// TODO: Should make this error not fatal?
-				// Can Concurrent VM shutdown/migration/reboot events can cause
-				// this method
-				// to be executed on a bridge which has already been removed?
-				throw new CloudRuntimeException("Unable to remove OVS bridge " + bridge);
-			}
-			return;
-		} catch (Exception e) {
-			s_logger.warn("destroyTunnelNetwork failed:", e);
-			return;
-		}
-	}
+    private synchronized void destroyTunnelNetwork(int key) {
+        try {
+            findOrCreateTunnelNetwork(key);
+            String bridge = "OVSTunnel" + key;
+            Script cmd = new Script(_ovsTunnelPath, _timeout, s_logger);
+            cmd.add("destroy_ovs_bridge");
+            cmd.add("--bridge", bridge);
+            String result = cmd.execute();
+            if (result != null) {
+                // TODO: Should make this error not fatal?
+                // Can Concurrent VM shutdown/migration/reboot events can cause
+                // this method
+                // to be executed on a bridge which has already been removed?
+                throw new CloudRuntimeException("Unable to remove OVS bridge " + bridge);
+            }
+            return;
+        } catch (Exception e) {
+            s_logger.warn("destroyTunnelNetwork failed:", e);
+            return;
+        }
+    }
 
-	private synchronized boolean findOrCreateTunnelNetwork(long key) {
-		try {
-			String nwName = "OVSTunnel" + key;
-			if (checkNetwork(nwName)) {
-				return true;
-			}
-			// if not found, create a new one
-			Map<String, String> otherConfig = new HashMap<String, String>();
-			otherConfig.put("ovs-host-setup", "");
-			Script.runSimpleBashScript("ovs-vsctl -- --may-exist add-br "
-					+ nwName + " -- set bridge " + nwName
-					+ " other_config:ovs_host_setup='-1'");
-			s_logger.debug("### KVM network for tunnels created:" + nwName);
-		} catch (Exception e) {
-			s_logger.warn("createTunnelNetwork failed", e);
-		}
-		return true;
-	}
+    private synchronized boolean findOrCreateTunnelNetwork(long key) {
+        try {
+            String nwName = "OVSTunnel" + key;
+            if (checkNetwork(nwName)) {
+                return true;
+            }
+            // if not found, create a new one
+            Map<String, String> otherConfig = new HashMap<String, String>();
+            otherConfig.put("ovs-host-setup", "");
+            Script.runSimpleBashScript("ovs-vsctl -- --may-exist add-br "
+                + nwName + " -- set bridge " + nwName
+                + " other_config:ovs_host_setup='-1'");
+            s_logger.debug("### KVM network for tunnels created:" + nwName);
+        } catch (Exception e) {
+            s_logger.warn("createTunnelNetwork failed", e);
+        }
+        return true;
+    }
 
-	private synchronized boolean configureTunnelNetwork(long networkId,
-			long hostId, int key) {
-		try {
-			findOrCreateTunnelNetwork(key);
-			String nwName = "OVSTunnel" + key;
-			String configuredHosts = Script
-					.runSimpleBashScript("ovs-vsctl get bridge " + nwName
-							+ " other_config:ovs_host_setup");
-			boolean configured = false;
-			if (configuredHosts != null) {
-				String hostIdsStr[] = configuredHosts.split(",");
-				for (String hostIdStr : hostIdsStr) {
-					if (hostIdStr.equals(((Long) hostId).toString())) {
-						configured = true;
-						break;
-					}
-				}
-			}
-			if (!configured) {
-				Script cmd = new Script(_ovsTunnelPath, _timeout, s_logger);
-				cmd.add("setup_ovs_bridge");
-				cmd.add("--key", String.valueOf(key));
-				cmd.add("--cs_host_id", ((Long) hostId).toString());
-				cmd.add("--bridge", nwName);
-				String result = cmd.execute();
-				if (result != null) {
-					throw new CloudRuntimeException(
-							"Unable to pre-configure OVS bridge " + nwName
-									+ " for network ID:" + networkId);
-				}
-			}
-		} catch (Exception e) {
-			s_logger.warn("createandConfigureTunnelNetwork failed", e);
-			return false;
-		}
-		return true;
-	}
+    private synchronized boolean configureTunnelNetwork(long networkId,
+        long hostId, int key) {
+        try {
+            findOrCreateTunnelNetwork(key);
+            String nwName = "OVSTunnel" + key;
+            String configuredHosts = Script
+                .runSimpleBashScript("ovs-vsctl get bridge " + nwName
+                    + " other_config:ovs_host_setup");
+            boolean configured = false;
+            if (configuredHosts != null) {
+                String hostIdsStr[] = configuredHosts.split(",");
+                for (String hostIdStr : hostIdsStr) {
+                    if (hostIdStr.equals(((Long)hostId).toString())) {
+                        configured = true;
+                        break;
+                    }
+                }
+            }
+            if (!configured) {
+                Script cmd = new Script(_ovsTunnelPath, _timeout, s_logger);
+                cmd.add("setup_ovs_bridge");
+                cmd.add("--key", String.valueOf(key));
+                cmd.add("--cs_host_id", ((Long)hostId).toString());
+                cmd.add("--bridge", nwName);
+                String result = cmd.execute();
+                if (result != null) {
+                    throw new CloudRuntimeException(
+                        "Unable to pre-configure OVS bridge " + nwName
+                            + " for network ID:" + networkId);
+                }
+            }
+        } catch (Exception e) {
+            s_logger.warn("createandConfigureTunnelNetwork failed", e);
+            return false;
+        }
+        return true;
+    }
 
-	private OvsCreateTunnelAnswer execute(OvsCreateTunnelCommand cmd) {
-		String bridge = "OVSTunnel" + cmd.getKey();
-		try {
-			if (!findOrCreateTunnelNetwork(cmd.getKey())) {
-				s_logger.debug("Error during bridge setup");
-				return new OvsCreateTunnelAnswer(cmd, false,
-						"Cannot create network", bridge);
-			}
+    private OvsCreateTunnelAnswer execute(OvsCreateTunnelCommand cmd) {
+        String bridge = "OVSTunnel" + cmd.getKey();
+        try {
+            if (!findOrCreateTunnelNetwork(cmd.getKey())) {
+                s_logger.debug("Error during bridge setup");
+                return new OvsCreateTunnelAnswer(cmd, false,
+                    "Cannot create network", bridge);
+            }
 
-			configureTunnelNetwork(cmd.getNetworkId(), cmd.getFrom(),
-					cmd.getKey());
-			Script command = new Script(_ovsTunnelPath, _timeout, s_logger);
-			command.add("create_tunnel");
-			command.add("--bridge", bridge);
-			command.add("--remote_ip", cmd.getRemoteIp());
-			command.add("--key", cmd.getKey().toString());
-			command.add("--src_host", cmd.getFrom().toString());
-			command.add("--dst_host", cmd.getTo().toString());
+            configureTunnelNetwork(cmd.getNetworkId(), cmd.getFrom(),
+                cmd.getKey());
+            Script command = new Script(_ovsTunnelPath, _timeout, s_logger);
+            command.add("create_tunnel");
+            command.add("--bridge", bridge);
+            command.add("--remote_ip", cmd.getRemoteIp());
+            command.add("--key", cmd.getKey().toString());
+            command.add("--src_host", cmd.getFrom().toString());
+            command.add("--dst_host", cmd.getTo().toString());
 
-			String result = command.execute();
-			if (result != null) {
-				return new OvsCreateTunnelAnswer(cmd, true, result, null,
-						bridge);
-			} else {
-				return new OvsCreateTunnelAnswer(cmd, false, result, bridge);
-			}
-		} catch (Exception e) {
-			s_logger.debug("Error during tunnel setup");
-			s_logger.warn("Caught execption when creating ovs tunnel", e);
-			return new OvsCreateTunnelAnswer(cmd, false, e.getMessage(), bridge);
-		}
-	}
+            String result = command.execute();
+            if (result != null) {
+                return new OvsCreateTunnelAnswer(cmd, true, result, null,
+                    bridge);
+            } else {
+                return new OvsCreateTunnelAnswer(cmd, false, result, bridge);
+            }
+        } catch (Exception e) {
+            s_logger.debug("Error during tunnel setup");
+            s_logger.warn("Caught execption when creating ovs tunnel", e);
+            return new OvsCreateTunnelAnswer(cmd, false, e.getMessage(), bridge);
+        }
+    }
 
-	private Answer execute(OvsDestroyTunnelCommand cmd) {
-		try {
-			if (!findOrCreateTunnelNetwork(cmd.getKey())) {
-				s_logger.warn("Unable to find tunnel network for GRE key:"
-						+ cmd.getKey());
-				return new Answer(cmd, false, "No network found");
-			}
+    private Answer execute(OvsDestroyTunnelCommand cmd) {
+        try {
+            if (!findOrCreateTunnelNetwork(cmd.getKey())) {
+                s_logger.warn("Unable to find tunnel network for GRE key:"
+                    + cmd.getKey());
+                return new Answer(cmd, false, "No network found");
+            }
 
-			String bridge = "OVSTunnel" + cmd.getKey();
-			Script command = new Script(_ovsTunnelPath, _timeout, s_logger);
-			command.add("destroy_tunnel");
-			command.add("--bridge", bridge);
-			command.add("--iface_name", cmd.getInPortName());
-			String result = command.execute();
-			if (result == null) {
-				return new Answer(cmd, true, result);
-			} else {
-				return new Answer(cmd, false, result);
-			}
-		} catch (Exception e) {
-			s_logger.warn("caught execption when destroy ovs tunnel", e);
-			return new Answer(cmd, false, e.getMessage());
-		}
-	}
+            String bridge = "OVSTunnel" + cmd.getKey();
+            Script command = new Script(_ovsTunnelPath, _timeout, s_logger);
+            command.add("destroy_tunnel");
+            command.add("--bridge", bridge);
+            command.add("--iface_name", cmd.getInPortName());
+            String result = command.execute();
+            if (result == null) {
+                return new Answer(cmd, true, result);
+            } else {
+                return new Answer(cmd, false, result);
+            }
+        } catch (Exception e) {
+            s_logger.warn("caught execption when destroy ovs tunnel", e);
+            return new Answer(cmd, false, e.getMessage());
+        }
+    }
 
     private CheckNetworkAnswer execute(CheckNetworkCommand cmd) {
         List<PhysicalNetworkSetupInfo> phyNics = cmd.getPhysicalNetworkInfoList();
@@ -2342,7 +2342,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
              *
              * These bindings will read the snapshot and write the contents to
              * the secondary storage directly
-             * 
+             *
              * It will stop doing so if the amount of time spend is longer then
              * cmds.timeout
              */
@@ -3217,8 +3217,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-
-	private Answer execute(RebootCommand cmd) {
+    private Answer execute(RebootCommand cmd) {
 
         synchronized (_vms) {
             _vms.put(cmd.getVmName(), State.Starting);
@@ -3299,8 +3298,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-
-	protected Answer execute(StopCommand cmd) {
+    protected Answer execute(StopCommand cmd) {
         final String vmName = cmd.getVmName();
 
         State state = null;
@@ -3345,21 +3343,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected Answer execute(ModifySshKeysCommand cmd) {
-        File sshKeysDir = new File(_SSHKEYSPATH);
+        File sshKeysDir = new File(SSHKEYSPATH);
         String result = null;
         if (!sshKeysDir.exists()) {
             // Change permissions for the 700
             Script script = new Script("mkdir", _timeout, s_logger);
             script.add("-m", "700");
-            script.add(_SSHKEYSPATH);
+            script.add(SSHKEYSPATH);
             script.execute();
 
             if (!sshKeysDir.exists()) {
-                s_logger.debug("failed to create directory " + _SSHKEYSPATH);
+                s_logger.debug("failed to create directory " + SSHKEYSPATH);
             }
         }
 
-        File pubKeyFile = new File(_SSHPUBKEYPATH);
+        File pubKeyFile = new File(SSHPUBKEYPATH);
         if (!pubKeyFile.exists()) {
             try {
                 pubKeyFile.createNewFile();
@@ -3376,15 +3374,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 pubkStream.write(pubKey.getBytes());
                 pubkStream.close();
             } catch (FileNotFoundException e) {
-                result = "File" + _SSHPUBKEYPATH + "is not found:" + e.toString();
+                result = "File" + SSHPUBKEYPATH + "is not found:" + e.toString();
                 s_logger.debug(result);
             } catch (IOException e) {
-                result = "Write file " + _SSHPUBKEYPATH + ":" + e.toString();
+                result = "Write file " + SSHPUBKEYPATH + ":" + e.toString();
                 s_logger.debug(result);
             }
         }
 
-        File prvKeyFile = new File(_SSHPRVKEYPATH);
+        File prvKeyFile = new File(SSHPRVKEYPATH);
         if (!prvKeyFile.exists()) {
             try {
                 prvKeyFile.createNewFile();
@@ -3401,15 +3399,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 prvKStream.write(prvKey.getBytes());
                 prvKStream.close();
             } catch (FileNotFoundException e) {
-                result = "File" + _SSHPRVKEYPATH + "is not found:" + e.toString();
+                result = "File" + SSHPRVKEYPATH + "is not found:" + e.toString();
                 s_logger.debug(result);
             } catch (IOException e) {
-                result = "Write file " + _SSHPRVKEYPATH + ":" + e.toString();
+                result = "Write file " + SSHPRVKEYPATH + ":" + e.toString();
                 s_logger.debug(result);
             }
 
             Script script = new Script("chmod", _timeout, s_logger);
-            script.add("600", _SSHPRVKEYPATH);
+            script.add("600", SSHPRVKEYPATH);
             script.execute();
         }
 
@@ -3616,7 +3614,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
 
             // pass cmdline info to system vms
-			if (vmSpec.getType() != VirtualMachine.Type.User) {
+            if (vmSpec.getType() != VirtualMachine.Type.User) {
                 if ((conn.getVersion() < 1001000)) { // CLOUDSTACK-2823: try passCmdLine some times if kernel < 2.6.34 and qemu < 1.1.0 on hypervisor (for instance, CentOS 6.4)
                     //wait for 5 minutes at most
                     String controlIp = null;
@@ -3962,7 +3960,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public PingCommand getCurrentStatus(long id) {
         final HashMap<String, State> newStates = sync();
 
-        if (!_can_bridge_firewall) {
+        if (!_canBridgeFirewall) {
             return new PingRoutingCommand(com.cloud.host.Host.Type.Routing, id, newStates, this.getHostVmStateReport());
         } else {
             HashMap<String, Pair<Long, Long>> nwGrpStates = syncNetworkGroups(id);
@@ -4821,14 +4819,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    private class vmStats {
+    private class VmStats {
         long _usedTime;
         long _tx;
         long _rx;
-        long _io_rd;
-        long _io_wr;
-        long _bytes_rd;
-        long _bytes_wr;
+        long _ioRead;
+        long _ioWrote;
+        long _bytesRead;
+        long _bytesWrote;
         Calendar _timestamp;
     }
 
@@ -4843,7 +4841,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             stats.setEntityType("vm");
 
             /* get cpu utilization */
-            vmStats oldStats = null;
+            VmStats oldStats = null;
 
             Calendar now = Calendar.getInstance();
 
@@ -4896,29 +4894,29 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
 
             if (oldStats != null) {
-                long deltaiord = io_rd - oldStats._io_rd;
+                long deltaiord = io_rd - oldStats._ioRead;
                 if (deltaiord > 0)
                     stats.setDiskReadIOs(deltaiord);
-                long deltaiowr = io_wr - oldStats._io_wr;
+                long deltaiowr = io_wr - oldStats._ioWrote;
                 if (deltaiowr > 0)
                     stats.setDiskWriteIOs(deltaiowr);
-                double deltabytesrd = bytes_rd - oldStats._bytes_rd;
+                double deltabytesrd = bytes_rd - oldStats._bytesRead;
                 if (deltabytesrd > 0)
                     stats.setDiskReadKBs(deltabytesrd / 1024);
-                double deltabyteswr = bytes_wr - oldStats._bytes_wr;
+                double deltabyteswr = bytes_wr - oldStats._bytesWrote;
                 if (deltabyteswr > 0)
                     stats.setDiskWriteKBs(deltabyteswr / 1024);
             }
 
             /* save to Hashmap */
-            vmStats newStat = new vmStats();
+            VmStats newStat = new VmStats();
             newStat._usedTime = info.cpuTime;
             newStat._rx = rx;
             newStat._tx = tx;
-            newStat._io_rd = io_rd;
-            newStat._io_wr = io_wr;
-            newStat._bytes_rd = bytes_rd;
-            newStat._bytes_wr = bytes_wr;
+            newStat._ioRead = io_rd;
+            newStat._ioWrote = io_wr;
+            newStat._bytesRead = bytes_rd;
+            newStat._bytesWrote = bytes_wr;
             newStat._timestamp = now;
             _vmStats.put(vmName, newStat);
             return stats;
@@ -4941,7 +4939,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected boolean destroy_network_rules_for_vm(Connect conn, String vmName) {
-        if (!_can_bridge_firewall) {
+        if (!_canBridgeFirewall) {
             return false;
         }
         String vif = null;
@@ -4964,7 +4962,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected boolean default_network_rules(Connect conn, String vmName, NicTO nic, Long vmId, String secIpStr) {
-        if (!_can_bridge_firewall) {
+        if (!_canBridgeFirewall) {
             return false;
         }
 
@@ -4996,7 +4994,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected boolean post_default_network_rules(Connect conn, String vmName, NicTO nic, Long vmId, InetAddress dhcpServerIp, String hostIp, String hostMacAddr) {
-        if (!_can_bridge_firewall) {
+        if (!_canBridgeFirewall) {
             return false;
         }
 
@@ -5030,7 +5028,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected boolean default_network_rules_for_systemvm(Connect conn, String vmName) {
-        if (!_can_bridge_firewall) {
+        if (!_canBridgeFirewall) {
             return false;
         }
 
@@ -5047,7 +5045,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private boolean add_network_rules(String vmName, String vmId, String guestIP, String sig, String seq, String mac, String rules, String vif, String brname,
         String secIps) {
-        if (!_can_bridge_firewall) {
+        if (!_canBridgeFirewall) {
             return false;
         }
 
@@ -5075,7 +5073,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private boolean network_rules_vmSecondaryIp(Connect conn, String vmName, String secIp, String action) {
 
-        if (!_can_bridge_firewall) {
+        if (!_canBridgeFirewall) {
             return false;
         }
 
@@ -5093,7 +5091,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private boolean cleanup_rules() {
-        if (!_can_bridge_firewall) {
+        if (!_canBridgeFirewall) {
             return false;
         }
         Script cmd = new Script(_securityGroupPath, _timeout, s_logger);

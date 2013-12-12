@@ -31,7 +31,7 @@ import com.cloud.utils.script.Script;
 public class KVMHABase {
     private static final Logger s_logger = Logger.getLogger(KVMHABase.class);
     private long _timeout = 60000; /* 1 minutes */
-    protected static String _heartBeatPath;
+    protected static String s_heartBeatPath;
     protected long _heartBeatUpdateTimeout = 60000;
     protected long _heartBeatUpdateFreq = 60000;
     protected long _heartBeatUpdateMaxRetry = 3;

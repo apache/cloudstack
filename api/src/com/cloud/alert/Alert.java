@@ -39,5 +39,6 @@ public interface Alert extends Identity, InternalIdentity {
     Date getResolved();
 
     boolean getArchived();
+
     String getName();
 }

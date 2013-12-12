@@ -94,7 +94,7 @@ public class KVMStoragePoolManager {
         this._storageMapper.put("libvirt", new LibvirtStorageAdaptor(storagelayer));
         // add other storage adaptors here
         // this._storageMapper.put("newadaptor", new NewStorageAdaptor(storagelayer));
-        this._storageMapper.put(StoragePoolType.Iscsi.toString(), new iScsiAdmStorageAdaptor());
+        this._storageMapper.put(StoragePoolType.Iscsi.toString(), new IscsiAdmStorageAdaptor());
     }
 
     public boolean connectPhysicalDisk(StoragePoolType type, String poolUuid, String volPath, Map<String, String> details) {

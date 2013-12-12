@@ -41,7 +41,7 @@ import com.cloud.utils.db.TransactionLegacy;
 public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> implements VmRulesetLogDao {
     protected static Logger s_logger = Logger.getLogger(VmRulesetLogDaoImpl.class);
     private SearchBuilder<VmRulesetLogVO> VmIdSearch;
-    private String INSERT_OR_UPDATE = "INSERT INTO op_vm_ruleset_log (instance_id, created, logsequence) "
+    private String InsertOrUpdateSQl = "INSERT INTO op_vm_ruleset_log (instance_id, created, logsequence) "
         + " VALUES(?, now(), 1) ON DUPLICATE KEY UPDATE logsequence=logsequence+1";
     private static HashMap<Integer, String> cachedPrepStmtStrings = new HashMap<Integer, String>();
     final static private int cacheStringSizes[] = {512, 256, 128, 64, 32, 16, 8, 4, 2, 1};
@@ -160,7 +160,7 @@ public class VmRulesetLogDaoImpl extends GenericDaoBase<VmRulesetLogVO, Long> im
         int count = 0;
         boolean success = true;
         try {
-            stmtInsert = txn.prepareAutoCloseStatement(INSERT_OR_UPDATE);
+            stmtInsert = txn.prepareAutoCloseStatement(InsertOrUpdateSQl);
 
             txn.start();
             for (Long vmId : workItems) {

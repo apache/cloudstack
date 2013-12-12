@@ -322,7 +322,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
 
         String deviceType = NetworkDevice.F5BigIpLoadBalancer.getName();
         lbDeviceVO = addExternalLoadBalancer(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(),
-                deviceType, new F5BigIpResource(), false, false, null, null);
+            deviceType, new F5BigIpResource(), false, false, null, null);
 
         if (lbDeviceVO != null) {
             lbHost = _hostDao.findById(lbDeviceVO.getHostId());
@@ -376,7 +376,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         }
 
         return addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(),
-                deviceName, new F5BigIpResource(), false, false, null,
+            deviceName, new F5BigIpResource(), false, false, null,
             null);
 
     }

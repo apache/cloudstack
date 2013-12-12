@@ -24,7 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -34,7 +33,7 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCreateCmd;
+import org.apache.cloudstack.api.BaseAsyncCreateCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
@@ -232,9 +231,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
 
     @Parameter(name = ApiConstants.CUSTOM_PARAMETERS,
                type = CommandType.MAP,
-               since= "4.3",
+               since = "4.3",
                description = "used to specify the custom parameters.")
-    private  Map customParameters;
+    private Map customParameters;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -263,12 +262,12 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     }
 
     public Map<String, String> getCustomParameters() {
-        Map<String,String> customparameterMap = new HashMap<String, String>();
-        if (customParameters != null && customParameters.size() !=0){
+        Map<String, String> customparameterMap = new HashMap<String, String>();
+        if (customParameters != null && customParameters.size() != 0) {
             Collection parameterCollection = customParameters.values();
             Iterator iter = parameterCollection.iterator();
             while (iter.hasNext()) {
-                HashMap<String, String> value = (HashMap<String, String>) iter.next();
+                HashMap<String, String> value = (HashMap<String, String>)iter.next();
                 for (String key : value.keySet()) {
                     customparameterMap.put(key, value.get(key));
                 }
@@ -288,7 +287,6 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd {
     public Boolean getDisplayVm() {
         return displayVm;
     }
-
 
     public List<Long> getSecurityGroupIdList() {
         if (securityGroupNameList != null && securityGroupIdList != null) {

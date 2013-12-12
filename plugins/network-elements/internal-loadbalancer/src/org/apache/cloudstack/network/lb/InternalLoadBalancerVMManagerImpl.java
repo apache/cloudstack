@@ -118,7 +118,7 @@ import com.cloud.vm.dao.NicDao;
 @Local(value = {InternalLoadBalancerVMManager.class, InternalLoadBalancerVMService.class})
 public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements InternalLoadBalancerVMManager, InternalLoadBalancerVMService, VirtualMachineGuru {
     private static final Logger s_logger = Logger.getLogger(InternalLoadBalancerVMManagerImpl.class);
-    static final private String _internalLbVmNamePrefix = "b";
+    static final private String InternalLbVmNamePrefix = "b";
 
     private String _instance;
     private String _mgmtHost;
@@ -759,7 +759,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                 }
 
                 internalLbVm =
-                    new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId, VirtualMachineName.getSystemVmName(id, _instance, _internalLbVmNamePrefix),
+                    new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId, VirtualMachineName.getSystemVmName(id, _instance, InternalLbVmNamePrefix),
                         template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), false, 0, false,
                         RedundantState.UNKNOWN, false, false, VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
                 internalLbVm.setRole(Role.INTERNAL_LB_VM);

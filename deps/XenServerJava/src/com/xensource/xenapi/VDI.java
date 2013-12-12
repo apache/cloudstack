@@ -28,7 +28,6 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 package com.xensource.xenapi;
 
 import com.xensource.xenapi.Types.BadServerResponse;
@@ -61,14 +60,14 @@ public class VDI extends XenAPIObject {
      * For internal use only.
      */
     VDI(String ref) {
-       this.ref = ref;
+        this.ref = ref;
     }
 
     /**
      * @return The XenAPI reference (OpaqueRef) to this object.
      */
     public String toWireString() {
-       return this.ref;
+        return this.ref;
     }
 
     /**
@@ -79,7 +78,7 @@ public class VDI extends XenAPIObject {
     {
         if (obj != null && obj instanceof VDI)
         {
-            VDI other = (VDI) obj;
+            VDI other = (VDI)obj;
             return other.ref.equals(this.ref);
         } else
         {
@@ -136,8 +135,8 @@ public class VDI extends XenAPIObject {
         /**
          * Convert a VDI.Record to a Map
          */
-        public Map<String,Object> toMap() {
-            Map<String,Object> map = new HashMap<String,Object>();
+        public Map<String, Object> toMap() {
+            Map<String, Object> map = new HashMap<String, Object>();
             map.put("uuid", this.uuid == null ? "" : this.uuid);
             map.put("name_label", this.nameLabel == null ? "" : this.nameLabel);
             map.put("name_description", this.nameDescription == null ? "" : this.nameDescription);
@@ -299,15 +298,15 @@ public class VDI extends XenAPIObject {
      * @return all fields from the object
      */
     public VDI.Record getRecord(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_record";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVDIRecord(result);
+        return Types.toVDIRecord(result);
     }
 
     /**
@@ -317,15 +316,15 @@ public class VDI extends XenAPIObject {
      * @return reference to the object
      */
     public static VDI getByUuid(Connection c, String uuid) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_by_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVDI(result);
+        return Types.toVDI(result);
     }
 
     /**
@@ -335,9 +334,9 @@ public class VDI extends XenAPIObject {
      * @return Task
      */
     public static Task createAsync(Connection c, VDI.Record record) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VDI.create";
         String session = c.getSessionReference();
         Map<String, Object> record_map = record.toMap();
@@ -354,16 +353,16 @@ public class VDI extends XenAPIObject {
      * @return reference to the newly created object
      */
     public static VDI create(Connection c, VDI.Record record) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.create";
         String session = c.getSessionReference();
         Map<String, Object> record_map = record.toMap();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(record_map)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVDI(result);
+        return Types.toVDI(result);
     }
 
     /**
@@ -372,9 +371,9 @@ public class VDI extends XenAPIObject {
      * @return Task
      */
     public Task destroyAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VDI.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -388,9 +387,9 @@ public class VDI extends XenAPIObject {
      *
      */
     public void destroy(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.destroy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -405,15 +404,15 @@ public class VDI extends XenAPIObject {
      * @return references to objects with matching names
      */
     public static Set<VDI> getByNameLabel(Connection c, String label) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_by_name_label";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(label)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfVDI(result);
+        return Types.toSetOfVDI(result);
     }
 
     /**
@@ -422,15 +421,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public String getUuid(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -439,15 +438,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public String getNameLabel(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_name_label";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -456,15 +455,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public String getNameDescription(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_name_description";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -473,15 +472,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Set<Types.VdiOperations> getAllowedOperations(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_allowed_operations";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfVdiOperations(result);
+        return Types.toSetOfVdiOperations(result);
     }
 
     /**
@@ -490,15 +489,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, Types.VdiOperations> getCurrentOperations(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_current_operations";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringVdiOperations(result);
+        return Types.toMapOfStringVdiOperations(result);
     }
 
     /**
@@ -507,15 +506,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public SR getSR(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_SR";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSR(result);
+        return Types.toSR(result);
     }
 
     /**
@@ -524,15 +523,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Set<VBD> getVBDs(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_VBDs";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfVBD(result);
+        return Types.toSetOfVBD(result);
     }
 
     /**
@@ -541,15 +540,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Set<Crashdump> getCrashDumps(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_crash_dumps";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfCrashdump(result);
+        return Types.toSetOfCrashdump(result);
     }
 
     /**
@@ -558,15 +557,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Long getVirtualSize(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_virtual_size";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toLong(result);
+        return Types.toLong(result);
     }
 
     /**
@@ -575,15 +574,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Long getPhysicalUtilisation(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_physical_utilisation";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toLong(result);
+        return Types.toLong(result);
     }
 
     /**
@@ -592,15 +591,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Types.VdiType getType(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_type";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVdiType(result);
+        return Types.toVdiType(result);
     }
 
     /**
@@ -609,15 +608,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Boolean getSharable(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_sharable";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toBoolean(result);
+        return Types.toBoolean(result);
     }
 
     /**
@@ -626,15 +625,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Boolean getReadOnly(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_read_only";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toBoolean(result);
+        return Types.toBoolean(result);
     }
 
     /**
@@ -643,15 +642,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getOtherConfig(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+        return Types.toMapOfStringString(result);
     }
 
     /**
@@ -660,15 +659,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Boolean getStorageLock(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_storage_lock";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toBoolean(result);
+        return Types.toBoolean(result);
     }
 
     /**
@@ -677,15 +676,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public String getLocation(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_location";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -694,15 +693,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Boolean getManaged(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_managed";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toBoolean(result);
+        return Types.toBoolean(result);
     }
 
     /**
@@ -711,15 +710,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Boolean getMissing(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_missing";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toBoolean(result);
+        return Types.toBoolean(result);
     }
 
     /**
@@ -728,15 +727,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public VDI getParent(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_parent";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVDI(result);
+        return Types.toVDI(result);
     }
 
     /**
@@ -745,15 +744,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getXenstoreData(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_xenstore_data";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+        return Types.toMapOfStringString(result);
     }
 
     /**
@@ -762,15 +761,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Map<String, String> getSmConfig(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_sm_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfStringString(result);
+        return Types.toMapOfStringString(result);
     }
 
     /**
@@ -779,15 +778,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Boolean getIsASnapshot(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_is_a_snapshot";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toBoolean(result);
+        return Types.toBoolean(result);
     }
 
     /**
@@ -796,15 +795,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public VDI getSnapshotOf(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_snapshot_of";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVDI(result);
+        return Types.toVDI(result);
     }
 
     /**
@@ -813,15 +812,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Set<VDI> getSnapshots(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_snapshots";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfVDI(result);
+        return Types.toSetOfVDI(result);
     }
 
     /**
@@ -830,15 +829,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Date getSnapshotTime(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_snapshot_time";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toDate(result);
+        return Types.toDate(result);
     }
 
     /**
@@ -847,15 +846,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Set<String> getTags(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_tags";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfString(result);
+        return Types.toSetOfString(result);
     }
 
     /**
@@ -864,15 +863,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Boolean getAllowCaching(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_allow_caching";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toBoolean(result);
+        return Types.toBoolean(result);
     }
 
     /**
@@ -881,15 +880,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Types.OnBoot getOnBoot(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_on_boot";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toOnBoot(result);
+        return Types.toOnBoot(result);
     }
 
     /**
@@ -898,15 +897,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Pool getMetadataOfPool(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_metadata_of_pool";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toPool(result);
+        return Types.toPool(result);
     }
 
     /**
@@ -915,15 +914,15 @@ public class VDI extends XenAPIObject {
      * @return value of the field
      */
     public Boolean getMetadataLatest(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_metadata_latest";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toBoolean(result);
+        return Types.toBoolean(result);
     }
 
     /**
@@ -932,9 +931,9 @@ public class VDI extends XenAPIObject {
      * @param otherConfig New value to set
      */
     public void setOtherConfig(Connection c, Map<String, String> otherConfig) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.set_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(otherConfig)};
@@ -949,9 +948,9 @@ public class VDI extends XenAPIObject {
      * @param value Value to add
      */
     public void addToOtherConfig(Connection c, String key, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.add_to_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
@@ -965,9 +964,9 @@ public class VDI extends XenAPIObject {
      * @param key Key to remove
      */
     public void removeFromOtherConfig(Connection c, String key) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.remove_from_other_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
@@ -981,9 +980,9 @@ public class VDI extends XenAPIObject {
      * @param xenstoreData New value to set
      */
     public void setXenstoreData(Connection c, Map<String, String> xenstoreData) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.set_xenstore_data";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(xenstoreData)};
@@ -998,9 +997,9 @@ public class VDI extends XenAPIObject {
      * @param value Value to add
      */
     public void addToXenstoreData(Connection c, String key, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.add_to_xenstore_data";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
@@ -1014,9 +1013,9 @@ public class VDI extends XenAPIObject {
      * @param key Key to remove
      */
     public void removeFromXenstoreData(Connection c, String key) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.remove_from_xenstore_data";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
@@ -1030,9 +1029,9 @@ public class VDI extends XenAPIObject {
      * @param smConfig New value to set
      */
     public void setSmConfig(Connection c, Map<String, String> smConfig) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.set_sm_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(smConfig)};
@@ -1047,9 +1046,9 @@ public class VDI extends XenAPIObject {
      * @param value Value to add
      */
     public void addToSmConfig(Connection c, String key, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.add_to_sm_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key), Marshalling.toXMLRPC(value)};
@@ -1063,9 +1062,9 @@ public class VDI extends XenAPIObject {
      * @param key Key to remove
      */
     public void removeFromSmConfig(Connection c, String key) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.remove_from_sm_config";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(key)};
@@ -1079,9 +1078,9 @@ public class VDI extends XenAPIObject {
      * @param tags New value to set
      */
     public void setTags(Connection c, Set<String> tags) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.set_tags";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(tags)};
@@ -1095,9 +1094,9 @@ public class VDI extends XenAPIObject {
      * @param value New value to add
      */
     public void addTags(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.add_tags";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1111,9 +1110,9 @@ public class VDI extends XenAPIObject {
      * @param value Value to remove
      */
     public void removeTags(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.remove_tags";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1128,13 +1127,13 @@ public class VDI extends XenAPIObject {
      * @return Task
      */
     public Task snapshotAsync(Connection c, Map<String, String> driverParams) throws
-       BadServerResponse,
-       VersionException,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        VersionException,
+        XenAPIException,
+        XmlRpcException {
 
-        if(c.rioConnection){
-            if (driverParams.isEmpty()){
+        if (c.rioConnection) {
+            if (driverParams.isEmpty()) {
                 return rioSnapshotAsync(c);
             } else {
                 throw new Types.VersionException("driverParams parameter must be empty map for Rio (legacy XenServer) host");
@@ -1144,12 +1143,10 @@ public class VDI extends XenAPIObject {
         }
     }
 
-
-
     private Task rioSnapshotAsync(Connection c) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException {
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException {
         String method_call = "Async.VDI.snapshot";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1159,9 +1156,9 @@ public class VDI extends XenAPIObject {
     }
 
     private Task miamiSnapshotAsync(Connection c, Map<String, String> driverParams) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException {
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException {
         String method_call = "Async.VDI.snapshot";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(driverParams)};
@@ -1177,13 +1174,13 @@ public class VDI extends XenAPIObject {
      * @return The ID of the newly created VDI.
      */
     public VDI snapshot(Connection c, Map<String, String> driverParams) throws
-       BadServerResponse,
-       VersionException,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        VersionException,
+        XenAPIException,
+        XmlRpcException {
 
-        if(c.rioConnection){
-            if (driverParams.isEmpty()){
+        if (c.rioConnection) {
+            if (driverParams.isEmpty()) {
                 return rioSnapshot(c);
             } else {
                 throw new Types.VersionException("driverParams parameter must be empty map for Rio (legacy XenServer) host");
@@ -1193,30 +1190,28 @@ public class VDI extends XenAPIObject {
         }
     }
 
-
-
     private VDI rioSnapshot(Connection c) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException {
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException {
         String method_call = "VDI.snapshot";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVDI(result);
+        return Types.toVDI(result);
     }
 
     private VDI miamiSnapshot(Connection c, Map<String, String> driverParams) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException {
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException {
         String method_call = "VDI.snapshot";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(driverParams)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVDI(result);
+        return Types.toVDI(result);
     }
 
     /**
@@ -1226,13 +1221,13 @@ public class VDI extends XenAPIObject {
      * @return Task
      */
     public Task createCloneAsync(Connection c, Map<String, String> driverParams) throws
-       BadServerResponse,
-       VersionException,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        VersionException,
+        XenAPIException,
+        XmlRpcException {
 
-        if(c.rioConnection){
-            if (driverParams.isEmpty()){
+        if (c.rioConnection) {
+            if (driverParams.isEmpty()) {
                 return rioCreateCloneAsync(c);
             } else {
                 throw new Types.VersionException("driverParams parameter must be empty map for Rio (legacy XenServer) host");
@@ -1242,12 +1237,10 @@ public class VDI extends XenAPIObject {
         }
     }
 
-
-
     private Task rioCreateCloneAsync(Connection c) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException {
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException {
         String method_call = "Async.VDI.clone";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1257,9 +1250,9 @@ public class VDI extends XenAPIObject {
     }
 
     private Task miamiCreateCloneAsync(Connection c, Map<String, String> driverParams) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException {
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException {
         String method_call = "Async.VDI.clone";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(driverParams)};
@@ -1275,13 +1268,13 @@ public class VDI extends XenAPIObject {
      * @return The ID of the newly created VDI.
      */
     public VDI createClone(Connection c, Map<String, String> driverParams) throws
-       BadServerResponse,
-       VersionException,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        VersionException,
+        XenAPIException,
+        XmlRpcException {
 
-        if(c.rioConnection){
-            if (driverParams.isEmpty()){
+        if (c.rioConnection) {
+            if (driverParams.isEmpty()) {
                 return rioCreateClone(c);
             } else {
                 throw new Types.VersionException("driverParams parameter must be empty map for Rio (legacy XenServer) host");
@@ -1291,30 +1284,28 @@ public class VDI extends XenAPIObject {
         }
     }
 
-
-
     private VDI rioCreateClone(Connection c) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException {
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException {
         String method_call = "VDI.clone";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVDI(result);
+        return Types.toVDI(result);
     }
 
     private VDI miamiCreateClone(Connection c, Map<String, String> driverParams) throws
-       BadServerResponse,
-       XmlRpcException,
-       XenAPIException {
+        BadServerResponse,
+        XmlRpcException,
+        XenAPIException {
         String method_call = "VDI.clone";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(driverParams)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVDI(result);
+        return Types.toVDI(result);
     }
 
     /**
@@ -1324,9 +1315,9 @@ public class VDI extends XenAPIObject {
      * @return Task
      */
     public Task resizeAsync(Connection c, Long size) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VDI.resize";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(size)};
@@ -1341,9 +1332,9 @@ public class VDI extends XenAPIObject {
      * @param size The new size of the VDI
      */
     public void resize(Connection c, Long size) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.resize";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(size)};
@@ -1358,9 +1349,9 @@ public class VDI extends XenAPIObject {
      * @return Task
      */
     public Task resizeOnlineAsync(Connection c, Long size) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VDI.resize_online";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(size)};
@@ -1375,9 +1366,9 @@ public class VDI extends XenAPIObject {
      * @param size The new size of the VDI
      */
     public void resizeOnline(Connection c, Long size) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.resize_online";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(size)};
@@ -1408,14 +1399,20 @@ public class VDI extends XenAPIObject {
      * @param snapshotOf Storage-specific config
      * @return Task
      */
-    public static Task introduceAsync(Connection c, String uuid, String nameLabel, String nameDescription, SR SR, Types.VdiType type, Boolean sharable, Boolean readOnly, Map<String, String> otherConfig, String location, Map<String, String> xenstoreData, Map<String, String> smConfig, Boolean managed, Long virtualSize, Long physicalUtilisation, Pool metadataOfPool, Boolean isASnapshot, Date snapshotTime, VDI snapshotOf) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException,
-       Types.SrOperationNotSupported {
+    public static Task introduceAsync(Connection c, String uuid, String nameLabel, String nameDescription, SR SR, Types.VdiType type, Boolean sharable, Boolean readOnly,
+        Map<String, String> otherConfig, String location, Map<String, String> xenstoreData, Map<String, String> smConfig, Boolean managed, Long virtualSize,
+        Long physicalUtilisation, Pool metadataOfPool, Boolean isASnapshot, Date snapshotTime, VDI snapshotOf) throws
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException,
+        Types.SrOperationNotSupported {
         String method_call = "Async.VDI.introduce";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(SR), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(sharable), Marshalling.toXMLRPC(readOnly), Marshalling.toXMLRPC(otherConfig), Marshalling.toXMLRPC(location), Marshalling.toXMLRPC(xenstoreData), Marshalling.toXMLRPC(smConfig), Marshalling.toXMLRPC(managed), Marshalling.toXMLRPC(virtualSize), Marshalling.toXMLRPC(physicalUtilisation), Marshalling.toXMLRPC(metadataOfPool), Marshalling.toXMLRPC(isASnapshot), Marshalling.toXMLRPC(snapshotTime), Marshalling.toXMLRPC(snapshotOf)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription),
+            Marshalling.toXMLRPC(SR), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(sharable), Marshalling.toXMLRPC(readOnly), Marshalling.toXMLRPC(otherConfig),
+            Marshalling.toXMLRPC(location), Marshalling.toXMLRPC(xenstoreData), Marshalling.toXMLRPC(smConfig), Marshalling.toXMLRPC(managed),
+            Marshalling.toXMLRPC(virtualSize), Marshalling.toXMLRPC(physicalUtilisation), Marshalling.toXMLRPC(metadataOfPool), Marshalling.toXMLRPC(isASnapshot),
+            Marshalling.toXMLRPC(snapshotTime), Marshalling.toXMLRPC(snapshotOf)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -1444,17 +1441,23 @@ public class VDI extends XenAPIObject {
      * @param snapshotOf Storage-specific config
      * @return The ref of the newly created VDI record.
      */
-    public static VDI introduce(Connection c, String uuid, String nameLabel, String nameDescription, SR SR, Types.VdiType type, Boolean sharable, Boolean readOnly, Map<String, String> otherConfig, String location, Map<String, String> xenstoreData, Map<String, String> smConfig, Boolean managed, Long virtualSize, Long physicalUtilisation, Pool metadataOfPool, Boolean isASnapshot, Date snapshotTime, VDI snapshotOf) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException,
-       Types.SrOperationNotSupported {
+    public static VDI introduce(Connection c, String uuid, String nameLabel, String nameDescription, SR SR, Types.VdiType type, Boolean sharable, Boolean readOnly,
+        Map<String, String> otherConfig, String location, Map<String, String> xenstoreData, Map<String, String> smConfig, Boolean managed, Long virtualSize,
+        Long physicalUtilisation, Pool metadataOfPool, Boolean isASnapshot, Date snapshotTime, VDI snapshotOf) throws
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException,
+        Types.SrOperationNotSupported {
         String method_call = "VDI.introduce";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(SR), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(sharable), Marshalling.toXMLRPC(readOnly), Marshalling.toXMLRPC(otherConfig), Marshalling.toXMLRPC(location), Marshalling.toXMLRPC(xenstoreData), Marshalling.toXMLRPC(smConfig), Marshalling.toXMLRPC(managed), Marshalling.toXMLRPC(virtualSize), Marshalling.toXMLRPC(physicalUtilisation), Marshalling.toXMLRPC(metadataOfPool), Marshalling.toXMLRPC(isASnapshot), Marshalling.toXMLRPC(snapshotTime), Marshalling.toXMLRPC(snapshotOf)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription),
+            Marshalling.toXMLRPC(SR), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(sharable), Marshalling.toXMLRPC(readOnly), Marshalling.toXMLRPC(otherConfig),
+            Marshalling.toXMLRPC(location), Marshalling.toXMLRPC(xenstoreData), Marshalling.toXMLRPC(smConfig), Marshalling.toXMLRPC(managed),
+            Marshalling.toXMLRPC(virtualSize), Marshalling.toXMLRPC(physicalUtilisation), Marshalling.toXMLRPC(metadataOfPool), Marshalling.toXMLRPC(isASnapshot),
+            Marshalling.toXMLRPC(snapshotTime), Marshalling.toXMLRPC(snapshotOf)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVDI(result);
+        return Types.toVDI(result);
     }
 
     /**
@@ -1480,13 +1483,19 @@ public class VDI extends XenAPIObject {
      * @param snapshotOf Storage-specific config
      * @return Task
      */
-    public static Task dbIntroduceAsync(Connection c, String uuid, String nameLabel, String nameDescription, SR SR, Types.VdiType type, Boolean sharable, Boolean readOnly, Map<String, String> otherConfig, String location, Map<String, String> xenstoreData, Map<String, String> smConfig, Boolean managed, Long virtualSize, Long physicalUtilisation, Pool metadataOfPool, Boolean isASnapshot, Date snapshotTime, VDI snapshotOf) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+    public static Task dbIntroduceAsync(Connection c, String uuid, String nameLabel, String nameDescription, SR SR, Types.VdiType type, Boolean sharable,
+        Boolean readOnly, Map<String, String> otherConfig, String location, Map<String, String> xenstoreData, Map<String, String> smConfig, Boolean managed,
+        Long virtualSize, Long physicalUtilisation, Pool metadataOfPool, Boolean isASnapshot, Date snapshotTime, VDI snapshotOf) throws
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VDI.db_introduce";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(SR), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(sharable), Marshalling.toXMLRPC(readOnly), Marshalling.toXMLRPC(otherConfig), Marshalling.toXMLRPC(location), Marshalling.toXMLRPC(xenstoreData), Marshalling.toXMLRPC(smConfig), Marshalling.toXMLRPC(managed), Marshalling.toXMLRPC(virtualSize), Marshalling.toXMLRPC(physicalUtilisation), Marshalling.toXMLRPC(metadataOfPool), Marshalling.toXMLRPC(isASnapshot), Marshalling.toXMLRPC(snapshotTime), Marshalling.toXMLRPC(snapshotOf)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription),
+            Marshalling.toXMLRPC(SR), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(sharable), Marshalling.toXMLRPC(readOnly), Marshalling.toXMLRPC(otherConfig),
+            Marshalling.toXMLRPC(location), Marshalling.toXMLRPC(xenstoreData), Marshalling.toXMLRPC(smConfig), Marshalling.toXMLRPC(managed),
+            Marshalling.toXMLRPC(virtualSize), Marshalling.toXMLRPC(physicalUtilisation), Marshalling.toXMLRPC(metadataOfPool), Marshalling.toXMLRPC(isASnapshot),
+            Marshalling.toXMLRPC(snapshotTime), Marshalling.toXMLRPC(snapshotOf)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
         return Types.toTask(result);
@@ -1515,16 +1524,22 @@ public class VDI extends XenAPIObject {
      * @param snapshotOf Storage-specific config
      * @return The ref of the newly created VDI record.
      */
-    public static VDI dbIntroduce(Connection c, String uuid, String nameLabel, String nameDescription, SR SR, Types.VdiType type, Boolean sharable, Boolean readOnly, Map<String, String> otherConfig, String location, Map<String, String> xenstoreData, Map<String, String> smConfig, Boolean managed, Long virtualSize, Long physicalUtilisation, Pool metadataOfPool, Boolean isASnapshot, Date snapshotTime, VDI snapshotOf) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+    public static VDI dbIntroduce(Connection c, String uuid, String nameLabel, String nameDescription, SR SR, Types.VdiType type, Boolean sharable, Boolean readOnly,
+        Map<String, String> otherConfig, String location, Map<String, String> xenstoreData, Map<String, String> smConfig, Boolean managed, Long virtualSize,
+        Long physicalUtilisation, Pool metadataOfPool, Boolean isASnapshot, Date snapshotTime, VDI snapshotOf) throws
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.db_introduce";
         String session = c.getSessionReference();
-        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription), Marshalling.toXMLRPC(SR), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(sharable), Marshalling.toXMLRPC(readOnly), Marshalling.toXMLRPC(otherConfig), Marshalling.toXMLRPC(location), Marshalling.toXMLRPC(xenstoreData), Marshalling.toXMLRPC(smConfig), Marshalling.toXMLRPC(managed), Marshalling.toXMLRPC(virtualSize), Marshalling.toXMLRPC(physicalUtilisation), Marshalling.toXMLRPC(metadataOfPool), Marshalling.toXMLRPC(isASnapshot), Marshalling.toXMLRPC(snapshotTime), Marshalling.toXMLRPC(snapshotOf)};
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(uuid), Marshalling.toXMLRPC(nameLabel), Marshalling.toXMLRPC(nameDescription),
+            Marshalling.toXMLRPC(SR), Marshalling.toXMLRPC(type), Marshalling.toXMLRPC(sharable), Marshalling.toXMLRPC(readOnly), Marshalling.toXMLRPC(otherConfig),
+            Marshalling.toXMLRPC(location), Marshalling.toXMLRPC(xenstoreData), Marshalling.toXMLRPC(smConfig), Marshalling.toXMLRPC(managed),
+            Marshalling.toXMLRPC(virtualSize), Marshalling.toXMLRPC(physicalUtilisation), Marshalling.toXMLRPC(metadataOfPool), Marshalling.toXMLRPC(isASnapshot),
+            Marshalling.toXMLRPC(snapshotTime), Marshalling.toXMLRPC(snapshotOf)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVDI(result);
+        return Types.toVDI(result);
     }
 
     /**
@@ -1533,9 +1548,9 @@ public class VDI extends XenAPIObject {
      * @return Task
      */
     public Task dbForgetAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VDI.db_forget";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1549,9 +1564,9 @@ public class VDI extends XenAPIObject {
      *
      */
     public void dbForget(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.db_forget";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1565,10 +1580,10 @@ public class VDI extends XenAPIObject {
      * @return Task
      */
     public Task updateAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException,
-       Types.SrOperationNotSupported {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException,
+        Types.SrOperationNotSupported {
         String method_call = "Async.VDI.update";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1582,10 +1597,10 @@ public class VDI extends XenAPIObject {
      *
      */
     public void update(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException,
-       Types.SrOperationNotSupported {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException,
+        Types.SrOperationNotSupported {
         String method_call = "VDI.update";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1600,9 +1615,9 @@ public class VDI extends XenAPIObject {
      * @return Task
      */
     public Task copyAsync(Connection c, SR sr) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VDI.copy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(sr)};
@@ -1618,15 +1633,15 @@ public class VDI extends XenAPIObject {
      * @return The reference of the newly created VDI.
      */
     public VDI copy(Connection c, SR sr) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.copy";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(sr)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVDI(result);
+        return Types.toVDI(result);
     }
 
     /**
@@ -1635,9 +1650,9 @@ public class VDI extends XenAPIObject {
      * @param value The new value of the VDI's managed field
      */
     public void setManaged(Connection c, Boolean value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.set_managed";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1651,9 +1666,9 @@ public class VDI extends XenAPIObject {
      * @return Task
      */
     public Task forgetAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VDI.forget";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1667,9 +1682,9 @@ public class VDI extends XenAPIObject {
      *
      */
     public void forget(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.forget";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1683,9 +1698,9 @@ public class VDI extends XenAPIObject {
      * @param value The new value of the VDI's sharable field
      */
     public void setSharable(Connection c, Boolean value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.set_sharable";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1699,9 +1714,9 @@ public class VDI extends XenAPIObject {
      * @param value The new value of the VDI's read_only field
      */
     public void setReadOnly(Connection c, Boolean value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.set_read_only";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1715,9 +1730,9 @@ public class VDI extends XenAPIObject {
      * @param value The new value of the VDI's missing field
      */
     public void setMissing(Connection c, Boolean value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.set_missing";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1731,9 +1746,9 @@ public class VDI extends XenAPIObject {
      * @param value The new value of the VDI's virtual size
      */
     public void setVirtualSize(Connection c, Long value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.set_virtual_size";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1747,9 +1762,9 @@ public class VDI extends XenAPIObject {
      * @param value The new value of the VDI's physical utilisation
      */
     public void setPhysicalUtilisation(Connection c, Long value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.set_physical_utilisation";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1763,9 +1778,9 @@ public class VDI extends XenAPIObject {
      * @param value The new value indicating whether this VDI is a snapshot
      */
     public void setIsASnapshot(Connection c, Boolean value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.set_is_a_snapshot";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1779,9 +1794,9 @@ public class VDI extends XenAPIObject {
      * @param value The VDI of which this VDI is a snapshot
      */
     public void setSnapshotOf(Connection c, VDI value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.set_snapshot_of";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1795,9 +1810,9 @@ public class VDI extends XenAPIObject {
      * @param value The snapshot time of this VDI.
      */
     public void setSnapshotTime(Connection c, Date value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.set_snapshot_time";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1811,9 +1826,9 @@ public class VDI extends XenAPIObject {
      * @param value The pool whose metadata is contained by this VDI
      */
     public void setMetadataOfPool(Connection c, Pool value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.set_metadata_of_pool";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1828,9 +1843,9 @@ public class VDI extends XenAPIObject {
      * @return Task
      */
     public Task setNameLabelAsync(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VDI.set_name_label";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1845,9 +1860,9 @@ public class VDI extends XenAPIObject {
      * @param value The name lable for the VDI
      */
     public void setNameLabel(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.set_name_label";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1862,9 +1877,9 @@ public class VDI extends XenAPIObject {
      * @return Task
      */
     public Task setNameDescriptionAsync(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VDI.set_name_description";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1879,9 +1894,9 @@ public class VDI extends XenAPIObject {
      * @param value The name description for the VDI
      */
     public void setNameDescription(Connection c, String value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.set_name_description";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1896,9 +1911,9 @@ public class VDI extends XenAPIObject {
      * @return Task
      */
     public Task setOnBootAsync(Connection c, Types.OnBoot value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VDI.set_on_boot";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1913,9 +1928,9 @@ public class VDI extends XenAPIObject {
      * @param value The value to set
      */
     public void setOnBoot(Connection c, Types.OnBoot value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.set_on_boot";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1930,9 +1945,9 @@ public class VDI extends XenAPIObject {
      * @return Task
      */
     public Task setAllowCachingAsync(Connection c, Boolean value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VDI.set_allow_caching";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1947,9 +1962,9 @@ public class VDI extends XenAPIObject {
      * @param value The value to set
      */
     public void setAllowCaching(Connection c, Boolean value) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.set_allow_caching";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(value)};
@@ -1963,9 +1978,9 @@ public class VDI extends XenAPIObject {
      * @return Task
      */
     public Task openDatabaseAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VDI.open_database";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -1980,15 +1995,15 @@ public class VDI extends XenAPIObject {
      * @return A session which can be used to query the database
      */
     public Session openDatabase(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.open_database";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSession(result);
+        return Types.toSession(result);
     }
 
     /**
@@ -1997,9 +2012,9 @@ public class VDI extends XenAPIObject {
      * @return Task
      */
     public Task readDatabasePoolUuidAsync(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VDI.read_database_pool_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
@@ -2014,15 +2029,15 @@ public class VDI extends XenAPIObject {
      * @return The cached pool UUID of the database on the VDI.
      */
     public String readDatabasePoolUuid(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.read_database_pool_uuid";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toString(result);
+        return Types.toString(result);
     }
 
     /**
@@ -2033,9 +2048,9 @@ public class VDI extends XenAPIObject {
      * @return Task
      */
     public Task poolMigrateAsync(Connection c, SR sr, Map<String, String> options) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "Async.VDI.pool_migrate";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(sr), Marshalling.toXMLRPC(options)};
@@ -2052,15 +2067,15 @@ public class VDI extends XenAPIObject {
      * @return The new reference of the migrated VDI.
      */
     public VDI poolMigrate(Connection c, SR sr, Map<String, String> options) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.pool_migrate";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(sr), Marshalling.toXMLRPC(options)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toVDI(result);
+        return Types.toVDI(result);
     }
 
     /**
@@ -2069,15 +2084,15 @@ public class VDI extends XenAPIObject {
      * @return references to all objects
      */
     public static Set<VDI> getAll(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_all";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toSetOfVDI(result);
+        return Types.toSetOfVDI(result);
     }
 
     /**
@@ -2086,15 +2101,15 @@ public class VDI extends XenAPIObject {
      * @return records of all objects
      */
     public static Map<VDI, VDI.Record> getAllRecords(Connection c) throws
-       BadServerResponse,
-       XenAPIException,
-       XmlRpcException {
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException {
         String method_call = "VDI.get_all_records";
         String session = c.getSessionReference();
         Object[] method_params = {Marshalling.toXMLRPC(session)};
         Map response = c.dispatch(method_call, method_params);
         Object result = response.get("Value");
-            return Types.toMapOfVDIVDIRecord(result);
+        return Types.toMapOfVDIVDIRecord(result);
     }
 
 }

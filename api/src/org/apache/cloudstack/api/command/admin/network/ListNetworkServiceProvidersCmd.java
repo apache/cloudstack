@@ -39,7 +39,7 @@ import com.cloud.utils.Pair;
             since = "3.0.0")
 public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkServiceProvidersCmd.class.getName());
-    private static final String _name = "listnetworkserviceprovidersresponse";
+    private static final String Name = "listnetworkserviceprovidersresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -79,7 +79,7 @@ public class ListNetworkServiceProvidersCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     @Override
     public String getCommandName() {
-        return _name;
+        return Name;
     }
 
     @Override

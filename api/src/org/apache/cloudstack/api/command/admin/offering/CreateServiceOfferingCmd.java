@@ -36,7 +36,7 @@ import com.cloud.user.Account;
 @APICommand(name = "createServiceOffering", description = "Creates a service offering.", responseObject = ServiceOfferingResponse.class)
 public class CreateServiceOfferingCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateServiceOfferingCmd.class.getName());
-    private static final String _name = "createserviceofferingresponse";
+    private static final String Name = "createserviceofferingresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -220,7 +220,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        return _name;
+        return Name;
     }
 
     @Override

@@ -18,15 +18,12 @@ package com.cloud.network.element;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.response.ExternalFirewallResponse;
-
 import com.cloud.api.commands.AddPaloAltoFirewallCmd;
 import com.cloud.api.commands.ConfigurePaloAltoFirewallCmd;
 import com.cloud.api.commands.DeletePaloAltoFirewallCmd;
 import com.cloud.api.commands.ListPaloAltoFirewallNetworksCmd;
 import com.cloud.api.commands.ListPaloAltoFirewallsCmd;
 import com.cloud.api.response.PaloAltoFirewallResponse;
-import com.cloud.host.Host;
 import com.cloud.network.Network;
 import com.cloud.network.dao.ExternalFirewallDeviceVO;
 import com.cloud.utils.component.PluggableService;

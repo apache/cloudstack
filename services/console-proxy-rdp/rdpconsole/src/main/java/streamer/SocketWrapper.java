@@ -46,7 +46,7 @@ public class SocketWrapper extends PipelineImpl {
     protected SSLSocket sslSocket;
 
     //protected String SSL_VERSION_TO_USE = "TLSv1.2";
-    /*DEBUG*/protected String SSL_VERSION_TO_USE = "TLSv1";
+    /*DEBUG*/protected static final String SSL_VERSION_TO_USE = "TLSv1";
 
     public SocketWrapper(String id) {
         super(id);

@@ -66,11 +66,11 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     String _cidr;
     String _gateway;
 
-    private static final TrafficType[] _trafficTypes = {TrafficType.Control};
+    private static final TrafficType[] TrafficTypes = {TrafficType.Control};
 
     @Override
     public boolean isMyTrafficType(TrafficType type) {
-        for (TrafficType t : _trafficTypes) {
+        for (TrafficType t : TrafficTypes) {
             if (t == type) {
                 return true;
             }
@@ -80,7 +80,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
     @Override
     public TrafficType[] getSupportedTrafficType() {
-        return _trafficTypes;
+        return TrafficTypes;
     }
 
     protected boolean canHandle(NetworkOffering offering) {

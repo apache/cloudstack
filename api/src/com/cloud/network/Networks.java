@@ -31,7 +31,7 @@ public class Networks {
         None, DcGlobal, // global to data center
         HostLocal;
 
-        public static String DummyPrivateIp = "169.254.1.1";
+        public static final String DummyPrivateIp = "169.254.1.1";
     }
 
     /**

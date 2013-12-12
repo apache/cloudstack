@@ -23,46 +23,46 @@ import java.util.Map;
 import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
 
 public class VmWorkReboot extends VmWork {
-	private static final long serialVersionUID = 195907627459759933L;
+    private static final long serialVersionUID = 195907627459759933L;
 
-	// use serialization friendly map
-	private Map<String, String> rawParams;
-	
+    // use serialization friendly map
+    private Map<String, String> rawParams;
+
     public VmWorkReboot(long userId, long accountId, long vmId, Map<VirtualMachineProfile.Param, Object> params) {
-    	super(userId, accountId, vmId);
-    	
-    	setParams(params);
-    }
-    
-	public Map<String, String> getRawParams() {
-		return rawParams;
-	}
+        super(userId, accountId, vmId);
 
-	public void setRawParams(Map<String, String> params) {
-		rawParams = params;
-	}
-	
-	public Map<VirtualMachineProfile.Param, Object> getParams() {
-		Map<VirtualMachineProfile.Param, Object> map = new HashMap<VirtualMachineProfile.Param, Object>();
-		
-		if(rawParams != null) {
-			for(Map.Entry<String, String> entry : rawParams.entrySet()) {
-				VirtualMachineProfile.Param key = new VirtualMachineProfile.Param(entry.getKey());
-				Object val = JobSerializerHelper.fromObjectSerializedString(entry.getValue());
-				map.put(key, val);
-			}
-		}
-		
-		return map;
-	}
-	
-	public void setParams(Map<VirtualMachineProfile.Param, Object> params) {
-		if(params != null) {
-			rawParams = new HashMap<String, String>();
-			for(Map.Entry<VirtualMachineProfile.Param, Object> entry : params.entrySet()) {
-				rawParams.put(entry.getKey().getName(), JobSerializerHelper.toObjectSerializedString(
-					entry.getValue() instanceof Serializable ? (Serializable)entry.getValue() : entry.getValue().toString()));
-			}
-		}
-	}
+        setParams(params);
+    }
+
+    public Map<String, String> getRawParams() {
+        return rawParams;
+    }
+
+    public void setRawParams(Map<String, String> params) {
+        rawParams = params;
+    }
+
+    public Map<VirtualMachineProfile.Param, Object> getParams() {
+        Map<VirtualMachineProfile.Param, Object> map = new HashMap<VirtualMachineProfile.Param, Object>();
+
+        if (rawParams != null) {
+            for (Map.Entry<String, String> entry : rawParams.entrySet()) {
+                VirtualMachineProfile.Param key = new VirtualMachineProfile.Param(entry.getKey());
+                Object val = JobSerializerHelper.fromObjectSerializedString(entry.getValue());
+                map.put(key, val);
+            }
+        }
+
+        return map;
+    }
+
+    public void setParams(Map<VirtualMachineProfile.Param, Object> params) {
+        if (params != null) {
+            rawParams = new HashMap<String, String>();
+            for (Map.Entry<VirtualMachineProfile.Param, Object> entry : params.entrySet()) {
+                rawParams.put(entry.getKey().getName(), JobSerializerHelper.toObjectSerializedString(
+                    entry.getValue() instanceof Serializable ? (Serializable)entry.getValue() : entry.getValue().toString()));
+            }
+        }
+    }
 }

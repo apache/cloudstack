@@ -23,7 +23,7 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
 import com.cloud.storage.Storage.StoragePoolType;
 
-public class iScsiAdmStoragePool implements KVMStoragePool {
+public class IscsiAdmStoragePool implements KVMStoragePool {
     private String _uuid;
     private String _sourceHost;
     private int _sourcePort;
@@ -34,7 +34,7 @@ public class iScsiAdmStoragePool implements KVMStoragePool {
     private String _sourceDir;
     private String _localPath;
 
-    public iScsiAdmStoragePool(String uuid, String host, int port, StoragePoolType storagePoolType, StorageAdaptor storageAdaptor) {
+    public IscsiAdmStoragePool(String uuid, String host, int port, StoragePoolType storagePoolType, StorageAdaptor storageAdaptor) {
         _uuid = uuid;
         _sourceHost = host;
         _sourcePort = port;

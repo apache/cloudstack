@@ -35,14 +35,14 @@ import com.cloud.test.stress.TestClientWithAPI;
 public class PerformanceWithAPI {
 
     public static final Logger s_logger = Logger.getLogger(PerformanceWithAPI.class.getClass());
-    private static final int _retry = 10;
-    private static final int _apiPort = 8096;
-    private static int numVM = 2;
-    private static final long _zoneId = -1L;
-    private static final long _templateId = 3;
-    private static final long _serviceOfferingId = 1;
-    private static final String _apiUrl = "/client/api";
-    private static final int _developerPort = 8080;
+    private static final int Retry = 10;
+    private static final int ApiPort = 8096;
+    private static int s_numVM = 2;
+    private static final long ZoneId = -1L;
+    private static final long TemplateId = 3;
+    private static final long ServiceOfferingId = 1;
+    private static final String ApiUrl = "/client/api";
+    private static final int DeveloperPort = 8080;
 
     public static void main(String[] args) {
 
@@ -60,14 +60,14 @@ public class PerformanceWithAPI {
                 numThreads = Integer.parseInt(iter.next());
             }
             if (arg.equals("-n")) {
-                numVM = Integer.parseInt(iter.next());
+                s_numVM = Integer.parseInt(iter.next());
             }
         }
 
-        final String server = host + ":" + _apiPort + "/";
-        final String developerServer = host + ":" + _developerPort + _apiUrl;
+        final String server = host + ":" + ApiPort + "/";
+        final String developerServer = host + ":" + DeveloperPort + ApiUrl;
 
-        s_logger.info("Starting test in " + numThreads + " thread(s). Each thread is launching " + numVM + " VMs");
+        s_logger.info("Starting test in " + numThreads + " thread(s). Each thread is launching " + s_numVM + " VMs");
 
         for (int i = 0; i < numThreads; i++) {
             new Thread(new Runnable() {
@@ -93,10 +93,10 @@ public class PerformanceWithAPI {
                         if (myUser.getUserId() != null) {
                             s_logger.info("User " + myUser.getUserName() + " was created successfully, starting VM creation");
                             //create VMs for the user
-                            for (int i = 0; i < numVM; i++) {
+                            for (int i = 0; i < s_numVM; i++) {
                                 //Create a new VM, add it to the list of user's VMs
                                 VirtualMachine myVM = new VirtualMachine(myUser.getUserId());
-                                myVM.deployVM(_zoneId, _serviceOfferingId, _templateId, myUser.getDeveloperServer(), myUser.getApiKey(), myUser.getSecretKey());
+                                myVM.deployVM(ZoneId, ServiceOfferingId, TemplateId, myUser.getDeveloperServer(), myUser.getApiKey(), myUser.getSecretKey());
                                 myUser.getVirtualMachines().add(myVM);
                                 singlePrivateIp = myVM.getPrivateIp();
 
@@ -108,7 +108,7 @@ public class PerformanceWithAPI {
                                 }
 
                                 //get public IP address for the User
-                                myUser.retrievePublicIp(_zoneId);
+                                myUser.retrievePublicIp(ZoneId);
                                 singlePublicIp = myUser.getPublicIp().get(myUser.getPublicIp().size() - 1);
                                 if (singlePublicIp != null) {
                                     s_logger.info("Successfully got public Ip " + singlePublicIp + " for user " + myUser.getUserName());
@@ -123,16 +123,16 @@ public class PerformanceWithAPI {
                                     break;
                             }
 
-                            s_logger.info("Deployment successful..." + numVM + " VMs were created. Waiting for 5 min before performance test");
+                            s_logger.info("Deployment successful..." + s_numVM + " VMs were created. Waiting for 5 min before performance test");
                             Thread.sleep(300000L); // Wait
 
                             //Start performance test for the user
                             s_logger.info("Starting performance test for Guest network that has " + myUser.getPublicIp().size() + " public IP addresses");
                             for (int j = 0; j < myUser.getPublicIp().size(); j++) {
                                 s_logger.info("Starting test for user which has " + myUser.getVirtualMachines().size() + " vms. Public IP for the user is " +
-                                    myUser.getPublicIp().get(j) + " , number of retries is " + _retry + " , private IP address of the machine is" +
+                                    myUser.getPublicIp().get(j) + " , number of retries is " + Retry + " , private IP address of the machine is" +
                                     myUser.getVirtualMachines().get(j).getPrivateIp());
-                                guestNetwork myNetwork = new guestNetwork(myUser.getPublicIp().get(j), _retry);
+                                GuestNetwork myNetwork = new GuestNetwork(myUser.getPublicIp().get(j), Retry);
                                 myNetwork.setVirtualMachines(myUser.getVirtualMachines());
                                 new Thread(myNetwork).start();
                             }

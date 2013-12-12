@@ -75,7 +75,6 @@ import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.usage.UsageIPAddressVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.NumbersUtil;
@@ -256,7 +255,7 @@ public class NetworkUsageManagerImpl extends ManagerBase implements NetworkUsage
 
         private int _interval;
 
-        private long mgmtSrvrId = MacAddress.getMacAddress().toLong();
+        private final long mgmtSrvrId = MacAddress.getMacAddress().toLong();
 
         protected DirectNetworkStatsListener(int interval) {
             _interval = interval;

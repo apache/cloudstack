@@ -150,7 +150,7 @@ public class Link {
             pkgBuf.clear();
             engResult = sslEngine.wrap(buffers, pkgBuf);
             if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED && engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
-                    engResult.getStatus() != SSLEngineResult.Status.OK) {
+                engResult.getStatus() != SSLEngineResult.Status.OK) {
                 throw new IOException("SSL: SSLEngine return bad result! " + engResult);
             }
 
@@ -276,7 +276,7 @@ public class Link {
             appBuf = ByteBuffer.allocate(sslSession.getApplicationBufferSize() + 40);
             engResult = _sslEngine.unwrap(_readBuffer, appBuf);
             if (engResult.getHandshakeStatus() != HandshakeStatus.FINISHED && engResult.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING &&
-                    engResult.getStatus() != SSLEngineResult.Status.OK) {
+                engResult.getStatus() != SSLEngineResult.Status.OK) {
                 throw new IOException("SSL: SSLEngine return bad result! " + engResult);
             }
             if (remaining == _readBuffer.remaining()) {

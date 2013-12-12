@@ -25,14 +25,14 @@ import org.apache.log4j.NDC;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.Session;
 
-public class guestNetwork implements Runnable {
-    public static final Logger s_logger = Logger.getLogger(guestNetwork.class.getClass());
+public class GuestNetwork implements Runnable {
+    public static final Logger s_logger = Logger.getLogger(GuestNetwork.class.getClass());
 
     private String publicIp;
     private ArrayList<VirtualMachine> virtualMachines;
     private int retryNum;
 
-    public guestNetwork(String publicIp, int retryNum) {
+    public GuestNetwork(String publicIp, int retryNum) {
         this.publicIp = publicIp;
         this.retryNum = retryNum;
     }

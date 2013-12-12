@@ -123,7 +123,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         Account caller = CallContext.current().getCallingAccount();
 
-        if(networkId != null){
+        if (networkId != null) {
             SearchBuilder<NetworkVO> network = _networkDao.createSearchBuilder();
             network.and("networkId", network.entity().getId(), Op.EQ);
             sb.join("networkJoin", network, sb.entity().getId(), network.entity().getNetworkACLId(), JoinBuilder.JoinType.INNER);
@@ -138,9 +138,9 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             sc.setParameters("name", name);
         }
 
-        if(vpcId != null){
+        if (vpcId != null) {
             Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
-            if(vpc == null){
+            if (vpc == null) {
                 throw new InvalidParameterValueException("Unable to find VPC");
             }
             _accountMgr.checkAccess(caller, null, true, vpc);
@@ -158,9 +158,9 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             Long projectId = cmd.getProjectId();
             boolean listAll = cmd.listAll();
             Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
-                    ListProjectResourcesCriteria>(domainId, isRecursive, null);
+                ListProjectResourcesCriteria>(domainId, isRecursive, null);
             _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
-                    listAll, false);
+                listAll, false);
             domainId = domainIdRecursiveListProject.first();
             isRecursive = domainIdRecursiveListProject.second();
             ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
@@ -489,7 +489,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
         }
 
-        if(aclId == null){
+        if (aclId == null) {
             //Join with network_acl table when aclId is not specified to list acl_items within permitted VPCs
             SearchBuilder<NetworkACLVO> vpcSearch = _networkACLDao.createSearchBuilder();
             vpcSearch.and("vpcId", vpcSearch.entity().getVpcId(), Op.IN);
@@ -511,12 +511,12 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             sc.setParameters("trafficType", trafficType);
         }
 
-        if(aclId != null){
+        if (aclId != null) {
             // Get VPC and check access
             NetworkACL acl = _networkACLDao.findById(aclId);
-            if(acl.getVpcId() != 0){
+            if (acl.getVpcId() != 0) {
                 Vpc vpc = _vpcDao.findById(acl.getVpcId());
-                if(vpc == null){
+                if (vpc == null) {
                     throw new InvalidParameterValueException("Unable to find VPC associated with acl");
                 }
                 _accountMgr.checkAccess(caller, null, true, vpc);
@@ -524,7 +524,6 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             sc.setParameters("aclId", aclId);
         } else {
             //ToDo: Add accountId to network_acl_item table for permission check
-
 
             // aclId is not specified
             // List permitted VPCs and filter aclItems
@@ -535,9 +534,9 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             Long projectId = cmd.getProjectId();
             boolean listAll = cmd.listAll();
             Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
-                    ListProjectResourcesCriteria>(domainId, isRecursive, null);
+                ListProjectResourcesCriteria>(domainId, isRecursive, null);
             _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
-                    listAll, false);
+                listAll, false);
             domainId = domainIdRecursiveListProject.first();
             isRecursive = domainIdRecursiveListProject.second();
             ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();

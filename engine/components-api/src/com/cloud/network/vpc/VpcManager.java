@@ -111,7 +111,7 @@ public interface VpcManager {
             Long domainId, PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Long aclId, Account caller,
             Boolean displayNetworkEnabled)
 
-        throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
+            throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     /**
      * Assigns source nat public IP address to VPC

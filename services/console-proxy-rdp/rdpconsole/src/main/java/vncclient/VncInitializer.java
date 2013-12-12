@@ -167,7 +167,7 @@ public class VncInitializer extends OneTimeSwitch {
         Element source = new MockSource("source") {
             {
                 bufs = ByteBuffer.convertByteArraysToByteBuffers(
-                // Send screen description
+                    // Send screen description
                     new byte[] {
                         // Framebuffer width (short)
                         0, (byte)200,

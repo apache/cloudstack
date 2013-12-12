@@ -41,7 +41,6 @@ import com.cloud.vm.snapshot.VMSnapshotManager;
 
 public enum Config {
 
-
     // Alert
 
     AlertEmailAddresses(
@@ -65,7 +64,14 @@ public enum Config {
     AlertSMTPPort("Alert", ManagementServer.class, Integer.class, "alert.smtp.port", "465", "Port the SMTP server is listening on.", null),
     AlertSMTPConnectionTimeout("Alert", ManagementServer.class, Integer.class, "alert.smtp.connectiontimeout", "30000",
             "Socket connection timeout value in milliseconds. -1 for infinite timeout.", null),
-    AlertSMTPTimeout("Alert", ManagementServer.class, Integer.class, "alert.smtp.timeout", "30000", "Socket I/O timeout value in milliseconds. -1 for infinite timeout.", null),
+    AlertSMTPTimeout(
+            "Alert",
+            ManagementServer.class,
+            Integer.class,
+            "alert.smtp.timeout",
+            "30000",
+            "Socket I/O timeout value in milliseconds. -1 for infinite timeout.",
+            null),
     AlertSMTPUseAuth("Alert", ManagementServer.class, String.class, "alert.smtp.useAuth", null, "If true, use SMTP authentication when sending emails.", null),
     AlertSMTPUsername(
             "Alert",
@@ -1892,49 +1898,49 @@ public enum Config {
     private final String _range;
     private final String _scope; // Parameter can be at different levels (Zone/cluster/pool/account), by default every parameter is at global
 
-    private static final HashMap<String, List<Config>> _scopeLevelConfigsMap = new HashMap<String, List<Config>>();
+    private static final HashMap<String, List<Config>> s_scopeLevelConfigsMap = new HashMap<String, List<Config>>();
     static {
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.Zone.toString(), new ArrayList<Config>());
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.Cluster.toString(), new ArrayList<Config>());
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.StoragePool.toString(), new ArrayList<Config>());
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.Account.toString(), new ArrayList<Config>());
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.Global.toString(), new ArrayList<Config>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Zone.toString(), new ArrayList<Config>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Cluster.toString(), new ArrayList<Config>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.StoragePool.toString(), new ArrayList<Config>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Account.toString(), new ArrayList<Config>());
+        s_scopeLevelConfigsMap.put(ConfigKey.Scope.Global.toString(), new ArrayList<Config>());
 
         for (Config c : Config.values()) {
             //Creating group of parameters per each level (zone/cluster/pool/account)
             StringTokenizer tokens = new StringTokenizer(c.getScope(), ",");
             while (tokens.hasMoreTokens()) {
                 String scope = tokens.nextToken().trim();
-                List<Config> currentConfigs = _scopeLevelConfigsMap.get(scope);
+                List<Config> currentConfigs = s_scopeLevelConfigsMap.get(scope);
                 currentConfigs.add(c);
-                _scopeLevelConfigsMap.put(scope, currentConfigs);
+                s_scopeLevelConfigsMap.put(scope, currentConfigs);
             }
         }
     }
 
-    private static final HashMap<String, List<Config>> _configs = new HashMap<String, List<Config>>();
+    private static final HashMap<String, List<Config>> Configs = new HashMap<String, List<Config>>();
     static {
         // Add categories
-        _configs.put("Alert", new ArrayList<Config>());
-        _configs.put("Storage", new ArrayList<Config>());
-        _configs.put("Snapshots", new ArrayList<Config>());
-        _configs.put("Network", new ArrayList<Config>());
-        _configs.put("Usage", new ArrayList<Config>());
-        _configs.put("Console Proxy", new ArrayList<Config>());
-        _configs.put("Advanced", new ArrayList<Config>());
-        _configs.put("Usage", new ArrayList<Config>());
-        _configs.put("Developer", new ArrayList<Config>());
-        _configs.put("Hidden", new ArrayList<Config>());
-        _configs.put("Account Defaults", new ArrayList<Config>());
-        _configs.put("Project Defaults", new ArrayList<Config>());
-        _configs.put("Secure", new ArrayList<Config>());
+        Configs.put("Alert", new ArrayList<Config>());
+        Configs.put("Storage", new ArrayList<Config>());
+        Configs.put("Snapshots", new ArrayList<Config>());
+        Configs.put("Network", new ArrayList<Config>());
+        Configs.put("Usage", new ArrayList<Config>());
+        Configs.put("Console Proxy", new ArrayList<Config>());
+        Configs.put("Advanced", new ArrayList<Config>());
+        Configs.put("Usage", new ArrayList<Config>());
+        Configs.put("Developer", new ArrayList<Config>());
+        Configs.put("Hidden", new ArrayList<Config>());
+        Configs.put("Account Defaults", new ArrayList<Config>());
+        Configs.put("Project Defaults", new ArrayList<Config>());
+        Configs.put("Secure", new ArrayList<Config>());
 
         // Add values into HashMap
         for (Config c : Config.values()) {
             String category = c.getCategory();
-            List<Config> currentConfigs = _configs.get(category);
+            List<Config> currentConfigs = Configs.get(category);
             currentConfigs.add(c);
-            _configs.put(category, currentConfigs);
+            Configs.put(category, currentConfigs);
         }
     }
 
@@ -2026,7 +2032,7 @@ public enum Config {
     }
 
     public static List<Config> getConfigs(String category) {
-        return _configs.get(category);
+        return Configs.get(category);
     }
 
     public static Config getConfig(String name) {
@@ -2044,7 +2050,7 @@ public enum Config {
     }
 
     public static List<String> getCategories() {
-        Object[] keys = _configs.keySet().toArray();
+        Object[] keys = Configs.keySet().toArray();
         List<String> categories = new ArrayList<String>();
         for (Object key : keys) {
             categories.add((String)key);
@@ -2053,6 +2059,6 @@ public enum Config {
     }
 
     public static List<Config> getConfigListByScope(String scope) {
-        return _scopeLevelConfigsMap.get(scope);
+        return s_scopeLevelConfigsMap.get(scope);
     }
 }

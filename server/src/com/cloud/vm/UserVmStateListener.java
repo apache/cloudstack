@@ -35,7 +35,6 @@ import com.cloud.event.UsageEventUtils;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.server.ManagementServer;
 import com.cloud.server.ManagementService;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.fsm.StateListener;
@@ -53,12 +52,12 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
     protected NicDao _nicDao;
     private static final Logger s_logger = Logger.getLogger(UserVmStateListener.class);
 
-    protected static EventBus _eventBus = null;
+    protected static EventBus s_eventBus = null;
 
     public UserVmStateListener(UsageEventDao usageEventDao, NetworkDao networkDao, NicDao nicDao) {
-        this._usageEventDao = usageEventDao;
-        this._networkDao = networkDao;
-        this._nicDao = nicDao;
+        _usageEventDao = usageEventDao;
+        _networkDao = networkDao;
+        _nicDao = nicDao;
     }
 
     @Override
@@ -104,7 +103,7 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
     private void pubishOnEventBus(String event, String status, VirtualMachine vo, VirtualMachine.State oldState, VirtualMachine.State newState) {
 
         try {
-            _eventBus = ComponentContext.getComponent(EventBus.class);
+            s_eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {
             return; // no provider is configured to provide events bus, so just return
         }
@@ -124,7 +123,7 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
 
         eventMsg.setDescription(eventDescription);
         try {
-            _eventBus.publish(eventMsg);
+            s_eventBus.publish(eventMsg);
         } catch (org.apache.cloudstack.framework.events.EventBusException e) {
             s_logger.warn("Failed to publish state change event on the the event bus.");
         }

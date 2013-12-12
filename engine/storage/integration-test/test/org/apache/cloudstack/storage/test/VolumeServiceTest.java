@@ -85,7 +85,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
 
 @ContextConfiguration(locations = {"classpath:/storageContext.xml"})
-public class volumeServiceTest extends CloudStackTestNGBase {
+public class VolumeServiceTest extends CloudStackTestNGBase {
     // @Inject
     // ImageDataStoreProviderManager imageProviderMgr;
     @Inject

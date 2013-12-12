@@ -24,7 +24,6 @@ import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotPoliciesCmd;
 import org.apache.cloudstack.api.command.user.snapshot.ListSnapshotsCmd;
 
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
@@ -39,7 +38,6 @@ public interface SnapshotApiService {
      * @param cmd
      *            the command containing the search criteria (order by, limit, etc.)
      * @return list of snapshots
-     * @throws PermissionDeniedException
      */
     Pair<List<? extends Snapshot>, Integer> listSnapshots(ListSnapshotsCmd cmd);
 

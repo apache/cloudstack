@@ -100,7 +100,7 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.SYSTEM_VM_TYPE)
     @Param(description = "is this a the systemvm type for system vm offering")
-    private String vm_type;
+    private String vmType;
 
     @SerializedName(ApiConstants.NETWORKRATE)
     @Param(description = "data transfer rate in megabits per second allowed.")
@@ -170,11 +170,11 @@ public class ServiceOfferingResponse extends BaseResponse {
     }
 
     public String getSystemVmType() {
-        return vm_type;
+        return vmType;
     }
 
     public void setSystemVmType(String vmtype) {
-        vm_type = vmtype;
+        vmType = vmtype;
     }
 
     public String getDisplayText() {

@@ -16,70 +16,68 @@
 // under the License.
 package com.cloud.agent.api;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.Command;
 
 public class OvsCreateTunnelAnswer extends Answer {
-	Long from;
-	Long to;
-	long networkId;
-	String inPortName;
+    Long from;
+    Long to;
+    long networkId;
+    String inPortName;
 
-	// for debug info
-	String fromIp;
-	String toIp;
-	int key;
-	String bridge;
+    // for debug info
+    String fromIp;
+    String toIp;
+    int key;
+    String bridge;
 
-	public OvsCreateTunnelAnswer(Command cmd, boolean success, String details,
-			String bridge) {
-		super(cmd, success, details);
-		OvsCreateTunnelCommand c = (OvsCreateTunnelCommand) cmd;
-		from = c.getFrom();
-		to = c.getTo();
-		networkId = c.getNetworkId();
-		inPortName = "[]";
-		fromIp = c.getFromIp();
-		toIp = c.getRemoteIp();
-		key = c.getKey();
-		this.bridge = bridge;
-	}
+    public OvsCreateTunnelAnswer(Command cmd, boolean success, String details,
+            String bridge) {
+        super(cmd, success, details);
+        OvsCreateTunnelCommand c = (OvsCreateTunnelCommand)cmd;
+        from = c.getFrom();
+        to = c.getTo();
+        networkId = c.getNetworkId();
+        inPortName = "[]";
+        fromIp = c.getFromIp();
+        toIp = c.getRemoteIp();
+        key = c.getKey();
+        this.bridge = bridge;
+    }
 
-	public OvsCreateTunnelAnswer(Command cmd, boolean success, String details,
-			String inPortName, String bridge) {
-		this(cmd, success, details, bridge);
-		this.inPortName = inPortName;
-	}
+    public OvsCreateTunnelAnswer(Command cmd, boolean success, String details,
+            String inPortName, String bridge) {
+        this(cmd, success, details, bridge);
+        this.inPortName = inPortName;
+    }
 
-	public Long getFrom() {
-		return from;
-	}
+    public Long getFrom() {
+        return from;
+    }
 
-	public Long getTo() {
-		return to;
-	}
+    public Long getTo() {
+        return to;
+    }
 
-	public long getNetworkId() {
-		return networkId;
-	}
+    public long getNetworkId() {
+        return networkId;
+    }
 
-	public String getInPortName() {
-		return inPortName;
-	}
+    public String getInPortName() {
+        return inPortName;
+    }
 
-	public String getFromIp() {
-		return fromIp;
-	}
+    public String getFromIp() {
+        return fromIp;
+    }
 
-	public String getToIp() {
-		return toIp;
-	}
+    public String getToIp() {
+        return toIp;
+    }
 
-	public int getKey() {
-		return key;
-	}
+    public int getKey() {
+        return key;
+    }
 
-	public String getBridge() {
-		return bridge;
-	}
+    public String getBridge() {
+        return bridge;
+    }
 }

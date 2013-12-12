@@ -72,8 +72,8 @@ public class AlertVO implements Alert {
 
     @Column(name = "archived")
     private boolean archived;
-    
-    @Column(name="name")
+
+    @Column(name = "name")
     private String name;
 
     public AlertVO() {
@@ -187,7 +187,6 @@ public class AlertVO implements Alert {
     public String getName() {
         return name;
     }
-
 
     public void setName(String name) {
         this.name = name;

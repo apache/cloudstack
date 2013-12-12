@@ -65,7 +65,7 @@ import com.cloud.vm.dao.NicDao;
 @Local(value = {ContrailElement.class, StaticNatServiceProvider.class})
 public class ContrailElementImpl extends AdapterBase implements ContrailElement, IpDeployer, StaticNatServiceProvider {
 
-    private static final Map<Service, Map<Capability, String>> _capabilities = InitCapabilities();
+    private final Map<Service, Map<Capability, String>> _capabilities = InitCapabilities();
 
     @Inject
     ContrailManager _manager;

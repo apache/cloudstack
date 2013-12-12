@@ -31,7 +31,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
     private boolean _osType = false;
     private boolean _domainTypeKVM = false;
     private boolean _emulatorFlag = false;
-    private boolean _archTypex86_64 = false;
+    private boolean _archTypex8664 = false;
     private final StringBuffer _emulator = new StringBuffer();
     private final StringBuffer _capXML = new StringBuffer();
     private static final Logger s_logger = Logger.getLogger(LibvirtCapXMLParser.class);
@@ -50,7 +50,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
         } else if (qName.equalsIgnoreCase("emulator")) {
             _emulatorFlag = false;
         } else if (qName.equalsIgnoreCase("arch")) {
-            _archTypex86_64 = false;
+            _archTypex8664 = false;
         } else if (_host) {
             _capXML.append("<").append("/").append(qName).append(">");
         }
@@ -81,7 +81,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
         } else if (qName.equalsIgnoreCase("arch")) {
             for (int i = 0; i < attributes.getLength(); i++) {
                 if (attributes.getQName(i).equalsIgnoreCase("name") && attributes.getValue(i).equalsIgnoreCase("x86_64")) {
-                    _archTypex86_64 = true;
+                    _archTypex8664 = true;
                 }
             }
         } else if (qName.equalsIgnoreCase("domain")) {
@@ -90,7 +90,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
                     _domainTypeKVM = true;
                 }
             }
-        } else if (qName.equalsIgnoreCase("emulator") && _domainTypeKVM && _archTypex86_64) {
+        } else if (qName.equalsIgnoreCase("emulator") && _domainTypeKVM && _archTypex8664) {
             _emulatorFlag = true;
             _emulator.delete(0, _emulator.length());
         } else if (_host) {

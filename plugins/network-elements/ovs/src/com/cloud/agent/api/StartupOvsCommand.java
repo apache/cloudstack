@@ -16,12 +16,11 @@
 // under the License.
 package com.cloud.agent.api;
 
-import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.Host;
 
 public class StartupOvsCommand extends StartupCommand {
 
-	public StartupOvsCommand() {
-		super(Host.Type.L2Networking);
-	}
+    public StartupOvsCommand() {
+        super(Host.Type.L2Networking);
+    }
 }

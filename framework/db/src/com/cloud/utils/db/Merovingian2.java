@@ -52,7 +52,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
     private static final String SELECT_THREAD_LOCKS_SQL = SELECT_SQL + " WHERE mac=? AND ip=?";
     private static final String CLEANUP_THREAD_LOCKS_SQL = "DELETE FROM op_lock WHERE mac=? AND ip=? AND thread=?";
 
-    TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
+    TimeZone _gmtTimeZone = TimeZone.getTimeZone("GMT");
 
     private final long _msId;
 
@@ -184,7 +184,7 @@ public class Merovingian2 extends StandardMBean implements MerovingianMBean {
             pstmt.setLong(2, _msId);
             pstmt.setString(3, threadName);
             pstmt.setInt(4, threadId);
-            pstmt.setString(5, DateUtil.getDateDisplayString(s_gmtTimeZone, new Date()));
+            pstmt.setString(5, DateUtil.getDateDisplayString(_gmtTimeZone, new Date()));
             try {
                 int rows = pstmt.executeUpdate();
                 if (rows == 1) {

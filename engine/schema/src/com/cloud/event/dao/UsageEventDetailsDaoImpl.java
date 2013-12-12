@@ -98,7 +98,7 @@ public class UsageEventDetailsDaoImpl extends GenericDaoBase<UsageEventDetailsVO
 
         } catch (SQLException e) {
             throw new CloudRuntimeException("Error while executing SQL prepared statement", e);
-        }  catch (Throwable e) {
+        } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + e);
         } finally {
             if (pstmt != null) {

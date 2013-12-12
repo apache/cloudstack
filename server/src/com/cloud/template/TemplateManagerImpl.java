@@ -1267,12 +1267,12 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             updatedTemplate.setFeatured(isFeatured.booleanValue());
         }
 
-        if(isExtractable != null){
+        if (isExtractable != null) {
             // Only Root admins allowed to change it for templates
-            if(!template.getFormat().equals(ImageFormat.ISO) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN){
+            if (!template.getFormat().equals(ImageFormat.ISO) && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                 throw new InvalidParameterValueException("Only ROOT admins are allowed to modify this attribute.");
-            }else{
-            // For Isos normal user can change it, as their are no derivatives.
+            } else {
+                // For Isos normal user can change it, as their are no derivatives.
                 updatedTemplate.setExtractable(isExtractable.booleanValue());
             }
         }
@@ -1628,20 +1628,20 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         // Increment the number of templates
         if (template != null) {
             Map<String, String> details = new HashMap<String, String>();
-            if ( volume != null ) {
+            if (volume != null) {
                 Long vmId = volume.getInstanceId();
-                if ( vmId != null ) {
-	            UserVmVO userVm = _userVmDao.findById(vmId);
+                if (vmId != null) {
+                    UserVmVO userVm = _userVmDao.findById(vmId);
                     if (userVm != null) {
                         _userVmDao.loadDetails(userVm);
                         details.putAll(userVm.getDetails());
                     }
                 }
             }
-            if(cmd.getDetails() != null) {
+            if (cmd.getDetails() != null) {
                 details.putAll(cmd.getDetails());
             }
-            if( !details.isEmpty()) {
+            if (!details.isEmpty()) {
                 privateTemplate.setDetails(details);
                 _tmpltDao.saveDetails(privateTemplate);
             }

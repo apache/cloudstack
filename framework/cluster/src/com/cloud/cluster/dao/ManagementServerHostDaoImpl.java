@@ -44,48 +44,48 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Local(value = {ManagementServerHostDao.class})
 public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServerHostVO, Long> implements ManagementServerHostDao {
     private static final Logger s_logger = Logger.getLogger(ManagementServerHostDaoImpl.class);
-    
+
     private final SearchBuilder<ManagementServerHostVO> MsIdSearch;
     private final SearchBuilder<ManagementServerHostVO> ActiveSearch;
     private final SearchBuilder<ManagementServerHostVO> InactiveSearch;
     private final SearchBuilder<ManagementServerHostVO> StateSearch;
 
-	@Override
+    @Override
     public void invalidateRunSession(long id, long runid) {
-	    TransactionLegacy txn = TransactionLegacy.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement("update mshost set runid=0, state='Down' where id=? and runid=?");
             pstmt.setLong(1, id);
             pstmt.setLong(2, runid);
-            
+
             pstmt.executeUpdate();
         } catch (SQLException e) {
-        	throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
+            throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
         }
-	}
-	
-	@Override
+    }
+
+    @Override
     public ManagementServerHostVO findByMsid(long msid) {
         SearchCriteria<ManagementServerHostVO> sc = MsIdSearch.create();
         sc.setParameters("msid", msid);
-		
-		List<ManagementServerHostVO> l = listIncludingRemovedBy(sc);
+
+        List<ManagementServerHostVO> l = listIncludingRemovedBy(sc);
         if (l != null && l.size() > 0) {
             return l.get(0);
         }
-		 
-		return null;
-	}
-	
-	@Override
+
+        return null;
+    }
+
+    @Override
     @DB
-	public void update(long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate) {
+    public void update(long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             txn.start();
-            
+
             pstmt =
                 txn.prepareAutoCloseStatement("update mshost set name=?, version=?, service_ip=?, service_port=?, last_update=?, removed=null, alert_count=0, runid=?, state=? where id=?");
             pstmt.setString(1, name);
@@ -96,48 +96,48 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             pstmt.setLong(6, runid);
             pstmt.setString(7, ManagementServerHost.State.Up.toString());
             pstmt.setLong(8, id);
-            
+
             pstmt.executeUpdate();
             txn.commit();
         } catch (Exception e) {
             s_logger.warn("Unexpected exception, ", e);
             throw new RuntimeException(e.getMessage(), e);
         }
-	}
-	
-	@Override
+    }
+
+    @Override
     @DB
     public boolean remove(Long id) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-    
+
         try {
-        	txn.start();
-        	
-        	ManagementServerHostVO msHost = findById(id);
-        	msHost.setState(ManagementServerHost.State.Down);
-        	super.remove(id);
-        	
-        	txn.commit();
-        	return true;
+            txn.start();
+
+            ManagementServerHostVO msHost = findById(id);
+            msHost.setState(ManagementServerHost.State.Down);
+            super.remove(id);
+
+            txn.commit();
+            return true;
         } catch (Exception e) {
             s_logger.warn("Unexpected exception, ", e);
             throw new RuntimeException(e.getMessage(), e);
         }
     }
 
-	@Override
+    @Override
     @DB
-	public void update(long id, long runid, Date lastUpdate) {
+    public void update(long id, long runid, Date lastUpdate) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             txn.start();
-            
+
             pstmt = txn.prepareAutoCloseStatement("update mshost set last_update=?, removed=null, alert_count=0 where id=? and runid=?");
             pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
             pstmt.setLong(2, id);
             pstmt.setLong(3, runid);
-            
+
             int count = pstmt.executeUpdate();
             txn.commit();
 
@@ -148,69 +148,69 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             s_logger.warn("Unexpected exception, ", e);
             throw new RuntimeException(e.getMessage(), e);
         }
-	}
-	
-	@Override
-    public List<ManagementServerHostVO> getActiveList(Date cutTime) {
-	    SearchCriteria<ManagementServerHostVO> sc = ActiveSearch.create();
-	    sc.setParameters("lastUpdateTime", cutTime);
-	    
-	    return listIncludingRemovedBy(sc);
-	}
+    }
 
-	@Override
+    @Override
+    public List<ManagementServerHostVO> getActiveList(Date cutTime) {
+        SearchCriteria<ManagementServerHostVO> sc = ActiveSearch.create();
+        sc.setParameters("lastUpdateTime", cutTime);
+
+        return listIncludingRemovedBy(sc);
+    }
+
+    @Override
     public List<ManagementServerHostVO> getInactiveList(Date cutTime) {
-	    SearchCriteria<ManagementServerHostVO> sc = InactiveSearch.create();
-	    sc.setParameters("lastUpdateTime", cutTime);
-	    
-	    return listIncludingRemovedBy(sc);
-	}
-	
-	@Override
+        SearchCriteria<ManagementServerHostVO> sc = InactiveSearch.create();
+        sc.setParameters("lastUpdateTime", cutTime);
+
+        return listIncludingRemovedBy(sc);
+    }
+
+    @Override
     @DB
-	public int increaseAlertCount(long id) {
+    public int increaseAlertCount(long id) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         int changedRows = 0;
         try {
             txn.start();
-            
+
             pstmt = txn.prepareAutoCloseStatement("update mshost set alert_count=alert_count+1 where id=? and alert_count=0");
             pstmt.setLong(1, id);
-            
+
             changedRows = pstmt.executeUpdate();
             txn.commit();
         } catch (Exception e) {
             s_logger.warn("Unexpected exception, ", e);
             throw new RuntimeException(e.getMessage(), e);
         }
-        
-        return changedRows;
-	}
-	
-	protected ManagementServerHostDaoImpl() {
-		MsIdSearch = createSearchBuilder();
-		MsIdSearch.and("msid",  MsIdSearch.entity().getMsid(), SearchCriteria.Op.EQ);
-		MsIdSearch.done();
-		
-	    ActiveSearch = createSearchBuilder();
-	    ActiveSearch.and("lastUpdateTime", ActiveSearch.entity().getLastUpdateTime(),  SearchCriteria.Op.GT);
-	    ActiveSearch.and("removed", ActiveSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-	    ActiveSearch.done();
 
-	    InactiveSearch = createSearchBuilder();
-	    InactiveSearch.and("lastUpdateTime", InactiveSearch.entity().getLastUpdateTime(),  SearchCriteria.Op.LTEQ);
-	    InactiveSearch.and("removed", InactiveSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-	    InactiveSearch.done();
-	    
-	    StateSearch = createSearchBuilder();
-	    StateSearch.and("state", StateSearch.entity().getState(), SearchCriteria.Op.IN);
-	    StateSearch.done();
-	}
-	
-	@Override
+        return changedRows;
+    }
+
+    protected ManagementServerHostDaoImpl() {
+        MsIdSearch = createSearchBuilder();
+        MsIdSearch.and("msid", MsIdSearch.entity().getMsid(), SearchCriteria.Op.EQ);
+        MsIdSearch.done();
+
+        ActiveSearch = createSearchBuilder();
+        ActiveSearch.and("lastUpdateTime", ActiveSearch.entity().getLastUpdateTime(), SearchCriteria.Op.GT);
+        ActiveSearch.and("removed", ActiveSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        ActiveSearch.done();
+
+        InactiveSearch = createSearchBuilder();
+        InactiveSearch.and("lastUpdateTime", InactiveSearch.entity().getLastUpdateTime(), SearchCriteria.Op.LTEQ);
+        InactiveSearch.and("removed", InactiveSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+        InactiveSearch.done();
+
+        StateSearch = createSearchBuilder();
+        StateSearch.and("state", StateSearch.entity().getState(), SearchCriteria.Op.IN);
+        StateSearch.done();
+    }
+
+    @Override
     public void update(long id, long runId, State state, Date lastUpdate) {
-	    TransactionLegacy txn = TransactionLegacy.currentTxn();
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             pstmt = txn.prepareAutoCloseStatement("update mshost set state=?, last_update=? where id=? and runid=?");
@@ -218,9 +218,9 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             pstmt.setString(2, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
             pstmt.setLong(3, id);
             pstmt.setLong(4, runId);
-            
+
             int count = pstmt.executeUpdate();
-            
+
             if (count < 1) {
                 throw new CloudRuntimeException("Invalid cluster session detected", new ClusterInvalidSessionException("runid " + runId + " is no longer valid"));
             }
@@ -228,21 +228,21 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
             throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
         }
     }
-	
-	@Override
+
+    @Override
     public List<ManagementServerHostVO> listBy(ManagementServerHost.State... states) {
-	    SearchCriteria<ManagementServerHostVO> sc = StateSearch.create();
+        SearchCriteria<ManagementServerHostVO> sc = StateSearch.create();
 
         sc.setParameters("state", (Object[])states);
-        
+
         return listBy(sc);
-	}
-	
-	@Override
-	public List<Long> listOrphanMsids() {
-		List<Long> orphanList = new ArrayList<Long>();
-		
-	    TransactionLegacy txn = TransactionLegacy.currentTxn();
+    }
+
+    @Override
+    public List<Long> listOrphanMsids() {
+        List<Long> orphanList = new ArrayList<Long>();
+
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         try {
             pstmt =
@@ -250,26 +250,26 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
 
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-            	orphanList.add(rs.getLong(1));
+                orphanList.add(rs.getLong(1));
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("DB exception on " + pstmt.toString(), e);
         }
-        
-        return orphanList;
-	}
 
-	@Override
-	public ManagementServerHostVO findOneInUpState(Filter filter) {
-	    SearchCriteria<ManagementServerHostVO> sc = StateSearch.create();
+        return orphanList;
+    }
+
+    @Override
+    public ManagementServerHostVO findOneInUpState(Filter filter) {
+        SearchCriteria<ManagementServerHostVO> sc = StateSearch.create();
 
         sc.setParameters("state", ManagementServerHost.State.Up);
-        
-        List<ManagementServerHostVO> mshosts =  listBy(sc, filter);
+
+        List<ManagementServerHostVO> mshosts = listBy(sc, filter);
         if (mshosts != null && mshosts.size() > 0) {
-        	return mshosts.get(0);	
+            return mshosts.get(0);
         }
         return null;
-	}
-	
+    }
+
 }

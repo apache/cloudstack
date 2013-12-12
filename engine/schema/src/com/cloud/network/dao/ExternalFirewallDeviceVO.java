@@ -80,10 +80,10 @@ public class ExternalFirewallDeviceVO implements InternalIdentity, Identity {
         Free, Allocated
     }
 
-    public ExternalFirewallDeviceVO(long hostId, long physicalNetworkId, String provider_name, String device_name, long capacity, boolean dedicated) {
+    public ExternalFirewallDeviceVO(long hostId, long physicalNetworkId, String providerName, String deviceName, long capacity, boolean dedicated) {
         this.physicalNetworkId = physicalNetworkId;
-        this.providerName = provider_name;
-        this.deviceName = device_name;
+        this.providerName = providerName;
+        this.deviceName = deviceName;
         this.hostId = hostId;
         this.deviceState = FirewallDeviceState.Disabled;
         this.allocationState = FirewallDeviceAllocationState.Free;

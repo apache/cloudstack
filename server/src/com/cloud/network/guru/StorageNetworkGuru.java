@@ -56,11 +56,11 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         super();
     }
 
-    private static final TrafficType[] _trafficTypes = {TrafficType.Storage};
+    private static final TrafficType[] TrafficTypes = {TrafficType.Storage};
 
     @Override
     public boolean isMyTrafficType(TrafficType type) {
-        for (TrafficType t : _trafficTypes) {
+        for (TrafficType t : TrafficTypes) {
             if (t == type) {
                 return true;
             }
@@ -70,7 +70,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
     @Override
     public TrafficType[] getSupportedTrafficType() {
-        return _trafficTypes;
+        return TrafficTypes;
     }
 
     protected boolean canHandle(NetworkOffering offering) {

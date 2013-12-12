@@ -315,7 +315,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
-    protected DataCenterLinkLocalIpAddressDao _LinkLocalIpAllocDao;
+    protected DataCenterLinkLocalIpAddressDao _linkLocalIpAllocDao;
 
     private int _maxVolumeSizeInGb = Integer.parseInt(Config.MaxVolumeSize.getDefaultValue());
     private long _defaultPageSize = Long.parseLong(Config.DefaultPageSize.getDefaultValue());
@@ -403,8 +403,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if (localCidrs.length > 0) {
                 s_logger.warn("Management network CIDR is not configured originally. Set it default to " + localCidrs[0]);
 
-                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0), "Management network CIDR is not configured originally. Set it default to " +
-                    localCidrs[0], "");
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0),
+                    "Management network CIDR is not configured originally. Set it default to " +
+                        localCidrs[0], "");
                 _configDao.update(Config.ManagementNetwork.key(), Config.ManagementNetwork.getCategory(), localCidrs[0]);
             } else {
                 s_logger.warn("Management network CIDR is not properly configured and we are not able to find a default setting");
@@ -979,9 +980,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
 
                 // Delete link local ip addresses for the pod
-                List<DataCenterLinkLocalIpAddressVO> localIps = _LinkLocalIpAllocDao.listByPodIdDcId(podId, pod.getDataCenterId());
+                List<DataCenterLinkLocalIpAddressVO> localIps = _linkLocalIpAllocDao.listByPodIdDcId(podId, pod.getDataCenterId());
                 if (!localIps.isEmpty()) {
-                    if (!(_LinkLocalIpAllocDao.deleteIpAddressByPod(podId))) {
+                    if (!(_linkLocalIpAllocDao.deleteIpAddressByPod(podId))) {
                         throw new CloudRuntimeException("Failed to cleanup private ip addresses for pod " + podId);
                     }
                 }
@@ -1936,7 +1937,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         //restricting the createserviceoffering to allow setting all or none of the dynamic parameters to null
         if (cpuNumber == null || cpuSpeed == null || memory == null) {
-            if (cpuNumber !=null || cpuSpeed !=null || memory !=null) {
+            if (cpuNumber != null || cpuSpeed != null || memory != null) {
                 throw new InvalidParameterValueException("For creating a custom compute offering cpu, cpu speed and memory all should be null");
             }
         }
@@ -2013,14 +2014,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             cmd.getDetails(), cmd.getBytesReadRate(), cmd.getBytesWriteRate(), cmd.getIopsReadRate(), cmd.getIopsWriteRate());
     }
 
-    protected ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vm_type, String name, Integer cpu, Integer ramSize,
+    protected ServiceOfferingVO createServiceOffering(long userId, boolean isSystem, VirtualMachine.Type vmType, String name, Integer cpu, Integer ramSize,
         Integer speed, String displayText, boolean localStorageRequired, boolean offerHA, boolean limitResourceUse, boolean volatileVm, String tags, Long domainId,
         String hostTag, Integer networkRate, String deploymentPlanner, Map<String, String> details, Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate,
         Long iopsWriteRate) {
         tags = StringUtils.cleanupTags(tags);
         ServiceOfferingVO offering =
             new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA, limitResourceUse, volatileVm, displayText, localStorageRequired, false, tags,
-                isSystem, vm_type, domainId, hostTag, deploymentPlanner);
+                isSystem, vmType, domainId, hostTag, deploymentPlanner);
         if ((bytesReadRate != null) && (bytesReadRate > 0))
             offering.setBytesReadRate(bytesReadRate);
         if ((bytesWriteRate != null) && (bytesWriteRate > 0))
@@ -3718,7 +3719,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Set<Provider> firewallProviderSet = new HashSet<Provider>();
             firewallProviderSet.add(firewallProvider);
             serviceProviderMap.put(Service.Firewall, firewallProviderSet);
-            if (!(firewallProvider.getName().equals(Provider.JuniperSRX.getName()) || firewallProvider.getName().equals(Provider.PaloAlto.getName()) || firewallProvider.getName().equals(Provider.VirtualRouter.getName())) &&
+            if (!(firewallProvider.getName().equals(Provider.JuniperSRX.getName()) || firewallProvider.getName().equals(Provider.PaloAlto.getName()) || firewallProvider.getName()
+                .equals(Provider.VirtualRouter.getName())) &&
                 egressDefaultPolicy == false) {
                 throw new InvalidParameterValueException("Firewall egress with default policy " + egressDefaultPolicy + " is not supported by the provider " +
                     firewallProvider.getName());

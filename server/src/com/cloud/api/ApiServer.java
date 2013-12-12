@@ -181,11 +181,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @Inject
     protected ApiAsyncJobDispatcher _asyncDispatcher;
-    private static int _workerCount = 0;
-    private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-    private static Map<String, Class<?>> _apiNameCmdClassMap = new HashMap<String, Class<?>>();
+    private static int s_workerCount = 0;
+    private static final DateFormat DateFormatToUse = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    private static Map<String, Class<?>> s_apiNameCmdClassMap = new HashMap<String, Class<?>>();
 
-    private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(
+    private static ExecutorService s_executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(
         "ApiServer"));
 
     public ApiServer() {
@@ -234,11 +234,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 throw new CloudRuntimeException(String.format("%s is claimed as a API command, but it doesn't have @APICommand annotation", cmdClass.getName()));
             }
             String apiName = at.name();
-            if (_apiNameCmdClassMap.containsKey(apiName)) {
+            if (s_apiNameCmdClassMap.containsKey(apiName)) {
                 s_logger.error("API Cmd class " + cmdClass.getName() + " has non-unique apiname" + apiName);
                 continue;
             }
-            _apiNameCmdClassMap.put(apiName, cmdClass);
+            s_apiNameCmdClassMap.put(apiName, cmdClass);
         }
 
         encodeApiResponse = Boolean.valueOf(_configDao.getValue(Config.EncodeApiResponse.key()));
@@ -630,7 +630,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 return true;
             } else {
                 // check against every available command to see if the command exists or not
-                if (!_apiNameCmdClassMap.containsKey(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
+                if (!s_apiNameCmdClassMap.containsKey(commandName) && !commandName.equals("login") && !commandName.equals("logout")) {
                     s_logger.debug("The given command:" + commandName + " does not exist or it is not available for user with id:" + userId);
                     throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, "The given command does not exist or it is not available for user");
                 }
@@ -686,9 +686,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     s_logger.debug("Missing Expires parameter -- ignoring request. Signature: " + signature + ", apiKey: " + apiKey);
                     return false;
                 }
-                synchronized (_dateFormat) {
+                synchronized (DateFormatToUse) {
                     try {
-                        expiresTS = _dateFormat.parse(expires);
+                        expiresTS = DateFormatToUse.parse(expires);
                     } catch (ParseException pe) {
                         s_logger.debug("Incorrect date format for Expires parameter", pe);
                         return false;
@@ -872,7 +872,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     }
 
     private Class<?> getCmdClass(String cmdName) {
-        return _apiNameCmdClassMap.get(cmdName);
+        return s_apiNameCmdClassMap.get(cmdName);
     }
 
     // FIXME: rather than isError, we might was to pass in the status code to give more flexibility
@@ -957,7 +957,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     conn.bind(socket, _params);
 
                     // Execute a new worker task to handle the request
-                    _executor.execute(new WorkerTask(_httpService, conn, _workerCount++));
+                    s_executor.execute(new WorkerTask(_httpService, conn, s_workerCount++));
                 } catch (InterruptedIOException ex) {
                     break;
                 } catch (IOException e) {
@@ -1094,8 +1094,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     }
 
     @Inject
-    public void setPluggableServices(List<PluggableService> _pluggableServices) {
-        this._pluggableServices = _pluggableServices;
+    public void setPluggableServices(List<PluggableService> pluggableServices) {
+        this._pluggableServices = pluggableServices;
     }
 
     public List<APIChecker> getApiAccessCheckers() {
@@ -1103,7 +1103,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     }
 
     @Inject
-    public void setApiAccessCheckers(List<APIChecker> _apiAccessCheckers) {
-        this._apiAccessCheckers = _apiAccessCheckers;
+    public void setApiAccessCheckers(List<APIChecker> apiAccessCheckers) {
+        this._apiAccessCheckers = apiAccessCheckers;
     }
 }

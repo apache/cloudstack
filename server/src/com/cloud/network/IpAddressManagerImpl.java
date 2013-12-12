@@ -1644,7 +1644,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         Set<Long> availableIps = _networkModel.getAvailableIps(network, requestedIp);
 
         if (availableIps == null || availableIps.isEmpty()) {
-            s_logger.debug("There are no free ips in the  network " + network );
+            s_logger.debug("There are no free ips in the  network " + network);
             return null;
         }
 

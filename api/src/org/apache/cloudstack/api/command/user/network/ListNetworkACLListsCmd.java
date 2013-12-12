@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -34,7 +33,7 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listNetworkACLLists", description="Lists all network ACLs", responseObject=NetworkACLResponse.class)
+@APICommand(name = "listNetworkACLLists", description = "Lists all network ACLs", responseObject = NetworkACLResponse.class)
 public class ListNetworkACLListsCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkACLListsCmd.class.getName());
 
@@ -85,8 +84,8 @@ public class ListNetworkACLListsCmd extends BaseListProjectAndAccountResourcesCm
     }
 
     @Override
-    public void execute(){
-        Pair<List<? extends NetworkACL>,Integer> result = _networkACLService.listNetworkACLs(this);
+    public void execute() {
+        Pair<List<? extends NetworkACL>, Integer> result = _networkACLService.listNetworkACLs(this);
         ListResponse<NetworkACLResponse> response = new ListResponse<NetworkACLResponse>();
         List<NetworkACLResponse> aclResponses = new ArrayList<NetworkACLResponse>();
 
@@ -96,6 +95,6 @@ public class ListNetworkACLListsCmd extends BaseListProjectAndAccountResourcesCm
         }
         response.setResponses(aclResponses, result.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

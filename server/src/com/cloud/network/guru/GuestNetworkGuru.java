@@ -117,7 +117,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             "If true, when account has dedicated guest vlan range(s), once the vlans dedicated to the account have been consumed vlans will be allocated from the system pool",
             false, ConfigKey.Scope.Account);
 
-    private static final TrafficType[] _trafficTypes = {TrafficType.Guest};
+    private static final TrafficType[] TrafficTypes = {TrafficType.Guest};
 
     // Currently set to anything except STT for the Nicira integration.
     protected IsolationMethod[] _isolationMethods;
@@ -132,7 +132,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
     @Override
     public boolean isMyTrafficType(TrafficType type) {
-        for (TrafficType t : _trafficTypes) {
+        for (TrafficType t : TrafficTypes) {
             if (t == type) {
                 return true;
             }
@@ -142,7 +142,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
     @Override
     public TrafficType[] getSupportedTrafficType() {
-        return _trafficTypes;
+        return TrafficTypes;
     }
 
     public boolean isMyIsolationMethod(PhysicalNetwork physicalNetwork) {

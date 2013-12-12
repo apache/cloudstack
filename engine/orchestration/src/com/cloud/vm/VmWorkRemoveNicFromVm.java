@@ -17,17 +17,17 @@
 package com.cloud.vm;
 
 public class VmWorkRemoveNicFromVm extends VmWork {
-	private static final long serialVersionUID = -4265657031064437923L;
+    private static final long serialVersionUID = -4265657031064437923L;
 
-	Nic nic;
-    
-	public VmWorkRemoveNicFromVm(long userId, long accountId, long vmId, Nic nic) {
-    	super(userId, accountId, vmId);
-    	
-    	this.nic = nic;
+    Nic nic;
+
+    public VmWorkRemoveNicFromVm(long userId, long accountId, long vmId, Nic nic) {
+        super(userId, accountId, vmId);
+
+        this.nic = nic;
     }
-    
+
     public Nic getNic() {
-    	return this.nic;
+        return this.nic;
     }
 }

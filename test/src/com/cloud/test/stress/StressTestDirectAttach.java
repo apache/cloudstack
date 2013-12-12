@@ -61,18 +61,18 @@ public class StressTestDirectAttach {
     private static boolean repeat = true;
     private static String[] users = null;
     private static boolean internet = false;
-    private static ThreadLocal<String> _linuxIP = new ThreadLocal<String>();
-    private static ThreadLocal<String> _linuxVmId = new ThreadLocal<String>();
-    private static ThreadLocal<String> _linuxVmId1 = new ThreadLocal<String>();
-    private static ThreadLocal<String> _linuxPassword = new ThreadLocal<String>();
-    private static ThreadLocal<String> _windowsIP = new ThreadLocal<String>();
-    private static ThreadLocal<String> _secretKey = new ThreadLocal<String>();
-    private static ThreadLocal<String> _apiKey = new ThreadLocal<String>();
-    private static ThreadLocal<Long> _userId = new ThreadLocal<Long>();
-    private static ThreadLocal<String> _account = new ThreadLocal<String>();
-    private static ThreadLocal<String> _domainRouterId = new ThreadLocal<String>();
-    private static ThreadLocal<String> _newVolume = new ThreadLocal<String>();
-    private static ThreadLocal<String> _newVolume1 = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_linuxIP = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_linuxVmId = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_linuxVmId1 = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_linuxPassword = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_windowsIP = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_secretKey = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_apiKey = new ThreadLocal<String>();
+    private static ThreadLocal<Long> s_userId = new ThreadLocal<Long>();
+    private static ThreadLocal<String> s_account = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_domainRouterId = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_newVolume = new ThreadLocal<String>();
+    private static ThreadLocal<String> s_newVolume1 = new ThreadLocal<String>();
     private static DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     private static int usageIterator = 1;
     private static int numThreads = 1;
@@ -182,16 +182,16 @@ public class StressTestDirectAttach {
                                         // the windows VM
                                         // can boot up and do a sys prep.
 
-                                        s_logger.info("Begin Linux SSH test for account " + _account.get());
-                                        reason = sshTest(_linuxIP.get(), _linuxPassword.get());
+                                        s_logger.info("Begin Linux SSH test for account " + s_account.get());
+                                        reason = sshTest(s_linuxIP.get(), s_linuxPassword.get());
 
                                         if (reason == null) {
-                                            s_logger.info("Linux SSH test successful for account " + _account.get());
+                                            s_logger.info("Linux SSH test successful for account " + s_account.get());
                                         }
                                     }
                                     if (reason == null) {
                                         if (internet) {
-                                            s_logger.info("Windows SSH test successful for account " + _account.get());
+                                            s_logger.info("Windows SSH test successful for account " + s_account.get());
                                         } else {
                                             s_logger.info("deploy test successful....now cleaning up");
                                             if (cleanUp) {
@@ -228,7 +228,7 @@ public class StressTestDirectAttach {
                                     } else {
                                         // Just stop but don't destroy the
                                         // VMs/Routers
-                                        s_logger.info("SSH test failed for account " + _account.get() + "with reason '" + reason + "', stopping VMs");
+                                        s_logger.info("SSH test failed for account " + s_account.get() + "with reason '" + reason + "', stopping VMs");
                                         int stopResponseCode = executeStop(server, developerServer, username);
                                         s_logger.info("stop command finished with response code: " + stopResponseCode);
                                         success = false; // since the SSH test
@@ -404,7 +404,7 @@ public class StressTestDirectAttach {
     }
 
     private static String executeRegistration(String server, String username, String password) throws HttpException, IOException {
-        String url = server + "?command=registerUserKeys&id=" + _userId.get().toString();
+        String url = server + "?command=registerUserKeys&id=" + s_userId.get().toString();
         s_logger.info("registering: " + username);
         String returnValue = null;
         HttpClient client = new HttpClient();
@@ -413,7 +413,7 @@ public class StressTestDirectAttach {
         if (responseCode == 200) {
             InputStream is = method.getResponseBodyAsStream();
             Map<String, String> requestKeyValues = getSingleValueFromXML(is, new String[] {"apikey", "secretkey"});
-            _apiKey.set(requestKeyValues.get("apikey"));
+            s_apiKey.set(requestKeyValues.get("apikey"));
             returnValue = requestKeyValues.get("secretkey");
         } else {
             s_logger.error("registration failed with error code: " + responseCode);
@@ -458,8 +458,8 @@ public class StressTestDirectAttach {
             s_logger.info("created user " + username + " with id " + userIdStr);
             if (userIdStr != null) {
                 userId = Long.parseLong(userIdStr);
-                _userId.set(userId);
-                _account.set(userIdValues.get("account"));
+                s_userId.set(userId);
+                s_account.set(userIdValues.get("account"));
                 if (userId == -1) {
                     s_logger.error("create user (" + username + ") failed to retrieve a valid user id, aborting depolyment test");
                     return -1;
@@ -470,14 +470,14 @@ public class StressTestDirectAttach {
             return responseCode;
         }
 
-        _secretKey.set(executeRegistration(server, username, username));
+        s_secretKey.set(executeRegistration(server, username, username));
 
-        if (_secretKey.get() == null) {
+        if (s_secretKey.get() == null) {
             s_logger.error("FAILED to retrieve secret key during registration, skipping user: " + username);
             return -1;
         } else {
-            s_logger.info("got secret key: " + _secretKey.get());
-            s_logger.info("got api key: " + _apiKey.get());
+            s_logger.info("got secret key: " + s_secretKey.get());
+            s_logger.info("got api key: " + s_apiKey.get());
         }
 
         // ---------------------------------
@@ -489,10 +489,10 @@ public class StressTestDirectAttach {
         } else {
             networkAccount = encodedUsername;
         }
-        String encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
+        String encodedApiKey = URLEncoder.encode(s_apiKey.get(), "UTF-8");
         String requestToSign = "apikey=" + encodedApiKey + "&command=createSecurityGroup&name=" + encodedUsername;
         requestToSign = requestToSign.toLowerCase();
-        String signature = signRequest(requestToSign, _secretKey.get());
+        String signature = signRequest(requestToSign, s_secretKey.get());
         String encodedSignature = URLEncoder.encode(signature, "UTF-8");
         url = developerServer + "?command=createSecurityGroup&name=" + encodedUsername + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
         method = new GetMethod(url);
@@ -543,12 +543,12 @@ public class StressTestDirectAttach {
             String encodedZoneId = URLEncoder.encode("" + zoneId, "UTF-8");
             String encodedServiceOfferingId = URLEncoder.encode("" + serviceOfferingId, "UTF-8");
             String encodedTemplateId = URLEncoder.encode("" + templateId, "UTF-8");
-            encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
+            encodedApiKey = URLEncoder.encode(s_apiKey.get(), "UTF-8");
             requestToSign =
                 "apikey=" + encodedApiKey + "&command=deployVirtualMachine&securitygrouplist=" + encodedUsername + "&serviceofferingid=" + encodedServiceOfferingId +
                     "&templateid=" + encodedTemplateId + "&zoneid=" + encodedZoneId;
             requestToSign = requestToSign.toLowerCase();
-            signature = signRequest(requestToSign, _secretKey.get());
+            signature = signRequest(requestToSign, s_secretKey.get());
             encodedSignature = URLEncoder.encode(signature, "UTF-8");
             url =
                 developerServer + "?command=deployVirtualMachine&securitygrouplist=" + encodedUsername + "&zoneid=" + encodedZoneId + "&serviceofferingid=" +
@@ -568,9 +568,9 @@ public class StressTestDirectAttach {
                     s_logger.info("deploy linux vm response code: " + responseCode);
                     long linuxVMId = Long.parseLong(values.get("id"));
                     s_logger.info("got linux virtual machine id: " + linuxVMId);
-                    _linuxVmId.set(values.get("id"));
-                    _linuxIP.set(values.get("ipaddress"));
-                    _linuxPassword.set("rs-ccb35ea5");
+                    s_linuxVmId.set(values.get("id"));
+                    s_linuxIP.set(values.get("ipaddress"));
+                    s_linuxPassword.set("rs-ccb35ea5");
                 }
             } else {
                 s_logger.error("deploy linux vm failed with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -580,7 +580,7 @@ public class StressTestDirectAttach {
 
         //Create a new volume
         {
-            url = server + "?command=createVolume&diskofferingid=" + diskOfferingId + "&zoneid=" + zoneId + "&name=newvolume&account=" + _account.get() + "&domainid=1";
+            url = server + "?command=createVolume&diskofferingid=" + diskOfferingId + "&zoneid=" + zoneId + "&name=newvolume&account=" + s_account.get() + "&domainid=1";
             s_logger.info("Creating volume....");
             client = new HttpClient();
             method = new GetMethod(url);
@@ -597,7 +597,7 @@ public class StressTestDirectAttach {
                     s_logger.info("create volume response code: " + responseCode);
                     String volumeId = values.get("id");
                     s_logger.info("got volume id: " + volumeId);
-                    _newVolume.set(volumeId);
+                    s_newVolume.set(volumeId);
                 }
             } else {
                 s_logger.error("create volume failed with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -607,8 +607,8 @@ public class StressTestDirectAttach {
 
         //attach a new volume to the vm
         {
-            url = server + "?command=attachVolume&id=" + _newVolume.get() + "&virtualmachineid=" + _linuxVmId.get();
-            s_logger.info("Attaching volume with id " + _newVolume.get() + " to the vm " + _linuxVmId.get());
+            url = server + "?command=attachVolume&id=" + s_newVolume.get() + "&virtualmachineid=" + s_linuxVmId.get();
+            s_logger.info("Attaching volume with id " + s_newVolume.get() + " to the vm " + s_linuxVmId.get());
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
@@ -640,12 +640,12 @@ public class StressTestDirectAttach {
             String encodedZoneId = URLEncoder.encode("" + zoneId, "UTF-8");
             String encodedServiceOfferingId = URLEncoder.encode("" + serviceOfferingId, "UTF-8");
             String encodedTemplateId = URLEncoder.encode("" + templateId, "UTF-8");
-            encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
+            encodedApiKey = URLEncoder.encode(s_apiKey.get(), "UTF-8");
             requestToSign =
                 "apikey=" + encodedApiKey + "&command=deployVirtualMachine&securitygrouplist=" + encodedUsername + "&serviceofferingid=" + encodedServiceOfferingId +
                     "&templateid=" + encodedTemplateId + "&zoneid=" + encodedZoneId;
             requestToSign = requestToSign.toLowerCase();
-            signature = signRequest(requestToSign, _secretKey.get());
+            signature = signRequest(requestToSign, s_secretKey.get());
             encodedSignature = URLEncoder.encode(signature, "UTF-8");
             url =
                 developerServer + "?command=deployVirtualMachine&securitygrouplist=" + encodedUsername + "&zoneid=" + encodedZoneId + "&serviceofferingid=" +
@@ -665,7 +665,7 @@ public class StressTestDirectAttach {
                     s_logger.info("deploy linux vm response code: " + responseCode);
                     long linuxVMId = Long.parseLong(values.get("id"));
                     s_logger.info("got linux virtual machine id: " + linuxVMId);
-                    _linuxVmId1.set(values.get("id"));
+                    s_linuxVmId1.set(values.get("id"));
                 }
             } else {
                 s_logger.error("deploy linux vm failed with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -675,7 +675,7 @@ public class StressTestDirectAttach {
 
         //Create a new volume
         {
-            url = server + "?command=createVolume&diskofferingid=" + diskOfferingId1 + "&zoneid=" + zoneId + "&name=newvolume1&account=" + _account.get() + "&domainid=1";
+            url = server + "?command=createVolume&diskofferingid=" + diskOfferingId1 + "&zoneid=" + zoneId + "&name=newvolume1&account=" + s_account.get() + "&domainid=1";
             s_logger.info("Creating volume....");
             client = new HttpClient();
             method = new GetMethod(url);
@@ -692,7 +692,7 @@ public class StressTestDirectAttach {
                     s_logger.info("create volume response code: " + responseCode);
                     String volumeId = values.get("id");
                     s_logger.info("got volume id: " + volumeId);
-                    _newVolume1.set(volumeId);
+                    s_newVolume1.set(volumeId);
                 }
             } else {
                 s_logger.error("create volume failed with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -702,8 +702,8 @@ public class StressTestDirectAttach {
 
         //attach a new volume to the vm
         {
-            url = server + "?command=attachVolume&id=" + _newVolume1.get() + "&virtualmachineid=" + _linuxVmId1.get();
-            s_logger.info("Attaching volume with id " + _newVolume1.get() + " to the vm " + _linuxVmId1.get());
+            url = server + "?command=attachVolume&id=" + s_newVolume1.get() + "&virtualmachineid=" + s_linuxVmId1.get();
+            s_logger.info("Attaching volume with id " + s_newVolume1.get() + " to the vm " + s_linuxVmId1.get());
             client = new HttpClient();
             method = new GetMethod(url);
             responseCode = client.executeMethod(method);
@@ -735,7 +735,7 @@ public class StressTestDirectAttach {
         // -----------------------------
         // GET USER
         // -----------------------------
-        String userId = _userId.get().toString();
+        String userId = s_userId.get().toString();
         String encodedUserId = URLEncoder.encode(userId, "UTF-8");
         String url = server + "?command=listUsers&id=" + encodedUserId;
         s_logger.info("Cleaning up resources for user: " + userId + " with url " + url);
@@ -780,13 +780,13 @@ public class StressTestDirectAttach {
         // -----------------------------
 
         //Reboot centos VM
-        String encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
-        String requestToSign = "apikey=" + encodedApiKey + "&command=rebootVirtualMachine&id=" + _linuxVmId.get();
+        String encodedApiKey = URLEncoder.encode(s_apiKey.get(), "UTF-8");
+        String requestToSign = "apikey=" + encodedApiKey + "&command=rebootVirtualMachine&id=" + s_linuxVmId.get();
         requestToSign = requestToSign.toLowerCase();
-        String signature = signRequest(requestToSign, _secretKey.get());
+        String signature = signRequest(requestToSign, s_secretKey.get());
         String encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
-        url = developerServer + "?command=rebootVirtualMachine&id=" + _linuxVmId.get() + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
+        url = developerServer + "?command=rebootVirtualMachine&id=" + s_linuxVmId.get() + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
@@ -802,12 +802,12 @@ public class StressTestDirectAttach {
         }
 
         //Stop centos VM
-        requestToSign = "apikey=" + encodedApiKey + "&command=stopVirtualMachine&id=" + _linuxVmId.get();
+        requestToSign = "apikey=" + encodedApiKey + "&command=stopVirtualMachine&id=" + s_linuxVmId.get();
         requestToSign = requestToSign.toLowerCase();
-        signature = signRequest(requestToSign, _secretKey.get());
+        signature = signRequest(requestToSign, s_secretKey.get());
         encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
-        url = developerServer + "?command=stopVirtualMachine&id=" + _linuxVmId.get() + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
+        url = developerServer + "?command=stopVirtualMachine&id=" + s_linuxVmId.get() + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
@@ -823,12 +823,12 @@ public class StressTestDirectAttach {
         }
 
         //Start centos VM
-        requestToSign = "apikey=" + encodedApiKey + "&command=startVirtualMachine&id=" + _linuxVmId.get();
+        requestToSign = "apikey=" + encodedApiKey + "&command=startVirtualMachine&id=" + s_linuxVmId.get();
         requestToSign = requestToSign.toLowerCase();
-        signature = signRequest(requestToSign, _secretKey.get());
+        signature = signRequest(requestToSign, s_secretKey.get());
         encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
-        url = developerServer + "?command=startVirtualMachine&id=" + _linuxVmId.get() + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
+        url = developerServer + "?command=startVirtualMachine&id=" + s_linuxVmId.get() + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
         client = new HttpClient();
         method = new GetMethod(url);
         responseCode = client.executeMethod(method);
@@ -902,9 +902,9 @@ public class StressTestDirectAttach {
         // -----------------------------
         // GET EVENTS
         // -----------------------------
-        String url = server + "?command=listEvents&page=1&account=" + _account.get();
+        String url = server + "?command=listEvents&page=1&account=" + s_account.get();
 
-        s_logger.info("Getting events for the account " + _account.get());
+        s_logger.info("Getting events for the account " + s_account.get());
         HttpClient client = new HttpClient();
         HttpMethod method = new GetMethod(url);
         int responseCode = client.executeMethod(method);
@@ -939,7 +939,7 @@ public class StressTestDirectAttach {
         // -----------------------------
         // GET USER
         // -----------------------------
-        String userId = _userId.get().toString();
+        String userId = s_userId.get().toString();
         String encodedUserId = URLEncoder.encode(userId, "UTF-8");
 
         String url = server + "?command=listUsers&id=" + encodedUserId;
@@ -968,10 +968,10 @@ public class StressTestDirectAttach {
             // ----------------------------------
             // LIST VIRTUAL MACHINES
             // ----------------------------------
-            String encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
+            String encodedApiKey = URLEncoder.encode(s_apiKey.get(), "UTF-8");
             String requestToSign = "apikey=" + encodedApiKey + "&command=listVirtualMachines";
             requestToSign = requestToSign.toLowerCase();
-            String signature = signRequest(requestToSign, _secretKey.get());
+            String signature = signRequest(requestToSign, s_secretKey.get());
             String encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
             url = developerServer + "?command=listVirtualMachines&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
@@ -1013,7 +1013,7 @@ public class StressTestDirectAttach {
                 for (String vmId : vmIds) {
                     requestToSign = "apikey=" + encodedApiKey + "&command=stopVirtualMachine&id=" + vmId;
                     requestToSign = requestToSign.toLowerCase();
-                    signature = signRequest(requestToSign, _secretKey.get());
+                    signature = signRequest(requestToSign, s_secretKey.get());
                     encodedSignature = URLEncoder.encode(signature, "UTF-8");
 
                     url = developerServer + "?command=stopVirtualMachine&id=" + vmId + "&apikey=" + encodedApiKey + "&signature=" + encodedSignature;
@@ -1052,15 +1052,15 @@ public class StressTestDirectAttach {
 
         }
 
-        _linuxIP.set("");
-        _linuxVmId.set("");
-        _linuxPassword.set("");
-        _windowsIP.set("");
-        _secretKey.set("");
-        _apiKey.set("");
-        _userId.set(Long.parseLong("0"));
-        _account.set("");
-        _domainRouterId.set("");
+        s_linuxIP.set("");
+        s_linuxVmId.set("");
+        s_linuxPassword.set("");
+        s_windowsIP.set("");
+        s_secretKey.set("");
+        s_apiKey.set("");
+        s_userId.set(Long.parseLong("0"));
+        s_account.set("");
+        s_domainRouterId.set("");
         return responseCode;
     }
 
@@ -1090,16 +1090,16 @@ public class StressTestDirectAttach {
         while (true) {
             try {
                 if (retry > 0) {
-                    s_logger.info("Retry attempt : " + retry + " ...sleeping 300 seconds before next attempt. Account is " + _account.get());
+                    s_logger.info("Retry attempt : " + retry + " ...sleeping 300 seconds before next attempt. Account is " + s_account.get());
                     Thread.sleep(300000);
                 }
 
-                s_logger.info("Attempting to SSH into windows host " + host + " with retry attempt: " + retry + " for account " + _account.get());
+                s_logger.info("Attempting to SSH into windows host " + host + " with retry attempt: " + retry + " for account " + s_account.get());
 
                 Connection conn = new Connection(host);
                 conn.connect(null, 60000, 60000);
 
-                s_logger.info("User " + _account.get() + " ssHed successfully into windows host " + host);
+                s_logger.info("User " + s_account.get() + " ssHed successfully into windows host " + host);
                 boolean success = false;
                 boolean isAuthenticated = conn.authenticateWithPassword("Administrator", "password");
                 if (isAuthenticated == false) {
@@ -1121,7 +1121,7 @@ public class StressTestDirectAttach {
                 }
                 Session sess = conn.openSession();
 
-                s_logger.info("User + " + _account.get() + " executing : wget http://192.168.1.250/dump.bin");
+                s_logger.info("User + " + s_account.get() + " executing : wget http://192.168.1.250/dump.bin");
                 sess.execCommand("wget http://192.168.1.250/dump.bin && dir dump.bin");
 
                 InputStream stdout = sess.getStdout();
@@ -1164,7 +1164,7 @@ public class StressTestDirectAttach {
                 } else {
                     retry++;
                     if (retry == MAX_RETRY_WIN) {
-                        return "SSH Windows Network test fail for account " + _account.get();
+                        return "SSH Windows Network test fail for account " + s_account.get();
                     }
                 }
             } catch (Exception e) {
@@ -1196,16 +1196,16 @@ public class StressTestDirectAttach {
         while (true) {
             try {
                 if (retry > 0) {
-                    s_logger.info("Retry attempt : " + retry + " ...sleeping 120 seconds before next attempt. Account is " + _account.get());
+                    s_logger.info("Retry attempt : " + retry + " ...sleeping 120 seconds before next attempt. Account is " + s_account.get());
                     Thread.sleep(120000);
                 }
 
-                s_logger.info("Attempting to SSH into linux host " + host + " with retry attempt: " + retry + ". Account is " + _account.get());
+                s_logger.info("Attempting to SSH into linux host " + host + " with retry attempt: " + retry + ". Account is " + s_account.get());
 
                 Connection conn = new Connection(host);
                 conn.connect(null, 60000, 60000);
 
-                s_logger.info("User + " + _account.get() + " ssHed successfully into linux host " + host);
+                s_logger.info("User + " + s_account.get() + " ssHed successfully into linux host " + host);
 
                 boolean isAuthenticated = conn.authenticateWithPassword("root", password);
 
@@ -1224,7 +1224,7 @@ public class StressTestDirectAttach {
                     linuxCommand = "wget http://192.168.1.250/dump.bin && ls -al dump.bin";
 
                 Session sess = conn.openSession();
-                s_logger.info("User " + _account.get() + " executing : " + linuxCommand);
+                s_logger.info("User " + s_account.get() + " executing : " + linuxCommand);
                 sess.execCommand(linuxCommand);
 
                 InputStream stdout = sess.getStdout();

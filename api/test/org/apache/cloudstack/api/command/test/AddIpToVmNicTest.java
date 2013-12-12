@@ -67,7 +67,8 @@ public class AddIpToVmNicTest extends TestCase {
         AddIpToVmNicCmd ipTonicCmd = Mockito.mock(AddIpToVmNicCmd.class);
         NicSecondaryIp secIp = Mockito.mock(NicSecondaryIp.class);
 
-        Mockito.when(networkService.allocateSecondaryGuestIP(Matchers.any(Account.class), Matchers.anyLong(), Matchers.anyLong(), Matchers.anyLong(), Matchers.anyString()))
+        Mockito.when(
+            networkService.allocateSecondaryGuestIP(Matchers.any(Account.class), Matchers.anyLong(), Matchers.anyLong(), Matchers.anyLong(), Matchers.anyString()))
             .thenReturn(secIp);
 
         ipTonicCmd._networkService = networkService;
@@ -86,7 +87,8 @@ public class AddIpToVmNicTest extends TestCase {
         NetworkService networkService = Mockito.mock(NetworkService.class);
         AddIpToVmNicCmd ipTonicCmd = Mockito.mock(AddIpToVmNicCmd.class);
 
-        Mockito.when(networkService.allocateSecondaryGuestIP(Matchers.any(Account.class), Matchers.anyLong(), Matchers.anyLong(), Matchers.anyLong(), Matchers.anyString()))
+        Mockito.when(
+            networkService.allocateSecondaryGuestIP(Matchers.any(Account.class), Matchers.anyLong(), Matchers.anyLong(), Matchers.anyLong(), Matchers.anyString()))
             .thenReturn(null);
 
         ipTonicCmd._networkService = networkService;

@@ -150,8 +150,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return _timeout;
     }
 
-    public void setTimeout(int _timeout) {
-        this._timeout = _timeout;
+    public void setTimeout(int timeout) {
+        this._timeout = timeout;
     }
 
     String _instance;

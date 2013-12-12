@@ -25,10 +25,10 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
-import com.cloud.event.UsageEventVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.event.UsageEventVO;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.utils.db.DB;
@@ -128,11 +128,11 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     }
 
     @Override
-    public List<ServiceOfferingVO> findSystemOffering(Long domainId, Boolean isSystem, String vm_type) {
+    public List<ServiceOfferingVO> findSystemOffering(Long domainId, Boolean isSystem, String vmType) {
         SearchCriteria<ServiceOfferingVO> sc = SystemServiceOffering.create();
         sc.setParameters("domainId", domainId);
         sc.setParameters("system", isSystem);
-        sc.setParameters("vm_type", vm_type);
+        sc.setParameters("vm_type", vmType);
         return listBy(sc);
     }
 
@@ -211,7 +211,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
                 throw new CloudRuntimeException("missing argument vmId");
             }
             Map<String, String> dynamicOffering = userVmDetailsDao.listDetailsKeyPairs(vmId);
-            return  getcomputeOffering(offering, dynamicOffering);
+            return getcomputeOffering(offering, dynamicOffering);
         }
         return offering;
     }

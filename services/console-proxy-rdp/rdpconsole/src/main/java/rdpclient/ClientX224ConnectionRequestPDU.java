@@ -119,7 +119,7 @@ public class ClientX224ConnectionRequestPDU extends OneTimeSwitch {
 
         byte[] packet = new byte[] {
 
-        0x03, // TPKT Header: version = 3
+            0x03, // TPKT Header: version = 3
             0x00, // TPKT Header: Reserved = 0
             0x00, // TPKT Header: Packet length - high part
             0x2c, // TPKT Header: Packet length - low part (total = 44 bytes)
@@ -138,7 +138,7 @@ public class ClientX224ConnectionRequestPDU extends OneTimeSwitch {
             0x08, 0x00, // RDP_NEG_REQ::length (8 bytes)
             0x01, 0x00, 0x00, 0x00 // RDP_NEG_REQ: Requested protocols
                                    // (PROTOCOL_SSL in little endian format)
-            };
+        };
 
         MockSource source = new MockSource("source", ByteBuffer.convertByteArraysToByteBuffers(new byte[] {1, 2, 3}));
         Element cr = new ClientX224ConnectionRequestPDU("cr", cookie);

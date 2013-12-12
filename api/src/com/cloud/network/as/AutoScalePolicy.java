@@ -32,8 +32,8 @@ public interface AutoScalePolicy extends ControlledEntity, InternalIdentity {
     public int getDuration();
 
     public int getQuietTime();
-    
-	public Date getLastQuiteTime();
+
+    public Date getLastQuiteTime();
 
     public String getAction();
 

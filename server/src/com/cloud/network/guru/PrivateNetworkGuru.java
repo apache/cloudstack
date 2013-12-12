@@ -66,7 +66,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     @Inject
     EntityManager _entityMgr;
 
-    private static final TrafficType[] _trafficTypes = {TrafficType.Guest};
+    private static final TrafficType[] TrafficTypes = {TrafficType.Guest};
 
     protected PrivateNetworkGuru() {
         super();
@@ -74,7 +74,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public boolean isMyTrafficType(TrafficType type) {
-        for (TrafficType t : _trafficTypes) {
+        for (TrafficType t : TrafficTypes) {
             if (t == type) {
                 return true;
             }
@@ -84,7 +84,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public TrafficType[] getSupportedTrafficType() {
-        return _trafficTypes;
+        return TrafficTypes;
     }
 
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
