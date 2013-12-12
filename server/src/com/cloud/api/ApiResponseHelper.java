@@ -465,10 +465,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         if (snapshotInfo == null) {
-            throw new CloudRuntimeException("Unable to find info for image store snapshot with uuid '" + snapshot.getUuid() + "'");
+            s_logger.debug("Unable to find info for image store snapshot with uuid "+snapshot.getUuid());
+            snapshotResponse.setRevertable(false);
+        }else{
+            snapshotResponse.setRevertable(snapshotInfo.isRevertable());
         }
-
-        snapshotResponse.setRevertable(snapshotInfo.isRevertable());
 
         // set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.Snapshot, snapshot.getId());
