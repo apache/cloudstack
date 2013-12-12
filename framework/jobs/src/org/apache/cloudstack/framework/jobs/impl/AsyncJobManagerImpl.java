@@ -593,7 +593,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         msgDetector.open(_messageBus, topics);
         try {
             long startTick = System.currentTimeMillis();
-            while (System.currentTimeMillis() - startTick < timeoutInMiliseconds) {
+            while (timeoutInMiliseconds < 0 || System.currentTimeMillis() - startTick < timeoutInMiliseconds) {
                 msgDetector.waitAny(checkIntervalInMilliSeconds);
                 job = _jobDao.findById(job.getId());
                 if (job.getStatus().done()) {
