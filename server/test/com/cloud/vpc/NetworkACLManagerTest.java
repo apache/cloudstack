@@ -57,6 +57,9 @@ import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.NetworkACLManagerImpl;
 import com.cloud.network.vpc.NetworkACLVO;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.VpcGateway;
+import com.cloud.network.vpc.VpcGatewayVO;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpc.dao.NetworkACLDao;
@@ -69,17 +72,6 @@ import com.cloud.user.UserVO;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.network.vpc.NetworkACLManager;
-import com.cloud.network.vpc.VpcManager;
-import com.cloud.network.vpc.VpcService;
-import com.cloud.network.vpc.NetworkACLVO;
-import com.cloud.network.vpc.NetworkACLItemVO;
-import com.cloud.network.vpc.VpcGatewayVO;
-import com.cloud.network.vpc.PrivateGateway;
-import com.cloud.network.vpc.NetworkACLManagerImpl;
-import com.cloud.network.vpc.NetworkACLItemDao;
-import com.cloud.network.vpc.NetworkACLItem;
-import com.cloud.network.vpc.VpcGateway;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
