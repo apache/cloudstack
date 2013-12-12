@@ -43,6 +43,7 @@ import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
+import com.cloud.network.dao.Site2SiteVpnConnectionDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.security.dao.SecurityGroupDao;
@@ -144,6 +145,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     Site2SiteVpnGatewayDao _vpnGatewayDao;
     @Inject
     Site2SiteCustomerGatewayDao _customerGatewayDao;
+    @Inject
+    Site2SiteVpnConnectionDao _vpnConnectionDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -172,6 +175,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         _daoMap.put(ResourceObjectType.NetworkACLList, _networkACLListDao);
         _daoMap.put(ResourceObjectType.VpnGateway, _vpnGatewayDao);
         _daoMap.put(ResourceObjectType.CustomerGateway, _customerGatewayDao);
+        _daoMap.put(ResourceObjectType.VpnConnection, _vpnConnectionDao);
 
         return true;
     }

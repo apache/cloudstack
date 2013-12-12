@@ -31,6 +31,7 @@ import org.apache.cloudstack.resourcedetail.dao.NetworkACLItemDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.NetworkACLListDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.RemoteAccessVpnDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.Site2SiteCustomerGatewayDetailsDao;
+import org.apache.cloudstack.resourcedetail.dao.Site2SiteVpnConnectionDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.Site2SiteVpnGatewayDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
@@ -99,6 +100,8 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     Site2SiteVpnGatewayDetailsDao _vpnGatewayDetailsDao;
     @Inject
     Site2SiteCustomerGatewayDetailsDao _customerGatewayDetailsDao;
+    @Inject
+    Site2SiteVpnConnectionDetailsDao _vpnConnectionDetailsDao;
     
 
     private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> _daoMap =
@@ -125,6 +128,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         _daoMap.put(ResourceObjectType.NetworkACL, _networkACLDetailsDao);
         _daoMap.put(ResourceObjectType.VpnGateway, _vpnGatewayDetailsDao);
         _daoMap.put(ResourceObjectType.CustomerGateway, _customerGatewayDetailsDao);
+        _daoMap.put(ResourceObjectType.VpnConnection, _vpnConnectionDetailsDao);
 
         return true;
     }
