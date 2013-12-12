@@ -98,6 +98,12 @@ install_packages() {
 
   apt-get --no-install-recommends -q -y --force-yes install haproxy
 
+  #32 bit architecture support:: not required for 32 bit template
+  dpkg --add-architecture i386
+  apt-get update
+  apt-get --no-install-recommends -q -y --force-yes install links:i386 libuuid1:i386
+
+
 }
 
 setup_accounts() {
