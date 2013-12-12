@@ -470,7 +470,7 @@
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
           <sourceDirectory>${project.basedir}</sourceDirectory>
           <includes>**\/*.java</includes>
-          <excludes>**\/deps\/,**\/test\/,**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat,**\/awsapi\/,**\/xapi\/,**\/apidoc\/</excludes>
+          <excludes>**\/deps\/,**\/test\/,**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat,**\/awsapi\/,**\/XenServerJava\/,**\/apidoc\/</excludes>
         </configuration>
       </plugin>
     </plugins>
