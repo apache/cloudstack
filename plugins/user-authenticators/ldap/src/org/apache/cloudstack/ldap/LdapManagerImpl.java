@@ -24,9 +24,6 @@ import javax.inject.Inject;
 import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.LdapValidator;
 import org.apache.cloudstack.api.command.LDAPConfigCmd;
 import org.apache.cloudstack.api.command.LDAPRemoveCmd;
@@ -40,6 +37,8 @@ import org.apache.cloudstack.api.command.LdapUserSearchCmd;
 import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.LdapUserResponse;
 import org.apache.cloudstack.ldap.dao.LdapConfigurationDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
@@ -76,10 +75,10 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
             try {
                 final String providerUrl = "ldap://" + hostname + ":" + port;
                 _ldapContextFactory.createBindContext(providerUrl);
-                configuration = new LdapConfigurationVO(hostname, port);
+                configuration = new LdapConfigurationVO(hostname, Integer.toString(port));
                 _ldapConfigurationDao.persist(configuration);
                 s_logger.info("Added new ldap server with hostname: " + hostname);
-                return new LdapConfigurationResponse(hostname, port);
+                return new LdapConfigurationResponse(hostname, Integer.toString(port));
             } catch (final NamingException e) {
                 throw new InvalidParameterValueException("Unable to bind to the given LDAP server");
             }

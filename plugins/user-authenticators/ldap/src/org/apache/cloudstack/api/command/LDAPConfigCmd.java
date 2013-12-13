@@ -21,9 +21,11 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.log4j.Logger;
-
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -37,12 +39,9 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.ldap.LdapConfiguration;
 import org.apache.cloudstack.ldap.LdapConfigurationVO;
 import org.apache.cloudstack.ldap.LdapManager;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.log4j.Logger;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 
@@ -68,7 +67,7 @@ public class LDAPConfigCmd extends BaseCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @Parameter(name = ApiConstants.LIST_ALL, type = CommandType.BOOLEAN, description = "If true return current LDAP configuration")
+    @Parameter(name = ApiConstants.LIST_ALL, type = BaseCmd.CommandType.BOOLEAN, description = "If true return current LDAP configuration")
     private Boolean listAll;
 
     @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, description = "Hostname or ip address of the ldap server eg: my.ldap.com")
@@ -80,19 +79,13 @@ public class LDAPConfigCmd extends BaseCmd {
     @Parameter(name = ApiConstants.USE_SSL, type = CommandType.BOOLEAN, description = "Check Use SSL if the external LDAP server is configured for LDAP over SSL.")
     private Boolean useSSL;
 
-    @Parameter(name = ApiConstants.SEARCH_BASE,
-               type = CommandType.STRING,
-               description = "The search base defines the starting point for the search in the directory tree Example:  dc=cloud,dc=com.")
+    @Parameter(name = ApiConstants.SEARCH_BASE, type = CommandType.STRING, description = "The search base defines the starting point for the search in the directory tree Example:  dc=cloud,dc=com.")
     private String searchBase;
 
-    @Parameter(name = ApiConstants.QUERY_FILTER,
-               type = CommandType.STRING,
-               description = "You specify a query filter here, which narrows down the users, who can be part of this domain.")
+    @Parameter(name = ApiConstants.QUERY_FILTER, type = CommandType.STRING, description = "You specify a query filter here, which narrows down the users, who can be part of this domain.")
     private String queryFilter;
 
-    @Parameter(name = ApiConstants.BIND_DN,
-               type = CommandType.STRING,
-               description = "Specify the distinguished name of a user with the search permission on the directory.")
+    @Parameter(name = ApiConstants.BIND_DN, type = CommandType.STRING, description = "Specify the distinguished name of a user with the search permission on the directory.")
     private String bindDN;
 
     @Parameter(name = ApiConstants.BIND_PASSWORD, type = CommandType.STRING, description = "Enter the password.")
@@ -177,8 +170,7 @@ public class LDAPConfigCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-        ResourceAllocationException {
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         if (getListAll()) {
             // return the existing conf
 
@@ -192,8 +184,7 @@ public class LDAPConfigCmd extends BaseCmd {
                 String searchBaseConfig = _ldapConfiguration.getBaseDn();
                 String bindDnConfig = _ldapConfiguration.getBindPrincipal();
                 for (LdapConfigurationVO ldapConfigurationVO : result.first()) {
-                    responses.add(createLDAPConfigResponse(ldapConfigurationVO.getHostname(), ldapConfigurationVO.getPort(), useSSlConfig, null, searchBaseConfig,
-                        bindDnConfig));
+                    responses.add(createLDAPConfigResponse(ldapConfigurationVO.getHostname(), ldapConfigurationVO.getPort(), useSSlConfig, null, searchBaseConfig, bindDnConfig));
                 }
             }
             response.setResponses(responses);
@@ -204,7 +195,7 @@ public class LDAPConfigCmd extends BaseCmd {
         } else {
             boolean result = updateLDAP();
             if (result) {
-                LDAPConfigResponse lr = createLDAPConfigResponse(getHostname(), getPort(), getUseSSL(), getQueryFilter(), getSearchBase(), getBindDN());
+                LDAPConfigResponse lr = this.createLDAPConfigResponse(getHostname(), getPort().toString(), getUseSSL(), getQueryFilter(), getSearchBase(), getBindDN());
                 lr.setResponseName(getCommandName());
                 setResponseObject(lr);
             }
@@ -212,10 +203,10 @@ public class LDAPConfigCmd extends BaseCmd {
 
     }
 
-    private LDAPConfigResponse createLDAPConfigResponse(String hostname, Integer port, Boolean useSSL, String queryFilter, String searchBase, String bindDN) {
+    private LDAPConfigResponse createLDAPConfigResponse(String hostname, String port, Boolean useSSL, String queryFilter, String searchBase, String bindDN) {
         LDAPConfigResponse lr = new LDAPConfigResponse();
         lr.setHostname(hostname);
-        lr.setPort(port.toString());
+        lr.setPort(port);
         lr.setUseSSL(useSSL.toString());
         lr.setQueryFilter(queryFilter);
         lr.setBindDN(bindDN);
