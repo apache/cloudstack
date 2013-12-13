@@ -8985,7 +8985,8 @@
 
                                             setTimeout(function() {
                                                 args.response.success({
-                                                    data: args.context.routerGroupByZone[0]
+                                                    data: args.context.routerGroupByZone[0],
+                                                    actionFilter: routerGroupActionfilter
                                                 })
                                             });
                                         }
@@ -9218,7 +9219,8 @@
                                             });
                                             setTimeout(function() {
                                                 args.response.success({
-                                                    data: args.context.routerGroupByPod[0]
+                                                    data: args.context.routerGroupByPod[0],
+                                                    actionFilter: routerGroupActionfilter
                                                 });
                                             });
                                         }
@@ -9454,7 +9456,8 @@
                                             });
                                             setTimeout(function() {
                                                 args.response.success({
-                                                    data: args.context.routerGroupByCluster[0]
+                                                    data: args.context.routerGroupByCluster[0],
+                                                    actionFilter: routerGroupActionfilter
                                                 });
                                             });
                                         }
@@ -9693,7 +9696,8 @@
                                             });
                                             setTimeout(function() {
                                                 args.response.success({
-                                                    data: args.context.routerGroupByAccount[0]
+                                                    data: args.context.routerGroupByAccount[0],
+                                                    actionFilter: routerGroupActionfilter
                                                 });
                                             });
                                         }
@@ -18707,7 +18711,16 @@
         }
         return allowedActions;
     }
-
+    
+    var routerGroupActionfilter = function(args) {
+        var jsonObj = args.context.item;
+        var allowedActions = [];
+        if (jsonObj.routerRequiresUpgrade > 0) {
+            allowedActions.push("upgradeRouterToUseNewerTemplate");    
+        }     
+        return allowedActions;
+    }
+        
     var bladeActionfilter = function(args) {
         var jsonObj = args.context.item;
         var allowedActions = [];
