@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
@@ -55,7 +56,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.projects.Project;
 import com.cloud.user.Account;
 
-@APICommand(name = "associateIpAddress", description="Acquires and associates a public IP to an account.", responseObject=IPAddressResponse.class)
+@APICommand(name = "associateIpAddress", description = "Acquires and associates a public IP to an account.", responseObject = IPAddressResponse.class, responseView = ResponseView.Restricted)
 public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(AssociateIPAddrCmd.class.getName());
     private static final String s_name = "associateipaddressresponse";
@@ -307,7 +308,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         }
 
         if (result != null) {
-            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(result);
+            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(ResponseView.Restricted, result);
             ipResponse.setResponseName(getCommandName());
             setResponseObject(ipResponse);
         } else {

@@ -234,7 +234,7 @@ public interface ResponseGenerator {
 
     VlanIpRangeResponse createVlanIpRangeResponse(Vlan vlan);
 
-    IPAddressResponse createIPAddressResponse(IpAddress ipAddress);
+    IPAddressResponse createIPAddressResponse(ResponseView view, IpAddress ipAddress);
 
     GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlan result);
 

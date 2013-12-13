@@ -19,11 +19,14 @@ package org.apache.cloudstack.api.command.user.address;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.IPAddressResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
@@ -31,12 +34,11 @@ import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.VlanIpRangeResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.IpAddress;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listPublicIpAddresses", description="Lists all public ip addresses", responseObject=IPAddressResponse.class)
+@APICommand(name = "listPublicIpAddresses", description = "Lists all public ip addresses", responseObject = IPAddressResponse.class, responseView = ResponseView.Restricted)
 public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPublicIpAddressesCmd.class.getName());
 
@@ -149,16 +151,17 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
         ListResponse<IPAddressResponse> response = new ListResponse<IPAddressResponse>();
         List<IPAddressResponse> ipAddrResponses = new ArrayList<IPAddressResponse>();
         for (IpAddress ipAddress : result.first()) {
-            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(ipAddress);
+            IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(ResponseView.Restricted, ipAddress);
             ipResponse.setObjectName("publicipaddress");
             ipAddrResponses.add(ipResponse);
         }
 
         response.setResponses(ipAddrResponses, result.second());
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
+    @Override
     public ApiCommandJobType getInstanceType() {
         return ApiCommandJobType.IpAddress;
     }

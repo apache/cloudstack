@@ -620,7 +620,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public IPAddressResponse createIPAddressResponse(IpAddress ipAddr) {
+    public IPAddressResponse createIPAddressResponse(ResponseView view, IpAddress ipAddr) {
         VlanVO vlan = ApiDBUtils.findVlanById(ipAddr.getVlanId());
         boolean forVirtualNetworks = vlan.getVlanType().equals(VlanType.VirtualNetwork);
         long zoneId = ipAddr.getDataCenterId();
@@ -705,9 +705,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        // show this info to admin only
-        Account account = CallContext.current().getCallingAccount();
-        if (_accountMgr.isRootAdmin(account.getId())) {
+        // show this info to full view only
+        if (view == ResponseView.Full) {
             VlanVO vl = ApiDBUtils.findVlanById(ipAddr.getVlanId());
             if (vl != null) {
                 ipResponse.setVlanId(vl.getUuid());
