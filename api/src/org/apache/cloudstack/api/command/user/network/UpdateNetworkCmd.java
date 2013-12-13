@@ -16,17 +16,18 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -37,7 +38,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 
-@APICommand(name = "updateNetwork", description="Updates a network", responseObject=NetworkResponse.class)
+@APICommand(name = "updateNetwork", description = "Updates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted)
 public class UpdateNetworkCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkCmd.class.getName());
 
@@ -48,7 +49,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType = NetworkResponse.class,
             required=true, description="the ID of the network")
-    private Long id;
+    protected Long id;
 
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the new name for the network")
     private String name;
@@ -88,11 +89,11 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
         return displayText;
     }
 
-    private String getNetworkDomain() {
+    public String getNetworkDomain() {
         return networkDomain;
     }
 
-    private Long getNetworkOfferingId() {
+    public Long getNetworkOfferingId() {
         return networkOfferingId;
     }
 
@@ -103,7 +104,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
         return false;
     }
 
-    private String getGuestVmCidr() {
+    public String getGuestVmCidr() {
         return guestVmCidr;
     }
 
@@ -143,9 +144,9 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
         
 
         if (result != null) {
-            NetworkResponse response = _responseGenerator.createNetworkResponse(result);
+            NetworkResponse response = _responseGenerator.createNetworkResponse(ResponseView.Full, result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update network");
         }

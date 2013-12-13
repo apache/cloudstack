@@ -41,8 +41,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
@@ -158,13 +160,13 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
-import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.net.NetUtils;
@@ -988,7 +990,10 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         String endIP = cmd.getEndIp();
         String netmask = cmd.getNetmask();
         String networkDomain = cmd.getNetworkDomain();
-        String vlanId = cmd.getVlan();
+        String vlanId = null;
+        if (cmd instanceof CreateNetworkCmdByAdmin) {
+            vlanId = ((CreateNetworkCmdByAdmin)cmd).getVlan();
+        }
         String name = cmd.getNetworkName();
         String displayText = cmd.getDisplayText();
         Account caller = CallContext.current().getCallingAccount();
@@ -3912,7 +3917,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             throw new InvalidParameterValueException("unsupported type of broadcastUri specified: " + broadcastUriString);
         }
 
-        final NetworkOfferingVO ntwkOffFinal = ntwkOff; 
+        final NetworkOfferingVO ntwkOffFinal = ntwkOff;
         try {
             return Transaction.execute(new TransactionCallbackWithException<Network,Exception>() {
                 @Override
@@ -4005,7 +4010,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
     @Inject
     public void setNetworkGurus(List<NetworkGuru> networkGurus) {
-        this._networkGurus = networkGurus;
+        _networkGurus = networkGurus;
     }
 
 }

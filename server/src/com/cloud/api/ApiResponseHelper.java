@@ -2144,7 +2144,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public NetworkResponse createNetworkResponse(Network network) {
+    public NetworkResponse createNetworkResponse(ResponseView view, Network network) {
         // need to get network profile in order to retrieve dns information from
         // there
         NetworkProfile profile = ApiDBUtils.getNetworkProfile(network.getId());
@@ -2214,20 +2214,18 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setReservedIpRange(reservation);
 
         // return vlan information only to Root admin
-        if (network.getBroadcastUri() != null
-                && _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())) {
+        if (network.getBroadcastUri() != null && view == ResponseView.Full) {
             String broadcastUri = network.getBroadcastUri().toString();
             response.setBroadcastUri(broadcastUri);
             String vlan = "N/A";
-            switch (BroadcastDomainType.getSchemeValue(network.getBroadcastUri())){
-                case Vlan:
-                case Vxlan:
+            switch (BroadcastDomainType.getSchemeValue(network.getBroadcastUri())) {
+            case Vlan:
+            case Vxlan:
                 vlan = BroadcastDomainType.getValue(network.getBroadcastUri());
-                    break;
+                break;
             }
             // return vlan information only to Root admin
             response.setVlan(vlan);
-
         }
 
         DataCenter zone = ApiDBUtils.findZoneById(network.getDataCenterId());
@@ -2915,7 +2913,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public VpcResponse createVpcResponse(Vpc vpc) {
+    public VpcResponse createVpcResponse(ResponseView view, Vpc vpc) {
         VpcResponse response = new VpcResponse();
         response.setId(vpc.getUuid());
         response.setName(vpc.getName());
@@ -2954,7 +2952,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
         List<? extends Network> networks = ApiDBUtils.listVpcNetworks(vpc.getId());
         for (Network network : networks) {
-            NetworkResponse ntwkRsp = createNetworkResponse(network);
+            NetworkResponse ntwkRsp = createNetworkResponse(view, network);
             networkResponses.add(ntwkRsp);
         }
 

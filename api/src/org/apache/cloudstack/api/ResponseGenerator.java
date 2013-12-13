@@ -313,7 +313,7 @@ public interface ResponseGenerator {
 
     NetworkOfferingResponse createNetworkOfferingResponse(NetworkOffering offering);
 
-    NetworkResponse createNetworkResponse(Network network);
+    NetworkResponse createNetworkResponse(ResponseView view, Network network);
 
     UserResponse createUserResponse(User user);
 
@@ -374,7 +374,7 @@ public interface ResponseGenerator {
      * @param vpc
      * @return
      */
-    VpcResponse createVpcResponse(Vpc vpc);
+    VpcResponse createVpcResponse(ResponseView view, Vpc vpc);
 
     /**
      * @param networkACLItem

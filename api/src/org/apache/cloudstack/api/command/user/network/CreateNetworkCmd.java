@@ -23,6 +23,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
@@ -42,7 +43,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.offering.NetworkOffering;
 
-@APICommand(name = "createNetwork", description="Creates a network", responseObject=NetworkResponse.class)
+@APICommand(name = "createNetwork", description = "Creates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted)
 public class CreateNetworkCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkCmd.class.getName());
 
@@ -84,9 +85,6 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address in the network IP" +
             " range. If not specified, will be defaulted to startIP")
     private String endIp;
-
-    @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the network")
-    private String vlan;
 
     @Parameter(name=ApiConstants.ISOLATED_PVLAN, type=CommandType.STRING, description="the isolated private vlan for this network")
     private String isolatedPvlan;
@@ -146,10 +144,6 @@ public class CreateNetworkCmd extends BaseCmd {
 
     public String getGateway() {
         return gateway;
-    }
-
-    public String getVlan() {
-        return vlan;
     }
 
     public String getIsolatedPvlan() {
@@ -293,7 +287,7 @@ public class CreateNetworkCmd extends BaseCmd {
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
         Network result = _networkService.createGuestNetwork(this);
         if (result != null) {
-            NetworkResponse response = _responseGenerator.createNetworkResponse(result);
+            NetworkResponse response = _responseGenerator.createNetworkResponse(ResponseView.Restricted, result);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         }else {

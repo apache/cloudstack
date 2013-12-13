@@ -19,21 +19,22 @@ package org.apache.cloudstack.api.command.user.vpc;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.vpc.Vpc;
 
 
-@APICommand(name = "listVPCs", description="Lists VPCs", responseObject=VpcResponse.class)
+@APICommand(name = "listVPCs", description = "Lists VPCs", responseObject = VpcResponse.class, responseView = ResponseView.Restricted)
 public class ListVPCsCmd extends BaseListTaggedResourcesCmd{
     public static final Logger s_logger = Logger.getLogger(ListVPCsCmd.class.getName());
     private static final String s_name = "listvpcsresponse";
@@ -122,18 +123,18 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd{
     public void execute() {
         List<? extends Vpc> vpcs = _vpcService.listVpcs(getId(), getVpcName(), getDisplayText(),
                 getSupportedServices(), getCidr(), getVpcOffId(), getState(), getAccountName(), getDomainId(),
-                this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(), getZoneId(), this.isRecursive(),
-                this.listAll(), getRestartRequired(), getTags(), getProjectId());
+                getKeyword(), getStartIndex(), getPageSizeVal(), getZoneId(), isRecursive(),
+                listAll(), getRestartRequired(), getTags(), getProjectId());
         ListResponse<VpcResponse> response = new ListResponse<VpcResponse>();
         List<VpcResponse> offeringResponses = new ArrayList<VpcResponse>();
         for (Vpc vpc : vpcs) {
-            VpcResponse offeringResponse = _responseGenerator.createVpcResponse(vpc);
+            VpcResponse offeringResponse = _responseGenerator.createVpcResponse(ResponseView.Restricted, vpc);
             offeringResponses.add(offeringResponse);
         }
 
         response.setResponses(offeringResponses);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 
     @Override
