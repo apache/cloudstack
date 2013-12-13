@@ -18632,7 +18632,9 @@
         var jsonObj = args.context.item;
         var allowedActions = [];
 
-        allowedActions.push('upgradeRouterToUseNewerTemplate');
+        if(jsonObj.requiresupgrade == true) {
+            allowedActions.push('upgradeRouterToUseNewerTemplate');
+        }
         
         if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
