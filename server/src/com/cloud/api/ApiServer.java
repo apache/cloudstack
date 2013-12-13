@@ -83,6 +83,7 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.AclPolicyPermission.Permission;
 import org.apache.cloudstack.acl.AclPolicyPermissionVO;
 import org.apache.cloudstack.acl.PermissionScope;
@@ -242,7 +243,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         // commands.properties.
         SearchBuilder<AclPolicyPermissionVO> sb = _aclPermissionDao.createSearchBuilder();
         sb.and("policyId", sb.entity().getAclPolicyId(), SearchCriteria.Op.EQ);
-        sb.and("resourceType", sb.entity().getEntityType(), SearchCriteria.Op.NULL);
         sb.and("scope", sb.entity().getScope(), SearchCriteria.Op.EQ);
         sb.done();
 
@@ -343,6 +343,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private void addDefaultAclPolicyPermission(String apiName, Class<?> cmdClass, RoleType role) {
 
         boolean isReadCommand = false;
+        AclEntityType[] entityTypes = null;
         if (cmdClass != null) {
             BaseCmd cmdObj;
             try {
@@ -354,37 +355,53 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 throw new CloudRuntimeException(String.format(
                         "%s is claimed as an API command, but it cannot be instantiated", cmdClass.getName()));
             }
+
+            APICommand at = cmdClass.getAnnotation(APICommand.class);
+            entityTypes = at.entityType();
         }
 
         AclPolicyPermissionVO apiPermission = null;
+        PermissionScope permissionScope = PermissionScope.ACCOUNT;
         switch (role) {
         case User:
-            apiPermission = new AclPolicyPermissionVO(role.ordinal() + 1, apiName, null, null, PermissionScope.ACCOUNT,
-                    null, Permission.Allow);
+            permissionScope = PermissionScope.ACCOUNT;
             break;
 
         case Admin:
-            apiPermission = new AclPolicyPermissionVO(role.ordinal() + 1, apiName, null, null, PermissionScope.ALL,
-                    null, Permission.Allow);
+            permissionScope = PermissionScope.ALL;
             break;
 
         case DomainAdmin:
-            apiPermission = new AclPolicyPermissionVO(role.ordinal() + 1, apiName, null, null, PermissionScope.DOMAIN,
-                    null, Permission.Allow);
+            permissionScope = PermissionScope.DOMAIN;
             break;
 
         case ResourceAdmin:
-            apiPermission = new AclPolicyPermissionVO(role.ordinal() + 1, apiName, null, null, PermissionScope.DOMAIN,
-                    null, Permission.Allow);
+            permissionScope = PermissionScope.DOMAIN;
             break;
         }
 
-        if (apiPermission != null) {
-            if (isReadCommand) {
-                apiPermission.setAccessType(AccessType.ListEntry);
+        if (entityTypes == null || entityTypes.length == 0) {
+            apiPermission = new AclPolicyPermissionVO(role.ordinal() + 1, apiName, null, null, permissionScope,
+                    new Long(-1), Permission.Allow);
+            if (apiPermission != null) {
+                if (isReadCommand) {
+                    apiPermission.setAccessType(AccessType.ListEntry);
+                }
+                _aclPermissionDao.persist(apiPermission);
             }
-            _aclPermissionDao.persist(apiPermission);
         }
+
+        for (AclEntityType entityType : entityTypes) {
+            apiPermission = new AclPolicyPermissionVO(role.ordinal() + 1, apiName, entityType.toString(), null,
+                    permissionScope, new Long(-1), Permission.Allow);
+            if (apiPermission != null) {
+                if (isReadCommand) {
+                    apiPermission.setAccessType(AccessType.ListEntry);
+                }
+                _aclPermissionDao.persist(apiPermission);
+            }
+        }
+
     }
 
     // NOTE: handle() only handles over the wire (OTW) requests from integration.api.port 8096
