@@ -61,5 +61,10 @@ public class FirewallRulesCidrsVO implements InternalIdentity {
     public String getSourceCidrList() {
         return sourceCidrList;
     }
-    
+
+    public void setSourceCidrList(String sourceCidrList) {
+        this.sourceCidrList = sourceCidrList;
+    }
+
+
 }

@@ -16,11 +16,15 @@
 // under the License.
 package com.cloud.network.guru;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.network.dao.*;
+import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.FirewallRuleVO;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.context.CallContext;
@@ -44,10 +48,6 @@ import com.cloud.network.Network.State;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetwork.IsolationMethod;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offering.NetworkOffering;
@@ -77,6 +77,10 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     IPAddressDao _ipAddressDao;
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    FirewallRulesDao _fwRulesDao;
+    @Inject
+    FirewallRulesCidrsDao _fwRulesCidrDao;
 
     public ExternalGuestNetworkGuru() {
         super();
@@ -213,6 +217,29 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
                 _ipAddressDao.update(ip.getId(), ip);
             }
         }
+
+        //Egress rules cidr is subset of guest nework cidr, we need to change
+        List <FirewallRuleVO> fwEgressRules = _fwRulesDao.listByNetworkPurposeTrafficType(config.getId(), FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Egress);
+
+        for (FirewallRuleVO rule: fwEgressRules) {
+            //get the cidr list for this rule
+            List<FirewallRulesCidrsVO>  fwRuleCidrsVo = _fwRulesCidrDao.listByFirewallRuleId(rule.getId());
+
+            for (FirewallRulesCidrsVO ruleCidrvo: fwRuleCidrsVo) {
+                String cidr = ruleCidrvo.getCidr();
+                String cidrAddr =  cidr.split("/")[0];
+                String size = cidr.split("/")[1];
+
+                long ipMask = getIpMask(cidrAddr, cidrSize);
+                String newIp = NetUtils.long2Ip(newCidrAddress | ipMask);
+                String updatedCidr = newIp+"/"+size;
+
+                ruleCidrvo.setSourceCidrList(updatedCidr);
+                _fwRulesCidrDao.update(ruleCidrvo.getId(), ruleCidrvo);
+            }
+
+        }
+
 
         return implemented;
     }
