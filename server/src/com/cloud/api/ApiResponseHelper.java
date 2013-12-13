@@ -859,9 +859,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public ZoneResponse createZoneResponse(DataCenter dataCenter, Boolean showCapacities) {
+    public ZoneResponse createZoneResponse(ResponseView view, DataCenter dataCenter, Boolean showCapacities) {
         DataCenterJoinVO vOffering = ApiDBUtils.newDataCenterView(dataCenter);
-        return ApiDBUtils.newDataCenterResponse(vOffering, showCapacities);
+        return ApiDBUtils.newDataCenterResponse(view, vOffering, showCapacities);
     }
 
     public static List<CapacityResponse> getDataCenterCapacityResponse(Long zoneId) {

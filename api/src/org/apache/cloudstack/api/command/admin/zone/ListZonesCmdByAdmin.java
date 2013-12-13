@@ -14,18 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.query.dao;
+package org.apache.cloudstack.api.command.admin.zone;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
-import com.cloud.api.query.vo.DataCenterJoinVO;
-import com.cloud.dc.DataCenter;
-import com.cloud.utils.db.GenericDao;
-
-public interface DataCenterJoinDao extends GenericDao<DataCenterJoinVO, Long> {
-
-    ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dof, Boolean showCapacities);
-
-    DataCenterJoinVO newDataCenterView(DataCenter dof);
+@APICommand(name = "listZones", description = "Lists zones", responseObject = ZoneResponse.class, responseView = ResponseView.Full)
+public class ListZonesCmdByAdmin extends ListZonesCmd {
 }

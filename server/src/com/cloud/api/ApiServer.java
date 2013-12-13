@@ -114,7 +114,7 @@ import org.apache.cloudstack.api.command.user.tag.ListTagsCmd;
 import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
-import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
+import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.ExceptionResponse;
@@ -684,7 +684,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     && !(cmdObj instanceof ListStoragePoolsCmd)
                     && !(cmdObj instanceof ListDiskOfferingsCmd)
                     && !(cmdObj instanceof ListServiceOfferingsCmd)
-                    && !(cmdObj instanceof ListZonesByCmd)
+                    && !(cmdObj instanceof ListZonesCmd)
                     ) {
                 buildAsyncListResponse((BaseListCmd) cmdObj, caller);
             }

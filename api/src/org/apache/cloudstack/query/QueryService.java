@@ -42,7 +42,7 @@ import org.apache.cloudstack.api.command.user.vm.ListVMsCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.ListVMGroupsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
-import org.apache.cloudstack.api.command.user.zone.ListZonesByCmd;
+import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AclGroupResponse;
 import org.apache.cloudstack.api.response.AclPolicyResponse;
@@ -114,7 +114,7 @@ public interface QueryService {
 
     public ListResponse<ServiceOfferingResponse>  searchForServiceOfferings(ListServiceOfferingsCmd cmd);
 
-    public ListResponse<ZoneResponse>  listDataCenters(ListZonesByCmd cmd);
+    public ListResponse<ZoneResponse>  listDataCenters(ListZonesCmd cmd);
 
     public ListResponse<TemplateResponse> listTemplates(ListTemplatesCmd cmd);
 

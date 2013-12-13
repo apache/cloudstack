@@ -1643,8 +1643,8 @@ public class ApiDBUtils {
         return _serviceOfferingJoinDao.newServiceOfferingView(offering);
     }
 
-    public static ZoneResponse newDataCenterResponse(DataCenterJoinVO dc, Boolean showCapacities) {
-        return _dcJoinDao.newDataCenterResponse(dc, showCapacities);
+    public static ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dc, Boolean showCapacities) {
+        return _dcJoinDao.newDataCenterResponse(view, dc, showCapacities);
     }
 
     public static DataCenterJoinVO newDataCenterView(DataCenter dc){

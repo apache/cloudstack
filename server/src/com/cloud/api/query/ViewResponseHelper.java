@@ -370,10 +370,10 @@ public class ViewResponseHelper {
         return respList;
     }
 
-    public static List<ZoneResponse> createDataCenterResponse(Boolean showCapacities, DataCenterJoinVO... dcs) {
+    public static List<ZoneResponse> createDataCenterResponse(ResponseView view, Boolean showCapacities, DataCenterJoinVO... dcs) {
         List<ZoneResponse> respList = new ArrayList<ZoneResponse>();
         for (DataCenterJoinVO vt : dcs){
-            respList.add(ApiDBUtils.newDataCenterResponse(vt, showCapacities));
+            respList.add(ApiDBUtils.newDataCenterResponse(view, vt, showCapacities));
         }
         return respList;
     }

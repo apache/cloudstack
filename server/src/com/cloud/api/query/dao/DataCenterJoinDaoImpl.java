@@ -21,11 +21,13 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
@@ -55,13 +57,13 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         dofIdSearch.and("id", dofIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         dofIdSearch.done();
 
-        this._count = "select count(distinct id) from data_center_view WHERE ";
+        _count = "select count(distinct id) from data_center_view WHERE ";
     }
 
 
 
     @Override
-    public ZoneResponse newDataCenterResponse(DataCenterJoinVO dataCenter, Boolean showCapacities) {
+    public ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dataCenter, Boolean showCapacities) {
 
         Account account = CallContext.current().getCallingAccount();
         ZoneResponse zoneResponse = new ZoneResponse();
@@ -74,7 +76,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
             zoneResponse.setDescription(dataCenter.getDescription());
         }
 
-        if ((account == null) || (_accountMgr.isRootAdmin(account.getId()))) {
+        if (view == ResponseView.Full) {
             zoneResponse.setDns1(dataCenter.getDns1());
             zoneResponse.setDns2(dataCenter.getDns2());
             zoneResponse.setIp6Dns1(dataCenter.getIp6Dns1());
@@ -104,7 +106,7 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
         
         // update tag information
         List<ResourceTagJoinVO> resourceTags = ApiDBUtils.listResourceTagViewByResourceUUID(dataCenter.getUuid(), ResourceObjectType.Zone);
-        for (ResourceTagJoinVO resourceTag : resourceTags) {            
+        for (ResourceTagJoinVO resourceTag : resourceTags) {
             ResourceTagResponse tagResponse = ApiDBUtils.newResourceTagResponse(resourceTag, false);
             zoneResponse.addTag(tagResponse);
         }

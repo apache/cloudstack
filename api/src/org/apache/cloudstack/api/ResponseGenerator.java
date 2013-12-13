@@ -253,7 +253,7 @@ public interface ResponseGenerator {
 
     PodResponse createPodResponse(Pod pod, Boolean showCapacities);
 
-    ZoneResponse createZoneResponse(DataCenter dataCenter, Boolean showCapacities);
+    ZoneResponse createZoneResponse(ResponseView view, DataCenter dataCenter, Boolean showCapacities);
 
     VolumeResponse createVolumeResponse(ResponseView view, Volume volume);
 
