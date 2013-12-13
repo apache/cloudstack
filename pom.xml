@@ -160,6 +160,7 @@
   </organization>
 
   <modules>
+    <module>build/checkstyle</module>
     <module>api</module>
     <module>agent</module>
     <module>core</module>
@@ -175,7 +176,6 @@
     <module>services</module>
     <module>maven-standard</module>
     <module>quickcloud</module>
-    <module>build/checkstyle</module>
   </modules>
 
   <dependencyManagement>
@@ -448,6 +448,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
+		<!--
         <dependencies>
           <dependency>
             <groupId>org.apache.cloudstack</groupId>
@@ -455,9 +456,11 @@
             <version>${project.version}</version>
           </dependency>
         </dependencies>
+		-->
+		<inherited>false</inherited>
         <executions>
           <execution>
-            <phase>process-classes</phase>
+            <phase>install</phase>
             <goals>
               <goal>check</goal>
             </goals>
@@ -465,7 +468,7 @@
         </executions>
         <configuration>
           <failsOnError>true</failsOnError>
-          <configLocation>tooling/checkstyle.xml</configLocation>
+          <configLocation>${project.basedir}/build/checkstyle/src/main/resources/tooling/checkstyle.xml</configLocation>
           <consoleOutput>true</consoleOutput>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
           <sourceDirectory>${project.basedir}</sourceDirectory>
@@ -757,14 +760,18 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <configuration>
+          <failsOnError>true</failsOnError>
           <configLocation>tooling/checkstyle.xml</configLocation>
-          <headerLocation>tooling/LICENSE.txt</headerLocation>
+          <consoleOutput>true</consoleOutput>
+          <includeTestSourceDirectory>true</includeTestSourceDirectory>
+          <sourceDirectory>${project.basedir}</sourceDirectory>
+          <includes>**\/*.java</includes>
+          <excludes>**\/deps\/,**\/test\/,**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat,**\/awsapi\/,**\/XenServerJava\/,**\/apidoc\/</excludes>
         </configuration>
       </plugin>
     </plugins>  
   </reporting>
   -->
-
   <profiles>
     <profile>
       <id>awsapi</id>
