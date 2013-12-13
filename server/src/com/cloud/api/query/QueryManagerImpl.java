@@ -43,6 +43,7 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.admin.account.ListAccountsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.iso.ListIsosCmdByAdmin;
@@ -1773,7 +1774,13 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     public ListResponse<AccountResponse> searchForAccounts(ListAccountsCmd cmd) {
         Pair<List<AccountJoinVO>, Integer> result = searchForAccountsInternal(cmd);
         ListResponse<AccountResponse> response = new ListResponse<AccountResponse>();
-        List<AccountResponse> accountResponses = ViewResponseHelper.createAccountResponse(result.first().toArray(
+
+        ResponseView respView = ResponseView.Restricted;
+        if (cmd instanceof ListAccountsCmdByAdmin) {
+            respView = ResponseView.Full;
+        }
+
+        List<AccountResponse> accountResponses = ViewResponseHelper.createAccountResponse(respView, result.first().toArray(
                 new AccountJoinVO[result.first().size()]));
         response.setResponses(accountResponses, result.second());
         return response;

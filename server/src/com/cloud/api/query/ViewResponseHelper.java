@@ -338,10 +338,10 @@ public class ViewResponseHelper {
     }
 
 
-    public static List<AccountResponse> createAccountResponse(AccountJoinVO... accounts) {
+    public static List<AccountResponse> createAccountResponse(ResponseView view, AccountJoinVO... accounts) {
         List<AccountResponse> respList = new ArrayList<AccountResponse>();
         for (AccountJoinVO vt : accounts){
-            respList.add(ApiDBUtils.newAccountResponse(vt));
+            respList.add(ApiDBUtils.newAccountResponse(view, vt));
         }
         return respList;
     }

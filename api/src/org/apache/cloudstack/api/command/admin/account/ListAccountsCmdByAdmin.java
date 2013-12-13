@@ -14,22 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.api.query.dao;
+package org.apache.cloudstack.api.command.admin.account;
 
+import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
 
-import com.cloud.api.query.vo.AccountJoinVO;
-import com.cloud.user.Account;
-import com.cloud.utils.db.GenericDao;
-
-public interface AccountJoinDao extends GenericDao<AccountJoinVO, Long> {
-
-    AccountResponse newAccountResponse(ResponseView view, AccountJoinVO vol);
-
-    AccountJoinVO newAccountView(Account vol);
-
-    void setResourceLimits(AccountJoinVO account, boolean accountIsAdmin, ResourceLimitAndCountResponse response);
-
+@APICommand(name = "listAccounts", description = "Lists accounts and provides detailed account information for listed accounts", responseObject = AccountResponse.class, responseView = ResponseView.Full)
+public class ListAccountsCmdByAdmin extends ListAccountsCmd {
 }

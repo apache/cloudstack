@@ -17,17 +17,19 @@
 
 package org.apache.cloudstack.api.command.admin.zone;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
@@ -103,9 +105,9 @@ public class MarkDefaultZoneForAccountCmd extends BaseAsyncCmd {
     public void execute(){
         Account result = _configService.markDefaultZone(getAccountName(),getDomainId(), getDefaultZoneId());
         if (result != null) {
-            AccountResponse response = _responseGenerator.createAccountResponse(result);
+            AccountResponse response = _responseGenerator.createAccountResponse(ResponseView.Full, result);
             response.setResponseName(getCommandName());
-            this.setResponseObject(response);
+            setResponseObject(response);
         }
         else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to mark the account with the default zone");

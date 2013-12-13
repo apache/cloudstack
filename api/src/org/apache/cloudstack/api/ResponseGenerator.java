@@ -198,7 +198,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 public interface ResponseGenerator {
     UserResponse createUserResponse(UserAccount user);
 
-    AccountResponse createAccountResponse(Account account);
+    AccountResponse createAccountResponse(ResponseView view, Account account);
 
     DomainResponse createDomainResponse(Domain domain);
 
@@ -317,7 +317,7 @@ public interface ResponseGenerator {
 
     UserResponse createUserResponse(User user);
 
-    AccountResponse createUserAccountResponse(UserAccount user);
+    AccountResponse createUserAccountResponse(ResponseView view, UserAccount user);
 
     Long getSecurityGroupId(String groupName, long accountId);
 

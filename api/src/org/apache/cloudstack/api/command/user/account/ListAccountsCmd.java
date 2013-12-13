@@ -16,15 +16,17 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.account;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListDomainResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.log4j.Logger;
 
-@APICommand(name = "listAccounts", description="Lists accounts and provides detailed account information for listed accounts", responseObject=AccountResponse.class)
+@APICommand(name = "listAccounts", description = "Lists accounts and provides detailed account information for listed accounts", responseObject = AccountResponse.class, responseView = ResponseView.Restricted)
 public class ListAccountsCmd extends BaseListDomainResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListAccountsCmd.class.getName());
     private static final String s_name = "listaccountsresponse";
@@ -87,6 +89,6 @@ public class ListAccountsCmd extends BaseListDomainResourcesCmd {
     public void execute(){
         ListResponse<AccountResponse> response = _queryService.searchForAccounts(this);
         response.setResponseName(getCommandName());
-        this.setResponseObject(response);
+        setResponseObject(response);
     }
 }

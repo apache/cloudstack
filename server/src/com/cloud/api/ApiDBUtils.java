@@ -1607,8 +1607,8 @@ public class ApiDBUtils {
     }
 
 
-    public static AccountResponse newAccountResponse(AccountJoinVO ve) {
-        return _accountJoinDao.newAccountResponse(ve);
+    public static AccountResponse newAccountResponse(ResponseView view, AccountJoinVO ve) {
+        return _accountJoinDao.newAccountResponse(view, ve);
     }
 
     public static AccountJoinVO newAccountView(Account e){

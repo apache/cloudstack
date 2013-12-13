@@ -335,14 +335,14 @@ public class ApiResponseHelper implements ResponseGenerator {
     // this method is used for response generation via createAccount (which
     // creates an account + user)
     @Override
-    public AccountResponse createUserAccountResponse(UserAccount user) {
-        return ApiDBUtils.newAccountResponse(ApiDBUtils.findAccountViewById(user.getAccountId()));
+    public AccountResponse createUserAccountResponse(ResponseView view, UserAccount user) {
+        return ApiDBUtils.newAccountResponse(view, ApiDBUtils.findAccountViewById(user.getAccountId()));
     }
 
     @Override
-    public AccountResponse createAccountResponse(Account account) {
+    public AccountResponse createAccountResponse(ResponseView view, Account account) {
         AccountJoinVO vUser = ApiDBUtils.newAccountView(account);
-        return ApiDBUtils.newAccountResponse(vUser);
+        return ApiDBUtils.newAccountResponse(view, vUser);
     }
 
     @Override

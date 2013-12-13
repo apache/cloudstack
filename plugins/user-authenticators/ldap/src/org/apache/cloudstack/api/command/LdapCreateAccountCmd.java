@@ -23,19 +23,21 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.NamingException;
 
+import org.apache.log4j.Logger;
+import org.bouncycastle.util.encoders.Base64;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.ldap.LdapManager;
 import org.apache.cloudstack.ldap.LdapUser;
-import org.apache.log4j.Logger;
-import org.bouncycastle.util.encoders.Base64;
 
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
@@ -106,7 +108,7 @@ public class LdapCreateAccountCmd extends BaseCmd {
 			final UserAccount userAccount = createCloudstackUserAccount(user);
 			if (userAccount != null) {
 				final AccountResponse response = _responseGenerator
-						.createUserAccountResponse(userAccount);
+                        .createUserAccountResponse(ResponseView.Full, userAccount);
 				response.setResponseName(getCommandName());
 				setResponseObject(response);
 			} else {
