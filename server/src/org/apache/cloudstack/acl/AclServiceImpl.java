@@ -365,7 +365,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     @Override
     public List<AclPolicy> listAclPolicies(long accountId) {
 
-        // static roles of the account
+        // static policies of the account
         SearchBuilder<AclGroupAccountMapVO> groupSB = _aclGroupAccountMapDao.createSearchBuilder();
         groupSB.and("account", groupSB.entity().getAccountId(), Op.EQ);
 
@@ -377,12 +377,12 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         SearchCriteria<Long> policySc = policySB.create();
         policySc.setJoinParameters("accountgroupjoin", "account", accountId);
 
-        List<Long> roleIds = _aclGroupPolicyMapDao.customSearch(policySc, null);
+        List<Long> policyIds = _aclGroupPolicyMapDao.customSearch(policySc, null);
 
         SearchBuilder<AclPolicyVO> sb = _aclPolicyDao.createSearchBuilder();
         sb.and("ids", sb.entity().getId(), Op.IN);
         SearchCriteria<AclPolicyVO> sc = sb.create();
-        sc.setParameters("ids", roleIds.toArray(new Object[roleIds.size()]));
+        sc.setParameters("ids", policyIds.toArray(new Object[policyIds.size()]));
         List<AclPolicyVO> policies = _aclPolicyDao.customSearch(sc, null);
 
         return new ArrayList<AclPolicy>(policies);
@@ -647,7 +647,6 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         SearchBuilder<AclPolicyPermissionVO> sb = _policyPermissionDao.createSearchBuilder();
         sb.and("action", sb.entity().getAction(), Op.EQ);
         sb.and("policyId", sb.entity().getAclPolicyId(), Op.IN);
-        sb.and("entityType", sb.entity().getEntityType(), Op.NULL);
 
         SearchCriteria<AclPolicyPermissionVO> sc = sb.create();
         sc.setParameters("policyId", policyIds.toArray(new Object[policyIds.size()]));
@@ -667,7 +666,7 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
         // Get the static Policies of the Caller
         List<AclPolicy> policies = listAclPolicies(caller.getId());
 
-        // add any dynamic roles w.r.t the entity
+        // add any dynamic policies w.r.t the entity
         if (caller.getId() == entity.getAccountId()) {
             // The caller owns the entity
             AclPolicy owner = _aclPolicyDao.findByName(Domain.ROOT_DOMAIN, "RESOURCE_OWNER");

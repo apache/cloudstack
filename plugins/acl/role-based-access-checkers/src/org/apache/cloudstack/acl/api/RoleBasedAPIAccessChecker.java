@@ -22,6 +22,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.AclPolicy;
 import org.apache.cloudstack.acl.AclRole;
 import org.apache.cloudstack.acl.AclService;
 import org.apache.log4j.Logger;
@@ -54,10 +55,10 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
             throw new PermissionDeniedException("The account id=" + user.getAccountId() + "for user id=" + user.getId() + "is null");
         }
 
-        List<AclRole> roles = _aclService.listAclPolicies(account.getAccountId());
+        List<AclPolicy> policies = _aclService.listAclPolicies(account.getAccountId());
 
 
-        boolean isAllowed = _aclService.isAPIAccessibleForPolicies(commandName, roles);
+        boolean isAllowed = _aclService.isAPIAccessibleForPolicies(commandName, policies);
         if (!isAllowed) {
             throw new PermissionDeniedException("The API does not exist or is blacklisted. api: " + commandName);
         }

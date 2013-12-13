@@ -378,8 +378,7 @@ INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id,
 INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin role', UUID(), 1, 1, Now(), 'Static');
 INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin role', UUID(), 1, 1, Now(), 'Static');
 INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin role', UUID(), 1, 1, Now(), 'Static');
--- RESOURCE_OWNER dynamic policy we will handle that inside java logic
--- INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (6, 'RESOURCE_OWNER', 'Resource owner role', UUID(), 1, 1, Now(), 'Dynamic');
+INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (6, 'RESOURCE_OWNER', 'Resource owner role', UUID(), 1, 1, Now(), 'Dynamic');
 
 
 INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, account_id, created) VALUES (1, 'NORMAL', 'Domain user group', UUID(), 1, 1, Now());
