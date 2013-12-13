@@ -234,11 +234,13 @@ public class HypervManagerImpl implements HypervManager {
             command.add("-t", "cifs");
             command.add(path);
             command.add(mountPoint);
+            command.add("-o", "uid=`whoami`,gid=`whoami`");
 
             if (query != null) {
                 query = query.replace('&', ',');
                 command.add("-o", query);
             }
+
             result = command.execute();
         }
 
