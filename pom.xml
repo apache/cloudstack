@@ -460,7 +460,7 @@
 		<inherited>false</inherited>
         <executions>
           <execution>
-            <phase>install</phase>
+            <phase>validate</phase>
             <goals>
               <goal>check</goal>
             </goals>
