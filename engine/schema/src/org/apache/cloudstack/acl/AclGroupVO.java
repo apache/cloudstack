@@ -116,4 +116,9 @@ public class AclGroupVO implements AclGroup {
     public Date getCreated() {
         return created;
     }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.AclGroup;
+    }
 }

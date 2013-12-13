@@ -23,6 +23,8 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.AclEntityType;
+
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 
@@ -301,5 +303,10 @@ public class SecurityGroupJoinVO extends BaseViewVO implements ControlledViewEnt
 
     public String getTagCustomer() {
         return tagCustomer;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.SecurityGroup;
     }
 }

@@ -27,6 +27,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -531,5 +532,10 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public String getTempZonePair() {
         return tempZonePair;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.VirtualMachineTemplate;
     }
 }

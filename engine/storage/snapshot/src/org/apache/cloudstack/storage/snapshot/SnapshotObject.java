@@ -23,6 +23,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -366,5 +367,10 @@ public class SnapshotObject implements SnapshotInfo {
             return store.delete(this);
         }
         return true;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.Snapshot;
     }
 }

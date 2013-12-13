@@ -22,13 +22,13 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallResponse;
@@ -112,7 +112,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
         return vpcId;
     }
 
- 
+
 
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
@@ -246,7 +246,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
 
         if (getVpcId() != null ){
                 throw new  InvalidParameterValueException("Unable to create firewall rule for the network id=" + networkId +
-                        " as firewall egress rule can be created only for non vpc networks.");  
+                        " as firewall egress rule can be created only for non vpc networks.");
             }
 
         try {
@@ -287,7 +287,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
                 return  getNetworkId();
     }
 
-    
+
     @Override
     public Integer getIcmpCode() {
         if (icmpCode != null) {
@@ -337,6 +337,11 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
     public String getUuid() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.FirewallRule;
     }
 
 }

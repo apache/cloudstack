@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -35,6 +35,8 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
+
+import org.apache.cloudstack.acl.AclEntityType;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.Encrypt;
@@ -153,7 +155,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name="tags")
     protected String tags;
 */
-    
+
     @Transient
     Map<String, String> details;
 
@@ -162,7 +164,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     @Column(name="disk_offering_id")
     protected Long diskOfferingId;
-    
+
     public VMInstanceVO(long id,
             long serviceOfferingId,
             String name,
@@ -499,6 +501,11 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     public Boolean isDynamicallyScalable() {
         return this.dynamicallyScalable;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.VirtualMachine;
     }
 
 }

@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.nat;
 
 import java.util.List;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -312,6 +313,11 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     @Override
     public TrafficType getTrafficType() {
         return null;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.FirewallRule;
     }
 
 }

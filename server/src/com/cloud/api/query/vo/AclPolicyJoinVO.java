@@ -210,4 +210,9 @@ public class AclPolicyJoinVO extends BaseViewVO implements ControlledViewEntity 
         return permissionAllowDeny;
     }
 
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.AclPolicy;
+    }
+
 }

@@ -26,6 +26,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.AclEntityType;
+
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.NicSecondaryIp;
 
@@ -156,5 +158,10 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
 
     public void setVmId(Long vmId) {
         this.vmId = vmId;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.NicSecondaryIp;
     }
 }

@@ -29,6 +29,8 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
+
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
@@ -130,5 +132,10 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
 
     public void setQuietTime(Integer quietTime) {
         this.quietTime = quietTime;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.AutoScalePolicy;
     }
 }

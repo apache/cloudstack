@@ -27,6 +27,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
@@ -241,5 +242,9 @@ public class AclGroupJoinVO extends BaseViewVO implements ControlledViewEntity {
         return permissionAccessType;
     }
 
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.AclGroup;
+    }
 
 }

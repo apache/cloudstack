@@ -30,4 +30,5 @@ public interface ControlledEntity extends OwnedBy, PartOf {
         Domain
     }
 
+    AclEntityType getEntityType();
 }

@@ -92,4 +92,13 @@ public class AclPolicyPermissionDaoImpl extends GenericDaoBase<AclPolicyPermissi
         return listBy(sc);
     }
 
+    @Override
+    public List<AclPolicyPermissionVO> listByPolicyActionAndEntity(long policyId, String action, String entityType) {
+        SearchCriteria<AclPolicyPermissionVO> sc = fullSearch.create();
+        sc.setParameters("policyId", policyId);
+        sc.setParameters("entityType", entityType);
+        sc.setParameters("action", action);
+        return listBy(sc);
+    }
+
 }

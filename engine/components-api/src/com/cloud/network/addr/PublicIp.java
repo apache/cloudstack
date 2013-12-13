@@ -18,6 +18,8 @@ package com.cloud.network.addr;
 
 import java.util.Date;
 
+import org.apache.cloudstack.acl.AclEntityType;
+
 import com.cloud.dc.VlanVO;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.IPAddressVO;
@@ -40,7 +42,7 @@ public class PublicIp implements PublicIpAddress {
     public static PublicIp createFromAddrAndVlan(IPAddressVO addr, VlanVO vlan) {
     	return new PublicIp(addr, vlan, NetUtils.createSequenceBasedMacAddress(addr.getMacAddress()));
     }
-    
+
     @Override
     public Ip getAddress() {
         return _addr.getAddress();
@@ -194,7 +196,7 @@ public class PublicIp implements PublicIpAddress {
     public boolean getSystem() {
         return _addr.getSystem();
     }
-	
+
     @Override
     public Long getVpcId() {
        return _addr.getVpcId();
@@ -231,5 +233,10 @@ public class PublicIp implements PublicIpAddress {
 
     public Long getIpMacAddress() {
         return  _addr.getMacAddress();
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.PublicIpAddress;
     }
 }

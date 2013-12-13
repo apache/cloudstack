@@ -25,6 +25,7 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -436,6 +437,11 @@ public class TemplateObject implements TemplateInfo {
             return dataStore.delete(this);
         }
         return true;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.VirtualMachineTemplate;
     }
 
 }

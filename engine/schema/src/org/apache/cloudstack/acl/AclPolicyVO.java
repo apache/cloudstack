@@ -133,4 +133,9 @@ public class AclPolicyVO implements AclPolicy {
         this.policyType = policyType;
     }
 
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.AclPolicy;
+    }
+
 }

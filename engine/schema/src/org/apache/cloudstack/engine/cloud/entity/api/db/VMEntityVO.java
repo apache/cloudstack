@@ -37,6 +37,8 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.acl.AclEntityType;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
@@ -572,6 +574,11 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
 
     public void setVmReservation(VMReservationVO vmReservation) {
         this.vmReservation = vmReservation;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.VirtualMachine;
     }
 
 }

@@ -18,6 +18,8 @@ package com.cloud.network;
 
 import java.net.URI;
 
+import org.apache.cloudstack.acl.AclEntityType;
+
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
@@ -276,4 +278,9 @@ public class NetworkProfile implements Network {
 	public String getIp6Cidr() {
 		return ip6Cidr;
 	}
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.Network;
+    }
 }

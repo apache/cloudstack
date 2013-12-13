@@ -2394,7 +2394,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // get caller role permission on VM List
             //TODO: this method needs to pass the entity type instead of current hard-code to VM for now. Also, api action name
             // should be passed in caller context.
-            AclPolicyPermission policyPerm = _aclService.getAclPolicyPermission(caller.getId(), AclEntityType.VM.toString(), "listVirtualMachine");
+            AclPolicyPermission policyPerm = _aclService.getAclPolicyPermission(caller.getId(),
+                    AclEntityType.VirtualMachine.toString(), "listVirtualMachine");
             if (policyPerm == null) {
                 // no list entry permission
                 throw new PermissionDeniedException("Caller has no policy permission assigned to list VM");

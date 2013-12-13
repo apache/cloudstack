@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.user;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import javax.persistence.Column;
@@ -29,27 +30,27 @@ import javax.persistence.Transient;
 @Entity
 @Table(name="ssh_keypairs")
 public class SSHKeyPairVO implements SSHKeyPair {
-	
+
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
 	@Column(name="id")
 	private Long id = null;
-	
+
 	@Column(name="account_id")
 	private long accountId;
-	
+
     @Column(name="domain_id")
     private long domainId;
-    
+
     @Column(name="keypair_name")
     private String name;
-    
+
     @Column(name="fingerprint")
     private String fingerprint;
-    
+
     @Column(name="public_key", length=5120)
     private String publicKey;
-    
+
     @Transient
     private String privateKey;
 
@@ -57,7 +58,7 @@ public class SSHKeyPairVO implements SSHKeyPair {
 	public long getId() {
 		return id;
 	}
-	
+
 	@Override
 	public long getAccountId() {
 		return accountId;
@@ -67,7 +68,7 @@ public class SSHKeyPairVO implements SSHKeyPair {
 	public long getDomainId() {
 		return domainId;
 	}
-	
+
 	@Override
 	public String getFingerprint() {
 		return fingerprint;
@@ -82,7 +83,7 @@ public class SSHKeyPairVO implements SSHKeyPair {
 	public String getPublicKey() {
 		return publicKey;
 	}
-	
+
 	@Override
 	public String getPrivateKey() {
 		return privateKey;
@@ -111,9 +112,14 @@ public class SSHKeyPairVO implements SSHKeyPair {
 	public void setPublicKey(String publicKey) {
 		this.publicKey = publicKey;
 	}
-	
+
 	public void setPrivateKey(String privateKey) {
 		this.privateKey = privateKey;
 	}
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.SSHKeyPair;
+    }
 
 }

@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.engine.cloud.entity.api.TemplateEntity;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreInfo;
@@ -283,6 +284,12 @@ public class TemplateEntityImpl implements TemplateEntity {
     public long getVirtualSize() {
         // TODO Auto-generated method stub
         return 0;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

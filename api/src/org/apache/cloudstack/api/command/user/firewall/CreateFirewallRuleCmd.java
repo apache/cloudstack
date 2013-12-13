@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.firewall;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -326,6 +327,11 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     @Override
     public TrafficType getTrafficType() {
         return FirewallRule.TrafficType.Ingress;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.FirewallRule;
     }
 
 }

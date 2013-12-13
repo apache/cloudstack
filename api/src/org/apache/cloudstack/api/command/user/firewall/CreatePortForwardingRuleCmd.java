@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.firewall;
 
 import java.util.List;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -396,6 +397,11 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     @Override
     public TrafficType getTrafficType() {
         return null;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.FirewallRule;
     }
 
 }

@@ -29,6 +29,8 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
+
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
@@ -187,5 +189,10 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity {
     @Override
     public String getUuid() {
         return uuid;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.AutoScaleVmGroup;
     }
 }

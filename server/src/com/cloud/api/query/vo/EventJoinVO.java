@@ -25,6 +25,8 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.AclEntityType;
+
 import com.cloud.event.Event.State;
 import com.cloud.utils.db.GenericDao;
 
@@ -215,5 +217,10 @@ public class EventJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public boolean getArchived() {
         return archived;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.Event;
     }
 }

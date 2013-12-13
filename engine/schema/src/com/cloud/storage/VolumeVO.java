@@ -32,10 +32,11 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.acl.AclEntityType;
+
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.VirtualMachine.State;
 
 @Entity
 @Table(name = "volumes")
@@ -156,7 +157,7 @@ public class VolumeVO implements Volume {
 
     @Column(name = "iso_id")
     private Long isoId;
-    
+
     @Transient
     // @Column(name="reservation")
     String reservationId;
@@ -558,7 +559,7 @@ public class VolumeVO implements Volume {
     public void setFormat(Storage.ImageFormat format) {
         this.format = format;
     }
-    
+
     public void setVmSnapshotChainSize(Long vmSnapshotChainSize){
         this.vmSnapshotChainSize = vmSnapshotChainSize;
     }
@@ -574,10 +575,15 @@ public class VolumeVO implements Volume {
     public void setIsoId(Long isoId) {
         this.isoId =isoId;
     }
-    
+
     // don't use this directly, use volume state machine instead
     // This method is used by UpdateVolume as a part of "Better control over first class objects in CS"
     public void setState(State state) {
         this.state = state;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.Volume;
     }
 }

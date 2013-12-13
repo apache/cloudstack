@@ -23,6 +23,8 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.AclEntityType;
+
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -155,5 +157,10 @@ public class InstanceGroupJoinVO extends BaseViewVO implements ControlledViewEnt
 
     public Date getCreated() {
         return created;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.InstanceGroup;
     }
 }

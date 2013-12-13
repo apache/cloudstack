@@ -22,6 +22,8 @@ import javax.inject.Inject;
 
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -639,5 +641,10 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public Long getVmSnapshotChainSize() {
         return this.volumeVO.getVmSnapshotChainSize();
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.Volume;
     }
 }

@@ -27,9 +27,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.acl.AclEntityType;
 import com.cloud.utils.db.Encrypt;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name=("vpn_users"))
@@ -127,5 +126,10 @@ public class VpnUserVO implements VpnUser {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.VpnUser;
     }
 }

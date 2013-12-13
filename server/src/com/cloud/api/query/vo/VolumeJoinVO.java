@@ -25,6 +25,9 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+
+import org.apache.cloudstack.acl.AclEntityType;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.storage.Storage;
@@ -695,5 +698,8 @@ public class VolumeJoinVO extends BaseViewVO implements ControlledViewEntity {
         return path;
     }
 
-
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.Volume;
+    }
 }

@@ -31,6 +31,8 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.acl.AclEntityType;
+
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -571,6 +573,11 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     public void setUpdated(Date updated) {
         this.updated = updated;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.VirtualMachineTemplate;
     }
 
 }

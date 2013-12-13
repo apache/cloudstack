@@ -29,6 +29,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.acl.AclEntityType;
+
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -72,10 +74,10 @@ public class UserIpv6AddressVO implements UserIpv6Address {
 
     @Column(name="domain_id")
     private Long domainId = null;
-	
+
     @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
-	
+
 	protected UserIpv6AddressVO() {
 		this.uuid = UUID.randomUUID().toString();
 	}
@@ -185,4 +187,9 @@ public class UserIpv6AddressVO implements UserIpv6Address {
 	public void setCreated(Date created) {
 		this.created = created;
 	}
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.UserIpv6Address;
+    }
 }

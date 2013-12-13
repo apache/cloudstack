@@ -36,8 +36,17 @@ public interface AclPolicyPermission extends InternalIdentity {
     Permission getPermission();
 
     public enum Permission {
-        Allow,
-        Deny
+        Allow(true), Deny(false);
+
+        boolean result;
+
+        Permission(boolean result) {
+            this.result = result;
+        }
+
+        public boolean isGranted() {
+            return result;
+        }
     }
 
 }

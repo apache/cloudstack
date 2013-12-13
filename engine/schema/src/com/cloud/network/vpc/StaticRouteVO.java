@@ -28,6 +28,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -137,5 +138,10 @@ public class StaticRouteVO implements StaticRoute {
         StringBuilder buf = new StringBuilder("StaticRoute[");
         buf.append(uuid).append("|").append(cidr).append("|").append(vpcGatewayId).append("]");
         return buf.toString();
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.StaticRoute;
     }
 }

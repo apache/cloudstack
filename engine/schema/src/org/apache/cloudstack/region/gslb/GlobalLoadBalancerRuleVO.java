@@ -20,6 +20,9 @@ package org.apache.cloudstack.region.gslb;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 
 import javax.persistence.*;
+
+import org.apache.cloudstack.acl.AclEntityType;
+
 import java.util.UUID;
 
 @Entity
@@ -179,5 +182,10 @@ public class GlobalLoadBalancerRuleVO implements GlobalLoadBalancerRule {
     @Override
     public GlobalLoadBalancerRule.State getState() {
         return state;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.GlobalLoadBalancerRule;
     }
 }

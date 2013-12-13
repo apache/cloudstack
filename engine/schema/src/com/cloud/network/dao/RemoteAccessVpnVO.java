@@ -25,6 +25,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.AclEntityType;
+
 import com.cloud.network.RemoteAccessVpn;
 
 @Entity
@@ -35,13 +37,13 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
 
     @Column(name="network_id")
     private Long networkId;
-    
+
     @Column(name="domain_id")
     private long domainId;
 
     @Column(name="vpn_server_addr_id")
     private long serverAddressId;
-    
+
     @Column(name="local_ip")
     private String localIp;
 
@@ -50,22 +52,22 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
 
     @Column(name="ipsec_psk")
     private String ipsecPresharedKey;
-    
+
     @Column(name="state")
     private State state;
-    
+
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
-    
+
     @Column(name="uuid")
     private String uuid;
 
     @Column(name="vpc_id")
     private Long vpcId;
-    
-    public RemoteAccessVpnVO() { 
+
+    public RemoteAccessVpnVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
@@ -81,12 +83,12 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
         this.uuid = UUID.randomUUID().toString();
         this.vpcId = vpcId;
     }
-    
+
     @Override
     public State getState() {
         return state;
     }
-    
+
     public void setState(State state) {
         this.state = state;
     }
@@ -95,7 +97,7 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     public long getAccountId() {
         return accountId;
     }
-    
+
     @Override
 	public long getServerAddressId() {
         return serverAddressId;
@@ -128,7 +130,7 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     public long getDomainId() {
 		return domainId;
 	}
-	
+
 	@Override
     public Long getNetworkId() {
 	    return networkId;
@@ -148,4 +150,9 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
 	public Long getVpcId() {
 		return vpcId;
 	}
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.RemoteAccessVpn;
+    }
 }

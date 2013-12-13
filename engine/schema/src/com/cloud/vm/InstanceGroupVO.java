@@ -28,9 +28,8 @@ import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.SecondaryTable;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.acl.AclEntityType;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
 @Table(name="instance_group")
@@ -41,16 +40,16 @@ public class InstanceGroupVO implements InstanceGroup {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
-    
+
     @Column(name="name")
     String name;
-    
+
     @Column(name="account_id")
     private long accountId;
-    
+
     @Column(name="domain_id", table="account", insertable=false, updatable=false)
     private long domainId;
-    
+
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
 
@@ -59,47 +58,47 @@ public class InstanceGroupVO implements InstanceGroup {
 
     @Column(name="uuid")
     private String uuid;
-    
+
 	@Column(name="type", table="account", insertable=false, updatable=false)
 	private short accountType;
-    
+
     public InstanceGroupVO(String name, long accountId) {
         this.name = name;
         this.accountId = accountId;
         this.uuid = UUID.randomUUID().toString();
     }
-    
+
     protected InstanceGroupVO() {
         super();
     }
-    
+
     @Override
     public long getId() {
     	return id;
     }
-    
+
     @Override
     public String getName() {
-    	return name; 
+    	return name;
     }
-    
+
     @Override
     public long getAccountId() {
         return accountId;
     }
-    
+
     public long getDomainId() {
         return domainId;
     }
-    
+
     public Date getRemoved() {
         return removed;
     }
-    
+
 	public Date getCreated() {
 		return created;
 	}
-    
+
     public void setName(String name) {
     	this.name = name;
     }
@@ -108,13 +107,18 @@ public class InstanceGroupVO implements InstanceGroup {
     public String getUuid() {
     	return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }
-    
+
 	@Override
 	public Short getAccountType() {
 		return accountType;
 	}
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.InstanceGroup;
+    }
 }

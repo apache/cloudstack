@@ -18,6 +18,7 @@ package com.cloud.network.rules;
 
 import java.util.List;
 
+import org.apache.cloudstack.acl.AclEntityType;
 
 public class StaticNatRuleImpl implements StaticNatRule {
     long id;
@@ -142,6 +143,11 @@ public class StaticNatRuleImpl implements StaticNatRule {
     @Override
     public TrafficType getTrafficType() {
         return null;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.FirewallRule;
     }
 
 }

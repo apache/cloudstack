@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -29,6 +29,8 @@ import javax.persistence.Table;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
+
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
@@ -72,7 +74,7 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
 
     @Column(name="domain_id")
     private Long domainId;
-    
+
     @Column(name="account_id")
     private Long accountId;
 
@@ -195,7 +197,7 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     public String getUuid() {
         return uuid;
     }
-    
+
     @Override
     public long getDomainId() {
         return domainId;
@@ -204,5 +206,10 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     @Override
     public long getAccountId() {
         return accountId;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.Site2SiteCustomerGateway;
     }
 }

@@ -28,6 +28,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.AclEntityType;
+
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -185,5 +187,10 @@ public class AccountVO implements Account {
     @Override
     public boolean isDefault() {
         return isDefault;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.Account;
     }
 }

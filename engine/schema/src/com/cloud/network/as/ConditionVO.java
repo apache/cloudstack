@@ -29,6 +29,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.Identity;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.InternalIdentity;
@@ -125,5 +126,10 @@ public class ConditionVO implements Condition, Identity, InternalIdentity {
 
     public Date getRemoved() {
         return removed;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.Condition;
     }
 }

@@ -29,6 +29,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.acl.AclEntityType;
+
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -190,5 +192,10 @@ public class EventVO implements Event {
 
     public void setArchived(Boolean archived) {
         this.archived = archived;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.Event;
     }
 }

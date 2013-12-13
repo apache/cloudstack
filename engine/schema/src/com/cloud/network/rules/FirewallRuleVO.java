@@ -5,7 +5,7 @@
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
 // with the License.  You may obtain a copy of the License at
-// 
+//
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
@@ -33,6 +33,8 @@ import javax.persistence.Inheritance;
 import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 import javax.persistence.Transient;
+
+import org.apache.cloudstack.acl.AclEntityType;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
@@ -192,7 +194,7 @@ public class FirewallRuleVO implements FirewallRule {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol, 
+    public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol,
             long networkId, long accountId, long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode,
             Integer icmpType, Long related, TrafficType trafficType) {
         this.xId = xId;
@@ -230,7 +232,7 @@ public class FirewallRuleVO implements FirewallRule {
         this.type = type;
     }
 
-    public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId, 
+    public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId,
             long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related) {
         this(xId, ipAddressId, port, port, protocol, networkId, accountId, domainId, purpose, sourceCidrs, icmpCode, icmpType, related, null);
     }
@@ -271,5 +273,10 @@ public class FirewallRuleVO implements FirewallRule {
     @Override
     public TrafficType getTrafficType() {
         return trafficType;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.FirewallRule;
     }
 }

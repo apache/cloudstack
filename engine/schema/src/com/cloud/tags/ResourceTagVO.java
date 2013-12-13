@@ -27,53 +27,52 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.acl.AclEntityType;
 import com.cloud.server.ResourceTag;
-import org.apache.cloudstack.api.InternalIdentity;
 
 
 @Entity
 @Table(name="resource_tags")
 public class ResourceTagVO implements ResourceTag {
-    
+
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
-    
+
     @Column(name="uuid")
     private String uuid;
-    
+
     @Column(name="key")
     private String key;
-    
+
     @Column(name="value")
     String value;
-    
+
     @Column(name="domain_id")
     long domainId;
 
     @Column(name="account_id")
     long accountId;
-    
+
     @Column(name="resource_id")
     long resourceId;
-    
+
     @Column(name="resource_uuid")
     private String resourceUuid;
-    
+
     @Column(name="resource_type")
     @Enumerated(value=EnumType.STRING)
     private ResourceObjectType resourceType;
-    
+
     @Column(name="customer")
     String customer;
 
-    
+
     protected ResourceTagVO(){
         this.uuid = UUID.randomUUID().toString();
     }
-    
+
     /**
      * @param key
      * @param value
@@ -84,7 +83,7 @@ public class ResourceTagVO implements ResourceTag {
      * @param customer TODO
      * @param resourceUuid TODO
      */
-    public ResourceTagVO(String key, String value, long accountId, long domainId, long resourceId, 
+    public ResourceTagVO(String key, String value, long accountId, long domainId, long resourceId,
             ResourceObjectType resourceType, String customer, String resourceUuid) {
         super();
         this.key = key;
@@ -97,8 +96,8 @@ public class ResourceTagVO implements ResourceTag {
         this.customer = customer;
         this.resourceUuid = resourceUuid;
     }
-    
-    
+
+
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("Tag[");
@@ -107,7 +106,7 @@ public class ResourceTagVO implements ResourceTag {
         .append("|accountId=").append(accountId).append("]");
         return buf.toString();
     }
-    
+
     @Override
     public long getId() {
         return id;
@@ -147,7 +146,7 @@ public class ResourceTagVO implements ResourceTag {
     public String getUuid() {
         return uuid;
     }
-    
+
     @Override
     public String getCustomer() {
         return customer;
@@ -156,5 +155,10 @@ public class ResourceTagVO implements ResourceTag {
     @Override
     public String getResourceUuid() {
         return resourceUuid;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.ResourceTag;
     }
 }

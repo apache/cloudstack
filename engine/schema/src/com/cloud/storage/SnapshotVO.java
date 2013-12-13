@@ -21,6 +21,9 @@ import com.cloud.utils.db.GenericDao;
 import com.google.gson.annotations.Expose;
 
 import javax.persistence.*;
+
+import org.apache.cloudstack.acl.AclEntityType;
+
 import java.util.Date;
 import java.util.UUID;
 
@@ -225,5 +228,10 @@ public class SnapshotVO implements Snapshot {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.Snapshot;
     }
 }

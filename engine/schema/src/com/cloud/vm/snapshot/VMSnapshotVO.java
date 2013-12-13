@@ -33,6 +33,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
 
 import com.cloud.utils.db.GenericDao;
@@ -83,14 +84,14 @@ public class VMSnapshotVO implements VMSnapshot {
 
     @Column(name = "current")
     Boolean current;
-    
+
     @Column(name = "parent")
     Long parent;
-    
+
     @Column(name = "updated")
     @Temporal(value = TemporalType.TIMESTAMP)
     Date updated;
-    
+
     @Column(name="update_count", updatable = true, nullable=false)
     protected long updatedCount;
 
@@ -231,8 +232,13 @@ public class VMSnapshotVO implements VMSnapshot {
     public Type getType() {
         return type;
     }
-    
+
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.VMSnapshot;
     }
 }

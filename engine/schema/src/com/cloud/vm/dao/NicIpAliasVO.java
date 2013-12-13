@@ -28,6 +28,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import org.apache.cloudstack.acl.AclEntityType;
+
 import java.util.Date;
 import java.util.UUID;
 
@@ -221,6 +224,11 @@ public class NicIpAliasVO implements NicIpAlias  {
 
     public String getStartIpOfSubnet() {
         return startIpOfSubnet;
+    }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.NicIpAlias;
     }
 
 }

@@ -33,5 +33,6 @@ public interface AclPolicyPermissionDao extends GenericDao<AclPolicyPermissionVO
 
     List<AclPolicyPermissionVO> listGrantedByActionAndScope(long policyId, String action, PermissionScope scope);
 
+    List<AclPolicyPermissionVO> listByPolicyActionAndEntity(long policyId, String action, String entityType);
 
 }
