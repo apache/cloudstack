@@ -539,35 +539,47 @@
                                     },
                                     domain: {
                                         label: 'label.domain',
+                                        isHidden: function(args) {
+                                            if (isAdmin() || isDomainAdmin())
+                                                return false;
+                                            else
+                                                return true;
+                                        },
                                         select: function(args) {
-                                            $.ajax({
-                                                url: createURL("listDomains&listAll=true"),
-                                                success: function(json) {
-                                                    var items = [];
-                                                    items.push({
-                                                        id: "",
-                                                        description: ""
-                                                    });
-                                                    var domainObjs = json.listdomainsresponse.domain;
-                                                    $(domainObjs).each(function() {
+                                            if (isAdmin() || isDomainAdmin()) {
+                                                $.ajax({
+                                                    url: createURL("listDomains&listAll=true"),
+                                                    success: function(json) {
+                                                        var items = [];
                                                         items.push({
-                                                            id: this.id,
-                                                            description: this.path
+                                                            id: "",
+                                                            description: ""
                                                         });
-                                                    });
-                                                    args.response.success({
-                                                        data: items
-                                                    });
-                                                }
-                                            });
-                                            args.$select.change(function() {
-                                                var $form = $(this).closest('form');
-                                                if ($(this).val() == "") {
-                                                    $form.find('.form-item[rel=account]').hide();
-                                                } else {
-                                                    $form.find('.form-item[rel=account]').css('display', 'inline-block');
-                                                }
-                                            });
+                                                        var domainObjs = json.listdomainsresponse.domain;
+                                                        $(domainObjs).each(function() {
+                                                            items.push({
+                                                                id: this.id,
+                                                                description: this.path
+                                                            });
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                                args.$select.change(function() {
+                                                    var $form = $(this).closest('form');
+                                                    if ($(this).val() == "") {
+                                                        $form.find('.form-item[rel=account]').hide();
+                                                    } else {
+                                                        $form.find('.form-item[rel=account]').css('display', 'inline-block');
+                                                    }
+                                                });
+                                            } else {
+                                                args.response.success({
+                                                data: null
+                                                });
+                                            }
                                         },
                                     },
                                     account: {
@@ -575,6 +587,12 @@
                                         validation: {
                                             required: true
                                         },
+                                        isHidden: function(args) {
+                                            if (isAdmin() || isDomainAdmin())
+                                                return false;
+                                            else
+                                                return true;
+                                        }
                                     }
                                 }
                             },
