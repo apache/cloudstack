@@ -26,6 +26,7 @@
 
                 var close = function() {
                     $wizard.dialog('destroy');
+                    $wizard.remove();
                     $('div.overlay').fadeOut(function() {
                         $('div.overlay').remove();
                     });
