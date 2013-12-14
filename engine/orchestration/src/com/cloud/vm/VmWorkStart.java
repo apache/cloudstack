@@ -50,76 +50,76 @@ public class VmWorkStart extends VmWork {
     // use serialization friendly map
     private Map<String, String> rawParams;
 
-    public VmWorkStart(long userId, long accountId, long vmId) {
-        super(userId, accountId, vmId);
-    }
+    public VmWorkStart(long userId, long accountId, long vmId, String handlerName) {
+        super(userId, accountId, vmId, handlerName);
+	}
 
-    public DeploymentPlan getPlan() {
+	public DeploymentPlan getPlan() {
+		
+		if(podId != null || clusterId != null || hostId != null || poolId != null || physicalNetworkId != null) {
+			// this is ugly, to work with legacy code, we need to re-construct the DeploymentPlan hard-codely
+			// this has to be refactored together with migrating legacy code into the new way
+			ReservationContext context = null;
+			if(reservationId != null) {
+		        Journal journal = new Journal.LogJournal("VmWorkStart", s_logger);
+				context = new ReservationContextImpl(reservationId, journal,
+						CallContext.current().getCallingUser(),
+						CallContext.current().getCallingAccount());
+			}
+			
+			DeploymentPlan plan = new DataCenterDeployment(
+					dcId, podId, clusterId, hostId, poolId, physicalNetworkId,
+					context);
+			return plan;
+		}
+		
+		return null;
+	}
 
-        if (podId != null || clusterId != null || hostId != null || poolId != null || physicalNetworkId != null) {
-            // this is ugly, to work with legacy code, we need to re-construct the DeploymentPlan hard-codely
-            // this has to be refactored together with migrating legacy code into the new way
-            ReservationContext context = null;
-            if (reservationId != null) {
-                Journal journal = new Journal.LogJournal("VmWorkStart", s_logger);
-                context = new ReservationContextImpl(reservationId, journal,
-                    CallContext.current().getCallingUser(),
-                    CallContext.current().getCallingAccount());
-            }
+	public void setPlan(DeploymentPlan plan) {
+		if(plan != null) {
+			dcId = plan.getDataCenterId();
+			podId = plan.getPodId();
+			clusterId = plan.getClusterId();
+			hostId = plan.getHostId();
+			poolId = plan.getPoolId();
+			physicalNetworkId = plan.getPhysicalNetworkId();
+			avoids = plan.getAvoids();
+			
+			if(plan.getReservationContext() != null)
+				reservationId = plan.getReservationContext().getReservationId();
+		}
+	}
 
-            DeploymentPlan plan = new DataCenterDeployment(
-                dcId, podId, clusterId, hostId, poolId, physicalNetworkId,
-                context);
-            return plan;
-        }
+	public Map<String, String> getRawParams() {
+		return rawParams;
+	}
 
-        return null;
-    }
-
-    public void setPlan(DeploymentPlan plan) {
-        if (plan != null) {
-            dcId = plan.getDataCenterId();
-            podId = plan.getPodId();
-            clusterId = plan.getClusterId();
-            hostId = plan.getHostId();
-            poolId = plan.getPoolId();
-            physicalNetworkId = plan.getPhysicalNetworkId();
-            avoids = plan.getAvoids();
-
-            if (plan.getReservationContext() != null)
-                reservationId = plan.getReservationContext().getReservationId();
-        }
-    }
-
-    public Map<String, String> getRawParams() {
-        return rawParams;
-    }
-
-    public void setRawParams(Map<String, String> params) {
-        rawParams = params;
-    }
-
-    public Map<VirtualMachineProfile.Param, Object> getParams() {
-        Map<VirtualMachineProfile.Param, Object> map = new HashMap<VirtualMachineProfile.Param, Object>();
-
-        if (rawParams != null) {
-            for (Map.Entry<String, String> entry : rawParams.entrySet()) {
-                VirtualMachineProfile.Param key = new VirtualMachineProfile.Param(entry.getKey());
-                Object val = JobSerializerHelper.fromObjectSerializedString(entry.getValue());
-                map.put(key, val);
-            }
-        }
-
-        return map;
-    }
-
-    public void setParams(Map<VirtualMachineProfile.Param, Object> params) {
-        if (params != null) {
-            rawParams = new HashMap<String, String>();
-            for (Map.Entry<VirtualMachineProfile.Param, Object> entry : params.entrySet()) {
-                rawParams.put(entry.getKey().getName(), JobSerializerHelper.toObjectSerializedString(
-                    entry.getValue() instanceof Serializable ? (Serializable)entry.getValue() : entry.getValue().toString()));
-            }
-        }
-    }
+	public void setRawParams(Map<String, String> params) {
+		rawParams = params;
+	}
+	
+	public Map<VirtualMachineProfile.Param, Object> getParams() {
+		Map<VirtualMachineProfile.Param, Object> map = new HashMap<VirtualMachineProfile.Param, Object>();
+		
+		if(rawParams != null) {
+			for(Map.Entry<String, String> entry : rawParams.entrySet()) {
+				VirtualMachineProfile.Param key = new VirtualMachineProfile.Param(entry.getKey());
+				Object val = JobSerializerHelper.fromObjectSerializedString(entry.getValue());
+				map.put(key, val);
+			}
+		}
+		
+		return map;
+	}
+	
+	public void setParams(Map<VirtualMachineProfile.Param, Object> params) {
+		if(params != null) {
+			rawParams = new HashMap<String, String>();
+			for(Map.Entry<VirtualMachineProfile.Param, Object> entry : params.entrySet()) {
+				rawParams.put(entry.getKey().getName(), JobSerializerHelper.toObjectSerializedString(
+					entry.getValue() instanceof Serializable ? (Serializable)entry.getValue() : entry.getValue().toString()));
+			}
+		}
+	}
 }

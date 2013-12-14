@@ -38,8 +38,9 @@ public class VmWorkMigrate extends VmWork {
     private Map<String, String> storage;
     long srcHostId;
 
-    public VmWorkMigrate(long userId, long accountId, long vmId, long srcHostId, DeployDestination dst) {
-        super(userId, accountId, vmId);
+    public VmWorkMigrate(long userId, long accountId, long vmId, String handlerName,
+            long srcHostId, DeployDestination dst) {
+        super(userId, accountId, vmId, handlerName);
         this.srcHostId = srcHostId;
         zoneId = dst.getDataCenter() != null ? dst.getDataCenter().getId() : null;
         podId = dst.getPod() != null ? dst.getPod().getId() : null;

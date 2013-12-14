@@ -16,9 +16,12 @@
 // under the License.
 package com.cloud.vm;
 
+import java.util.Map;
+
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
@@ -26,6 +29,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
 import org.apache.cloudstack.jobs.JobInfo;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -35,15 +39,25 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
     public static final String VM_WORK_QUEUE = "VmWorkJobQueue";
     public static final String VM_WORK_JOB_DISPATCHER = "VmWorkJobDispatcher";
     public static final String VM_WORK_JOB_WAKEUP_DISPATCHER = "VmWorkJobWakeupDispatcher";
+    
+    @Inject private VirtualMachineManagerImpl _vmMgr;
+	@Inject private AsyncJobManager _asyncJobMgr;
+    @Inject private VMInstanceDao _instanceDao;
+    
+    private Map<String, VmWorkJobHandler> _handlers;
 
-    @Inject
-    private VirtualMachineManagerImpl _vmMgr;
-    @Inject
-    private AsyncJobManager _asyncJobMgr;
-    @Inject
-    private VMInstanceDao _instanceDao;
+    public VmWorkJobDispatcher() {
+    }
 
-    @Override
+    public Map<String, VmWorkJobHandler> getHandlers() {
+        return _handlers;
+    }
+
+    public void setHandlers(Map<String, VmWorkJobHandler> handlers) {
+        _handlers = handlers;
+    }
+
+	@Override
     public void runJob(AsyncJob job) {
         VmWork work = null;
         try {
@@ -69,80 +83,26 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
                 _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, "Unable to deserialize VM work");
                 return;
             }
+            
+            if (_handlers == null || _handlers.isEmpty()) {
+                s_logger.error("Invalid startup configuration, no work job handler is found. cmd: " + job.getCmd() + ", job info: " + job.getCmdInfo());
+                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, "Invalid startup configuration. no job handler is found");
+                return;
+            }
+
+            VmWorkJobHandler handler = _handlers.get(work.getHandlerName());
+            
+            if (handler == null) {
+                s_logger.error("Unable to find work job handler. handler name: " + work.getHandlerName() + ", job cmd: " + job.getCmd() + ", job info: " + job.getCmdInfo());
+                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, "Unable to find work job handler");
+                return;
+            }
 
             CallContext.register(work.getUserId(), work.getAccountId(), job.getRelated());
-
-            VMInstanceVO vm = _instanceDao.findById(work.getVmId());
-            if (vm == null) {
-                s_logger.info("Unable to find vm " + work.getVmId());
-            }
-            assert (vm != null);
-            if (work instanceof VmWorkStart) {
-                VmWorkStart workStart = (VmWorkStart)work;
-                _vmMgr.orchestrateStart(vm.getUuid(), workStart.getParams(), workStart.getPlan());
-                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, null);
-            } else if (work instanceof VmWorkStop) {
-                VmWorkStop workStop = (VmWorkStop)work;
-                _vmMgr.orchestrateStop(vm.getUuid(), workStop.isCleanup());
-                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, null);
-            } else if (work instanceof VmWorkMigrate) {
-                VmWorkMigrate workMigrate = (VmWorkMigrate)work;
-                _vmMgr.orchestrateMigrate(vm.getUuid(), workMigrate.getSrcHostId(), workMigrate.getDeployDestination());
-                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, null);
-            } else if (work instanceof VmWorkMigrateWithStorage) {
-                VmWorkMigrateWithStorage workMigrateWithStorage = (VmWorkMigrateWithStorage)work;
-                _vmMgr.orchestrateMigrateWithStorage(vm.getUuid(),
-                    workMigrateWithStorage.getSrcHostId(),
-                    workMigrateWithStorage.getDestHostId(),
-                    workMigrateWithStorage.getVolumeToPool());
-                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, null);
-            } else if (work instanceof VmWorkMigrateForScale) {
-                VmWorkMigrateForScale workMigrateForScale = (VmWorkMigrateForScale)work;
-                _vmMgr.orchestrateMigrateForScale(vm.getUuid(),
-                    workMigrateForScale.getSrcHostId(),
-                    workMigrateForScale.getDeployDestination(),
-                    workMigrateForScale.getNewServiceOfferringId());
-                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, null);
-            } else if (work instanceof VmWorkReboot) {
-                VmWorkReboot workReboot = (VmWorkReboot)work;
-                _vmMgr.orchestrateReboot(vm.getUuid(), workReboot.getParams());
-                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, null);
-            } else if (work instanceof VmWorkAddVmToNetwork) {
-                VmWorkAddVmToNetwork workAddVmToNetwork = (VmWorkAddVmToNetwork)work;
-                NicProfile nic = _vmMgr.orchestrateAddVmToNetwork(vm, workAddVmToNetwork.getNetwork(),
-                    workAddVmToNetwork.getRequestedNicProfile());
-                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0,
-                    JobSerializerHelper.toObjectSerializedString(nic));
-            } else if (work instanceof VmWorkRemoveNicFromVm) {
-                VmWorkRemoveNicFromVm workRemoveNicFromVm = (VmWorkRemoveNicFromVm)work;
-                boolean result = _vmMgr.orchestrateRemoveNicFromVm(vm, workRemoveNicFromVm.getNic());
-                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0,
-                    JobSerializerHelper.toObjectSerializedString(new Boolean(result)));
-            } else if (work instanceof VmWorkRemoveVmFromNetwork) {
-                VmWorkRemoveVmFromNetwork workRemoveVmFromNetwork = (VmWorkRemoveVmFromNetwork)work;
-                boolean result = _vmMgr.orchestrateRemoveVmFromNetwork(vm,
-                    workRemoveVmFromNetwork.getNetwork(), workRemoveVmFromNetwork.getBroadcastUri());
-                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0,
-                    JobSerializerHelper.toObjectSerializedString(new Boolean(result)));
-            } else if (work instanceof VmWorkReconfigure) {
-                VmWorkReconfigure workReconfigure = (VmWorkReconfigure)work;
-                _vmMgr.reConfigureVm(vm.getUuid(), workReconfigure.getNewServiceOffering(),
-                    workReconfigure.isSameHost());
-                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, null);
-            } else if (work instanceof VmWorkStorageMigration) {
-                VmWorkStorageMigration workStorageMigration = (VmWorkStorageMigration)work;
-                _vmMgr.orchestrateStorageMigration(vm.getUuid(), workStorageMigration.getDestStoragePool());
-                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.SUCCEEDED, 0, null);
-            } else {
-                assert (false);
-                s_logger.error("Unhandled VM work command: " + job.getCmd());
-
-                RuntimeException e = new RuntimeException("Unsupported VM work command: " + job.getCmd());
-                String exceptionJson = JobSerializerHelper.toSerializedString(e);
-                s_logger.error("Serialize exception object into json: " + exceptionJson);
-                _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, exceptionJson);
-            }
-        } catch (Throwable e) {
+            
+            Pair<JobInfo.Status, String> result = handler.handleVmWorkJob(job, work);
+            _asyncJobMgr.completeAsyncJob(job.getId(), result.first(), 0, result.second());
+        } catch(Throwable e) {
             s_logger.error("Unable to complete " + job, e);
 
             String exceptionJson = JobSerializerHelper.toSerializedString(e);

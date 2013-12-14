@@ -28,18 +28,10 @@ public class VmWorkReboot extends VmWork {
     // use serialization friendly map
     private Map<String, String> rawParams;
 
-    public VmWorkReboot(long userId, long accountId, long vmId, Map<VirtualMachineProfile.Param, Object> params) {
-        super(userId, accountId, vmId);
-
-        setParams(params);
-    }
-
-    public Map<String, String> getRawParams() {
-        return rawParams;
-    }
-
-    public void setRawParams(Map<String, String> params) {
-        rawParams = params;
+    public VmWorkReboot(long userId, long accountId, long vmId, String handlerName, Map<VirtualMachineProfile.Param, Object> params) {
+        super(userId, accountId, vmId, handlerName);
+    	
+    	setParams(params);
     }
 
     public Map<VirtualMachineProfile.Param, Object> getParams() {
