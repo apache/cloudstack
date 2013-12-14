@@ -916,7 +916,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                         || userVm.getHypervisorType() == HypervisorType.KVM) {
                     List<SnapshotVO> activeSnapshots = _snapshotDao.listByInstanceId(volume.getInstanceId(),
                             Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp);
-                    if (activeSnapshots.size() > 1) {
+                    if (activeSnapshots.size() > 0) {
                         throw new CloudRuntimeException(
                                 "There is other active snapshot tasks on the instance to which the volume is attached, please try again later");
                     }
