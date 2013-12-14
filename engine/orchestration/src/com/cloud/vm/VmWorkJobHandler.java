@@ -16,28 +16,11 @@
 // under the License.
 package com.cloud.vm;
 
-import java.net.URI;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.jobs.JobInfo;
 
-import com.cloud.network.Network;
+import com.cloud.utils.Pair;
 
-public class VmWorkRemoveVmFromNetwork extends VmWork {
-	private static final long serialVersionUID = -5070392905642149925L;
-
-	Network network;
-	URI broadcastUri;
-	
-    public VmWorkRemoveVmFromNetwork(long userId, long accountId, long vmId, String handlerName, Network network, URI broadcastUri) {
-        super(userId, accountId, vmId, handlerName);
-    	
-    	this.network = network;
-    	this.broadcastUri = broadcastUri;
-	}
-	
-	public Network getNetwork() {
-		return network;
-	}
-	
-	public URI getBroadcastUri() {
-		return broadcastUri;
-	}
+public interface VmWorkJobHandler {
+    Pair<JobInfo.Status, String> handleVmWorkJob(AsyncJob job, VmWork work) throws Exception;
 }

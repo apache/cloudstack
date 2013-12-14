@@ -24,20 +24,20 @@ public class VmWorkReconfigure extends VmWork {
 	ServiceOffering newServiceOffering;
 	boolean sameHost;
 	
-    public VmWorkReconfigure(long userId, long accountId, long vmId, 
+    public VmWorkReconfigure(long userId, long accountId, long vmId, String handlerName,
     	ServiceOffering newServiceOffering, boolean sameHost) {
     	
-    	super(userId, accountId, vmId);
+        super(userId, accountId, vmId, handlerName);
     	
     	this.newServiceOffering = newServiceOffering;
     	this.sameHost = sameHost;
     }
     
     public ServiceOffering getNewServiceOffering() {
-    	return this.newServiceOffering;
+    	return newServiceOffering;
     }
     
     public boolean isSameHost() {
-    	return this.sameHost;
+    	return sameHost;
     }
 }

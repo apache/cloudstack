@@ -21,13 +21,13 @@ public class VmWorkRemoveNicFromVm extends VmWork {
 
 	Nic nic;
     
-	public VmWorkRemoveNicFromVm(long userId, long accountId, long vmId, Nic nic) {
-    	super(userId, accountId, vmId);
+    public VmWorkRemoveNicFromVm(long userId, long accountId, long vmId, String handlerName, Nic nic) {
+        super(userId, accountId, vmId, handlerName);
     	
     	this.nic = nic;
     }
     
     public Nic getNic() {
-    	return this.nic;
+    	return nic;
     }
 }

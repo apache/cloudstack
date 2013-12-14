@@ -205,8 +205,10 @@ import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @Local(value = VirtualMachineManager.class)
-public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager, Listener, Configurable {
+public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMachineManager, VmWorkJobHandler, Listener, Configurable {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineManagerImpl.class);
+
+    public static final String VM_WORK_JOB_HANDLER = VirtualMachineManagerImpl.class.getSimpleName();
 
     private static final String VM_SYNC_ALERT_SUBJECT = "VM state sync alert";
     
@@ -270,6 +272,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
     @Inject
     protected EntityManager _entityMgr;
+
     @Inject
     ConfigDepot _configDepot;
 
@@ -726,8 +729,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	}
     }
     
-    @Override
-    public void orchestrateStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
+    private void orchestrateStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
     	ConcurrentOperationException, ResourceUnavailableException {
         
     	CallContext cctxt = CallContext.current();
@@ -1250,8 +1252,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	}
     }
 
-    @Override
-    public void orchestrateStop(String vmUuid, boolean cleanUpEvenIfUnableToStop) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
+    private void orchestrateStop(String vmUuid, boolean cleanUpEvenIfUnableToStop) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
         advanceStop(vm, cleanUpEvenIfUnableToStop);
@@ -1537,8 +1538,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	}
     }
 
-    @Override
-    public void orchestrateStorageMigration(String vmUuid, StoragePool destPool) {
+    private void orchestrateStorageMigration(String vmUuid, StoragePool destPool) {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
         try {
@@ -1624,8 +1624,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	}
     }
     
-    @Override
-    public void orchestrateMigrate(String vmUuid, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException {
+    private void orchestrateMigrate(String vmUuid, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         if (vm == null) {
             if (s_logger.isDebugEnabled()) {
@@ -1894,8 +1893,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	}
     }
     
-    @Override
-    public void orchestrateMigrateWithStorage(String vmUuid, long srcHostId, long destHostId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException,
+    private void orchestrateMigrateWithStorage(String vmUuid, long srcHostId, long destHostId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException,
     	ConcurrentOperationException {
     	
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
@@ -2176,8 +2174,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	}
     }
     
-    @Override
-    public void orchestrateReboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ConcurrentOperationException,
+    private void orchestrateReboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ConcurrentOperationException,
     ResourceUnavailableException {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
@@ -3110,8 +3107,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	}
     }
     
-    @Override
-    public NicProfile orchestrateAddVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException, ResourceUnavailableException,
+    private NicProfile orchestrateAddVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException, ResourceUnavailableException,
     InsufficientCapacityException {
         CallContext cctx = CallContext.current();
 
@@ -3217,8 +3213,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	}
     }
 
-    @Override
-    public boolean orchestrateRemoveNicFromVm(VirtualMachine vm, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException {
+    private boolean orchestrateRemoveNicFromVm(VirtualMachine vm, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException {
         CallContext cctx = CallContext.current();
         VMInstanceVO vmVO = _vmDao.findById(vm.getId());
         NetworkVO network = _networkDao.findById(nic.getNetworkId());
@@ -3282,9 +3277,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	return orchestrateRemoveVmFromNetwork(vm, network, broadcastUri);
     }
     
-    @Override
     @DB
-    public boolean orchestrateRemoveVmFromNetwork(VirtualMachine vm, Network network, URI broadcastUri) throws ConcurrentOperationException, ResourceUnavailableException {
+    private boolean orchestrateRemoveVmFromNetwork(VirtualMachine vm, Network network, URI broadcastUri) throws ConcurrentOperationException, ResourceUnavailableException {
         CallContext cctx = CallContext.current();
         VMInstanceVO vmVO = _vmDao.findById(vm.getId());
         ReservationContext context = new ReservationContextImpl(null, null, cctx.getCallingUser(), cctx.getCallingAccount());
@@ -3449,8 +3443,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	}
     }
 
-    @Override
-    public void orchestrateMigrateForScale(String vmUuid, long srcHostId, DeployDestination dest, Long oldSvcOfferingId)
+    private void orchestrateMigrateForScale(String vmUuid, long srcHostId, DeployDestination dest, Long oldSvcOfferingId)
     	throws ResourceUnavailableException, ConcurrentOperationException {
         
     	VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
@@ -3707,8 +3700,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	}
     }
     
-    @Override
-    public VMInstanceVO orchestrateReConfigureVm(String vmUuid, ServiceOffering oldServiceOffering, boolean reconfiguringOnExistingHost) throws ResourceUnavailableException,
+    private VMInstanceVO orchestrateReConfigureVm(String vmUuid, ServiceOffering oldServiceOffering, boolean reconfiguringOnExistingHost) throws ResourceUnavailableException,
     ConcurrentOperationException {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
@@ -4166,7 +4158,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	            workJob.setVmInstanceId(vm.getId());
 
     	            // save work context info (there are some duplications)
-    	            VmWorkStart workInfo = new VmWorkStart(callingUser.getId(), callingAccount.getId(), vm.getId());
+                    VmWorkStart workInfo = new VmWorkStart(callingUser.getId(), callingAccount.getId(), vm.getId(), VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER);
     	            workInfo.setPlan(planToDeploy);
     	            workInfo.setParams(params);
     	            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
@@ -4220,7 +4212,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		            workJob.setVmInstanceId(vm.getId());
 		
 		            // save work context info (there are some duplications)
-		            VmWorkStop workInfo = new VmWorkStop(user.getId(), account.getId(), vm.getId(), cleanup);
+                    VmWorkStop workInfo = new VmWorkStop(user.getId(), account.getId(), vm.getId(), VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, cleanup);
 		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 		
 		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
@@ -4273,7 +4265,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		            workJob.setVmInstanceId(vm.getId());
 		
 		            // save work context info (there are some duplications)
-		            VmWorkReboot workInfo = new VmWorkReboot(user.getId(), account.getId(), vm.getId(), params);
+                    VmWorkReboot workInfo = new VmWorkReboot(user.getId(), account.getId(), vm.getId(), VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, params);
 		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 		
 		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
@@ -4325,7 +4317,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		            workJob.setVmInstanceId(vm.getId());
 		
 		            // save work context info (there are some duplications)
-		            VmWorkMigrate workInfo = new VmWorkMigrate(user.getId(), account.getId(), vm.getId(), srcHostId, dest);
+                    VmWorkMigrate workInfo = new VmWorkMigrate(user.getId(), account.getId(), vm.getId(), VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, srcHostId, dest);
 		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 		
 		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
@@ -4380,7 +4372,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		
 		            // save work context info (there are some duplications)
 		            VmWorkMigrateWithStorage workInfo = new VmWorkMigrateWithStorage(user.getId(), account.getId(), vm.getId(),
-		            	srcHostId, destHostId, volumeToPool);
+                            VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, srcHostId, destHostId, volumeToPool);
 		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 		
 		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
@@ -4434,7 +4426,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		
 		            // save work context info (there are some duplications)
 		            VmWorkMigrateForScale workInfo = new VmWorkMigrateForScale(user.getId(), account.getId(), vm.getId(),
-		            	srcHostId, dest, newSvcOfferingId);
+                            VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, srcHostId, dest, newSvcOfferingId);
 		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 		
 		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
@@ -4487,7 +4479,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		
 		            // save work context info (there are some duplications)
 		            VmWorkStorageMigration workInfo = new VmWorkStorageMigration(user.getId(), account.getId(), vm.getId(),
-		            	destPool);
+                            VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, destPool);
 		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 		
 		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
@@ -4538,7 +4530,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		
 		            // save work context info (there are some duplications)
 		            VmWorkAddVmToNetwork workInfo = new VmWorkAddVmToNetwork(user.getId(), account.getId(), vm.getId(),
-		            	network, requested);
+                            VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, network, requested);
 		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 		
 		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
@@ -4589,7 +4581,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		
 		            // save work context info (there are some duplications)
 		            VmWorkRemoveNicFromVm workInfo = new VmWorkRemoveNicFromVm(user.getId(), account.getId(), vm.getId(),
-		            	nic);
+                            VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, nic);
 		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 		
 		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
@@ -4640,7 +4632,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		
 		            // save work context info (there are some duplications)
 		            VmWorkRemoveVmFromNetwork workInfo = new VmWorkRemoveVmFromNetwork(user.getId(), account.getId(), vm.getId(),
-		            	network, broadcastUri);
+                            VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, network, broadcastUri);
 		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 		
 		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
@@ -4693,7 +4685,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 		
 		            // save work context info (there are some duplications)
 		            VmWorkReconfigure workInfo = new VmWorkReconfigure(user.getId(), account.getId(), vm.getId(),
-		            		oldServiceOffering, reconfiguringOnExistingHost);
+                            VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, oldServiceOffering, reconfiguringOnExistingHost);
 		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 		
 		            _jobMgr.submitAsyncJob(workJob, VmWorkJobDispatcher.VM_WORK_QUEUE, vm.getId());
@@ -4709,4 +4701,74 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
     }
    
+    @Override
+    public Pair<JobInfo.Status, String> handleVmWorkJob(AsyncJob job, VmWork work) throws Exception {
+
+        VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
+        if (vm == null) {
+            s_logger.info("Unable to find vm " + work.getVmId());
+        }
+        assert (vm != null);
+        if (work instanceof VmWorkStart) {
+            VmWorkStart workStart = (VmWorkStart)work;
+            orchestrateStart(vm.getUuid(), workStart.getParams(), workStart.getPlan());
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        } else if (work instanceof VmWorkStop) {
+            VmWorkStop workStop = (VmWorkStop)work;
+            orchestrateStop(vm.getUuid(), workStop.isCleanup());
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        } else if (work instanceof VmWorkMigrate) {
+            VmWorkMigrate workMigrate = (VmWorkMigrate)work;
+            orchestrateMigrate(vm.getUuid(), workMigrate.getSrcHostId(), workMigrate.getDeployDestination());
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        } else if (work instanceof VmWorkMigrateWithStorage) {
+            VmWorkMigrateWithStorage workMigrateWithStorage = (VmWorkMigrateWithStorage)work;
+            orchestrateMigrateWithStorage(vm.getUuid(),
+                    workMigrateWithStorage.getSrcHostId(),
+                    workMigrateWithStorage.getDestHostId(),
+                    workMigrateWithStorage.getVolumeToPool());
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        } else if (work instanceof VmWorkMigrateForScale) {
+            VmWorkMigrateForScale workMigrateForScale = (VmWorkMigrateForScale)work;
+            orchestrateMigrateForScale(vm.getUuid(),
+                    workMigrateForScale.getSrcHostId(),
+                    workMigrateForScale.getDeployDestination(),
+                    workMigrateForScale.getNewServiceOfferringId());
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        } else if (work instanceof VmWorkReboot) {
+            VmWorkReboot workReboot = (VmWorkReboot)work;
+            orchestrateReboot(vm.getUuid(), workReboot.getParams());
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        } else if (work instanceof VmWorkAddVmToNetwork) {
+            VmWorkAddVmToNetwork workAddVmToNetwork = (VmWorkAddVmToNetwork)work;
+            NicProfile nic = orchestrateAddVmToNetwork(vm, workAddVmToNetwork.getNetwork(),
+                    workAddVmToNetwork.getRequestedNicProfile());
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, JobSerializerHelper.toObjectSerializedString(nic));
+        } else if (work instanceof VmWorkRemoveNicFromVm) {
+            VmWorkRemoveNicFromVm workRemoveNicFromVm = (VmWorkRemoveNicFromVm)work;
+            boolean result = orchestrateRemoveNicFromVm(vm, workRemoveNicFromVm.getNic());
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+                    JobSerializerHelper.toObjectSerializedString(new Boolean(result)));
+        } else if (work instanceof VmWorkRemoveVmFromNetwork) {
+            VmWorkRemoveVmFromNetwork workRemoveVmFromNetwork = (VmWorkRemoveVmFromNetwork)work;
+            boolean result = orchestrateRemoveVmFromNetwork(vm,
+                    workRemoveVmFromNetwork.getNetwork(), workRemoveVmFromNetwork.getBroadcastUri());
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+                    JobSerializerHelper.toObjectSerializedString(new Boolean(result)));
+        } else if (work instanceof VmWorkReconfigure) {
+            VmWorkReconfigure workReconfigure = (VmWorkReconfigure)work;
+            reConfigureVm(vm.getUuid(), workReconfigure.getNewServiceOffering(),
+                    workReconfigure.isSameHost());
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        } else if (work instanceof VmWorkStorageMigration) {
+            VmWorkStorageMigration workStorageMigration = (VmWorkStorageMigration)work;
+            orchestrateStorageMigration(vm.getUuid(), workStorageMigration.getDestStoragePool());
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        } else {
+            RuntimeException e = new RuntimeException("Unsupported VM work command: " + job.getCmd());
+            String exceptionJson = JobSerializerHelper.toSerializedString(e);
+            s_logger.error("Serialize exception object into json: " + exceptionJson);
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.FAILED, exceptionJson);
+        }
+    }
 }

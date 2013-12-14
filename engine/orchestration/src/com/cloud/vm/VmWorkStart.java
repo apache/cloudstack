@@ -50,8 +50,8 @@ public class VmWorkStart extends VmWork {
 	// use serialization friendly map
 	private Map<String, String> rawParams;
 
-    public VmWorkStart(long userId, long accountId, long vmId) {
-        super(userId, accountId, vmId);
+    public VmWorkStart(long userId, long accountId, long vmId, String handlerName) {
+        super(userId, accountId, vmId, handlerName);
 	}
 
 	public DeploymentPlan getPlan() {
@@ -62,8 +62,8 @@ public class VmWorkStart extends VmWork {
 			ReservationContext context = null;
 			if(reservationId != null) {
 		        Journal journal = new Journal.LogJournal("VmWorkStart", s_logger);
-				context = new ReservationContextImpl(reservationId, journal, 
-						CallContext.current().getCallingUser(), 
+				context = new ReservationContextImpl(reservationId, journal,
+						CallContext.current().getCallingUser(),
 						CallContext.current().getCallingAccount());
 			}
 			

@@ -60,7 +60,6 @@
 
     <bean id="clusteredAgentManagerImpl" class="com.cloud.agent.manager.ClusteredAgentManagerImpl" />
 
-
     <bean id="cloudOrchestrator"
         class="org.apache.cloudstack.engine.orchestration.CloudOrchestrator" />
     <bean id="dataCenterResourceManagerImpl"
@@ -73,9 +72,15 @@
     <bean id="virtualMachineEntityImpl" class="org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntityImpl" />
     
     <bean id="virtualMachinePowerStateSyncImpl" class="com.cloud.vm.VirtualMachinePowerStateSyncImpl" />
+      
     <bean id= "vmWorkJobDispatcher" class="com.cloud.vm.VmWorkJobDispatcher">
         <property name="name">
             <util:constant static-field="com.cloud.vm.VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER"/>
+        </property>
+        <property name="handlers">
+            <map>
+                <entry key="VirtualMachineManagerImpl" value-ref="clusteredVirtualMachineManagerImpl" />
+            </map>
         </property>
     </bean>
     <bean id= "vmWorkJobWakeupDispatcher" class="com.cloud.vm.VmWorkJobWakeupDispatcher">

@@ -24,19 +24,19 @@ public class VmWorkAddVmToNetwork extends VmWork {
 	Network network;
 	NicProfile requstedNicProfile;
 	
-	public VmWorkAddVmToNetwork(long userId, long accountId, long vmId, 
+    public VmWorkAddVmToNetwork(long userId, long accountId, long vmId, String handlerName,
 		Network network, NicProfile requested) {
-		super(userId, accountId, vmId);
+        super(userId, accountId, vmId, handlerName);
 	
 		this.network = network;
-		this.requstedNicProfile = requested;
+		requstedNicProfile = requested;
 	}
 	
 	public Network getNetwork() {
-		return this.network;
+		return network;
 	}
 	
 	public NicProfile getRequestedNicProfile() {
-		return this.requstedNicProfile;
+		return requstedNicProfile;
 	}
 }
