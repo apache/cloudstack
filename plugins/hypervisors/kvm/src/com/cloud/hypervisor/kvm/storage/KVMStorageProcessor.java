@@ -644,8 +644,11 @@ public class KVMStorageProcessor implements StorageProcessor {
         String snapshotRelPath = null;
         String vmName = snapshot.getVmName();
         KVMStoragePool secondaryStoragePool = null;
+        Connect conn = null;
+        KVMPhysicalDisk snapshotDisk = null;
+        KVMStoragePool primaryPool = null;
         try {
-            Connect conn = LibvirtConnection.getConnectionByVmName(vmName);
+            conn = LibvirtConnection.getConnectionByVmName(vmName);
 
             secondaryStoragePool = storagePoolMgr.getStoragePoolByURI(secondaryStoragePoolUrl);
 
@@ -653,8 +656,8 @@ public class KVMStorageProcessor implements StorageProcessor {
             snapshotRelPath = destSnapshot.getPath();
 
             snapshotDestPath = ssPmountPath + File.separator + snapshotRelPath;
-            KVMPhysicalDisk snapshotDisk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), volumePath);
-            KVMStoragePool primaryPool = snapshotDisk.getPool();
+            snapshotDisk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), volumePath);
+            primaryPool = snapshotDisk.getPool();
 
             /**
              * RBD snapshots can't be copied using qemu-img, so we have to use
@@ -732,46 +735,6 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             }
 
-            /* Delete the snapshot on primary */
-
-            DomainInfo.DomainState state = null;
-            Domain vm = null;
-            if (vmName != null) {
-                try {
-                    vm = resource.getDomain(conn, vmName);
-                    state = vm.getInfo().state;
-                } catch (LibvirtException e) {
-                    s_logger.trace("Ignoring libvirt error.", e);
-                }
-            }
-
-            KVMStoragePool primaryStorage = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
-            if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING && !primaryStorage.isExternalSnapshot()) {
-                DomainSnapshot snap = vm.snapshotLookupByName(snapshotName);
-                snap.delete(0);
-
-                /*
-                 * libvirt on RHEL6 doesn't handle resume event emitted from
-                 * qemu
-                 */
-                vm = resource.getDomain(conn, vmName);
-                state = vm.getInfo().state;
-                if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
-                    vm.resume();
-                }
-            } else {
-                if (primaryPool.getType() != StoragePoolType.RBD) {
-                    Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
-                    command.add("-d", snapshotDisk.getPath());
-                    command.add("-n", snapshotName);
-                    String result = command.execute();
-                    if (result != null) {
-                        s_logger.debug("Failed to backup snapshot: " + result);
-                        return new CopyCmdAnswer("Failed to backup snapshot: " + result);
-                    }
-                }
-            }
-
             SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
             newSnapshot.setPath(snapshotRelPath + File.separator + snapshotName);
             return new CopyCmdAnswer(newSnapshot);
@@ -782,6 +745,49 @@ public class KVMStorageProcessor implements StorageProcessor {
             s_logger.debug("Failed to backup snapshot: " + e.toString());
             return new CopyCmdAnswer(e.toString());
         } finally {
+            try {
+                /* Delete the snapshot on primary */
+                DomainInfo.DomainState state = null;
+                Domain vm = null;
+                if (vmName != null) {
+                    try {
+                        vm = resource.getDomain(conn, vmName);
+                        state = vm.getInfo().state;
+                    } catch (LibvirtException e) {
+                        s_logger.trace("Ignoring libvirt error.", e);
+                    }
+                }
+
+                KVMStoragePool primaryStorage = storagePoolMgr.getStoragePool(primaryStore.getPoolType(),
+                        primaryStore.getUuid());
+                if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING && !primaryStorage.isExternalSnapshot()) {
+                    DomainSnapshot snap = vm.snapshotLookupByName(snapshotName);
+                    snap.delete(0);
+
+                    /*
+                     * libvirt on RHEL6 doesn't handle resume event emitted from
+                     * qemu
+                     */
+                    vm = resource.getDomain(conn, vmName);
+                    state = vm.getInfo().state;
+                    if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
+                        vm.resume();
+                    }
+                } else {
+                    if (primaryPool.getType() != StoragePoolType.RBD) {
+                        Script command = new Script(_manageSnapshotPath, _cmdsTimeout, s_logger);
+                        command.add("-d", snapshotDisk.getPath());
+                        command.add("-n", snapshotName);
+                        String result = command.execute();
+                        if (result != null) {
+                            s_logger.debug("Failed to delete snapshot on primary: " + result);
+                            // return new CopyCmdAnswer("Failed to backup snapshot: " + result);
+                        }
+                    }
+                }
+            } catch (Exception ex) {
+                s_logger.debug("Failed to delete snapshots on primary", ex);
+            }
             if (secondaryStoragePool != null) {
                 secondaryStoragePool.delete();
             }
