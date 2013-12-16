@@ -28,6 +28,9 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.handler.MessageContext;
+import javax.xml.ws.WebServiceException;
+
+import org.apache.log4j.Logger;
 
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.InvalidCollectorVersionFaultMsg;
@@ -59,6 +62,7 @@ import com.vmware.vim25.VimService;
  *
  */
 public class VmwareClient {
+    private static final Logger s_logger = Logger.getLogger(VmwareClient.class);
 
     private static class TrustAllTrustManager implements javax.net.ssl.TrustManager, javax.net.ssl.X509TrustManager {
 
@@ -313,20 +317,25 @@ public class VmwareClient {
      * @throws RuntimeFaultFaultMsg
      * @throws InvalidPropertyFaultMsg
      */
-    public boolean waitForTask(ManagedObjectReference task) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg {
+    public boolean waitForTask(ManagedObjectReference task) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvalidCollectorVersionFaultMsg, Exception {
 
         boolean retVal = false;
 
-        // info has a property - state for state of the task
-        Object[] result =
-            waitForValues(task, new String[] {"info.state", "info.error"}, new String[] {"state"}, new Object[][] {new Object[] {TaskInfoState.SUCCESS,
-                TaskInfoState.ERROR}});
-
-        if (result[0].equals(TaskInfoState.SUCCESS)) {
-            retVal = true;
-        }
-        if (result[1] instanceof LocalizedMethodFault) {
-            throw new RuntimeException(((LocalizedMethodFault)result[1]).getLocalizedMessage());
+        try {
+            // info has a property - state for state of the task
+            Object[] result = waitForValues(task, new String[] { "info.state", "info.error" }, new String[] { "state" }, new Object[][] { new Object[] {
+                    TaskInfoState.SUCCESS, TaskInfoState.ERROR } });
+    
+            if (result[0].equals(TaskInfoState.SUCCESS)) {
+                retVal = true;
+            }
+            if (result[1] instanceof LocalizedMethodFault) {
+                throw new RuntimeException(((LocalizedMethodFault) result[1]).getLocalizedMessage());
+            }
+        } catch(WebServiceException we) {
+            s_logger.debug("Cancelling vCenter task because task failed with " + we.getLocalizedMessage());
+            getService().cancelTask(task);
+            throw new RuntimeException("vCenter task failed due to " + we.getLocalizedMessage());
         }
         return retVal;
     }
