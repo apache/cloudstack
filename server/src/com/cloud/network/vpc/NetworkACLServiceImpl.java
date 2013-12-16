@@ -579,8 +579,21 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     @Override
     public boolean revokeNetworkACLItem(long ruleId) {
         NetworkACLItemVO aclItem = _networkACLItemDao.findById(ruleId);
+<<<<<<< HEAD
         if (aclItem != null) {
             if ((aclItem.getAclId() == NetworkACL.DEFAULT_ALLOW) || (aclItem.getAclId() == NetworkACL.DEFAULT_DENY)) {
+=======
+        if(aclItem != null){
+            NetworkACL acl = _networkAclMgr.getNetworkACL(aclItem.getAclId());
+
+            Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
+
+            Account caller = CallContext.current().getCallingAccount();
+
+            _accountMgr.checkAccess(caller, null, true, vpc);
+
+            if((aclItem.getAclId() == NetworkACL.DEFAULT_ALLOW) || (aclItem.getAclId() == NetworkACL.DEFAULT_DENY)){
+>>>>>>> e2805b8... CLOUDSTACK-5145 : Added permission checks while deleting network ACLs
                 throw new InvalidParameterValueException("ACL Items in default ACL cannot be deleted");
             }
         }
