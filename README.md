@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/runseb/cloudstack.png)](https://travis-ci.org/runseb/cloudstack)
+
 Apache CloudStack Version 4.2.0
 
 # About Apache CloudStack
