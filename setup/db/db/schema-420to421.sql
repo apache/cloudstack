@@ -24,7 +24,8 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
     'The maximum size limit for S3 single part upload API(in GB). If it is set to 0, then it means always use multi-part upload to upload object to S3. If it is set to -1, then it means always use single-part upload to upload object to S3.');
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Storage", 'DEFAULT', 'management-server', "enable.ha.storage.migration", "true", "Enable/disable storage migration across primary storage during HA"); 
-
+UPDATE `cloud`.`configuration` SET description="Specify whether or not to reserve CPU based on CPU overprovisioning factor" where name="vmware.reserve.cpu";
+UPDATE `cloud`.`configuration` SET description="Specify whether or not to reserve memory based on memory overprovisioning factor" where name="vmware.reserve.mem";
 -- Remove Windows Server 8 from guest_os_type dropdown to use Windows Server 2012
 DELETE FROM `cloud`.`guest_os_hypervisor` where guest_os_id=168;
 DELETE FROM `cloud`.`guest_os` where id=168;
