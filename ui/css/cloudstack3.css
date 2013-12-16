@@ -7569,20 +7569,6 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   min-width: 100px;
 }
 
-div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody tr.even td {
-  border-right: 1px solid #BFBFBF;
-  clear: none;
-  color: #495A76;
-  font-size: 10px;
-  margin-right: 25px;
-  min-width: -moz-available;
-  max-width: 90px;
-  overflow: hidden;
-  padding: 9px 5px 8px 0;
-  position: relative;
-  vertical-align: middle;
-}
-
 .multi-edit {
   overflow: auto;
 }
