@@ -28,7 +28,9 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -137,6 +139,15 @@ public class AclPolicyPermissionVO implements AclPolicyPermission {
 
     @Override
     public Long getScopeId() {
+        // handle special -1 scopeId, current caller domain, account
+        if ( scopeId < 0 ){
+            Account caller = CallContext.current().getCallingAccount();
+            if ( scope == PermissionScope.DOMAIN){
+                return caller.getDomainId();
+            } else if (scope == PermissionScope.ACCOUNT) {
+                return caller.getAccountId();
+            }
+        }
         return scopeId;
     }
 
