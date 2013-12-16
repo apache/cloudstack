@@ -1,0 +1,34 @@
+<!-- cloud_usage -->
+<dataset>
+<cloud_usage usage_type="1" raw_usage="11" usage_id="8" id="8" start_date="1" zone_id="1"/>
+<cloud_usage usage_type="1" raw_usage="12" usage_id="7" id="7" start_date="1" zone_id="1"/>
+<cloud_usage usage_type="1" raw_usage="13" usage_id="6" id="6" start_date="1" zone_id="1"/>
+
+<cloud_usage usage_type="6" usage_id="16" id="7" start_date="1" zone_id="1"/>
+<cloud_usage usage_type="6" usage_id="16" id="7" start_date="1" zone_id="1" />
+<cloud_usage usage_type="8" usage_id="14" id="7" start_date="1" zone_id="1" />
+<cloud_usage usage_type="8" usage_id="14" id="7" start_date="1" zone_id="1" />
+
+<cloud_usage usage_type="9" usage_id="18" id="7" start_date="1" zone_id="1" />
+
+<usage_volume id="2" />
+<usage_volume id="3" />
+<usage_volume id="4" />
+<usage_volume id="2" />
+<usage_volume id="3" />
+<usage_volume id="4" />
+
+<usage_vm_instance usage_type="1" vm_instance_id="1" />
+<usage_vm_instance usage_type="1" vm_instance_id="1" />
+<usage_vm_instance usage_type="1" vm_instance_id="2" />
+<usage_vm_instance usage_type="1" vm_instance_id="2" />
+<usage_vm_instance usage_type="1" vm_instance_id="3" />
+<usage_vm_instance usage_type="1" vm_instance_id="3" />
+<usage_vm_instance usage_type="1" vm_instance_id="3" />
+<usage_vm_instance usage_type="1" vm_instance_id="3" />
+
+<usage_vm_instance usage_type="2" vm_instance_id="1" />
+<usage_vm_instance usage_type="2" vm_instance_id="1" />
+<usage_vm_instance usage_type="2" vm_instance_id="2" />
+<usage_vm_instance usage_type="2" vm_instance_id="2" />
+</dataset>

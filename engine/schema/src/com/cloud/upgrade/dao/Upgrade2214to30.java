@@ -34,6 +34,7 @@ import org.apache.log4j.Logger;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -108,19 +109,6 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         }
 
         return new File[] {new File(script)};
-    }
-
-    protected void closePstmts(List<PreparedStatement> pstmt2Close){
-        for(PreparedStatement pstmt : pstmt2Close) {
-            try {
-                if (pstmt != null && !pstmt.isClosed()) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-                // It's not possible to recover from this and we need to continue closing
-                e.printStackTrace();
-            }
-        }
     }
 
     private void setupPhysicalNetworks(Connection conn) {
@@ -374,7 +362,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Exception while adding PhysicalNetworks", e);
         } finally {
-            closePstmts(pstmt2Close);
+            TransactionLegacy.closePstmts(pstmt2Close);
         }
 
     }
@@ -454,7 +442,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable encrypt host_details values ", e);
         } finally {
-            closePstmts(pstmt2Close);
+            TransactionLegacy.closePstmts(pstmt2Close);
         }
         s_logger.debug("Done encrypting host details");
     }
@@ -500,7 +488,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable encrypt vm_instance vnc_password ", e);
         } finally {
-            closePstmts(pstmt2Close);
+            TransactionLegacy.closePstmts(pstmt2Close);
         }
         s_logger.debug("Done encrypting vm_instance vnc_password");
     }
@@ -533,7 +521,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable encrypt user secret key ", e);
         } finally {
-            closePstmts(pstmt2Close);
+            TransactionLegacy.closePstmts(pstmt2Close);
         }
         s_logger.debug("Done encrypting user keys");
     }
@@ -566,7 +554,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         } catch (UnsupportedEncodingException e) {
             throw new CloudRuntimeException("Unable encrypt vpn_users password ", e);
         } finally {
-            closePstmts(pstmt2Close);
+            TransactionLegacy.closePstmts(pstmt2Close);
         }
         s_logger.debug("Done encrypting vpn_users password");
     }
@@ -687,7 +675,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create service/provider map for network offerings", e);
         } finally {
-            closePstmts(pstmt2Close);
+            TransactionLegacy.closePstmts(pstmt2Close);
         }
     }
 
@@ -725,7 +713,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update domain network ref", e);
         } finally {
-            closePstmts(pstmt2Close);
+            TransactionLegacy.closePstmts(pstmt2Close);
         }
     }
 
@@ -759,7 +747,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create service/provider map for networks", e);
         } finally {
-            closePstmts(pstmt2Close);
+            TransactionLegacy.closePstmts(pstmt2Close);
         }
     }
 
@@ -873,7 +861,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                 pstmt.close();
             } catch (SQLException e) {
             }
-            closePstmts(pstmt2Close);
+            TransactionLegacy.closePstmts(pstmt2Close);
         }
     }
 
@@ -904,7 +892,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to update op_host_capacity table. ", e);
         } finally {
-            closePstmts(pstmt2Close);
+            TransactionLegacy.closePstmts(pstmt2Close);
         }
     }
 
@@ -1011,7 +999,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                 pstmt.close();
             } catch (SQLException e) {
             }
-            closePstmts(pstmt2Close);
+            TransactionLegacy.closePstmts(pstmt2Close);
         }
     }
 
@@ -1084,7 +1072,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                 zoneIds.add(rs.getLong(1));
             }
         } catch (SQLException e) {
-            closePstmts(pstmt2Close);
+            TransactionLegacy.closePstmts(pstmt2Close);
             throw new CloudRuntimeException("Unable to switch networks to the new network offering", e);
         }
 
@@ -1167,7 +1155,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                     pstmt.close();
                 } catch (SQLException e) {
                 }
-                closePstmts(pstmt2Close);
+                TransactionLegacy.closePstmts(pstmt2Close);
             }
         }
 

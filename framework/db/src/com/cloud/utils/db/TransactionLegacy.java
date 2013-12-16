@@ -769,7 +769,7 @@ public class TransactionLegacy {
 
         try {
             // we should only close db connection when it is not user managed
-            if (this._dbId != CONNECTED_DB) {
+            if (_dbId != CONNECTED_DB) {
                 if (s_connLogger.isTraceEnabled()) {
                     s_connLogger.trace("Closing DB connection: dbconn" + System.identityHashCode(_conn));
                 }
@@ -1212,6 +1212,26 @@ public class TransactionLegacy {
      * @param conn
      */
     protected void setConnection(Connection conn) {
-        this._conn = conn;
+        _conn = conn;
     }
+
+    /**
+     * Receives a list of {@link PreparedStatement} and quietly closes all of them, which
+     * triggers also closing their dependent objects, like a {@link ResultSet}
+     *
+     * @param pstmt2Close
+     */
+    public static void closePstmts(List<PreparedStatement> pstmt2Close) {
+        for (PreparedStatement pstmt : pstmt2Close) {
+            try {
+                if (pstmt != null && !pstmt.isClosed()) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+                // It's not possible to recover from this and we need to continue closing
+                e.printStackTrace();
+            }
+        }
+    }
+
 }

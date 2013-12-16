@@ -1,0 +1,15 @@
+<!-- cloud -->
+<dataset>
+<configuration name="usage.stats.job.aggregation.range" value="600"/>
+
+<vm_instance type="User" id="8" removed="0" />
+
+<volumes id="16" removed="0"/>
+<volumes id="17" removed="0"/>
+
+<template_zone_ref template_id="14" zone_id="1" removed="0" />
+<template_zone_ref template_id="15" zone_id="1" removed="0" />
+<template_zone_ref template_id="16" zone_id="1" removed="0" />
+
+<snapshots id="18" removed="0" />
+</dataset>
