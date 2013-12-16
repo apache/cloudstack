@@ -750,11 +750,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             // release account specific acquired portable IP's. Since all the portable IP's must have been already
             // disassociated with VPC/guest network (due to deletion), so just mark portable IP as free.
-            List<? extends IpAddress> portableIpsToRelease = _ipAddressDao.listByAccount(accountId);
-            for (IpAddress ip : portableIpsToRelease) {
-                s_logger.debug("Releasing portable ip " + ip + " as a part of account id=" + accountId + " cleanup");
-                _ipAddrMgr.releasePortableIpAddress(ip.getId());
+            List<? extends IpAddress> ipsToRelease = _ipAddressDao.listByAccount(accountId);
+            for (IpAddress ip : ipsToRelease) {
+                if (ip.isPortable()) {
+                    s_logger.debug("Releasing portable ip " + ip + " as a part of account id=" + accountId + " cleanup");
+                    _ipAddrMgr.releasePortableIpAddress(ip.getId());
+                }
             }
+
             // release dedication if any
             List<DedicatedResourceVO> dedicatedResources = _dedicatedDao.listByAccountId(accountId);
             if (dedicatedResources != null && !dedicatedResources.isEmpty()) {
