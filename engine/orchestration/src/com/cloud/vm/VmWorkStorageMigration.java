@@ -25,11 +25,11 @@ public class VmWorkStorageMigration extends VmWork {
 
     public VmWorkStorageMigration(long userId, long accountId, long vmId, String handlerName, StoragePool destPool) {
         super(userId, accountId, vmId, handlerName);
-    	
-    	this.destPool = destPool;
+
+        this.destPool = destPool;
     }
 
     public StoragePool getDestStoragePool() {
-    	return destPool;
+        return destPool;
     }
 }

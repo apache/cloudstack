@@ -32,7 +32,7 @@ public class VmWork implements Serializable {
         this.accountId = accountId;
         this.vmId = vmId;
         this.handlerName = handlerName;
-	}
+    }
 
     public long getUserId() {
         return userId;
@@ -42,9 +42,9 @@ public class VmWork implements Serializable {
         return accountId;
     }
 
-	public long getVmId() {
-		return vmId;
-	}
+    public long getVmId() {
+        return vmId;
+    }
 
     public String getHandlerName() {
         return handlerName;

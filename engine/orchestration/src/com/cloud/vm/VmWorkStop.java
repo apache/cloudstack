@@ -17,10 +17,10 @@
 package com.cloud.vm;
 
 public class VmWorkStop extends VmWork {
-	private static final long serialVersionUID = 202908740486785251L;
-	
-	private final boolean cleanup;
-	
+    private static final long serialVersionUID = 202908740486785251L;
+
+    private final boolean cleanup;
+
     public VmWorkStop(long userId, long accountId, long vmId, String handlerName, boolean cleanup) {
         super(userId, accountId, vmId, handlerName);
         this.cleanup = cleanup;

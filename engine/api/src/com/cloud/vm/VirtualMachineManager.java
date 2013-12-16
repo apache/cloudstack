@@ -108,9 +108,9 @@ public interface VirtualMachineManager extends Manager {
     void migrateAway(String vmUuid, long hostId) throws InsufficientServerCapacityException;
 
     void migrate(String vmUuid, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException;
-    
+
     void migrateWithStorage(String vmUuid, long srcId, long destId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException, ConcurrentOperationException;
-    
+
     void reboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException;
 
     void advanceReboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException,
@@ -153,7 +153,7 @@ public interface VirtualMachineManager extends Manager {
      */
     NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException,
         ResourceUnavailableException, InsufficientCapacityException;
-    
+
     /**
      * @param vm
      * @param nic

@@ -22,31 +22,31 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 
 public class VmWorkMigrateWithStorage extends VmWork {
-	private static final long serialVersionUID = -5626053872453569165L;
+    private static final long serialVersionUID = -5626053872453569165L;
 
-	long srcHostId;
-	long destHostId;
-	Map<Volume, StoragePool> volumeToPool;
-	
+    long srcHostId;
+    long destHostId;
+    Map<Volume, StoragePool> volumeToPool;
+
     public VmWorkMigrateWithStorage(long userId, long accountId, long vmId, String handlerName, long srcHostId,
-    	long destHostId, Map<Volume, StoragePool> volumeToPool) {
-    	
+            long destHostId, Map<Volume, StoragePool> volumeToPool) {
+
         super(userId, accountId, vmId, handlerName);
-    
-    	this.srcHostId = srcHostId;
-    	this.destHostId = destHostId;
-    	this.volumeToPool = volumeToPool;
+
+        this.srcHostId = srcHostId;
+        this.destHostId = destHostId;
+        this.volumeToPool = volumeToPool;
     }
 
     public long getSrcHostId() {
-    	return srcHostId;
+        return srcHostId;
     }
 
     public long getDestHostId() {
-    	return destHostId;
+        return destHostId;
     }
 
     public Map<Volume, StoragePool> getVolumeToPool() {
-    	return volumeToPool;
+        return volumeToPool;
     }
 }

@@ -30,8 +30,8 @@ public class VmWorkReboot extends VmWork {
 
     public VmWorkReboot(long userId, long accountId, long vmId, String handlerName, Map<VirtualMachineProfile.Param, Object> params) {
         super(userId, accountId, vmId, handlerName);
-    	
-    	setParams(params);
+
+        setParams(params);
     }
 
     public Map<VirtualMachineProfile.Param, Object> getParams() {
