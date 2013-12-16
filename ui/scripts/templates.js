@@ -361,6 +361,18 @@
                                                     id: 'QCOW2',
                                                     description: 'QCOW2'
                                                 });
+                                                items.push({
+                                                    id: 'RAW',
+                                                    description: 'RAW'
+                                                });
+                                                items.push({
+                                                    id: 'VHD',
+                                                    description: 'VHD'
+                                                });
+                                                items.push({
+                                                    id: 'VMDK',
+                                                    description: 'VMDK'
+                                                });
                                             } else if (args.hypervisor == "BareMetal") {
                                                 //formatSelect.append("<option value='BareMetal'>BareMetal</option>");
                                                 items.push({

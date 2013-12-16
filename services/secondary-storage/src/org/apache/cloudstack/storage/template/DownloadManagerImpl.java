@@ -75,6 +75,7 @@ import com.cloud.storage.template.TemplateDownloader.Status;
 import com.cloud.storage.template.TemplateLocation;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.VhdProcessor;
+import com.cloud.storage.template.OVAProcessor;
 import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
@@ -840,8 +841,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
             if ((tInfo.getSize() == tInfo.getPhysicalSize()) && (tInfo.getInstallPath().endsWith(ImageFormat.OVA.getFileExtension()))) {
                 try {
-                    Processor processor = _processors.get("VMDK Processor");
-                    VmdkProcessor vmdkProcessor = (VmdkProcessor)processor;
+                    Processor processor = _processors.get("OVA Processor");
+                    OVAProcessor vmdkProcessor = (OVAProcessor)processor;
                     long vSize = vmdkProcessor.getTemplateVirtualSize(path, tInfo.getInstallPath().substring(tInfo.getInstallPath().lastIndexOf(File.separator) + 1));
                     tInfo.setSize(vSize);
                     loc.updateVirtualSize(vSize);
@@ -897,8 +898,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
             if ((vInfo.getSize() == vInfo.getPhysicalSize()) && (vInfo.getInstallPath().endsWith(ImageFormat.OVA.getFileExtension()))) {
                 try {
-                    Processor processor = _processors.get("VMDK Processor");
-                    VmdkProcessor vmdkProcessor = (VmdkProcessor)processor;
+                    Processor processor = _processors.get("OVA Processor");
+                    OVAProcessor vmdkProcessor = (OVAProcessor)processor;
                     long vSize = vmdkProcessor.getTemplateVirtualSize(path, vInfo.getInstallPath().substring(vInfo.getInstallPath().lastIndexOf(File.separator) + 1));
                     vInfo.setSize(vSize);
                     loc.updateVirtualSize(vSize);
@@ -1051,6 +1052,10 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         processor = new QCOW2Processor();
         processor.configure("QCOW2 Processor", params);
         _processors.put("QCOW2 Processor", processor);
+
+        processor = new OVAProcessor();
+        processor.configure("OVA Processor", params);
+        _processors.put("OVA Processor", processor);
 
         processor = new VmdkProcessor();
         processor.configure("VMDK Processor", params);

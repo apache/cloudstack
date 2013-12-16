@@ -78,7 +78,7 @@ import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
-import com.cloud.storage.template.VmdkProcessor;
+import com.cloud.storage.template.OVAProcessor;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.script.Script;
@@ -617,10 +617,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
             clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateUniqueName, true, false);
 
             long physicalSize = new File(installFullPath + "/" + templateUniqueName + ".ova").length();
-            VmdkProcessor processor = new VmdkProcessor();
+            OVAProcessor processor = new OVAProcessor();
             Map<String, Object> params = new HashMap<String, Object>();
             params.put(StorageLayer.InstanceConfigKey, _storage);
-            processor.configure("VMDK Processor", params);
+            processor.configure("OVA Processor", params);
             long virtualSize = processor.getTemplateVirtualSize(installFullPath, templateUniqueName);
 
             postCreatePrivateTemplate(installFullPath, templateId, templateUniqueName, physicalSize, virtualSize);
@@ -841,11 +841,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             long physicalSize = new File(installFullPath + "/" + templateVMDKName).length();
-            VmdkProcessor processor = new VmdkProcessor();
+            OVAProcessor processor = new OVAProcessor();
             // long physicalSize = new File(installFullPath + "/" + templateUniqueName + ".ova").length();
             Map<String, Object> params = new HashMap<String, Object>();
             params.put(StorageLayer.InstanceConfigKey, _storage);
-            processor.configure("VMDK Processor", params);
+            processor.configure("OVA Processor", params);
             long virtualSize = processor.getTemplateVirtualSize(installFullPath, templateUniqueName);
 
             postCreatePrivateTemplate(installFullPath, templateId, templateUniqueName, physicalSize, virtualSize);

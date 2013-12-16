@@ -125,6 +125,7 @@ import com.cloud.storage.template.RawImageProcessor;
 import com.cloud.storage.template.TemplateLocation;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.VhdProcessor;
+import com.cloud.storage.template.OVAProcessor;
 import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.S3Utils;
@@ -771,6 +772,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (ext != null) {
             if (ext.equalsIgnoreCase("vhd")) {
                 return ImageFormat.VHD;
+            } else if (ext.equalsIgnoreCase("vhdx")) {
+                return ImageFormat.VHDX;
             } else if (ext.equalsIgnoreCase("qcow2")) {
                 return ImageFormat.QCOW2;
             } else if (ext.equalsIgnoreCase("ova")) {
@@ -779,6 +782,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 return ImageFormat.TAR;
             } else if (ext.equalsIgnoreCase("img") || ext.equalsIgnoreCase("raw")) {
                 return ImageFormat.RAW;
+            } else if (ext.equalsIgnoreCase("vmdk")) {
+                return ImageFormat.VMDK;
+            } else if (ext.equalsIgnoreCase("vdi")) {
+                return ImageFormat.VDI;
             }
         }
 
@@ -794,11 +801,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             } else if (format == ImageFormat.QCOW2) {
                 processor = new QCOW2Processor();
             } else if (format == ImageFormat.OVA) {
-                processor = new VmdkProcessor();
+                processor = new OVAProcessor();
             } else if (format == ImageFormat.VHD) {
                 processor = new VhdProcessor();
             } else if (format == ImageFormat.RAW) {
                 processor = new RawImageProcessor();
+            } else if (format == ImageFormat.VMDK) {
+                processor = new VmdkProcessor();
             }
 
             if (processor == null) {
@@ -840,7 +849,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     if (!srcFile.exists()) {
                         srcFile = _storage.getFile(templatePath + ".ova");
                         if (!srcFile.exists()) {
-                            return new CopyCmdAnswer("Can't find src file:" + templatePath);
+                            srcFile = _storage.getFile(templatePath + ".vmdk");
+                            if (!srcFile.exists()) {
+                                return new CopyCmdAnswer("Can't find src file:" + templatePath);
+                            }
                         }
                     }
                 }
