@@ -809,7 +809,7 @@ class TestAssociatePublicIp(cloudstackTestCase):
 
             self.debug("Trying to SSH to ip: %s" % portableip.ipaddress.ipaddress)
 
-           SshClient(
+            SshClient(
                         portableip.ipaddress.ipaddress,
                         self.services['natrule']["publicport"],
                         self.virtual_machine.username,
@@ -1534,7 +1534,7 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
 
             self.debug("Trying to SSH to ip: %s" % portableip.ipaddress.ipaddress)
 
-           SshClient(
+            SshClient(
                         portableip.ipaddress.ipaddress,
                         self.services['natrule']["publicport"],
                         self.virtual_machine2.username,
