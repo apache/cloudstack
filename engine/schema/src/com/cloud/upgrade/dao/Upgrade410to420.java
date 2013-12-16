@@ -738,8 +738,8 @@ public class Upgrade410to420 implements DbUpgrade {
                     pstmt2.execute();
                 } else {
                     //update cluster_details table with the default overcommit ratios.
-                    pstmt1.setLong(1, id);
-                    pstmt1.setString(2, "1");
+                    pstmt1.setLong(1,id);
+                    pstmt1.setString(2,global_cpu_overprovisioning_factor);
                     pstmt1.execute();
                     pstmt2.setLong(1, id);
                     pstmt2.setString(2, "1");
