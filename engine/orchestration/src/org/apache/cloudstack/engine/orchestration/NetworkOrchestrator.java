@@ -1517,6 +1517,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     protected void removeNic(VirtualMachineProfile vm, NicVO nic) {
+
+        if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start && nic.getState() != Nic.State.Allocated) {
+            // Nics with reservation strategy 'Start' should go through release phase in the Nic life cycle.
+            // Ensure that release is performed before Nic is to be removed to avoid resource leaks.
+            try {
+                releaseNic(vm, nic.getId());
+            } catch (Exception ex) {
+                s_logger.warn("Failed to release nic: " + nic.toString() + " as part of remove operation due to", ex );
+            }
+        }
+
         nic.setState(Nic.State.Deallocating);
         _nicDao.update(nic.getId(), nic);
         NetworkVO network = _networksDao.findById(nic.getNetworkId());
