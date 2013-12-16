@@ -1721,24 +1721,17 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     int getReservedMemoryMb(VirtualMachineTO vmSpec) {
-        if (vmSpec.getDetails().get(Config.VmwareReserveMem.key()).equalsIgnoreCase("true")) {
-            return (int)(vmSpec.getMinRam() / (1024 * 1024));
-        } else if (vmSpec.getMinRam() != vmSpec.getMaxRam()) {
-            s_logger.warn("memory overprovisioning factor is set to " + (vmSpec.getMaxRam() / vmSpec.getMinRam()) + " ignoring the flag vmware.reserve.mem");
-            return (int)(vmSpec.getMinRam() / (1024 * 1024));
-        }
-        return 0;
+         if (vmSpec.getDetails().get(Config.VmwareReserveMem.key()).equalsIgnoreCase("true")) {
+             return  (int) (vmSpec.getMinRam() / (1024 * 1024));
+         }
+         return 0;
     }
 
     int getReservedCpuMHZ(VirtualMachineTO vmSpec) {
-        if (vmSpec.getDetails().get(Config.VmwareReserveCpu.key()).equalsIgnoreCase("true")) {
-            return vmSpec.getMinSpeed();
-        } else if (vmSpec.getMinSpeed().intValue() != vmSpec.getMaxSpeed().intValue()) {
-            s_logger.warn("cpu overprovisioning factor is set to " + (vmSpec.getMaxSpeed().intValue() / vmSpec.getMinSpeed().intValue()) +
-                    " ignoring the flag vmware.reserve.cpu");
-            return vmSpec.getMinSpeed();
-        }
-        return 0;
+         if (vmSpec.getDetails().get(Config.VmwareReserveCpu.key()).equalsIgnoreCase("true")) {
+             return vmSpec.getMinSpeed();
+         }
+         return 0;
     }
 
     // return the finalized disk chain for startup, from top to bottom
