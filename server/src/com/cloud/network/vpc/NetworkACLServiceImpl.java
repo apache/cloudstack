@@ -582,6 +582,14 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     public boolean revokeNetworkACLItem(long ruleId) {
         NetworkACLItemVO aclItem = _networkACLItemDao.findById(ruleId);
         if(aclItem != null){
+            NetworkACL acl = _networkAclMgr.getNetworkACL(aclItem.getAclId());
+
+            Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
+
+            Account caller = CallContext.current().getCallingAccount();
+
+            _accountMgr.checkAccess(caller, null, true, vpc);
+
             if((aclItem.getAclId() == NetworkACL.DEFAULT_ALLOW) || (aclItem.getAclId() == NetworkACL.DEFAULT_DENY)){
                 throw new InvalidParameterValueException("ACL Items in default ACL cannot be deleted");
             }
