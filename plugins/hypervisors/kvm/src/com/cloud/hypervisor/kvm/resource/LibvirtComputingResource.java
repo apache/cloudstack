@@ -3477,12 +3477,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } else {
             grd.setMemorySize(vmTO.getMaxRam() / 1024);
         }
-        grd.setVcpuNum(vmTO.getCpus());
+        int vcpus = vmTO.getCpus();
+        grd.setVcpuNum(vcpus);
         vm.addComp(grd);
 
         CpuModeDef cmd = new CpuModeDef();
         cmd.setMode(_guestCpuMode);
         cmd.setModel(_guestCpuModel);
+        // multi cores per socket, for larger core configs
+        if (vcpus % 6 == 0) {
+            int sockets = vcpus / 6;
+            cmd.setTopology(6, sockets);
+        } else if (vcpus % 4 == 0) {
+            int sockets = vcpus / 4;
+            cmd.setTopology(4, sockets);
+        }
         vm.addComp(cmd);
 
         if (_hypervisorLibvirtVersion >= 9000) {
