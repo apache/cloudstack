@@ -64,7 +64,6 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceOwnerType;
@@ -2415,128 +2414,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
 
     @Override
-    public void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId,
-            boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria) {
-
-        sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
-        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-
-        if (((permittedAccounts.isEmpty()) && (domainId != null) && isRecursive)) {
-            // if accountId isn't specified, we can do a domain match for the
-            // admin case if isRecursive is true
-            sb.and("domainPath", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
-        }
-
-        if (listProjectResourcesCriteria != null) {
-            if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
-                sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.EQ);
-            } else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
-                sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.NEQ);
-            }
-        }
-
-    }
-
-    @Override
-    public void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-            ListProjectResourcesCriteria listProjectResourcesCriteria, List<Long> grantedIds, List<Long> revokedIds) {
-
-        if (!revokedIds.isEmpty()) {
-            sb.and("idNIN", sb.entity().getId(), SearchCriteria.Op.NIN);
-        }
-        if (permittedAccounts.isEmpty() && domainId == null && listProjectResourcesCriteria == null) {
-            // caller role authorize him to access everything matching query criteria
-            return;
-
-        }
-        boolean hasOp = true;
-        if (!permittedAccounts.isEmpty()) {
-            sb.and().op("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
-        } else if (domainId != null) {
-            if (isRecursive) {
-                // if accountId isn't specified, we can do a domain match for the
-                // admin case if isRecursive is true
-                sb.and().op("domainPath", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
-            } else {
-                sb.and().op("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-            }
-        } else {
-            hasOp = false;
-        }
-
-
-        if (listProjectResourcesCriteria != null) {
-            if (hasOp) {
-                if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
-                    sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.EQ);
-                } else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
-                    sb.and("accountType", sb.entity().getAccountType(), SearchCriteria.Op.NEQ);
-                }
-            } else {
-                if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.ListProjectResourcesOnly) {
-                    sb.and().op("accountType", sb.entity().getAccountType(), SearchCriteria.Op.EQ);
-                } else if (listProjectResourcesCriteria == Project.ListProjectResourcesCriteria.SkipProjectResources) {
-                    sb.and().op("accountType", sb.entity().getAccountType(), SearchCriteria.Op.NEQ);
-                }
-            }
-        }
-
-        if (!grantedIds.isEmpty()) {
-            sb.or("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
-        }
-        sb.cp();
-
-
-    }
-
-    @Override
-    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc,
-            Long domainId, boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria) {
-        if (listProjectResourcesCriteria != null) {
-            sc.setParameters("accountType", Account.ACCOUNT_TYPE_PROJECT);
-        }
-
-        if (!permittedAccounts.isEmpty()) {
-            sc.setParameters("accountIdIN", permittedAccounts.toArray());
-        } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById(domainId);
-            if (isRecursive) {
-                sc.setParameters("domainPath", domain.getPath() + "%");
-            } else {
-                sc.setParameters("domainId", domainId);
-            }
-        }
-
-    }
-
-    @Override
-    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-            ListProjectResourcesCriteria listProjectResourcesCriteria, List<Long> grantedIds, List<Long> revokedIds) {
-        if (!revokedIds.isEmpty()) {
-            sc.setParameters("idNIN", revokedIds.toArray());
-        }
-
-        if (listProjectResourcesCriteria != null) {
-            sc.setParameters("accountType", Account.ACCOUNT_TYPE_PROJECT);
-        }
-
-        if (!permittedAccounts.isEmpty()) {
-            sc.setParameters("accountIdIN", permittedAccounts.toArray());
-        } else if (domainId != null) {
-            DomainVO domain = _domainDao.findById(domainId);
-            if (isRecursive) {
-                sc.setParameters("domainPath", domain.getPath() + "%");
-            } else {
-                sc.setParameters("domainId", domainId);
-            }
-        }
-
-        if (!grantedIds.isEmpty()) {
-            sc.setParameters("idIN", grantedIds.toArray());
-        }
-    }
-
-    @Override
     public UserAccount getUserByApiKey(String apiKey) {
         return _userAccountDao.getUserByApiKey(apiKey);
     }
@@ -2638,6 +2515,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
     }
+
 
     @Override
     public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, SearchCriteria<? extends ControlledEntity> aclSc, boolean isRecursive,

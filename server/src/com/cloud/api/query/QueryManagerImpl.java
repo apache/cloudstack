@@ -500,7 +500,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     private Pair<List<EventJoinVO>, Integer> searchForEventsInternal(ListEventsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
 
         Long id = cmd.getId();
         String type = cmd.getType();
@@ -513,17 +515,15 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts,
-                domainIdRecursiveListProject, cmd.listAll(), false);
-        Long domainId = domainIdRecursiveListProject.first();
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
+                domainIdRecursiveListProject, cmd.listAll(), false, "listEvents");
+        //Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(EventJoinVO.class, "createDate", false, cmd.getStartIndex(),
                 cmd.getPageSizeVal());
         SearchBuilder<EventJoinVO> sb = _eventJoinDao.createSearchBuilder();
-        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("levelL", sb.entity().getLevel(), SearchCriteria.Op.LIKE);
@@ -538,9 +538,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("archived", sb.entity().getArchived(), SearchCriteria.Op.EQ);
 
         SearchCriteria<EventJoinVO> sc = sb.create();
-        // building ACL condition
-        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
+        SearchCriteria<EventJoinVO> aclSc = _eventJoinDao.createSearchCriteria();
+        // building ACL search criteria
+        _accountMgr.buildACLViewSearchCriteria(sc, aclSc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -615,7 +615,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     private Pair<List<ResourceTagJoinVO>, Integer> listTagsInternal(ListTagsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
         String key = cmd.getKey();
         String value = cmd.getValue();
         String resourceId = cmd.getResourceId();
@@ -626,8 +628,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
 
-        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts,
-                domainIdRecursiveListProject, listAll, false);
+        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
+                domainIdRecursiveListProject, listAll, false, "listTags");
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
@@ -635,8 +637,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 cmd.getPageSizeVal());
 
         SearchBuilder<ResourceTagJoinVO> sb = _resourceTagJoinDao.createSearchBuilder();
-        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
 
         sb.and("key", sb.entity().getKey(), SearchCriteria.Op.EQ);
         sb.and("value", sb.entity().getValue(), SearchCriteria.Op.EQ);
@@ -652,8 +652,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         // now set the SC criteria...
         SearchCriteria<ResourceTagJoinVO> sc = sb.create();
-        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
+        SearchCriteria<ResourceTagJoinVO> aclSc = _resourceTagJoinDao.createSearchCriteria();
+        // building ACL search criteria
+        _accountMgr.buildACLViewSearchCriteria(sc, aclSc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         if (key != null) {
             sc.setParameters("key", key);
@@ -696,12 +697,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         String keyword = cmd.getKeyword();
 
         Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts,
-                domainIdRecursiveListProject, cmd.listAll(), false);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
+                domainIdRecursiveListProject, cmd.listAll(), false, "listInstanceGroups");
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
@@ -710,15 +713,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 cmd.getPageSizeVal());
 
         SearchBuilder<InstanceGroupJoinVO> sb = _vmGroupJoinDao.createSearchBuilder();
-        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
 
         SearchCriteria<InstanceGroupJoinVO> sc = sb.create();
-        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
+        SearchCriteria<InstanceGroupJoinVO> aclSc = _vmGroupJoinDao.createSearchCriteria();
+        // building ACL search criteria
+        _accountMgr.buildACLViewSearchCriteria(sc, aclSc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         if (keyword != null) {
             SearchCriteria<InstanceGroupJoinVO> ssc = _vmGroupJoinDao.createSearchCriteria();
@@ -984,7 +986,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         String securityGroup = cmd.getSecurityGroupName();
         Long id = cmd.getId();
         Object keyword = cmd.getKeyword();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
         Map<String, String> tags = cmd.getTags();
 
         if (instanceId != null) {
@@ -999,8 +1003,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts,
-                domainIdRecursiveListProject, cmd.listAll(), false);
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
+                domainIdRecursiveListProject, cmd.listAll(), false, "listSecurityGroups");
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
@@ -1010,16 +1014,15 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         SearchBuilder<SecurityGroupJoinVO> sb = _securityGroupJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
         // ids
-        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
 
 
         SearchCriteria<SecurityGroupJoinVO> sc = sb.create();
-        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
+        SearchCriteria<SecurityGroupJoinVO> aclSc = _securityGroupJoinDao.createSearchCriteria();
+        // building ACL search criteria
+        _accountMgr.buildACLViewSearchCriteria(sc, aclSc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -1113,27 +1116,30 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             String name, String state, Long zoneId, Long podId, Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc, String role) {
 
         Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts,
-                domainIdRecursiveListProject, cmd.listAll(), false);
+        String action = "listRouters";
+        if (cmd instanceof ListInternalLBVMsCmd) {
+            action = "listInternalLoadBalancerVMs";
+        }
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
+                domainIdRecursiveListProject, cmd.listAll(), false, action);
+
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         Filter searchFilter = new Filter(DomainRouterJoinVO.class, "id", true, cmd.getStartIndex(),
                 cmd.getPageSizeVal());
-        // Filter searchFilter = new Filter(DomainRouterJoinVO.class, null,
-        // true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<DomainRouterJoinVO> sb = _routerJoinDao.createSearchBuilder();
         sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct
         // ids to get
         // number of
         // records with
         // pagination
-        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
 
         sb.and("name", sb.entity().getInstanceName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -1158,8 +1164,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         }
 
         SearchCriteria<DomainRouterJoinVO> sc = sb.create();
-        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
+        SearchCriteria<DomainRouterJoinVO> aclSc = _routerJoinDao.createSearchCriteria();
+        // building ACL search criteria
+        _accountMgr.buildACLViewSearchCriteria(sc, aclSc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         if (keyword != null) {
             SearchCriteria<DomainRouterJoinVO> ssc = _routerJoinDao.createSearchCriteria();
@@ -1392,20 +1399,20 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         boolean listAll = cmd.listAll();
 
         Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 domainId, isRecursive, null);
-        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts,
-                domainIdRecursiveListProject, listAll, true);
-        domainId = domainIdRecursiveListProject.first();
+        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedDomains, permittedAccounts, permittedResources,
+                domainIdRecursiveListProject, listAll, true, "listProjectInvitations");
+        //domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(ProjectInvitationJoinVO.class, "id", true, startIndex, pageSizeVal);
         SearchBuilder<ProjectInvitationJoinVO> sb = _projectInvitationJoinDao.createSearchBuilder();
-        _accountMgr.buildACLViewSearchBuilder(sb, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
 
         sb.and("projectId", sb.entity().getProjectId(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
@@ -1413,8 +1420,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
 
         SearchCriteria<ProjectInvitationJoinVO> sc = sb.create();
-        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
+        SearchCriteria<ProjectInvitationJoinVO> aclSc = _projectInvitationJoinDao.createSearchCriteria();
+        // building ACL search criteria
+        _accountMgr.buildACLViewSearchCriteria(sc, aclSc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         if (projectId != null) {
             sc.setParameters("projectId", projectId);
@@ -3141,18 +3149,20 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             return listAffinityGroupsByVM(vmId.longValue(), startIndex, pageSize);
         }
 
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 domainId, isRecursive, null);
-        _accountMgr.buildACLSearchParameters(caller, affinityGroupId, accountName, null, permittedAccounts,
-                domainIdRecursiveListProject, listAll, true);
-        domainId = domainIdRecursiveListProject.first();
+        _accountMgr.buildACLSearchParameters(caller, affinityGroupId, accountName, null, permittedDomains, permittedAccounts, permittedResources,
+                domainIdRecursiveListProject, listAll, true, "listAffinityGroups");
+        //domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(AffinityGroupJoinVO.class, "id", true, startIndex, pageSize);
-        SearchCriteria<AffinityGroupJoinVO> sc = buildAffinityGroupSearchCriteria(domainId, isRecursive,
-                permittedAccounts, listProjectResourcesCriteria, affinityGroupId, affinityGroupName, affinityGroupType);
+        SearchCriteria<AffinityGroupJoinVO> sc = buildAffinityGroupSearchCriteria(isRecursive,
+                permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria, affinityGroupId, affinityGroupName, affinityGroupType);
         
         Pair<List<AffinityGroupJoinVO>, Integer> uniqueGroupsPair = _affinityGroupJoinDao.searchAndCount(sc,
                 searchFilter);
@@ -3169,6 +3179,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             vrs = _affinityGroupJoinDao.searchByIds(vrIds);
         }
 
+        /*  TODO: confirm with Prachi if we still need this complicated logic with new ACL model
         if (!permittedAccounts.isEmpty()) {
             // add domain level affinity groups
             if (domainId != null) {
@@ -3194,25 +3205,24 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                     affinityGroupType);
             vrs.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, domainId));
         }
+        */
 
         return new Pair<List<AffinityGroupJoinVO>, Integer>(vrs, vrs.size());
 
     }
 
-    private SearchCriteria<AffinityGroupJoinVO> buildAffinityGroupSearchCriteria(Long domainId, boolean isRecursive,
-            List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria,
+    private SearchCriteria<AffinityGroupJoinVO> buildAffinityGroupSearchCriteria(boolean isRecursive,
+            List<Long> permittedDomains, List<Long> permittedAccounts, List<Long> permittedResources, ListProjectResourcesCriteria listProjectResourcesCriteria,
             Long affinityGroupId, String affinityGroupName, String affinityGroupType) {
 
         SearchBuilder<AffinityGroupJoinVO> groupSearch = _affinityGroupJoinDao.createSearchBuilder();
-        _accountMgr.buildACLViewSearchBuilder(groupSearch, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
-
         groupSearch.select(null, Func.DISTINCT, groupSearch.entity().getId()); // select
         // distinct
 
         SearchCriteria<AffinityGroupJoinVO> sc = groupSearch.create();
-        _accountMgr.buildACLViewSearchCriteria(sc, domainId, isRecursive, permittedAccounts,
-                listProjectResourcesCriteria);
+        SearchCriteria<AffinityGroupJoinVO> aclSc = _affinityGroupJoinDao.createSearchCriteria();
+        // building ACL search criteria
+        _accountMgr.buildACLViewSearchCriteria(sc, aclSc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         if (affinityGroupId != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, affinityGroupId);

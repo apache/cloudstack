@@ -32,7 +32,6 @@ import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 
-import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.domain.Domain;
 import com.cloud.domain.PartOf;
 import com.cloud.exception.ConcurrentOperationException;
@@ -280,31 +279,6 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         // TODO Auto-generated method stub
     }
 
-    @Override
-    public void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId,
-            boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria) {
-        // TODO Auto-generated method stub
-    }
-
-    @Override
-    public void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-            ListProjectResourcesCriteria listProjectResourcesCriteria, List<Long> grantedIds, List<Long> revokedIds) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc, Long domainId,
-            boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria) {
-        // TODO Auto-generated method stub
-    }
-
-    @Override
-    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-            ListProjectResourcesCriteria listProjectResourcesCriteria, List<Long> grantedIds, List<Long> revokedIds) {
-        // TODO Auto-generated method stub
-
-    }
 
     /* (non-Javadoc)
      * @see com.cloud.user.AccountService#getUserByApiKey(java.lang.String)

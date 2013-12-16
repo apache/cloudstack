@@ -35,7 +35,6 @@ import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.api.query.dao.AccountJoinDao;
-import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.domain.Domain;
@@ -232,21 +231,6 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
         
     }
 
-    @Override
-    public void buildACLViewSearchBuilder(
-            SearchBuilder<? extends ControlledViewEntity> arg0, Long arg1,
-            boolean arg2, List<Long> arg3, ListProjectResourcesCriteria arg4) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public void buildACLViewSearchCriteria(
-            SearchCriteria<? extends ControlledViewEntity> arg0, Long arg1,
-            boolean arg2, List<Long> arg3, ListProjectResourcesCriteria arg4) {
-        // TODO Auto-generated method stub
-        
-    }
 
     @Override
     public Long checkAccessAndSpecifyAuthority(Account arg0, Long arg1) {
@@ -368,20 +352,6 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
 
     @Override
     public void checkAccess(Account account, AccessType accessType, boolean sameOwner, PartOf... entities) throws PermissionDeniedException {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-            ListProjectResourcesCriteria listProjectResourcesCriteria, List<Long> grantedIds, List<Long> revokedIds) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-            ListProjectResourcesCriteria listProjectResourcesCriteria, List<Long> grantedIds, List<Long> revokedIds) {
         // TODO Auto-generated method stub
 
     }
