@@ -230,11 +230,15 @@ public class HypervManagerImpl implements HypervManager {
         Script script = null;
         String result = null;
         if (scheme.equals("cifs")) {
+            String user = System.getProperty("user.name");
             Script command = new Script(true, "mount", _timeout, s_logger);
             command.add("-t", "cifs");
             command.add(path);
             command.add(mountPoint);
-            command.add("-o", "uid=`whoami`,gid=`whoami`");
+
+            if (user != null) {
+                command.add("-o", "uid=" + user + ",gid=" + user);
+            }
 
             if (query != null) {
                 query = query.replace('&', ',');
