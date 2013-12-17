@@ -2044,7 +2044,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             } else if (nic.getTrafficType() == TrafficType.Control) {
                 controlNic = nic;
                 // DOMR control command is sent over management server in VMware
-                if (dest.getHost().getHypervisorType() == HypervisorType.VMware) {
+                if (dest.getHost().getHypervisorType() == HypervisorType.VMware || dest.getHost().getHypervisorType() == HypervisorType.Hyperv) {
                     s_logger.info("Check if we need to add management server explicit route to DomR. pod cidr: " + dest.getPod().getCidrAddress() + "/" +
                         dest.getPod().getCidrSize() + ", pod gateway: " + dest.getPod().getGateway() + ", management host: " + ClusterManager.ManagementHostIPAdr.value());
 
