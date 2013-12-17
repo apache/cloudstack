@@ -176,14 +176,18 @@ table tbody td.truncated > span {
 /** Multiselect*/
 table thead th.multiselect,
 table tbody td.multiselect {
-  width: 40px;
-  min-width: 40px;
-  max-width: 40px;
+  width: 20px;
+  min-width: 20px;
+  max-width: 20px;
 }
 
 table thead th.multiselect input,
 table tbody td.multiselect input {
   margin: 0;
+  /*+placement:shift -8px 0px;*/
+  position: relative;
+  left: -8px;
+  top: 0px;
 }
 
 table thead th.multiselect input {
