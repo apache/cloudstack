@@ -1454,11 +1454,19 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
+        StoragePoolVO volumePool = _storagePoolDao.findById(volume.getPoolId());
+
+        if (hostId != null) {
+            HostVO host = _hostDao.findById(hostId);
+
+            if (host != null && host.getHypervisorType() == HypervisorType.XenServer && volumePool.isManaged()) {
+                sendCommand = true;
+            }
+        }
+
         Answer answer = null;
 
         if (sendCommand) {
-            StoragePoolVO volumePool = _storagePoolDao.findById(volume.getPoolId());
-
             DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
             DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
 
@@ -1867,21 +1875,28 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         boolean sendCommand = (vm.getState() == State.Running);
         AttachAnswer answer = null;
         Long hostId = vm.getHostId();
+
         if (hostId == null) {
             hostId = vm.getLastHostId();
             HostVO host = _hostDao.findById(hostId);
+
             if (host != null && host.getHypervisorType() == HypervisorType.VMware) {
                 sendCommand = true;
             }
         }
 
-        StoragePoolVO volumeToAttachStoragePool = null;
+        HostVO host = null;
+        StoragePoolVO volumeToAttachStoragePool = _storagePoolDao.findById(volumeToAttach.getPoolId());
+
+        if (hostId != null) {
+            host = _hostDao.findById(hostId);
+
+            if (host != null && host.getHypervisorType() == HypervisorType.XenServer && volumeToAttachStoragePool.isManaged()) {
+                sendCommand = true;
+            }
+        }
 
         if (sendCommand) {
-            volumeToAttachStoragePool = _storagePoolDao.findById(volumeToAttach.getPoolId());
-
-            HostVO host = _hostDao.findById(hostId);
-
             if (host.getHypervisorType() == HypervisorType.KVM &&
                 volumeToAttachStoragePool.isManaged() &&
                 volumeToAttach.getPath() == null) {
