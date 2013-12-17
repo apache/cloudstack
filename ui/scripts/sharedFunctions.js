@@ -2066,6 +2066,11 @@ cloudStack.api = {
                 }
             },
             dataProvider: function(args) {
+            	args.response.success({
+                    data: args.jsonObj.tags
+                });
+            	
+            	/*
                 var resourceId = args.context[contextId][0].id;
                 var data = {
                     resourceId: resourceId,
@@ -2096,6 +2101,7 @@ cloudStack.api = {
                         args.response.error(parseXMLHttpResponse(json));
                     }
                 });
+                */
             }
         };
     }
