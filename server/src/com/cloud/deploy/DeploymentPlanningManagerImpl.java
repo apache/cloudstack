@@ -474,7 +474,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
         // check if zone is dedicated. if yes check if vm owner has acess to it.
         DedicatedResourceVO dedicatedZone = _dedicatedDao.findByZoneId(dc.getId());
-        if (dedicatedZone != null) {
+        if (dedicatedZone != null && !_accountMgr.isRootAdmin(vmProfile.getOwner().getType())) {
             long accountDomainId = vmProfile.getOwner().getDomainId();
             long accountId = vmProfile.getOwner().getAccountId();
 
