@@ -850,7 +850,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 }
 
-                Account owner = _entityMgr.findById(Account.class, vm.getAccountId());              
+                Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
                 VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, owner, params);
                 DeployDestination dest = null;
                 try {
