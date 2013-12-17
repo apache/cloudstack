@@ -406,7 +406,9 @@ namespace HypervResource
     public class DiskTO
     {
         public string type;
+        public string diskSequence = null;
         public TemplateObjectTO templateObjectTO = null;
+        public VolumeObjectTO volumeObjectTO = null;
 
         public static DiskTO ParseJson(dynamic json)
         {
@@ -416,7 +418,9 @@ namespace HypervResource
                 result = new DiskTO()
                 {
                     templateObjectTO = TemplateObjectTO.ParseJson(json.data),
+                    volumeObjectTO = VolumeObjectTO.ParseJson(json.data),
                     type = (string)json.type,
+                    diskSequence = json.diskSeq
                 };
             }
 
