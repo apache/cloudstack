@@ -41,13 +41,19 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.fsm.NoTransitionException;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 /**
  * Manages allocating resources to vms.
  */
 public interface VirtualMachineManager extends Manager {
-	 
-	public interface Topics {
+
+    static final ConfigKey<Boolean> ExecuteInSequence = new ConfigKey<Boolean>("Advanced", Boolean.class, "execute.in.sequence.hypervisor.commands", "true",
+            "If set to true, StartCommand, StopCommand, CopyCommand, MigrateCommand will be synchronized on the agent side."
+                    + " If set to false, these commands become asynchronous. Default value is true.", true);
+
+
+    public interface Topics {
         public static final String VM_POWER_STATE = "vm.powerstate";
 	}
 	 

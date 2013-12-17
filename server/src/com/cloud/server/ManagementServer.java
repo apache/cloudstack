@@ -29,7 +29,7 @@ import com.cloud.vm.VirtualMachine;
 /**
  */
 public interface ManagementServer extends ManagementService, PluggableService  {
-    
+
     /**
      * returns the instance id of this management server.
      * 

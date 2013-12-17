@@ -739,7 +739,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     private List<UserAuthenticator> _userAuthenticators;
     private List<UserAuthenticator> _userPasswordEncoders;
-    protected boolean _executeInSequence;
 
     protected List<DeploymentPlanner> _planners;
 
@@ -824,7 +823,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             _availableIdsMap.put(id, true);
         }
 
-        _executeInSequence = Boolean.parseBoolean(_configDao.getValue(Config.ExecuteInSequence.key()));
 
         return true;
     }
@@ -2901,6 +2899,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return cmdList;
     }
 
+
     protected class EventPurgeTask extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
@@ -3523,10 +3522,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         _encryptionIV = null;
     }
 
-    @Override
-    public boolean getExecuteInSequence() {
-        return  _executeInSequence;
-    }
 
     private static String getBase64EncodedRandomKey(int nBits) {
         SecureRandom random;

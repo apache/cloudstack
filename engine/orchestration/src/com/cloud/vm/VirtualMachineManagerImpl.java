@@ -1120,7 +1120,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     protected boolean getExecuteInSequence() {
-        return false;
+        return ExecuteInSequence.value();
     }
 
     protected boolean sendStop(VirtualMachineGuru guru, VirtualMachineProfile profile, boolean force) {
@@ -3762,7 +3762,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {ClusterDeltaSyncInterval, StartRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait, VmOpLockStateRetry,
-                VmOpWaitInterval, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval};
+                VmOpWaitInterval, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval, ExecuteInSequence};
     }
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {

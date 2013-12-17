@@ -365,7 +365,6 @@ public interface ManagementService {
 
     VirtualMachine upgradeSystemVM(ScaleSystemVMCmd cmd) throws ResourceUnavailableException, ManagementServerException, VirtualMachineMigrationException, ConcurrentOperationException;
 
-    boolean getExecuteInSequence();
 
     void cleanupVMReservations();
 }
