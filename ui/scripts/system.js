@@ -8797,66 +8797,12 @@
                                     dataType: "json",
                                     async: true,
                                     success: function(json) {
-                                        var zoneObjs = json.listzonesresponse.zone;                                        
-                                        if (zoneObjs != null) {
-                                        	for (var i = 0; i < zoneObjs.length; i++) {
-                                        		var currentPage = 1;
-                                        		$.ajax({
-    	                                            url: createURL('listRouters'),
-    	                                            data: {
-    	                                            	zoneid: zoneObjs[i].id,
-    	                                            	listAll: true,
-                                            			page: currentPage,
-                                            	        pagesize: pageSize //global variable
-    	                                            },
-    	                                            async: false,
-    	                                            success: function(json) {
-    	                                            	if (json.listroutersresponse.count != undefined) {
-    	                                            		zoneObjs[i].routerCount = json.listroutersresponse.count;        	                                            		    	                                            		
-    	                                            		var routerCountFromAllPages = json.listroutersresponse.count;        
-    	                                                	var routerCountFromFirstPageToCurrentPage = json.listroutersresponse.router.length;  
-    	                                                	var routerRequiresUpgrade = 0;    	                                                	                                                	
-    	                                                	var callListApiWithPage = function() {                                                		
-    	                                                		$.ajax({
-    	                                        					url: createURL('listRouters'),
-    	                                                    		async: false,
-    	                                                    		data: {    	                                                    			
-    	                                                    			zoneid: zoneObjs[i].id,
-    	                                                    			listAll: true,
-    	                                                    			page: currentPage,
-    	                                                    	        pagesize: pageSize //global variable
-    	                                                    		},
-    	                                                    		success: function(json) {                           			
-    	                                                    			routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;    	                                                    			                                                    			
-    	                                                    			var items = json.listroutersresponse.router;
-    	                                                    			for (var i = 0; i < items.length; i++) {    	                                                    				
-    	                                                    				if (items[i].requiresupgrade) {
-    	                                                    					routerRequiresUpgrade++;
-    	                                                    				}
-    	                                                    			}      	                                                    			
-    	                                                    			if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
-    	                                                    				currentPage++;
-    	                                                    				callListApiWithPage();
-    	                                                    			}                                                    			
-    	                                                    		}
-    	                                        				});                                                		
-    	                                                	}    	                                                	
-    	                                                	if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
-                                                				currentPage++;
-                                                				callListApiWithPage();
-                                                			}              	
-    	                                                	zoneObjs[i].routerRequiresUpgrade = routerRequiresUpgrade;
-    	                                            		
-    	                                            	} else {
-    	                                            		zoneObjs[i].routerCount = 0;
-    	                                            		zoneObjs[i].routerRequiresUpgrade = 0;
-    	                                            	}    	                                            		                                                
-    	                                            }
-    	                                        });
-                                        	}
+                                        var groupbyObjs = json.listzonesresponse.zone;                                        
+                                        if (groupbyObjs != null) {
+                                        	addExtraPropertiesToGroupbyObjects(groupbyObjs, 'zoneid');                                        	
                                         }  
                                         args.response.success({                                           
-                                            data: zoneObjs
+                                            data: groupbyObjs
                                         });
                                     }
                                 });
@@ -8919,67 +8865,12 @@
                                             	}
                                             }
                                         }],  
-                                        dataProvider: function(args) {   
-                                        	var currentPage = 1;
-                                        	$.ajax({
-	                                            url: createURL('listRouters'),
-	                                            data: {
-	                                            	zoneid: args.context.routerGroupByZone[0].id,
-	                                            	listAll: true,
-	                                            	page: currentPage,
-                                        	        pagesize: pageSize //global variable
-	                                            },
-	                                            async: false,
-	                                            success: function(json) {
-	                                            	if (json.listroutersresponse.count != undefined) {
-	                                            		args.context.routerGroupByZone[0].routerCount = json.listroutersresponse.count;   
-	                                            		var routerCountFromAllPages = json.listroutersresponse.count;         
-	                                                	var routerCountFromFirstPageToCurrentPage = json.listroutersresponse.router.length;  
-	                                                	var routerRequiresUpgrade = 0;    	                                                	                                                	
-	                                                	var callListApiWithPage = function() {                                                		
-	                                                		$.ajax({
-	                                        					url: createURL('listRouters'),
-	                                                    		async: false,
-	                                                    		data: {    	                                                    			
-	                                                    			zoneid: args.context.routerGroupByZone[0].id,
-	                                                    			listAll: true,
-	                                                    			page: currentPage,
-	                                                    	        pagesize: pageSize //global variable
-	                                                    		},
-	                                                    		success: function(json) {                           			
-	                                                    			routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;    	                                                    			                                                    			
-	                                                    			var items = json.listroutersresponse.router;
-	                                                    			for (var i = 0; i < items.length; i++) {    	                                                    				
-	                                                    				if (items[i].requiresupgrade) {
-	                                                    					routerRequiresUpgrade++;
-	                                                    				}
-	                                                    			}      	                                                    			
-	                                                    			if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
-	                                                    				currentPage++;
-	                                                    				callListApiWithPage();
-	                                                    			}                                                    			
-	                                                    		}
-	                                        				});                                                		
-	                                                	}    	                                                	
-	                                                	if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
-                                            				currentPage++;
-                                            				callListApiWithPage();
-                                            			}                    	
-	                                                	args.context.routerGroupByZone[0].routerRequiresUpgrade = routerRequiresUpgrade;
-	                                            		
-	                                            	} else {
-	                                            		args.context.routerGroupByZone[0].routerCount = 0;
-	                                            		args.context.routerGroupByZone[0].routerRequiresUpgrade = 0;
-	                                            	}    	                                            		                                                
-	                                            }
-	                                        });
-
-                                            setTimeout(function() {
-                                                args.response.success({
-                                                    data: args.context.routerGroupByZone[0],
-                                                    actionFilter: routerGroupActionfilter
-                                                })
-                                            });
+                                        dataProvider: function(args) {                                         
+                                        	addExtraPropertiesToGroupbyObject(args.context.routerGroupByZone[0], 'zoneid');                                         
+                                            args.response.success({
+                                                data: args.context.routerGroupByZone[0],
+                                                actionFilter: routerGroupActionfilter
+                                            });                                            
                                         }
                             		}
                             	}
@@ -9029,67 +8920,13 @@
                                     dataType: "json",
                                     async: true,
                                     success: function (json) {
-                                        var podObjs = json.listpodsresponse.pod;
-                                        if (podObjs != null) {
-                                            for (var i = 0; i < podObjs.length; i++) {
-                                            	var currentPage = 1;
-                                            	$.ajax({
-                                                    url: createURL('listRouters'),
-                                                    data: {
-                                                        podid: podObjs[i].id,
-                                                        listAll: true,
-                                                        page: currentPage,
-                                                        pagesize: pageSize //global variable
-                                                    },
-                                                    async: false,
-                                                    success: function (json) {
-                                                        if (json.listroutersresponse.count != undefined) {
-                                                            podObjs[i].routerCount = json.listroutersresponse.count;
-                                                            var routerCountFromAllPages = json.listroutersresponse.count;                                                            
-                                                            var routerCountFromFirstPageToCurrentPage = json.listroutersresponse.router.length;
-                                                            var routerRequiresUpgrade = 0;                                                            
-                                                            var callListApiWithPage = function () {
-                                                                $.ajax({
-                                                                    url: createURL('listRouters'),
-                                                                    async: false,
-                                                                    data: {
-                                                                        podid: podObjs[i].id,
-                                                                        listAll: true,
-                                                                        page: currentPage,
-                                                                        pagesize: pageSize //global variable
-                                                                    },
-                                                                    success: function (json) {
-                                                                        routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
-                                                                        var items = json.listroutersresponse.router;
-                                                                        for (var i = 0; i < items.length; i++) {
-                                                                            if (items[i].requiresupgrade) {
-                                                                                routerRequiresUpgrade++;
-                                                                            }
-                                                                        }
-                                                                        if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
-                                                                            currentPage++;
-                                                                            callListApiWithPage();
-                                                                        }
-                                                                    }
-                                                                });
-                                                            }                                                                
-                                                            if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
-                                                                currentPage++;
-                                                                callListApiWithPage();
-                                                            }                                                            
-                                                            podObjs[i].routerRequiresUpgrade = routerRequiresUpgrade;
-
-                                                        } else {
-                                                            podObjs[i].routerCount = 0;
-                                                            podObjs[i].routerRequiresUpgrade = 0;
-                                                        }
-                                                    }
-                                                });
-                                            }
-                                        }
-                                        args.response.success({
-                                            data: podObjs
-                                        });
+                                    	var groupbyObjs = json.listpodsresponse.pod;                                  
+                                        if (groupbyObjs != null) {
+                                        	addExtraPropertiesToGroupbyObjects(groupbyObjs, 'podid');                                        	
+                                        }  
+                                        args.response.success({                                           
+                                            data: groupbyObjs
+                                        });                                    	
                                     }
                                 });
                             },
@@ -9155,65 +8992,11 @@
                                             }
                                         }],
                                         dataProvider: function (args) {
-                                        	var currentPage = 1;
-                                            $.ajax({
-                                                url: createURL('listRouters'),
-                                                data: {
-                                                    podid: args.context.routerGroupByPod[0].id,
-                                                    listAll: true,
-                                                    page: currentPage,
-                                                    pagesize: pageSize //global variable
-                                                },
-                                                async: false,
-                                                success: function (json) {
-                                                    if (json.listroutersresponse.count != undefined) {
-                                                        args.context.routerGroupByPod[0].routerCount = json.listroutersresponse.count;
-                                                        var routerCountFromAllPages = json.listroutersresponse.count;                                                        
-                                                        var routerCountFromFirstPageToCurrentPage = json.listroutersresponse.router.length;
-                                                        var routerRequiresUpgrade = 0;
-                                                        var callListApiWithPage = function () {
-                                                            $.ajax({
-                                                                url: createURL('listRouters'),
-                                                                async: false,
-                                                                data: {
-                                                                    podid: args.context.routerGroupByPod[0].id,
-                                                                    listAll: true,
-                                                                    page: currentPage,
-                                                                    pagesize: pageSize //global variable
-                                                                },
-                                                                success: function (json) {
-                                                                    routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
-                                                                    var items = json.listroutersresponse.router;
-                                                                    for (var i = 0; i < items.length; i++) {
-                                                                        if (items[i].requiresupgrade) {
-                                                                            routerRequiresUpgrade++;
-                                                                        }
-                                                                    }
-                                                                    if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
-                                                                        currentPage++;
-                                                                        callListApiWithPage();
-                                                                    }
-                                                                }
-                                                            });
-                                                        }
-                                                        if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
-                                                            currentPage++;
-                                                            callListApiWithPage();
-                                                        }
-                                                        args.context.routerGroupByPod[0].routerRequiresUpgrade = routerRequiresUpgrade;
-
-                                                    } else {
-                                                        args.context.routerGroupByPod[0].routerCount = 0;
-                                                        args.context.routerGroupByPod[0].routerRequiresUpgrade = 0;
-                                                    }
-                                                }
-                                            });
-                                            setTimeout(function() {
-                                                args.response.success({
-                                                    data: args.context.routerGroupByPod[0],
-                                                    actionFilter: routerGroupActionfilter
-                                                });
-                                            });
+                                        	addExtraPropertiesToGroupbyObject(args.context.routerGroupByPod[0], 'podid'); 
+                                        	args.response.success({
+                                                data: args.context.routerGroupByPod[0],
+                                                actionFilter: routerGroupActionfilter
+                                            });     
                                         }
                                     }
                                 }
@@ -9263,67 +9046,13 @@
                                     dataType: "json",
                                     async: true,
                                     success: function (json) {
-                                        var clusterObjs = json.listclustersresponse.cluster;
-                                        if (clusterObjs != null) {
-                                            for (var i = 0; i < clusterObjs.length; i++) {
-                                            	var currentPage = 1;
-                                            	$.ajax({
-                                                    url: createURL('listRouters'),
-                                                    data: {
-                                                        clusterid: clusterObjs[i].id,
-                                                        listAll: true,
-                                                        page: currentPage,
-                                                        pagesize: pageSize //global variable
-                                                    },
-                                                    async: false,
-                                                    success: function (json) {
-                                                        if (json.listroutersresponse.count != undefined) {
-                                                            clusterObjs[i].routerCount = json.listroutersresponse.count;
-                                                            var routerCountFromAllPages = json.listroutersresponse.count;                                                            
-                                                            var routerCountFromFirstPageToCurrentPage = json.listroutersresponse.router.length;
-                                                            var routerRequiresUpgrade = 0;
-                                                            var callListApiWithPage = function () {
-                                                                $.ajax({
-                                                                    url: createURL('listRouters'),
-                                                                    async: false,
-                                                                    data: {
-                                                                        clusterid: clusterObjs[i].id,
-                                                                        listAll: true,
-                                                                        page: currentPage,
-                                                                        pagesize: pageSize //global variable
-                                                                    },
-                                                                    success: function (json) {
-                                                                        routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
-                                                                        var items = json.listroutersresponse.router;
-                                                                        for (var i = 0; i < items.length; i++) {
-                                                                            if (items[i].requiresupgrade) {
-                                                                                routerRequiresUpgrade++;
-                                                                            }
-                                                                        }
-                                                                        if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
-                                                                            currentPage++;
-                                                                            callListApiWithPage();
-                                                                        }
-                                                                    }
-                                                                });
-                                                            }
-                                                            if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
-                                                                currentPage++;
-                                                                callListApiWithPage();
-                                                            }
-                                                            clusterObjs[i].routerRequiresUpgrade = routerRequiresUpgrade;
-
-                                                        } else {
-                                                            clusterObjs[i].routerCount = 0;
-                                                            clusterObjs[i].routerRequiresUpgrade = 0;
-                                                        }
-                                                    }
-                                                });
-                                            }
-                                        }
-                                        args.response.success({
-                                            data: clusterObjs
-                                        });
+                                    	var groupbyObjs = json.listclustersresponse.cluster;                                
+                                        if (groupbyObjs != null) {
+                                        	addExtraPropertiesToGroupbyObjects(groupbyObjs, 'clusterid');                                        	
+                                        }  
+                                        args.response.success({                                           
+                                            data: groupbyObjs
+                                        });                                    	
                                     }
                                 });
                             },
@@ -9391,66 +9120,12 @@
                                             	label: 'zone'
                                             }
                                         }],
-                                        dataProvider: function (args) {
-                                        	var currentPage = 1;
-                                            $.ajax({
-                                                url: createURL('listRouters'),
-                                                data: {
-                                                    clusterid: args.context.routerGroupByCluster[0].id,
-                                                    listAll: true,
-                                                    page: currentPage,
-                                                    pagesize: pageSize //global variable
-                                                },
-                                                async: false,
-                                                success: function (json) {
-                                                    if (json.listroutersresponse.count != undefined) {
-                                                        args.context.routerGroupByCluster[0].routerCount = json.listroutersresponse.count;
-                                                        var routerCountFromAllPages = json.listroutersresponse.count;                                                        
-                                                        var routerCountFromFirstPageToCurrentPage = json.listroutersresponse.router.length;
-                                                        var routerRequiresUpgrade = 0;
-                                                        var callListApiWithPage = function () {
-                                                            $.ajax({
-                                                                url: createURL('listRouters'),
-                                                                async: false,
-                                                                data: {
-                                                                    clusterid: args.context.routerGroupByCluster[0].id,
-                                                                    listAll: true,
-                                                                    page: currentPage,
-                                                                    pagesize: pageSize //global variable
-                                                                },
-                                                                success: function (json) {
-                                                                    routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
-                                                                    var items = json.listroutersresponse.router;
-                                                                    for (var i = 0; i < items.length; i++) {
-                                                                        if (items[i].requiresupgrade) {
-                                                                            routerRequiresUpgrade++;
-                                                                        }
-                                                                    }
-                                                                    if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
-                                                                        currentPage++;
-                                                                        callListApiWithPage();
-                                                                    }
-                                                                }
-                                                            });
-                                                        }
-                                                        if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
-                                                            currentPage++;
-                                                            callListApiWithPage();
-                                                        }
-                                                        args.context.routerGroupByCluster[0].routerRequiresUpgrade = routerRequiresUpgrade;
-
-                                                    } else {
-                                                        args.context.routerGroupByCluster[0].routerCount = 0;
-                                                        args.context.routerGroupByCluster[0].routerRequiresUpgrade = 0;
-                                                    }
-                                                }
-                                            });
-                                            setTimeout(function() {
-                                                args.response.success({
-                                                    data: args.context.routerGroupByCluster[0],
-                                                    actionFilter: routerGroupActionfilter
-                                                });
-                                            });
+                                        dataProvider: function (args) {                                        	
+                                        	addExtraPropertiesToGroupbyObject(args.context.routerGroupByCluster[0], 'clusterid'); 
+                                        	args.response.success({
+                                                data: args.context.routerGroupByCluster[0],
+                                                actionFilter: routerGroupActionfilter
+                                            });   
                                         }
                                     }
                                 }
@@ -18912,4 +18587,106 @@
 
         return [];
     };
+    
+    function addExtraPropertiesToGroupbyObjects(groupbyObjs, groupbyId) {    	
+    	for (var i = 0; i < groupbyObjs.length; i++) {    		
+    		addExtraPropertiesToGroupbyObject(groupbyObjs[i], groupbyId);    		
+    	}
+    }
+        
+    function addExtraPropertiesToGroupbyObject(groupbyObj, groupbyId) {
+		var currentPage = 1;
+		
+		var listRoutersData = {	                                            	
+        	listAll: true,    			
+	        pagesize: pageSize //global variable
+        };    		
+		listRoutersData[groupbyId] = groupbyObj.id;
+		
+		$.ajax({
+            url: createURL('listRouters'),
+            data: $.extend({}, listRoutersData, {
+            	page: currentPage
+        	}),
+            async: false,
+            success: function(json) {
+            	if (json.listroutersresponse.count != undefined) {                		                                            		    	                                            		
+            		var routerCountFromAllPages = json.listroutersresponse.count;        
+                	var routerCountFromFirstPageToCurrentPage = json.listroutersresponse.router.length;  
+                	var routerRequiresUpgrade = 0;    
+                	
+                	$.ajax({
+                		url: createURL('listRouters'),
+                        data: $.extend({}, listRoutersData, {
+                        	page: currentPage,
+                    		projectid: -1
+                    	}),
+                        async: false,    	        	                                            
+                        success: function(json) {    	        	                                            	
+                        	if (json.listroutersresponse.count != undefined) {                            		                                            		    	                                            		
+                        		routerCountFromAllPages += json.listroutersresponse.count;    
+                        		groupbyObj.routerCount = routerCountFromAllPages;
+                        		
+                            	routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;      	        	                                                		
+                        	}
+                        }    	                                                		
+                	});    	                                                	
+                	
+                	var callListApiWithPage = function() {        	                                                		
+                		$.ajax({
+        					url: createURL('listRouters'),
+                    		async: false,
+                    		data: $.extend({}, listRoutersData, {
+                            	page: currentPage
+                        	}),
+                    		success: function(json) {                           			
+                    			routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;    	                                                    			                                                    			
+                    			var items = json.listroutersresponse.router;
+                    			for (var k = 0; k < items.length; k++) {    	                                                    				
+                    				if (items[k].requiresupgrade) {
+                    					routerRequiresUpgrade++;
+                    				}
+                    			}    
+                    			
+                    			$.ajax({
+                    				url: createURL('listRouters'),
+                            		async: false,
+                            		data: $.extend({}, listRoutersData, {
+                            			page: currentPage,
+                                		projectid: -1
+                                	}),
+                            		success: function(json) {  
+                            			routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;    	                                                    			                                                    			
+                            			var items = json.listroutersresponse.router;
+                            			for (var k = 0; k < items.length; k++) {    	                                                    				
+                            				if (items[k].requiresupgrade) {
+                            					routerRequiresUpgrade++;
+                            				}
+                            			}       	    	                                                    			
+                            		}
+                    			});    	                                                    			
+                    			
+                    			if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
+                    				currentPage++;
+                    				callListApiWithPage();
+                    			}                                                    			
+                    		}
+        				});                                                		
+                	} 
+                	
+                	if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
+        				currentPage++;
+        				callListApiWithPage();
+        			}  
+                	
+                	groupbyObj.routerRequiresUpgrade = routerRequiresUpgrade;
+            		
+            	} else {
+            		groupbyObj.routerCount = 0;
+            		groupbyObj.routerRequiresUpgrade = 0;
+            	}    	                                            		                                                
+            }
+        });    	
+    }    
+    
 })($, cloudStack);
