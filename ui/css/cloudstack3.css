@@ -10296,6 +10296,11 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   color: #000000;
 }
 
+.tagger ul li span.label span.value {
+  max-width: 100px;
+  overflow: hidden;
+}
+
 .tagger ul li span.label {
   font-size: 10px;
   position: relative;
@@ -10307,11 +10312,35 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   left: 6px;
 }
 
+.tagger ul li span.label > span {
+  float: left;
+  display: block;
+  margin-top: 2px;
+}
+
+.tagger ul li span.label > span.key {
+  font-weight: bold;
+  max-width: 134px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  margin-left: 15px;
+  margin-right: 5px;
+}
+
+.tagger ul li span.label > span.value {
+  max-width: 160px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  margin-left: 6px;
+}
+
 .tagger ul li span.remove {
   width: 15px !important;
   overflow: hidden !important;
   height: 11px !important;
-  background: #DFDFDF url(../images/sprites.png) no-repeat -596px -1183px;
+  background: #DFDFDF;
   display: block;
   top: 0px !important;
   left: -3px !important;
