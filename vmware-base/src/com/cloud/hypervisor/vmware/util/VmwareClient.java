@@ -325,7 +325,7 @@ public class VmwareClient {
             // info has a property - state for state of the task
             Object[] result = waitForValues(task, new String[] { "info.state", "info.error" }, new String[] { "state" }, new Object[][] { new Object[] {
                     TaskInfoState.SUCCESS, TaskInfoState.ERROR } });
-    
+
             if (result[0].equals(TaskInfoState.SUCCESS)) {
                 retVal = true;
             }
