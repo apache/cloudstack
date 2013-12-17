@@ -460,12 +460,12 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
         boolean isExplicit = false;
         VirtualMachine vm = vmProfile.getVirtualMachine();
 
+
         // check if zone is dedicated. if yes check if vm owner has acess to it.
         DedicatedResourceVO dedicatedZone = _dedicatedDao.findByZoneId(dc.getId());
-        if (dedicatedZone != null) {
+        if (dedicatedZone != null && !_accountMgr.isRootAdmin(vmProfile.getOwner().getType())) {
             long accountDomainId = vmProfile.getOwner().getDomainId();
             long accountId = vmProfile.getOwner().getAccountId();
-
             // If a zone is dedicated to an account then all hosts in this zone
             // will be explicitly dedicated to
             // that account. So there won't be any shared hosts in the zone, the
