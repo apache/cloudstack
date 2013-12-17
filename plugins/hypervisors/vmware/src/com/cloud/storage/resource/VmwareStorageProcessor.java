@@ -253,16 +253,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
             s_logger.error(msg);
             throw new Exception(msg);
         }
-
-        s_logger.info("Move volume out of volume-wrapper VM ");
-        String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkName, VmwareStorageLayoutType.VMWARE, true);
-        String[] legacyCloudStackLayoutFilePair =
-            VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, true);
-
-        dsMo.moveDatastoreFile(vmwareLayoutFilePair[0], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[0], dcMo.getMor(), true);
-
-        dsMo.moveDatastoreFile(vmwareLayoutFilePair[1], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[1], dcMo.getMor(), true);
-
         return true;
     }
 
@@ -275,15 +265,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
             s_logger.error(msg);
             throw new Exception(msg);
         }
-
-        s_logger.info("Move volume out of volume-wrapper VM ");
-        String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkName, VmwareStorageLayoutType.VMWARE, false);
-        String[] legacyCloudStackLayoutFilePair =
-            VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, false);
-
-        dsMo.moveDatastoreFile(vmwareLayoutFilePair[0], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[0], dcMo.getMor(), true);
-
-        dsMo.moveDatastoreFile(vmwareLayoutFilePair[1], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[1], dcMo.getMor(), true);
         return true;
     }
 
@@ -309,6 +290,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
 
             String vmdkName = volume.getName();
+            String vmdkFileBaseName = null;
             if (srcStore == null) {
                 // create a root volume for blank VM (created from ISO)
                 String dummyVmName = this.hostService.getWorkerName(context, cmd, 0);
@@ -319,8 +301,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         throw new Exception("Unable to create a dummy VM for volume creation");
                     }
 
-                    String vmdkFilePair[] = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, null, vmdkName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, true    // we only use the first file in the pair, linked or not will not matter
-                    );
+                    vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);
+                    // we only use the first file in the pair, linked or not will not matter
+                    String vmdkFilePair[] = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, null, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, true);
                     String volumeDatastorePath = vmdkFilePair[0];
                     synchronized (this) {
                         s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
@@ -353,6 +336,14 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(vmdkName);
                 assert (vmMo != null);
 
+                vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0); // TO-DO: Support for base template containing multiple disks
+                s_logger.info("Move volume out of volume-wrapper VM ");
+                String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.VMWARE, !_fullCloneFlag);
+                String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, !_fullCloneFlag);
+
+                dsMo.moveDatastoreFile(vmwareLayoutFilePair[0], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[0], dcMo.getMor(), true);
+                dsMo.moveDatastoreFile(vmwareLayoutFilePair[1], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[1], dcMo.getMor(), true);
+
                 s_logger.info("detach disks from volume-wrapper VM " + vmdkName);
                 vmMo.detachAllDisks();
 
@@ -365,11 +356,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
             // restoreVM - move the new ROOT disk into corresponding VM folder
             String vmInternalCSName = volume.getVmName();
             if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmInternalCSName)) {
-                VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmInternalCSName, dsMo, vmdkName);
+                VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmInternalCSName, dsMo, vmdkFileBaseName);
             }
 
             VolumeObjectTO newVol = new VolumeObjectTO();
-            newVol.setPath(vmdkName);
+            newVol.setPath(vmdkFileBaseName);
             newVol.setSize(volume.getSize());
             return new CopyCmdAnswer(newVol);
         } catch (Throwable e) {

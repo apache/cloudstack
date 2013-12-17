@@ -1737,6 +1737,22 @@ public class VirtualMachineMO extends BaseMO {
         }
     }
 
+    public List<String> getVmdkFileBaseNames() throws Exception {
+        List<String> vmdkFileBaseNames = new ArrayList<String>();
+        VirtualDevice[] devices = getAllDiskDevice();
+        for(VirtualDevice device : devices) {
+            if(device instanceof VirtualDisk) {
+                VirtualDeviceBackingInfo backingInfo = ((VirtualDisk)device).getBacking();
+                if(backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
+                    VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)backingInfo;
+                    DatastoreFile dsBackingFile = new DatastoreFile(diskBackingInfo.getFileName());
+                    vmdkFileBaseNames.add(dsBackingFile.getFileBaseName());
+                }
+            }
+        }
+        return vmdkFileBaseNames;
+    }
+
     // this method relies on un-offical VMware API
     @Deprecated
     public void moveAllVmDiskFiles(DatastoreMO destDsMo, String destDsDir, boolean followDiskChain) throws Exception {
