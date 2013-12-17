@@ -1646,11 +1646,11 @@ div.list-view td.state.off span {
 
 .ui-tabs li a {
   float: left;
-  padding: 15px;
+  padding: 15px 10px;
   min-width: 91px;
   text-align: center;
   font-size: 11px;
-  margin-right: 12px;
+  margin-right: 5px;
   color: #4E6070;
   text-decoration: none;
   /*+placement:shift 0px 2px;*/
@@ -3533,6 +3533,10 @@ div.view table td.editable div.edit input {
   border: none;
   position: relative;
   z-index: 1;
+}
+
+.detail-view div.view table td.editable div.edit {
+  width: 116px;
 }
 
 div.view table td.editable div.action {
