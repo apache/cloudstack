@@ -207,14 +207,14 @@ namespace HypervResource
             return new SyntheticEthernetPortSettingData(newResourcePaths[0]);
         }
 
-        public const string IDE_HARDDISK_CONTROLLER = "Microsoft:Hyper-V:Emulated IDE Controller";
+        public const string IDE_CONTROLLER = "Microsoft:Hyper-V:Emulated IDE Controller";
         public const string SCSI_CONTROLLER = "Microsoft:Hyper-V:Synthetic SCSI Controller";
-        public const string IDE_HARDDISK_DRIVE = "Microsoft:Hyper-V:Synthetic Disk Drive";
-        public const string IDE_ISO_DRIVE = "Microsoft:Hyper-V:Synthetic DVD Drive";
+        public const string HARDDISK_DRIVE = "Microsoft:Hyper-V:Synthetic Disk Drive";
+        public const string ISO_DRIVE = "Microsoft:Hyper-V:Synthetic DVD Drive";
 
         // TODO: names harvested from Msvm_ResourcePool, not clear how to create new instances
-        public const string IDE_ISO_DISK = "Microsoft:Hyper-V:Virtual CD/DVD Disk"; // For IDE_ISO_DRIVE
-        public const string IDE_HARDDISK_DISK = "Microsoft:Hyper-V:Virtual Hard Disk"; // For IDE_HARDDISK_DRIVE
+        public const string ISO_DISK = "Microsoft:Hyper-V:Virtual CD/DVD Disk"; // For IDE_ISO_DRIVE
+        public const string HARDDISK_DISK = "Microsoft:Hyper-V:Virtual Hard Disk"; // For IDE_HARDDISK_DRIVE
 
         /// <summary>
         /// Create new VM.  By default we start it. 
@@ -280,7 +280,7 @@ namespace HypervResource
             var newVm = CreateVM(vmName, memSize, vcpus);
 
             // Add a SCSI controller for attaching/detaching data volumes.
-            AddScsiControllerToVm(newVm);
+            AddScsiController(newVm);
 
             foreach (var diskDrive in diskDrives)
             {
@@ -345,11 +345,11 @@ namespace HypervResource
                 switch (driveType) {
                     case "ROOT":
                         ideCtrllr = "0";
-                        driveResourceType = IDE_HARDDISK_DRIVE;
+                        driveResourceType = HARDDISK_DRIVE;
                         break;
                     case "ISO":
                         ideCtrllr = "1";
-                        driveResourceType = IDE_ISO_DRIVE;
+                        driveResourceType = ISO_DRIVE;
                         break;
                     default: 
                         // TODO: double check exception type
@@ -362,7 +362,7 @@ namespace HypervResource
                 }
                 logger.DebugFormat("Create disk type {1} (Named: {0}), on vm {2} {3}", diskName, driveResourceType, vmName, 
                                         string.IsNullOrEmpty(vhdFile) ? " no disk to insert" : ", inserting disk" +vhdFile );
-                AddDiskDriveToVm(newVm, vhdFile, ideCtrllr, driveResourceType);
+                AddDiskDriveToIdeController(newVm, vhdFile, ideCtrllr, driveResourceType);
                 if (isoPath != null)
                 {
                     AttachIso(vmName, isoPath);
@@ -566,16 +566,32 @@ namespace HypervResource
         public void patchSystemVmIso(String vmName, String systemVmIso)
         {
             ComputerSystem vmObject = GetComputerSystem(vmName);
-            AddDiskDriveToVm(vmObject, "", "1", IDE_ISO_DRIVE);
+            AddDiskDriveToIdeController(vmObject, "", "1", ISO_DRIVE);
             AttachIso(vmName, systemVmIso);
         }
 
+        public void AttachDisk(string vmName, string diskPath, string addressOnController)
+        {
+            logger.DebugFormat("Got request to attach disk {0} to vm {1}", diskPath, vmName);
+
+            ComputerSystem vm = GetComputerSystem(vmName);
+            if (vm == null)
+            {
+                logger.DebugFormat("VM {0} not found", vmName);
+                return;
+            }
+            else
+            {
+                ManagementPath newDrivePath = AttachDiskDriveToScsiController(vm, addressOnController);
+                InsertDiskImage(vm, diskPath, HARDDISK_DISK, newDrivePath);
+            }
+        }
 
         /// </summary>
         /// <param name="vm"></param>
         /// <param name="cntrllerAddr"></param>
         /// <param name="driveResourceType">IDE_HARDDISK_DRIVE or IDE_ISO_DRIVE</param>
-        public ManagementPath AddDiskDriveToVm(ComputerSystem vm, string vhdfile, string cntrllerAddr, string driveResourceType)
+        public ManagementPath AddDiskDriveToIdeController(ComputerSystem vm, string vhdfile, string cntrllerAddr, string driveResourceType)
         {
             logger.DebugFormat("Creating DISK for VM {0} (GUID {1}) by attaching {2}", 
                         vm.ElementName,
@@ -585,11 +601,11 @@ namespace HypervResource
             // Determine disk type for drive and assert drive type valid
             string diskResourceSubType = null;
             switch(driveResourceType) {
-                case IDE_HARDDISK_DRIVE:
-                    diskResourceSubType = IDE_HARDDISK_DISK;
+                case HARDDISK_DRIVE:
+                    diskResourceSubType = HARDDISK_DISK;
                     break;
-                case IDE_ISO_DRIVE: 
-                    diskResourceSubType = IDE_ISO_DISK;
+                case ISO_DRIVE: 
+                    diskResourceSubType = ISO_DISK;
                     break;
                 default:
                     var errMsg = string.Format(
@@ -602,7 +618,7 @@ namespace HypervResource
                     throw ex;
             }
 
-            ManagementPath newDrivePath = AttachNewDriveToVm(vm, cntrllerAddr, driveResourceType);
+            ManagementPath newDrivePath = AttachNewDrive(vm, cntrllerAddr, driveResourceType);
 
             // If there's not disk to insert, we are done.
             if (String.IsNullOrEmpty(vhdfile))
@@ -629,7 +645,7 @@ namespace HypervResource
             }
             else
             {
-                RemoveStorageImageFromVm(vm, diskFileName);
+                RemoveStorageImage(vm, diskFileName);
             }
         }
 
@@ -638,7 +654,7 @@ namespace HypervResource
         /// </summary>
         /// <param name="vm"></param>
         /// <param name="diskFileName"></param>
-        private void RemoveStorageImageFromVm(ComputerSystem vm, string diskFileName)
+        private void RemoveStorageImage(ComputerSystem vm, string diskFileName)
         {
             // Obtain StorageAllocationSettingData for disk
             StorageAllocationSettingData.StorageAllocationSettingDataCollection storageSettingsObjs = StorageAllocationSettingData.GetInstances();
@@ -674,13 +690,13 @@ namespace HypervResource
 
             RemoveStorageResource(imageToRemove.Path, vm);
 
-            logger.InfoFormat("REmoved disk image {0} from VM {1} (GUID {2}): the disk image is not attached.",
+            logger.InfoFormat("Removed disk image {0} from VM {1} (GUID {2}): the disk image is not attached.",
                     diskFileName,
                     vm.ElementName,
                     vm.Name);
         }
 
-        private ManagementPath AttachNewDriveToVm(ComputerSystem vm, string cntrllerAddr, string driveType)
+        private ManagementPath AttachNewDrive(ComputerSystem vm, string cntrllerAddr, string driveType)
         {
             // Disk drives are attached to a 'Parent' IDE controller.  We IDE Controller's settings for the 'Path', which our new Disk drive will use to reference it.
             VirtualSystemSettingData vmSettings = GetVmSettings(vm);
@@ -722,7 +738,7 @@ namespace HypervResource
             return newDrivePaths[0];
         }
 
-        private ManagementPath AddScsiControllerToVm(ComputerSystem vm)
+        private ManagementPath AddScsiController(ComputerSystem vm)
         {
             // A description of the controller is created by modifying a clone of the default ResourceAllocationSettingData for scsi controller
             string scsiQuery = String.Format("ResourceSubType LIKE \"{0}\" AND InstanceID LIKE \"%Default\"", SCSI_CONTROLLER);
@@ -752,6 +768,55 @@ namespace HypervResource
                 scsiSettings.ResourceSubType,
                 newResourcePaths[0].Path);
             return newResourcePaths[0];
+        }
+
+        private ManagementPath GetDiskDriveToScsiController(ComputerSystem vm, string addrOnController)
+        {
+            VirtualSystemSettingData vmSettings = GetVmSettings(vm);
+            var ctrller = GetScsiControllerSettings(vmSettings);
+            return null;
+        }
+
+        private ManagementPath AttachDiskDriveToScsiController(ComputerSystem vm, string addrOnController)
+        {
+            // Disk drives are attached to a 'Parent' Scsi controller.
+            VirtualSystemSettingData vmSettings = GetVmSettings(vm);
+            var ctrller = GetScsiControllerSettings(vmSettings);
+
+            // A description of the drive is created by modifying a clone of the default ResourceAllocationSettingData for that drive type
+            string defaultDriveQuery = String.Format("ResourceSubType LIKE \"{0}\" AND InstanceID LIKE \"%Default\"", HARDDISK_DRIVE);
+            var newDiskDriveSettings = CloneResourceAllocationSetting(defaultDriveQuery);
+
+            // Set IDE controller and address on the controller for the new drive
+            newDiskDriveSettings.LateBoundObject["Parent"] = ctrller.Path.ToString();
+            newDiskDriveSettings.LateBoundObject["AddressOnParent"] = addrOnController;
+            newDiskDriveSettings.CommitObject();
+
+            // Add this new disk drive to the VM
+            logger.DebugFormat("Creating disk drive type {0}, parent IDE controller is {1} and address on controller is {2}",
+                newDiskDriveSettings.ResourceSubType,
+                newDiskDriveSettings.Parent,
+                newDiskDriveSettings.AddressOnParent);
+            string[] newDriveResource = new string[] { newDiskDriveSettings.LateBoundObject.GetText(System.Management.TextFormat.CimDtd20) };
+            ManagementPath[] newDrivePaths = AddVirtualResource(newDriveResource, vm);
+
+            // assert
+            if (newDrivePaths.Length != 1)
+            {
+                var errMsg = string.Format(
+                    "Failed to add disk drive type {3} to VM {0} (GUID {1}): number of resource created {2}",
+                    vm.ElementName,
+                    vm.Name,
+                    newDrivePaths.Length,
+                    HARDDISK_DRIVE);
+                var ex = new WmiException(errMsg);
+                logger.Error(errMsg, ex);
+                throw ex;
+            }
+            logger.DebugFormat("New disk drive type {0} WMI path is {1}s",
+                newDiskDriveSettings.ResourceSubType,
+                newDrivePaths[0].Path);
+            return newDrivePaths[0];
         }
 
 
@@ -795,15 +860,13 @@ namespace HypervResource
         /// Create Msvm_StorageAllocationSettingData corresponding to the ISO image, and 
         /// associate this with the VM's DVD drive.
         /// </summary>
-        private void AttachIsoToVm(ComputerSystem vm, string isoPath)
+        private void AttachIso(ComputerSystem vm, string isoPath)
         {
             // Disk drives are attached to a 'Parent' IDE controller.  We IDE Controller's settings for the 'Path', which our new Disk drive will use to reference it.
             VirtualSystemSettingData vmSettings = GetVmSettings(vm);
             var driveWmiObj = GetDvdDriveSettings(vmSettings);
-            InsertDiskImage(vm, isoPath, IDE_ISO_DISK, driveWmiObj.Path);
+            InsertDiskImage(vm, isoPath, ISO_DISK, driveWmiObj.Path);
         }
-
-
 
         private static ResourceAllocationSettingData CloneResourceAllocationSetting(string wmiQuery)
         {
@@ -834,7 +897,7 @@ namespace HypervResource
             }
             else
             {
-                AttachIsoToVm(vm, iso);
+                AttachIso(vm, iso);
             }
         }
 
@@ -1827,7 +1890,7 @@ namespace HypervResource
 
             foreach (ResourceAllocationSettingData wmiObj in wmiObjCollection)
             {
-                if (wmiObj.ResourceSubType == IDE_HARDDISK_CONTROLLER && wmiObj.Address == cntrllerAddr)
+                if (wmiObj.ResourceSubType == IDE_CONTROLLER && wmiObj.Address == cntrllerAddr)
                 {
                     return wmiObj;
                 }
@@ -1836,6 +1899,26 @@ namespace HypervResource
             var errMsg = string.Format(
                                 "Cannot find the Microsoft Emulated IDE Controlle at address {0} in VirtualSystemSettingData {1}", 
                                 cntrllerAddr, 
+                                vmSettings.Path.Path);
+            var ex = new WmiException(errMsg);
+            logger.Error(errMsg, ex);
+            throw ex;
+        }
+
+        public ResourceAllocationSettingData GetScsiControllerSettings(VirtualSystemSettingData vmSettings)
+        {
+            var wmiObjCollection = GetResourceAllocationSettings(vmSettings);
+
+            foreach (ResourceAllocationSettingData wmiObj in wmiObjCollection)
+            {
+                if (wmiObj.ResourceSubType == SCSI_CONTROLLER)
+                {
+                    return wmiObj;
+                }
+            }
+
+            var errMsg = string.Format(
+                                "Cannot find the Microsoft Synthetic SCSI Controller in VirtualSystemSettingData {1}",
                                 vmSettings.Path.Path);
             var ex = new WmiException(errMsg);
             logger.Error(errMsg, ex);

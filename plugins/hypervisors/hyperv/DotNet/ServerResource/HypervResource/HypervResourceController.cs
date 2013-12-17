@@ -215,17 +215,28 @@ namespace HypervResource
                 {
                     string vmName = (string)cmd.vmName;
                     DiskTO disk = DiskTO.ParseJson(cmd.disk);
-                    TemplateObjectTO dataStore = disk.templateObjectTO;
 
-                    if (dataStore.nfsDataStoreTO != null)
+                    if (disk.type.Equals("ISO"))
                     {
+                        TemplateObjectTO dataStore = disk.templateObjectTO;
                         NFSTO share = dataStore.nfsDataStoreTO;
                         Utils.ConnectToRemote(share.UncPath, share.Domain, share.User, share.Password);
-
-                        // The share is mapped, now attach the iso
-                        string isoPath = Utils.NormalizePath(Path.Combine(share.UncPath, dataStore.path));
-                        wmiCallsV2.AttachIso(vmName, isoPath);
+                        string diskPath = Utils.NormalizePath(Path.Combine(share.UncPath, dataStore.path));
+                        wmiCallsV2.AttachIso(vmName, diskPath);
                         result = true;
+                    }
+                    else if (disk.type.Equals("DATADISK"))
+                    {
+                        VolumeObjectTO volume = disk.volumeObjectTO;
+                        PrimaryDataStoreTO primary = volume.primaryDataStore;
+                        Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
+                        string diskPath = Utils.NormalizePath(volume.FullFileName);
+                        wmiCallsV2.AttachDisk(vmName, diskPath, disk.diskSequence);
+                        result = true;
+                    }
+                    else
+                    {
+                        details = "Invalid disk type to be attached to vm " + vmName;
                     }
                 }
                 catch (Exception sysEx)
@@ -238,6 +249,7 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
+                    disk = cmd.disk,
                     contextMap = contextMap
                 };
 
@@ -261,15 +273,26 @@ namespace HypervResource
                 {
                     string vmName = (string)cmd.vmName;
                     DiskTO disk = DiskTO.ParseJson(cmd.disk);
-                    TemplateObjectTO dataStore = disk.templateObjectTO;
 
-                    if (dataStore.nfsDataStoreTO != null)
+                    if (disk.type.Equals("ISO"))
                     {
+                        TemplateObjectTO dataStore = disk.templateObjectTO;
                         NFSTO share = dataStore.nfsDataStoreTO;
-                        // The share is mapped, now attach the iso
-                        string isoPath = Utils.NormalizePath(Path.Combine(share.UncPath, dataStore.path));
-                        wmiCallsV2.DetachDisk(vmName, isoPath);
+                        string diskPath = Utils.NormalizePath(Path.Combine(share.UncPath, dataStore.path));
+                        wmiCallsV2.DetachDisk(vmName, diskPath);
                         result = true;
+                    }
+                    else if (disk.type.Equals("DATADISK"))
+                    {
+                        VolumeObjectTO volume = disk.volumeObjectTO;
+                        PrimaryDataStoreTO primary = volume.primaryDataStore;
+                        string diskPath = Utils.NormalizePath(volume.FullFileName);
+                        wmiCallsV2.DetachDisk(vmName, diskPath);
+                        result = true;
+                    }
+                    else
+                    {
+                        details = "Invalid disk type to be dettached from vm " + vmName;
                     }
                 }
                 catch (Exception sysEx)
@@ -1648,6 +1671,14 @@ namespace HypervResource
                 strtRouteCmd.gatewayIpAddress = config.GatewayIpAddress;
                 strtRouteCmd.hypervisorVersion = System.Environment.OSVersion.Version.ToString();
                 strtRouteCmd.caps = "hvm";
+
+                dynamic details = strtRouteCmd.hostDetails;
+                if (details != null)
+                {
+                    string productVersion = System.Environment.OSVersion.Version.Major.ToString() + "." +
+                        System.Environment.OSVersion.Version.Minor.ToString();
+                    details.Add("product_version", productVersion);
+                }
 
                 // Detect CPUs, speed, memory
                 uint cores;

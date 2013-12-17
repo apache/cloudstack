@@ -27,9 +27,10 @@ namespace HypervResource
 {
     public interface IWmiCallsV2
     {
-        System.Management.ManagementPath AddDiskDriveToVm(ComputerSystem vm, string vhdfile, string cntrllerAddr, string driveResourceType);
+        System.Management.ManagementPath AddDiskDriveToIdeController(ComputerSystem vm, string vhdfile, string cntrllerAddr, string driveResourceType);
         ComputerSystem AddUserData(ComputerSystem vm, string userData);
         void AttachIso(string displayName, string iso);
+        void AttachDisk(string vmName, string diskPath, string addressOnController);
         void CreateDynamicVirtualHardDisk(ulong MaxInternalSize, string Path);
         SyntheticEthernetPortSettingData CreateNICforVm(ComputerSystem vm, string mac);
         ComputerSystem CreateVM(string name, long memory_mb, int vcpus);
