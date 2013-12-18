@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.cloudstack.acl.AclPolicyPermission.Permission;
 import org.apache.cloudstack.acl.AclPolicyPermissionVO;
 import org.apache.cloudstack.acl.PermissionScope;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
 import com.cloud.utils.db.GenericDao;
 
@@ -34,5 +35,7 @@ public interface AclPolicyPermissionDao extends GenericDao<AclPolicyPermissionVO
     List<AclPolicyPermissionVO> listGrantedByActionAndScope(long policyId, String action, PermissionScope scope);
 
     List<AclPolicyPermissionVO> listByPolicyActionAndEntity(long policyId, String action, String entityType);
+
+    List<AclPolicyPermissionVO> listByPolicyAccessAndEntity(long id, AccessType accessType, String entityType);
 
 }

@@ -90,8 +90,8 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
     @Inject
     AclGroupAccountMapDao _aclGroupAccountMapDao;
 
-    @Inject
-    AclApiPermissionDao _apiPermissionDao;
+    // @Inject
+    // AclApiPermissionDao _apiPermissionDao;
 
     @Inject
     AclPolicyPermissionDao _policyPermissionDao;

@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.acl.entity;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -78,8 +79,14 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         HashMap<AclPolicy, Boolean> policyPermissionMap = new HashMap<AclPolicy, Boolean>();
 
         for (AclPolicy policy : policies) {
-            List<AclPolicyPermissionVO> permissions = _policyPermissionDao.listByPolicyActionAndEntity(policy.getId(),
+            List<AclPolicyPermissionVO> permissions = new ArrayList<AclPolicyPermissionVO>();
+
+            if (action != null) {
+                permissions = _policyPermissionDao.listByPolicyActionAndEntity(policy.getId(),
                     action, entityType);
+            } else {
+                permissions = _policyPermissionDao.listByPolicyAccessAndEntity(policy.getId(), accessType, entityType);
+            }
             for (AclPolicyPermissionVO permission : permissions) {
                 if (checkPermissionScope(caller, permission.getScope(), entity)) {
                     if (permission.getEntityType().equals(entityType)) {

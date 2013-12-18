@@ -389,16 +389,17 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 }
                 _aclPermissionDao.persist(apiPermission);
             }
-        }
+        } else {
 
-        for (AclEntityType entityType : entityTypes) {
-            apiPermission = new AclPolicyPermissionVO(role.ordinal() + 1, apiName, entityType.toString(), null,
-                    permissionScope, new Long(-1), Permission.Allow);
-            if (apiPermission != null) {
-                if (isReadCommand) {
-                    apiPermission.setAccessType(AccessType.ListEntry);
+            for (AclEntityType entityType : entityTypes) {
+                apiPermission = new AclPolicyPermissionVO(role.ordinal() + 1, apiName, entityType.toString(), null,
+                        permissionScope, new Long(-1), Permission.Allow);
+                if (apiPermission != null) {
+                    if (isReadCommand) {
+                        apiPermission.setAccessType(AccessType.ListEntry);
+                    }
+                    _aclPermissionDao.persist(apiPermission);
                 }
-                _aclPermissionDao.persist(apiPermission);
             }
         }
 

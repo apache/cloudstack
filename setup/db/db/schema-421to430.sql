@@ -360,7 +360,7 @@ CREATE TABLE `acl_policy_permission` (
   `policy_id` bigint(20) unsigned NOT NULL,
   `action` varchar(100) NOT NULL,
   `resource_type` varchar(100) DEFAULT NULL,
-  `scope_id` bigint(20) unsigned,
+  `scope_id` bigint(20) DEFAULT NULL,
   `scope` varchar(40) DEFAULT NULL,
   `access_type` varchar(40) DEFAULT NULL,
   `permission`  varchar(40) NOT NULL COMMENT 'Allow or Deny',

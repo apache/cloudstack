@@ -24,6 +24,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.acl.AclPolicyPermission.Permission;
 import org.apache.cloudstack.acl.AclPolicyPermissionVO;
 import org.apache.cloudstack.acl.PermissionScope;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -51,6 +52,7 @@ public class AclPolicyPermissionDaoImpl extends GenericDaoBase<AclPolicyPermissi
         fullSearch.and("scopeId", fullSearch.entity().getScopeId(), SearchCriteria.Op.EQ);
         fullSearch.and("action", fullSearch.entity().getAction(), SearchCriteria.Op.EQ);
         fullSearch.and("permission", fullSearch.entity().getPermission(), SearchCriteria.Op.EQ);
+        fullSearch.and("accessType", fullSearch.entity().getAccessType(), SearchCriteria.Op.EQ);
         fullSearch.done();
 
         actionScopeSearch = createSearchBuilder();
@@ -98,6 +100,16 @@ public class AclPolicyPermissionDaoImpl extends GenericDaoBase<AclPolicyPermissi
         sc.setParameters("policyId", policyId);
         sc.setParameters("entityType", entityType);
         sc.setParameters("action", action);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<AclPolicyPermissionVO> listByPolicyAccessAndEntity(long policyId, AccessType accessType,
+            String entityType) {
+        SearchCriteria<AclPolicyPermissionVO> sc = fullSearch.create();
+        sc.setParameters("policyId", policyId);
+        sc.setParameters("entityType", entityType);
+        sc.setParameters("accessType", accessType);
         return listBy(sc);
     }
 
