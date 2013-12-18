@@ -58,7 +58,10 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
             " and store_role = ? and volume_id = ? and state = 'Ready'" +
             " order by created DESC " +
             " limit 1";
-
+    private final String findLatestSnapshot = "select store_id, store_role, snapshot_id from cloud.snapshot_store_ref where " +
+            " store_role = ? and volume_id = ? and state = 'Ready'" +
+            " order by created DESC " +
+            " limit 1";
 
 
     @Override
@@ -187,6 +190,33 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         sc.setParameters("snapshot_id", snapshotId);
         sc.setParameters("store_role", role);
         return findOneBy(sc);
+    }
+
+    @Override
+    public SnapshotDataStoreVO findLatestSnapshotForVolume(Long volumeId, DataStoreRole role) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = txn.prepareStatement(findLatestSnapshot);
+            pstmt.setString(1, role.toString());
+            pstmt.setLong(2, volumeId);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long sid = rs.getLong(1);
+                long snid = rs.getLong(3);
+                return findByStoreSnapshot(role, sid, snid);
+            }
+        } catch (SQLException e) {
+            s_logger.debug("Failed to find parent snapshot: " + e.toString());
+        } finally {
+            try {
+                if (pstmt != null)
+                    pstmt.close();
+            } catch (SQLException e) {
+            }
+        }
+        return null;
     }
 
     @Override

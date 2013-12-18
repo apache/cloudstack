@@ -50,4 +50,6 @@ StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Even
     List<SnapshotDataStoreVO> listOnCache(long snapshotId);
 
     void updateStoreRoleToCache(long storeId);
+
+    SnapshotDataStoreVO findLatestSnapshotForVolume(Long volumeId, DataStoreRole role);
 }

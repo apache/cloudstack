@@ -248,6 +248,7 @@ public enum Config {
     XenGuestNetwork("Hidden", ManagementServer.class, String.class, "xen.guest.network.device", null, "Specify for guest network name label", null),
     XenMaxNics("Advanced", AgentManager.class, Integer.class, "xen.nics.max", "7", "Maximum allowed nics for Vms created on Xen", null),
     XenPVdriverVersion("Advanced", ManagementServer.class, String.class, "xen.pvdriver.version", "xenserver61", "default Xen PV driver version for registered template, valid value:xenserver56,xenserver61 ", "xenserver56,xenserver61"),
+    XenServerHotFix("Advanced", ManagementServer.class, Boolean.class, "xen.hotfix.enabled", "false", "Enable/Disable xenserver hot fix", null),
 
     // VMware
     VmwareUseNexusVSwitch("Network", ManagementServer.class, Boolean.class, "vmware.use.nexus.vswitch", "false", "Enable/Disable Cisco Nexus 1000v vSwitch in VMware environment", null),

@@ -91,7 +91,7 @@ import com.cloud.utils.storage.encoding.Decoder;
 public class XenServerStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
     protected CitrixResourceBase hypervisorResource;
-    private String BaseMountPointOnHost = "/var/run/cloud_mount";
+    protected String BaseMountPointOnHost = "/var/run/cloud_mount";
 
     public XenServerStorageProcessor(CitrixResourceBase resource) {
         hypervisorResource = resource;
@@ -782,7 +782,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
         }
     }
 
-    private boolean IsISCSI(String type) {
+    protected boolean IsISCSI(String type) {
         return SRType.LVMOHBA.equals(type) || SRType.LVMOISCSI.equals(type) || SRType.LVM.equals(type) ;
     }
 
@@ -1079,7 +1079,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
         return lfilename;
     }
 
-    private String backupSnapshotToS3(final Connection connection, final S3TO s3, final String srUuid, final String folder, final String snapshotUuid,
+    protected String backupSnapshotToS3(final Connection connection, final S3TO s3, final String srUuid, final String folder, final String snapshotUuid,
             final Boolean iSCSIFlag, final int wait) {
 
         final String filename = iSCSIFlag ? "VHD-" + snapshotUuid
@@ -1161,7 +1161,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
         throw new CloudRuntimeException(errMsg);
     }
 
-    private boolean destroySnapshotOnPrimaryStorageExceptThis(Connection conn, String volumeUuid, String avoidSnapshotUuid){
+    protected boolean destroySnapshotOnPrimaryStorageExceptThis(Connection conn, String volumeUuid, String avoidSnapshotUuid){
         try {
             VDI volume = getVDIbyUuid(conn, volumeUuid);
             if (volume == null) {

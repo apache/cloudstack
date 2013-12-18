@@ -1278,6 +1278,17 @@ public class Types
                 String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
                 throw new Types.CrlNameInvalid(p1);
             }
+            if (ErrorDescription[0].equals("VDI_NOT_SPARSE"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                throw new Types.VdiNotSparse(p1);
+            }
+            if (ErrorDescription[0].equals("VDI_TOO_SMALL"))
+            {
+                String p1 = ErrorDescription.length > 1 ? ErrorDescription[1] : "";
+                String p2 = ErrorDescription.length > 2 ? ErrorDescription[2] : "";
+                throw new Types.VdiTooSmall(p1, p2);
+            }
             if (ErrorDescription[0].equals("HOST_POWER_ON_MODE_DISABLED"))
             {
                 throw new Types.HostPowerOnModeDisabled();
@@ -7568,6 +7579,45 @@ public class Types
          */
         public VdiNotInMap(String vdi) {
             super("This VDI was not mapped to a destination SR in VM.migrate_send operation");
+            this.vdi = vdi;
+        }
+
+    }
+
+    /**
+     * The VDI is too small. Please resize it to at least the minimum size.
+     */
+    public static class VdiTooSmall extends XenAPIException {
+        public final String vdi;
+        public final String minimumSize;
+
+        /**
+         * Create a new VdiTooSmall
+         *
+         * @param vdi
+         * @param minimumSize
+         */
+        public VdiTooSmall(String vdi, String minimumSize) {
+            super("The VDI is too small. Please resize it to at least the minimum size.");
+            this.vdi = vdi;
+            this.minimumSize = minimumSize;
+        }
+
+    }
+
+    /**
+     * The VDI is not stored using a sparse format. It is not possible to query and manipulate only the changed blocks (or 'block differences' or 'disk deltas') between two VDIs. Please select a VDI which uses a sparse-aware technology such as VHD.
+     */
+    public static class VdiNotSparse extends XenAPIException {
+        public final String vdi;
+
+        /**
+         * Create a new VdiNotSparse
+         *
+         * @param vdi
+         */
+        public VdiNotSparse(String vdi) {
+            super("The VDI is not stored using a sparse format. It is not possible to query and manipulate only the changed blocks (or 'block differences' or 'disk deltas') between two VDIs. Please select a VDI which uses a sparse-aware technology such as VHD.");
             this.vdi = vdi;
         }
 
