@@ -756,12 +756,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         // Verify input parameters
         NicSecondaryIpVO secIpVO = _nicSecondaryIpDao.findById(ipAddressId);
         if (secIpVO == null) {
-            throw new InvalidParameterValueException("Unable to find ip address by id");
+            throw new InvalidParameterValueException("Unable to find secondary ip address by id");
         }
 
         VirtualMachine vm = _userVmDao.findById(secIpVO.getVmId());
         if (vm == null) {
-            throw new InvalidParameterValueException("There is no vm with the nic");
+            throw new InvalidParameterValueException("There is no vm with the given secondary ip");
         }
         // verify permissions
         _accountMgr.checkAccess(caller, null, true, vm);
@@ -790,7 +790,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             throw new InvalidParameterValueException("Invalid zone Id is given");
         }
 
-        s_logger.debug("Calling the ip allocation ...");
+        s_logger.debug("Calling secondary ip "+ secIpVO.getIp4Address() + " release ");
         if (dc.getNetworkType() == NetworkType.Advanced && network.getGuestType() == Network.GuestType.Isolated) {
             //check PF or static NAT is configured on this ip address
             String secondaryIp = secIpVO.getIp4Address();
@@ -812,7 +812,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
                     publicIpVO.getId());
             }
         } else if (dc.getNetworkType() == NetworkType.Basic || ntwkOff.getGuestType() == Network.GuestType.Shared) {
-            final IPAddressVO ip = _ipAddressDao.findByIpAndNetworkId(secIpVO.getNetworkId(), secIpVO.getIp4Address());
+            final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(secIpVO.getNetworkId(), secIpVO.getIp4Address());
             if (ip != null) {
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
