@@ -42,6 +42,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.deploy.DeploymentPlanner;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -555,7 +556,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public void start(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy) {
         try {
-            advanceStart(vmUuid, params, planToDeploy);
+            advanceStart(vmUuid, params, planToDeploy, null);
         } catch (ConcurrentOperationException e) {
             throw new CloudRuntimeException("Unable to start a VM due to concurrent operation", e).add(VirtualMachine.class, vmUuid);
         } catch (InsufficientCapacityException e) {
@@ -696,20 +697,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params)
+    public void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlanner planner)
     	throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
 
-        advanceStart(vmUuid, params, null);
+        advanceStart(vmUuid, params, null, planner);
     }
 
     @Override
-    public void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
+    public void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy, DeploymentPlanner planner) throws InsufficientCapacityException,
 		ConcurrentOperationException, ResourceUnavailableException {
 
     	AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
     		// avoid re-entrance
-    		orchestrateStart(vmUuid, params, planToDeploy);
+    		orchestrateStart(vmUuid, params, planToDeploy, planner);
     	} else {
     	    Outcome<VirtualMachine> outcome = startVmThroughJobQueue(vmUuid, params, planToDeploy);
 
@@ -731,9 +732,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	}
     }
 
-    private void orchestrateStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
-    	ConcurrentOperationException, ResourceUnavailableException {
 
+    @Override
+    public void orchestrateStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy, DeploymentPlanner planner)
+            throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+        
     	CallContext cctxt = CallContext.current();
         Account account = cctxt.getCallingAccount();
         User caller = cctxt.getCallingUser();
@@ -848,7 +851,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, owner, params);
                 DeployDestination dest = null;
                 try {
-                    dest = _dpMgr.planDeployment(vmProfile, plan, avoids);
+                    dest = _dpMgr.planDeployment(vmProfile, plan, avoids, planner);
                 } catch (AffinityConflictException e2) {
                     s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
                     throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
@@ -2035,7 +2038,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public void migrateAway(String vmUuid, long srcHostId) throws InsufficientServerCapacityException {
+    public void migrateAway(String vmUuid, long srcHostId, DeploymentPlanner planner) throws InsufficientServerCapacityException {
         VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
         if (vm == null) {
             s_logger.debug("Unable to find a VM for " + vmUuid);
@@ -2068,7 +2071,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         while (true) {
 
             try {
-                dest = _dpMgr.planDeployment(profile, plan, excludes);
+                dest = _dpMgr.planDeployment(profile, plan, excludes, planner);
             } catch (AffinityConflictException e2) {
                 s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
                 throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
@@ -3390,7 +3393,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         DeployDestination dest = null;
 
         try {
-            dest = _dpMgr.planDeployment(profile, plan, excludes);
+            dest = _dpMgr.planDeployment(profile, plan, excludes, null);
         } catch (AffinityConflictException e2) {
             s_logger.warn("Unable to create deployment, affinity rules associted to the VM conflict", e2);
             throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
@@ -4714,7 +4717,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         assert (vm != null);
         if (work instanceof VmWorkStart) {
             VmWorkStart workStart = (VmWorkStart)work;
-            orchestrateStart(vm.getUuid(), workStart.getParams(), workStart.getPlan());
+            orchestrateStart(vm.getUuid(), workStart.getParams(), workStart.getPlan(), null);
             return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
         } else if (work instanceof VmWorkStop) {
             VmWorkStop workStop = (VmWorkStop)work;

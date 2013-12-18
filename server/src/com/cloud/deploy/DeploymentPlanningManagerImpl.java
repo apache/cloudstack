@@ -212,7 +212,7 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
     @Override
     public DeployDestination planDeployment(VirtualMachineProfile vmProfile,
-            DeploymentPlan plan, ExcludeList avoids) throws InsufficientServerCapacityException,
+            DeploymentPlan plan, ExcludeList avoids, DeploymentPlanner planner) throws InsufficientServerCapacityException,
             AffinityConflictException {
 
         // call affinitygroup chain
@@ -247,19 +247,21 @@ public class DeploymentPlanningManagerImpl extends ManagerBase implements Deploy
 
 
         ServiceOffering offering = vmProfile.getServiceOffering();
-        String plannerName = offering.getDeploymentPlanner();
-        if (plannerName == null) {
-            if (vm.getHypervisorType() == HypervisorType.BareMetal) {
-                plannerName = "BareMetalPlanner";
-            } else {
-                plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
+        if(planner == null){
+            String plannerName = offering.getDeploymentPlanner();
+            if (plannerName == null) {
+                if (vm.getHypervisorType() == HypervisorType.BareMetal) {
+                    plannerName = "BareMetalPlanner";
+                } else {
+                    plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
+                }
             }
-        }
-        DeploymentPlanner planner = null;
-        for (DeploymentPlanner plannerInList : _planners) {
-            if (plannerName.equals(plannerInList.getName())) {
-                planner = plannerInList;
-                break;
+
+            for (DeploymentPlanner plannerInList : _planners) {
+                if (plannerName.equals(plannerInList.getName())) {
+                    planner = plannerInList;
+                    break;
+                }
             }
         }
 

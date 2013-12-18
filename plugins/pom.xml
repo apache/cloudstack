@@ -32,6 +32,7 @@
     <module>deployment-planners/user-concentrated-pod</module>
     <module>deployment-planners/user-dispersing</module>
     <module>deployment-planners/implicit-dedication</module>
+    <module>ha-planners/skip-heurestics</module>
     <module>host-allocators/random</module>
     <module>dedicated-resources</module>
     <module>hypervisors/ovm</module>

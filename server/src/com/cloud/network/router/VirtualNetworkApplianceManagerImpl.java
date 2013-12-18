@@ -2664,7 +2664,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting router " + router);
         try {
-            _itMgr.advanceStart(router.getUuid(), params, planToDeploy);
+            _itMgr.advanceStart(router.getUuid(), params, planToDeploy, null);
         } catch (OperationTimedoutException e) {
             throw new ResourceUnavailableException("Starting router " + router + " failed! " + e.toString(), DataCenter.class, router.getDataCenterId());
         }
@@ -3433,9 +3433,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     protected boolean sendCommandsToRouter(final VirtualRouter router, Commands cmds) throws AgentUnavailableException {
-        if(!checkRouterVersion(router)){
+       /*if(!checkRouterVersion(router)){
             throw new CloudRuntimeException("Router requires upgrade. Unable to send command to router:" + router.getId());
-        }
+        }*/
         Answer[] answers = null;
         try {
             answers = _agentMgr.send(router.getHostId(), cmds);

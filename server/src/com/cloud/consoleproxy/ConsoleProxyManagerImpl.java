@@ -551,7 +551,7 @@ VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
             }
 
             if (proxy.getState() == VirtualMachine.State.Stopped) {
-                _itMgr.advanceStart(proxy.getUuid(), null);
+                _itMgr.advanceStart(proxy.getUuid(), null, null);
                 proxy = _consoleProxyDao.findById(proxy.getId());
             }
 
