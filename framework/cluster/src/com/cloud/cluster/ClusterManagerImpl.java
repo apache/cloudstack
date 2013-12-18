@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.cluster;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
@@ -25,6 +23,7 @@ import java.nio.channels.SocketChannel;
 import java.rmi.RemoteException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLNonTransientException;
 import java.sql.SQLRecoverableException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -42,18 +41,17 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.cluster.dao.ManagementServerHostPeerDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Profiler;
-import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -585,21 +583,15 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     }
 
                     if(isRootCauseConnectionRelated(e.getCause())) {
-                        s_logger.error("DB communication problem detected, fence it");
-                        queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeIsolated));
+                        invalidHeartbeatConnection();
                     }
-
-                    invalidHeartbeatConnection();
                 } catch(ActiveFencingException e) {
                     queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeIsolated));
                 } catch (Throwable e) {
                     s_logger.error("Unexpected exception in cluster heartbeat", e);
                     if(isRootCauseConnectionRelated(e.getCause())) {
-                        s_logger.error("DB communication problem detected, fence it");
-                        queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeIsolated));
+                        invalidHeartbeatConnection();
                     }
-
-                    invalidHeartbeatConnection();
                 } finally {
                     txn.transitToAutoManagedConnection(TransactionLegacy.CLOUD_DB);
                     txn.close("ClusterHeartbeat");
@@ -610,8 +602,8 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
     private boolean isRootCauseConnectionRelated(Throwable e) {
         while (e != null) {
-            if (e instanceof SQLRecoverableException) {
-                return true;
+            if (e instanceof SQLRecoverableException || e instanceof SQLNonTransientException) {
+                    return true;
             }
 
             e = e.getCause();
@@ -634,6 +626,9 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
             Connection conn = TransactionLegacy.getStandaloneConnection();
             if (conn != null) {
                 _heartbeatConnection.reset(TransactionLegacy.getStandaloneConnection());
+            } else {
+                s_logger.error("DB communication problem detected, fence it");
+                queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeIsolated));
             }
         }
     }
