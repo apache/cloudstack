@@ -17,5 +17,5 @@
 package streamer;
 
 public enum Direction {
-  IN, OUT
+    IN, OUT
 }

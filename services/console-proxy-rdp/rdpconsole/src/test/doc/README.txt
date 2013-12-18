@@ -30,3 +30,5 @@ fingerprints.
 
 File rdp-key.pem contains private key in PEM format for use with
 Wireshark.
+
+As alternative, mimikatz can be used to extract RDP private key.

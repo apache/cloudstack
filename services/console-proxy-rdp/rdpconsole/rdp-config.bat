@@ -16,7 +16,7 @@ rem specific language governing permissions and limitations
 rem under the License.
 
 rem 
-rem Configure and start RDP service.
+rem Configure and start RDP service. Run this script on RDP server.
 rem 
  
 rem Turn off firewall
