@@ -2030,7 +2030,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
             boolean useExtDns = !dnsProvided;
             /* For backward compatibility */
-            useExtDns = UseExternalDnsServers.valueIn(dc.getId());
+            useExtDns = useExtDns || UseExternalDnsServers.valueIn(dc.getId());
 
             if (useExtDns) {
                 buf.append(" useextdns=true");
