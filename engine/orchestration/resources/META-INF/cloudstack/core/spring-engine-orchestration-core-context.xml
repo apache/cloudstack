@@ -75,17 +75,18 @@
       
     <bean id= "vmWorkJobDispatcher" class="com.cloud.vm.VmWorkJobDispatcher">
         <property name="name">
-            <util:constant static-field="com.cloud.vm.VmWorkJobDispatcher.VM_WORK_JOB_DISPATCHER"/>
+            <util:constant static-field="com.cloud.vm.VmWorkConstants.VM_WORK_JOB_DISPATCHER"/>
         </property>
         <property name="handlers">
             <map>
                 <entry key="VirtualMachineManagerImpl" value-ref="clusteredVirtualMachineManagerImpl" />
+                <entry key="VolumeApiServiceImpl" value-ref="volumeApiServiceImpl" />
             </map>
         </property>
     </bean>
     <bean id= "vmWorkJobWakeupDispatcher" class="com.cloud.vm.VmWorkJobWakeupDispatcher">
         <property name="name">
-            <util:constant static-field="com.cloud.vm.VmWorkJobDispatcher.VM_WORK_JOB_WAKEUP_DISPATCHER"/>
+            <util:constant static-field="com.cloud.vm.VmWorkConstants.VM_WORK_JOB_WAKEUP_DISPATCHER"/>
         </property>
     </bean>
     

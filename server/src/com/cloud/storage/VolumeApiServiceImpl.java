@@ -26,7 +26,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import com.cloud.uuididentity.UUIDManager;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.BaseCmd;
@@ -54,10 +53,17 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.Outcome;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
+import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
+import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
@@ -131,28 +137,37 @@ import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
 import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.VmDiskStatisticsDao;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Predicate;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.uuididentity.UUIDManager;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VmWork;
+import com.cloud.vm.VmWorkConstants;
+import com.cloud.vm.VmWorkJobHandler;
+import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
@@ -161,8 +176,11 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
-public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiService {
+public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiService, VmWorkJobHandler {
     private final static Logger s_logger = Logger.getLogger(VolumeApiServiceImpl.class);
+
+    public static final String VM_WORK_JOB_HANDLER = VolumeApiServiceImpl.class.getSimpleName();
+
     @Inject
     VolumeOrchestrationService _volumeMgr;
 
@@ -310,6 +328,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     protected HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     @Inject
     StorageManager storageMgr;
+
+    @Inject
+    protected AsyncJobManager _jobMgr;
+
+    // TODO
+    static final ConfigKey<Boolean> VmJobEnabled = new ConfigKey<Boolean>("Advanced",
+            Boolean.class, "vm.job.enabled", "false",
+            "True to enable new VM sync model. false to use the old way", false);
+    static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced",
+            Long.class, "vm.job.check.interval", "3000",
+            "Interval in milliseconds to check if the job is complete", false);
+
     private int _customDiskOfferingMinSize = 1;
     private final int _customDiskOfferingMaxSize = 1024;
     private long _maxVolumeSizeInGb;
@@ -1034,9 +1064,35 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     public Volume attachVolumeToVM(AttachVolumeCmd command) {
-        Long vmId = command.getVirtualMachineId();
-        Long volumeId = command.getId();
-        Long deviceId = command.getDeviceId();
+
+        AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+        if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+            // avoid re-entrance
+            return orchestrateAttachVolumeToVM(command.getVirtualMachineId(), command.getId(), command.getDeviceId());
+        } else {
+            Outcome<Volume> outcome = attachVolumeToVmThroughJobQueue(command.getVirtualMachineId(), command.getId(), command.getDeviceId());
+
+            Volume vol = null;
+            try {
+                vol = outcome.get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Operation is interrupted", e);
+            } catch (java.util.concurrent.ExecutionException e) {
+                throw new RuntimeException("Execution excetion", e);
+            }
+
+            Throwable jobException = retrieveExecutionException(outcome.getJob());
+            if (jobException != null) {
+                if (jobException instanceof ConcurrentOperationException)
+                    throw (ConcurrentOperationException)jobException;
+                else
+                    throw new RuntimeException("Unexpected exception", jobException);
+            }
+            return vol;
+        }
+    }
+
+    private Volume orchestrateAttachVolumeToVM(Long vmId, Long volumeId, Long deviceId) {
         return attachVolumeToVM(vmId, volumeId, deviceId);
     }
 
@@ -1203,6 +1259,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             volume.setPath(path);
         }
 
+        if (displayVolume != null) {
+            volume.setDisplayVolume(displayVolume);
+        }
+
         if (state != null) {
             try {
                 Volume.State volumeState = Volume.State.valueOf(state);
@@ -1304,6 +1364,38 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             _asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volumeId);
             _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, volumeId.toString());
         }
+
+        AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+        if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+            // avoid re-entrance
+            return orchestrateDetachVolumeFromVM(vmId, volumeId);
+        } else {
+            Outcome<Volume> outcome = detachVolumeFromVmThroughJobQueue(vmId, volumeId);
+
+            Volume vol = null;
+            try {
+                vol = outcome.get();
+            } catch (InterruptedException e) {
+                throw new RuntimeException("Operation is interrupted", e);
+            } catch (java.util.concurrent.ExecutionException e) {
+                throw new RuntimeException("Execution excetion", e);
+            }
+
+            Throwable jobException = retrieveExecutionException(outcome.getJob());
+            if (jobException != null) {
+                if (jobException instanceof ConcurrentOperationException)
+                    throw (ConcurrentOperationException)jobException;
+                else
+                    throw new RuntimeException("Unexpected exception", jobException);
+            }
+            return vol;
+        }
+    }
+
+    private Volume orchestrateDetachVolumeFromVM(long vmId, long volumeId) {
+
+        Volume volume = _volumeDao.findById(volumeId);
+        VMInstanceVO vm = _vmInstanceDao.findById(vmId);
 
         String errorMsg = "Failed to detach volume: " + volume.getName() + " from VM: " + vm.getHostName();
         boolean sendCommand = (vm.getState() == State.Running);
@@ -1850,4 +1942,176 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _storagePoolAllocators = storagePoolAllocators;
     }
 
+    public Throwable retrieveExecutionException(AsyncJob job) {
+        assert (job != null);
+        assert (job.getDispatcher().equals(VmWorkConstants.VM_WORK_JOB_DISPATCHER));
+
+        AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, job.getId());
+        if (jobVo != null && jobVo.getResult() != null) {
+            Object obj = JobSerializerHelper.fromSerializedString(job.getResult());
+
+            if (obj != null && obj instanceof Throwable)
+                return (Throwable)obj;
+        }
+        return null;
+    }
+
+    public class VmJobSyncOutcome extends OutcomeImpl<Volume> {
+        private long _volumeId;
+
+        public VmJobSyncOutcome(final AsyncJob job, final long volumeId) {
+            super(Volume.class, job, VmJobCheckInterval.value(), new Predicate() {
+                @Override
+                public boolean checkCondition() {
+                    AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, job.getId());
+                    assert (jobVo != null);
+                    if (jobVo == null || jobVo.getStatus() != JobInfo.Status.IN_PROGRESS)
+                        return true;
+
+                    return false;
+                }
+            }, AsyncJob.Topics.JOB_STATE);
+            _volumeId = volumeId;
+        }
+
+        @Override
+        protected Volume retrieve() {
+            return _volumeDao.findById(_volumeId);
+        }
+    }
+
+    public Outcome<Volume> attachVolumeToVmThroughJobQueue(final Long vmId, final Long volumeId, final Long deviceId) {
+
+        final CallContext context = CallContext.current();
+        final User callingUser = context.getCallingUser();
+        final Account callingAccount = context.getCallingAccount();
+
+        final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                VmWorkJobVO workJob = null;
+
+                _vmInstanceDao.lockRow(vm.getId(), true);
+                workJob = new VmWorkJobVO(context.getContextId());
+
+                workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+                workJob.setCmd(VmWorkAttachVolume.class.getName());
+
+                workJob.setAccountId(callingAccount.getId());
+                workJob.setUserId(callingUser.getId());
+                workJob.setStep(VmWorkJobVO.Step.Starting);
+                workJob.setVmType(vm.getType());
+                workJob.setVmInstanceId(vm.getId());
+
+                // save work context info (there are some duplications)
+                VmWorkAttachVolume workInfo = new VmWorkAttachVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
+                        VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, deviceId);
+                workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+                _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+
+                // Transaction syntax sugar has a cost here
+                context.putContextParameter("workJob", workJob);
+                context.putContextParameter("jobId", new Long(workJob.getId()));
+            }
+        });
+
+        final long jobId = (Long)context.getContextParameter("jobId");
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
+
+        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+                volumeId);
+    }
+
+    public Outcome<Volume> detachVolumeFromVmThroughJobQueue(final Long vmId, final Long volumeId) {
+
+        final CallContext context = CallContext.current();
+        final User callingUser = context.getCallingUser();
+        final Account callingAccount = context.getCallingAccount();
+
+        final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                VmWorkJobVO workJob = null;
+
+                _vmInstanceDao.lockRow(vm.getId(), true);
+                workJob = new VmWorkJobVO(context.getContextId());
+
+                workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+                workJob.setCmd(VmWorkDetachVolume.class.getName());
+
+                workJob.setAccountId(callingAccount.getId());
+                workJob.setUserId(callingUser.getId());
+                workJob.setStep(VmWorkJobVO.Step.Starting);
+                workJob.setVmType(vm.getType());
+                workJob.setVmInstanceId(vm.getId());
+
+                // save work context info (there are some duplications)
+                VmWorkDetachVolume workInfo = new VmWorkDetachVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
+                        VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId);
+                workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+                _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+
+                // Transaction syntax sugar has a cost here
+                context.putContextParameter("workJob", workJob);
+                context.putContextParameter("jobId", new Long(workJob.getId()));
+            }
+        });
+
+        final long jobId = (Long)context.getContextParameter("jobId");
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
+
+        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+                volumeId);
+    }
+
+    @Override
+    public Pair<JobInfo.Status, String> handleVmWorkJob(AsyncJob job, VmWork work) throws Exception {
+        VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
+        if (vm == null) {
+            s_logger.info("Unable to find vm " + work.getVmId());
+        }
+        assert (vm != null);
+
+        if (work instanceof VmWorkAttachVolume) {
+
+            VmWorkAttachVolume attachWork = (VmWorkAttachVolume)work;
+
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Execute Attach-Volume within VM work job context. vmId: " + attachWork.getVmId()
+                        + ", volId: " + attachWork.getVolumeId() + ", deviceId: " + attachWork.getDeviceId());
+
+            orchestrateAttachVolumeToVM(attachWork.getVmId(), attachWork.getVolumeId(), attachWork.getDeviceId());
+
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Done executing Attach-Volume within VM work job context. vmId: " + attachWork.getVmId()
+                        + ", volId: " + attachWork.getVolumeId() + ", deviceId: " + attachWork.getDeviceId());
+
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        } else if (work instanceof VmWorkDetachVolume) {
+            VmWorkDetachVolume detachWork = (VmWorkDetachVolume)work;
+
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Execute Detach-Volume within VM work job context. vmId: " + detachWork.getVmId()
+                        + ", volId: " + detachWork.getVolumeId());
+
+            orchestrateDetachVolumeFromVM(detachWork.getVmId(), detachWork.getVolumeId());
+
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Done executing Detach-Volume within VM work job context. vmId: " + detachWork.getVmId()
+                        + ", volId: " + detachWork.getVolumeId());
+
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        } else {
+            RuntimeException e = new RuntimeException("Unsupported VM work command: " + job.getCmd());
+            String exceptionJson = JobSerializerHelper.toSerializedString(e);
+            s_logger.error("Serialize exception object into json: " + exceptionJson);
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.FAILED, exceptionJson);
+        }
+    }
 }

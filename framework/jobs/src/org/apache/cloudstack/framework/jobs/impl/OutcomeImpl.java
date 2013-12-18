@@ -110,13 +110,11 @@ public class OutcomeImpl<T> implements Outcome<T> {
     @Override
     public void execute(Task<T> task) {
         // TODO Auto-generated method stub
-
     }
 
     @Override
     public void execute(Task<T> task, long wait, TimeUnit unit) {
         // TODO Auto-generated method stub
-
     }
 
     public Predicate getPredicate() {
