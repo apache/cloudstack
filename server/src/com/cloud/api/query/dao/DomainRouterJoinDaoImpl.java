@@ -82,6 +82,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
             String routerVersion = Version.trimRouterVersion(router.getTemplateVersion());
             routerResponse.setVersion(routerVersion);
             routerResponse.setRequiresUpgrade((Version.compare(routerVersion, VirtualNetworkApplianceService._minVRVersion) < 0));
+        } else {
+            routerResponse.setVersion("UNKNOWN");
+            routerResponse.setRequiresUpgrade(true);
         }
 
         if (caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
