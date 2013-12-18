@@ -715,6 +715,12 @@ setup_dnsmasq() {
   then
     [ $ETH0_IP ] && NS="$INTERNAL_DNS,$NS"
     [ $ETH0_IP6 ] && NS6="[::],$NS6"
+    # enable dns
+    sed -i -e "/^[#]*port=.*$/d" /etc/dnsmasq.conf
+  else
+    # disable dns
+    sed -i -e "/^[#]*port=.*$/d" /etc/dnsmasq.conf
+    echo "port=0" >> /etc/dnsmasq.conf
   fi
   NS=${NS%?}
   NS6=${NS6%?}
