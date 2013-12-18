@@ -497,11 +497,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                     answer = ep.sendMessage(cmd);
                 }
             }
-            // clean up cache entry in case of failure
-            if (answer == null || !answer.getResult()) {
-                if (cacheData != null) {
-                    cacheMgr.deleteCacheObject(cacheData);
-                }
+            // clean up cache entry
+            if (cacheData != null) {
+                cacheMgr.deleteCacheObject(cacheData);
             }
             return answer;
         } catch (Exception e) {
