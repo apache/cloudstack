@@ -219,7 +219,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
 
                     if (restart) {
 
-                        vmMgr.advanceStart(consoleProxy.getUuid(), null);
+                        vmMgr.advanceStart(consoleProxy.getUuid(), null, null);
                         // update work status
                         work.setStartedAfterMaintenance(true);
                         _storagePoolWorkDao.update(work.getId(), work);
@@ -245,7 +245,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     _storagePoolWorkDao.update(work.getId(), work);
 
                     if (restart) {
-                        vmMgr.advanceStart(secStrgVm.getUuid(), null);
+                        vmMgr.advanceStart(secStrgVm.getUuid(), null, null);
                         // update work status
                         work.setStartedAfterMaintenance(true);
                         _storagePoolWorkDao.update(work.getId(), work);
@@ -262,7 +262,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                     _storagePoolWorkDao.update(work.getId(), work);
 
                     if (restart) {
-                        vmMgr.advanceStart(domR.getUuid(), null);
+                        vmMgr.advanceStart(domR.getUuid(), null, null);
                         // update work status
                         work.setStartedAfterMaintenance(true);
                         _storagePoolWorkDao.update(work.getId(), work);
@@ -330,17 +330,21 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 // proxy
                 if (vmInstance.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
 
-                    ConsoleProxyVO consoleProxy = _consoleProxyDao.findById(vmInstance.getId());
-                    vmMgr.advanceStart(consoleProxy.getUuid(), null);
+                    ConsoleProxyVO consoleProxy = _consoleProxyDao
+                            .findById(vmInstance.getId());
+                    vmMgr.advanceStart(consoleProxy.getUuid(), null, null);
                     // update work queue
                     work.setStartedAfterMaintenance(true);
                     _storagePoolWorkDao.update(work.getId(), work);
                 }
 
                 // if the instance is of type ssvm, call the ssvm manager
-                if (vmInstance.getType().equals(VirtualMachine.Type.SecondaryStorageVm)) {
-                    SecondaryStorageVmVO ssVm = _secStrgDao.findById(vmInstance.getId());
-                    vmMgr.advanceStart(ssVm.getUuid(), null);
+                if (vmInstance.getType().equals(
+                        VirtualMachine.Type.SecondaryStorageVm)) {
+                    SecondaryStorageVmVO ssVm = _secStrgDao.findById(vmInstance
+                            .getId());
+                    vmMgr.advanceStart(ssVm.getUuid(), null, null);
+
                     // update work queue
                     work.setStartedAfterMaintenance(true);
                     _storagePoolWorkDao.update(work.getId(), work);
@@ -349,7 +353,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 // if the instance is of type ssvm, call the ssvm manager
                 if (vmInstance.getType().equals(VirtualMachine.Type.DomainRouter)) {
                     DomainRouterVO domR = _domrDao.findById(vmInstance.getId());
-                    vmMgr.advanceStart(domR.getUuid(), null);
+                    vmMgr.advanceStart(domR.getUuid(), null, null);
                     // update work queue
                     work.setStartedAfterMaintenance(true);
                     _storagePoolWorkDao.update(work.getId(), work);
@@ -359,7 +363,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
                 if (vmInstance.getType().equals(VirtualMachine.Type.User)) {
                     UserVmVO userVm = userVmDao.findById(vmInstance.getId());
 
-                    vmMgr.advanceStart(userVm.getUuid(), null);                        // update work queue
+                    vmMgr.advanceStart(userVm.getUuid(), null, null);                        // update work queue
                     work.setStartedAfterMaintenance(true);
                     _storagePoolWorkDao.update(work.getId(), work);
                 }

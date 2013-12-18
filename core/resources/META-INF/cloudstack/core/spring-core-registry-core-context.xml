@@ -77,6 +77,11 @@
         <property name="excludeKey" value="deployment.planners.exclude" />
     </bean>
 
+    <bean id="haPlannersRegistry"
+          class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="ha.planners.exclude" />
+    </bean>
+
     <bean id="podAllocatorsRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="excludeKey" value="pod.allocators.exclude" />

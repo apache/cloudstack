@@ -258,7 +258,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     public SecondaryStorageVmVO startSecStorageVm(long secStorageVmId) {
         try {
             SecondaryStorageVmVO secStorageVm = _secStorageVmDao.findById(secStorageVmId);
-            _itMgr.advanceStart(secStorageVm.getUuid(), null);
+            _itMgr.advanceStart(secStorageVm.getUuid(), null, null);
             return _secStorageVmDao.findById(secStorageVm.getId());
         } catch (StorageUnavailableException e) {
             s_logger.warn("Exception while trying to start secondary storage vm", e);

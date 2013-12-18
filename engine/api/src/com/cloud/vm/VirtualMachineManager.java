@@ -93,10 +93,13 @@ public interface VirtualMachineManager extends Manager {
 
     boolean stateTransitTo(VirtualMachine vm, VirtualMachine.Event e, Long hostId) throws NoTransitionException;
 
-    void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException,
-        ConcurrentOperationException, OperationTimedoutException;
+    void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
+            ConcurrentOperationException, OperationTimedoutException;
 
-    void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy) throws InsufficientCapacityException,
+    void advanceStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy, DeploymentPlanner planner) throws InsufficientCapacityException,
+            ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
+
+    void orchestrateStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy, DeploymentPlanner planner) throws InsufficientCapacityException,
         ResourceUnavailableException, ConcurrentOperationException, OperationTimedoutException;
 
     void advanceStop(String vmUuid, boolean cleanupEvenIfUnableToStop) throws ResourceUnavailableException, OperationTimedoutException, ConcurrentOperationException;
@@ -105,7 +108,7 @@ public interface VirtualMachineManager extends Manager {
 
     void destroy(String vmUuid) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 
-    void migrateAway(String vmUuid, long hostId) throws InsufficientServerCapacityException;
+    void migrateAway(String vmUuid, long hostId, DeploymentPlanner planner) throws InsufficientServerCapacityException;
 
     void migrate(String vmUuid, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException;
 
