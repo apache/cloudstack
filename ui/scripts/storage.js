@@ -569,7 +569,7 @@
                                     desc: 'message.action.take.snapshot',
                                     fields: {
                                         quiescevm: {
-                                            label: 'Quiesce VM',
+                                            label: 'label.quiesce.vm',
                                             isBoolean: true,
                                             isHidden: function(args) {
                                                 var hidden = true;

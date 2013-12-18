@@ -14481,14 +14481,14 @@
 
                                     //SMB                                           
                                     smbUsername: {
-                                    	label: 'SMB Username',
+                                    	label: 'label.smb.username',
                                     	validation: {
                                             required: true
                                         },
                                         isHidden: true
                                     },
                                     smbPassword: {
-                                    	label: 'SMB Password',
+                                    	label: 'label.smb.password',
                                     	isPassword: true,
                                     	validation: {
                                             required: true
@@ -14496,7 +14496,7 @@
                                         isHidden: true
                                     },
                                     smbDomain: {
-                                    	label: 'SMB Domain',
+                                    	label: 'label.smb.domain',
                                     	validation: {
                                             required: true
                                         },
@@ -15851,20 +15851,20 @@
                                             
                                             //SMB (begin)                                            
                                             smbUsername: {
-                                            	label: 'SMB Username',
+                                            	label: 'label.smb.username',
                                             	validation: {
                                                     required: true
                                                 }
                                             },
                                             smbPassword: {
-                                            	label: 'SMB Password',
+                                            	label: 'label.smb.password',
                                             	isPassword: true,
                                             	validation: {
                                                     required: true
                                                 }
                                             },
                                             smbDomain: {
-                                            	label: 'SMB Domain',
+                                            	label: 'label.smb.domain',
                                             	validation: {
                                                     required: true
                                                 }
