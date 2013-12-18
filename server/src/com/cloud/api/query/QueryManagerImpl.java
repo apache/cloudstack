@@ -424,8 +424,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             ssc.addOr("email", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("state", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("accountName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("type", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("accountState", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("accountType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
             sc.addAnd("username", SearchCriteria.Op.SC, ssc);
         }
