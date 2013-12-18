@@ -25,6 +25,10 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script type="text/javascript">
 dictionary = {
+'label.quiesce.vm': '<fmt:message key="label.quiesce.vm" />',
+'label.smb.username': '<fmt:message key="label.smb.username" />',
+'label.smb.password': '<fmt:message key="label.smb.password" />',
+'label.smb.domain': '<fmt:message key="label.smb.domain" />',
 'label.hypervisors': '<fmt:message key="label.hypervisors" />',
 'label.home': '<fmt:message key="label.home" />',
 'label.sockets': '<fmt:message key="label.sockets" />',

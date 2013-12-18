@@ -43,7 +43,7 @@
                         isChecked: false
                     },
                     quiescevm: {
-                        label: 'Quiesce VM',
+                        label: 'label.quiesce.vm',
                         isBoolean: true,
                         isChecked: false
                     }
