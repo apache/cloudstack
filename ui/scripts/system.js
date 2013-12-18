@@ -14514,7 +14514,7 @@
 
 
                                     hypervisor: {
-                                        label: 'Hypervisor',
+                                        label: 'label.hypervisor',
                                         isHidden: true,
                                         select: function(args) {
                                             var items = [];
@@ -14535,7 +14535,7 @@
                                     },
 
                                     zoneid: {
-                                        label: 'Zone',
+                                        label: 'label.zone',
                                         docID: 'helpPrimaryStorageZone',
                                         validation: {
                                             required: true
@@ -16478,7 +16478,7 @@
                                             },
 
                                             createNfsCache: {
-                                                label: 'Create NFS Secondary Staging Store',
+                                                label: 'label.create.nfs.secondary.staging.store',
                                                 isBoolean: true,
                                                 isChecked: true
                                             },

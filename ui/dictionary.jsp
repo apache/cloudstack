@@ -25,6 +25,17 @@ under the License.
 <% long now = System.currentTimeMillis(); %>
 <script type="text/javascript">
 dictionary = {
+'label.port': '<fmt:message key="label.port" />',
+'label.remove.ldap': '<fmt:message key="label.remove.ldap" />',
+'message.remove.ldap': '<fmt:message key="message.remove.ldap" />',
+'message.configure.ldap': '<fmt:message key="message.configure.ldap" />',
+'label.configure.ldap': '<fmt:message key="label.configure.ldap" />',
+'label.ldap.port': '<fmt:message key="label.ldap.port" />',
+'label.ldap.configuration': '<fmt:message key="label.ldap.configuration" />',
+'label.create.nfs.secondary.staging.store': '<fmt:message key="label.create.nfs.secondary.staging.store" />',
+'label.volatile': '<fmt:message key="label.volatile" />',
+'label.planner.mode': '<fmt:message key="label.planner.mode" />',
+'label.deployment.planner': '<fmt:message key="label.deployment.planner" />',
 'label.quiesce.vm': '<fmt:message key="label.quiesce.vm" />',
 'label.smb.username': '<fmt:message key="label.smb.username" />',
 'label.smb.password': '<fmt:message key="label.smb.password" />',

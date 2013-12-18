@@ -101,16 +101,16 @@
             },
             ldapConfiguration: {
                 type: 'select',
-                title: 'LDAP Configuration',
+                title: 'label.ldap.configuration',
                 listView: {
                     id: 'ldap',
-                    label: 'LDAP Configuration',
+                    label: 'label.ldap.configuration',
                     fields: {
                         hostname: {
-                            label: 'Hostname'
+                            label: 'label.host.name'
                         },
                         port: {
-                            label: 'LDAP Port'
+                            label: 'label.ldap.port'
                         }
                     },
                     dataProvider: function(args) {
@@ -134,13 +134,13 @@
                         name: 'label.details',
                         actions: {
                             remove: {
-                                label: 'Remove LDAP',
+                                label: 'label.remove.ldap',
                                 messages: {
                                     notification: function(args) {
-                                        return 'LDAP Configuration Deleted';
+                                        return 'label.remove.ldap';
                                     },
                                     confirm: function() {
-                                        return 'Are you sure you want to delete the LDAP configuration?';
+                                        return 'message.remove.ldap';
                                     }
                                 },
                                 action: function(args) {
@@ -156,13 +156,13 @@
                         },
                         tabs: {
                             details: {
-                                title: 'LDAP Configuration Details',
+                                title: 'label.ldap.configuration',
                                 fields: [{
                                     hostname: {
-                                        label: 'Hostname'
+                                        label: 'label.host.name'
                                     },
                                     port: {
-                                        label: 'Port'
+                                        label: 'label.port'
                                     }
                                 }],
                                 dataProvider: function(args) {
@@ -185,27 +185,26 @@
                     },
                     actions: {
                         add: {
-                            label: 'Configure LDAP',
+                            label: 'label.configure.ldap',
                             messages: {
                                 confirm: function(args) {
-                                    return 'Do you really want to configure LDAP ? ';
+                                    return 'message.configure.ldap';
                                 },
                                 notification: function(args) {
-                                    console.log(args);
-                                    return 'Successfully added a new LDAP server';
+                                    return 'label.configure.ldap';
                                 }
                             },
                             createForm: {
-                                title: 'Configure LDAP',
+                                title: 'label.configure.ldap',
                                 fields: {
                                     hostname: {
-                                        label: 'Hostname',
+                                        label: 'label.host.name',
                                         validation: {
                                             required: true
                                         }
                                     },
                                     port: {
-                                        label: 'Port',
+                                        label: 'label.port',
                                         validation: {
                                             required: true
                                         }

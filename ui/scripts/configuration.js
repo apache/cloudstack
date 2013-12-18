@@ -197,14 +197,14 @@
                                     },
 
                                     isVolatile: {
-                                        label: 'isVolatile',
+                                        label: 'label.volatile',
                                         isBoolean: true,
                                         isChecked: false
 
                                     },
 
                                     deploymentPlanner: {
-                                        label: 'Deployment Planner',
+                                        label: 'label.deployment.planner',
                                         select: function(args) {
                                             $.ajax({
                                                 url: createURL('listDeploymentPlanners'),
@@ -233,7 +233,7 @@
 
                                     // plannerKey:{label:'Planner Key' , docID:'helpImplicitPlannerKey'},
                                     plannerMode: {
-                                        label: 'Planner Mode',
+                                        label: 'label.planner.mode',
                                         select: function(args) {
                                             var items = [];
                                             items.push({
