@@ -177,11 +177,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-       <groupId>org.apache.cloudstack</groupId>
-       <artifactId>cloud-plugin-planner-skip-heurestics</artifactId>
-       <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-planner-user-concentrated-pod</artifactId>
       <version>${project.version}</version>

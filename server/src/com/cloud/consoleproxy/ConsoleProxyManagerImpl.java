@@ -549,7 +549,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
 
             if (proxy.getState() == VirtualMachine.State.Stopped) {
-                _itMgr.advanceStart(proxy.getUuid(), null, null);
+                _itMgr.advanceStart(proxy.getUuid(), null);
                 proxy = _consoleProxyDao.findById(proxy.getId());
             }
 

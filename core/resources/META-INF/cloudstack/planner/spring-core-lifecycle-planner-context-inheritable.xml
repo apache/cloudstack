@@ -38,9 +38,4 @@
             value="org.apache.cloudstack.affinity.AffinityGroupProcessor" />
     </bean>
 
-    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
-        <property name="registry" ref="haPlannersRegistry" />
-        <property name="typeClass" value="com.cloud.deploy.HAPlanner" />
-    </bean>
-
 </beans>

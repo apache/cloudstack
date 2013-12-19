@@ -189,7 +189,7 @@ public class VMEntityManagerImpl implements VMEntityManager {
         while (true) {
             DeployDestination dest = null;
             try {
-                dest = _dpMgr.planDeployment(vmProfile, plan, exclude, null);
+                dest = _dpMgr.planDeployment(vmProfile, plan, exclude);
             } catch (AffinityConflictException e) {
                 throw new CloudRuntimeException("Unable to create deployment, affinity rules associted to the VM conflict");
             }

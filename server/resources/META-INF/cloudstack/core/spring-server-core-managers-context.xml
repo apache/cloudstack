@@ -65,7 +65,6 @@
     <bean id="highAvailabilityManagerExtImpl" class="com.cloud.ha.HighAvailabilityManagerExtImpl">
         <property name="investigators" value="#{haInvestigatorsRegistry.registered}" />
         <property name="fenceBuilders" value="#{haFenceBuildersRegistry.registered}" />
-        <property name="haPlanners" value="#{haPlannersRegistry.registered}" />
     </bean>
 
     <bean id="ipAddressManagerImpl" class="com.cloud.network.IpAddressManagerImpl">
