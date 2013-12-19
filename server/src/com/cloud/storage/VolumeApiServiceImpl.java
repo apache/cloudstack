@@ -340,8 +340,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             Long.class, "vm.job.check.interval", "3000",
             "Interval in milliseconds to check if the job is complete", false);
 
-    private int _customDiskOfferingMinSize = 1;
-    private final int _customDiskOfferingMaxSize = 1024;
     private long _maxVolumeSizeInGb;
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
 
@@ -541,9 +539,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (size == null) {
                     throw new InvalidParameterValueException("This disk offering requires a custom size specified");
                 }
-                if ((sizeInGB < _customDiskOfferingMinSize) || (sizeInGB > _customDiskOfferingMaxSize)) {
-                    throw new InvalidParameterValueException("Volume size: " + sizeInGB + "GB is out of allowed range. Max: " + _customDiskOfferingMaxSize + " Min:" +
-                        _customDiskOfferingMinSize);
+                Long customDiskOfferingMaxSize = _volumeMgr.CustomDiskOfferingMaxSize.value();
+                Long customDiskOfferingMinSize = _volumeMgr.CustomDiskOfferingMinSize.value();
+
+                if ((sizeInGB < customDiskOfferingMinSize) || (sizeInGB > customDiskOfferingMaxSize)) {
+                    throw new InvalidParameterValueException("Volume size: " + sizeInGB + "GB is out of allowed range. Max: " + customDiskOfferingMaxSize + " Min:" +
+                            customDiskOfferingMinSize);
                 }
             }
 
@@ -1925,8 +1926,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     public boolean configure(String name, Map<String, Object> params) {
-        String _customDiskOfferingMinSizeStr = _configDao.getValue(Config.CustomDiskOfferingMinSize.toString());
-        _customDiskOfferingMinSize = NumbersUtil.parseInt(_customDiskOfferingMinSizeStr, Integer.parseInt(Config.CustomDiskOfferingMinSize.getDefaultValue()));
 
         String maxVolumeSizeInGbString = _configDao.getValue(Config.MaxVolumeSize.toString());
         _maxVolumeSizeInGb = NumbersUtil.parseLong(maxVolumeSizeInGbString, 2000);

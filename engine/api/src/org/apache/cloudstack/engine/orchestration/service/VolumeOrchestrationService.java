@@ -44,6 +44,7 @@ import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 /**
  * VolumeOrchestrationService is a PURE orchestration service on CloudStack
@@ -53,6 +54,21 @@ import com.cloud.vm.VirtualMachineProfile;
  * to provision volumes.
  */
 public interface VolumeOrchestrationService {
+
+    static final ConfigKey<Long> CustomDiskOfferingMinSize = new ConfigKey<Long>("Advanced",
+        Long.class,
+        "custom.diskoffering.size.min",
+        "1",
+        "Minimum size in GB for custom disk offering.",
+        true
+    );
+    static final ConfigKey<Long> CustomDiskOfferingMaxSize = new ConfigKey<Long>("Advanced",
+        Long.class,
+        "custom.diskoffering.size.max",
+        "1024",
+        "Maximum size in GB for custom disk offering.",
+        true
+    );
     VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType)
         throws ConcurrentOperationException, StorageUnavailableException;
 

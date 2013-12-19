@@ -3270,7 +3270,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
-        long diskOffMaxSize = Long.valueOf(_configDao.getValue(Config.CustomDiskOfferingMaxSize.key()));
+        long diskOffMaxSize = _volumeMgr.CustomDiskOfferingMaxSize.value();
         KVMSnapshotEnabled = Boolean.parseBoolean(_configDao.getValue("KVM.snapshot.enabled"));
 
         boolean userPublicTemplateEnabled = TemplateManager.AllowPublicUserTemplates.valueIn(caller.getId());

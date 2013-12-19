@@ -2520,6 +2520,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (tmp != null) {
             size = tmp;
         }
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
+        if (diskOffering.isCustomized()) {
+            if (diskSize == null) {
+                throw new InvalidParameterValueException("This disk offering requires a custom size specified");
+            }
+            Long customDiskOfferingMaxSize = volumeMgr.CustomDiskOfferingMaxSize.value();
+            Long customDiskOfferingMinSize = volumeMgr.CustomDiskOfferingMinSize.value();
+            if ((diskSize < customDiskOfferingMinSize) || (diskSize > customDiskOfferingMaxSize)) {
+                throw new InvalidParameterValueException("VM Creation failed. Volume size: " + diskSize + "GB is out of allowed range. Max: " + customDiskOfferingMaxSize + " Min:" +
+                        customDiskOfferingMinSize);
+            }
+        }
         if (diskOfferingId != null) {
             size += _diskOfferingDao.findById(diskOfferingId).getDiskSize();
         }
