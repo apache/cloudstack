@@ -23,6 +23,7 @@ import java.nio.channels.SocketChannel;
 import java.rmi.RemoteException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLNonTransientException;
 import java.sql.SQLRecoverableException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -576,21 +577,15 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     }
 
                     if (isRootCauseConnectionRelated(e.getCause())) {
-                        s_logger.error("DB communication problem detected, fence it");
-                        queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeIsolated));
+                        invalidHeartbeatConnection();
                     }
-
-                    invalidHeartbeatConnection();
                 } catch (ActiveFencingException e) {
                     queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeIsolated));
                 } catch (Throwable e) {
                     s_logger.error("Unexpected exception in cluster heartbeat", e);
                     if (isRootCauseConnectionRelated(e.getCause())) {
-                        s_logger.error("DB communication problem detected, fence it");
-                        queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeIsolated));
+                        invalidHeartbeatConnection();
                     }
-
-                    invalidHeartbeatConnection();
                 } finally {
                     txn.transitToAutoManagedConnection(TransactionLegacy.CLOUD_DB);
                     txn.close("ClusterHeartbeat");
@@ -601,8 +596,8 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
     private boolean isRootCauseConnectionRelated(Throwable e) {
         while (e != null) {
-            if (e instanceof SQLRecoverableException) {
-                return true;
+            if (e instanceof SQLRecoverableException || e instanceof SQLNonTransientException) {
+                    return true;
             }
 
             e = e.getCause();
@@ -625,6 +620,9 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
             Connection conn = TransactionLegacy.getStandaloneConnection();
             if (conn != null) {
                 _heartbeatConnection.reset(conn);
+            } else {
+                s_logger.error("DB communication problem detected, fence it");
+                queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeIsolated));
             }
             // The stand-alone connection does not have to be closed here because there will be another reference to it.
             // As a matter of fact, it will be assigned to the connection instance variable in the ConnectionConcierge class.
