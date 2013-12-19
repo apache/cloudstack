@@ -651,12 +651,11 @@ public class VolumeManagerImpl extends ManagerBase implements VolumeManager {
             DiskOfferingVO diskOffering, List<StoragePool> avoids,
             long size, HypervisorType hyperType) {
         StoragePool pool = null;
-
+        DiskProfile dskCh = null;
         if (diskOffering != null && diskOffering.isCustomized()) {
-            diskOffering.setDiskSize(size);
+            dskCh.setSize(size);
         }
 
-        DiskProfile dskCh = null;
         if (volume.getVolumeType() == Type.ROOT
                 && Storage.ImageFormat.ISO != template.getFormat()) {
             dskCh = createDiskCharacteristics(volume, template, dc, offering);
