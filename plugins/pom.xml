@@ -51,6 +51,7 @@
     <module>network-elements/bigswitch-vns</module>
     <module>network-elements/midonet</module>
     <module>network-elements/stratosphere-ssp</module>
+    <module>network-elements/opendaylight</module>
     <module>storage-allocators/random</module>
     <module>user-authenticators/ldap</module>
     <module>user-authenticators/md5</module>
