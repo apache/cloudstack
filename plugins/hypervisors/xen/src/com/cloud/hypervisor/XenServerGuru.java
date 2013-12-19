@@ -19,8 +19,17 @@ package com.cloud.hypervisor;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.command.CopyCommand;
+
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.to.*;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.HostInfo;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -30,10 +39,6 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachineProfile;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.storage.command.CopyCommand;
 
 @Local(value = HypervisorGuru.class)
 public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru {

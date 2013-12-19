@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.xen.resource;
 
-import static com.cloud.utils.ReflectUtil.flattenProperties;
-import static com.google.common.collect.Lists.newArrayList;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,7 +28,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -59,46 +55,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-
-import com.google.gson.Gson;
-import com.trilead.ssh2.SCPClient;
-import com.xensource.xenapi.Bond;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Console;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.HostCpu;
-import com.xensource.xenapi.HostMetrics;
-import com.xensource.xenapi.Network;
-import com.xensource.xenapi.PBD;
-import com.xensource.xenapi.PIF;
-import com.xensource.xenapi.PIF.Record;
-import com.xensource.xenapi.Pool;
-import com.xensource.xenapi.SR;
-import com.xensource.xenapi.Session;
-import com.xensource.xenapi.Task;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.BadAsyncResult;
-import com.xensource.xenapi.Types.BadServerResponse;
-import com.xensource.xenapi.Types.ConsoleProtocol;
-import com.xensource.xenapi.Types.IpConfigurationMode;
-import com.xensource.xenapi.Types.OperationNotAllowed;
-import com.xensource.xenapi.Types.SrFull;
-import com.xensource.xenapi.Types.VbdType;
-import com.xensource.xenapi.Types.VmBadPowerState;
-import com.xensource.xenapi.Types.VmPowerState;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VBDMetrics;
-import com.xensource.xenapi.VDI;
-import com.xensource.xenapi.VIF;
-import com.xensource.xenapi.VLAN;
-import com.xensource.xenapi.VM;
-import com.xensource.xenapi.VMGuestMetrics;
-import com.xensource.xenapi.XenAPIObject;
-
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -238,8 +194,6 @@ import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
-import com.cloud.agent.api.storage.CopyVolumeAnswer;
-import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
@@ -283,7 +237,6 @@ import com.cloud.storage.template.TemplateProp;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.S3Utils;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -305,20 +258,12 @@ import com.xensource.xenapi.HostMetrics;
 import com.xensource.xenapi.Network;
 import com.xensource.xenapi.PBD;
 import com.xensource.xenapi.PIF;
-import com.xensource.xenapi.PIF.Record;
 import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Session;
 import com.xensource.xenapi.Task;
 import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.BadAsyncResult;
 import com.xensource.xenapi.Types.BadServerResponse;
-import com.xensource.xenapi.Types.ConsoleProtocol;
-import com.xensource.xenapi.Types.IpConfigurationMode;
-import com.xensource.xenapi.Types.OperationNotAllowed;
-import com.xensource.xenapi.Types.SrFull;
-import com.xensource.xenapi.Types.VbdType;
-import com.xensource.xenapi.Types.VmBadPowerState;
 import com.xensource.xenapi.Types.VmPowerState;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
@@ -329,6 +274,7 @@ import com.xensource.xenapi.VLAN;
 import com.xensource.xenapi.VM;
 import com.xensource.xenapi.VMGuestMetrics;
 import com.xensource.xenapi.XenAPIObject;
+
 
 /**
  * CitrixResourceBase encapsulates the calls to the XenServer Xapi process
@@ -3678,7 +3624,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             Iterator<Console> i = consoles.iterator();
             while (i.hasNext()) {
                 c = i.next();
-                if (c.getProtocol(conn) == ConsoleProtocol.RFB)
+                if (c.getProtocol(conn) == Types.ConsoleProtocol.RFB)
                     return c.getLocation(conn);
             }
         } catch (XenAPIException e) {
@@ -5055,7 +5001,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return false;
         }
 
-        src.reconfigureIp(conn, IpConfigurationMode.NONE, null, null, null, null);
+        src.reconfigureIp(conn, Types.IpConfigurationMode.NONE, null, null, null, null);
         return true;
     }
 
@@ -5873,7 +5819,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             XsLocalNetwork nw = getNetworkByName(conn, label);
             s_logger.debug("Network object:" + nw.getNetwork().getUuid(conn));
             PIF pif = nw.getPif(conn);
-            Record pifRec = pif.getRecord(conn);
+            PIF.Record pifRec = pif.getRecord(conn);
             s_logger.debug("PIF object:" + pifRec.uuid + "(" + pifRec.device + ")");
             return new OvsFetchInterfaceAnswer(cmd, true, "Interface " + pifRec.device + " retrieved successfully", pifRec.IP, pifRec.netmask, pifRec.MAC);
         } catch (BadServerResponse e) {
@@ -6921,9 +6867,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return new CreateVMSnapshotAnswer(cmd, cmd.getTarget(), cmd.getVolumeTOs());
         } catch (Exception e) {
             String msg = "";
-            if (e instanceof BadAsyncResult) {
+            if (e instanceof Types.BadAsyncResult) {
                 String licenseKeyWord = "LICENCE_RESTRICTION";
-                BadAsyncResult errorResult = (BadAsyncResult)e;
+                Types.BadAsyncResult errorResult = (Types.BadAsyncResult)e;
                 if (errorResult.shortDescription != null && errorResult.shortDescription.contains(licenseKeyWord)) {
                     msg = licenseKeyWord;
                 }
@@ -6940,7 +6886,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                         Set<VBD> vbds = vmSnapshot.getVBDs(conn);
                         for (VBD vbd : vbds) {
                             VBD.Record vbdr = vbd.getRecord(conn);
-                            if (vbdr.type == VbdType.DISK) {
+                            if (vbdr.type == Types.VbdType.DISK) {
                                 VDI vdi = vbdr.VDI;
                                 vdi.destroy(conn);
                             }
@@ -6959,8 +6905,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    private VM createWorkingVM(Connection conn, String vmName, String guestOSType, List<VolumeObjectTO> listVolumeTo) throws BadServerResponse, VmBadPowerState, SrFull,
-        OperationNotAllowed, XenAPIException, XmlRpcException {
+    private VM createWorkingVM(Connection conn, String vmName, String guestOSType, List<VolumeObjectTO> listVolumeTo) throws BadServerResponse, Types.VmBadPowerState, Types.SrFull,
+            Types.OperationNotAllowed, XenAPIException, XmlRpcException {
         String guestOsTypeName = getGuestOsType(guestOSType, false);
         if (guestOsTypeName == null) {
             String msg =
@@ -7015,7 +6961,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             VM snapshot = snapshots.iterator().next();
             Set<VBD> vbds = snapshot.getVBDs(conn);
             for (VBD vbd : vbds) {
-                if (vbd.getType(conn) == VbdType.DISK) {
+                if (vbd.getType(conn) == Types.VbdType.DISK) {
                     VDI vdi = vbd.getVDI(conn);
                     vdiList.add(vdi);
                 }

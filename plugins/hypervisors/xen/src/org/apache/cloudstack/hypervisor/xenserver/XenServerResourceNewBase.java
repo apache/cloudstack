@@ -45,26 +45,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineName;
 
-/**
- * 
- * XenServerResourceNewBase is an abstract base class that encapsulates how
- * CloudStack should interact with XenServer after a special XenServer
- * 6.2 hotfix.  From here on, every Resource for future versions of
- * XenServer should use this as the base class.  This base class lessens
- * the amount of load CloudStack places on Xapi because it doesn't use
- * polling as a means to collect data and figure out task completion.
- * 
- * This base class differs from CitrixResourceBase in the following ways:
- *   - VM states are detected using Event.from instead of polling.  This
- *     increases the number of threads CloudStack uses but the threads
- *     are mostly idle just waiting for events from XenServer.
- *   - stats are collected through the http interface rather than Xapi plugin.
- *     This change may be promoted to CitrixResourceBase as it's also possible
- *     in previous versions of XenServer.
- *   - Asynchronous task completion is done throught Event.from rather than
- *     polling.
- *
- */
 public class XenServerResourceNewBase extends XenServer610Resource {
     private static final Logger s_logger = Logger.getLogger(XenServerResourceNewBase.class);
     protected VmEventListener _listener = null;

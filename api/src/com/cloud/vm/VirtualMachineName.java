@@ -38,7 +38,7 @@ public class VirtualMachineName {
 
         return true;
     }
-    
+
     public static String getVnetName(long vnetId) {
         StringBuilder vnet = new StringBuilder();
         Formatter formatter = new Formatter(vnet);
