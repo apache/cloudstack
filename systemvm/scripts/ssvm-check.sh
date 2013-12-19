@@ -34,6 +34,10 @@ do
    esac
 done
 
+isCifs() {
+ mount | grep "type cifs" > /dev/null
+ echo $?
+}
 
 # ping dns server
 echo ================================================
@@ -67,12 +71,18 @@ fi
 
 # check to see if we have the NFS volume mounted
 echo ================================================
-mount|grep -v sunrpc|grep -v rpc_pipefs|grep nfs 1> /dev/null 2>&1
+storage="cifs"
+if [ $(isCifs) -ne 0 ] ;
+ then
+   storage="nfs"
+fi
+
+mount|grep -v sunrpc|grep -v rpc_pipefs|grep $storage 1> /dev/null 2>&1
 if [ $? -eq 0 ]
 then
-    echo "NFS is currently mounted"
+    echo "$storage is currently mounted"
     # check for write access
-    for MOUNTPT in `mount|grep -v sunrpc|grep -v rpc_pipefs|grep nfs| awk '{print $3}'`
+    for MOUNTPT in `mount|grep -v sunrpc|grep -v rpc_pipefs|grep $storage| awk '{print $3}'`
     do
         if [ $MOUNTPT != "/proc/xen" ] # mounted by xen
         then
@@ -96,9 +106,9 @@ else
     ping -c 2  $NFSSERVER
     if [ $? -eq 0 ]
     then
-	echo "Good: Can ping NFS server"
+	echo "Good: Can ping $storage server"
     else
-	echo "WARNING: cannot ping NFS server"
+	echo "WARNING: cannot ping $storage server"
 	echo routing table follows
 	route -n
     fi
