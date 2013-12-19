@@ -195,7 +195,7 @@ public class VolumeServiceTest extends CloudStackTestNGBase {
         Mockito.when(hostDao.findById(Matchers.anyLong())).thenReturn(host);
         Mockito.when(hostDao.findHypervisorHostInCluster(Matchers.anyLong())).thenReturn(results);
         List<EndPoint> eps = new ArrayList<EndPoint>();
-        eps.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(), host.getPublicIpAddress()));
+        eps.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
         Mockito.when(selector.selectAll(Matchers.any(DataStore.class))).thenReturn(eps);
         Mockito.when(selector.select(Matchers.any(DataObject.class))).thenReturn(eps.get(0));
         Mockito.when(selector.select(Matchers.any(DataObject.class), Matchers.any(DataObject.class))).thenReturn(eps.get(0));

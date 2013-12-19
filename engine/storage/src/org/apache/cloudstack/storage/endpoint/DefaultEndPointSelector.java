@@ -140,7 +140,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             return null;
         }
 
-        return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(), host.getPublicIpAddress());
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
     }
 
     protected EndPoint findEndPointForImageMove(DataStore srcStore, DataStore destStore) {
@@ -223,7 +223,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
         Collections.shuffle(ssAHosts);
         HostVO host = ssAHosts.get(0);
-        return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(), host.getPublicIpAddress());
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
     }
 
     private List<HostVO> listUpAndConnectingSecondaryStorageVmHost(Long dcId) {
@@ -276,14 +276,15 @@ public class DefaultEndPointSelector implements EndPointSelector {
         List<EndPoint> endPoints = new ArrayList<EndPoint>();
         if (store.getScope().getScopeType() == ScopeType.HOST) {
             HostVO host = hostDao.findById(store.getScope().getScopeId());
-            endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(), host.getPublicIpAddress()));
+
+            endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
         } else if (store.getScope().getScopeType() == ScopeType.CLUSTER) {
             QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
             sc.and(sc.entity().getClusterId(), Op.EQ, store.getScope().getScopeId());
             sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
             List<HostVO> hosts = sc.list();
             for (HostVO host : hosts) {
-                endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(), host.getPublicIpAddress()));
+                endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
             }
 
         } else {
