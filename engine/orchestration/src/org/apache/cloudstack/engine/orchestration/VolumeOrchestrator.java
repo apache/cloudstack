@@ -397,15 +397,15 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         ServiceOffering offering, DiskOffering diskOffering, List<StoragePool> avoids, long size, HypervisorType hyperType) {
         StoragePool pool = null;
 
-        if (diskOffering != null && diskOffering.isCustomized()) {
-            diskOffering.setDiskSize(size);
-        }
-
         DiskProfile dskCh = null;
         if (volume.getVolumeType() == Type.ROOT && Storage.ImageFormat.ISO != template.getFormat()) {
             dskCh = createDiskCharacteristics(volume, template, dc, offering);
         } else {
             dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
+        }
+
+        if (diskOffering != null && diskOffering.isCustomized()) {
+            dskCh.setSize(size);
         }
 
         dskCh.setHyperType(hyperType);

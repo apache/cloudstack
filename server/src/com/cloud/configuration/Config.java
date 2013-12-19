@@ -1109,6 +1109,13 @@ public enum Config {
             "xenserver61",
             "default Xen PV driver version for registered template, valid value:xenserver56,xenserver61 ",
             "xenserver56,xenserver61"),
+    XenServerHotFix("Advanced",
+            ManagementServer.class,
+            Boolean.class,
+            "xen.hotfix.enabled",
+            "false",
+            "Enable/Disable xenserver hot fix",
+            null),
 
     // VMware
     VmwareUseNexusVSwitch(

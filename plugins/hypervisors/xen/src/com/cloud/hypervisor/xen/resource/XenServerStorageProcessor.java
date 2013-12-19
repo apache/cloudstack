@@ -90,7 +90,7 @@ import com.cloud.utils.storage.encoding.Decoder;
 public class XenServerStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
     protected CitrixResourceBase hypervisorResource;
-    private String BaseMountPointOnHost = "/var/run/cloud_mount";
+    protected String BaseMountPointOnHost = "/var/run/cloud_mount";
 
     public XenServerStorageProcessor(CitrixResourceBase resource) {
         hypervisorResource = resource;

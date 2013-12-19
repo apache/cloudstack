@@ -16,8 +16,11 @@
 // under the License.
 package org.apache.cloudstack.storage.to;
 
+import java.util.ArrayList;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.commons.lang.ArrayUtils;
 
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -34,6 +37,8 @@ public class SnapshotObjectTO implements DataTO {
     private HypervisorType hypervisorType;
     private long id;
     private boolean quiescevm;
+    private String[] parents;
+
 
     public SnapshotObjectTO() {
 
@@ -49,9 +54,17 @@ public class SnapshotObjectTO implements DataTO {
         }
 
         SnapshotInfo parentSnapshot = snapshot.getParent();
+        ArrayList<String> parentsArry = new ArrayList<String>();
         if (parentSnapshot != null) {
             this.parentSnapshotPath = parentSnapshot.getPath();
+            while(parentSnapshot != null) {
+                parentsArry.add(parentSnapshot.getPath());
+                parentSnapshot = parentSnapshot.getParent();
+            }
+            parents =  parentsArry.toArray(new String[parentsArry.size()]);
+            ArrayUtils.reverse(parents);
         }
+
         this.dataStore = snapshot.getDataStore().getTO();
         this.setName(snapshot.getName());
         this.hypervisorType = snapshot.getHypervisorType();
@@ -137,6 +150,10 @@ public class SnapshotObjectTO implements DataTO {
 
     public void setQuiescevm(boolean quiescevm) {
         this.quiescevm = quiescevm;
+    }
+
+    public String[] getParents() {
+        return parents;
     }
 
     @Override

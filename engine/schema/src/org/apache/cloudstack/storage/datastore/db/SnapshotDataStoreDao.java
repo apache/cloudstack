@@ -52,4 +52,6 @@ public interface SnapshotDataStoreDao extends GenericDao<SnapshotDataStoreVO, Lo
     List<SnapshotDataStoreVO> listOnCache(long snapshotId);
 
     void updateStoreRoleToCache(long storeId);
+
+    SnapshotDataStoreVO findLatestSnapshotForVolume(Long volumeId, DataStoreRole role);
 }

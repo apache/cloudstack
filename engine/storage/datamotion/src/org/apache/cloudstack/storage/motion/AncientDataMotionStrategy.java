@@ -18,12 +18,10 @@
  */
 package org.apache.cloudstack.storage.motion;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -46,6 +44,8 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
@@ -470,6 +470,14 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         int _backupsnapshotwait = NumbersUtil.parseInt(value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
 
         DataObject cacheData = null;
+        SnapshotInfo snapshotInfo = (SnapshotInfo)srcData;
+        Object payload = snapshotInfo.getPayload();
+        Boolean fullSnapshot = true;
+        if (payload != null) {
+            fullSnapshot = (Boolean)payload;
+        }
+        Map<String, String> options = new HashMap<String, String>();
+        options.put("fullSnapshot", fullSnapshot.toString());
         Answer answer = null;
         try {
             if (needCacheStorage(srcData, destData)) {
@@ -478,6 +486,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
                 CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
                 cmd.setCacheTO(cacheData.getTO());
+                cmd.setOptions(options);
                 EndPoint ep = selector.select(srcData, destData);
                 if (ep == null) {
                     String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
@@ -488,6 +497,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 }
             } else {
                 CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
+                cmd.setOptions(options);
                 EndPoint ep = selector.select(srcData, destData);
                 if (ep == null) {
                     String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";

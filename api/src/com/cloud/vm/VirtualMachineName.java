@@ -26,6 +26,19 @@ import com.cloud.dc.Vlan;
 public class VirtualMachineName {
     public static final String SEPARATOR = "-";
 
+    public static boolean isValidCloudStackVmName(String name, String instance) {
+        String[] parts = name.split(SEPARATOR);
+        if (parts.length <= 1) {
+            return false;
+        }
+
+        if (!parts[parts.length - 1].equals(instance)) {
+            return false;
+        }
+
+        return true;
+    }
+    
     public static String getVnetName(long vnetId) {
         StringBuilder vnet = new StringBuilder();
         Formatter formatter = new Formatter(vnet);

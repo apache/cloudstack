@@ -22,7 +22,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
@@ -104,29 +103,30 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 
         // determine full snapshot backup or not
 
-        boolean fullBackup = false;
 
-        if (parentSnapshot != null) {
-            int _deltaSnapshotMax = NumbersUtil.parseInt(configDao.getValue("snapshot.delta.max"), SnapshotManager.DELTAMAX);
+        boolean fullBackup = true;
+        SnapshotDataStoreVO parentSnapshotOnBackupStore = snapshotStoreDao.findLatestSnapshotForVolume(snapshot.getVolumeId(), DataStoreRole.Image);
+        if (parentSnapshotOnBackupStore != null) {
+            int _deltaSnapshotMax = NumbersUtil.parseInt(configDao.getValue("snapshot.delta.max"),
+                    SnapshotManager.DELTAMAX);
             int deltaSnap = _deltaSnapshotMax;
-
             int i;
-            SnapshotDataStoreVO parentSnapshotOnBackupStore = null;
-            for (i = 1; i < deltaSnap; i++) {
-                parentSnapshotOnBackupStore = snapshotStoreDao.findBySnapshot(parentSnapshot.getId(), DataStoreRole.Image);
-                if (parentSnapshotOnBackupStore == null) {
-                    break;
-                }
-                Long prevBackupId = parentSnapshotOnBackupStore.getParentSnapshotId();
 
+            for (i = 1; i < deltaSnap; i++) {
+                Long prevBackupId = parentSnapshotOnBackupStore.getParentSnapshotId();
                 if (prevBackupId == 0) {
                     break;
                 }
-
                 parentSnapshotOnBackupStore = snapshotStoreDao.findBySnapshot(prevBackupId, DataStoreRole.Image);
+                if (parentSnapshotOnBackupStore == null) {
+                    break;
+                }
             }
+
             if (i >= deltaSnap) {
                 fullBackup = true;
+            } else {
+                fullBackup = false;
             }
         }
 

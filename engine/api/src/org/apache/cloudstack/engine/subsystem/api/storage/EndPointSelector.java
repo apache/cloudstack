@@ -30,4 +30,6 @@ public interface EndPointSelector {
     List<EndPoint> selectAll(DataStore store);
 
     EndPoint select(Scope scope, Long storeId);
+
+    EndPoint selectHypervisorHost(Scope scope);
 }
