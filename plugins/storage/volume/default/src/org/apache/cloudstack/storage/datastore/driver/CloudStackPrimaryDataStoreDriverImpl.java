@@ -257,10 +257,10 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             }
 
             CreateObjectCommand cmd = new CreateObjectCommand(snapshotTO);
-            EndPoint ep = epSelector.select(snapshot);
+            EndPoint ep = this.epSelector.select(snapshot, StorageAction.TAKESNAPSHOT);
             Answer answer = null;
             if ( ep == null ){
-                String errMsg = "No remote endpoint to send DeleteCommand, check if host or ssvm is down?";
+                String errMsg = "No remote endpoint to send createObjectCommand, check if host or ssvm is down?";
                 s_logger.error(errMsg);
                 answer = new Answer(cmd, false, errMsg);
             } else{

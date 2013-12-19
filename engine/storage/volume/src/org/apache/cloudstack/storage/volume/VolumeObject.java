@@ -22,6 +22,7 @@ import javax.inject.Inject;
 
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -98,6 +99,15 @@ public class VolumeObject implements VolumeInfo {
         return null;
     }
 
+    @Override
+    public VirtualMachine getAttachedVM() {
+        Long vmId = this.volumeVO.getInstanceId();
+        if (vmId != null) {
+            VMInstanceVO vm = vmInstanceDao.findById(vmId);
+            return vm;
+        }
+        return null;
+    }
     @Override
     public String getUuid() {
         return volumeVO.getUuid();
