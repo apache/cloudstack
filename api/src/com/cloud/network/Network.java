@@ -47,9 +47,9 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Service Dns = new Service("Dns", Capability.AllowDnsSuffixModification);
         public static final Service Gateway = new Service("Gateway");
         public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols, Capability.MultipleIps, Capability.TrafficStatistics,
-            Capability.SupportedTrafficDirection, Capability.SupportedEgressProtocols);
+                Capability.SupportedTrafficDirection, Capability.SupportedEgressProtocols);
         public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedLBIsolation, Capability.SupportedProtocols,
-            Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps, Capability.SupportedStickinessMethods, Capability.ElasticLb, Capability.LbSchemes);
+                Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps, Capability.SupportedStickinessMethods, Capability.ElasticLb, Capability.LbSchemes);
         public static final Service UserData = new Service("UserData");
         public static final Service SourceNat = new Service("SourceNat", Capability.SupportedSourceNatTypes, Capability.RedundantRouter);
         public static final Service StaticNat = new Service("StaticNat", Capability.ElasticIp);
@@ -128,6 +128,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Provider CiscoVnmc = new Provider("CiscoVnmc", true);
         // add new Ovs provider
         public static final Provider Ovs = new Provider("Ovs", false);
+        public static final Provider Opendaylight = new Provider("Opendaylight", false);
 
         private final String name;
         private final boolean isExternal;
@@ -213,7 +214,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
         Allocated("Indicates the network configuration is in allocated but not setup"), Setup("Indicates the network configuration is setup"), Implementing(
                 "Indicates the network configuration is being implemented"), Implemented("Indicates the network configuration is in use"), Shutdown(
-                "Indicates the network configuration is being destroyed"), Destroy("Indicates that the network is destroyed");
+                        "Indicates the network configuration is being destroyed"), Destroy("Indicates that the network is destroyed");
 
         protected static final StateMachine2<State, Network.Event, Network> s_fsm = new StateMachine2<State, Network.Event, Network>();
 

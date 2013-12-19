@@ -706,3 +706,6 @@ importLdapUsers=3
 
 #### juniper-contrail commands
 createServiceInstance=1
+
+### OpenDaylight plugin commands
+addOpenDaylightController=1
