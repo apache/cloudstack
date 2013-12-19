@@ -560,19 +560,15 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                 params.put(VirtualMachineProfile.Param.HaTag, _haTag);
             }
 
-            // First try starting the vm with its original planner, if it doesn't succeed send HAPlanner as its an emergency.
-            _itMgr.advanceStart(vm.getUuid(), params, null);
-
-            VMInstanceVO started = _instanceDao.findById(vm.getId());
-            if (started != null && started.getState() == VirtualMachine.State.Running) {
-                s_logger.info("VM is now restarted: " + vmId + " on " + started.getHostId());
-                return null;
-            }else {
+            try{
+                // First try starting the vm with its original planner, if it doesn't succeed send HAPlanner as its an emergency.
+                _itMgr.advanceStart(vm.getUuid(), params, null);
+            }catch (InsufficientCapacityException e){
                 s_logger.warn("Failed to deploy vm " + vmId + " with original planner, sending HAPlanner");
                 _itMgr.advanceStart(vm.getUuid(), params, _haPlanners.get(0));
             }
 
-            started = _instanceDao.findById(vm.getId());
+            VMInstanceVO started = _instanceDao.findById(vm.getId());
             if (started != null && started.getState() == VirtualMachine.State.Running) {
                 s_logger.info("VM is now restarted: " + vmId + " on " + started.getHostId());
                 return null;
