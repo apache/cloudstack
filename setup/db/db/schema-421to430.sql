@@ -863,3 +863,8 @@ CREATE TABLE `cloud`.`s2s_vpn_connection_details` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_s2s_vpn_connection_details__s2s_vpn_connection_id` FOREIGN KEY `fk_s2s_vpn_connection_details__s2s_vpn_connection_id`(`s2s_vpn_connection_id`) REFERENCES `s2s_vpn_connection`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `cpu`;
+ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `ram`;
+ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `speed`;
+

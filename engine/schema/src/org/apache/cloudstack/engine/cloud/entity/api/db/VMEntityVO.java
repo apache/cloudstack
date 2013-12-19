@@ -145,12 +145,6 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     @Enumerated(value = EnumType.STRING)
     protected HypervisorType hypervisorType;
 
-    @Column(name = "ram")
-    protected long ram;
-
-    @Column(name = "cpu")
-    protected int cpu;
-
     @Transient
     Map<String, String> details;
 
@@ -160,9 +154,6 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     //orchestration columns
     @Column(name = "owner")
     private String owner = null;
-
-    @Column(name = "speed")
-    private int speed;
 
     @Transient
     List<String> computeTags;
@@ -489,14 +480,6 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
 
     public void setOwner(String owner) {
         this.owner = owner;
-    }
-
-    public int getSpeed() {
-        return speed;
-    }
-
-    public void setSpeed(int speed) {
-        this.speed = speed;
     }
 
     public List<String> getComputeTags() {
