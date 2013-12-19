@@ -2755,7 +2755,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting router " + router);
         try {
-            _itMgr.advanceStart(router.getUuid(), params, planToDeploy);
+            _itMgr.advanceStart(router.getUuid(), params, planToDeploy, null);
         } catch (OperationTimedoutException e) {
             throw new ResourceUnavailableException("Starting router " + router + " failed! " + e.toString(), DataCenter.class, router.getDataCenterId());
         }
