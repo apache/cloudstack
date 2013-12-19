@@ -56,7 +56,6 @@ public class ScaleVMCmd extends BaseAsyncCmd {
             required=true, description="The ID of the virtual machine")
     private Long id;
 
-    @ACL
     @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.UUID, entityType=ServiceOfferingResponse.class,
             required=true, description="the ID of the service offering for the virtual machine")
     private Long serviceOfferingId;

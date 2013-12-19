@@ -20,6 +20,8 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -37,7 +39,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "destroyVirtualMachine", description = "Destroys a virtual machine. Once destroyed, only the administrator can recover it.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted)
+@APICommand(name = "destroyVirtualMachine", description = "Destroys a virtual machine. Once destroyed, only the administrator can recover it.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.VirtualMachine })
 public class DestroyVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DestroyVMCmd.class.getName());
 
@@ -47,15 +49,16 @@ public class DestroyVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @ACL
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
             required=true, description="The ID of the virtual machine")
     private Long id;
-    
-    
+
+
     @Parameter(name=ApiConstants.EXPUNGE, type=CommandType.BOOLEAN,
             description="If true is passed, the vm is expunged immediately. False by default. Parameter can be passed to the call by ROOT/Domain admin only", since="4.2.1")
     private Boolean expunge;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -63,7 +66,7 @@ public class DestroyVMCmd extends BaseAsyncCmd {
     public Long getId() {
         return id;
     }
-    
+
     public boolean getExpunge() {
         if (expunge == null) {
             return false;

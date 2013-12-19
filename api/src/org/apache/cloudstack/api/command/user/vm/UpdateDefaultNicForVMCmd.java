@@ -21,6 +21,8 @@ import java.util.EnumSet;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -37,7 +39,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "updateDefaultNicForVirtualMachine", description = "Changes the default NIC on a VM", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted)
+@APICommand(name = "updateDefaultNicForVirtualMachine", description = "Changes the default NIC on a VM", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.VirtualMachine })
 
 public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateDefaultNicForVMCmd.class);
@@ -47,6 +49,7 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @ACL
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
             required=true, description="Virtual Machine ID")
     private Long vmId;
@@ -66,7 +69,7 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
     public Long getNicId() {
         return nicId;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -75,11 +78,11 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
         return "virtualmachine";
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_NIC_UPDATE;
@@ -89,8 +92,8 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "Updating NIC " + getNicId() + " on user vm: " + getVmId();
     }
-    
-    
+
+
     @Override
     public long getEntityOwnerId() {
         UserVm vm = _responseGenerator.findUserVmById(getVmId());

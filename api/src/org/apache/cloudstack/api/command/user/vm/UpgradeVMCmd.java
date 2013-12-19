@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.vm;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -47,6 +48,7 @@ public class UpgradeVMCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @ACL
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class,
             required=true, description="The ID of the virtual machine")
     private Long id;

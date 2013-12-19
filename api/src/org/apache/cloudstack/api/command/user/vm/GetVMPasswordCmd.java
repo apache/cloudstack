@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command.user.vm;
 
 import java.security.InvalidParameterException;
 
+import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -29,7 +31,7 @@ import org.apache.log4j.Logger;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "getVMPassword", responseObject=GetVMPasswordResponse.class, description="Returns an encrypted password for the VM")
+@APICommand(name = "getVMPassword", responseObject = GetVMPasswordResponse.class, description = "Returns an encrypted password for the VM", entityType = { AclEntityType.VirtualMachine })
 public class GetVMPasswordCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(GetVMPasswordCmd.class.getName());
     private static final String s_name = "getvmpasswordresponse";
@@ -39,6 +41,7 @@ public class GetVMPasswordCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @ACL
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=UserVmResponse.class
             , required=true, description="The ID of the virtual machine")
     private Long id;

@@ -21,6 +21,8 @@ import java.util.EnumSet;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -37,7 +39,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "removeNicFromVirtualMachine", description = "Removes VM from specified network by deleting a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted)
+@APICommand(name = "removeNicFromVirtualMachine", description = "Removes VM from specified network by deleting a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.VirtualMachine })
 
 public class RemoveNicFromVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveNicFromVMCmd.class);
@@ -46,7 +48,7 @@ public class RemoveNicFromVMCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
+    @ACL
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
             required=true, description="Virtual Machine ID")
     private Long vmId;
@@ -62,7 +64,7 @@ public class RemoveNicFromVMCmd extends BaseAsyncCmd {
     public Long getVmId() {
         return vmId;
     }
-    
+
     public Long getNicId() {
         return nicId;
     }
@@ -75,7 +77,7 @@ public class RemoveNicFromVMCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     public static String getResultObjectName() {
         return "virtualmachine";
     }
@@ -89,8 +91,8 @@ public class RemoveNicFromVMCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "Removing NIC " + getNicId() + " from user vm: " + getVmId();
     }
-    
-    
+
+
     @Override
     public long getEntityOwnerId() {
         UserVm vm = _responseGenerator.findUserVmById(getVmId());

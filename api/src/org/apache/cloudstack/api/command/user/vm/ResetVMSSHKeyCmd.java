@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.user.vm;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -39,7 +41,7 @@ import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
 @APICommand(name = "resetSSHKeyForVirtualMachine", responseObject = UserVmResponse.class, description = "Resets the SSH Key for virtual machine. " +
-        "The virtual machine must be in a \"Stopped\" state. [async]", responseView = ResponseView.Restricted)
+ "The virtual machine must be in a \"Stopped\" state. [async]", responseView = ResponseView.Restricted, entityType = { AclEntityType.VirtualMachine })
 public class ResetVMSSHKeyCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(ResetVMSSHKeyCmd.class.getName());
@@ -49,7 +51,7 @@ public class ResetVMSSHKeyCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-
+    @ACL
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = UserVmResponse.class, required = true, description = "The ID of the virtual machine")
     private Long id;
 
