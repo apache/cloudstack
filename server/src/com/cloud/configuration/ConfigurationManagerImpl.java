@@ -2378,6 +2378,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String newVlanNetmask = cmd.getNetmask();
         String vlanId = cmd.getVlan();
         // TODO decide if we should be forgiving or demand a valid and complete URI
+        if(Vlan.UNTAGGED.equalsIgnoreCase(vlanId))
+            vlanId = null;
         if (!((vlanId == null) || ("".equals(vlanId)) || vlanId.startsWith(BroadcastDomainType.Vlan.scheme())))
             vlanId = BroadcastDomainType.Vlan.toUri(vlanId).toString();
         Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
