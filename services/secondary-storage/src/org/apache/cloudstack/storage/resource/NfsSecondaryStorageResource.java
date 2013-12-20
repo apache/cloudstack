@@ -444,7 +444,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             File srcFile = getFile(srcData.getPath(), srcDataStore.getUrl());
             File destFile = getFile(destData.getPath(), destDataStore.getUrl());
 
-            ImageFormat srcFormat = srcData.getVolume().getFormat();
+            VolumeObjectTO volumeObjectTO = srcData.getVolume();
+            ImageFormat srcFormat = null;
+            //TODO: the image format should be stored in snapshot table, instead of getting from volume
+            if (volumeObjectTO != null) {
+                srcFormat = volumeObjectTO.getFormat();
+            } else {
+                srcFormat = ImageFormat.QCOW2;
+            }
 
             // get snapshot file name
             String templateName = srcFile.getName();
