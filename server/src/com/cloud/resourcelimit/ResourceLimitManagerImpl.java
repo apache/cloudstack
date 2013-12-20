@@ -879,6 +879,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         join1.and("accountId", join1.entity().getAccountId(), Op.EQ);
         join1.and("type", join1.entity().getType(), Op.EQ);
         join1.and("state", join1.entity().getState(), SearchCriteria.Op.NIN);
+        join1.and("displayVm", join1.entity().isDisplayVm(), Op.EQ);
         cpuSearch.join("offerings", join1, cpuSearch.entity().getId(), join1.entity().getServiceOfferingId(), JoinBuilder.JoinType.INNER);
         cpuSearch.done();
 
@@ -886,6 +887,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         sc.setJoinParameters("offerings", "accountId", accountId);
         sc.setJoinParameters("offerings", "type", VirtualMachine.Type.User);
         sc.setJoinParameters("offerings", "state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+        sc.setJoinParameters("offerings", "displayVm", 1);
         List<SumCount> cpus = _serviceOfferingDao.customSearch(sc, null);
         if (cpus != null) {
             return cpus.get(0).sum;
@@ -901,6 +903,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         join1.and("accountId", join1.entity().getAccountId(), Op.EQ);
         join1.and("type", join1.entity().getType(), Op.EQ);
         join1.and("state", join1.entity().getState(), SearchCriteria.Op.NIN);
+        join1.and("displayVm", join1.entity().isDisplayVm(), Op.EQ);
         memorySearch.join("offerings", join1, memorySearch.entity().getId(), join1.entity().getServiceOfferingId(), JoinBuilder.JoinType.INNER);
         memorySearch.done();
 
@@ -908,6 +911,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         sc.setJoinParameters("offerings", "accountId", accountId);
         sc.setJoinParameters("offerings", "type", VirtualMachine.Type.User);
         sc.setJoinParameters("offerings", "state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+        sc.setJoinParameters("offerings", "displayVm", 1);
         List<SumCount> memory = _serviceOfferingDao.customSearch(sc, null);
         if (memory != null) {
             return memory.get(0).sum;
@@ -954,14 +958,17 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         return _resourceCountDao.getResourceCount(account.getId(), ResourceOwnerType.Account, type);
     }
 
+    private boolean isDisplayFlagOn(Boolean displayResource){
+
+        // 1. If its null assume displayResource = 1
+        // 2. If its not null then send true if displayResource = 1
+        return (displayResource == null) || (displayResource != null && displayResource);
+    }
+
     @Override
     public void checkResourceLimit(Account account, ResourceType type, Boolean displayResource, long... count) throws ResourceAllocationException {
 
-        // By default its always on.
-        // TODO boilerplate code.
-        boolean displayflag = (displayResource == null) || (displayResource != null && displayResource);
-
-        if (displayflag) {
+        if (isDisplayFlagOn(displayResource)) {
             checkResourceLimit(account, type, count);
         }
     }
@@ -969,9 +976,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     @Override
     public void incrementResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta) {
 
-        // 1. If its null assume displayResource = 1
-        // 2. If its not null then increment if displayResource = 1
-        if (displayResource == null || (displayResource != null && displayResource)) {
+        if (isDisplayFlagOn(displayResource)) {
             incrementResourceCount(accountId, type, delta);
         }
     }
@@ -979,9 +984,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     @Override
     public void decrementResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta) {
 
-        // 1. If its null assume displayResource = 1
-        // 2. If its not null then decrement if displayResource = 1
-        if (displayResource == null || (displayResource != null && displayResource)) {
+        if (isDisplayFlagOn(displayResource)) {
             decrementResourceCount(accountId, type, delta);
         }
     }
@@ -995,7 +998,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         // Increment because the display is turned on.
         if (displayResource) {
-            //            checkResourceLimit((Account)_accountDao.findById(accountId), type, delta);
             incrementResourceCount(accountId, type, delta);
         } else {
             decrementResourceCount(accountId, type, delta);

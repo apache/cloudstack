@@ -485,22 +485,22 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return _vmDao.listByHostId(hostId);
     }
 
-    protected void resourceLimitCheck(Account owner, Long cpu, Long memory) throws ResourceAllocationException {
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.user_vm);
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.cpu, cpu);
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.memory, memory);
+    protected void resourceLimitCheck(Account owner, Boolean displayVm, Long cpu, Long memory) throws ResourceAllocationException {
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.user_vm, displayVm);
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.cpu, displayVm, cpu);
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.memory, displayVm, memory);
     }
 
-    protected void resourceCountIncrement(long accountId, Long cpu, Long memory) {
-        _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.user_vm);
-        _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.cpu, cpu);
-        _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.memory, memory);
+    protected void resourceCountIncrement(long accountId, Boolean displayVm, Long cpu, Long memory) {
+        _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.user_vm, displayVm);
+        _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.cpu, displayVm, cpu);
+        _resourceLimitMgr.incrementResourceCount(accountId, ResourceType.memory, displayVm, memory);
     }
 
-    protected void resourceCountDecrement(long accountId, Long cpu, Long memory) {
-        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.user_vm);
-        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.cpu, cpu);
-        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.memory, memory);
+    protected void resourceCountDecrement(long accountId, Boolean displayVm, Long cpu, Long memory) {
+        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.user_vm, displayVm);
+        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.cpu, displayVm, cpu);
+        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.memory, displayVm, memory);
     }
 
     @Override
@@ -1538,7 +1538,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 // First check that the maximum number of UserVMs, CPU and Memory limit for the given
                 // accountId will not be exceeded
-                resourceLimitCheck(account, new Long(serviceOffering.getCpu()), new Long(serviceOffering.getRamSize()));
+                resourceLimitCheck(account, vm.isDisplayVm(), new Long(serviceOffering.getCpu()), new Long(serviceOffering.getRamSize()));
 
                 _haMgr.cancelDestroy(vm, vm.getHostId());
 
@@ -1571,7 +1571,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
 
                 //Update Resource Count for the given account
-                resourceCountIncrement(account.getId(), new Long(serviceOffering.getCpu()), new Long(serviceOffering.getRamSize()));
+                resourceCountIncrement(account.getId(), vm.isDisplayVm(), new Long(serviceOffering.getCpu()), new Long(serviceOffering.getRamSize()));
             }
         });
 
@@ -1782,7 +1782,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 ServiceOfferingVO offering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
 
                 // Update Resource Count for the given account
-                resourceCountDecrement(vm.getAccountId(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
+                resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
             }
         }
     }
@@ -1846,10 +1846,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, vmInstance);
 
-        if (isDisplayVmEnabled != null) {
+        //If the flag is specified and is changed
+        if (isDisplayVmEnabled != null && isDisplayVmEnabled != vmInstance.isDisplayVm()) {
             if (!_accountMgr.isRootAdmin(caller.getType())) {
                 throw new PermissionDeniedException("Cannot update parameter displayvm, only admin permitted ");
             }
+            ServiceOffering offering = _serviceOfferingDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
+            _resourceLimitMgr.changeResourceCount(vmInstance.getAccountId(), ResourceType.user_vm, isDisplayVmEnabled);
+            _resourceLimitMgr.changeResourceCount(vmInstance.getAccountId(), ResourceType.cpu, isDisplayVmEnabled, new Long(offering.getCpu()));
+            _resourceLimitMgr.changeResourceCount(vmInstance.getAccountId(), ResourceType.memory, isDisplayVmEnabled, new Long(offering.getRamSize()));
         }
 
         return updateVirtualMachine(id, displayName, group, ha, isDisplayVmEnabled, osTypeId, userData, isDynamicallyScalable, cmd.getHttpMethod(), cmd.getCustomId());
@@ -2535,7 +2540,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             size += _diskOfferingDao.findById(diskOfferingId).getDiskSize();
         }
-        resourceLimitCheck(owner, new Long(offering.getCpu()), new Long(offering.getRamSize()));
+        resourceLimitCheck(owner, isDisplayVmEnabled, new Long(offering.getCpu()), new Long(offering.getRamSize()));
 
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, (isIso || diskOfferingId == null ? 1 : 2));
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, size);
@@ -2917,7 +2922,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
 
                 //Update Resource Count for the given account
-                resourceCountIncrement(accountId, new Long(offering.getCpu()), new Long(offering.getRamSize()));
+                resourceCountIncrement(accountId, isDisplayVmEnabled, new Long(offering.getCpu()), new Long(offering.getRamSize()));
                 return vm;
             }
         });
@@ -3425,7 +3430,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 ServiceOfferingVO offering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
 
                 //Update Resource Count for the given account
-                resourceCountDecrement(vm.getAccountId(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
+                resourceCountDecrement(vm.getAccountId(), vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
             }
             return _vmDao.findById(vmId);
         } else {
@@ -4376,7 +4381,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         removeInstanceFromInstanceGroup(cmd.getVmId());
 
         // VV 2: check if account/domain is with in resource limits to create a new vm
-        resourceLimitCheck(newAccount, new Long(offering.getCpu()), new Long(offering.getRamSize()));
+        resourceLimitCheck(newAccount, vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
 
         // VV 3: check if volumes and primary storage space are with in resource limits
         _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.volume, _volsDao.findByInstance(cmd.getVmId()).size());
@@ -4405,7 +4410,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid());
 
                 // update resource counts for old account
-                resourceCountDecrement(oldAccount.getAccountId(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
+                resourceCountDecrement(oldAccount.getAccountId(), vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
 
                 // OWNERSHIP STEP 1: update the vm owner
                 vm.setAccountId(newAccount.getAccountId());
@@ -4433,7 +4438,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
 
                 //update resource count of new account
-                resourceCountIncrement(newAccount.getAccountId(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
+                resourceCountIncrement(newAccount.getAccountId(), vm.isDisplayVm(), new Long(offering.getCpu()), new Long(offering.getRamSize()));
 
                 //generate usage events to account for this change
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(),
