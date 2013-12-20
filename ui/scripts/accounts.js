@@ -851,15 +851,10 @@
                                     dataProvider: function(args) {
                                         $.ajax({
                                             url: createURL('listConfigurations&accountid=' + args.context.accounts[0].id),
-                                            data: {
-                                                page: args.page,
-                                                pageSize: pageSize,
-                                                listAll: true
-                                            },
+                                            data: listViewDataProvider(args, {}, { searchBy: 'name' }),
                                             success: function(json) {
                                                 args.response.success({
                                                     data: json.listconfigurationsresponse.configuration
-
                                                 });
 
                                             },
