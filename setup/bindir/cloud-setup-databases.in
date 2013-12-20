@@ -442,7 +442,7 @@ for example:
                     self.errorAndExit("--deploy-as= user name cannot be the user name supplied for the connection credentials")
 
                 self.info("Mysql root user name:%s"%self.rootuser, True)
-                self.info("Mysql root user password:%s"%self.rootpassword, True)
+                self.info("Mysql root user password:%s"%"******", True)
 
             if self.options.serversetup:
                 if not self.options.rootcreds:
@@ -514,10 +514,7 @@ for example:
             self.host,self.port = parseHostInfo(stuff[1])
 
             self.info("Mysql user name:%s"%self.user, True)
-            if self.password:
-                self.info("Mysql user password:%s"%self.password, True)
-            else:
-                self.info("Mysql user password:", True)
+            self.info("Mysql user password:%s"%"******", True)
             self.info("Mysql server ip:%s"%self.host, True)
             self.info("Mysql server port:%s"%self.port, True)
 
