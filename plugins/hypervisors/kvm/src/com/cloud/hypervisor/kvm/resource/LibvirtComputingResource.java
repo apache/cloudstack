@@ -1042,7 +1042,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         for (int i = 0; i < interfaces.length; i++) {
             String fname = interfaces[i].getName();
             s_logger.debug("matchPifFileInDirectory: file name '" + fname + "'");
-            if (fname.startsWith("eth") || fname.startsWith("bond") || fname.startsWith("vlan") || fname.startsWith("vxlan") || fname.startsWith("em") ||
+            if (fname.startsWith("eth") || fname.startsWith("bond") || fname.startsWith("vlan") || fname.startsWith("vx") || fname.startsWith("em") ||
                 fname.matches("^p\\d+p\\d+.*")) {
                 return fname;
             }
