@@ -29,7 +29,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.deploy.HAPlanner;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContext;
@@ -47,6 +46,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.deploy.HAPlanner;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -344,6 +344,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
             try {
                 _itMgr.advanceStop(vm.getUuid(), true);
+                vm = _instanceDao.findByUuid(vm.getUuid());
             } catch (ResourceUnavailableException e) {
                 assert false : "How do we hit this when force is true?";
             throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
