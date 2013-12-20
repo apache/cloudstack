@@ -6997,11 +6997,7 @@
                                             dataProvider: function(args) {
                                                 $.ajax({
                                                     url: createURL('listConfigurations&zoneid=' + args.context.physicalResources[0].id),
-                                                    data: {
-                                                        page: args.page,
-                                                        pageSize: pageSize,
-                                                        listAll: true
-                                                    },
+                                                    data: listViewDataProvider(args, {}, { searchBy: 'name' }),
                                                     success: function(json) {
                                                         args.response.success({
                                                             data: json.listconfigurationsresponse.configuration
@@ -12716,11 +12712,7 @@
                                     dataProvider: function(args) {
                                         $.ajax({
                                             url: createURL('listConfigurations&clusterid=' + args.context.clusters[0].id),
-                                            data: {
-                                                page: args.page,
-                                                pageSize: pageSize,
-                                                listAll: true
-                                            },
+                                            data: listViewDataProvider(args, {}, { searchBy: 'name' }),
                                             success: function(json) {
                                                 args.response.success({
                                                     data: json.listconfigurationsresponse.configuration
@@ -14934,11 +14926,7 @@
 
                                         $.ajax({
                                             url: createURL('listConfigurations&storageid=' + args.context.primarystorages[0].id),
-                                            data: {
-                                                page: args.page,
-                                                pageSize: pageSize,
-                                                listAll: true
-                                            },
+                                            data: listViewDataProvider(args, {}, { searchBy: 'name' }),
                                             success: function(json) {
                                                 args.response.success({
                                                     data: json.listconfigurationsresponse.configuration
