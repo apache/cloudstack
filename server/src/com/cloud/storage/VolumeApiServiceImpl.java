@@ -26,8 +26,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -74,6 +72,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -333,11 +332,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     protected AsyncJobManager _jobMgr;
 
     // TODO
-    static final ConfigKey<Boolean> VmJobEnabled = new ConfigKey<Boolean>("Advanced",
-            Boolean.class, "vm.job.enabled", "false",
+    static final ConfigKey<Boolean> VmJobEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.job.enabled", "false",
             "True to enable new VM sync model. false to use the old way", false);
-    static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced",
-            Long.class, "vm.job.check.interval", "3000",
+    static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced", Long.class, "vm.job.check.interval", "3000",
             "Interval in milliseconds to check if the job is complete", false);
 
     private long _maxVolumeSizeInGb;
@@ -409,25 +406,23 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (userSpecifiedName == null) {
             userSpecifiedName = getRandomVolumeName();
         }
-        if ((!url.toLowerCase().endsWith("vhd")) && (!url.toLowerCase().endsWith("vhd.zip")) && (!url.toLowerCase().endsWith("vhd.bz2")) &&
-            (!url.toLowerCase().endsWith("vhdx")) && (!url.toLowerCase().endsWith("vhdx.zip")) &&
-            (!url.toLowerCase().endsWith("vhdx.gz")) && (!url.toLowerCase().endsWith("vhdx.bz2")) &&
-            (!url.toLowerCase().endsWith("vhd.gz")) && (!url.toLowerCase().endsWith("qcow2")) && (!url.toLowerCase().endsWith("qcow2.zip")) &&
-            (!url.toLowerCase().endsWith("qcow2.bz2")) && (!url.toLowerCase().endsWith("qcow2.gz")) && (!url.toLowerCase().endsWith("ova")) &&
-            (!url.toLowerCase().endsWith("ova.zip")) && (!url.toLowerCase().endsWith("ova.bz2")) && (!url.toLowerCase().endsWith("ova.gz")) &&
-            (!url.toLowerCase().endsWith("img")) && (!url.toLowerCase().endsWith("raw"))) {
+        if ((!url.toLowerCase().endsWith("vhd")) && (!url.toLowerCase().endsWith("vhd.zip")) && (!url.toLowerCase().endsWith("vhd.bz2")) && (!url.toLowerCase().endsWith("vhdx"))
+                && (!url.toLowerCase().endsWith("vhdx.zip")) && (!url.toLowerCase().endsWith("vhdx.gz")) && (!url.toLowerCase().endsWith("vhdx.bz2"))
+                && (!url.toLowerCase().endsWith("vhd.gz")) && (!url.toLowerCase().endsWith("qcow2")) && (!url.toLowerCase().endsWith("qcow2.zip"))
+                && (!url.toLowerCase().endsWith("qcow2.bz2")) && (!url.toLowerCase().endsWith("qcow2.gz")) && (!url.toLowerCase().endsWith("ova"))
+                && (!url.toLowerCase().endsWith("ova.zip")) && (!url.toLowerCase().endsWith("ova.bz2")) && (!url.toLowerCase().endsWith("ova.gz"))
+                && (!url.toLowerCase().endsWith("img")) && (!url.toLowerCase().endsWith("raw"))) {
             throw new InvalidParameterValueException("Please specify a valid " + format.toLowerCase());
         }
 
-        if ((format.equalsIgnoreCase("vhd") && (!url.toLowerCase().endsWith(".vhd") && !url.toLowerCase().endsWith("vhd.zip") && !url.toLowerCase().endsWith("vhd.bz2") && !url.toLowerCase()
-            .endsWith("vhd.gz"))) ||
-            (format.equalsIgnoreCase("vhdx") && (!url.toLowerCase().endsWith(".vhdx") && !url.toLowerCase().endsWith("vhdx.zip") &&
-                !url.toLowerCase().endsWith("vhdx.bz2") && !url.toLowerCase()
-                .endsWith("vhdx.gz"))) ||
-            (format.equalsIgnoreCase("qcow2") && (!url.toLowerCase().endsWith(".qcow2") && !url.toLowerCase().endsWith("qcow2.zip") &&
-                !url.toLowerCase().endsWith("qcow2.bz2") && !url.toLowerCase().endsWith("qcow2.gz"))) ||
-            (format.equalsIgnoreCase("ova") && (!url.toLowerCase().endsWith(".ova") && !url.toLowerCase().endsWith("ova.zip") && !url.toLowerCase().endsWith("ova.bz2") && !url.toLowerCase()
-                .endsWith("ova.gz"))) || (format.equalsIgnoreCase("raw") && (!url.toLowerCase().endsWith(".img") && !url.toLowerCase().endsWith("raw")))) {
+        if ((format.equalsIgnoreCase("vhd") && (!url.toLowerCase().endsWith(".vhd") && !url.toLowerCase().endsWith("vhd.zip") && !url.toLowerCase().endsWith("vhd.bz2") && !url
+                .toLowerCase().endsWith("vhd.gz")))
+                || (format.equalsIgnoreCase("vhdx") && (!url.toLowerCase().endsWith(".vhdx") && !url.toLowerCase().endsWith("vhdx.zip") && !url.toLowerCase().endsWith("vhdx.bz2") && !url
+                        .toLowerCase().endsWith("vhdx.gz")))
+                || (format.equalsIgnoreCase("qcow2") && (!url.toLowerCase().endsWith(".qcow2") && !url.toLowerCase().endsWith("qcow2.zip")
+                        && !url.toLowerCase().endsWith("qcow2.bz2") && !url.toLowerCase().endsWith("qcow2.gz")))
+                || (format.equalsIgnoreCase("ova") && (!url.toLowerCase().endsWith(".ova") && !url.toLowerCase().endsWith("ova.zip") && !url.toLowerCase().endsWith("ova.bz2") && !url
+                        .toLowerCase().endsWith("ova.gz"))) || (format.equalsIgnoreCase("raw") && (!url.toLowerCase().endsWith(".img") && !url.toLowerCase().endsWith("raw")))) {
             throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is an invalid for the format " + format.toLowerCase());
         }
         UriUtils.validateUrl(url);
@@ -543,8 +538,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 Long customDiskOfferingMinSize = _volumeMgr.CustomDiskOfferingMinSize.value();
 
                 if ((sizeInGB < customDiskOfferingMinSize) || (sizeInGB > customDiskOfferingMaxSize)) {
-                    throw new InvalidParameterValueException("Volume size: " + sizeInGB + "GB is out of allowed range. Max: " + customDiskOfferingMaxSize + " Min:" +
-                            customDiskOfferingMinSize);
+                    throw new InvalidParameterValueException("Volume size: " + sizeInGB + "GB is out of allowed range. Max: " + customDiskOfferingMaxSize + " Min:"
+                            + customDiskOfferingMinSize);
                 }
             }
 
@@ -603,8 +598,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             if (snapshotCheck.getState() != Snapshot.State.BackedUp) {
-                throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.State.BackedUp +
-                    " state yet and can't be used for volume creation");
+                throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.State.BackedUp + " state yet and can't be used for volume creation");
             }
             parentVolume = _volsDao.findByIdIncludingRemoved(snapshotCheck.getVolumeId());
 
@@ -663,15 +657,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             userSpecifiedName = getRandomVolumeName();
         }
 
-        VolumeVO volume = commitVolume(cmd, caller, ownerId, displayVolumeEnabled, zoneId, diskOfferingId, size, minIops,
-            maxIops, parentVolume, userSpecifiedName, _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()));
+        VolumeVO volume = commitVolume(cmd, caller, ownerId, displayVolumeEnabled, zoneId, diskOfferingId, size, minIops, maxIops, parentVolume, userSpecifiedName,
+                _uuidMgr.generateUuid(Volume.class, cmd.getCustomId()));
 
         return volume;
     }
 
     private VolumeVO commitVolume(final CreateVolumeCmd cmd, final Account caller, final long ownerId, final Boolean displayVolumeEnabled, final Long zoneId,
-        final Long diskOfferingId, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume,
-        final String userSpecifiedName, final String uuid) {
+            final Long diskOfferingId, final Long size, final Long minIops, final Long maxIops, final VolumeVO parentVolume, final String userSpecifiedName, final String uuid) {
         return Transaction.execute(new TransactionCallback<VolumeVO>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
@@ -701,7 +694,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (cmd.getSnapshotId() == null) {
                     // for volume created from snapshot, create usage event after volume creation
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                        diskOfferingId, null, size, Volume.class.getName(), volume.getUuid());
+                            diskOfferingId, null, size, Volume.class.getName(), volume.getUuid());
                 }
 
                 CallContext.current().setEventDetails("Volume Id: " + volume.getId());
@@ -771,8 +764,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    protected VolumeVO createVolumeFromSnapshot(VolumeVO volume, long snapshotId, Long vmId)
-        throws StorageUnavailableException {
+    protected VolumeVO createVolumeFromSnapshot(VolumeVO volume, long snapshotId, Long vmId) throws StorageUnavailableException {
         VolumeInfo createdVolume = null;
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
 
@@ -783,7 +775,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         createdVolume = _volumeMgr.createVolumeFromSnapshot(volume, snapshot, vm);
 
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(), createdVolume.getDataCenterId(), createdVolume.getId(),
-            createdVolume.getName(), createdVolume.getDiskOfferingId(), null, createdVolume.getSize(), Volume.class.getName(), createdVolume.getUuid());
+                createdVolume.getName(), createdVolume.getDiskOfferingId(), null, createdVolume.getSize(), Volume.class.getName(), createdVolume.getUuid());
 
         return _volsDao.findById(createdVolume.getId());
     }
@@ -815,8 +807,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         /* Only works for KVM/Xen for now */
-        if (_volsDao.getHypervisorType(volume.getId()) != HypervisorType.KVM && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.XenServer &&
-            _volsDao.getHypervisorType(volume.getId()) != HypervisorType.VMware) {
+        if (_volsDao.getHypervisorType(volume.getId()) != HypervisorType.KVM && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.XenServer
+                && _volsDao.getHypervisorType(volume.getId()) != HypervisorType.VMware) {
             throw new InvalidParameterValueException("Cloudstack currently only supports volumes marked as KVM or XenServer hypervisor for resize");
         }
 
@@ -899,14 +891,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
          * the actual disk size
          */
         if (currentSize > newSize && !shrinkOk) {
-            throw new InvalidParameterValueException("Going from existing size of " + currentSize + " to size of " + newSize +
-                " would shrink the volume, need to sign off by supplying the shrinkok parameter with value of true");
+            throw new InvalidParameterValueException("Going from existing size of " + currentSize + " to size of " + newSize
+                    + " would shrink the volume, need to sign off by supplying the shrinkok parameter with value of true");
         }
 
         if (!shrinkOk) {
             /* Check resource limit for this account on primary storage resource */
-            _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(volume.getAccountId()), ResourceType.primary_storage, volume.isDisplayVolume(), new Long(newSize -
-                currentSize));
+            _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(volume.getAccountId()), ResourceType.primary_storage, volume.isDisplayVolume(), new Long(newSize
+                    - currentSize));
         }
 
         /*
@@ -952,7 +944,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             _volsDao.update(volume.getId(), volume);
             // Log usage event for volumes belonging user VM's only
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
+                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
 
             /* Update resource count for the account on primary storage resource */
             if (!shrinkOk) {
@@ -1013,15 +1005,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     /* If volume is in primary storage, decrement primary storage count else decrement secondary
                      storage count (in case of upload volume). */
                     if (volume.getFolder() != null || volume.getPath() != null || volume.getState() == Volume.State.Allocated) {
-                        _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplayVolume(),
-                            new Long(volume.getSize()));
+                        _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplayVolume(), new Long(volume.getSize()));
                     } else {
                         _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(), ResourceType.secondary_storage.getOrdinal());
                     }
 
                     // Log usage event for volumes belonging user VM's only
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                        Volume.class.getName(), volume.getUuid());
+                            Volume.class.getName(), volume.getUuid());
                 }
             }
             // Mark volume as removed if volume has not been created on primary or secondary
@@ -1141,8 +1132,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         List<VolumeVO> existingDataVolumes = _volsDao.findByInstanceAndType(vmId, Volume.Type.DATADISK);
         int maxDataVolumesSupported = getMaxDataVolumesSupported(vm);
         if (existingDataVolumes.size() >= maxDataVolumesSupported) {
-            throw new InvalidParameterValueException("The specified VM already has the maximum number of data disks (" + maxDataVolumesSupported +
-                "). Please specify another VM.");
+            throw new InvalidParameterValueException("The specified VM already has the maximum number of data disks (" + maxDataVolumesSupported + "). Please specify another VM.");
         }
 
         // Check that the VM and the volume are in the same zone
@@ -1198,7 +1188,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         deviceId = getDeviceId(vmId, deviceId);
         VolumeInfo volumeOnPrimaryStorage = volume;
-        if (volume.getState().equals(Volume.State.Allocated) || volume.getState() == Volume.State.Uploaded) {
+        //don't create volume on primary storage if its being attached to the vm which Root's volume hasn't been created yet
+        List<VolumeVO> existingRootVolumes = _volsDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
+        boolean rootVolumeCreatedOnPrimary = true;
+        if (existingRootVolumes.get(0).getState().equals(Volume.State.Allocated)) {
+            rootVolumeCreatedOnPrimary = false;
+        }
+
+        if ((volume.getState().equals(Volume.State.Allocated) && rootVolumeCreatedOnPrimary) || volume.getState() == Volume.State.Uploaded) {
             try {
                 volumeOnPrimaryStorage = _volumeMgr.createVolumeOnPrimaryStorage(vm, rootVolumeOfVm, volume, rootDiskHyperType);
             } catch (NoTransitionException e) {
@@ -1214,15 +1211,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (moveVolumeNeeded) {
             PrimaryDataStoreInfo primaryStore = (PrimaryDataStoreInfo)volumeOnPrimaryStorage.getDataStore();
             if (primaryStore.isLocal()) {
-                throw new CloudRuntimeException("Failed to attach local data volume " + volume.getName() + " to VM " + vm.getDisplayName() +
-                    " as migration of local data volume is not allowed");
+                throw new CloudRuntimeException("Failed to attach local data volume " + volume.getName() + " to VM " + vm.getDisplayName()
+                        + " as migration of local data volume is not allowed");
             }
             StoragePoolVO vmRootVolumePool = _storagePoolDao.findById(rootVolumeOfVm.getPoolId());
 
             try {
-                volumeOnPrimaryStorage =
-                    _volumeMgr.moveVolume(volumeOnPrimaryStorage, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(), vmRootVolumePool.getClusterId(),
-                        dataDiskHyperType);
+                volumeOnPrimaryStorage = _volumeMgr.moveVolume(volumeOnPrimaryStorage, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(),
+                        vmRootVolumePool.getClusterId(), dataDiskHyperType);
             } catch (ConcurrentOperationException e) {
                 s_logger.debug("move volume failed", e);
                 throw new CloudRuntimeException("move volume failed", e);
@@ -1301,9 +1297,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "detaching volume", async = true)
     public Volume detachVolumeFromVM(DetachVolumeCmd cmmd) {
         Account caller = CallContext.current().getCallingAccount();
-        if ((cmmd.getId() == null && cmmd.getDeviceId() == null && cmmd.getVirtualMachineId() == null) ||
-            (cmmd.getId() != null && (cmmd.getDeviceId() != null || cmmd.getVirtualMachineId() != null)) ||
-            (cmmd.getId() == null && (cmmd.getDeviceId() == null || cmmd.getVirtualMachineId() == null))) {
+        if ((cmmd.getId() == null && cmmd.getDeviceId() == null && cmmd.getVirtualMachineId() == null)
+                || (cmmd.getId() != null && (cmmd.getDeviceId() != null || cmmd.getVirtualMachineId() != null))
+                || (cmmd.getId() == null && (cmmd.getDeviceId() == null || cmmd.getVirtualMachineId() == null))) {
             throw new InvalidParameterValueException("Please provide either a volume id, or a tuple(device id, instance id)");
         }
 
@@ -1557,8 +1553,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         if (volume.getState() != Volume.State.Ready) {
-            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() +
-                ". Cannot take snapshot.");
+            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
         }
 
         CreateSnapshotPayload payload = new CreateSnapshotPayload();
@@ -1588,8 +1583,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         if (volume.getState() != Volume.State.Ready) {
-            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() +
-                ". Cannot take snapshot.");
+            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
         }
 
         if (volume.getTemplateId() != null) {
@@ -1639,8 +1633,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         // instance is stopped
         if (volume.getInstanceId() != null && ApiDBUtils.findVMInstanceById(volume.getInstanceId()).getState() != State.Stopped) {
             s_logger.debug("Invalid state of the volume with ID: " + volumeId + ". It should be either detached or the VM should be in stopped state.");
-            PermissionDeniedException ex =
-                new PermissionDeniedException("Invalid state of the volume with specified ID. It should be either detached or the VM should be in stopped state.");
+            PermissionDeniedException ex = new PermissionDeniedException(
+                    "Invalid state of the volume with specified ID. It should be either detached or the VM should be in stopped state.");
             ex.addProxyObject(volume.getUuid(), "volumeId");
             throw ex;
         }
@@ -1768,8 +1762,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (storeForDataStoreScope.getScopeId().equals(vmClusterId)) {
                     return false;
                 }
-            } else if (storeForDataStoreScope.getScopeType() == ScopeType.HOST &&
-                (storeForRootStoreScope.getScopeType() == ScopeType.CLUSTER || storeForRootStoreScope.getScopeType() == ScopeType.ZONE)) {
+            } else if (storeForDataStoreScope.getScopeType() == ScopeType.HOST
+                    && (storeForRootStoreScope.getScopeType() == ScopeType.CLUSTER || storeForRootStoreScope.getScopeType() == ScopeType.ZONE)) {
                 Long hostId = _vmInstanceDao.findById(rootVolumeOfVm.getInstanceId()).getHostId();
                 if (storeForDataStoreScope.getScopeId().equals(hostId)) {
                     return false;
@@ -2005,8 +1999,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 workJob.setVmInstanceId(vm.getId());
 
                 // save work context info (there are some duplications)
-                VmWorkAttachVolume workInfo = new VmWorkAttachVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
-                        VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, deviceId);
+                VmWorkAttachVolume workInfo = new VmWorkAttachVolume(callingUser.getId(), callingAccount.getId(), vm.getId(), VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId,
+                        deviceId);
                 workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
@@ -2020,8 +2014,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         final long jobId = (Long)context.getContextParameter("jobId");
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
-                volumeId);
+        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"), volumeId);
     }
 
     public Outcome<Volume> detachVolumeFromVmThroughJobQueue(final Long vmId, final Long volumeId) {
@@ -2050,8 +2043,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 workJob.setVmInstanceId(vm.getId());
 
                 // save work context info (there are some duplications)
-                VmWorkDetachVolume workInfo = new VmWorkDetachVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
-                        VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId);
+                VmWorkDetachVolume workInfo = new VmWorkDetachVolume(callingUser.getId(), callingAccount.getId(), vm.getId(), VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId);
                 workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
@@ -2065,8 +2057,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         final long jobId = (Long)context.getContextParameter("jobId");
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
-                volumeId);
+        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"), volumeId);
     }
 
     @Override
@@ -2082,28 +2073,26 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             VmWorkAttachVolume attachWork = (VmWorkAttachVolume)work;
 
             if (s_logger.isDebugEnabled())
-                s_logger.debug("Execute Attach-Volume within VM work job context. vmId: " + attachWork.getVmId()
-                        + ", volId: " + attachWork.getVolumeId() + ", deviceId: " + attachWork.getDeviceId());
+                s_logger.debug("Execute Attach-Volume within VM work job context. vmId: " + attachWork.getVmId() + ", volId: " + attachWork.getVolumeId() + ", deviceId: "
+                        + attachWork.getDeviceId());
 
             orchestrateAttachVolumeToVM(attachWork.getVmId(), attachWork.getVolumeId(), attachWork.getDeviceId());
 
             if (s_logger.isDebugEnabled())
-                s_logger.debug("Done executing Attach-Volume within VM work job context. vmId: " + attachWork.getVmId()
-                        + ", volId: " + attachWork.getVolumeId() + ", deviceId: " + attachWork.getDeviceId());
+                s_logger.debug("Done executing Attach-Volume within VM work job context. vmId: " + attachWork.getVmId() + ", volId: " + attachWork.getVolumeId() + ", deviceId: "
+                        + attachWork.getDeviceId());
 
             return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
         } else if (work instanceof VmWorkDetachVolume) {
             VmWorkDetachVolume detachWork = (VmWorkDetachVolume)work;
 
             if (s_logger.isDebugEnabled())
-                s_logger.debug("Execute Detach-Volume within VM work job context. vmId: " + detachWork.getVmId()
-                        + ", volId: " + detachWork.getVolumeId());
+                s_logger.debug("Execute Detach-Volume within VM work job context. vmId: " + detachWork.getVmId() + ", volId: " + detachWork.getVolumeId());
 
             orchestrateDetachVolumeFromVM(detachWork.getVmId(), detachWork.getVolumeId());
 
             if (s_logger.isDebugEnabled())
-                s_logger.debug("Done executing Detach-Volume within VM work job context. vmId: " + detachWork.getVmId()
-                        + ", volId: " + detachWork.getVolumeId());
+                s_logger.debug("Done executing Detach-Volume within VM work job context. vmId: " + detachWork.getVmId() + ", volId: " + detachWork.getVolumeId());
 
             return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
         } else {
