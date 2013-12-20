@@ -339,7 +339,6 @@ namespace HypervResource
                 }
 
                 string driveType = diskDrive.type;
-
                 string ideCtrllr = "0";
                 string driveResourceType = null;
                 switch (driveType) {
@@ -351,6 +350,8 @@ namespace HypervResource
                         ideCtrllr = "1";
                         driveResourceType = ISO_DRIVE;
                         break;
+                    case "DATADISK":
+                        break;
                     default: 
                         // TODO: double check exception type
                         errMsg = string.Format("Unknown disk type {0} for disk {1}, vm named {2}", 
@@ -360,12 +361,20 @@ namespace HypervResource
                         logger.Error(errMsg, ex);
                         throw ex;
                 }
-                logger.DebugFormat("Create disk type {1} (Named: {0}), on vm {2} {3}", diskName, driveResourceType, vmName, 
-                                        string.IsNullOrEmpty(vhdFile) ? " no disk to insert" : ", inserting disk" +vhdFile );
-                AddDiskDriveToIdeController(newVm, vhdFile, ideCtrllr, driveResourceType);
-                if (isoPath != null)
+
+                logger.DebugFormat("Create disk type {1} (Named: {0}), on vm {2} {3}", diskName, driveResourceType, vmName,
+                        string.IsNullOrEmpty(vhdFile) ? " no disk to insert" : ", inserting disk" + vhdFile);
+                if (driveType.Equals("DATADISK"))
                 {
-                    AttachIso(vmName, isoPath);
+                    AttachDisk(vmName, vhdFile, (string)diskDrive.diskSeq);
+                }
+                else
+                {
+                    AddDiskDriveToIdeController(newVm, vhdFile, ideCtrllr, driveResourceType);
+                    if (isoPath != null)
+                    {
+                        AttachIso(vmName, isoPath);
+                    }
                 }
             }
 
@@ -488,7 +497,7 @@ namespace HypervResource
             PingReply pingReply = null;
             IPAddress ipAddress = null;
             Ping pingSender = new Ping();
-            int numberOfPings = 4;
+            int numberOfPings = 6;
             int pingTimeout = 1000;
             int byteSize = 32;
             byte[] buffer = new byte[byteSize];
