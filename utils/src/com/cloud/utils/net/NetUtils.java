@@ -1367,16 +1367,58 @@ public class NetUtils {
         return resultIp;
     }
 
+    static final String VLAN_PREFIX = "vlan://";
+    static final int VLAN_PREFIX_LENGTH = VLAN_PREFIX.length();
+
     public static boolean isValidVlan(String vlan) {
+        if (null == vlan || "".equals(vlan))
+            return false;
+        if (vlan.startsWith(VLAN_PREFIX))
+            vlan = vlan.substring(VLAN_PREFIX_LENGTH);
         try {
             int vnet = Integer.parseInt(vlan);
-            if (vnet < 0 || vnet > 4096) {
+            if (vnet <= 0 || vnet >= 4095) { // the valid range is 1- 4094
                 return false;
             }
             return true;
         } catch (NumberFormatException e) {
             return false;
         }
+    }
+
+    static final String VLAN_UNTAGGED = "untagged";
+
+    public static boolean sameIsolationId(String one, String other)
+    {
+        // check nulls
+        // check empty strings
+        if ((one == null || one.equals(""))
+                &&
+                (other == null || other.equals("")))
+        {
+            return true;
+        }
+        // check 'untagged'
+        if (VLAN_UNTAGGED.equalsIgnoreCase(one) && VLAN_UNTAGGED.equalsIgnoreCase(other))
+        {
+            return true;
+        }
+        // if one is a number check the other as number and as 'vlan://' + number
+        if (one.startsWith(VLAN_PREFIX))
+        {
+            one = one.substring(VLAN_PREFIX_LENGTH);
+        }
+        if (other.startsWith(VLAN_PREFIX))
+        {
+            other = other.substring(VLAN_PREFIX_LENGTH);
+        }
+        // check valid uris or numbers
+        if (one.equals(other))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     // Attention maintainers: these pvlan functions should take into account code
