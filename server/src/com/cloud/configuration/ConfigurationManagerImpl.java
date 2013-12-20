@@ -36,8 +36,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.deploy.DeploymentClusterPlanner;
-import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -71,6 +69,7 @@ import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
@@ -119,7 +118,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
-import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -2472,6 +2471,8 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
         String newVlanNetmask = cmd.getNetmask();
         String vlanId = cmd.getVlan();
         // TODO decide if we should be forgiving or demand a valid and complete URI
+        if(Vlan.UNTAGGED.equalsIgnoreCase(vlanId))
+            vlanId = null;
         if (!((vlanId == null)
                 || ("".equals(vlanId))
                 || vlanId.startsWith(BroadcastDomainType.Vlan.scheme())))
