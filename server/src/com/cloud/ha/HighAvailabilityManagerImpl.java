@@ -351,6 +351,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
             try {
                 _itMgr.advanceStop(vm.getUuid(), true);
+                vm = _instanceDao.findByUuid(vm.getUuid());
             } catch (ResourceUnavailableException e) {
                 assert false : "How do we hit this when force is true?";
                 throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
