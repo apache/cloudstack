@@ -42,7 +42,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.deploy.DeploymentPlanner;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -119,6 +118,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.domain.dao.DomainDao;
@@ -722,12 +722,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 				throw new RuntimeException("Execution excetion", e);
 			}
 
-	    	Throwable jobException = retrieveExecutionException(outcome.getJob());
-	    	if(jobException != null) {
-		    	if(jobException instanceof ConcurrentOperationException)
-		    		throw (ConcurrentOperationException)jobException;
-		    	else if(jobException instanceof ResourceUnavailableException)
-		    		throw (ResourceUnavailableException)jobException;
+            Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+            if (jobResult != null) {
+                if (jobResult instanceof ConcurrentOperationException)
+                    throw (ConcurrentOperationException)jobResult;
+                else if (jobResult instanceof ResourceUnavailableException)
+                    throw (ResourceUnavailableException)jobResult;
 	    	}
     	}
     }
@@ -736,7 +736,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public void orchestrateStart(String vmUuid, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan planToDeploy, DeploymentPlanner planner)
             throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
-        
+
     	CallContext cctxt = CallContext.current();
         Account account = cctxt.getCallingAccount();
         User caller = cctxt.getCallingUser();
@@ -847,7 +847,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     }
                 }
 
-                Account owner = _entityMgr.findById(Account.class, vm.getAccountId());              
+                Account owner = _entityMgr.findById(Account.class, vm.getAccountId());
                 VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, template, offering, owner, params);
                 DeployDestination dest = null;
                 try {
@@ -1246,14 +1246,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 				throw new RuntimeException("Execution excetion", e);
 			}
 
-	    	Throwable jobException = retrieveExecutionException(outcome.getJob());
-	    	if(jobException != null) {
-	    		if(jobException instanceof AgentUnavailableException)
-	    			throw (AgentUnavailableException)jobException;
-	    		else if(jobException instanceof ConcurrentOperationException)
-		    		throw (ConcurrentOperationException)jobException;
-		    	else if(jobException instanceof OperationTimedoutException)
-		    		throw (OperationTimedoutException)jobException;
+            Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+            if (jobResult != null) {
+                if (jobResult instanceof AgentUnavailableException)
+                    throw (AgentUnavailableException)jobResult;
+                else if (jobResult instanceof ConcurrentOperationException)
+                    throw (ConcurrentOperationException)jobResult;
+                else if (jobResult instanceof OperationTimedoutException)
+                    throw (OperationTimedoutException)jobResult;
 	    	}
     	}
     }
@@ -1536,10 +1536,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 				throw new RuntimeException("Execution excetion", e);
 			}
 
-	    	Throwable jobException = retrieveExecutionException(outcome.getJob());
-	    	if(jobException != null) {
-		    	if(jobException instanceof RuntimeException)
-		    		throw (RuntimeException)jobException;
+            Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+            if (jobResult != null) {
+                if (jobResult instanceof RuntimeException)
+                    throw (RuntimeException)jobResult;
 	    	}
     	}
     }
@@ -1618,14 +1618,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 				throw new RuntimeException("Execution excetion", e);
 			}
 
-	    	Throwable jobException = retrieveExecutionException(outcome.getJob());
-	    	if(jobException != null) {
-		    	if(jobException instanceof ResourceUnavailableException)
-	    			throw (ResourceUnavailableException)jobException;
-	    		else if(jobException instanceof ConcurrentOperationException)
-		    		throw (ConcurrentOperationException)jobException;
-	    		else if(jobException instanceof RuntimeException)
-		    		throw (RuntimeException)jobException;
+            Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+	    	if(jobResult != null) {
+		    	if(jobResult instanceof ResourceUnavailableException)
+	    			throw (ResourceUnavailableException)jobResult;
+	    		else if(jobResult instanceof ConcurrentOperationException)
+		    		throw (ConcurrentOperationException)jobResult;
+	    		else if(jobResult instanceof RuntimeException)
+		    		throw (RuntimeException)jobResult;
 	    	}
     	}
     }
@@ -1889,7 +1889,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 throw new RuntimeException("Execution excetion", e);
 			}
 
-	    	Throwable jobException = retrieveExecutionException(outcome.getJob());
+            Object jobException = _jobMgr.unmarshallResultObject(outcome.getJob());
 	    	if(jobException != null) {
 	    	    if(jobException instanceof ResourceUnavailableException)
                     throw (ResourceUnavailableException)jobException;
@@ -2168,14 +2168,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 				throw new RuntimeException("Execution excetion", e);
 			}
 
-	    	Throwable jobException = retrieveExecutionException(outcome.getJob());
-	    	if(jobException != null) {
-	    		if(jobException instanceof ResourceUnavailableException)
-	    			throw (ResourceUnavailableException)jobException;
-	    		else if(jobException instanceof ConcurrentOperationException)
-		    		throw (ConcurrentOperationException)jobException;
-	    		else if(jobException instanceof InsufficientCapacityException)
-	    			throw (InsufficientCapacityException)jobException;
+            Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+            if (jobResult != null) {
+                if (jobResult instanceof ResourceUnavailableException)
+                    throw (ResourceUnavailableException)jobResult;
+                else if (jobResult instanceof ConcurrentOperationException)
+                    throw (ConcurrentOperationException)jobResult;
+                else if (jobResult instanceof InsufficientCapacityException)
+                    throw (InsufficientCapacityException)jobResult;
 	    	}
     	}
     }
@@ -3097,7 +3097,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 	    		NicProfile nic = (NicProfile)JobSerializerHelper.fromObjectSerializedString(jobVo.getResult());
 	    		return nic;
 	    	} else {
-		    	Throwable jobException = retrieveExecutionException(outcome.getJob());
+                Object jobException = _jobMgr.unmarshallResultObject(outcome.getJob());
 		    	if(jobException != null) {
 		    	    if(jobException instanceof ResourceUnavailableException)
 	                    throw (ResourceUnavailableException)jobException;
@@ -3204,14 +3204,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 	    		Boolean result = (Boolean)JobSerializerHelper.fromObjectSerializedString(jobVo.getResult());
 	    		return result;
 	    	} else {
-		    	Throwable jobException = retrieveExecutionException(outcome.getJob());
-		    	if(jobException != null) {
-		    	    if(jobException instanceof ResourceUnavailableException)
-	                    throw (ResourceUnavailableException)jobException;
-		    		else if(jobException instanceof ConcurrentOperationException)
-			    	    throw (ConcurrentOperationException)jobException;
-		    		else if(jobException instanceof RuntimeException)
-		    			throw (RuntimeException)jobException;
+                Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+                if (jobResult != null) {
+                    if (jobResult instanceof ResourceUnavailableException)
+                        throw (ResourceUnavailableException)jobResult;
+                    else if (jobResult instanceof ConcurrentOperationException)
+                        throw (ConcurrentOperationException)jobResult;
+                    else if (jobResult instanceof RuntimeException)
+                        throw (RuntimeException)jobResult;
 	            }
 
 		    	throw new RuntimeException("Job failed with un-handled exception");
@@ -3439,12 +3439,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 				throw new RuntimeException("Execution excetion", e);
 			}
 
-	    	Throwable jobException = retrieveExecutionException(outcome.getJob());
-	    	if(jobException != null) {
-	    		if(jobException instanceof ResourceUnavailableException)
-	    			throw (ResourceUnavailableException)jobException;
-	    		else if(jobException instanceof ConcurrentOperationException)
-		    		throw (ConcurrentOperationException)jobException;
+            Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+            if (jobResult != null) {
+                if (jobResult instanceof ResourceUnavailableException)
+                    throw (ResourceUnavailableException)jobResult;
+                else if (jobResult instanceof ConcurrentOperationException)
+                    throw (ConcurrentOperationException)jobResult;
 	    	}
     	}
     }
@@ -3693,12 +3693,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 	    	if(jobVo.getResultCode() == JobInfo.Status.SUCCEEDED.ordinal()) {
 	    		return _entityMgr.findById(VMInstanceVO.class, vm.getId());
 	    	} else {
-		    	Throwable jobException = retrieveExecutionException(outcome.getJob());
-		    	if(jobException != null) {
-		    		if(jobException instanceof ResourceUnavailableException)
-		    			throw (ResourceUnavailableException)jobException;
-		    		else if(jobException instanceof ConcurrentOperationException)
-			    		throw (ConcurrentOperationException)jobException;
+                Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+                if (jobResult != null) {
+                    if (jobResult instanceof ResourceUnavailableException)
+                        throw (ResourceUnavailableException)jobResult;
+                    else if (jobResult instanceof ConcurrentOperationException)
+                        throw (ConcurrentOperationException)jobResult;
 		    	}
 
 		    	throw new RuntimeException("Failed with un-handled exception");
@@ -4109,20 +4109,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         protected VirtualMachine retrieve() {
             return _vmDao.findById(_vmId);
         }
-    }
-
-    public Throwable retrieveExecutionException(AsyncJob job) {
-    	assert(job != null);
-        assert (job.getDispatcher().equals(VmWorkConstants.VM_WORK_JOB_DISPATCHER));
-
-    	AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, job.getId());
-    	if(jobVo != null && jobVo.getResult() != null) {
-    		Object obj = JobSerializerHelper.fromSerializedString(job.getResult());
-
-    		if(obj != null && obj instanceof Throwable)
-    			return (Throwable)obj;
-    	}
-    	return null;
     }
 
     //
