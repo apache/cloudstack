@@ -1650,7 +1650,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final boolean updateResourceCount = resourceCountNeedsUpdate(ntwkOff, aclType);
         //check resource limits
         if (updateResourceCount) {
-            _resourceLimitMgr.checkResourceLimit(owner, ResourceType.network, isDisplayNetworkEnabled);
+            _resourceLimitMgr.checkResourceLimit(owner, ResourceType.network);
         }
 
         // Validate network offering
@@ -1928,7 +1928,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
 
                 if (updateResourceCount) {
-                    _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.network, isDisplayNetworkEnabled);
+                    _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.network);
                 }
 
                 return network;
@@ -2217,7 +2217,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                             NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, networkFinal.getNetworkOfferingId());
                             boolean updateResourceCount = resourceCountNeedsUpdate(ntwkOff, networkFinal.getAclType());
                             if (updateResourceCount) {
-                                _resourceLimitMgr.decrementResourceCount(networkFinal.getAccountId(), ResourceType.network, networkFinal.getDisplayNetwork());
+                                _resourceLimitMgr.decrementResourceCount(networkFinal.getAccountId(), ResourceType.network);
                             }
                         }
                     }
@@ -2232,8 +2232,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return success;
     }
 
-    @Override
-    public boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType) {
+    private boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType) {
         //Update resource count only for Isolated account specific non-system networks
         boolean updateResourceCount = (ntwkOff.getGuestType() == GuestType.Isolated && !ntwkOff.isSystemOnly() && aclType == ACLType.Account);
         return updateResourceCount;

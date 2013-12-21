@@ -195,7 +195,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
 
         NetworksRegularUserCanCreateSearch = createSearchBuilder(Long.class);
         NetworksRegularUserCanCreateSearch.and("aclType", NetworksRegularUserCanCreateSearch.entity().getAclType(), Op.EQ);
-        NetworksRegularUserCanCreateSearch.and("displayNetwork", NetworksRegularUserCanCreateSearch.entity().getDisplayNetwork(), Op.EQ);
         NetworksRegularUserCanCreateSearch.select(null, Func.COUNT, NetworksRegularUserCanCreateSearch.entity().getId());
         SearchBuilder<NetworkAccountVO> join4 = _accountsDao.createSearchBuilder();
         join4.and("account", join4.entity().getAccountId(), Op.EQ);
@@ -550,7 +549,6 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     public long countNetworksUserCanCreate(long ownerId) {
         SearchCriteria<Long> sc = NetworksRegularUserCanCreateSearch.create();
         sc.setParameters("aclType", ACLType.Account);
-        sc.setParameters("displayNetwork", 1);
         sc.setJoinParameters("accounts", "account", ownerId);
         sc.setJoinParameters("ntwkOff", "specifyVlan", false);
         return customSearch(sc, null).get(0);
