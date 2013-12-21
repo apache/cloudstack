@@ -25,6 +25,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -833,6 +834,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     @Override
     public void removeDhcpServiceInSubnet(Nic nic) {
         //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType) {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
