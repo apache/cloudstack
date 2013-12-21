@@ -27,7 +27,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.AclPolicyPermission.Permission;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.acl.dao.AclApiPermissionDao;
 import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
 import org.apache.cloudstack.acl.dao.AclGroupDao;
 import org.apache.cloudstack.acl.dao.AclGroupPolicyMapDao;
@@ -731,6 +730,21 @@ public class AclServiceImpl extends ManagerBase implements AclService, Manager {
             }
         }
         return entityIds;
+    }
+
+    @Override
+    public boolean isGrantedAll(long accountId, String action) {
+        // Get the static Policies of the Caller
+        List<AclPolicy> policies = listAclPolicies(accountId);
+        // for each policy, find granted permission with Domain scope
+        List<Long> domainIds = new ArrayList<Long>();
+        for (AclPolicy policy : policies) {
+            List<AclPolicyPermissionVO> pp = _policyPermissionDao.listGrantedByActionAndScope(policy.getId(), action, PermissionScope.ALL);
+            if (pp != null && pp.size() > 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

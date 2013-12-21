@@ -2422,6 +2422,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedDomains, List<Long> permittedAccounts,
             List<Long> permittedResources, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation,
             String action) {
+        //TODO: need to handle listAll flag
         Long domainId = domainIdRecursiveListProject.first();
         if (domainId != null) {
             // look for entity in the given domain
@@ -2489,28 +2490,36 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // search for policy permissions associated with caller to get all his authorized domains, accounts, and resources
             // Assumption: if a domain is in grantedDomains, then all the accounts under this domain will not be returned in "grantedAccounts". Similarly, if an account
             // is in grantedAccounts, then all the resources owned by this account will not be returned in "grantedResources".
-            List<Long> grantedDomains = _aclService.getGrantedDomains(caller.getId(), action);
-            List<Long> grantedAccounts = _aclService.getGrantedAccounts(caller.getId(), action);
-            List<Long> grantedResources = _aclService.getGrantedResources(caller.getId(), action);
-
-            if (domainId != null) {
-                // specific domain is specified
-                if (grantedDomains.contains(domainId)) {
+            boolean grantedAll = _aclService.isGrantedAll(caller.getId(), action);
+            if ( grantedAll ){
+                if ( domainId != null ){
                     permittedDomains.add(domainId);
-                } else {
-                    for (Long acctId : grantedAccounts) {
-                        Account acct = _accountDao.findById(acctId);
-                        if (acct != null && acct.getDomainId() == domainId) {
-                            permittedAccounts.add(acctId);
+                }
+            }
+            else {
+                List<Long> grantedDomains = _aclService.getGrantedDomains(caller.getId(), action);
+                List<Long> grantedAccounts = _aclService.getGrantedAccounts(caller.getId(), action);
+                List<Long> grantedResources = _aclService.getGrantedResources(caller.getId(), action);
+
+                if (domainId != null) {
+                    // specific domain is specified
+                    if (grantedDomains.contains(domainId)) {
+                        permittedDomains.add(domainId);
+                    } else {
+                        for (Long acctId : grantedAccounts) {
+                            Account acct = _accountDao.findById(acctId);
+                            if (acct != null && acct.getDomainId() == domainId) {
+                                permittedAccounts.add(acctId);
+                            }
                         }
+                        permittedResources.addAll(grantedResources);
                     }
+                } else if (permittedAccounts.isEmpty()) {
+                    // neither domain nor account is not specified
+                    permittedDomains.addAll(grantedDomains);
+                    permittedAccounts.addAll(grantedAccounts);
                     permittedResources.addAll(grantedResources);
                 }
-            } else if (permittedAccounts.isEmpty()) {
-                // neither domain nor account is not specified
-                permittedDomains.addAll(grantedDomains);
-                permittedAccounts.addAll(grantedAccounts);
-                permittedResources.addAll(grantedResources);
             }
         }
 
@@ -2523,8 +2532,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             List<Long> permittedAccounts, List<Long> permittedResources, ListProjectResourcesCriteria listProjectResourcesCriteria) {
 
         if (listProjectResourcesCriteria != null) {
-            sc.addAnd("accountType", SearchCriteria.Op.EQ, Account.ACCOUNT_TYPE_PROJECT);
+            // add criteria for project or not
+            if (listProjectResourcesCriteria == ListProjectResourcesCriteria.SkipProjectResources) {
+                sc.addAnd("accountType", SearchCriteria.Op.NEQ, Account.ACCOUNT_TYPE_PROJECT);
+            } else if (listProjectResourcesCriteria == ListProjectResourcesCriteria.ListProjectResourcesOnly) {
+                sc.addAnd("accountType", SearchCriteria.Op.EQ, Account.ACCOUNT_TYPE_PROJECT);
+            }
         }
+
+        if (permittedDomains.isEmpty() && permittedAccounts.isEmpty() && permittedResources.isEmpty())
+            // can access everything
+            return;
 
         // Note that this may have limitations on number of permitted domains, accounts, or resource ids are allowed due to sql package size limitation
         if (!permittedDomains.isEmpty()) {

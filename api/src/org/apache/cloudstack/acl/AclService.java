@@ -57,6 +57,8 @@ public interface AclService {
     List<AclPolicy> getEffectivePolicies(Account caller, ControlledEntity entity);
 
     /* Visibility related interfaces */
+    boolean isGrantedAll(long accountId, String action);
+
     List<Long> getGrantedDomains(long accountId, String action);
 
     List<Long> getGrantedAccounts(long accountId, String action);
