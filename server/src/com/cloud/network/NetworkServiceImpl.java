@@ -41,6 +41,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.configuration.Resource;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -1998,10 +1999,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             network.setDisplayText(displayText);
         }
 
-        if (displayNetwork != null) {
+        // display flag is not null and has changed
+        if (displayNetwork != null && displayNetwork != network.getDisplayNetwork()) {
             if (!_accountMgr.isRootAdmin(callerAccount.getType())) {
                 throw new PermissionDeniedException("Only admin allowed to update displaynetwork parameter");
             }
+
+            // Update resource count if it needs to be updated
+            NetworkOffering networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+            if(_networkMgr.resourceCountNeedsUpdate(networkOffering,network.getAclType())){
+                _resourceLimitMgr.changeResourceCount(network.getAccountId(), Resource.ResourceType.network, displayNetwork);
+            }
+
             network.setDisplayNetwork(displayNetwork);
         }
 
