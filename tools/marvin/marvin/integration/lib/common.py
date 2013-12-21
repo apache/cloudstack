@@ -18,56 +18,11 @@
 """
 
 #Import Local Modules
-from marvin.cloudstackAPI import (listConfigurations,
-                                  listPhysicalNetworks,
-                                  listRegions,
-                                  addNetworkServiceProvider,
-                                  updateNetworkServiceProvider,
-                                  listDomains,
-                                  listZones,
-                                  listPods,
-                                  listOsTypes,
-                                  listTemplates,
-                                  updateResourceLimit,
-                                  listRouters,
-                                  listNetworks,
-                                  listClusters,
-                                  listSystemVms,
-                                  listStoragePools,
-                                  listVirtualMachines,
-                                  listLoadBalancerRuleInstances,
-                                  listFirewallRules,
-                                  listVolumes,
-                                  listIsos,
-                                  listAccounts,
-                                  listSnapshotPolicies,
-                                  listDiskOfferings,
-                                  listVlanIpRanges,
-                                  listUsageRecords,
-                                  listNetworkServiceProviders,
-                                  listHosts,
-                                  listPublicIpAddresses,
-                                  listPortForwardingRules,
-                                  listLoadBalancerRules,
-                                  listSnapshots,
-                                  listUsers,
-                                  listEvents,
-                                  listServiceOfferings,
-                                  listVirtualRouterElements,
-                                  listNetworkOfferings,
-                                  listResourceLimits,
-                                  listVPCOfferings)
-from marvin.integration.lib.base import (Configurations,
-                                         NetScaler,
-                                         Template,
-                                         Resources,
-                                         PhysicalNetwork,
-                                         Host)
-from marvin.integration.lib.utils import (get_process_status,
-                                          xsplit)
-
+from marvin.cloudstackAPI import *
 from marvin.sshClient import SshClient
-import random
+from utils import *
+from base import *
+from marvin.codes import PASS
 
 #Import System modules
 import time
@@ -136,7 +91,7 @@ def add_netscaler(apiclient, zoneid, NSservice):
       cmd = updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
       cmd.id = netscaler_provider.id
       cmd.state =  'Enabled'
-      apiclient.updateNetworkServiceProvider(cmd)
+      response = apiclient.updateNetworkServiceProvider(cmd)
 
     return netscaler
 
@@ -243,6 +198,19 @@ def get_template(apiclient, zoneid, ostype, services=None):
     raise Exception("Exception: Failed to find template with OSTypeID: %s" %
                                                                     ostypeid)
     return
+
+def get_hypervisor_type(apiclient):
+
+    """Return the hypervisor type of the hosts in setup"""
+
+    hosts = list_hosts(apiclient, type='Routing', listall=True)
+
+    hosts_list_validation_result = validateList(hosts)
+
+    assert hosts_list_validation_result[0] == PASS, "host list validation failed"
+
+    return hosts_list_validation_result[1].hypervisor
+
 
 def download_systemplates_sec_storage(server, services):
     """Download System templates on sec storage"""
