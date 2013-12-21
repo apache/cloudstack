@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.storage.test;
 
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
@@ -105,5 +106,11 @@ public class FakePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {
         //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public Map<String, String> getCapabilities() {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

@@ -35,35 +35,4 @@
       <version>${cs.xmlrpc.version}</version>
     </dependency>
   </dependencies>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-        <dependencies>
-          <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>build-checkstyle</artifactId>
-            <version>${parent.version}</version>
-          </dependency>
-        </dependencies>
-        <executions>
-          <execution>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution> 
-        </executions>
-        <configuration>
-          <failsOnError>true</failsOnError>
-          <configLocation>tooling/checkstyle.xml</configLocation>
-          <consoleOutput>true</consoleOutput>
-          <includeTestSourceDirectory>true</includeTestSourceDirectory>
-          <sourceDirectory>${project.basedir}</sourceDirectory>
-          <excludes>**\/*</excludes>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 </project>
