@@ -906,6 +906,43 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     - currentSize));
         }
 
+        if (userVm != null) {
+            // serialize VM operation
+            AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+            if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+                // avoid re-entrance
+                return orchestrateResizeVolume(volume.getId(), currentSize, newSize,
+                        newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
+            } else {
+                Outcome<Volume> outcome = resizeVolumeThroughJobQueue(userVm.getId(), volume.getId(), currentSize, newSize,
+                        newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
+
+                Volume vol = null;
+                try {
+                    vol = outcome.get();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("Operation is interrupted", e);
+                } catch (java.util.concurrent.ExecutionException e) {
+                    throw new RuntimeException("Execution excetion", e);
+                }
+
+                Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+                if (jobResult != null) {
+                    if (jobResult instanceof ConcurrentOperationException)
+                        throw (ConcurrentOperationException)jobResult;
+                    else if (jobResult instanceof Throwable)
+                        throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+                }
+                return volume;
+            }
+        }
+        return orchestrateResizeVolume(volume.getId(), currentSize, newSize,
+                newDiskOffering != null ? cmd.getNewDiskOfferingId() : null, shrinkOk);
+    }
+
+    private VolumeVO orchestrateResizeVolume(long volumeId, long currentSize, long newSize, Long newDiskOfferingId, boolean shrinkOk) {
+        VolumeVO volume = _volsDao.findById(volumeId);
+        UserVmVO userVm = _userVmDao.findById(volume.getInstanceId());
         /*
          * get a list of hosts to send the commands to, try the system the
          * associated vm is running on first, then the last known place it ran.
@@ -943,8 +980,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             volume = _volsDao.findById(volume.getId());
 
-            if (newDiskOffering != null) {
-                volume.setDiskOfferingId(cmd.getNewDiskOfferingId());
+            if (newDiskOfferingId != null) {
+                volume.setDiskOfferingId(newDiskOfferingId);
             }
             _volsDao.update(volume.getId(), volume);
             // Log usage event for volumes belonging user VM's only
@@ -1078,12 +1115,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new RuntimeException("Execution excetion", e);
             }
 
-            Throwable jobException = retrieveExecutionException(outcome.getJob());
-            if (jobException != null) {
-                if (jobException instanceof ConcurrentOperationException)
-                    throw (ConcurrentOperationException)jobException;
-                else
-                    throw new RuntimeException("Unexpected exception", jobException);
+            Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+            if (jobResult != null) {
+                if (jobResult instanceof ConcurrentOperationException)
+                    throw (ConcurrentOperationException)jobResult;
+                else if (jobResult instanceof Throwable)
+                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
             }
             return vol;
         }
@@ -1383,12 +1420,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 throw new RuntimeException("Execution excetion", e);
             }
 
-            Throwable jobException = retrieveExecutionException(outcome.getJob());
-            if (jobException != null) {
-                if (jobException instanceof ConcurrentOperationException)
-                    throw (ConcurrentOperationException)jobException;
-                else
-                    throw new RuntimeException("Unexpected exception", jobException);
+            Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+            if (jobResult != null) {
+                if (jobResult instanceof ConcurrentOperationException)
+                    throw (ConcurrentOperationException)jobResult;
+                else if (jobResult instanceof Throwable)
+                    throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
             }
             return vol;
         }
@@ -1516,6 +1553,48 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         } else {
             throw new InvalidParameterValueException("Migration of volume from local storage pool is not supported");
         }
+
+        if (vm != null) {
+            // serialize VM operation
+            AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+            if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+                // avoid re-entrance
+                return orchestrateMigrateVolume(vol.getId(), destPool.getId(), liveMigrateVolume);
+            } else {
+                Outcome<Volume> outcome = migrateVolumeThroughJobQueue(vm.getId(), vol.getId(), destPool.getId(), liveMigrateVolume);
+
+                try {
+                    outcome.get();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("Operation is interrupted", e);
+                } catch (java.util.concurrent.ExecutionException e) {
+                    throw new RuntimeException("Execution excetion", e);
+                }
+
+                Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+                if (jobResult != null) {
+                    if (jobResult instanceof ConcurrentOperationException)
+                        throw (ConcurrentOperationException)jobResult;
+                    else if (jobResult instanceof Throwable)
+                        throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+                }
+
+                // retrieve the migrated new volume from job result
+                if (jobResult != null && jobResult instanceof Long) {
+                    return _entityMgr.findById(VolumeVO.class, ((Long)jobResult).longValue());
+                }
+                return null;
+            }
+        }
+
+        return orchestrateMigrateVolume(vol.getId(), destPool.getId(), liveMigrateVolume);
+    }
+
+    private Volume orchestrateMigrateVolume(long volumeId, long destPoolId, boolean liveMigrateVolume) {
+        VolumeVO vol = _volsDao.findById(volumeId);
+        assert (vol != null);
+        StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(destPoolId, DataStoreRole.Primary);
+        assert (destPool != null);
 
         Volume newVol = null;
         if (liveMigrateVolume) {
@@ -1940,20 +2019,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _storagePoolAllocators = storagePoolAllocators;
     }
 
-    public Throwable retrieveExecutionException(AsyncJob job) {
-        assert (job != null);
-        assert (job.getDispatcher().equals(VmWorkConstants.VM_WORK_JOB_DISPATCHER));
-
-        AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, job.getId());
-        if (jobVo != null && jobVo.getResult() != null) {
-            Object obj = JobSerializerHelper.fromSerializedString(job.getResult());
-
-            if (obj != null && obj instanceof Throwable)
-                return (Throwable)obj;
-        }
-        return null;
-    }
-
     public class VmJobSyncOutcome extends OutcomeImpl<Volume> {
         private long _volumeId;
 
@@ -2065,6 +2130,98 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"), volumeId);
     }
 
+    public Outcome<Volume> resizeVolumeThroughJobQueue(final Long vmId, final long volumeId,
+            final long currentSize, final long newSize, final Long newServiceOfferingId, final boolean shrinkOk) {
+
+        final CallContext context = CallContext.current();
+        final User callingUser = context.getCallingUser();
+        final Account callingAccount = context.getCallingAccount();
+
+        final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                VmWorkJobVO workJob = null;
+
+                _vmInstanceDao.lockRow(vm.getId(), true);
+                workJob = new VmWorkJobVO(context.getContextId());
+
+                workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+                workJob.setCmd(VmWorkResizeVolume.class.getName());
+
+                workJob.setAccountId(callingAccount.getId());
+                workJob.setUserId(callingUser.getId());
+                workJob.setStep(VmWorkJobVO.Step.Starting);
+                workJob.setVmType(vm.getType());
+                workJob.setVmInstanceId(vm.getId());
+
+                // save work context info (there are some duplications)
+                VmWorkResizeVolume workInfo = new VmWorkResizeVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
+                        VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, currentSize, newSize, newServiceOfferingId, shrinkOk);
+                workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+                _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+
+                // Transaction syntax sugar has a cost here
+                context.putContextParameter("workJob", workJob);
+                context.putContextParameter("jobId", new Long(workJob.getId()));
+            }
+        });
+
+        final long jobId = (Long)context.getContextParameter("jobId");
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
+
+        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+                volumeId);
+    }
+
+    public Outcome<Volume> migrateVolumeThroughJobQueue(final Long vmId, final long volumeId,
+            final long destPoolId, final boolean liveMigrate) {
+
+        final CallContext context = CallContext.current();
+        final User callingUser = context.getCallingUser();
+        final Account callingAccount = context.getCallingAccount();
+
+        final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                VmWorkJobVO workJob = null;
+
+                _vmInstanceDao.lockRow(vm.getId(), true);
+                workJob = new VmWorkJobVO(context.getContextId());
+
+                workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+                workJob.setCmd(VmWorkMigrateVolume.class.getName());
+
+                workJob.setAccountId(callingAccount.getId());
+                workJob.setUserId(callingUser.getId());
+                workJob.setStep(VmWorkJobVO.Step.Starting);
+                workJob.setVmType(vm.getType());
+                workJob.setVmInstanceId(vm.getId());
+
+                // save work context info (there are some duplications)
+                VmWorkMigrateVolume workInfo = new VmWorkMigrateVolume(callingUser.getId(), callingAccount.getId(), vm.getId(),
+                        VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, destPoolId, liveMigrate);
+                workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+                _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+
+                // Transaction syntax sugar has a cost here
+                context.putContextParameter("workJob", workJob);
+                context.putContextParameter("jobId", new Long(workJob.getId()));
+            }
+        });
+
+        final long jobId = (Long)context.getContextParameter("jobId");
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
+
+        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+                volumeId);
+    }
+
     @Override
     public Pair<JobInfo.Status, String> handleVmWorkJob(AsyncJob job, VmWork work) throws Exception {
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
@@ -2100,6 +2257,36 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 s_logger.debug("Done executing Detach-Volume within VM work job context. vmId: " + detachWork.getVmId() + ", volId: " + detachWork.getVolumeId());
 
             return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+        } else if (work instanceof VmWorkResizeVolume) {
+            VmWorkResizeVolume resizeWork = (VmWorkResizeVolume)work;
+
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Execute Resize-Volume within VM work job context. vmId: " + resizeWork.getVmId()
+                        + ", volId: " + resizeWork.getVolumeId() + ", size " + resizeWork.getCurrentSize() + " -> " + resizeWork.getNewSize());
+
+            orchestrateResizeVolume(resizeWork.getVolumeId(), resizeWork.getCurrentSize(), resizeWork.getNewSize(),
+                    resizeWork.getNewServiceOfferingId(), resizeWork.isShrinkOk());
+
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Done executing Resize-Volume within VM work job context. vmId: " + resizeWork.getVmId()
+                        + ", volId: " + resizeWork.getVolumeId() + ", size " + resizeWork.getCurrentSize() + " -> " + resizeWork.getNewSize());
+
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+
+        } else if (work instanceof VmWorkMigrateVolume) {
+            VmWorkMigrateVolume migrateWork = (VmWorkMigrateVolume)work;
+
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Execute Migrate-Volume within VM work job context. vmId: " + migrateWork.getVmId()
+                        + ", volId: " + migrateWork.getVolumeId() + ", destPoolId: " + migrateWork.getDestPoolId() + ", live: " + migrateWork.isLiveMigrate());
+
+            Volume newVol = orchestrateMigrateVolume(migrateWork.getVolumeId(), migrateWork.getDestPoolId(), migrateWork.isLiveMigrate());
+
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Done executing Migrate-Volume within VM work job context. vmId: " + migrateWork.getVmId()
+                        + ", volId: " + migrateWork.getVolumeId() + ", destPoolId: " + migrateWork.getDestPoolId() + ", live: " + migrateWork.isLiveMigrate());
+
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, JobSerializerHelper.toObjectSerializedString(new Long(newVol.getId())));
         } else {
             RuntimeException e = new RuntimeException("Unsupported VM work command: " + job.getCmd());
             String exceptionJson = JobSerializerHelper.toSerializedString(e);

@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.framework.jobs.impl;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -609,6 +610,21 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         }
 
         return false;
+    }
+
+    @Override
+    public String marshallResultObject(Serializable obj) {
+        if (obj != null)
+            return JobSerializerHelper.toObjectSerializedString(obj);
+
+        return null;
+    }
+
+    @Override
+    public Object unmarshallResultObject(AsyncJob job) {
+        if(job.getResult() != null)
+            return JobSerializerHelper.fromObjectSerializedString(job.getResult());
+        return null;
     }
 
     private void checkQueue(long queueId) {
