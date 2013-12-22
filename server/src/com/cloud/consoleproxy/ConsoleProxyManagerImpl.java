@@ -1440,6 +1440,11 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             controlNic = managementNic;
         }
 
+        // verify ssh access on management nic for system vm running on HyperV
+        if(profile.getHypervisorType() == HypervisorType.Hyperv) {
+            controlNic = managementNic;
+        }
+
         CheckSshCommand check = new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922);
         cmds.addCommand("checkSsh", check);
 
