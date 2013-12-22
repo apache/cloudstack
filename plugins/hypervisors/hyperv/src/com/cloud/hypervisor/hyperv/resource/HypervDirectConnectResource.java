@@ -19,6 +19,7 @@ package com.cloud.hypervisor.hyperv.resource;
 import java.io.File;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -79,6 +80,7 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetMonitorServiceCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetSourceNatAnswer;
@@ -381,7 +383,9 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         } else if (clazz == CheckS2SVpnConnectionsCommand.class) {
             answer = execute((CheckS2SVpnConnectionsCommand)cmd);
         } else if (clazz == SetStaticRouteCommand.class) {
-            answer = execute((SetStaticRouteCommand)cmd);
+            answer = execute((SetStaticRouteCommand) cmd);
+        } else if (clazz == SetMonitorServiceCommand.class) {
+            answer = execute((SetMonitorServiceCommand) cmd);
         } else {
             if (clazz == StartCommand.class) {
                 VirtualMachineTO vmSpec = ((StartCommand)cmd).getVirtualMachine();
@@ -1450,6 +1454,35 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         return stats;
     }
 
+    protected Answer execute(SetMonitorServiceCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource SetMonitorServiceCommand: " + s_gson.toJson(cmd));
+        }
+
+        String controlIp = getRouterSshControlIp(cmd);
+        String config = cmd.getConfiguration();
+
+        String args = "";
+
+        args += " -c " + config;
+
+        try {
+            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/monitor_service.sh " + args);
+
+            if (!result.first()) {
+                String msg=  "monitor_service.sh failed on domain router " + controlIp + " failed " + result.second();
+                s_logger.error(msg);
+                return new Answer(cmd, false, msg);
+            }
+
+            return new Answer(cmd);
+
+        } catch (Throwable e) {
+            s_logger.error("Unexpected exception: " + e.toString(), e);
+            return new Answer(cmd, false, "SetMonitorServiceCommand failed due to " + e);
+        }
+    }
+
     protected CheckSshAnswer execute(CheckSshCommand cmd) {
         String vmName = cmd.getName();
         String privateIp = cmd.getIp();
@@ -1666,10 +1699,9 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                 sch = SocketChannel.open();
                 sch.configureBlocking(true);
                 sch.socket().setSoTimeout(5000);
-                // we need to connect to the public ip address to check the status of the VM
-                /*
+                // we need to connect to the control ip address to check the status of the system vm
                 InetSocketAddress addr = new InetSocketAddress(ipAddress, port);
-                sch.connect(addr);*/
+                sch.connect(addr);
                 return null;
             } catch (IOException e) {
                 s_logger.info("Could not connect to " + ipAddress + " due to " + e.toString());
