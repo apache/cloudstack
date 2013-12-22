@@ -29,6 +29,8 @@
 PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
 #set -x
 #exec 3>&0 4>&1 > /var/log/test.log 2>&1
+#start hv_kvp daemon
+/usr/sbin/hv_kvp_daemon
 
 # Fix haproxy directory issue
 mkdir -p /var/lib/haproxy
@@ -134,7 +136,9 @@ get_boot_params() {
           # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed using KVP Daemon
           #waiting for the hv_kvp_daemon to start up
           #sleep 30 need to fix the race condition of hv_kvp_daemon and cloud-early-config
+          sleep 5
           cp -f /var/opt/hyperv/.kvp_pool_0 /var/cache/cloud/cmdline
+          cat /dev/null > /var/opt/hyperv/.kvp_pool_0
           ;;
   esac
 
@@ -987,7 +991,7 @@ EOF
   fi
   if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
   then
-     if [ "$hyp" == "vmware" ]
+     if [ "$hyp" == "vmware" ] || [ "$hyp" == "hyperv" ];
      then
          ip route add $MGMTNET via $LOCAL_GW dev eth0
          
@@ -1087,7 +1091,7 @@ setup_secstorage() {
 
   cp /etc/iptables/iptables-secstorage /etc/iptables/rules.v4
   cp /etc/iptables/iptables-secstorage /etc/iptables/rules
-  if [ "$hyp" == "vmware" ]; then
+  if [ "$hyp" == "vmware" ] || [ "$hyp" == "hyperv" ]; then
     setup_sshd $ETH1_IP "eth1"
   else
     setup_sshd $ETH0_IP "eth0"
@@ -1113,7 +1117,7 @@ setup_console_proxy() {
   echo "$public_ip $NAME" >> /etc/hosts
   cp /etc/iptables/iptables-consoleproxy /etc/iptables/rules.v4
   cp /etc/iptables/iptables-consoleproxy /etc/iptables/rules
-  if [ "$hyp" == "vmware" ]; then
+  if [ "$hyp" == "vmware" ] || [ "$hyp" == "hyperv" ]; then
     setup_sshd $ETH1_IP "eth1"
   else
     setup_sshd $ETH0_IP "eth0"
