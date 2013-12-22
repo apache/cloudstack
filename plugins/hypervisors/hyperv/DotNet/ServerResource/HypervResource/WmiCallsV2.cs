@@ -445,13 +445,6 @@ namespace HypervResource
                 String bootargs = bootArgs;
                 AddUserData(vm, bootargs);
 
-
-                // Get existing KVP
-                //var vmSettings = GetVmSettings(vm);
-                //var kvpInfo = GetKvpSettings(vmSettings);
-                //logger.DebugFormat("Boot Args presisted on the VM are ", kvpInfo);
-                //AddUserData(vm, bootargs);
-
                 // Verify key added to subsystem
                 //kvpInfo = GetKvpSettings(vmSettings);
 
@@ -475,17 +468,16 @@ namespace HypervResource
             if (vmName.StartsWith("r-") || vmName.StartsWith("s-") || vmName.StartsWith("v-"))
             {
                 System.Threading.Thread.Sleep(90000);
-                SetState(newVm, RequiredState.Reset);
                 // wait for the second boot and then return with sucesss
                 //if publicIPAddress is empty or null don't ping the ip
-                if (publicIpAddress.Equals("") == true)
+              /*if (publicIpAddress.Equals("") == true)
                 {
                     System.Threading.Thread.Sleep(90000);
                 }
                 else
                 {
                     pingResource(publicIpAddress);
-                }
+                }*/
             }
             logger.InfoFormat("Started VM {0}", vmName);
             return newVm;
