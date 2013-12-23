@@ -52,7 +52,7 @@ namespace HypervResource
         KvpExchangeComponentSettingData GetKvpSettings(VirtualSystemSettingData vmSettings);
         void GetMemoryResources(out ulong physicalRamKBs, out ulong freeMemoryKBs);
         MemorySettingData GetMemSettings(VirtualSystemSettingData vmSettings);
-        void GetProcessorResources(out uint cores, out uint mhz);
+        void GetProcessorResources(out uint sockets, out uint cores, out uint mhz);
         void GetProcessorUsageInfo(out double cpuUtilization);
         ProcessorSettingData GetProcSettings(VirtualSystemSettingData vmSettings);
         ResourceAllocationSettingData.ResourceAllocationSettingDataCollection GetResourceAllocationSettings(VirtualSystemSettingData vmSettings);
