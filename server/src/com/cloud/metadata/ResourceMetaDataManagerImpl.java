@@ -26,6 +26,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
+import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.NetworkACLItemDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.NetworkACLListDetailsDao;
@@ -101,6 +102,8 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     Site2SiteCustomerGatewayDetailsDao _customerGatewayDetailsDao;
     @Inject
     Site2SiteVpnConnectionDetailsDao _vpnConnectionDetailsDao;
+    @Inject
+    DiskOfferingDetailsDao _diskOfferingDetailsDao;
 
     private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> s_daoMap = new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
 
@@ -126,6 +129,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         s_daoMap.put(ResourceObjectType.VpnGateway, _vpnGatewayDetailsDao);
         s_daoMap.put(ResourceObjectType.CustomerGateway, _customerGatewayDetailsDao);
         s_daoMap.put(ResourceObjectType.VpnConnection, _vpnConnectionDetailsDao);
+        s_daoMap.put(ResourceObjectType.DiskOffering, _diskOfferingDetailsDao);
 
         return true;
     }

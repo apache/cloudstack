@@ -25,11 +25,9 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
     // FIXME - extract enum to another interface as its used both by resourceTags and resourceMetaData code
     public enum ResourceObjectType {
         UserVm(true, true), Template(true, true), ISO(true, false), Volume(true, true), Snapshot(true, false), Network(true, true), Nic(false, true), LoadBalancer(true, true), PortForwardingRule(
-                true, true), FirewallRule(true, true),
-
-        SecurityGroup(true, false), PublicIpAddress(true, true), Project(true, false), Vpc(true, true), NetworkACL(true, true), StaticRoute(true, false), VMSnapshot(true, false), RemoteAccessVpn(
-                true, true), Zone(false, true), ServiceOffering(false, true), Storage(false, true), PrivateGateway(false, true), NetworkACLList(false, true), VpnGateway(false,
-                true), CustomerGateway(false, true), VpnConnection(false, true);
+                true, true), FirewallRule(true, true), SecurityGroup(true, false), PublicIpAddress(true, true), Project(true, false), Vpc(true, true), NetworkACL(true, true), StaticRoute(
+                true, false), VMSnapshot(true, false), RemoteAccessVpn(true, true), Zone(false, true), ServiceOffering(false, true), Storage(false, true), PrivateGateway(false,
+                true), NetworkACLList(false, true), VpnGateway(false, true), CustomerGateway(false, true), VpnConnection(false, true), User(true, false), DiskOffering(false, true);
 
         ResourceObjectType(boolean resourceTagsSupport, boolean resourceMetadataSupport) {
             this.resourceTagsSupport = resourceTagsSupport;

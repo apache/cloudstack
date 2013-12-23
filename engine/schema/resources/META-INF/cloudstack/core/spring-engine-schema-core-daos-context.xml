@@ -331,6 +331,7 @@
   <bean id="Site2SiteVpnGatewayDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.Site2SiteVpnGatewayDetailsDaoImpl" />
   <bean id="Site2SiteCustomerGatewayDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.Site2SiteCustomerGatewayDetailsDaoImpl" />
   <bean id="Site2SiteVpnConnectionDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.Site2SiteVpnConnectionDetailsDaoImpl" />
+  <bean id="DiskOfferingDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDaoImpl" />
   <bean id="databaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker" />
 
 </beans>

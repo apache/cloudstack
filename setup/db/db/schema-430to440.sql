@@ -214,3 +214,5 @@ CREATE VIEW `cloud`.`volume_view` AS
             and async_job.job_status = 0;
 
 UPDATE `cloud`.`configuration` SET `description` = 'If set to true, StartCommand, StopCommand, CopyCommand, MigrateCommand will be synchronized on the agent side. If set to false, these commands become asynchronous. Default value is true.' WHERE `name` = 'execute.in.sequence.hypervisor.commands';
+
+ALTER TABLE `cloud`.`disk_offering_details` CHANGE `display_detail` `display` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True if the detail can be displayed to the end user';
