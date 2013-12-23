@@ -4138,7 +4138,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     //Checks if the router is at the required version
     // Compares MS version and router version
-    private boolean checkRouterVersion(VirtualRouter router) {
+    private boolean checkRouterVersion(VirtualRouter router){
+        if(router.getTemplateVersion() == null){
+            return false;
+        }
         String trimmedVersion = Version.trimRouterVersion(router.getTemplateVersion());
         return (Version.compare(trimmedVersion, MinVRVersion) >= 0);
     }
