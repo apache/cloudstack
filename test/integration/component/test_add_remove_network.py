@@ -42,17 +42,17 @@ from marvin.integration.lib.base import (
 from marvin.integration.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
-                                        cleanup_resources,
                                         list_virtual_machines,
                                         list_events,
                                         list_zones,
                                         get_free_vlan,
-                                        get_hypervisor_type,
                                         update_resource_limit
                                         )
 
 from marvin.integration.lib.utils import (validateList,
-					                      random_gen)
+					                      random_gen,
+                                          get_hypervisor_type,
+                                          cleanup_resources)
 
 from marvin.cloudstackAPI import (addNicToVirtualMachine,
                                   removeNicFromVirtualMachine,
