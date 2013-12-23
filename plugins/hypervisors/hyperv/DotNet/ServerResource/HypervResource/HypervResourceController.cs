@@ -1683,9 +1683,11 @@ namespace HypervResource
                 // Detect CPUs, speed, memory
                 uint cores;
                 uint mhz;
-                wmiCallsV2.GetProcessorResources(out cores, out mhz);
+                uint sockets;
+                wmiCallsV2.GetProcessorResources(out sockets, out cores, out mhz);
                 strtRouteCmd.cpus = cores;
                 strtRouteCmd.speed = mhz;
+                strtRouteCmd.cpuSockets = sockets;
                 ulong memoryKBs;
                 ulong freeMemoryKBs;
                 wmiCallsV2.GetMemoryResources(out memoryKBs, out freeMemoryKBs);

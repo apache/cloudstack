@@ -183,8 +183,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         s_logger.debug("Generated StartupRoutingCommand for _agentIp \"" + _agentIp + "\"");
 
-        // TODO: does version need to be hard coded.
-        defaultStartRoutCmd.setVersion("4.2.0");
+        defaultStartRoutCmd.setVersion(this.getClass().getPackage().getImplementationVersion());
 
         // Specifics of the host's resource capacity and network configuration
         // comes from the host itself. CloudStack sanity checks network

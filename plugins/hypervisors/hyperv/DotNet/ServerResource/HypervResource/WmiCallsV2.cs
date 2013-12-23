@@ -1723,16 +1723,18 @@ namespace HypervResource
             }
         }
 
-        public void GetProcessorResources(out uint cores, out uint mhz)
+        public void GetProcessorResources(out uint sockets, out uint cores, out uint mhz)
         {
             //  Processor processors
             cores = 0;
             mhz = 0;
+            sockets = 0;
             Processor.ProcessorCollection procCol = Processor.GetInstances();
             foreach (Processor procInfo in procCol)
             {
                 cores += procInfo.NumberOfCores;
                 mhz = procInfo.MaxClockSpeed;
+                sockets++;
            }
         }
         
