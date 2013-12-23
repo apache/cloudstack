@@ -9170,7 +9170,7 @@
                                     }
                                 }
                                 $.ajax({
-                                    url: createURL("listAccounts&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),                                   
+                                    url: createURL("listAccounts&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),                                   
                                     success: function (json) {                                   
                                         var accountObjs = json.listaccountsresponse.account;
                                         if (accountObjs != null) {
