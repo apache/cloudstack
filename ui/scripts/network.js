@@ -1151,6 +1151,16 @@
                                         label: 'label.state'
                                     },
 
+                                    vpcid: {
+                                        label: 'label.vpc.id',
+                                        converter: function(args) {
+                                            if (args != null)
+                                                return args;
+                                            else
+                                                return 'N/A';
+                                        }
+                                    },
+                                    
                                     ispersistent: {
                                         label: 'Persistent ',
                                         converter: cloudStack.converters.toBooleanText
@@ -1260,16 +1270,6 @@
                                     },
                                     account: {
                                         label: 'label.account'
-                                    },
-
-                                    vpcid: {
-                                        label: 'label.vpc.id',
-                                        converter: function(args) {
-                                            if (args != null)
-                                                return args;
-                                            else
-                                                return 'N/A';
-                                        }
                                     }
                                 }],
 
