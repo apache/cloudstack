@@ -529,7 +529,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                             }
                         }
                     }
-                } catch (ResourceUnavailableException e) {
+                } catch (Exception e) {
                     s_logger.warn("Unable to apply vpn users ", e);
                     success = false;
 
