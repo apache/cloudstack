@@ -1812,9 +1812,12 @@
         } else {
             allowedActions.push("edit");
             
+            allowedActions.push("copyTemplate");
+            /*
             if(g_regionsecondaryenabled != true) {
                 allowedActions.push("copyTemplate");
             }
+            */
 			
             //allowedActions.push("createVm"); // For Beta2, this simply doesn't work without a network.
         }
@@ -1850,9 +1853,12 @@
         } else {
             allowedActions.push("edit");
 
+            allowedActions.push("copyISO");
+            /*
             if(g_regionsecondaryenabled != true) {
                 allowedActions.push("copyISO");
 			}
+			*/
         }
 
         // "Create VM"
