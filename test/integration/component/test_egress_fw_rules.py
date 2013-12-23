@@ -35,8 +35,8 @@ from marvin.integration.lib.common import (get_domain,
                                            rebootRouter,
                                            list_routers,
                                            wait_for_cleanup,
-                                           cleanup_resources,
                                            list_virtual_machines)
+from marvin.integration.lib.utils import cleanup_resources
 from marvin.cloudstackAPI.createEgressFirewallRule import createEgressFirewallRuleCmd
 from marvin.cloudstackAPI.deleteEgressFirewallRule import deleteEgressFirewallRuleCmd
 

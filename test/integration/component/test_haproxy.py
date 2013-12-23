@@ -34,9 +34,9 @@ from marvin.integration.lib.base import (
 from marvin.integration.lib.common import (get_domain,
                                         get_zone,
                                         get_template,
-                                        cleanup_resources,
                                         random_gen
                                         )
+from marvin.integration.lib.utils import cleanup_resources
 from marvin.cloudstackAPI import createLBStickinessPolicy
 from marvin.sshClient import SshClient
 
