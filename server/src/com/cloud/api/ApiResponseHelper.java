@@ -3610,6 +3610,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setIp6Address(result.getIp6Address());
         }
 
+        response.setDeviceId(String.valueOf(result.getDeviceId()));
+
         response.setIsDefault(result.isDefaultNic());
         return response;
     }
