@@ -40,6 +40,8 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.CreateSnapshotPayload;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
@@ -108,7 +110,8 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
 
         boolean fullBackup = true;
         SnapshotDataStoreVO parentSnapshotOnBackupStore = snapshotStoreDao.findLatestSnapshotForVolume(snapshot.getVolumeId(), DataStoreRole.Image);
-        if (parentSnapshotOnBackupStore != null) {
+        HypervisorType hypervisorType = snapshot.getBaseVolume().getHypervisorType();
+        if (parentSnapshotOnBackupStore != null && hypervisorType == Hypervisor.HypervisorType.XenServer) { // CS does incremental backup only for XenServer
             int _deltaSnapshotMax = NumbersUtil.parseInt(configDao.getValue("snapshot.delta.max"),
                     SnapshotManager.DELTAMAX);
             int deltaSnap = _deltaSnapshotMax;
