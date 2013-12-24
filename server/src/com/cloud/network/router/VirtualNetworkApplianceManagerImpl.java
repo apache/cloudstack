@@ -3719,6 +3719,14 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     typeString + " commands to the backend");
                     continue;
                 }
+
+                if (!checkRouterVersion(router)){
+                    //Rules will be applied after VR is upgraded
+                    s_logger.debug("Router " + router.getInstanceName() + " requires upgrade, so not sending apply " +
+                            typeString + " commands to the backend");
+                    continue;
+                }
+
                 try {
                     result = applier.execute(network, router);
                     connectedRouters.add(router);
