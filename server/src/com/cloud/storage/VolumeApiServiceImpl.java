@@ -1439,8 +1439,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Volume volume = _volumeDao.findById(volumeId);
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
 
-        String errorMsg = "Failed to detach volume: " + volume.getName() + " from VM: " + vm.getHostName();
-        boolean sendCommand = (vm.getState() == State.Running);
+        String errorMsg = "Failed to detach volume " + volume.getName() + " from VM " + vm.getHostName();
+        boolean sendCommand = vm.getState() == State.Running;
 
         Long hostId = vm.getHostId();
 
@@ -1454,10 +1454,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
+        HostVO host = null;
         StoragePoolVO volumePool = _storagePoolDao.findById(volume.getPoolId());
 
         if (hostId != null) {
-            HostVO host = _hostDao.findById(hostId);
+            host = _hostDao.findById(hostId);
 
             if (host != null && host.getHypervisorType() == HypervisorType.XenServer && volumePool.isManaged()) {
                 sendCommand = true;
@@ -1486,9 +1487,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
+        DataStore dataStore = dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
+
         if (!sendCommand || (answer != null && answer.getResult())) {
             // Mark the volume as detached
             _volsDao.detachVolume(volume.getId());
+
+            volService.disconnectVolumeFromHost(volFactory.getVolume(volume.getId()), host, dataStore);
 
             return _volsDao.findById(volumeId);
         } else {
@@ -1871,13 +1876,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private VolumeVO sendAttachVolumeCommand(UserVmVO vm, VolumeVO volumeToAttach, Long deviceId) {
-        String errorMsg = "Failed to attach volume: " + volumeToAttach.getName() + " to VM: " + vm.getHostName();
-        boolean sendCommand = (vm.getState() == State.Running);
+        String errorMsg = "Failed to attach volume " + volumeToAttach.getName() + " to VM " + vm.getHostName();
+        boolean sendCommand = vm.getState() == State.Running;
         AttachAnswer answer = null;
         Long hostId = vm.getHostId();
 
         if (hostId == null) {
             hostId = vm.getLastHostId();
+
             HostVO host = _hostDao.findById(hostId);
 
             if (host != null && host.getHypervisorType() == HypervisorType.VMware) {
@@ -1896,6 +1902,22 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
+        DataStore dataStore = dataStoreMgr.getDataStore(volumeToAttachStoragePool.getId(), DataStoreRole.Primary);
+
+        boolean queryForChap = true;
+
+        if (host != null) {
+            try {
+                // if connectVolumeToHost returns true, then we do not want to use CHAP because the volume is already connected to the host(s)
+                queryForChap = !volService.connectVolumeToHost(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
+            }
+            catch (Exception e) {
+                volService.disconnectVolumeFromHost(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
+
+                throw new CloudRuntimeException(e.getMessage());
+            }
+        }
+
         if (sendCommand) {
             if (host.getHypervisorType() == HypervisorType.KVM &&
                 volumeToAttachStoragePool.isManaged() &&
@@ -1910,9 +1932,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             AttachCommand cmd = new AttachCommand(disk, vm.getInstanceName());
 
-            VolumeInfo volumeInfo = volFactory.getVolume(volumeToAttach.getId());
-            DataStore dataStore = dataStoreMgr.getDataStore(volumeToAttachStoragePool.getId(), DataStoreRole.Primary);
-            ChapInfo chapInfo = volService.getChapInfo(volumeInfo, dataStore);
+            ChapInfo chapInfo = queryForChap ? volService.getChapInfo(volFactory.getVolume(volumeToAttach.getId()), dataStore) : null;
 
             Map<String, String> details = new HashMap<String, String>();
 
@@ -1934,6 +1954,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             try {
                 answer = (AttachAnswer)_agentMgr.send(hostId, cmd);
             } catch (Exception e) {
+                volService.disconnectVolumeFromHost(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
+
                 throw new CloudRuntimeException(errorMsg + " due to: " + e.getMessage());
             }
         }
@@ -1970,6 +1992,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     errorMsg += "; " + details;
                 }
             }
+
+            volService.disconnectVolumeFromHost(volFactory.getVolume(volumeToAttach.getId()), host, dataStore);
+
             throw new CloudRuntimeException(errorMsg);
         }
     }

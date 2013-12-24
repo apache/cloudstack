@@ -718,7 +718,10 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 					ManagedObjectReference morDs = oc.getObj();
 					String name = (String)VmwareHelper.getPropValue(oc, "name");
 
-					dsList.add(new Pair<ManagedObjectReference, String>(morDs, name));
+					// "-iqn." is an identifier we use to note a CloudStack-managed datastore that should never be added to CloudStack as primary storage
+					if (!name.startsWith("-iqn.")) {
+					    dsList.add(new Pair<ManagedObjectReference, String>(morDs, name));
+					}
 				}
 			}
 		}

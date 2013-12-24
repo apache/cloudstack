@@ -76,6 +76,10 @@ public class CheckOnHostCommandTest {
             return "10.1.1.1";
         };
 
+        public String getStorageUrl() {
+            return null;
+        }
+
         public String getStorageIpAddress() {
             return "10.1.1.2";
         };

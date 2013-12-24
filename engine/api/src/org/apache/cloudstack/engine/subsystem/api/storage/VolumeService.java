@@ -19,6 +19,7 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.Map;
+import java.util.List;
 
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
@@ -43,6 +44,10 @@ public interface VolumeService {
     }
 
     ChapInfo getChapInfo(VolumeInfo volumeInfo, DataStore dataStore);
+
+    boolean connectVolumeToHost(VolumeInfo volumeInfo, Host host, DataStore dataStore);
+
+    void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore);
 
     /**
      * Creates the volume based on the given criteria
