@@ -27,7 +27,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
@@ -225,7 +224,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      * @see com.cloud.network.NetworkService#searchForNetworks(com.cloud.api.commands.ListNetworksCmd)
      */
     @Override
-    public List<? extends Network> searchForNetworks(ListNetworksCmd cmd) {
+    public Pair<List<? extends Network>, Integer> searchForNetworks(ListNetworksCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }
