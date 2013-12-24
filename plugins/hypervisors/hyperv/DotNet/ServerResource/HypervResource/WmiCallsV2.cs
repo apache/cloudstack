@@ -390,9 +390,17 @@ namespace HypervResource
                     string mac = nic.mac;
                     string vlan = null;
                     string isolationUri = nic.isolationUri;
-                    if (isolationUri != null && isolationUri.StartsWith("vlan://") && !isolationUri.Equals("vlan://untagged"))
+                    string broadcastUri = nic.broadcastUri;
+                    if ( (broadcastUri != null ) || (isolationUri != null && isolationUri.StartsWith("vlan://")) && !isolationUri.Equals("vlan://untagged"))
                     {
-                        vlan = isolationUri.Substring("vlan://".Length);
+                        if (broadcastUri != null && broadcastUri.StartsWith("storage"))
+                        {
+                            vlan = broadcastUri.Substring("storage://".Length);
+                        }
+                        else
+                        {
+                            vlan = isolationUri.Substring("vlan://".Length);
+                        }
                         int tmp;
                         if (!int.TryParse(vlan, out tmp))
                         {
