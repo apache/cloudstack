@@ -36,7 +36,8 @@ from marvin.integration.lib.base import (Account,
 from marvin.integration.lib.common import (get_zone,
                                            get_pod,
                                            get_domain,
-                                           get_template)
+                                           get_template,
+                                           setNonContiguousVlanIds)
 from marvin.integration.lib.utils import (cleanup_resources,
                                           xsplit)
 
@@ -125,8 +126,14 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
         self.vlan = self.services["vlan"]
         self.apiClient = self.testClient.getApiClient()
 
-        self.setNonContiguousVlanIds(self.apiclient, self.zone.id)
+        self.physicalnetwork, self.vlan = setNonContiguousVlanIds(self.apiclient, self.zone.id)
 
+        self.physicalnetworkid = self.physicalnetwork.id
+        self.existingvlan = self.physicalnetwork.vlan
+        
+        if self.vlan == None:
+            self.fail("Failed to set non contiguous vlan ids to test. Free some ids from \
+                        from existing physical networks at extreme ends")
         self.cleanup = []
 
     def tearDown(self):
@@ -140,78 +147,6 @@ class TestNonContiguousVLANRanges(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-
-    def setNonContiguousVlanIds(self, apiclient, zoneid):
-        """
-        Form the non contiguous ranges based on currently assigned range in physical network
-        """
-
-        NonContigVlanIdsAcquired = False
-
-        list_physical_networks_response = PhysicalNetwork.list(
-            apiclient,
-            zoneid=zoneid
-        )
-        assert isinstance(list_physical_networks_response, list)
-        assert len(list_physical_networks_response) > 0, "No physical networks found in zone %s" % zoneid
-
-        for physical_network in list_physical_networks_response:
-
-            self.physicalnetwork = physical_network
-            self.physicalnetworkid = physical_network.id
-            self.existingvlan = physical_network.vlan
-
-            vlans = xsplit(self.existingvlan, ['-', ','])
-
-            assert len(vlans) > 0
-            assert int(vlans[0]) < int(vlans[-1]), "VLAN range  %s was improperly split" % self.existingvlan
-
-            # Keep some gap between existing vlan and the new vlans which we are going to add
-            # So that they are non contiguous
-
-            non_contig_end_vlan_id = int(vlans[-1]) + 6
-            non_contig_start_vlan_id = int(vlans[0]) - 6
-
-            # Form ranges which are consecutive to existing ranges but not immediately contiguous
-            # There should be gap in between existing range and new non contiguous ranage
-
-            # If you can't add range after existing range, because it's crossing 4095, then
-            # select VLAN ids before the existing range such that they are greater than 0, and
-            # then add this non contiguoud range
-
-            if non_contig_end_vlan_id < 4095:
-
-                self.vlan["partial_range"][0] = str(non_contig_end_vlan_id - 4) + '-' + str(non_contig_end_vlan_id - 3)
-                self.vlan["partial_range"][1] = str(non_contig_end_vlan_id - 1) + '-' + str(non_contig_end_vlan_id)
-                self.vlan["full_range"] = str(non_contig_end_vlan_id - 4) + '-' + str(non_contig_end_vlan_id)
-                NonContigVlanIdsAcquired = True
-
-            elif non_contig_start_vlan_id > 0:
-
-                self.vlan["partial_range"][0] = str(non_contig_start_vlan_id) + '-' + str(non_contig_start_vlan_id + 1)
-                self.vlan["partial_range"][1] = str(non_contig_start_vlan_id + 3) + '-' + str(non_contig_start_vlan_id + 4)
-                self.vlan["full_range"] = str(non_contig_start_vlan_id) + '-' + str(non_contig_start_vlan_id + 4)
-                NonContigVlanIdsAcquired = True
-
-            else:
-               NonContigVlanIdsAcquired = False
-
-            # If failed to get relevant vlan ids, continue to next physical network
-            # else break from loop as we have hot the non contiguous vlan ids for the test purpose
-
-            if not NonContigVlanIdsAcquired:
-                continue
-            else:
-                break
-
-        # If even through looping from all existing physical networks, failed to get relevant non
-        # contiguous vlan ids, then fail the test case
-
-        if not NonContigVlanIdsAcquired:
-            self.fail("Failed to set non contiguous vlan ids to test. Free some ids from \
-                        from existing physical networks at extreme ends")
-
-        return
 
     def validatePhysicalNetworkVlan(self, physicalNetworkId, vlan):
         """Validate whether the physical network has the updated vlan
