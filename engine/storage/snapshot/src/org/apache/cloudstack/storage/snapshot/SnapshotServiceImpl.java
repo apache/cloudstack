@@ -216,7 +216,12 @@ public class SnapshotServiceImpl implements SnapshotService {
     // the same store as its parent since
     // we are taking delta snapshot
     private DataStore findSnapshotImageStore(SnapshotInfo snapshot) {
-        if (snapshot.getParent() == null) {
+        Boolean fullSnapshot = true;
+        Object payload = snapshot.getPayload();
+        if (payload != null) {
+            fullSnapshot = (Boolean)payload;
+        }
+        if (fullSnapshot) {
             return dataStoreMgr.getImageStore(snapshot.getDataCenterId());
         } else {
             SnapshotInfo parentSnapshot = snapshot.getParent();
