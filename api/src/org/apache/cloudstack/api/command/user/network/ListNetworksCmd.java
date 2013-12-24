@@ -19,8 +19,6 @@ package org.apache.cloudstack.api.command.user.network;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
@@ -30,8 +28,10 @@ import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.network.Network;
+import com.cloud.utils.Pair;
 
 @APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class)
 public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
@@ -53,24 +53,16 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.IS_SYSTEM, type = CommandType.BOOLEAN, description = "true if network is system, false otherwise")
     private Boolean isSystem;
 
-    @Parameter(name = ApiConstants.ACL_TYPE,
-               type = CommandType.STRING,
-               description = "list networks by ACL (access control list) type. Supported values are Account and Domain")
+    @Parameter(name = ApiConstants.ACL_TYPE, type = CommandType.STRING, description = "list networks by ACL (access control list) type. Supported values are Account and Domain")
     private String aclType;
 
     @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "type of the traffic")
     private String trafficType;
 
-    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID,
-               type = CommandType.UUID,
-               entityType = PhysicalNetworkResponse.class,
-               description = "list networks by physical network id")
+    @Parameter(name = ApiConstants.PHYSICAL_NETWORK_ID, type = CommandType.UUID, entityType = PhysicalNetworkResponse.class, description = "list networks by physical network id")
     private Long physicalNetworkId;
 
-    @Parameter(name = ApiConstants.SUPPORTED_SERVICES,
-               type = CommandType.LIST,
-               collectionType = CommandType.STRING,
-               description = "list networks supporting certain services")
+    @Parameter(name = ApiConstants.SUPPORTED_SERVICES, type = CommandType.LIST, collectionType = CommandType.STRING, description = "list networks supporting certain services")
     private List<String> supportedServices;
 
     @Parameter(name = ApiConstants.RESTART_REQUIRED, type = CommandType.BOOLEAN, description = "list networks by restartRequired")
@@ -154,15 +146,14 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
 
     @Override
     public void execute() {
-        List<? extends Network> networks = _networkService.searchForNetworks(this);
+        Pair<List<? extends Network>, Integer> networks = _networkService.searchForNetworks(this);
         ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
         List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
-        for (Network network : networks) {
+        for (Network network : networks.first()) {
             NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(network);
             networkResponses.add(networkResponse);
         }
-
-        response.setResponses(networkResponses);
+        response.setResponses(networkResponses, networks.second());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }

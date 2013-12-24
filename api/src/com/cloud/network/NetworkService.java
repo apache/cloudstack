@@ -62,7 +62,7 @@ public interface NetworkService {
 
     Network createGuestNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException;
 
-    List<? extends Network> searchForNetworks(ListNetworksCmd cmd);
+    Pair<List<? extends Network>, Integer> searchForNetworks(ListNetworksCmd cmd);
 
     boolean deleteNetwork(long networkId);
 
