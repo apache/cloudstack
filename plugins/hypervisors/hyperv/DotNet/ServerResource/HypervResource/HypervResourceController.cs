@@ -688,7 +688,6 @@ namespace HypervResource
         }
 
         // POST api/HypervResource/CheckHealthCommand
-        // TODO: create test
         [HttpPost]
         [ActionName(CloudStackTypes.CheckHealthCommand)]
         public JContainer CheckHealthCommand([FromBody]dynamic cmd)
@@ -703,6 +702,24 @@ namespace HypervResource
                     contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CheckHealthAnswer);
+            }
+        }
+
+        // POST api/HypervResource/CheckOnHostCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.CheckOnHostCommand)]
+        public JContainer CheckOnHostCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.CheckOnHostCommand + cmd.ToString());
+                object ansContent = new
+                {
+                    result = true,
+                    details = "resource is alive",
+                    contextMap = contextMap
+                };
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CheckOnHostAnswer);
             }
         }
 
@@ -1229,6 +1246,7 @@ namespace HypervResource
             using (log4net.NDC.Push(Guid.NewGuid().ToString()))
             {
                 // Log command *after* we've removed security details from the command.
+                logger.Info(CloudStackTypes.CopyCommand + cmd.ToString());
 
                 bool result = false;
                 string details = null;
@@ -1240,9 +1258,8 @@ namespace HypervResource
 
                     TemplateObjectTO srcTemplateObjectTO = TemplateObjectTO.ParseJson(cmd.srcTO);
                     TemplateObjectTO destTemplateObjectTO = TemplateObjectTO.ParseJson(cmd.destTO);
+                    VolumeObjectTO srcVolumeObjectTO = VolumeObjectTO.ParseJson(cmd.srcTO);
                     VolumeObjectTO destVolumeObjectTO = VolumeObjectTO.ParseJson(cmd.destTO);
-
-                    logger.Info(CloudStackTypes.CopyCommand + cmd.ToString());
 
                     string destFile = null;
                     if (destTemplateObjectTO != null && destTemplateObjectTO.primaryDataStore != null)
@@ -1374,6 +1391,38 @@ namespace HypervResource
                             else
                             {
                                 // TODO: thin provision instead of copying the full file.
+                                File.Copy(srcFile, destFile);
+                                newData = cmd.destTO;
+                                result = true;
+                            }
+                        }
+                        else if (srcVolumeObjectTO != null && destVolumeObjectTO != null)
+                        {
+                            var guessedDestFile = destVolumeObjectTO.FullFileName;
+                            if (File.Exists(guessedDestFile))
+                            {
+                                logger.Info("Deleting existing file " + guessedDestFile);
+                                File.Delete(guessedDestFile);
+                            }
+
+                            destVolumeObjectTO.format = srcVolumeObjectTO.format;
+                            destFile = destVolumeObjectTO.FullFileName;
+                            if (File.Exists(destFile))
+                            {
+                                logger.Info("Deleting existing file " + destFile);
+                                File.Delete(destFile);
+                            }
+
+                            string srcFile = srcVolumeObjectTO.FullFileName;
+                            if (!File.Exists(srcFile))
+                            {
+                                details = "Local template file missing from " + srcFile;
+                            }
+                            else
+                            {
+                                // Create the directory before copying the files. CreateDirectory
+                                // doesn't do anything if the directory is already present.
+                                Directory.CreateDirectory(Path.GetDirectoryName(destFile));
                                 File.Copy(srcFile, destFile);
                                 newData = cmd.destTO;
                                 result = true;
