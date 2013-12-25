@@ -153,14 +153,33 @@ namespace HypervResource
             get
             {
                 string fileName = null;
-                if (this.primaryDataStore.isLocal)
+                if (this.primaryDataStore != null)
                 {
-                    fileName = Path.Combine(this.primaryDataStore.Path, this.name);
+                    PrimaryDataStoreTO store = this.primaryDataStore;
+                    if (store.isLocal)
+                    {
+                        fileName = Path.Combine(store.Path, this.name);
+                    }
+                    else
+                    {
+                        fileName = @"\\" + store.uri.Host + store.uri.LocalPath + @"\" + this.name;
+                        fileName = Utils.NormalizePath(fileName);
+                    }
+                }
+                else if (this.nfsDataStore != null)
+                {
+                    fileName = this.nfsDataStore.UncPath;
+                    if (this.path != null)
+                    {
+                        fileName += @"\" + this.path;
+                    }
+                    fileName = Utils.NormalizePath(fileName + @"\" + this.name);
                 }
                 else
                 {
-                    fileName = @"\\" + this.primaryDataStore.uri.Host + this.primaryDataStore.uri.LocalPath + @"\" + this.name;
-                    fileName = Utils.NormalizePath(fileName);
+                    String errMsg = "Invalid dataStore in VolumeObjectTO spec";
+                    logger.Error(errMsg);
+                    throw new InvalidDataException(errMsg);
                 }
 
                 if (this.format != null)
@@ -175,9 +194,11 @@ namespace HypervResource
         public dynamic dataStore;
         public string format;
         public string name;
+        public string path;
         public string uuid;
         public ulong size;
         public PrimaryDataStoreTO primaryDataStore;
+        public NFSTO nfsDataStore;
 
         public static VolumeObjectTO ParseJson(dynamic json)
         {
@@ -196,15 +217,17 @@ namespace HypervResource
                     dataStore = volumeObjectTOJson.dataStore,
                     format = ((string)volumeObjectTOJson.format),
                     name = (string)volumeObjectTOJson.name,
+                    path = volumeObjectTOJson.path,
                     uuid = (string)volumeObjectTOJson.uuid,
                     size = (ulong)volumeObjectTOJson.size
                 };
                 result.primaryDataStore = PrimaryDataStoreTO.ParseJson(volumeObjectTOJson.dataStore);
+                result.nfsDataStore = NFSTO.ParseJson(volumeObjectTOJson.dataStore);
 
                 // Assert
-                if (result.dataStore == null || result.primaryDataStore == null)
+                if (result.dataStore == null || (result.primaryDataStore == null && result.nfsDataStore == null))
                 {
-                    String errMsg = "VolumeObjectTO missing primary dataStore in spec " + volumeObjectTOJson.ToString();
+                    String errMsg = "VolumeObjectTO missing dataStore in spec " + volumeObjectTOJson.ToString();
                     logger.Error(errMsg);
                     throw new ArgumentNullException(errMsg);
                 }
@@ -220,22 +243,48 @@ namespace HypervResource
             {
                 logger.Info("No image format in VolumeObjectTO, going to use format from first file that matches " + volInfo.FullFileName);
 
-                string path = volInfo.primaryDataStore.Path;
-                if (!volInfo.primaryDataStore.isLocal)
+                string path = null;
+                if (volInfo.primaryDataStore != null)
                 {
-                    path = volInfo.primaryDataStore.UncPath;
+                    if (volInfo.primaryDataStore.isLocal)
+                    {
+                        path = volInfo.primaryDataStore.Path;
+                    }
+                    else
+                    {
+                        path = volInfo.primaryDataStore.UncPath;
+                    }
                 }
-
-                string[] choices = choices = Directory.GetFiles(path, volInfo.name + ".vhd*");
-                if (choices.Length != 1)
+                else if (volInfo.nfsDataStore != null)
                 {
-                    String errMsg = "Tried to guess file extension, but cannot find file corresponding to " + Path.Combine(volInfo.primaryDataStore.Path, volInfo.name); // format being guessed.
-                    logger.Debug(errMsg);
+                    path = volInfo.nfsDataStore.UncPath;
+                    if (volInfo.path != null)
+                    {
+                        path += @"\" + volInfo.path;
+                    }
                 }
                 else
                 {
-                    string[] splitFileName = choices[0].Split(new char[] { '.' });
-                    volInfo.format = splitFileName[splitFileName.Length - 1];
+                    String errMsg = "VolumeObjectTO missing dataStore in spec " + volInfo.ToString();
+                    logger.Error(errMsg);
+                    throw new ArgumentNullException(errMsg);
+                }
+
+                path = Utils.NormalizePath(path);
+                if (Directory.Exists(path))
+                {
+                    string[] choices = choices = Directory.GetFiles(path, volInfo.name + ".vhd*");
+                    if (choices.Length != 1)
+                    {
+                        String errMsg = "Tried to guess file extension, but cannot find file corresponding to " +
+                            Path.Combine(volInfo.primaryDataStore.Path, volInfo.name);
+                        logger.Debug(errMsg);
+                    }
+                    else
+                    {
+                        string[] splitFileName = choices[0].Split(new char[] { '.' });
+                        volInfo.format = splitFileName[splitFileName.Length - 1];
+                    }
                 }
                 logger.Debug("Going to use file " + volInfo.FullFileName);
             }
