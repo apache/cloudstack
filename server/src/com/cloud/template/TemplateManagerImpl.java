@@ -1395,8 +1395,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     throw new CloudRuntimeException("Failed to create template" + result.getResult());
                 }
 
-                VMTemplateZoneVO templateZone = new VMTemplateZoneVO(zoneId, templateId, new Date());
-                _tmpltZoneDao.persist(templateZone);
+                // create entries in template_zone_ref table
+                if (_dataStoreMgr.isRegionStore(store)) {
+                    // template created on region store
+                    _tmpltSvr.associateTemplateToZone(templateId, null);
+                } else {
+                    VMTemplateZoneVO templateZone = new VMTemplateZoneVO(zoneId, templateId, new Date());
+                    _tmpltZoneDao.persist(templateZone);
+                }
 
                 privateTemplate = _tmpltDao.findById(templateId);
                 if (snapshotId != null) {

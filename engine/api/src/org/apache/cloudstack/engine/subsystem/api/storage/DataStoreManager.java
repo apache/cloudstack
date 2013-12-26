@@ -42,4 +42,6 @@ public interface DataStoreManager {
     List<DataStore> listImageStores();
 
     List<DataStore> listImageCacheStores();
+
+    boolean isRegionStore(DataStore store);
 }
