@@ -103,6 +103,8 @@ public interface TemplateManager {
 
     DataStore getImageStore(long zoneId, long tmpltId);
 
+    DataStore getImageStore(long tmpltId);
+
     Long getTemplateSize(long templateId, long zoneId);
 
     DataStore getImageStore(String storeUuid, Long zoneId);
