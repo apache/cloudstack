@@ -28,7 +28,6 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.acl.AclEntityType;
-import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
 import com.cloud.utils.db.GenericDao;
@@ -98,22 +97,6 @@ public class AclGroupJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "member_account_name")
     private String memberAccountName;
 
-    @Column(name = "permission_action")
-    private String permissionAction;
-
-    @Column(name = "permission_entity_type")
-    private String permissionEntityType;
-
-    @Column(name = "permission_scope_id")
-    private long permissionScopeId;
-
-    @Column(name = "permission_scope_type")
-    @Enumerated(value = EnumType.STRING)
-    PermissionScope permissionScope;
-
-    @Column(name = "permission_access_type")
-    @Enumerated(value = EnumType.STRING)
-    AccessType permissionAccessType;
 
     public AclGroupJoinVO() {
     }
@@ -222,25 +205,6 @@ public class AclGroupJoinVO extends BaseViewVO implements ControlledViewEntity {
         return memberAccountName;
     }
 
-    public String getPermissionAction() {
-        return permissionAction;
-    }
-
-    public String getPermissionEntityType() {
-        return permissionEntityType;
-    }
-
-    public long getPermissionScopeId() {
-        return permissionScopeId;
-    }
-
-    public PermissionScope getPermissionScope() {
-        return permissionScope;
-    }
-
-    public AccessType getPermissionAccessType() {
-        return permissionAccessType;
-    }
 
     @Override
     public AclEntityType getEntityType() {
