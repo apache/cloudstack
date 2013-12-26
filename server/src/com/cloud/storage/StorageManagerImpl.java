@@ -1653,6 +1653,15 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             scopeType = ScopeType.REGION;
         }
 
+        String name = cmd.getName();
+        if (name == null) {
+            name = cmd.getUrl();
+        }
+        ImageStoreVO imageStore = _imageStoreDao.findByName(name);
+        if (imageStore != null) {
+            throw new InvalidParameterValueException("The image store with name " + name + " already exists, try creating with another name");
+        }
+
         // check if scope is supported by store provider
         if (!((ImageStoreProvider)storeProvider).isScopeSupported(scopeType)) {
             throw new InvalidParameterValueException("Image store provider " + providerName + " does not support scope " + scopeType);
