@@ -21,8 +21,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -32,6 +30,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.serializer.Param;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
+import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {VirtualMachine.class, UserVm.class, VirtualRouter.class})
@@ -229,7 +228,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private Set<ResourceTagResponse> tags;
 
     @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "Template details in key/value pairs.", since = "4.2.1")
+    @Param(description = "Vm details in key/value pairs.", since = "4.2.1")
     private Map details;
 
     @SerializedName(ApiConstants.SSH_KEYPAIR)
@@ -247,9 +246,14 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE)
     @Param(description = "true if vm contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory.")
     private Boolean isDynamicallyScalable;
+
     @SerializedName(ApiConstants.SERVICE_STATE)
     @Param(description = "State of the Service from LB rule")
     private String serviceState;
+
+    @SerializedName(ApiConstants.OS_TYPE_ID)
+    @Param(description = "OS type id of the vm", since = "4.4")
+    private Long osTypeId;
 
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
@@ -714,5 +718,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public void setDetails(Map details) {
         this.details = details;
+    }
+
+    public void setOsTypeId(Long osTypeId) {
+        this.osTypeId = osTypeId;
     }
 }
