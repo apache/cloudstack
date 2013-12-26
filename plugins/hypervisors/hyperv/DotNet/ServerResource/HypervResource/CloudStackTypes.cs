@@ -301,20 +301,34 @@ namespace HypervResource
         {
             get
             {
-                if (String.IsNullOrEmpty(this.path))
+                string fileName = null;
+                if (this.primaryDataStore != null)
                 {
-                    string fileName = null;
-                    if (this.primaryDataStore.isLocal)
+                    PrimaryDataStoreTO store = this.primaryDataStore;
+                    if (store.isLocal)
                     {
-                        fileName = Path.Combine(this.primaryDataStore.Path, this.name);
+                        fileName = Path.Combine(store.Path, this.name);
                     }
                     else
                     {
-                        fileName = @"\\" + this.primaryDataStore.uri.Host + this.primaryDataStore.uri.LocalPath + @"\" + this.name;
+                        fileName = @"\\" + store.uri.Host + store.uri.LocalPath + @"\" + this.name;
                     }
-                    return fileName +'.' + this.format.ToLowerInvariant();
+                    fileName = fileName + '.' + this.format.ToLowerInvariant();
                 }
-                return this.path;
+                else if (this.nfsDataStoreTO != null)
+                {
+                    NFSTO store = this.nfsDataStoreTO;
+                    fileName = store.UncPath + @"\" + this.path + @"\" + this.name;
+                    if (!this.format.Equals("RAW"))
+                    {
+                        fileName = fileName + '.' + this.format.ToLowerInvariant();
+                    }
+                }
+                else
+                {
+                    fileName = this.path;
+                }
+                return Utils.NormalizePath(fileName);
             }
         }
 
