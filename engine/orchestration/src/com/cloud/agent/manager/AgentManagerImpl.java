@@ -1475,20 +1475,12 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 List<HostVO> hosts = sc.list();
 
                 for (HostVO host : hosts) {
-                    long hostId = host.getId();
-                    DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
-                    HostPodVO podVO = _podDao.findById(host.getPodId());
-                    String hostDesc = "name: " + host.getName() + " (id:" + hostId + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
-
-                    if (host.getType() != Host.Type.Storage) {
-//                        List<VMInstanceVO> vos = _vmDao.listByHostId(hostId);
-//                        List<VMInstanceVO> vosMigrating = _vmDao.listVmsMigratingFromHost(hostId);
-//                        if (vos.isEmpty() && vosMigrating.isEmpty()) {
-//                            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Migration Complete for host " + hostDesc, "Host ["
-//                                    + hostDesc
-//                                    + "] is ready for maintenance");
-//                            _resourceMgr.resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _msId);
-//                        }
+                    if (_resourceMgr.checkAndMaintain(host.getId())) {
+                        DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
+                        HostPodVO podVO = _podDao.findById(host.getPodId());
+                        String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
+                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Migration Complete for host " + hostDesc, "Host ["
+                                + hostDesc + "] is ready for maintenance");
                     }
                 }
             } catch (Throwable th) {

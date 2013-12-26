@@ -1233,6 +1233,26 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    public boolean checkAndMaintain(final long hostId) {
+        boolean hostInMaintenance = false;
+        HostVO host = _hostDao.findById(hostId);
+
+        try {
+            if (host.getType() != Host.Type.Storage) {
+                List<VMInstanceVO> vos = _vmDao.listByHostId(hostId);
+                List<VMInstanceVO> vosMigrating = _vmDao.listVmsMigratingFromHost(hostId);
+                if (vos.isEmpty() && vosMigrating.isEmpty()) {
+                    resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _nodeId);
+                    hostInMaintenance = true;
+                }
+            }
+        } catch (NoTransitionException e) {
+            s_logger.debug("Cannot transmit host " + host.getId() + "to Maintenance state", e);
+        }
+        return hostInMaintenance;
+    }
+
+    @Override
     public Host updateHost(UpdateHostCmd cmd) throws NoTransitionException {
         Long hostId = cmd.getId();
         Long guestOSCategoryId = cmd.getOsCategoryId();
