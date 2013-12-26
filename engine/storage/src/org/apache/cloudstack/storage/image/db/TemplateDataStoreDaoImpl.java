@@ -350,13 +350,18 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     }
 
     @Override
-    public TemplateDataStoreVO findReadyOnCache(long templateId) {
+    public TemplateDataStoreVO findReadyByTemplate(long templateId, DataStoreRole role) {
         SearchCriteria<TemplateDataStoreVO> sc = templateRoleSearch.create();
         sc.setParameters("template_id", templateId);
-        sc.setParameters("store_role", DataStoreRole.ImageCache);
+        sc.setParameters("store_role", role);
         sc.setParameters("destroyed", false);
         sc.setParameters("state", ObjectInDataStoreStateMachine.State.Ready);
         return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public TemplateDataStoreVO findReadyOnCache(long templateId) {
+        return findReadyByTemplate(templateId, DataStoreRole.ImageCache);
     }
 
     @Override
