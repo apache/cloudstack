@@ -419,6 +419,64 @@ namespace HypervResource
             }
         }
 
+        // POST api/HypervResource/DeleteCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.DeleteCommand)]
+        public JContainer DeleteCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.DestroyCommand + cmd.ToString());
+
+                string details = null;
+                bool result = false;
+
+                try
+                {
+                    // Assert
+                    String errMsg = "No 'volume' details in " + CloudStackTypes.DestroyCommand + " " + cmd.ToString();
+                    VolumeObjectTO destVolumeObjectTO = VolumeObjectTO.ParseJson(cmd.data);
+
+                    if (destVolumeObjectTO.name == null)
+                    {
+                        logger.Error(errMsg);
+                        throw new ArgumentException(errMsg);
+                    }
+
+                    String path = destVolumeObjectTO.FullFileName;
+                    if (!File.Exists(path))
+                    {
+                        logger.Info(CloudStackTypes.DestroyCommand + ", but volume at pass already deleted " + path);
+                    }
+
+                    string vmName = (string)cmd.vmName;
+                    if (!string.IsNullOrEmpty(vmName) && File.Exists(path))
+                    {
+                        // Make sure that this resource is removed from the VM
+                        wmiCallsV2.DetachDisk(vmName, path);
+                    }
+
+                    File.Delete(path);
+                    result = true;
+                }
+                catch (Exception sysEx)
+                {
+                    details = CloudStackTypes.DestroyCommand + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
+                }
+
+                object ansContent = new
+                {
+                    result = result,
+                    details = details,
+                    contextMap = contextMap
+                };
+
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.Answer);
+            }
+        }
+
+        
         private static JArray ReturnCloudStackTypedJArray(object ansContent, string ansType)
         {
             JObject ansObj = Utils.CreateCloudStackObject(ansType, ansContent);
