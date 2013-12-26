@@ -18,12 +18,12 @@
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>cloudstack-services</artifactId>
-  <name>Apache CloudStack Cloud Services</name>
+  <artifactId>cloudstack-service-iam</artifactId>
+  <name>Apache CloudStack IAM Service</name>
   <packaging>pom</packaging>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
-    <artifactId>cloudstack</artifactId>
+    <artifactId>cloudstack-services</artifactId>
     <version>4.3.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
@@ -31,8 +31,7 @@
     <defaultGoal>install</defaultGoal>
   </build>
   <modules>
-    <module>console-proxy</module>
-    <module>secondary-storage</module>
-    <module>iam</module>
+    <module>plugin</module>
+    <module>server</module>
   </modules>
 </project>
