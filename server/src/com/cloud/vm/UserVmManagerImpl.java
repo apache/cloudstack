@@ -3248,6 +3248,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     || network.getTrafficType() == TrafficType.Public) {
                 userVm.setPrivateIpAddress(nic.getIp4Address());
                 userVm.setPrivateMacAddress(nic.getMacAddress());
+                _vmDao.update(userVm.getId(), userVm);
             }
         }
 
