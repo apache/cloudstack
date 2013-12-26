@@ -1804,11 +1804,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         String pif = matchPifFileInDirectory(brName);
         Pattern pattern = Pattern.compile("(\\D+)(\\d+)(\\D*)(\\d*)");
         Matcher matcher = pattern.matcher(pif);
-        if (matcher.find()) {
-            if (brName.startsWith("brvx")) {
+        s_logger.debug("getting broadcast uri for pif " + pif + " and bridge " + brName);
+        if(matcher.find()) {
+            if (brName.startsWith("brvx")){
                 return BroadcastDomainType.Vxlan.toUri(matcher.group(2)).toString();
-            } else {
-                return BroadcastDomainType.Vlan.toUri(matcher.group(4)).toString();
+            }
+            else{
+                if (!matcher.group(4).isEmpty()) {
+                    return BroadcastDomainType.Vlan.toUri(matcher.group(4)).toString();
+                } else {
+                    //untagged or not matching (eth|bond)#.#
+                    s_logger.debug("failed to get vNet id from bridge " + brName
+                           + "attached to physical interface" + pif + ", perhaps untagged interface");
+                    return "";
+                }
             }
         } else {
             s_logger.debug("failed to get vNet id from bridge " + brName + "attached to physical interface" + pif);
