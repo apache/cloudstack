@@ -1262,13 +1262,22 @@ namespace HypervResource
                     VolumeObjectTO destVolumeObjectTO = VolumeObjectTO.ParseJson(cmd.destTO);
 
                     string destFile = null;
-                    if (destTemplateObjectTO != null && destTemplateObjectTO.primaryDataStore != null)
+                    if (destTemplateObjectTO != null)
                     {
-                        destFile = destTemplateObjectTO.FullFileName;
-                        if (!destTemplateObjectTO.primaryDataStore.isLocal)
+                        if (destTemplateObjectTO.primaryDataStore != null)
                         {
-                            PrimaryDataStoreTO primary = destTemplateObjectTO.primaryDataStore;
-                            Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
+                            destFile = destTemplateObjectTO.FullFileName;
+                            if (!destTemplateObjectTO.primaryDataStore.isLocal)
+                            {
+                                PrimaryDataStoreTO primary = destTemplateObjectTO.primaryDataStore;
+                                Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
+                            }
+                        }
+                        else if (destTemplateObjectTO.nfsDataStoreTO != null)
+                        {
+                            destFile = destTemplateObjectTO.FullFileName;
+                            NFSTO store = destTemplateObjectTO.nfsDataStoreTO;
+                            Utils.ConnectToRemote(store.UncPath, store.Domain, store.User, store.Password);
                         }
                     }
 
@@ -1407,6 +1416,38 @@ namespace HypervResource
 
                             destVolumeObjectTO.format = srcVolumeObjectTO.format;
                             destFile = destVolumeObjectTO.FullFileName;
+                            if (File.Exists(destFile))
+                            {
+                                logger.Info("Deleting existing file " + destFile);
+                                File.Delete(destFile);
+                            }
+
+                            string srcFile = srcVolumeObjectTO.FullFileName;
+                            if (!File.Exists(srcFile))
+                            {
+                                details = "Local template file missing from " + srcFile;
+                            }
+                            else
+                            {
+                                // Create the directory before copying the files. CreateDirectory
+                                // doesn't do anything if the directory is already present.
+                                Directory.CreateDirectory(Path.GetDirectoryName(destFile));
+                                File.Copy(srcFile, destFile);
+                                newData = cmd.destTO;
+                                result = true;
+                            }
+                        }
+                        else if (srcVolumeObjectTO != null && destTemplateObjectTO != null)
+                        {
+                            var guessedDestFile = destTemplateObjectTO.FullFileName;
+                            if (File.Exists(guessedDestFile))
+                            {
+                                logger.Info("Deleting existing file " + guessedDestFile);
+                                File.Delete(guessedDestFile);
+                            }
+
+                            destTemplateObjectTO.format = srcVolumeObjectTO.format;
+                            destFile = destTemplateObjectTO.FullFileName;
                             if (File.Exists(destFile))
                             {
                                 logger.Info("Deleting existing file " + destFile);
