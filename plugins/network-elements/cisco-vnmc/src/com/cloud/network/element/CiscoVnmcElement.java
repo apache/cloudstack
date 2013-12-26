@@ -27,6 +27,7 @@ import java.util.UUID;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import javax.persistence.EntityExistsException;
 
 import org.apache.log4j.Logger;
 
@@ -847,8 +848,12 @@ public class CiscoVnmcElement extends AdapterBase implements SourceNatServicePro
             throw new InvalidParameterValueException("Could not find phyical network with ID: " + physicalNetworkId);
         }
 
-        ciscoAsa1000vResource = new CiscoAsa1000vDeviceVO(physicalNetworkId, cmd.getManagementIp(), cmd.getInPortProfile(), cmd.getClusterId());
-        _ciscoAsa1000vDao.persist((CiscoAsa1000vDeviceVO)ciscoAsa1000vResource);
+        ciscoAsa1000vResource = new CiscoAsa1000vDeviceVO(physicalNetworkId, cmd.getManagementIp().trim(), cmd.getInPortProfile(), cmd.getClusterId());
+        try {
+            _ciscoAsa1000vDao.persist((CiscoAsa1000vDeviceVO)ciscoAsa1000vResource);
+        } catch (EntityExistsException e) {
+            throw new InvalidParameterValueException("An ASA 1000v appliance already exists with same configuration");
+        }
 
         return ciscoAsa1000vResource;
     }
