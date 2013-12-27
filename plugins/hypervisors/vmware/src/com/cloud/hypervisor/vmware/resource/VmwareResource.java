@@ -4922,7 +4922,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         vmMo.mountToolsInstaller();
                     } else {
                         try{
-                            vmMo.unmountToolsInstaller();
+                            if (!vmMo.unmountToolsInstaller()) {
+                                return new Answer(cmd, false,
+                                        "Failed to unmount vmware-tools installer ISO as the corresponding CDROM device is locked by VM. Please unmount the CDROM device inside the VM and ret-try.");
+                            }
                         }catch(Throwable e){
                             vmMo.detachIso(null);
                         }
