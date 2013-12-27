@@ -50,8 +50,11 @@ public interface IAMService {
     AclPolicy removeAclPermissionFromAclPolicy(long aclPolicyId, String entityType, String scope, Long scopeId,
             String action);
 
+    List<AclPolicyPermission> listPolicyPermissionsByScope(long policyId, String action, String scope);
+
     boolean isAPIAccessibleForPolicies(String apiName, List<AclPolicy> policies);
 
     List<Long> getGrantedEntities(long accountId, String action, String scope);
+
 
 }

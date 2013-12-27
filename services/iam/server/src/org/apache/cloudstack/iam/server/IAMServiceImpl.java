@@ -24,8 +24,10 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.iam.api.AclGroup;
 import org.apache.cloudstack.iam.api.AclPolicy;
+import org.apache.cloudstack.iam.api.AclPolicyPermission;
 import org.apache.cloudstack.iam.api.AclPolicyPermission.Permission;
 import org.apache.cloudstack.iam.api.IAMService;
 import org.apache.cloudstack.iam.server.dao.AclGroupAccountMapDao;
@@ -33,7 +35,6 @@ import org.apache.cloudstack.iam.server.dao.AclGroupDao;
 import org.apache.cloudstack.iam.server.dao.AclGroupPolicyMapDao;
 import org.apache.cloudstack.iam.server.dao.AclPolicyDao;
 import org.apache.cloudstack.iam.server.dao.AclPolicyPermissionDao;
-import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -539,5 +540,12 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         return entityIds;
     }
 
+    @Override
+    public List<AclPolicyPermission> listPolicyPermissionsByScope(long policyId, String action, String scope) {
+        List<AclPolicyPermissionVO> pp = _policyPermissionDao.listGrantedByActionAndScope(policyId, action, scope);
+        List<AclPolicyPermission> pl = new ArrayList<AclPolicyPermission>();
+        pl.addAll(pp);
+        return pl;
+    }
 
 }

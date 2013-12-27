@@ -20,32 +20,32 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
-import org.apache.cloudstack.acl.QueryChecker;
+import org.apache.cloudstack.acl.QuerySelector;
 
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 
-public class RoleBasedEntityQueryChecker extends AdapterBase implements QueryChecker {
+public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySelector {
 
-    private static final Logger s_logger = Logger.getLogger(RoleBasedEntityQueryChecker.class.getName());
+    private static final Logger s_logger = Logger.getLogger(RoleBasedEntityQuerySelector.class.getName());
 
     @Override
-    public List<Long> getAuthorizedDomains(Account caller, AclEntityType entityType) {
+    public List<Long> getAuthorizedDomains(Account caller, String action) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public List<Long> getAuthorizedAccounts(Account caller, AclEntityType entityType) {
+    public List<Long> getAuthorizedAccounts(Account caller, String action) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public List<Long> getAuthorizedResources(Account caller, AclEntityType entityType) {
+    public List<Long> getAuthorizedResources(Account caller, String action) {
         // TODO Auto-generated method stub
         return null;
     }
+
 
 }

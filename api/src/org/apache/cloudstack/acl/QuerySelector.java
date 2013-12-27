@@ -24,35 +24,35 @@ import com.cloud.utils.component.Adapter;
 /**
  * QueryChecker returns granted access at domain, account or resource level.
  */
-public interface QueryChecker extends Adapter {
+public interface QuerySelector extends Adapter {
 
     /**
-    * List granted domains for the caller, given a specific entity type.
+    * List granted domains for the caller, given a specific action.
     *
     * @param caller account to check against.
-    * @param entityType entity type
+    * @param action action
     * @return list of domain Ids granted to the caller account.
     */
-    List<Long> getAuthorizedDomains(Account caller, AclEntityType entityType);
+    List<Long> getAuthorizedDomains(Account caller, String action);
 
     /**
-    * List granted accounts for the caller, given a specific entity type.
+    * List granted accounts for the caller, given a specific action.
     *
     * @param caller account to check against.
-    * @param entityType entity type
+    * @param action action.
     * @return list of domain Ids granted to the caller account.
     */
-    List<Long> getAuthorizedAccounts(Account caller, AclEntityType entityType);
+    List<Long> getAuthorizedAccounts(Account caller, String action);
 
 
     /**
-    * List granted resources for the caller, given a specific entity type.
+    * List granted resources for the caller, given a specific action.
     *
     * @param caller account to check against.
-    * @param entityType entity type
+    * @param action action.
     * @return list of domain Ids granted to the caller account.
     */
-    List<Long> getAuthorizedResources(Account caller, AclEntityType entityType);
+    List<Long> getAuthorizedResources(Account caller, String action);
 
 
 }
