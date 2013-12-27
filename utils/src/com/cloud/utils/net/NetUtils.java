@@ -837,32 +837,13 @@ public class NetUtils {
     }
 
     public static boolean isNetworkAWithinNetworkB(String cidrA, String cidrB) {
-        // This utility returns true if IP range of cidrA is same or lies completely in cidrB
-        // Returns true if networkA is same as networkB or networkA is a subset of networkB
         Long[] cidrALong = cidrToLong(cidrA);
         Long[] cidrBLong = cidrToLong(cidrB);
         if (cidrALong == null || cidrBLong == null) {
             return false;
         }
-        if (isSameIpRange(cidrA, cidrB)) {
-            return true;
-        }
-        String[] cidrPairFirst = cidrA.split("\\/");
-        String[] cidrPairSecond = cidrB.split("\\/");
-
-        Long networkSizeFirst = Long.valueOf(cidrPairFirst[1]);
-        Long networkSizeSecond = Long.valueOf(cidrPairSecond[1]);
-        String ipRangeFirst [] = NetUtils.getIpRangeFromCidr(cidrPairFirst[0], networkSizeFirst);
-        String ipRangeSecond [] = NetUtils.getIpRangeFromCidr(cidrPairFirst[0], networkSizeSecond);
-
-        long startIpFirst = NetUtils.ip2Long(ipRangeFirst[0]);
-        long endIpFirst = NetUtils.ip2Long(ipRangeFirst[1]);
-        long startIpSecond = NetUtils.ip2Long(ipRangeSecond[0]);
-        long endIpSecond = NetUtils.ip2Long(ipRangeSecond[1]);
-
-        if((startIpFirst >= startIpSecond) && (endIpFirst <= endIpSecond))
-            return true;
-        return false;
+        long shift = 32 - cidrBLong[1];
+        return ((cidrALong[0] >> shift) == (cidrBLong[0] >> shift));
     }
 
     public static Long[] cidrToLong(String cidr) {

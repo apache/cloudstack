@@ -174,19 +174,4 @@ public class NetUtilsTest extends TestCase {
     public void testGetLocalIPString() {
         assertNotNull(NetUtils.getLocalIPString());
     }
-
-    public void testSubnet() {
-        //Test to check if a cidr is a part of another cidr
-        //Test 2 same cidrs
-        assertTrue(NetUtils.isNetworkAWithinNetworkB("10.1.1.0/25", "10.1.1.0/25"));
-        //Tests when cidrA is smaller than cidrB
-        assertTrue(NetUtils.isNetworkAWithinNetworkB("10.1.1.0/26", "10.1.1.0/25"));
-        assertTrue(NetUtils.isNetworkAWithinNetworkB("10.1.1.0/25", "10.1.1.0/24"));
-        assertTrue(NetUtils.isNetworkAWithinNetworkB("10.1.1.0/23", "10.1.1.0/22"));
-        assertTrue(NetUtils.isNetworkAWithinNetworkB("192.168.0.0/16" , "192.168.0.0/15"));
-        //Tests when cidrA is larger than cidrB
-        assertFalse(NetUtils.isNetworkAWithinNetworkB("10.1.1.0/26", "10.1.1.0/27"));
-        assertFalse(NetUtils.isNetworkAWithinNetworkB("10.1.1.0/24", "10.1.1.0/25"));
-        assertFalse(NetUtils.isNetworkAWithinNetworkB("10.1.1.0/22", "10.1.1.0/23"));
-    }
 }
