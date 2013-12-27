@@ -3443,7 +3443,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     protected boolean sendCommandsToRouter(final VirtualRouter router, Commands cmds) throws AgentUnavailableException {
         if(!checkRouterVersion(router)){
-            //throw new CloudRuntimeException("Router requires upgrade. Unable to send command to router:" + router.getId());
+            throw new CloudRuntimeException("Router requires upgrade. Unable to send command to router:" + router.getId());
         }
         Answer[] answers = null;
         try {
