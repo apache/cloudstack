@@ -2262,6 +2262,8 @@ class Zone:
             cmd.internaldns2 = services["internaldns2"]
         if domainid:
             cmd.domainid = domainid
+        if "securitygroupenabled" in services:
+            cmd.securitygroupenabled = services["securitygroupenabled"]
 
         return Zone(apiclient.createZone(cmd).__dict__)
 

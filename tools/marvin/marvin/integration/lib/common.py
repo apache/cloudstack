@@ -799,35 +799,45 @@ def get_free_vlan(apiclient, zoneid):
     assert len(list_physical_networks_response) > 0, "No physical networks found in zone %s" % zoneid
 
     physical_network = list_physical_networks_response[0]
-    vlans = xsplit(physical_network.vlan, ['-', ','])
 
-    assert len(vlans) > 0
-    assert int(vlans[0]) < int(vlans[-1]), "VLAN range  %s was improperly split" % physical_network.vlan
-
-    usedVlanIds = []
     networks = list_networks(apiclient, zoneid= zoneid, type='Shared')
+    usedVlanIds = []
+
     if isinstance(networks, list) and len(networks) > 0:
-        usedVlanIds = [int(nw.vlan) for nw in networks]
+        usedVlanIds = [int(nw.vlan) for nw in networks if nw.vlan!="untagged"]
 
-    retriesCount = 20 #Assuming random function will give different integer each time
+    if hasattr(physical_network, "vlan") is False:
+        while True:
+            shared_ntwk_vlan = random.randrange(1,4095)
+            if shared_ntwk_vlan in usedVlanIds:
+                continue
+            else:
+                break
+    else:
+        vlans = xsplit(physical_network.vlan, ['-', ','])
 
-    shared_ntwk_vlan = None
+        assert len(vlans) > 0
+        assert int(vlans[0]) < int(vlans[-1]), "VLAN range  %s was improperly split" % physical_network.vlan
 
-    while True:
+        retriesCount = 20 #Assuming random function will give different integer each time
 
-        if retriesCount == 0:
-           break
+        shared_ntwk_vlan = None
 
-        free_vlan = int(vlans[-1]) + random.randrange(1, 20)
+        while True:
 
-        if free_vlan > 4095:
-            free_vlan = int(vlans[0]) - random.randrange(1, 20)
-        if free_vlan < 0 or (free_vlan in usedVlanIds):
-            retriesCount -= 1
-            continue
-        else:
-            shared_ntwk_vlan = free_vlan
-            break
+            if retriesCount == 0:
+                break
+
+            free_vlan = int(vlans[-1]) + random.randrange(1, 20)
+
+            if free_vlan > 4095:
+                free_vlan = int(vlans[0]) - random.randrange(1, 20)
+            if free_vlan < 0 or (free_vlan in usedVlanIds):
+                retriesCount -= 1
+                continue
+            else:
+                shared_ntwk_vlan = free_vlan
+                break
 
     return physical_network, shared_ntwk_vlan
 
