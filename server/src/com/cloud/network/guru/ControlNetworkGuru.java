@@ -173,7 +173,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     @Override
     public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
         assert nic.getTrafficType() == TrafficType.Control;
-        HypervisorType hType = vm.getHypervisorType(); 
+        HypervisorType hType = vm.getHypervisorType();
         if ( ( (hType == HypervisorType.VMware) || (hType == HypervisorType.Hyperv) )&& isRouterVm(vm)) {
             long dcId = vm.getVirtualMachine().getDataCenterId();
             DataCenterVO dcVo = _dcDao.findById(dcId);
