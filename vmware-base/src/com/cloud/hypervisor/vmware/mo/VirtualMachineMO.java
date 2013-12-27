@@ -2398,11 +2398,13 @@ public class VirtualMachineMO extends BaseMO {
 		_context.getService().mountToolsInstaller(_mor);
 	}
 
-	public void unmountToolsInstaller() throws Exception {
+	public boolean unmountToolsInstaller() throws Exception {
         int i = 1;
         // Monitor VM questions
         final Boolean[] flags = {false};
         final VirtualMachineMO vmMo = this;
+        final boolean[] encounterQuestion = new boolean[1];
+        encounterQuestion[0] = false;
         Future<?> future = _monitorServiceExecutor.submit(new Runnable() {
             @Override
             public void run() {
@@ -2413,6 +2415,7 @@ public class VirtualMachineMO extends BaseMO {
                         VirtualMachineRuntimeInfo runtimeInfo = vmMo.getRuntimeInfo();
                         VirtualMachineQuestionInfo question = runtimeInfo.getQuestion();
                         if (question != null) {
+                            encounterQuestion[0] = true;
                             if (s_logger.isTraceEnabled()) {
                                 s_logger.trace("Question id: " + question.getId());
                                 s_logger.trace("Question text: " + question.getText());
@@ -2478,6 +2481,13 @@ public class VirtualMachineMO extends BaseMO {
         } finally {
             flags[0] = true;
             future.cancel(true);
+        }
+        if (encounterQuestion[0]) {
+            s_logger.warn("cdrom is locked by VM. Failed to detach the ISO.");
+            return false;
+        } else {
+            s_logger.info("Successfully unmounted tools installer from VM.");
+            return true;
         }
     }
 
