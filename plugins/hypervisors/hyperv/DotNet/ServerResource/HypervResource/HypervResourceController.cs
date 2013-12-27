@@ -1200,6 +1200,7 @@ namespace HypervResource
                 object ansContent = new
                 {
                     result = true,
+                    willMigrate = true,
                     details = "success - NOP for MaintainCommand",
                     _reconnect = false,
                     contextMap = contextMap
