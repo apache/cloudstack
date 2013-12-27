@@ -282,7 +282,7 @@ public enum Config {
     // Hyperv
     HypervPublicNetwork("Hidden", ManagementServer.class, String.class, "hyperv.public.network.device", null, "Specify the public virtual switch on host for public network", null),
     HypervPrivateNetwork("Hidden", ManagementServer.class, String.class, "hyperv.private.network.device", null, "Specify the virtual switch on host for private network", null),
-    HypervGuestNetwork("Hidden", ManagementServer.class, String.class, "hyperv.guest.network.device", null, "Specify the virtual switch on host for private network", null),
+    HypervGuestNetwork("Hidden", ManagementServer.class, String.class, "hyperv.guest.network.device", null, "Specify the virtual switch on host for guest network", null),
 
 	// Usage
 	UsageExecutionTimezone("Usage", ManagementServer.class, String.class, "usage.execution.timezone", null, "The timezone to use for usage job execution time", null),
