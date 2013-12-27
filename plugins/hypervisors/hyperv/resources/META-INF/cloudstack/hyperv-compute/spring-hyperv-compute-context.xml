@@ -20,5 +20,7 @@
     <bean id="HypervGuru" class="com.cloud.hypervisor.hyperv.guru.HypervGuru">
         <property name="name" value="HypervGuru" />
     </bean>
-
+    <bean id="HypervInvestigator" class="com.cloud.ha.HypervInvestigator">
+        <property name="name" value="HypervInvestigator" />
+    </bean>
 </beans>
