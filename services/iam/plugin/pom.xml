@@ -26,4 +26,21 @@
     <version>4.3.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-api</artifactId>
+      <version>${project.version}</version>    
+    </dependency> 
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-schema</artifactId>
+      <version>${project.version}</version>    
+    </dependency>   
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-server</artifactId>
+      <version>${project.version}</version>    
+    </dependency>         
+  </dependencies> 
 </project>
