@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl;
+package org.apache.cloudstack.acl.api;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,6 +25,17 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclGroup;
+import org.apache.cloudstack.acl.AclGroupAccountMapVO;
+import org.apache.cloudstack.acl.AclGroupPolicyMapVO;
+import org.apache.cloudstack.acl.AclGroupVO;
+import org.apache.cloudstack.acl.AclPolicy;
+import org.apache.cloudstack.acl.AclPolicyPermission;
+import org.apache.cloudstack.acl.AclPolicyPermissionVO;
+import org.apache.cloudstack.acl.AclPolicyVO;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.PermissionScope;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.AclPolicyPermission.Permission;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
@@ -62,10 +73,10 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 
-@Local(value = {AclService.class})
-public class AclServiceImpl extends ManagerBase implements AclService, Manager {
+@Local(value = {AclApiService.class})
+public class AclApiServiceImpl extends ManagerBase implements AclApiService, Manager {
 
-    public static final Logger s_logger = Logger.getLogger(AclServiceImpl.class);
+    public static final Logger s_logger = Logger.getLogger(AclApiServiceImpl.class);
     private String _name;
 
     @Inject

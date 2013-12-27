@@ -14,15 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl;
+package org.apache.cloudstack.acl.api;
 
 import java.util.List;
 
+import org.apache.cloudstack.acl.AclGroup;
+import org.apache.cloudstack.acl.AclPolicy;
+import org.apache.cloudstack.acl.AclPolicyPermission;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.AclPolicyPermission.Permission;
 
 import com.cloud.user.Account;
 
-public interface AclService {
+public interface AclApiService {
 
     /* ACL group related interfaces */
     AclGroup createAclGroup(Account caller, String aclGroupName, String description);

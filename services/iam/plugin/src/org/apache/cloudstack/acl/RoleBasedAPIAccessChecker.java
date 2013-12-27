@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl.api;
+package org.apache.cloudstack.acl;
 
 import java.util.List;
 
@@ -24,7 +24,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.AclPolicy;
 import org.apache.cloudstack.acl.AclRole;
-import org.apache.cloudstack.acl.AclService;
+import org.apache.cloudstack.acl.api.AclApiService;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.PermissionDeniedException;
@@ -41,7 +42,7 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
     protected static final Logger s_logger = Logger.getLogger(RoleBasedAPIAccessChecker.class);
 
     @Inject AccountService _accountService;
-    @Inject AclService _aclService;
+    @Inject AclApiService _aclService;
 
     protected RoleBasedAPIAccessChecker() {
         super();

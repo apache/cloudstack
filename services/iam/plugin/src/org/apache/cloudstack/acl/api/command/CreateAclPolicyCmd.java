@@ -14,11 +14,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.iam.api.command;
+package org.apache.cloudstack.acl.api.command;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclGroup;
+import org.apache.cloudstack.acl.AclPolicy;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,7 +27,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.AclGroupResponse;
+import org.apache.cloudstack.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.context.CallContext;
 
@@ -34,27 +35,31 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 
-@APICommand(name = "createAclGroup", responseObject = AclGroupResponse.class, description = "Creates an acl group")
-public class CreateAclGroupCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateAclGroupCmd.class.getName());
+@APICommand(name = "createAclPolicy", responseObject = AclPolicyResponse.class, description = "Creates an acl policy")
+public class CreateAclPolicyCmd extends BaseAsyncCreateCmd {
+    public static final Logger s_logger = Logger.getLogger(CreateAclPolicyCmd.class.getName());
 
-    private static final String s_name = "createaclgroupresponse";
+    private static final String s_name = "createaclpolicyresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an account for the acl group. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an account for the acl policy. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, description = "domainId of the account owning the acl group", entityType = DomainResponse.class)
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, description = "domainId of the account owning the acl policy", entityType = DomainResponse.class)
     private Long domainId;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "optional description of the acl group")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "optional description of the acl policy")
     private String description;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the acl group")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the acl policy")
     private String name;
+
+    @ACL
+    @Parameter(name = ApiConstants.ACL_PARENT_POLICY_ID, type = CommandType.UUID, description = "The ID of parent acl policy.", entityType = AclPolicyResponse.class)
+    private Long parentPolicyId;
 
 
     // ///////////////////////////////////////////////////
@@ -77,11 +82,13 @@ public class CreateAclGroupCmd extends BaseAsyncCreateCmd {
         return name;
     }
 
+    public Long getParentPolicyId() {
+        return parentPolicyId;
+    }
 
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
-
 
     @Override
     public String getCommandName() {
@@ -111,52 +118,52 @@ public class CreateAclGroupCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        AclGroup grp = _entityMgr.findById(AclGroup.class, getEntityId());
-        if (grp != null) {
-            AclGroupResponse response = _responseGenerator.createAclGroupResponse(grp);
+        AclPolicy policy = _entityMgr.findById(AclPolicy.class, getEntityId());
+        if (policy != null) {
+            AclPolicyResponse response = _responseGenerator.createAclPolicyResponse(policy);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create acl group:" + name);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create acl policy:" + name);
         }
     }
 
     @Override
     public void create() throws ResourceAllocationException {
         Account account = CallContext.current().getCallingAccount();
-        AclGroup result = _aclService.createAclGroup(account, name, description);
+        AclPolicy result = _aclService.createAclPolicy(account, name, description, parentPolicyId);
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create acl group entity" + name);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create acl policy entity" + name);
         }
 
     }
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_ACL_GROUP_CREATE;
+        return EventTypes.EVENT_ACL_POLICY_CREATE;
     }
 
     @Override
     public String getEventDescription() {
-        return "creating Acl group";
+        return "creating Acl policy";
     }
 
     @Override
     public String getCreateEventType() {
-        return EventTypes.EVENT_ACL_GROUP_CREATE;
+        return EventTypes.EVENT_ACL_POLICY_CREATE;
     }
 
     @Override
     public String getCreateEventDescription() {
-        return "creating acl group";
+        return "creating acl policy";
     }
 
     @Override
     public ApiCommandJobType getInstanceType() {
-        return ApiCommandJobType.AclGroup;
+        return ApiCommandJobType.AclPolicy;
     }
 
 }

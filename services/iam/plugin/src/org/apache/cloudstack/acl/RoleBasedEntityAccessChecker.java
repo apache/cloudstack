@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.acl.entity;
+package org.apache.cloudstack.acl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,11 +24,11 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.AclPolicy;
 import org.apache.cloudstack.acl.AclPolicyPermissionVO;
-import org.apache.cloudstack.acl.AclService;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.acl.api.AclApiService;
 import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
 import org.apache.cloudstack.acl.dao.AclPolicyPermissionDao;
 import org.apache.log4j.Logger;
@@ -47,7 +47,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
     @Inject
     AccountService _accountService;
     @Inject
-    AclService _aclService;
+    AclApiService _aclService;
     
     @Inject DomainDao _domainDao;
 

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.iam.api.command;
+package org.apache.cloudstack.acl.api.command;
 
 import java.util.List;
 
@@ -29,8 +29,8 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AclGroupResponse;
+import org.apache.cloudstack.api.response.AclPolicyResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
@@ -39,10 +39,10 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 
-@APICommand(name = "removeAccountFromAclGroup", description = "remove accounts from an acl group", responseObject = AclGroupResponse.class)
-public class RemoveAccountFromAclGroupCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(RemoveAccountFromAclGroupCmd.class.getName());
-    private static final String s_name = "removeaccountfromaclgroupresponse";
+@APICommand(name = "removeAclPolicyFromAclGroup", description = "remove acl policy from an acl group", responseObject = AclGroupResponse.class)
+public class RemoveAclPolicyFromAclGroupCmd extends BaseAsyncCmd {
+    public static final Logger s_logger = Logger.getLogger(RemoveAclPolicyFromAclGroupCmd.class.getName());
+    private static final String s_name = "removeaclpolicyfromaclgroupresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -55,8 +55,8 @@ public class RemoveAccountFromAclGroupCmd extends BaseAsyncCmd {
     private Long id;
 
     @ACL
-    @Parameter(name = ApiConstants.ACCOUNTS, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AccountResponse.class, description = "comma separated list of account id that are going to be assigned to the acl group.")
-    private List<Long> accountIdList;
+    @Parameter(name = ApiConstants.ACL_POLICIES, type = CommandType.LIST, collectionType = CommandType.UUID, entityType = AclPolicyResponse.class, description = "comma separated list of acl policy id that are going to be applied to the acl group.")
+    private List<Long> policyIdList;
 
 
     /////////////////////////////////////////////////////
@@ -69,8 +69,8 @@ public class RemoveAccountFromAclGroupCmd extends BaseAsyncCmd {
     }
 
 
-    public List<Long> getAccountIdList() {
-        return accountIdList;
+    public List<Long> getRoleIdList() {
+        return policyIdList;
     }
 
     /////////////////////////////////////////////////////
@@ -93,13 +93,13 @@ public class RemoveAccountFromAclGroupCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException,
             InsufficientCapacityException, ServerApiException {
         CallContext.current().setEventDetails("Acl group Id: " + getId());
-        AclGroup result = _aclService.removeAccountsFromGroup(accountIdList, id);
+        AclGroup result = _aclService.removeAclPoliciesFromGroup(policyIdList, id);
         if (result != null){
             AclGroupResponse response = _responseGenerator.createAclGroupResponse(result);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove accounts from acl group");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add roles to acl group");
         }
     }
 
@@ -110,7 +110,7 @@ public class RemoveAccountFromAclGroupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "removing accounts from acl group";
+        return "removing acl roles from acl group";
     }
 
     @Override
