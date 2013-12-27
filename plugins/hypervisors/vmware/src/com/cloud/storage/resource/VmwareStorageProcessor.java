@@ -1263,9 +1263,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     if (isAttach) {
                         vmMo.mountToolsInstaller();
                     } else {
-                        try {
-                            vmMo.unmountToolsInstaller();
-                        } catch (Throwable e) {
+                        try{
+                            if (!vmMo.unmountToolsInstaller()) {
+                                return new AttachAnswer("Failed to unmount vmware-tools installer ISO as the corresponding CDROM device is locked by VM. Please unmount the CDROM device inside the VM and ret-try.");
+                            }
+                        } catch(Throwable e){
                             vmMo.detachIso(null);
                         }
                     }
