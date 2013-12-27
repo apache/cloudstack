@@ -684,10 +684,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     @Override
     public boolean disconnectPhysicalDiskByPath(String localPath) {
         // we've only ever cleaned up ISOs that are NFS mounted
-
         String poolUuid = null;
-
-        if (localPath != null && localPath.startsWith(_mountPoint)) {
+        if (localPath != null && localPath.startsWith(_mountPoint) && localPath.endsWith(".iso")) {
             String[] token = localPath.split("/");
 
             if (token.length > 3) {
