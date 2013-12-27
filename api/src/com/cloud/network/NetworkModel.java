@@ -61,6 +61,8 @@ public interface NetworkModel {
      */
     List<? extends IpAddress> listPublicIpsAssignedToGuestNtwk(long accountId, long associatedNetworkId, Boolean sourceNat);
 
+    List<? extends IpAddress> listPublicIpsAssignedToGuestNtwk(long associatedNetworkId, Boolean sourceNat);
+
     List<? extends NetworkOffering> getSystemAccountNetworkOfferings(String... offeringNames);
 
     List<? extends Nic> getNics(long vmId);

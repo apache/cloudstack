@@ -104,6 +104,16 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     /* (non-Javadoc)
+     * @see com.cloud.network.NetworkModel#listPublicIpsAssignedToGuestNtwk(long, long, java.lang.Boolean)
+     */
+    @Override
+    public List<IPAddressVO> listPublicIpsAssignedToGuestNtwk(long associatedNetworkId, Boolean sourceNat) {
+
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
      * @see com.cloud.network.NetworkModel#getSystemAccountNetworkOfferings(java.lang.String[])
      */
     @Override
