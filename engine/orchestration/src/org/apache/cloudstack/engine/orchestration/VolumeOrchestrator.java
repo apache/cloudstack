@@ -71,6 +71,8 @@ import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
@@ -140,6 +142,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     SnapshotDataFactory snapshotFactory;
     @Inject
     ConfigDepot _configDepot;
+    @Inject
+    HostDao _hostDao;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -835,6 +839,22 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 s_logger.debug("failed expunge volume" + expunge.getId(), e);
             } catch (ExecutionException e) {
                 s_logger.debug("failed expunge volume" + expunge.getId(), e);
+            }
+        }
+    }
+
+    @Override
+    public void disconnectVolumesFromHost(long vmId, long hostId) {
+        HostVO host = _hostDao.findById(hostId);
+
+        List<VolumeVO> volumesForVm = _volsDao.findByInstance(vmId);
+
+        if (volumesForVm != null) {
+            for (VolumeVO volumeForVm : volumesForVm) {
+                VolumeInfo volumeInfo = volFactory.getVolume(volumeForVm.getId());
+                DataStore dataStore = dataStoreMgr.getDataStore(volumeForVm.getPoolId(), DataStoreRole.Primary);
+
+                volService.disconnectVolumeFromHost(volumeInfo, host, dataStore);
             }
         }
     }
