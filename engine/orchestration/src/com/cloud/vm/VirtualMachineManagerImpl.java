@@ -334,7 +334,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     // TODO, remove it after transient period is over
     static final ConfigKey<Boolean> VmJobEnabled = new ConfigKey<Boolean>("Advanced",
-            Boolean.class, "vm.job.enabled", "false",
+            Boolean.class, "vm.job.enabled", "true",
             "True to enable new VM sync model. false to use the old way", false);
 
     static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced",
@@ -4087,10 +4087,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    public class VmJobSyncOutcome extends OutcomeImpl<VirtualMachine> {
+    public class VmJobVirtualMachineOutcome extends OutcomeImpl<VirtualMachine> {
         private long _vmId;
 
-        public VmJobSyncOutcome(final AsyncJob job, final long vmId) {
+        public VmJobVirtualMachineOutcome(final AsyncJob job, final long vmId) {
             super(VirtualMachine.class, job, VmJobCheckInterval.value(), new Predicate() {
                 @Override
                 public boolean checkCondition() {
@@ -4271,7 +4271,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	final long jobId = (Long)context.getContextParameter("jobId");
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmJobVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
         	vm.getId());
     }
 
@@ -4431,7 +4431,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	final long jobId = (Long)context.getContextParameter("jobId");
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
+        return new VmJobVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
     }
 
     public Outcome<VirtualMachine> migrateVmStorageThroughJobQueue(
@@ -4484,7 +4484,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	final long jobId = (Long)context.getContextParameter("jobId");
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
+        return new VmJobVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
     }
 
     public Outcome<VirtualMachine> addVmToNetworkThroughJobQueue(
@@ -4535,7 +4535,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	final long jobId = (Long)context.getContextParameter("jobId");
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
+        return new VmJobVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
     }
 
     public Outcome<VirtualMachine> removeNicFromVmThroughJobQueue(
@@ -4586,7 +4586,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	final long jobId = (Long)context.getContextParameter("jobId");
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
+        return new VmJobVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
     }
 
     public Outcome<VirtualMachine> removeVmFromNetworkThroughJobQueue(
@@ -4637,7 +4637,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	final long jobId = (Long)context.getContextParameter("jobId");
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
+        return new VmJobVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
     }
 
     public Outcome<VirtualMachine> reconfigureVmThroughJobQueue(
@@ -4690,7 +4690,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	final long jobId = (Long)context.getContextParameter("jobId");
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
+        return new VmJobVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
     }
 
     @Override
