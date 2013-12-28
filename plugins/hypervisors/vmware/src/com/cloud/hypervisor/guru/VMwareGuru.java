@@ -203,7 +203,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 break;
             }
         }
-        long clusterId = _hostDao.findById(_vmDao.findById(vm.getId()).getHostId()).getClusterId();
+
+        long clusterId = this.getClusterId(vm.getId());
         details.put(Config.VmwareReserveCpu.key(), VmwareReserveCpu.valueIn(clusterId).toString());
         details.put(Config.VmwareReserveMem.key(), VmwareReserveMemory.valueIn(clusterId).toString());
         to.setDetails(details);
@@ -296,6 +297,20 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         to.setOs(guestOS.getDisplayName());
         to.setHostName(vm.getHostName());
         return to;
+    }
+
+    private long getClusterId(long vmId) {
+        long clusterId;
+        Long hostId;
+
+        hostId = _vmDao.findById(vmId).getHostId();
+        if (hostId == null) {
+            // If VM is in stopped state then hostId would be undefined. Hence read last host's Id instead.
+            hostId = _vmDao.findById(vmId).getLastHostId();
+        }
+        clusterId = _hostDao.findById(hostId).getClusterId();
+
+        return clusterId;
     }
 
     private NicTO[] sortNicsByDeviceId(NicTO[] nics) {
