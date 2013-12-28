@@ -6504,9 +6504,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return vdi;
     }
 
-    protected void handleSrAndVdiDetach(String iqn) throws Exception {
-        Connection conn = getConnection();
-
+    protected void handleSrAndVdiDetach(String iqn, Connection conn) throws Exception {
         SR sr = getStorageRepository(conn, iqn);
 
         removeSR(conn, sr);
@@ -6614,7 +6612,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 vdi.setNameLabel(conn, "detached");
 
                 if (cmd.isManaged()) {
-                    handleSrAndVdiDetach(cmd.get_iScsiName());
+                    handleSrAndVdiDetach(cmd.get_iScsiName(), conn);
                 }
 
                 return new AttachVolumeAnswer(cmd);
