@@ -22,23 +22,18 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.acl.AclPolicy;
-import org.apache.cloudstack.acl.AclPolicyPermissionVO;
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.AclEntityType;
-import org.apache.cloudstack.acl.PermissionScope;
-import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.api.AclApiService;
 import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
 import org.apache.cloudstack.acl.dao.AclPolicyPermissionDao;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.iam.api.AclPolicy;
 
 import com.cloud.acl.DomainChecker;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
-import com.cloud.vm.VirtualMachine;
 
 public class RoleBasedEntityAccessChecker extends DomainChecker implements SecurityChecker {
 

@@ -16,9 +16,12 @@
 // under the License.
 package org.apache.cloudstack.acl.api.command;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclPolicy;
+import org.apache.cloudstack.acl.api.AclApiService;
+import org.apache.cloudstack.acl.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -27,9 +30,9 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.iam.api.AclPolicy;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
@@ -40,6 +43,9 @@ public class CreateAclPolicyCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAclPolicyCmd.class.getName());
 
     private static final String s_name = "createaclpolicyresponse";
+
+    @Inject
+    public AclApiService _aclApiSrv;
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -120,7 +126,7 @@ public class CreateAclPolicyCmd extends BaseAsyncCreateCmd {
     public void execute() {
         AclPolicy policy = _entityMgr.findById(AclPolicy.class, getEntityId());
         if (policy != null) {
-            AclPolicyResponse response = _responseGenerator.createAclPolicyResponse(policy);
+            AclPolicyResponse response = _aclApiSrv.createAclPolicyResponse(policy);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
@@ -131,7 +137,7 @@ public class CreateAclPolicyCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException {
         Account account = CallContext.current().getCallingAccount();
-        AclPolicy result = _aclService.createAclPolicy(account, name, description, parentPolicyId);
+        AclPolicy result = _aclApiSrv.createAclPolicy(account, name, description, parentPolicyId);
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());

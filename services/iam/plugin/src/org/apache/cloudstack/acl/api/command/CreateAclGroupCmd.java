@@ -16,9 +16,12 @@
 // under the License.
 package org.apache.cloudstack.acl.api.command;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclGroup;
+import org.apache.cloudstack.acl.api.AclApiService;
+import org.apache.cloudstack.acl.api.response.AclGroupResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,9 +29,9 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.AclGroupResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.iam.api.AclGroup;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
@@ -39,6 +42,9 @@ public class CreateAclGroupCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateAclGroupCmd.class.getName());
 
     private static final String s_name = "createaclgroupresponse";
+
+    @Inject
+    public AclApiService _aclApiSrv;
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -113,7 +119,7 @@ public class CreateAclGroupCmd extends BaseAsyncCreateCmd {
     public void execute() {
         AclGroup grp = _entityMgr.findById(AclGroup.class, getEntityId());
         if (grp != null) {
-            AclGroupResponse response = _responseGenerator.createAclGroupResponse(grp);
+            AclGroupResponse response = _aclApiSrv.createAclGroupResponse(grp);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
@@ -124,7 +130,7 @@ public class CreateAclGroupCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException {
         Account account = CallContext.current().getCallingAccount();
-        AclGroup result = _aclService.createAclGroup(account, name, description);
+        AclGroup result = _aclApiSrv.createAclGroup(account, name, description);
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());

@@ -21,12 +21,10 @@ import java.util.List;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.acl.APIChecker;
-import org.apache.cloudstack.acl.AclPolicy;
-import org.apache.cloudstack.acl.AclRole;
-import org.apache.cloudstack.acl.api.AclApiService;
-
 import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.api.AclApiService;
+import org.apache.cloudstack.iam.api.AclPolicy;
 
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;

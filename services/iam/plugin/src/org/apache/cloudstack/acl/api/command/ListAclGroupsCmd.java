@@ -16,14 +16,17 @@
 // under the License.
 package org.apache.cloudstack.acl.api.command;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.api.AclApiService;
+import org.apache.cloudstack.acl.api.response.AclGroupResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListDomainResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.AclGroupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
 
@@ -32,6 +35,9 @@ public class ListAclGroupsCmd extends BaseListDomainResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListAclGroupsCmd.class.getName());
 
     private static final String s_name = "listaclgroupsresponse";
+
+    @Inject
+    public AclApiService _aclApiSrv;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -68,7 +74,7 @@ public class ListAclGroupsCmd extends BaseListDomainResourcesCmd {
     @Override
     public void execute(){
 
-        ListResponse<AclGroupResponse> response = _queryService.listAclGroups(id, aclGroupName, getDomainId(),
+        ListResponse<AclGroupResponse> response = _aclApiSrv.listAclGroups(id, aclGroupName, getDomainId(),
                 getStartIndex(), getPageSizeVal());
         response.setResponseName(getCommandName());
         setResponseObject(response);

@@ -18,9 +18,13 @@ package org.apache.cloudstack.acl.api.command;
 
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclGroup;
+import org.apache.cloudstack.acl.api.AclApiService;
+import org.apache.cloudstack.acl.api.response.AclGroupResponse;
+import org.apache.cloudstack.acl.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -29,9 +33,8 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.AclGroupResponse;
-import org.apache.cloudstack.api.response.AclPolicyResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.iam.api.AclGroup;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientCapacityException;
@@ -43,6 +46,9 @@ import com.cloud.user.Account;
 public class AttachAclPolicyToAclGroupCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AttachAclPolicyToAclGroupCmd.class.getName());
     private static final String s_name = "attachaclpolicytoaclgroupresponse";
+
+    @Inject
+    public AclApiService _aclApiSrv;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -93,9 +99,9 @@ public class AttachAclPolicyToAclGroupCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException,
             InsufficientCapacityException, ServerApiException {
         CallContext.current().setEventDetails("Acl group Id: " + getId());
-        AclGroup result = _aclService.attachAclPoliciesToGroup(policyIdList, id);
+        AclGroup result = _aclApiSrv.attachAclPoliciesToGroup(policyIdList, id);
         if (result != null){
-            AclGroupResponse response = _responseGenerator.createAclGroupResponse(result);
+            AclGroupResponse response = _aclApiSrv.createAclGroupResponse(result);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {

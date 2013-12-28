@@ -18,12 +18,15 @@ package org.apache.cloudstack.acl.api;
 
 import java.util.List;
 
-import org.apache.cloudstack.acl.AclGroup;
-import org.apache.cloudstack.acl.AclPolicy;
-import org.apache.cloudstack.acl.AclPolicyPermission;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.PermissionScope;
-import org.apache.cloudstack.acl.AclPolicyPermission.Permission;
+import org.apache.cloudstack.acl.api.response.AclGroupResponse;
+import org.apache.cloudstack.acl.api.response.AclPolicyResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.iam.api.AclGroup;
+import org.apache.cloudstack.iam.api.AclPolicy;
+import org.apache.cloudstack.iam.api.AclPolicyPermission;
+import org.apache.cloudstack.iam.api.AclPolicyPermission.Permission;
 
 import com.cloud.user.Account;
 
@@ -61,5 +64,14 @@ public interface AclApiService {
 
     List<AclPolicy> getEffectivePolicies(Account caller, ControlledEntity entity);
 
+    /* Response Generation */
+    AclPolicyResponse createAclPolicyResponse(AclPolicy policy);
 
+    AclGroupResponse createAclGroupResponse(AclGroup group);
+
+    ListResponse<AclGroupResponse> listAclGroups(Long aclGroupId, String aclGroupName,
+            Long domainId, Long startIndex, Long pageSize);
+
+    ListResponse<AclPolicyResponse> listAclPolicies(Long aclPolicyId, String aclPolicyName,
+            Long domainId, Long startIndex, Long pageSize);
 }

@@ -535,4 +535,17 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         return pl;
     }
 
+    @Override
+    public List<AclPolicyPermission> listPollcyPermissionByEntityType(long policyId, String action, String entityType) {
+        List<AclPolicyPermissionVO> pp = _policyPermissionDao.listByPolicyActionAndEntity(policyId, action, entityType);
+        List<AclPolicyPermission> pl = new ArrayList<AclPolicyPermission>();
+        pl.addAll(pp);
+        return pl;
+    }
+
+    @Override
+    public AclPolicy getResourceOwnerPolicy() {
+        return _aclPolicyDao.findByName("RESOURCE_OWNER");
+    }
+
 }
