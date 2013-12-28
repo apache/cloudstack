@@ -80,9 +80,8 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_CREATE, eventDescription = "Creating Acl Group", create = true)
     public AclGroup createAclGroup(String aclGroupName, String description, String path) {
-        // check if the role is already existing
+        // check if the group is already existing
         AclGroup grp = _aclGroupDao.findByName(path, aclGroupName);
         if (grp != null) {
             throw new InvalidParameterValueException(
@@ -97,7 +96,6 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_DELETE, eventDescription = "Deleting Acl Group")
     public boolean deleteAclGroup(final Long aclGroupId) {
         // get the Acl Group entity
         final AclGroup grp = _aclGroupDao.findById(aclGroupId);
@@ -154,9 +152,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_UPDATE, eventDescription = "Adding accounts to acl group")
     public AclGroup addAccountsToGroup(final List<Long> acctIds, final Long groupId) {
-        final Account caller = CallContext.current().getCallingAccount();
         // get the Acl Group entity
         AclGroup group = _aclGroupDao.findById(groupId);
         if (group == null) {
@@ -184,9 +180,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_UPDATE, eventDescription = "Removing accounts from acl group")
     public AclGroup removeAccountsFromGroup(final List<Long> acctIds, final Long groupId) {
-        final Account caller = CallContext.current().getCallingAccount();
         // get the Acl Group entity
         AclGroup group = _aclGroupDao.findById(groupId);
         if (group == null) {
@@ -212,7 +206,6 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_POLICY_CREATE, eventDescription = "Creating Acl Policy", create = true)
     public AclPolicy createAclPolicy(final String aclPolicyName, final String description, final Long parentPolicyId) {
 
         // check if the policy is already existing
@@ -249,9 +242,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_POLICY_DELETE, eventDescription = "Deleting Acl Policy")
     public boolean deleteAclPolicy(final long aclPolicyId) {
-        Account caller = CallContext.current().getCallingAccount();
         // get the Acl Policy entity
         final AclPolicy policy = _aclPolicyDao.findById(aclPolicyId);
         if (policy == null) {
@@ -315,7 +306,6 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_UPDATE, eventDescription = "Attaching policy to acl group")
     public AclGroup attachAclPoliciesToGroup(final List<Long> policyIds, final Long groupId) {
         // get the Acl Group entity
         AclGroup group = _aclGroupDao.findById(groupId);
@@ -350,7 +340,6 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_UPDATE, eventDescription = "Removing policies from acl group")
     public AclGroup removeAclPoliciesFromGroup(final List<Long> policyIds, final Long groupId) {
         final Account caller = CallContext.current().getCallingAccount();
         // get the Acl Group entity
@@ -449,7 +438,6 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_POLICY_GRANT, eventDescription = "Granting acl permission to Acl Policy")
     public AclPolicy addAclPermissionToAclPolicy(long aclPolicyId, String entityType, String scope, Long scopeId,
             String action, String accessType, Permission perm) {
         Account caller = CallContext.current().getCallingAccount();
@@ -473,7 +461,6 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
     @DB
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_POLICY_REVOKE, eventDescription = "Revoking acl permission from Acl Policy")
     public AclPolicy removeAclPermissionFromAclPolicy(long aclPolicyId, String entityType, String scope, Long scopeId,
             String action) {
         // get the Acl Policy entity
