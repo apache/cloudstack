@@ -579,6 +579,26 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     }
 
 
+    @DB
+    @Override
+    public AclPolicy resetAclPolicy(long aclPolicyId) {
+        // get the Acl Policy entity
+        AclPolicy policy = _aclPolicyDao.findById(aclPolicyId);
+        if (policy == null) {
+            throw new InvalidParameterValueException("Unable to find acl policy: " + aclPolicyId
+                    + "; failed to reset the policy.");
+        }
+
+        SearchBuilder<AclPolicyPermissionVO> sb = _policyPermissionDao.createSearchBuilder();
+        sb.and("policyId", sb.entity().getAclPolicyId(), SearchCriteria.Op.EQ);
+        sb.and("scope", sb.entity().getScope(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<AclPolicyPermissionVO> permissionSC = sb.create();
+        permissionSC.setParameters("policyId", aclPolicyId);
+        _policyPermissionDao.expunge(permissionSC);
+
+        return policy;
+    }
 
     @Override
     public boolean isAPIAccessibleForPolicies(String apiName, List<AclPolicy> policies) {

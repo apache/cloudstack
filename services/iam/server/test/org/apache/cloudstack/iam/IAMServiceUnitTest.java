@@ -17,7 +17,6 @@
 package org.apache.cloudstack.iam;
 
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.when;
 

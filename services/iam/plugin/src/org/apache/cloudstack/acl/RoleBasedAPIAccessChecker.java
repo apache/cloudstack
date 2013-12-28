@@ -16,52 +16,205 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.api.AclApiService;
+import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.PermissionScope;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.iam.api.AclPolicy;
+import org.apache.cloudstack.iam.api.AclPolicyPermission.Permission;
+import org.apache.cloudstack.iam.api.IAMService;
 
+import com.cloud.api.ApiServerService;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.exception.CloudRuntimeException;
 
-// This is the Role Based API access checker that grab's the  account's roles
-// based on the set of roles, access is granted if any of the role has access to the api
+//This is the Role Based API access checker that grab's the  account's roles
+//based on the set of roles, access is granted if any of the role has access to the api
 @Local(value=APIChecker.class)
 public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker {
 
     protected static final Logger s_logger = Logger.getLogger(RoleBasedAPIAccessChecker.class);
 
-    @Inject AccountService _accountService;
-    @Inject AclApiService _aclService;
+    @Inject
+    AccountService _accountService;
+    @Inject
+    ApiServerService _apiServer;
+    @Inject
+    IAMService _iamSrv;
+
+    Set<String> commandsPropertiesOverrides = new HashSet<String>();
+    Map<RoleType, Set<String>> commandsPropertiesRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
+
+    List<PluggableService> _services;
 
     protected RoleBasedAPIAccessChecker() {
         super();
-    }
+        for (RoleType roleType : RoleType.values()) {
+            commandsPropertiesRoleBasedApisMap.put(roleType, new HashSet<String>());
+        }
+     }
 
     @Override
-    public boolean checkAccess(User user, String commandName)
-            throws PermissionDeniedException {
+    public boolean checkAccess(User user, String commandName) throws PermissionDeniedException {
         Account account = _accountService.getAccount(user.getAccountId());
         if (account == null) {
-            throw new PermissionDeniedException("The account id=" + user.getAccountId() + "for user id=" + user.getId() + "is null");
+            throw new PermissionDeniedException("The account id=" + user.getAccountId() + "for user id=" + user.getId()
+                    + "is null");
         }
 
-        List<AclPolicy> policies = _aclService.listAclPolicies(account.getAccountId());
+        List<AclPolicy> policies = _iamSrv.listAclPolicies(account.getAccountId());
 
-
-        boolean isAllowed = _aclService.isAPIAccessibleForPolicies(commandName, policies);
+        boolean isAllowed = _iamSrv.isAPIAccessibleForPolicies(commandName, policies);
         if (!isAllowed) {
             throw new PermissionDeniedException("The API does not exist or is blacklisted. api: " + commandName);
         }
         return isAllowed;
-    }
+     }
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        super.configure(name, params);
+
+        processMapping(PropertiesUtil.processConfigFile(new String[] { "commands.properties" }));
+        return true;
+     }
+
+    @Override
+    public boolean start() {
+
+        // drop all default policy api permissions - we reload them every time
+        // to include any changes done to the @APICommand or
+        // commands.properties.
+
+        for (RoleType role : RoleType.values()) {
+            _iamSrv.resetAclPolicy(role.ordinal() + 1);
+         }
+
+        for (PluggableService service : _services) {
+            for (Class<?> cmdClass : service.getCommands()) {
+                APICommand command = cmdClass.getAnnotation(APICommand.class);
+                if (!commandsPropertiesOverrides.contains(command.name())) {
+                    for (RoleType role : command.authorized()) {
+                        addDefaultAclPolicyPermission(command.name(), cmdClass, role);
+                    }
+                 }
+             }
+         }
+
+        // read commands.properties and load api acl permissions -
+        // commands.properties overrides any @APICommand authorization
+
+        for (String apiName : commandsPropertiesOverrides) {
+            Class<?> cmdClass = _apiServer.getCmdClass(apiName);
+            for (RoleType role : RoleType.values()) {
+                if (commandsPropertiesRoleBasedApisMap.get(role).contains(apiName)) {
+                    // insert permission for this role for this api
+                    addDefaultAclPolicyPermission(apiName, cmdClass, role);
+                }
+             }
+         }
+
+        return super.start();
+     }
+
+    private void processMapping(Map<String, String> configMap) {
+        for (Map.Entry<String, String> entry : configMap.entrySet()) {
+            String apiName = entry.getKey();
+            String roleMask = entry.getValue();
+            commandsPropertiesOverrides.add(apiName);
+            try {
+                short cmdPermissions = Short.parseShort(roleMask);
+                for (RoleType roleType : RoleType.values()) {
+                    if ((cmdPermissions & roleType.getValue()) != 0)
+                        commandsPropertiesRoleBasedApisMap.get(roleType).add(apiName);
+                }
+            } catch (NumberFormatException nfe) {
+                s_logger.info("Malformed key=value pair for entry: " + entry.toString());
+             }
+         }
+     }
+
+    public List<PluggableService> getServices() {
+        return _services;
+     }
+
+    @Inject
+    public void setServices(List<PluggableService> _services) {
+        this._services = _services;
+     }
+
+    private void addDefaultAclPolicyPermission(String apiName, Class<?> cmdClass, RoleType role) {
+
+        AccessType accessType = null;
+        AclEntityType[] entityTypes = null;
+        if (cmdClass != null) {
+            BaseCmd cmdObj;
+            try {
+                cmdObj = (BaseCmd) cmdClass.newInstance();
+                if (cmdObj instanceof BaseListCmd) {
+                    accessType = AccessType.ListEntry;
+                }
+            } catch (Exception e) {
+                throw new CloudRuntimeException(String.format(
+                        "%s is claimed as an API command, but it cannot be instantiated", cmdClass.getName()));
+             }
+
+            APICommand at = cmdClass.getAnnotation(APICommand.class);
+            entityTypes = at.entityType();
+        }
+
+        PermissionScope permissionScope = PermissionScope.ACCOUNT;
+        switch (role) {
+        case User:
+            permissionScope = PermissionScope.ACCOUNT;
+            break;
+
+        case Admin:
+            permissionScope = PermissionScope.ALL;
+            break;
+
+        case DomainAdmin:
+            permissionScope = PermissionScope.DOMAIN;
+            break;
+
+        case ResourceAdmin:
+            permissionScope = PermissionScope.DOMAIN;
+            break;
+         }
+
+       
+        if (entityTypes == null || entityTypes.length == 0) {
+            _iamSrv.addAclPermissionToAclPolicy(new Long(role.ordinal()) + 1, null, permissionScope.toString(), new Long(-1),
+                    apiName, accessType.toString(), Permission.Allow);
+        } else {
+            for (AclEntityType entityType : entityTypes) {
+                _iamSrv.addAclPermissionToAclPolicy(new Long(role.ordinal()) + 1, entityType.toString(), permissionScope.toString(), new Long(-1),
+                        apiName, accessType.toString(), Permission.Allow);
+            }
+         }
+
+     }
 
 }

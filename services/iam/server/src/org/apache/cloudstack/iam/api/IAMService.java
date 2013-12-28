@@ -72,5 +72,6 @@ public interface IAMService {
 
     List<Long> getGrantedEntities(long accountId, String action, String scope);
 
+    AclPolicy resetAclPolicy(long aclPolicyId);
 
 }

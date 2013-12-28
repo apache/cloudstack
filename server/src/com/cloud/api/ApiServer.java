@@ -190,10 +190,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private static final DateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     private static Map<String, List<Class<?>>> _apiNameCmdClassMap = new HashMap<String, List<Class<?>>>();
 
-    private static Set<String> commandsPropertiesOverrides = new HashSet<String>();
-    private static Map<RoleType, Set<String>> commandsPropertiesRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
-
-
     private static ExecutorService _executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("ApiServer"));
 
     public ApiServer() {
@@ -201,7 +197,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        processMapping(PropertiesUtil.processConfigFile(new String[] { "commands.properties" }));
         return true;
     }
 
@@ -238,39 +233,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
         }
 
-        // drop all default policy api permissions - we reload them every time
-        // to include any chanegs done to the @APICommand or
-        // commands.properties.
-        SearchBuilder<AclPolicyPermissionVO> sb = _aclPermissionDao.createSearchBuilder();
-        sb.and("policyId", sb.entity().getAclPolicyId(), SearchCriteria.Op.EQ);
-        sb.and("scope", sb.entity().getScope(), SearchCriteria.Op.EQ);
-        sb.done();
-
-        SearchCriteria<AclPolicyPermissionVO> permissionSC = sb.create();
-
-        for (RoleType role : RoleType.values()) {
-            permissionSC.setParameters("policyId", role.ordinal() + 1);
-            switch (role) {
-            case User:
-                permissionSC.setParameters("scope", PermissionScope.ACCOUNT.toString());
-                break;
-
-            case Admin:
-                permissionSC.setParameters("scope", PermissionScope.ALL.toString());
-                break;
-
-            case DomainAdmin:
-                permissionSC.setParameters("scope", PermissionScope.DOMAIN.toString());
-                break;
-
-            case ResourceAdmin:
-                permissionSC.setParameters("scope", PermissionScope.DOMAIN.toString());
-                break;
-            }
-            _aclPermissionDao.expunge(permissionSC);
-
-        }
-
         for(Class<?> cmdClass: cmdClasses) {
             APICommand at = cmdClass.getAnnotation(APICommand.class);
             if (at == null) {
@@ -283,27 +245,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 _apiNameCmdClassMap.put(apiName, apiCmdList);
             }
             apiCmdList.add(cmdClass);
-
-            if (!commandsPropertiesOverrides.contains(apiName)) {
-                for (RoleType role : at.authorized()) {
-                    addDefaultAclPolicyPermission(apiName, cmdClass, role);
-                }
-            }
         }
-
-        // read commands.properties and load api acl permissions -
-        // commands.properties overrides any @APICommand authorization
-
-        for (String apiName : commandsPropertiesOverrides) {
-            Class<?> cmdClass = getCmdClass(apiName);
-            for (RoleType role : RoleType.values()) {
-                if (commandsPropertiesRoleBasedApisMap.get(role).contains(apiName)) {
-                    // insert permission for this role for this api
-                    addDefaultAclPolicyPermission(apiName, cmdClass, role);
-                }
-            }
-        }
-
 
         encodeApiResponse = Boolean.valueOf(_configDao.getValue(Config.EncodeApiResponse.key()));
         String jsonType = _configDao.getValue(Config.JavaScriptDefaultContentType.key());
@@ -317,92 +259,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
         
         return true;
-    }
-
-    private void processMapping(Map<String, String> configMap) {
-        for (RoleType roleType : RoleType.values()) {
-            commandsPropertiesRoleBasedApisMap.put(roleType, new HashSet<String>());
-        }
-
-        for (Map.Entry<String, String> entry : configMap.entrySet()) {
-            String apiName = entry.getKey();
-            String roleMask = entry.getValue();
-            commandsPropertiesOverrides.add(apiName);
-            try {
-                short cmdPermissions = Short.parseShort(roleMask);
-                for (RoleType roleType : RoleType.values()) {
-                    if ((cmdPermissions & roleType.getValue()) != 0)
-                        commandsPropertiesRoleBasedApisMap.get(roleType).add(apiName);
-                }
-            } catch (NumberFormatException nfe) {
-                s_logger.info("Malformed key=value pair for entry: " + entry.toString());
-            }
-        }
-    }
-
-    private void addDefaultAclPolicyPermission(String apiName, Class<?> cmdClass, RoleType role) {
-
-        boolean isReadCommand = false;
-        AclEntityType[] entityTypes = null;
-        if (cmdClass != null) {
-            BaseCmd cmdObj;
-            try {
-                cmdObj = (BaseCmd) cmdClass.newInstance();
-                if (cmdObj instanceof BaseListCmd) {
-                    isReadCommand = true;
-                }
-            } catch (Exception e) {
-                throw new CloudRuntimeException(String.format(
-                        "%s is claimed as an API command, but it cannot be instantiated", cmdClass.getName()));
-            }
-
-            APICommand at = cmdClass.getAnnotation(APICommand.class);
-            entityTypes = at.entityType();
-        }
-
-        AclPolicyPermissionVO apiPermission = null;
-        PermissionScope permissionScope = PermissionScope.ACCOUNT;
-        switch (role) {
-        case User:
-            permissionScope = PermissionScope.ACCOUNT;
-            break;
-
-        case Admin:
-            permissionScope = PermissionScope.ALL;
-            break;
-
-        case DomainAdmin:
-            permissionScope = PermissionScope.DOMAIN;
-            break;
-
-        case ResourceAdmin:
-            permissionScope = PermissionScope.DOMAIN;
-            break;
-        }
-
-        if (entityTypes == null || entityTypes.length == 0) {
-            apiPermission = new AclPolicyPermissionVO(role.ordinal() + 1, apiName, null, null, permissionScope,
-                    new Long(-1), Permission.Allow);
-            if (apiPermission != null) {
-                if (isReadCommand) {
-                    apiPermission.setAccessType(AccessType.ListEntry);
-                }
-                _aclPermissionDao.persist(apiPermission);
-            }
-        } else {
-
-            for (AclEntityType entityType : entityTypes) {
-                apiPermission = new AclPolicyPermissionVO(role.ordinal() + 1, apiName, entityType.toString(), null,
-                        permissionScope, new Long(-1), Permission.Allow);
-                if (apiPermission != null) {
-                    if (isReadCommand) {
-                        apiPermission.setAccessType(AccessType.ListEntry);
-                    }
-                    _aclPermissionDao.persist(apiPermission);
-                }
-            }
-        }
-
     }
 
     // NOTE: handle() only handles over the wire (OTW) requests from integration.api.port 8096
