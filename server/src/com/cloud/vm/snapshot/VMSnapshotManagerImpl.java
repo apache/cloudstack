@@ -129,7 +129,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
     // TODO
     static final ConfigKey<Boolean> VmJobEnabled = new ConfigKey<Boolean>("Advanced",
-            Boolean.class, "vm.job.enabled", "false",
+            Boolean.class, "vm.job.enabled", "true",
             "True to enable new VM sync model. false to use the old way", false);
     static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced",
             Long.class, "vm.job.check.interval", "3000",
@@ -757,10 +757,10 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         return false;
     }
 
-    public class VmJobSyncOutcome extends OutcomeImpl<VMSnapshot> {
+    public class VmJobVMSnapshotOutcome extends OutcomeImpl<VMSnapshot> {
         private long _vmSnapshotId;
 
-        public VmJobSyncOutcome(final AsyncJob job, final long vmSnapshotId) {
+        public VmJobVMSnapshotOutcome(final AsyncJob job, final long vmSnapshotId) {
             super(VMSnapshot.class, job, VmJobCheckInterval.value(), new Predicate() {
                 @Override
                 public boolean checkCondition() {
@@ -781,10 +781,10 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         }
     }
 
-    public class VmJobSyncVirtualMachineOutcome extends OutcomeImpl<VirtualMachine> {
+    public class VmJobVirtualMachineOutcome extends OutcomeImpl<VirtualMachine> {
         long vmId;
 
-        public VmJobSyncVirtualMachineOutcome(final AsyncJob job, final long vmId) {
+        public VmJobVirtualMachineOutcome(final AsyncJob job, final long vmId) {
             super(VirtualMachine.class, job, VmJobCheckInterval.value(), new Predicate() {
                 @Override
                 public boolean checkCondition() {
@@ -845,7 +845,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         final long jobId = (Long)context.getContextParameter("jobId");
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmJobVMSnapshotOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
                 vmSnapshotId);
     }
 
@@ -890,7 +890,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         final long jobId = (Long)context.getContextParameter("jobId");
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmJobVMSnapshotOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
                 vmSnapshotId);
     }
 
@@ -935,7 +935,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         final long jobId = (Long)context.getContextParameter("jobId");
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmJobVMSnapshotOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
                 vmSnapshotId);
     }
 
@@ -980,7 +980,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         final long jobId = (Long)context.getContextParameter("jobId");
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobSyncVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmJobVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
                 vmId);
     }
 

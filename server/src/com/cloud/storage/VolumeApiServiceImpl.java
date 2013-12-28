@@ -1631,7 +1631,65 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     public Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm) throws ResourceAllocationException {
+
         VolumeInfo volume = volFactory.getVolume(volumeId);
+        if (volume == null) {
+            throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
+        }
+
+        if (volume.getState() != Volume.State.Ready) {
+            throw new InvalidParameterValueException("VolumeId: " + volumeId + " is not in " + Volume.State.Ready + " state but " + volume.getState() + ". Cannot take snapshot.");
+        }
+
+        VMInstanceVO vm = null;
+        if (volume.getInstanceId() != null)
+            vm = _vmInstanceDao.findById(volume.getInstanceId());
+
+        if (vm != null) {
+            // serialize VM operation
+            AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
+            if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
+                // avoid re-entrance
+                return orchestrateTakeVolumeSnapshot(volumeId, policyId, snapshotId, account, quiescevm);
+            } else {
+                Outcome<Snapshot> outcome = takeVolumeSnapshotThroughJobQueue(vm.getId(), volumeId, policyId, snapshotId, account.getId(), quiescevm);
+
+                try {
+                    outcome.get();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException("Operation is interrupted", e);
+                } catch (java.util.concurrent.ExecutionException e) {
+                    throw new RuntimeException("Execution excetion", e);
+                }
+
+                Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+                if (jobResult != null) {
+                    if (jobResult instanceof ConcurrentOperationException)
+                        throw (ConcurrentOperationException)jobResult;
+                    else if (jobResult instanceof ResourceAllocationException)
+                        throw (ResourceAllocationException)jobResult;
+                    else if (jobResult instanceof Throwable)
+                        throw new RuntimeException("Unexpected exception", (Throwable)jobResult);
+                }
+
+                return _snapshotDao.findById(snapshotId);
+            }
+        } else {
+            CreateSnapshotPayload payload = new CreateSnapshotPayload();
+            payload.setSnapshotId(snapshotId);
+            payload.setSnapshotPolicyId(policyId);
+            payload.setAccount(account);
+            payload.setQuiescevm(quiescevm);
+            volume.addPayload(payload);
+            return volService.takeSnapshot(volume);
+        }
+    }
+
+    private Snapshot orchestrateTakeVolumeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm)
+            throws ResourceAllocationException {
+
+        VolumeInfo volume = volFactory.getVolume(volumeId);
+
         if (volume == null) {
             throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
         }
@@ -2019,10 +2077,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _storagePoolAllocators = storagePoolAllocators;
     }
 
-    public class VmJobSyncOutcome extends OutcomeImpl<Volume> {
+    public class VmJobVolumeOutcome extends OutcomeImpl<Volume> {
         private long _volumeId;
 
-        public VmJobSyncOutcome(final AsyncJob job, final long volumeId) {
+        public VmJobVolumeOutcome(final AsyncJob job, final long volumeId) {
             super(Volume.class, job, VmJobCheckInterval.value(), new Predicate() {
                 @Override
                 public boolean checkCondition() {
@@ -2040,6 +2098,30 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         @Override
         protected Volume retrieve() {
             return _volumeDao.findById(_volumeId);
+        }
+    }
+
+    public class VmJobSnapshotOutcome extends OutcomeImpl<Snapshot> {
+        private long _snapshotId;
+
+        public VmJobSnapshotOutcome(final AsyncJob job, final long snapshotId) {
+            super(Snapshot.class, job, VmJobCheckInterval.value(), new Predicate() {
+                @Override
+                public boolean checkCondition() {
+                    AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, job.getId());
+                    assert (jobVo != null);
+                    if (jobVo == null || jobVo.getStatus() != JobInfo.Status.IN_PROGRESS)
+                        return true;
+
+                    return false;
+                }
+            }, AsyncJob.Topics.JOB_STATE);
+            _snapshotId = snapshotId;
+        }
+
+        @Override
+        protected Snapshot retrieve() {
+            return _snapshotDao.findById(_snapshotId);
         }
     }
 
@@ -2084,7 +2166,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         final long jobId = (Long)context.getContextParameter("jobId");
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"), volumeId);
+        return new VmJobVolumeOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+                volumeId);
     }
 
     public Outcome<Volume> detachVolumeFromVmThroughJobQueue(final Long vmId, final Long volumeId) {
@@ -2127,7 +2210,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         final long jobId = (Long)context.getContextParameter("jobId");
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"), volumeId);
+        return new VmJobVolumeOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+                volumeId);
     }
 
     public Outcome<Volume> resizeVolumeThroughJobQueue(final Long vmId, final long volumeId,
@@ -2172,7 +2256,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         final long jobId = (Long)context.getContextParameter("jobId");
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmJobVolumeOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
                 volumeId);
     }
 
@@ -2218,8 +2302,55 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         final long jobId = (Long)context.getContextParameter("jobId");
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmJobVolumeOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
                 volumeId);
+    }
+
+    public Outcome<Snapshot> takeVolumeSnapshotThroughJobQueue(final Long vmId, final Long volumeId,
+            final Long policyId, final Long snapshotId, final Long accountId, final boolean quiesceVm) {
+
+        final CallContext context = CallContext.current();
+        final User callingUser = context.getCallingUser();
+        final Account callingAccount = context.getCallingAccount();
+
+        final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
+
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                VmWorkJobVO workJob = null;
+
+                _vmInstanceDao.lockRow(vm.getId(), true);
+                workJob = new VmWorkJobVO(context.getContextId());
+
+                workJob.setDispatcher(VmWorkConstants.VM_WORK_JOB_DISPATCHER);
+                workJob.setCmd(VmWorkTakeVolumeSnapshot.class.getName());
+
+                workJob.setAccountId(callingAccount.getId());
+                workJob.setUserId(callingUser.getId());
+                workJob.setStep(VmWorkJobVO.Step.Starting);
+                workJob.setVmType(vm.getType());
+                workJob.setVmInstanceId(vm.getId());
+
+                // save work context info (there are some duplications)
+                VmWorkTakeVolumeSnapshot workInfo = new VmWorkTakeVolumeSnapshot(
+                        callingUser.getId(), accountId != null ? accountId : callingAccount.getId(), vm.getId(),
+                        VolumeApiServiceImpl.VM_WORK_JOB_HANDLER, volumeId, policyId, snapshotId, quiesceVm);
+                workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+
+                _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
+
+                // Transaction syntax sugar has a cost here
+                context.putContextParameter("workJob", workJob);
+                context.putContextParameter("jobId", new Long(workJob.getId()));
+            }
+        });
+
+        final long jobId = (Long)context.getContextParameter("jobId");
+        AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
+
+        return new VmJobSnapshotOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+                snapshotId);
     }
 
     @Override
@@ -2287,6 +2418,22 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                         + ", volId: " + migrateWork.getVolumeId() + ", destPoolId: " + migrateWork.getDestPoolId() + ", live: " + migrateWork.isLiveMigrate());
 
             return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, JobSerializerHelper.toObjectSerializedString(new Long(newVol.getId())));
+        } else if (work instanceof VmWorkTakeVolumeSnapshot) {
+            VmWorkTakeVolumeSnapshot snapshotWork = (VmWorkTakeVolumeSnapshot)work;
+
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Execute Take-Volume-Snapshot within VM work job context. vmId: " + snapshotWork.getVmId()
+                        + ", volId: " + snapshotWork.getVolumeId() + ", policyId: " + snapshotWork.getPolicyId() + ", quiesceVm: " + snapshotWork.isQuiesceVm());
+
+            Account account = _accountDao.findById(snapshotWork.getAccountId());
+            orchestrateTakeVolumeSnapshot(snapshotWork.getVolumeId(), snapshotWork.getPolicyId(), snapshotWork.getSnapshotId(),
+                    account, snapshotWork.isQuiesceVm());
+
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Done executing Take-Volume-Snapshot within VM work job context. vmId: " + snapshotWork.getVmId()
+                        + ", volId: " + snapshotWork.getVolumeId() + ", policyId: " + snapshotWork.getPolicyId() + ", quiesceVm: " + snapshotWork.isQuiesceVm());
+
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, JobSerializerHelper.toObjectSerializedString(snapshotWork.getSnapshotId()));
         } else {
             RuntimeException e = new RuntimeException("Unsupported VM work command: " + job.getCmd());
             String exceptionJson = JobSerializerHelper.toSerializedString(e);
