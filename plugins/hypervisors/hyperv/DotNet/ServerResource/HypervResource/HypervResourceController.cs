@@ -229,7 +229,10 @@ namespace HypervResource
                     {
                         VolumeObjectTO volume = disk.volumeObjectTO;
                         PrimaryDataStoreTO primary = volume.primaryDataStore;
-                        Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
+                        if (!primary.isLocal)
+                        {
+                            Utils.ConnectToRemote(primary.UncPath, primary.Domain, primary.User, primary.Password);
+                        }
                         string diskPath = Utils.NormalizePath(volume.FullFileName);
                         wmiCallsV2.AttachDisk(vmName, diskPath, disk.diskSequence);
                         result = true;
@@ -1144,7 +1147,7 @@ namespace HypervResource
                     VolumeObjectTO volume = VolumeObjectTO.ParseJson(cmd.data);
                     PrimaryDataStoreTO primary = volume.primaryDataStore;
                     ulong volumeSize = volume.size;
-                    string volumeName = volume.name + ".vhdx";
+                    string volumeName = volume.name + ".vhd";
                     string volumePath = null;
 
                     if (primary.isLocal)
