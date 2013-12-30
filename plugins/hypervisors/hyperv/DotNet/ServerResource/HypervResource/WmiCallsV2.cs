@@ -591,7 +591,11 @@ namespace HypervResource
             }
             else
             {
-                ManagementPath newDrivePath = AttachDiskDriveToScsiController(vm, addressOnController);
+                ManagementPath newDrivePath = GetDiskDriveOnScsiController(vm, addressOnController);
+                if (newDrivePath == null)
+                {
+                    newDrivePath = AttachDiskDriveToScsiController(vm, addressOnController);
+                }
                 InsertDiskImage(vm, diskPath, HARDDISK_DISK, newDrivePath);
             }
         }
@@ -779,10 +783,21 @@ namespace HypervResource
             return newResourcePaths[0];
         }
 
-        private ManagementPath GetDiskDriveToScsiController(ComputerSystem vm, string addrOnController)
+        private ManagementPath GetDiskDriveOnScsiController(ComputerSystem vm, string addrOnController)
         {
             VirtualSystemSettingData vmSettings = GetVmSettings(vm);
-            var ctrller = GetScsiControllerSettings(vmSettings);
+            var wmiObjCollection = GetResourceAllocationSettings(vmSettings);
+            foreach (ResourceAllocationSettingData wmiObj in wmiObjCollection)
+            {
+                if (wmiObj.ResourceSubType == HARDDISK_DRIVE)
+                {
+                    ResourceAllocationSettingData parent = new ResourceAllocationSettingData(new ManagementObject(wmiObj.Parent));
+                    if (parent.ResourceSubType == SCSI_CONTROLLER && wmiObj.AddressOnParent == addrOnController)
+                    {
+                        return wmiObj.Path;
+                    }
+                }
+            }
             return null;
         }
 
