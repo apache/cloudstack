@@ -855,6 +855,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
+    public DetailVO findDetail(long hostId, String name) {
+        return _detailsDao.findDetail(hostId, name);
+    }
+
+    @Override
     public long getId() {
         return MacAddress.getMacAddress().toLong();
     }

@@ -2000,6 +2000,45 @@ namespace HypervResource
             }
         }
 
+        // POST api/HypervResource/GetVncPortCommand
+        [HttpPost]
+        [ActionName(CloudStackTypes.GetVncPortCommand)]
+        public JContainer GetVncPortCommand([FromBody]dynamic cmd)
+        {
+            using (log4net.NDC.Push(Guid.NewGuid().ToString()))
+            {
+                logger.Info(CloudStackTypes.GetVncPortCommand + cmd.ToString());
+
+                string details = null;
+                bool result = false;
+                string address = null;
+                int port = -9;
+
+                try
+                {
+                    string vmName = (string)cmd.name;
+                    var sys = wmiCallsV2.GetComputerSystem(vmName);
+                    address = "instanceId=" + sys.Name ;
+                    result = true;
+                }
+                catch (Exception sysEx)
+                {
+                    details = CloudStackTypes.GetVncPortAnswer + " failed due to " + sysEx.Message;
+                    logger.Error(details, sysEx);
+                }
+
+                object ansContent = new
+                {
+                    result = result,
+                    details = details,
+                    address = address,
+                    port = port
+                };
+
+                return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.GetVncPortAnswer);
+            }
+        }
+
         public static System.Net.NetworkInformation.NetworkInterface GetNicInfoFromIpAddress(string ipAddress, out string subnet)
         {
             System.Net.NetworkInformation.NetworkInterface[] nics = System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces();

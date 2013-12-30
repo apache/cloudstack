@@ -328,15 +328,21 @@ public class ConsoleProxyServlet extends HttpServlet {
 
         s_logger.info("Parse host info returned from executing GetVNCPortCommand. host info: " + hostInfo);
 
-        if (hostInfo != null && hostInfo.startsWith("consoleurl")) {
-            String tokens[] = hostInfo.split("&");
+        if (hostInfo != null) {
+            if (hostInfo.startsWith("consoleurl")) {
+                String tokens[] = hostInfo.split("&");
 
-            if (hostInfo.length() > 19 && hostInfo.indexOf('/', 19) > 19) {
-                host = hostInfo.substring(19, hostInfo.indexOf('/', 19)).trim();
-                tunnelUrl = tokens[0].substring("consoleurl=".length());
-                tunnelSession = tokens[1].split("=")[1];
+                if (hostInfo.length() > 19 && hostInfo.indexOf('/', 19) > 19) {
+                    host = hostInfo.substring(19, hostInfo.indexOf('/', 19)).trim();
+                    tunnelUrl = tokens[0].substring("consoleurl=".length());
+                    tunnelSession = tokens[1].split("=")[1];
+                } else {
+                    host = "";
+                }
+            } else if (hostInfo.startsWith("instanceId")) {
+                host = hostInfo.substring(hostInfo.indexOf('=') + 1);
             } else {
-                host = "";
+                host = hostInfo;
             }
         } else {
             host = hostInfo;
@@ -389,28 +395,49 @@ public class ConsoleProxyServlet extends HttpServlet {
     private String composeConsoleAccessUrl(String rootUrl, VirtualMachine vm, HostVO hostVo) {
         StringBuffer sb = new StringBuffer(rootUrl);
         String host = hostVo.getPrivateIpAddress();
+        String username = _ms.findDetail(hostVo.getId(), "username").getValue();
+        String password = _ms.findDetail(hostVo.getId(), "password").getValue();
 
         Pair<String, Integer> portInfo = _ms.getVncPort(vm);
         if (s_logger.isDebugEnabled())
             s_logger.debug("Port info " + portInfo.first());
 
         Ternary<String, String, String> parsedHostInfo = parseHostInfo(portInfo.first());
+        int port = -1;
+        String sid;
+        
+        if (portInfo.second() == -9) {
+            //for hyperv
+            port = 2179;
+        } else {
+            port = portInfo.second();
+        }
 
+        sid = vm.getVncPassword();
         UserVmDetailVO details = _userVmDetailsDao.findDetail(vm.getId(), "keyboard");
-        String sid = vm.getVncPassword();
+
         String tag = vm.getUuid();
-        String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
+
+        String ticket = genAccessTicket(parsedHostInfo.first(), String.valueOf(port), sid, tag);
         ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(getEncryptorPassword());
         ConsoleProxyClientParam param = new ConsoleProxyClientParam();
         param.setClientHostAddress(parsedHostInfo.first());
-        param.setClientHostPort(portInfo.second());
+        param.setClientHostPort(port);
         param.setClientHostPassword(sid);
         param.setClientTag(tag);
         param.setTicket(ticket);
+
         if (details != null) {
             param.setLocale(details.getValue());
         }
-        if (parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
+
+        if (portInfo.second() == -9) {
+            //For Hyperv Clinet Host Address will send Instance id
+            param.setHypervHost(host);
+            param.setUsername(username);
+            param.setPassword(password);
+        }
+        if (parsedHostInfo.second() != null && parsedHostInfo.third() != null) {
             param.setClientTunnelUrl(parsedHostInfo.second());
             param.setClientTunnelSession(parsedHostInfo.third());
         }
