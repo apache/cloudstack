@@ -13693,7 +13693,7 @@
                                                         var oscategoryObjs = json.listoscategoriesresponse.oscategory;
                                                         var items = [{
                                                             id: '',
-                                                            description: _l('label.none')
+                                                            description: _l('')
                                                         }];
                                                         $(oscategoryObjs).each(function() {
                                                             items.push({
