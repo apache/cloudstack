@@ -34,6 +34,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.event.UsageEventDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -1028,7 +1029,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                         usageInstance.setServiceOfferingId(soId);
                         usageInstance.setStartDate(event.getCreateDate());
                         usageInstance.setEndDate(null);
-                        m_usageInstanceDao.persist(usageInstance);
+                        populateDynamicComputeOfferingDetailsAndPersist(usageInstance, event.getId());
                     }
                 }
 
@@ -1039,7 +1040,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 // add this VM to the usage helper table
                 UsageVMInstanceVO usageInstanceNew = new UsageVMInstanceVO(UsageTypes.RUNNING_VM, zoneId, event.getAccountId(), vmId, vmName,
                         soId, templateId, hypervisorType, event.getCreateDate(), null);
-                m_usageInstanceDao.persist(usageInstanceNew);
+                populateDynamicComputeOfferingDetailsAndPersist(usageInstanceNew, event.getId());
             } catch (Exception ex) {
                 s_logger.error("Error saving usage instance for vm: " + vmId, ex);
             }
@@ -1066,38 +1067,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             try {
                 Long templateId = event.getTemplateId();
                 String hypervisorType = event.getResourceType();
-                Long cpuCores= null;
-                Long memory = null;
-                Long cpuSpeed = null;
-
-                //populate the cpu, memory and cpuSpeed of the vm when created from a dynamic offering.
-                Map<String, String> usageDetails = _usageEventDetailsDao.findDetails(event.getId());
-
-                if (usageDetails != null && usageDetails.size() != 0) {
-                    if (usageDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name()) != null) {
-                        cpuCores = Long.parseLong(usageDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name()));
-                    }
-                    if (usageDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name()) != null) {
-                        cpuSpeed = Long.parseLong(usageDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name()));
-                    }
-                    if (usageDetails.get(UsageEventVO.DynamicParameters.memory.name()) != null) {
-                        memory = Long.parseLong(usageDetails.get(UsageEventVO.DynamicParameters.memory.name()));
-                    }
-                }
 
                 // add this VM to the usage helper table
                 UsageVMInstanceVO usageInstanceNew = new UsageVMInstanceVO(UsageTypes.ALLOCATED_VM, zoneId, event.getAccountId(), vmId, vmName,
                         soId, templateId, hypervisorType, event.getCreateDate(), null);
-                if (cpuCores != null) {
-                    usageInstanceNew.setCpuCores(cpuCores);
-                }
-                if (cpuSpeed != null) {
-                    usageInstanceNew.setCpuSpeed(cpuSpeed);
-                }
-                if (memory != null) {
-                    usageInstanceNew.setMemory(memory);
-                }
-                m_usageInstanceDao.persist(usageInstanceNew);
+                populateDynamicComputeOfferingDetailsAndPersist(usageInstanceNew, event.getId());
             } catch (Exception ex) {
                 s_logger.error("Error saving usage instance for vm: " + vmId, ex);
             }
@@ -1137,7 +1111,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             // add this VM to the usage helper table
             UsageVMInstanceVO usageInstanceNew = new UsageVMInstanceVO(UsageTypes.ALLOCATED_VM, zoneId, event.getAccountId(), vmId, vmName,
                     soId, templateId, hypervisorType, event.getCreateDate(), null);
-            m_usageInstanceDao.persist(usageInstanceNew);
+            populateDynamicComputeOfferingDetailsAndPersist(usageInstanceNew, event.getId());
         } else if (EventTypes.EVENT_VM_DYNAMIC_SCALE.equals(event.getType())) {
             // Ending the running vm event
             SearchCriteria<UsageVMInstanceVO> sc = m_usageInstanceDao.createSearchCriteria();
@@ -1172,7 +1146,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                     usageInstance.setServiceOfferingId(soId);
                     usageInstance.setStartDate(event.getCreateDate());
                     usageInstance.setEndDate(null);
-                    m_usageInstanceDao.persist(usageInstance);
+                    populateDynamicComputeOfferingDetailsAndPersist(usageInstance, event.getId());
                 }
             }
 
@@ -1182,8 +1156,28 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             // add this VM to the usage helper table with new service offering Id
             UsageVMInstanceVO usageInstanceNew = new UsageVMInstanceVO(UsageTypes.RUNNING_VM, zoneId, event.getAccountId(), vmId, vmName,
                     soId, templateId, hypervisorType, event.getCreateDate(), null);
-            m_usageInstanceDao.persist(usageInstanceNew);
+            populateDynamicComputeOfferingDetailsAndPersist(usageInstanceNew, event.getId());
         }
+    }
+
+    private void populateDynamicComputeOfferingDetailsAndPersist(UsageVMInstanceVO usageInstance, Long eventId) {
+
+        //populate the cpu, memory and cpuSpeed of the vm when created from a dynamic offering.
+        UsageEventDetailsVO cpuNumber = _usageEventDetailsDao.findDetail(eventId, UsageEventVO.DynamicParameters.cpuNumber.name());
+        if (cpuNumber != null) {
+            usageInstance.setCpuCores(Long.parseLong(cpuNumber.getValue()));
+        }
+
+        UsageEventDetailsVO cpuSpeed = _usageEventDetailsDao.findDetail(eventId, UsageEventVO.DynamicParameters.cpuSpeed.name());
+        if (cpuSpeed != null) {
+            usageInstance.setCpuSpeed(Long.parseLong(cpuSpeed.getValue()));
+        }
+
+        UsageEventDetailsVO memory = _usageEventDetailsDao.findDetail(eventId, UsageEventVO.DynamicParameters.memory.name());
+        if (memory != null) {
+            usageInstance.setMemory(Long.parseLong(memory.getValue()));
+        }
+        m_usageInstanceDao.persist(usageInstance);
     }
 
     private void createNetworkHelperEntry(UserStatisticsVO userStat, UsageNetworkVO usageNetworkStats, long timestamp) {
