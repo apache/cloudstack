@@ -795,11 +795,20 @@
                                         }
                                     }
                                 },
-                                action: function(args) {
-                                    $.ajax({
-                                        url: createURL("copyTemplate&id=" + args.context.templates[0].id + "&sourcezoneid=" + args.context.templates[0].zoneid + "&destzoneid=" + args.data.destinationZoneId),
-                                        dataType: "json",
-                                        async: true,
+                                action: function(args) {                                    
+                                    var data = {
+                                    	id: args.context.templates[0].id,
+                                    	destzoneid: args.data.destinationZoneId
+                                    };                                	
+                                    if (args.context.templates[0].zoneid != undefined) {
+                                        $.extend(data, {
+                                        	sourcezoneid: args.context.templates[0].zoneid
+                                        });	
+                                    }                                    
+                                    
+                                	$.ajax({
+                                        url: createURL('copyTemplate'),
+                                        data: data,                                        
                                         success: function(json) {
                                             var jid = json.copytemplateresponse.jobid;
                                             args.response.success({
@@ -1557,11 +1566,20 @@
                                         }
                                     }
                                 },
-                                action: function(args) {
-                                    $.ajax({
-                                        url: createURL("copyIso&id=" + args.context.isos[0].id + "&sourcezoneid=" + args.context.isos[0].zoneid + "&destzoneid=" + args.data.destinationZoneId),
-                                        dataType: "json",
-                                        async: true,
+                                action: function(args) {                                    
+                                    var data = {
+                                    	id: args.context.isos[0].id,
+                                    	destzoneid: args.data.destinationZoneId
+                                    };                                	
+                                    if (args.context.isos[0].zoneid != undefined) {
+                                        $.extend(data, {
+                                        	sourcezoneid: args.context.isos[0].zoneid
+                                        });	
+                                    }                                    
+                                	
+                                	$.ajax({
+                                        url: createURL('copyIso'),
+                                        data: data,
                                         success: function(json) {
                                             var jid = json.copytemplateresponse.jobid;
                                             args.response.success({
