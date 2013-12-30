@@ -54,6 +54,10 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
     private static final String COPY_ALL_EVENTS =
         "INSERT INTO cloud_usage.usage_event (id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size) "
             + "SELECT id, type, account_id, created, zone_id, resource_id, resource_name, offering_id, template_id, size, resource_type, virtual_size FROM cloud.usage_event vmevt WHERE vmevt.id <= ?";
+    private static final String COPY_EVENT_DETAILS = "INSERT INTO cloud_usage.usage_event_details (id, usage_event_id, name, value) "
+            + "SELECT id, usage_event_id, name, value FROM cloud.usage_event_details vmevtDetails WHERE vmevtDetails.usage_event_id > ? and vmevtDetails.usage_event_id <= ? ";
+    private static final String COPY_ALL_EVENT_DETAILS = "INSERT INTO cloud_usage.usage_event_details (id, usage_event_id, name, value) "
+            + "SELECT id, usage_event_id, name, value FROM cloud.usage_event_details vmevtDetails WHERE vmevtDetails.usage_event_id <= ?";
     private static final String MAX_EVENT = "select max(id) from cloud.usage_event where created <= ?";
     @Inject
     protected UsageEventDetailsDao usageEventDetailsDao;
@@ -96,6 +100,7 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
         long recentEventId = getMostRecentEventId();
         long maxEventId = getMaxEventId(endDate);
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
+        // Copy events from cloud db to usage db
         String sql = COPY_EVENTS;
         if (recentEventId == 0) {
             if (s_logger.isDebugEnabled()) {
@@ -115,12 +120,39 @@ public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implem
             pstmt.setLong(i++, maxEventId);
             pstmt.executeUpdate();
             txn.commit();
-            return findRecentEvents(endDate);
         } catch (Exception ex) {
             txn.rollback();
             s_logger.error("error copying events from cloud db to usage db", ex);
             throw new CloudRuntimeException(ex.getMessage());
         }
+
+        // Copy event details from cloud db to usage db
+        sql = COPY_EVENT_DETAILS;
+        if (recentEventId == 0) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("no recent event date, copying all event detailss");
+            }
+            sql = COPY_ALL_EVENT_DETAILS;
+        }
+
+        pstmt = null;
+        try {
+            txn.start();
+            pstmt = txn.prepareAutoCloseStatement(sql);
+            int i = 1;
+            if (recentEventId != 0) {
+                pstmt.setLong(i++, recentEventId);
+            }
+            pstmt.setLong(i++, maxEventId);
+            pstmt.executeUpdate();
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            s_logger.error("error copying event details from cloud db to usage db", ex);
+            throw new CloudRuntimeException(ex.getMessage());
+        }
+
+        return findRecentEvents(endDate);
     }
 
     @DB

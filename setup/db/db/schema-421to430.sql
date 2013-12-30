@@ -646,6 +646,15 @@ CREATE TABLE `cloud`.`usage_event_details` (
   CONSTRAINT `fk_usage_event_details__usage_event_id` FOREIGN KEY `fk_usage_event_details__usage_event_id`(`usage_event_id`) REFERENCES `usage_event`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud_usage`.`usage_event_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `usage_event_id` bigint unsigned NOT NULL COMMENT 'usage event id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_usage_event_details__usage_event_id` FOREIGN KEY `fk_usage_event_details__usage_event_id`(`usage_event_id`) REFERENCES `usage_event`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE `cloud`.`user_ip_address_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `user_ip_address_id` bigint unsigned NOT NULL COMMENT 'User ip address id',
