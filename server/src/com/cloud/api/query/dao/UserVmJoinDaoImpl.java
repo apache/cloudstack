@@ -46,9 +46,11 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmStats;
+import com.cloud.vm.dao.UserVmDetailsDao;
 
 @Component
 @Local(value = {UserVmJoinDao.class})
@@ -57,6 +59,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
 
     @Inject
     private ConfigurationDao _configDao;
+    @Inject
+    private UserVmDetailsDao _userVmDetailsDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
@@ -260,10 +264,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         }
 
         // set resource details map
-        // only hypervisortoolsversion can be returned to the end user       }
-        if (userVm.getDetailName() != null && userVm.getDetailName().equalsIgnoreCase(VmDetailConstants.HYPERVISOR_TOOLS_VERSION)) {
+        // only hypervisortoolsversion can be returned to the end user
+        UserVmDetailVO hypervisorToolsVersion = _userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.HYPERVISOR_TOOLS_VERSION);
+        if (hypervisorToolsVersion != null) {
             Map<String, String> resourceDetails = new HashMap<String, String>();
-            resourceDetails.put(userVm.getDetailName(), userVm.getDetailValue());
+            resourceDetails.put(hypervisorToolsVersion.getName(), hypervisorToolsVersion.getValue());
             userVmResponse.setDetails(resourceDetails);
         }
 
