@@ -71,10 +71,16 @@ public class ConsoleProxyHttpHandlerHelper {
                     map.put("ticket", param.getTicket());
                 if(param.getLocale() != null)
                     map.put("locale", param.getLocale());
+                if (param.getHypervHost() != null)
+                    map.put("hypervHost", param.getHypervHost());
+                if (param.getUsername() != null)
+                    map.put("username", param.getUsername());
+                if (param.getPassword() != null)
+                    map.put("password", param.getPassword());
             }
         } else {
-               // we no longer accept information from parameter other than token 
-               guardUserInput(map);
+        	// we no longer accept information from parameter other than token
+        	guardUserInput(map);
         }
         return map;
     }
@@ -88,5 +94,8 @@ public class ConsoleProxyHttpHandlerHelper {
         map.remove("sessionref");
         map.remove("ticket");
         map.remove("locale");
+        map.remove("hypervHost");
+        map.remove("username");
+        map.remove("password");
     }
 }

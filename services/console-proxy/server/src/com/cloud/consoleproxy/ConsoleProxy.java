@@ -35,10 +35,11 @@ import java.util.concurrent.Executor;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.xml.DOMConfigurator;
 
-import com.cloud.consoleproxy.util.Logger;
-import com.cloud.utils.PropertiesUtil;
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpServer;
+
+import com.cloud.consoleproxy.util.Logger;
+import com.cloud.utils.PropertiesUtil;
 
 /**
  * 
@@ -72,7 +73,7 @@ public class ConsoleProxy {
     static String factoryClzName;
     static boolean standaloneStart = false;
     
-    static String encryptorPassword = genDefaultEncryptorPassword(); 
+    static String encryptorPassword = genDefaultEncryptorPassword();
     
     private static String genDefaultEncryptorPassword() {
         try {
@@ -193,11 +194,11 @@ public class ConsoleProxy {
         if(authMethod != null) {
             Object result;
             try {
-                result = authMethod.invoke(ConsoleProxy.context, 
-                    param.getClientHostAddress(), 
-                    String.valueOf(param.getClientHostPort()), 
-                    param.getClientTag(), 
-                    param.getClientHostPassword(), 
+                result = authMethod.invoke(ConsoleProxy.context,
+                    param.getClientHostAddress(),
+                    String.valueOf(param.getClientHostPort()),
+                    param.getClientTag(),
+                    param.getClientHostPassword(),
                     param.getTicket(),
                     new Boolean(reauthentication));
             } catch (IllegalAccessException e) {
@@ -294,7 +295,7 @@ public class ConsoleProxy {
                 } catch (FileNotFoundException e) {
                     s_logger.info("Ignoring file not found exception and using defaults");
                 }
-        } 
+        }
         if (confs != null) {
             try {
                 props.load(confs);
@@ -403,7 +404,7 @@ public class ConsoleProxy {
         synchronized (connectionMap) {
             viewer = connectionMap.get(clientKey);
             if (viewer == null) {
-                viewer = new ConsoleProxyVncClient();
+                viewer = getClient(param);
                 viewer.initClient(param);
                 connectionMap.put(clientKey, viewer);
                 s_logger.info("Added viewer object " + viewer);
@@ -438,7 +439,7 @@ public class ConsoleProxy {
             ConsoleProxyClient viewer = connectionMap.get(clientKey);
             if (viewer == null) {
                 authenticationExternally(param);
-                viewer = new ConsoleProxyVncClient();
+                viewer = getClient(param);
                 viewer.initClient(param);
                 
                 connectionMap.put(clientKey, viewer);
@@ -474,7 +475,15 @@ public class ConsoleProxy {
             return viewer;
         }
     }
-    
+
+    private static ConsoleProxyClient getClient(ConsoleProxyClientParam param) {
+        if (param.getHypervHost() != null) {
+            return new ConsoleProxyRdpClient();
+        } else {
+            return new ConsoleProxyVncClient();
+        }
+    }
+
     public static void removeViewer(ConsoleProxyClient viewer) {
         synchronized (connectionMap) {
             for(Map.Entry<String, ConsoleProxyClient> entry : connectionMap.entrySet()) {
@@ -504,8 +513,8 @@ public class ConsoleProxy {
         return authenticateConsoleAccess(param, true);
     }
     
-    public static String getEncryptorPassword() { 
-        return encryptorPassword; 
+    public static String getEncryptorPassword() {
+        return encryptorPassword;
     }
     
     public static void setEncryptorPassword(String password) {
@@ -513,7 +522,8 @@ public class ConsoleProxy {
     }
     
     static class ThreadExecutor implements Executor {
-         public void execute(Runnable r) {
+         @Override
+        public void execute(Runnable r) {
              new Thread(r).start();
          }
     }

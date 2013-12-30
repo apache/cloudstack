@@ -20,13 +20,6 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
 
-import common.BitmapOrder;
-import common.BitmapRectangle;
-import common.BufferedImageCanvas;
-import common.CopyRectOrder;
-import common.OrderType;
-import common.ScreenDescription;
-
 import rdpclient.rdp.ServerBitmapUpdate;
 import streamer.BaseElement;
 import streamer.ByteBuffer;
@@ -35,6 +28,12 @@ import streamer.Link;
 import streamer.Order;
 import streamer.Pipeline;
 import streamer.PipelineImpl;
+import common.BitmapOrder;
+import common.BitmapRectangle;
+import common.BufferedImageCanvas;
+import common.CopyRectOrder;
+import common.OrderType;
+import common.ScreenDescription;
 
 public class AwtCanvasAdapter extends BaseElement {
 
@@ -48,6 +47,7 @@ public class AwtCanvasAdapter extends BaseElement {
 
     protected BufferedImageCanvas canvas;
 
+    @Override
     public String toString() {
         return "AwtRdpAdapter(" + id + ")";
     }
@@ -57,7 +57,7 @@ public class AwtCanvasAdapter extends BaseElement {
         if (verbose)
             System.out.println("[" + this + "] INFO: Data received: " + buf + ".");
 
-        Order order = (Order)buf.getOrder();
+        Order order = buf.getOrder();
         switch ((OrderType)order.type) {
 
         case BITMAP_UPDATE:
@@ -77,12 +77,13 @@ public class AwtCanvasAdapter extends BaseElement {
     }
 
     private void handleCopyRect(CopyRectOrder order, ByteBuffer buf) {
-        // TODO Auto-generated method stub
         // Copy image
         canvas.getOfflineGraphics().copyArea(order.srcX, order.srcY, order.width, order.height, order.x - order.srcX, order.y - order.srcY);
 
         // Request update of repainted area
+        canvas.updateFrameBuffer(order.x, order.y, order.width, order.height);
         canvas.repaint(order.x, order.y, order.width, order.height);
+
 
     }
 
@@ -137,6 +138,7 @@ public class AwtCanvasAdapter extends BaseElement {
             g.drawImage(rectImage, x, y, null);
 
             // Request update of repainted area
+            canvas.updateFrameBuffer(x, y, width, height);
             canvas.repaint(x, y, width, height);
         }
 

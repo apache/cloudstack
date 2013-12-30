@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
+import com.cloud.host.DetailVO;
 import com.cloud.host.HostVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.utils.Pair;
@@ -50,6 +51,8 @@ public interface ManagementServer extends ManagementService, PluggableService  {
      * @return Host
      */
     HostVO getHostBy(long hostId);
+
+    DetailVO findDetail(long hostId, String name);
 
     String getConsoleAccessUrlRoot(long vmId);
     

@@ -44,6 +44,11 @@
       <artifactId>cloud-utils</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>rdpclient</groupId>
+      <artifactId>cloudstack-service-console-proxy-rdpclient</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <resources>

@@ -26,10 +26,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.consoleproxy.util.Logger;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+
+import com.cloud.consoleproxy.util.Logger;
 
 public class ConsoleProxyAjaxHandler implements HttpHandler {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyAjaxHandler.class);
@@ -37,6 +38,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
     public ConsoleProxyAjaxHandler() {
     }
     
+    @Override
     public void handle(HttpExchange t) throws IOException {
         try {
             if(s_logger.isTraceEnabled())
@@ -65,7 +67,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
         String queries = t.getRequestURI().getQuery();
         if(s_logger.isTraceEnabled())
             s_logger.trace("Handle AJAX request: " + queries);
-        
+
         Map<String, String> queryMap = ConsoleProxyHttpHandlerHelper.getQueryMap(queries);
         
         String host = queryMap.get("host");
@@ -78,6 +80,9 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
         String console_url = queryMap.get("consoleurl");
         String console_host_session = queryMap.get("sessionref");
         String vm_locale = queryMap.get("locale");
+        String hypervHost = queryMap.get("hypervHost");
+        String username = queryMap.get("username");
+        String password = queryMap.get("password");
 
         if(tag == null)
             tag = "";
@@ -87,7 +92,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
         
         int port;
 
-        if(host == null || portStr == null || sid == null) 
+        if(host == null || portStr == null || sid == null)
             throw new IllegalArgumentException();
         
         try {
@@ -126,6 +131,9 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
             param.setClientTunnelUrl(console_url);
             param.setClientTunnelSession(console_host_session);
             param.setLocale(vm_locale);
+            param.setHypervHost(hypervHost);
+            param.setUsername(username);
+            param.setPassword(password);
 
             viewer = ConsoleProxy.getAjaxVncViewer(param, ajaxSessionIdStr);
         } catch(Exception e) {
@@ -178,32 +186,31 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
                 
                 if(s_logger.isTraceEnabled())
                     s_logger.trace("Ajax request indicates client update");
-                
                 handleClientUpdate(t, viewer);
             }
         }
     }
     
-    private static String convertStreamToString(InputStream is, boolean closeStreamAfterRead) { 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is)); 
-        StringBuilder sb = new StringBuilder(); 
-        String line = null; 
-        try { 
-            while ((line = reader.readLine()) != null) { 
-                sb.append(line + "\n"); 
-            } 
+    private static String convertStreamToString(InputStream is, boolean closeStreamAfterRead) {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        StringBuilder sb = new StringBuilder();
+        String line = null;
+        try {
+            while ((line = reader.readLine()) != null) {
+                sb.append(line + "\n");
+            }
         } catch (IOException e) {
             s_logger.warn("Exception while reading request body: ", e);
         } finally {
             if(closeStreamAfterRead) {
-                try { 
-                    is.close(); 
-                } catch (IOException e) { 
-                } 
+                try {
+                    is.close();
+                } catch (IOException e) {
+                }
             }
-        } 
-        return sb.toString(); 
-    }   
+        }
+        return sb.toString();
+    }
     
     private void sendResponse(HttpExchange t, String contentType, String response) throws IOException {
         Headers hds = t.getResponseHeaders();
