@@ -546,6 +546,9 @@ class VirtualMachine:
         if ipaddress:
             cmd.ipaddress = ipaddress
 
+        # waiting before adding nic to avoid error while "plugging nic"
+        time.sleep(5)
+
         return apiclient.addNicToVirtualMachine(cmd)
 
     def remove_nic(self, apiclient, nicId):

@@ -60,6 +60,7 @@ from marvin.cloudstackAPI import (addNicToVirtualMachine,
 
 from marvin.codes import PASS
 import random
+import time
 
 class Services:
     """Test Add Remove Network Services
@@ -1159,6 +1160,8 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
         cmd.networkid = self.isolated_network.id
 
         with self.assertRaises(Exception) as e:
+            # waiting before adding nic to avoid error while "plugging nic"
+            time.sleep(5)
             self.apiclient.addNicToVirtualMachine(cmd)
 	    self.debug("addNicToVirtualMachine API failed with exception: %s" % e.exception)
 
@@ -1178,6 +1181,8 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
         cmd.networkid = random_gen(id="network_id", size=30)
 
         with self.assertRaises(Exception) as e:
+            # waiting before adding nic to avoid error while "plugging nic"
+            time.sleep(5)
             self.apiclient.addNicToVirtualMachine(cmd)
 	    self.debug("addNicToVirtualMachine API failed with exception: %s" % e.exception)
 
@@ -1224,6 +1229,8 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
         cmd.networkid = isolated_network.id
 
         with self.assertRaises(Exception) as e:
+            # waiting before adding nic to avoid error while "plugging nic"
+            time.sleep(5)
             self.apiclient.addNicToVirtualMachine(cmd)
 	    self.debug("addNicToVirtualMachine API failed with exception: %s" % e.exception)
 
@@ -1274,6 +1281,8 @@ class TestFailureScenariosAddNetworkToVM(cloudstackTestCase):
         self.dedbug("Trying to add isolated network to VM (both in basic zone,\
                     this operation should fail")
         with self.assertRaises(Exception) as e:
+            # waiting before adding nic to avoid error while "plugging nic"
+            time.sleep(5)
             self.apiclient.addNicToVirtualMachine(cmd)
 	    self.debug("addNicToVirtualMachine API failed with exception: %s" % e.exception)
 
