@@ -656,7 +656,7 @@ class TestRevokeIngressRule(cloudstackTestCase):
         # SSH Attempt to VM should fail
         with self.assertRaises(Exception):
             self.debug("SSH into VM: %s" % self.virtual_machine.id)
-           SshClient(
+            SshClient(
                                         self.virtual_machine.ssh_ip,
                                         self.virtual_machine.ssh_port,
                                         self.virtual_machine.username,
