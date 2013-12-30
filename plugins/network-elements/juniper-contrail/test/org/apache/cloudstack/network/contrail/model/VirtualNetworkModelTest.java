@@ -17,47 +17,26 @@
 
 package org.apache.cloudstack.network.contrail.model;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.io.IOException;
 import java.util.UUID;
 
 import junit.framework.TestCase;
-
-import javax.inject.Inject;
-import java.io.IOException;
-
-import org.apache.cloudstack.network.contrail.management.*;
-import org.apache.log4j.Logger;
-
-import net.juniper.contrail.api.ApiConnectorMock;
-import net.juniper.contrail.api.ApiConnectorFactory;
-import net.juniper.contrail.api.ApiObjectBase;
-import net.juniper.contrail.api.types.Domain;
-import net.juniper.contrail.api.types.InstanceIp;
-import net.juniper.contrail.api.types.NetworkIpam;
-import net.juniper.contrail.api.types.SubnetType;
-import net.juniper.contrail.api.types.VirtualMachine;
-import net.juniper.contrail.api.types.VirtualMachineInterface;
-import net.juniper.contrail.api.types.VirtualNetwork;
-import net.juniper.contrail.api.types.VnSubnetsType;
-import net.juniper.contrail.api.types.NetworkPolicy;
-import net.juniper.contrail.api.types.Project;
-import net.juniper.contrail.api.types.FloatingIp;
-import net.juniper.contrail.api.types.VnSubnetsType;
-import net.juniper.contrail.api.types.ServiceInstance;
 import net.juniper.contrail.api.ApiConnector;
+import net.juniper.contrail.api.ApiConnectorMock;
 
-import org.junit.runner.RunWith;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.AfterClass;
-import org.junit.Ignore;
+import org.apache.log4j.Logger;
 import org.junit.Test;
 
-import static org.mockito.Mockito.*;
-import com.cloud.network.Networks.TrafficType;
+import org.apache.cloudstack.network.contrail.management.ContrailManager;
+import org.apache.cloudstack.network.contrail.management.ContrailManagerImpl;
+import org.apache.cloudstack.network.contrail.management.ModelDatabase;
+
 import com.cloud.network.Network.State;
+import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.utils.component.ComponentContext;
 
 public class VirtualNetworkModelTest extends TestCase {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkModelTest.class);
@@ -89,7 +68,7 @@ public class VirtualNetworkModelTest extends TestCase {
         String uuid = UUID.randomUUID().toString();
         ContrailManagerImpl contrailMgr = mock(ContrailManagerImpl.class);
         ModelController controller      = mock(ModelController.class);
-        ApiConnector api 				= new ApiConnectorMock(null, 0);
+        ApiConnector api = new ApiConnectorMock(null, 0);
         when(controller.getManager()).thenReturn(contrailMgr);
         when(controller.getApiAccessor()).thenReturn(api);
 
@@ -118,6 +97,6 @@ public class VirtualNetworkModelTest extends TestCase {
             fail("virtual-network update failed ");
         }
         assertTrue(vnModel.verify(controller));
-}
+    }
 
 }
