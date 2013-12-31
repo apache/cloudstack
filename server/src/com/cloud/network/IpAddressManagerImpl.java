@@ -1105,8 +1105,14 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     }
 
     protected IPAddressVO getExistingSourceNatInNetwork(long ownerId, Long networkId) {
-
-        List<? extends IpAddress> addrs = _networkModel.listPublicIpsAssignedToGuestNtwk(ownerId, networkId, true);
+        List<? extends IpAddress> addrs;
+        Network guestNetwork = _networksDao.findById(networkId);
+        if (guestNetwork.getGuestType() == GuestType.Shared) {
+            // ignore the account id for the shared network
+            addrs = _networkModel.listPublicIpsAssignedToGuestNtwk(networkId, true);
+        } else {
+            addrs = _networkModel.listPublicIpsAssignedToGuestNtwk(ownerId, networkId, true);
+        }
 
         IPAddressVO sourceNatIp = null;
         if (addrs.isEmpty()) {
