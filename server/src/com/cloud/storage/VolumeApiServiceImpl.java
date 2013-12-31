@@ -2360,7 +2360,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
     }
 
-    private Pair<JobInfo.Status, String> orchestrateDetachVolumeFromVM(VmWorkAttachVolume work) throws Exception {
+    private Pair<JobInfo.Status, String> orchestrateDetachVolumeFromVM(VmWorkDetachVolume work) throws Exception {
         orchestrateDetachVolumeFromVM(work.getVmId(), work.getVolumeId());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
     }
