@@ -112,7 +112,6 @@ import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualSCSISharing;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 
-import org.apache.cloudstack.engine.orchestration.VolumeOrchestrator;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -283,6 +282,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.resource.ServerResource;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.storage.resource.StoragePoolResource;
@@ -317,9 +317,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected final long _ops_timeout = 900000; 		// 15 minutes time out to time
 
     protected final int _shutdown_waitMs = 300000;		// wait up to 5 minutes for shutdown
-
-    @Inject
-    protected VolumeOrchestrationService volMgr;
 
     // out an operation
     protected final int _retry = 24;
@@ -4357,7 +4354,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.info("Executing resource MigrateVolumeCommand: " + _gson.toJson(cmd));
         }
 
-        final String vmName = volMgr.getVmNameFromVolumeId(cmd.getVolumeId());
+        final String vmName = cmd.getAttachedVmName();
 
         VirtualMachineMO vmMo = null;
         VmwareHypervisorHost srcHyperHost = null;
@@ -4369,13 +4366,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VirtualMachineRelocateSpecDiskLocator diskLocator = null;
 
         String srcDiskName = "";
-        String srcDsName = "";
         String tgtDsName = "";
 
         try {
             srcHyperHost = getHyperHost(getServiceContext());
             morDc = srcHyperHost.getHyperHostDatacenter();
-            srcDsName = volMgr.getStoragePoolOfVolume(cmd.getVolumeId());
             tgtDsName = poolTo.getUuid().replace("-", "");
 
             // find VM in this datacenter not just in this cluster.
