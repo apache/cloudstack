@@ -39,7 +39,7 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
     @Inject private VirtualMachineManagerImpl _vmMgr;
 	@Inject private AsyncJobManager _asyncJobMgr;
     @Inject private VMInstanceDao _instanceDao;
-    
+
     private Map<String, VmWorkJobHandler> _handlers;
 
     public VmWorkJobDispatcher() {
@@ -59,10 +59,10 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
         try {
         	String cmd = job.getCmd();
         	assert(cmd != null);
-        	
+
         	if(s_logger.isDebugEnabled())
         		s_logger.debug("Run VM work job: " + cmd);
-        	
+
         	Class<?> workClz = null;
         	try {
         		workClz = Class.forName(job.getCmd());
@@ -71,7 +71,7 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
                 _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, e.getMessage());
         		return;
         	}
-        	
+
         	work = VmWorkSerializer.deserialize(workClz, job.getCmdInfo());
             assert(work != null);
             if(work == null) {
@@ -79,7 +79,7 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
                 _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, "Unable to deserialize VM work");
         		return;
             }
-            
+
             if (_handlers == null || _handlers.isEmpty()) {
                 s_logger.error("Invalid startup configuration, no work job handler is found. cmd: " + job.getCmd() + ", job info: " + job.getCmdInfo());
                 _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, "Invalid startup configuration. no job handler is found");
@@ -87,7 +87,7 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
             }
 
             VmWorkJobHandler handler = _handlers.get(work.getHandlerName());
-            
+
             if (handler == null) {
                 s_logger.error("Unable to find work job handler. handler name: " + work.getHandlerName() + ", job cmd: " + job.getCmd() + ", job info: " + job.getCmdInfo());
                 _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, "Unable to find work job handler");
@@ -95,13 +95,13 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
             }
 
             CallContext.register(work.getUserId(), work.getAccountId(), job.getRelated());
-            
-            Pair<JobInfo.Status, String> result = handler.handleVmWorkJob(job, work);
+
+            Pair<JobInfo.Status, String> result = handler.handleVmWorkJob(work);
             _asyncJobMgr.completeAsyncJob(job.getId(), result.first(), 0, result.second());
-            
+
         } catch(Throwable e) {
             s_logger.error("Unable to complete " + job, e);
-            
+
             String exceptionJson = JobSerializerHelper.toSerializedString(e);
             s_logger.info("Serialize exception object into json: " + exceptionJson);
             _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, exceptionJson);
