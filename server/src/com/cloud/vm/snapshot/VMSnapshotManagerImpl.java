@@ -42,7 +42,6 @@ import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.Outcome;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
-import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
 import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
@@ -91,6 +90,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmWork;
 import com.cloud.vm.VmWorkConstants;
 import com.cloud.vm.VmWorkJobHandler;
+import com.cloud.vm.VmWorkJobHandlerProxy;
 import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -123,6 +123,8 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
     EntityManager _entityMgr;
     @Inject
     AsyncJobManager _jobMgr;
+
+    VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
     int _vmSnapshotMax;
     int _wait;
@@ -478,7 +480,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         }
     }
 
-    public boolean orchestrateDeleteVMSnapshot(Long vmSnapshotId) {
+    private boolean orchestrateDeleteVMSnapshot(Long vmSnapshotId) {
         Account caller = getCaller();
 
         VMSnapshotVO vmSnapshot = _vmSnapshotDao.findById(vmSnapshotId);
@@ -585,7 +587,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
         }
     }
 
-    public UserVm orchestrateRevertToVMSnapshot(Long vmSnapshotId) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
+    private UserVm orchestrateRevertToVMSnapshot(Long vmSnapshotId) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
 
         // check if VM snapshot exists in DB
         VMSnapshotVO vmSnapshotVo = _vmSnapshotDao.findById(vmSnapshotId);
@@ -984,72 +986,31 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
                 vmId);
     }
 
+    public Pair<JobInfo.Status, String> orchestrateCreateVMSnapshot(VmWorkCreateVMSnapshot work) throws Exception {
+        VMSnapshot snapshot = orchestrateCreateVMSnapshot(work.getVmId(), work.getVmSnapshotId(), work.isQuiesceVm());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+                _jobMgr.marshallResultObject(new Long(snapshot.getId())));
+    }
+
+    public Pair<JobInfo.Status, String> orchestrateDeleteVMSnapshot(VmWorkDeleteVMSnapshot work) {
+        boolean result = orchestrateDeleteVMSnapshot(work.getVmSnapshotId());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+                _jobMgr.marshallResultObject(new Boolean(result)));
+    }
+
+    public Pair<JobInfo.Status, String> orchestrateRevertToVMSnapshot(VmWorkRevertToVMSnapshot work) throws Exception {
+        orchestrateRevertToVMSnapshot(work.getVmSnapshotId());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+    }
+
+    public Pair<JobInfo.Status, String> orchestrateDeleteAllVMSnapshots(VmWorkDeleteAllVMSnapshots work) {
+        boolean result = orchestrateDeleteAllVMSnapshots(work.getVmId(), work.getSnapshotType());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+                _jobMgr.marshallResultObject(new Boolean(result)));
+    }
+
     @Override
-    public Pair<JobInfo.Status, String> handleVmWorkJob(AsyncJob job, VmWork work) throws Exception {
-
-        if (work instanceof VmWorkCreateVMSnapshot) {
-            VmWorkCreateVMSnapshot createWork = (VmWorkCreateVMSnapshot)work;
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Execute Create-VM-Snapshot within VM work job context. vmId: " + createWork.getVmId()
-                        + ", VM snapshotId: " + createWork.getVmSnapshotId() + "quiesce: " + createWork.isQuiesceVm());
-
-            VMSnapshot vmSnapshot = orchestrateCreateVMSnapshot(createWork.getVmId(), createWork.getVmSnapshotId(), createWork.isQuiesceVm());
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Execute Create-VM-Snapshot within VM work job context. vmId: " + createWork.getVmId()
-                        + ", VM snapshotId: " + createWork.getVmSnapshotId() + "quiesce: " + createWork.isQuiesceVm());
-
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, JobSerializerHelper.toObjectSerializedString(new Long(vmSnapshot.getId())));
-        } else if (work instanceof VmWorkDeleteVMSnapshot) {
-            VmWorkDeleteVMSnapshot deleteWork = (VmWorkDeleteVMSnapshot)work;
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Execute Delete-VM-Snapshot within VM work job context. vmId: " + deleteWork.getVmId()
-                        + ", VM snapshotId: " + deleteWork.getVmSnapshotId());
-
-            boolean result = orchestrateDeleteVMSnapshot(deleteWork.getVmSnapshotId());
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Done executing Delete-VM-Snapshot within VM work job context. vmId: " + deleteWork.getVmId()
-                        + ", VM snapshotId: " + deleteWork.getVmSnapshotId());
-
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, JobSerializerHelper.toObjectSerializedString(new Boolean(result)));
-
-        } else if (work instanceof VmWorkRevertToVMSnapshot) {
-            VmWorkRevertToVMSnapshot revertWork = (VmWorkRevertToVMSnapshot)work;
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Execute Revert-VM-Snapshot within VM work job context. vmId: " + revertWork.getVmId()
-                        + ", VM snapshotId: " + revertWork.getVmSnapshotId());
-
-            orchestrateRevertToVMSnapshot(revertWork.getVmSnapshotId());
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Done executing Revert-VM-Snapshot within VM work job context. vmId: " + revertWork.getVmId()
-                        + ", VM snapshotId: " + revertWork.getVmSnapshotId());
-
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
-
-        } else if (work instanceof VmWorkDeleteAllVMSnapshots) {
-            VmWorkDeleteAllVMSnapshots deleteAllWork = (VmWorkDeleteAllVMSnapshots)work;
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Execute Delete-All-VM-Snapshot within VM work job context. vmId: " + deleteAllWork.getVmId());
-
-            boolean result = orchestrateDeleteAllVMSnapshots(deleteAllWork.getVmId(), deleteAllWork.getSnapshotType());
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Execute Delete-All-VM-Snapshot within VM work job context. vmId: " + deleteAllWork.getVmId());
-
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, JobSerializerHelper.toObjectSerializedString(new Boolean(result)));
-
-        } else {
-
-            RuntimeException e = new RuntimeException("Unsupported VM work command: " + job.getCmd());
-            String exceptionJson = JobSerializerHelper.toSerializedString(e);
-            s_logger.error("Serialize exception object into json: " + exceptionJson);
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.FAILED, exceptionJson);
-        }
+    public Pair<JobInfo.Status, String> handleVmWorkJob(VmWork work) throws Exception {
+        return _jobHandlerProxy.handleVmWorkJob(work);
     }
 }

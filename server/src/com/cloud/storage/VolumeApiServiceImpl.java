@@ -61,7 +61,6 @@ import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.Outcome;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
-import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
 import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
@@ -328,6 +327,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Inject
     protected AsyncJobManager _jobMgr;
+
+    VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
     // TODO
     static final ConfigKey<Boolean> VmJobEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.job.enabled", "false",
@@ -2353,92 +2354,38 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 snapshotId);
     }
 
+    private Pair<JobInfo.Status, String> orchestrateAttachVolumeToVM(VmWorkAttachVolume work) throws Exception {
+        orchestrateAttachVolumeToVM(work.getVmId(), work.getVolumeId(), work.getDeviceId());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+    }
+
+    private Pair<JobInfo.Status, String> orchestrateDetachVolumeFromVM(VmWorkAttachVolume work) throws Exception {
+        orchestrateDetachVolumeFromVM(work.getVmId(), work.getVolumeId());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+    }
+
+    private Pair<JobInfo.Status, String> orchestrateResizeVolume(VmWorkResizeVolume work) throws Exception {
+        orchestrateResizeVolume(work.getVolumeId(), work.getCurrentSize(), work.getNewSize(),
+                work.getNewServiceOfferingId(), work.isShrinkOk());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+    }
+
+    private Pair<JobInfo.Status, String> orchestrateMigrateVolume(VmWorkMigrateVolume work) throws Exception {
+        Volume newVol = orchestrateMigrateVolume(work.getVolumeId(), work.getDestPoolId(), work.isLiveMigrate());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+                _jobMgr.marshallResultObject(new Long(newVol.getId())));
+    }
+
+    private Pair<JobInfo.Status, String> orchestrateTakeVolumeSnapshot(VmWorkTakeVolumeSnapshot work) throws Exception {
+        Account account = _accountDao.findById(work.getAccountId());
+        orchestrateTakeVolumeSnapshot(work.getVolumeId(), work.getPolicyId(), work.getSnapshotId(),
+                account, work.isQuiesceVm());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+                _jobMgr.marshallResultObject(work.getSnapshotId()));
+    }
+
     @Override
-    public Pair<JobInfo.Status, String> handleVmWorkJob(AsyncJob job, VmWork work) throws Exception {
-        VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
-        if (vm == null) {
-            s_logger.info("Unable to find vm " + work.getVmId());
-        }
-        assert (vm != null);
-
-        if (work instanceof VmWorkAttachVolume) {
-
-            VmWorkAttachVolume attachWork = (VmWorkAttachVolume)work;
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Execute Attach-Volume within VM work job context. vmId: " + attachWork.getVmId() + ", volId: " + attachWork.getVolumeId() + ", deviceId: "
-                        + attachWork.getDeviceId());
-
-            orchestrateAttachVolumeToVM(attachWork.getVmId(), attachWork.getVolumeId(), attachWork.getDeviceId());
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Done executing Attach-Volume within VM work job context. vmId: " + attachWork.getVmId() + ", volId: " + attachWork.getVolumeId() + ", deviceId: "
-                        + attachWork.getDeviceId());
-
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
-        } else if (work instanceof VmWorkDetachVolume) {
-            VmWorkDetachVolume detachWork = (VmWorkDetachVolume)work;
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Execute Detach-Volume within VM work job context. vmId: " + detachWork.getVmId() + ", volId: " + detachWork.getVolumeId());
-
-            orchestrateDetachVolumeFromVM(detachWork.getVmId(), detachWork.getVolumeId());
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Done executing Detach-Volume within VM work job context. vmId: " + detachWork.getVmId() + ", volId: " + detachWork.getVolumeId());
-
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
-        } else if (work instanceof VmWorkResizeVolume) {
-            VmWorkResizeVolume resizeWork = (VmWorkResizeVolume)work;
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Execute Resize-Volume within VM work job context. vmId: " + resizeWork.getVmId()
-                        + ", volId: " + resizeWork.getVolumeId() + ", size " + resizeWork.getCurrentSize() + " -> " + resizeWork.getNewSize());
-
-            orchestrateResizeVolume(resizeWork.getVolumeId(), resizeWork.getCurrentSize(), resizeWork.getNewSize(),
-                    resizeWork.getNewServiceOfferingId(), resizeWork.isShrinkOk());
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Done executing Resize-Volume within VM work job context. vmId: " + resizeWork.getVmId()
-                        + ", volId: " + resizeWork.getVolumeId() + ", size " + resizeWork.getCurrentSize() + " -> " + resizeWork.getNewSize());
-
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
-
-        } else if (work instanceof VmWorkMigrateVolume) {
-            VmWorkMigrateVolume migrateWork = (VmWorkMigrateVolume)work;
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Execute Migrate-Volume within VM work job context. vmId: " + migrateWork.getVmId()
-                        + ", volId: " + migrateWork.getVolumeId() + ", destPoolId: " + migrateWork.getDestPoolId() + ", live: " + migrateWork.isLiveMigrate());
-
-            Volume newVol = orchestrateMigrateVolume(migrateWork.getVolumeId(), migrateWork.getDestPoolId(), migrateWork.isLiveMigrate());
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Done executing Migrate-Volume within VM work job context. vmId: " + migrateWork.getVmId()
-                        + ", volId: " + migrateWork.getVolumeId() + ", destPoolId: " + migrateWork.getDestPoolId() + ", live: " + migrateWork.isLiveMigrate());
-
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, JobSerializerHelper.toObjectSerializedString(new Long(newVol.getId())));
-        } else if (work instanceof VmWorkTakeVolumeSnapshot) {
-            VmWorkTakeVolumeSnapshot snapshotWork = (VmWorkTakeVolumeSnapshot)work;
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Execute Take-Volume-Snapshot within VM work job context. vmId: " + snapshotWork.getVmId()
-                        + ", volId: " + snapshotWork.getVolumeId() + ", policyId: " + snapshotWork.getPolicyId() + ", quiesceVm: " + snapshotWork.isQuiesceVm());
-
-            Account account = _accountDao.findById(snapshotWork.getAccountId());
-            orchestrateTakeVolumeSnapshot(snapshotWork.getVolumeId(), snapshotWork.getPolicyId(), snapshotWork.getSnapshotId(),
-                    account, snapshotWork.isQuiesceVm());
-
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Done executing Take-Volume-Snapshot within VM work job context. vmId: " + snapshotWork.getVmId()
-                        + ", volId: " + snapshotWork.getVolumeId() + ", policyId: " + snapshotWork.getPolicyId() + ", quiesceVm: " + snapshotWork.isQuiesceVm());
-
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, JobSerializerHelper.toObjectSerializedString(snapshotWork.getSnapshotId()));
-        } else {
-            RuntimeException e = new RuntimeException("Unsupported VM work command: " + job.getCmd());
-            String exceptionJson = JobSerializerHelper.toSerializedString(e);
-            s_logger.error("Serialize exception object into json: " + exceptionJson);
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.FAILED, exceptionJson);
-        }
+    public Pair<JobInfo.Status, String> handleVmWorkJob(VmWork work) throws Exception {
+        return _jobHandlerProxy.handleVmWorkJob(work);
     }
 }

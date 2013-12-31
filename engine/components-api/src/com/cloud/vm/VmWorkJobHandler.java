@@ -16,11 +16,10 @@
 // under the License.
 package com.cloud.vm;
 
-import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.jobs.JobInfo;
 
 import com.cloud.utils.Pair;
 
 public interface VmWorkJobHandler {
-    Pair<JobInfo.Status, String> handleVmWorkJob(AsyncJob job, VmWork work) throws Exception;
+    Pair<JobInfo.Status, String> handleVmWorkJob(VmWork work) throws Exception;
 }

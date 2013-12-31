@@ -42,5 +42,4 @@ public interface VMSnapshotManager extends VMSnapshotService, Manager {
     boolean syncVMSnapshot(VMInstanceVO vm, Long hostId);
 
     boolean hasActiveVMSnapshotTasks(Long vmId);
-
 }

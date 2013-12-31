@@ -316,6 +316,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     protected AsyncJobManager _jobMgr;
 
+    VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
+
     Map<VirtualMachine.Type, VirtualMachineGuru> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru>();
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
 
@@ -526,6 +528,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     @Override
     public boolean start() {
+        // TODO, initial delay is hardcoded
+        _executor.scheduleAtFixedRate(new TransitionTask(), 5000, VmJobStateReportInterval.value(), TimeUnit.SECONDS);
         _executor.scheduleAtFixedRate(new CleanupTask(), VmOpCleanupInterval.value(), VmOpCleanupInterval.value(), TimeUnit.SECONDS);
         cancelWorkItems(_nodeId);
         return true;
@@ -2942,9 +2946,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 return;
             }
             try {
-                lock.addRef();
-                List<VMInstanceVO> instances =
-                    _vmDao.findVMInTransition(new Date(new Date().getTime() - (AgentManager.Wait.value() * 1000)), State.Starting, State.Stopping);
+                scanStalledVMInTransitionStateOnDisconnectedHosts();
+
+                List<VMInstanceVO> instances = _vmDao.findVMInTransition(new Date(new Date().getTime() - (AgentManager.Wait.value() * 1000)), State.Starting, State.Stopping);
                 for (VMInstanceVO instance : instances) {
                     State state = instance.getState();
                     if (state == State.Stopping) {
@@ -3974,7 +3978,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-
     // VMs that in transitional state without recent power state report
     private List<Long> listStalledVMInTransitionStateOnUpHost(long hostId, Date cutTime) {
         String sql = "SELECT i.* FROM vm_instance as i, host as h WHERE h.status = 'UP' " +
@@ -4693,74 +4696,132 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return new VmJobVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
     }
 
-    @Override
-    public Pair<JobInfo.Status, String> handleVmWorkJob(AsyncJob job, VmWork work) throws Exception {
-
+    private Pair<JobInfo.Status, String> orchestrateStart(VmWorkStart work) throws Exception {
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
         if (vm == null) {
             s_logger.info("Unable to find vm " + work.getVmId());
         }
         assert (vm != null);
-        if (work instanceof VmWorkStart) {
-            VmWorkStart workStart = (VmWorkStart)work;
-            orchestrateStart(vm.getUuid(), workStart.getParams(), workStart.getPlan(), null);
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
-        } else if (work instanceof VmWorkStop) {
-            VmWorkStop workStop = (VmWorkStop)work;
-            orchestrateStop(vm.getUuid(), workStop.isCleanup());
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
-        } else if (work instanceof VmWorkMigrate) {
-            VmWorkMigrate workMigrate = (VmWorkMigrate)work;
-            orchestrateMigrate(vm.getUuid(), workMigrate.getSrcHostId(), workMigrate.getDeployDestination());
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
-        } else if (work instanceof VmWorkMigrateWithStorage) {
-            VmWorkMigrateWithStorage workMigrateWithStorage = (VmWorkMigrateWithStorage)work;
-            orchestrateMigrateWithStorage(vm.getUuid(),
-                    workMigrateWithStorage.getSrcHostId(),
-                    workMigrateWithStorage.getDestHostId(),
-                    workMigrateWithStorage.getVolumeToPool());
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
-        } else if (work instanceof VmWorkMigrateForScale) {
-            VmWorkMigrateForScale workMigrateForScale = (VmWorkMigrateForScale)work;
-            orchestrateMigrateForScale(vm.getUuid(),
-                    workMigrateForScale.getSrcHostId(),
-                    workMigrateForScale.getDeployDestination(),
-                    workMigrateForScale.getNewServiceOfferringId());
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
-        } else if (work instanceof VmWorkReboot) {
-            VmWorkReboot workReboot = (VmWorkReboot)work;
-            orchestrateReboot(vm.getUuid(), workReboot.getParams());
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
-        } else if (work instanceof VmWorkAddVmToNetwork) {
-            VmWorkAddVmToNetwork workAddVmToNetwork = (VmWorkAddVmToNetwork)work;
-            NicProfile nic = orchestrateAddVmToNetwork(vm, workAddVmToNetwork.getNetwork(),
-                    workAddVmToNetwork.getRequestedNicProfile());
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, JobSerializerHelper.toObjectSerializedString(nic));
-        } else if (work instanceof VmWorkRemoveNicFromVm) {
-            VmWorkRemoveNicFromVm workRemoveNicFromVm = (VmWorkRemoveNicFromVm)work;
-            boolean result = orchestrateRemoveNicFromVm(vm, workRemoveNicFromVm.getNic());
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
-                    JobSerializerHelper.toObjectSerializedString(new Boolean(result)));
-        } else if (work instanceof VmWorkRemoveVmFromNetwork) {
-            VmWorkRemoveVmFromNetwork workRemoveVmFromNetwork = (VmWorkRemoveVmFromNetwork)work;
-            boolean result = orchestrateRemoveVmFromNetwork(vm,
-                    workRemoveVmFromNetwork.getNetwork(), workRemoveVmFromNetwork.getBroadcastUri());
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
-                    JobSerializerHelper.toObjectSerializedString(new Boolean(result)));
-        } else if (work instanceof VmWorkReconfigure) {
-            VmWorkReconfigure workReconfigure = (VmWorkReconfigure)work;
-            reConfigureVm(vm.getUuid(), workReconfigure.getNewServiceOffering(),
-                    workReconfigure.isSameHost());
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
-        } else if (work instanceof VmWorkStorageMigration) {
-            VmWorkStorageMigration workStorageMigration = (VmWorkStorageMigration)work;
-            orchestrateStorageMigration(vm.getUuid(), workStorageMigration.getDestStoragePool());
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
-        } else {
-            RuntimeException e = new RuntimeException("Unsupported VM work command: " + job.getCmd());
-            String exceptionJson = JobSerializerHelper.toSerializedString(e);
-            s_logger.error("Serialize exception object into json: " + exceptionJson);
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.FAILED, exceptionJson);
+
+        orchestrateStart(vm.getUuid(), work.getParams(), work.getPlan(), null);
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+    }
+
+    private Pair<JobInfo.Status, String> orchestrateStop(VmWorkStop work) throws Exception {
+        VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
+        if (vm == null) {
+            s_logger.info("Unable to find vm " + work.getVmId());
         }
+        assert (vm != null);
+
+        orchestrateStop(vm.getUuid(), work.isCleanup());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+    }
+
+    private Pair<JobInfo.Status, String> orchestrateMigrate(VmWorkMigrate work) throws Exception {
+        VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
+        if (vm == null) {
+            s_logger.info("Unable to find vm " + work.getVmId());
+        }
+        assert (vm != null);
+
+        orchestrateMigrate(vm.getUuid(), work.getSrcHostId(), work.getDeployDestination());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+    }
+
+    private Pair<JobInfo.Status, String> orchestrateMigrateWithStorage(VmWorkMigrateWithStorage work) throws Exception {
+        VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
+        if (vm == null) {
+            s_logger.info("Unable to find vm " + work.getVmId());
+        }
+        assert (vm != null);
+        orchestrateMigrateWithStorage(vm.getUuid(),
+                work.getSrcHostId(),
+                work.getDestHostId(),
+                work.getVolumeToPool());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+    }
+
+    private Pair<JobInfo.Status, String> orchestrateMigrateForScale(VmWorkMigrateForScale work) throws Exception {
+        VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
+        if (vm == null) {
+            s_logger.info("Unable to find vm " + work.getVmId());
+        }
+        assert (vm != null);
+        orchestrateMigrateForScale(vm.getUuid(),
+                work.getSrcHostId(),
+                work.getDeployDestination(),
+                work.getNewServiceOfferringId());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+    }
+
+    private Pair<JobInfo.Status, String> orchestrateReboot(VmWorkReboot work) throws Exception {
+        VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
+        if (vm == null) {
+            s_logger.info("Unable to find vm " + work.getVmId());
+        }
+        assert (vm != null);
+        orchestrateReboot(vm.getUuid(), work.getParams());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+    }
+
+    private Pair<JobInfo.Status, String> orchestrateAddVmToNetwork(VmWorkAddVmToNetwork work) throws Exception {
+        VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
+        if (vm == null) {
+            s_logger.info("Unable to find vm " + work.getVmId());
+        }
+        assert (vm != null);
+        NicProfile nic = orchestrateAddVmToNetwork(vm, work.getNetwork(),
+                work.getRequestedNicProfile());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(nic));
+    }
+
+    private Pair<JobInfo.Status, String> orchestrateRemoveNicFromVm(VmWorkRemoveNicFromVm work) throws Exception {
+        VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
+        if (vm == null) {
+            s_logger.info("Unable to find vm " + work.getVmId());
+        }
+        assert (vm != null);
+        boolean result = orchestrateRemoveNicFromVm(vm, work.getNic());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+                _jobMgr.marshallResultObject(new Boolean(result)));
+    }
+
+    private Pair<JobInfo.Status, String> orchestrateRemoveVmFromNetwork(VmWorkRemoveVmFromNetwork work) throws Exception {
+        VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
+        if (vm == null) {
+            s_logger.info("Unable to find vm " + work.getVmId());
+        }
+        assert (vm != null);
+        boolean result = orchestrateRemoveVmFromNetwork(vm,
+                work.getNetwork(), work.getBroadcastUri());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
+                _jobMgr.marshallResultObject(new Boolean(result)));
+    }
+
+    private Pair<JobInfo.Status, String> orchestrateReconfigure(VmWorkReconfigure work) throws Exception {
+        VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
+        if (vm == null) {
+            s_logger.info("Unable to find vm " + work.getVmId());
+        }
+        assert (vm != null);
+        reConfigureVm(vm.getUuid(), work.getNewServiceOffering(),
+                work.isSameHost());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+    }
+
+    private Pair<JobInfo.Status, String> orchestrateStorageMigration(VmWorkStorageMigration work) throws Exception {
+        VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
+        if (vm == null) {
+            s_logger.info("Unable to find vm " + work.getVmId());
+        }
+        assert (vm != null);
+        orchestrateStorageMigration(vm.getUuid(), work.getDestStoragePool());
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
+    }
+
+    @Override
+    public Pair<JobInfo.Status, String> handleVmWorkJob(VmWork work) throws Exception {
+        return _jobHandlerProxy.handleVmWorkJob(work);
     }
 }
