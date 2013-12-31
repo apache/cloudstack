@@ -126,7 +126,7 @@ public class BridgeVifDriver extends VifDriverBase {
         } else if (nic.getType() == Networks.TrafficType.Public) {
             Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 128 : 0;
             if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan
-                    && !vNetId.equalsIgnoreCase("untagged")) {
+                    && !vNetId.equalsIgnoreCase("untagged") || nic.getBroadcastType() == Networks.BroadcastDomainType.Vxlan) {
                 if(trafficLabel != null && !trafficLabel.isEmpty()){
                     s_logger.debug("creating a vNet dev and bridge for public traffic per traffic label " + trafficLabel);
                     String brName = createVnetBr(vNetId, trafficLabel, protocol);
