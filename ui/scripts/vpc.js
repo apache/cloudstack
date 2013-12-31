@@ -1177,9 +1177,15 @@
                             label: 'id'
                         }
                     },
-                    dataProvider: function(args) {
+                    dataProvider: function(args) {                    	                  	
+                    	var data = {
+                    		vpcid: args.context.vpc[0].id
+                    	};                    	
+                        listViewDataProvider(args, data);
+                                            	
                         $.ajax({
-                            url: createURL('listNetworkACLLists&vpcid=' + args.context.vpc[0].id),
+                            url: createURL('listNetworkACLLists'),
+                            data: data,
                             success: function(json) {
                                 var items = json.listnetworkacllistsresponse.networkacllist;
 
