@@ -36,6 +36,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.exception.InsufficientServerCapacityException;
+import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -70,10 +71,6 @@ import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.service.api.OrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -4057,9 +4054,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException(
                     "Data disks attached to the vm, can not migrate. Need to dettach data disks at first");
         }
-
-        HypervisorType destHypervisorType = _clusterDao.findById(
+        HypervisorType destHypervisorType = destPool.getHypervisor();
+        if (destHypervisorType == null) {
+            destHypervisorType = _clusterDao.findById(
                 destPool.getClusterId()).getHypervisorType();
+        }
+
         if (vm.getHypervisorType() != destHypervisorType) {
             throw new InvalidParameterValueException(
                     "hypervisor is not compatible: dest: "
