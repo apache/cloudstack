@@ -40,6 +40,12 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.dao.VMInstanceDao;
 
+/**
+ * Please note: VmWorkJobWakeupDispatcher is not currently in use. It is designed for event-driven based
+ * job processing model.
+ *
+ * Current code base uses blocking calls to wait for job completion
+ */
 public class VmWorkJobWakeupDispatcher extends AdapterBase implements AsyncJobDispatcher {
     private static final Logger s_logger = Logger.getLogger(VmWorkJobWakeupDispatcher.class);
 

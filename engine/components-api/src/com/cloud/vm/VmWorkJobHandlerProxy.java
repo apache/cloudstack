@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
@@ -98,16 +99,28 @@ public class VmWorkJobHandlerProxy implements VmWorkJobHandler {
 
         Method method = getHandlerMethod(work.getClass());
         if (method != null) {
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Execute VM work job: " + work.getClass().getName() + _gsonLogger.toJson(work));
 
-            Object obj = method.invoke(_target, work);
+            try {
+                if (s_logger.isDebugEnabled())
+                    s_logger.debug("Execute VM work job: " + work.getClass().getName() + _gsonLogger.toJson(work));
 
-            if (s_logger.isDebugEnabled())
-                s_logger.debug("Done executing VM work job: " + work.getClass().getName() + _gsonLogger.toJson(work));
+                Object obj = method.invoke(_target, work);
 
-            assert (obj instanceof Pair);
-            return (Pair<JobInfo.Status, String>)obj;
+                if (s_logger.isDebugEnabled())
+                    s_logger.debug("Done executing VM work job: " + work.getClass().getName() + _gsonLogger.toJson(work));
+
+                assert (obj instanceof Pair);
+                return (Pair<JobInfo.Status, String>)obj;
+            } catch (InvocationTargetException e) {
+                s_logger.error("Invocation exception, caused by: " + e.getCause());
+
+                // legacy CloudStack code relies on checked exception for error handling
+                // we need to re-throw the real exception here
+                if (e.getCause() != null && e.getCause() instanceof Exception)
+                    throw (Exception)e.getCause();
+
+                throw e;
+            }
         } else {
             s_logger.error("Unable to find handler for VM work job: " + work.getClass().getName() + _gsonLogger.toJson(work));
 
