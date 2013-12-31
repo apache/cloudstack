@@ -989,6 +989,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
+        // public creates bridges on a pif, if private bridge not found try pif direct
+        // This addresses the unnecessary requirement of someone to create an unused bridge just for traffic label
+        if (_pifs.get("public") == null) {
+            s_logger.debug("public traffic label '" + _publicBridgeName+ "' not found as bridge, looking for physical interface");
+            File dev = new File("/sys/class/net/" + _publicBridgeName);
+            if (dev.exists()) {
+                s_logger.debug("public traffic label '" + _publicBridgeName + "' found as a physical device");
+                _pifs.put("public", _publicBridgeName);
+            }
+        }
+
         s_logger.debug("done looking for pifs, no more bridges");
     }
 
