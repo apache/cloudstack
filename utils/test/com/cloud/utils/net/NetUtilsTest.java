@@ -61,7 +61,7 @@ public class NetUtilsTest extends TestCase {
         assertEquals("This should be -1 because we ran out of ip addresses: " + ip, ip, -1);
     }
 
-    @Test 
+    @Test
     public void testVpnPolicy() {
         assertTrue(NetUtils.isValidS2SVpnPolicy("aes128-sha1"));
         assertTrue(NetUtils.isValidS2SVpnPolicy("3des-sha1"));
@@ -172,5 +172,11 @@ public class NetUtilsTest extends TestCase {
     @Test
     public void testGetLocalIPString() {
         assertNotNull(NetUtils.getLocalIPString());
+    }
+
+    @Test
+    public void testSameIsolationId() {
+        assertTrue(NetUtils.isSameIsolationId("1", "vlan://1"));
+        assertTrue(NetUtils.isSameIsolationId("", null));
     }
 }

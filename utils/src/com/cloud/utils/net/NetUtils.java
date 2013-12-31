@@ -38,6 +38,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.SystemUtils;
+import org.apache.commons.net.util.SubnetUtils;
 import org.apache.log4j.Logger;
 
 import com.googlecode.ipv6.IPv6Address;
@@ -46,7 +47,6 @@ import com.googlecode.ipv6.IPv6Network;
 
 import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.Pair;
-import org.apache.commons.net.util.SubnetUtils;
 import com.cloud.utils.script.Script;
 
 public class NetUtils {
@@ -680,7 +680,7 @@ public class NetUtils {
 
     /**
      * Given a cidr, this method returns an ip address within the range but
-     * is not in the avoid list. 
+     * is not in the avoid list.
      * Note: the gateway address has to be specified in the avoid list
      * 
      * @param cidr ip that the cidr starts with
@@ -1396,7 +1396,7 @@ public class NetUtils {
 
     static final String VLAN_UNTAGGED = "untagged";
 
-    public static boolean sameIsolationId(String one, String other)
+    public static boolean isSameIsolationId(String one, String other)
     {
         // check nulls
         // check empty strings
@@ -1421,7 +1421,7 @@ public class NetUtils {
             other = other.substring(VLAN_PREFIX_LENGTH);
         }
         // check valid uris or numbers
-        if (one.equals(other))
+        if (one.equalsIgnoreCase(other))
         {
             return true;
         }

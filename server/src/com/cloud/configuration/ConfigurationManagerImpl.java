@@ -2471,7 +2471,7 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
         String newVlanNetmask = cmd.getNetmask();
         String vlanId = cmd.getVlan();
         // TODO decide if we should be forgiving or demand a valid and complete URI
-        if(Vlan.UNTAGGED.equalsIgnoreCase(vlanId))
+        if (NetUtils.isSameIsolationId(Vlan.UNTAGGED, vlanId))
             vlanId = null;
         if (!((vlanId == null)
                 || ("".equals(vlanId))
@@ -2660,7 +2660,7 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
                     VlanVO vlan = vlans.get(0);
                     if (vlanId == null) {
                         vlanId = vlan.getVlanTag();
-                    } else if (!vlan.getVlanTag().equals(vlanId)) {
+                    } else if (!NetUtils.isSameIsolationId(vlan.getVlanTag(), vlanId)) {
                         throw new InvalidParameterValueException("there is already one vlan " + vlan.getVlanTag()
                                 + " on network :" + +network.getId() + ", only one vlan is allowed on guest network");
                     }
@@ -2907,7 +2907,7 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
             if (vlanId != null) {
                 // if vlan is specified, throw an error if it's not equal to
                 // network's vlanId
-                if (networkVlanId != null && !networkVlanId.equalsIgnoreCase(vlanId)) {
+                if (networkVlanId != null && !NetUtils.isSameIsolationId(networkVlanId, vlanId)) {
                     throw new InvalidParameterValueException("Vlan doesn't match vlan of the network");
                 }
             } else {
@@ -2990,16 +2990,16 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
                     continue;
                 }
                 String otherCidr = NetUtils.getCidrFromGatewayAndNetmask(otherVlanGateway, otherVlanNetmask);
-                if( !NetUtils.isNetworksOverlap(newCidr,  otherCidr)) {
+                if (!NetUtils.isNetworksOverlap(newCidr, otherCidr)) {
                     continue;
                 }
                 // from here, subnet overlaps
-                if ( !vlanId.equals(vlan.getVlanTag()) ) {
+                if (!NetUtils.isSameIsolationId(vlanId, vlan.getVlanTag())) {
                     throw new InvalidParameterValueException("The IP range with tag: " + vlan.getVlanTag()
                             + " in zone " + zone.getName()
                             + " has overlapped with the subnet. Please specify a different gateway/netmask.");
                 }
-                if ( vlan.getNetworkId() != networkId) {
+                if (vlan.getNetworkId() != networkId) {
                     throw new InvalidParameterValueException("This subnet is overlapped with subnet in other network " + vlan.getNetworkId()
                             + " in zone " + zone.getName()
                             + " . Please specify a different gateway/netmask.");
@@ -3037,7 +3037,7 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
                 if (vlan.getIp6Gateway() == null) {
                     continue;
                 }
-                if (vlanId.equals(vlan.getVlanTag())) {
+                if (NetUtils.isSameIsolationId(vlanId, vlan.getVlanTag())) {
                     if (NetUtils.isIp6RangeOverlap(ipv6Range, vlan.getIp6Range())) {
                         throw new InvalidParameterValueException("The IPv6 range with tag: " + vlan.getVlanTag()
                                 + " already has IPs that overlap with the new range. Please specify a different start IP/end IP.");
@@ -3457,7 +3457,7 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
         List<PortableIpRangeVO> existingPortableIPRanges = _portableIpRangeDao.listByRegionId(_regionDao.getRegionId());
         if (existingPortableIPRanges != null && !existingPortableIPRanges.isEmpty()) {
             for (PortableIpRangeVO portableIpRange : existingPortableIPRanges) {
-                if (portableIpRange.getVlanTag().equalsIgnoreCase(vlanId)) {
+                if (NetUtils.isSameIsolationId(portableIpRange.getVlanTag(), vlanId)) {
                     throw new InvalidParameterValueException("The VLAN tag " + vlanId
                             + " is already being used for portable ip range in this region");
                 }
