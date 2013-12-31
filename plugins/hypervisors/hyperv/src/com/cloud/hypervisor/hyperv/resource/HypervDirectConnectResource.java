@@ -423,7 +423,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
         return answer;
     }
-    
     protected Answer execute(final RemoteAccessVpnCfgCommand cmd) {
         String controlIp = getRouterSshControlIp(cmd);
         StringBuffer argsBuf = new StringBuffer();
@@ -505,9 +504,6 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         return new Answer(cmd);
     }
-
-    
-    
     private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource SetStaticRouteCommand: " + s_gson.toJson(cmd));
