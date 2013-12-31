@@ -27,12 +27,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.deploy.DeploymentClusterPlanner;
-import com.cloud.deploy.DeploymentPlanner;
-import com.cloud.event.UsageEventVO;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
@@ -44,6 +38,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -61,6 +56,8 @@ import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.deploy.DeploymentClusterPlanner;
+import com.cloud.event.UsageEventVO;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -78,7 +75,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -92,6 +88,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmVO;
@@ -103,7 +100,6 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.springframework.instrument.classloading.glassfish.GlassFishLoadTimeWeaver;
 
 @Local(value = CapacityManager.class)
 public class CapacityManagerImpl extends ManagerBase implements CapacityManager, StateListener<State, VirtualMachine.Event, VirtualMachine>, Listener, ResourceListener,
@@ -185,6 +181,10 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @DB
     @Override
     public boolean releaseVmCapacity(VirtualMachine vm, final boolean moveFromReserved, final boolean moveToReservered, final Long hostId) {
+        if (hostId == null) {
+            return true;
+        }
+
         final ServiceOfferingVO svo = _offeringsDao.findById(vm.getId(), vm.getServiceOfferingId());
         CapacityVO capacityCpu = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_CPU);
         CapacityVO capacityMemory = _capacityDao.findByHostIdType(hostId, CapacityVO.CAPACITY_TYPE_MEMORY);
