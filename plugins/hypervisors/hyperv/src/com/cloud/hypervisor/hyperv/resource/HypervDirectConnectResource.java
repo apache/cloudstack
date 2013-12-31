@@ -24,6 +24,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.SocketChannel;
+import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +76,7 @@ import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
@@ -89,6 +91,7 @@ import com.cloud.agent.api.routing.SetStaticRouteAnswer;
 import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.DhcpTO;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
@@ -424,6 +427,10 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             answer = execute((Site2SiteVpnCfgCommand) cmd);
         } else if (clazz == CheckS2SVpnConnectionsCommand.class) {
             answer = execute((CheckS2SVpnConnectionsCommand) cmd);
+        } else if (clazz == RemoteAccessVpnCfgCommand.class) {
+            answer = execute((RemoteAccessVpnCfgCommand) cmd);
+        } else if (clazz == VpnUsersCfgCommand.class) {
+            answer = execute((VpnUsersCfgCommand) cmd);
         } else if (clazz == SetStaticRouteCommand.class) {
             answer = execute((SetStaticRouteCommand) cmd);
         } else if (clazz == SetMonitorServiceCommand.class) {
@@ -459,7 +466,91 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
         return answer;
     }
+    
+    protected Answer execute(final RemoteAccessVpnCfgCommand cmd) {
+        String controlIp = getRouterSshControlIp(cmd);
+        StringBuffer argsBuf = new StringBuffer();
+        if (cmd.isCreate()) {
+            argsBuf.append(" -r ").append(cmd.getIpRange()).append(" -p ").append(cmd.getPresharedKey()).append(" -s ").append(cmd.getVpnServerIp()).append(" -l ").append(cmd.getLocalIp())
+            .append(" -c ");
 
+        } else {
+            argsBuf.append(" -d ").append(" -s ").append(cmd.getVpnServerIp());
+        }
+        argsBuf.append(" -C ").append(cmd.getLocalCidr());
+        argsBuf.append(" -i ").append(cmd.getPublicInterface());
+
+        try {
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Executing /opt/cloud/bin/vpn_lt2p.sh ");
+            }
+
+            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/vpn_l2tp.sh " + argsBuf.toString());
+
+            if (!result.first()) {
+                s_logger.error("RemoteAccessVpnCfg command on domR failed, message: " + result.second());
+
+                return new Answer(cmd, false, "RemoteAccessVpnCfg command failed due to " + result.second());
+            }
+
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("RemoteAccessVpnCfg command on domain router " + argsBuf.toString() + " completed");
+            }
+
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn(e.getMessage());
+            }
+
+            String msg = "RemoteAccessVpnCfg command failed due to " + e.getMessage();
+            s_logger.error(msg, e);
+            return new Answer(cmd, false, msg);
+        }
+
+        return new Answer(cmd);
+    }
+
+    protected Answer execute(final VpnUsersCfgCommand cmd) {
+
+        String controlIp = getRouterSshControlIp(cmd);
+        for (VpnUsersCfgCommand.UsernamePassword userpwd : cmd.getUserpwds()) {
+            StringBuffer argsBuf = new StringBuffer();
+            if (!userpwd.isAdd()) {
+                argsBuf.append(" -U ").append(userpwd.getUsername());
+            } else {
+                argsBuf.append(" -u ").append(userpwd.getUsernamePassword());
+            }
+
+            try {
+
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Executing /opt/cloud/bin/vpn_lt2p.sh ");
+                }
+
+                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/vpn_l2tp.sh " + argsBuf.toString());
+
+                if (!result.first()) {
+                    s_logger.error("VpnUserCfg command on domR failed, message: " + result.second());
+
+                    return new Answer(cmd, false, "VpnUserCfg command failed due to " + result.second());
+                }
+            } catch (Throwable e) {
+                if (e instanceof RemoteException) {
+                    s_logger.warn(e.getMessage());
+                }
+
+                String msg = "VpnUserCfg command failed due to " + e.getMessage();
+                s_logger.error(msg, e);
+                return new Answer(cmd, false, msg);
+            }
+        }
+
+        return new Answer(cmd);
+    }
+
+    
+    
     private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource SetStaticRouteCommand: " + s_gson.toJson(cmd));
