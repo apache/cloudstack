@@ -715,7 +715,7 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
             if (jobResult instanceof Boolean)
                 return (Boolean)jobResult;
 
-            return false;
+            return true;
         }
     }
 
