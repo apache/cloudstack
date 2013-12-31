@@ -1388,7 +1388,7 @@ public class NetUtils {
 
     static final String VLAN_UNTAGGED = "untagged";
 
-    public static boolean sameIsolationId(String one, String other)
+    public static boolean isSameIsolationId(String one, String other)
     {
         // check nulls
         // check empty strings
@@ -1413,7 +1413,7 @@ public class NetUtils {
             other = other.substring(VLAN_PREFIX_LENGTH);
         }
         // check valid uris or numbers
-        if (one.equals(other))
+        if (one.equalsIgnoreCase(other))
         {
             return true;
         }
