@@ -22,6 +22,7 @@ import marvin
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
+from marvin.sshClient import SshClient
 from marvin.integration.lib.utils import *
 from marvin.integration.lib.base import *
 from marvin.integration.lib.common import *
@@ -890,6 +891,8 @@ class TestDeployVM(cloudstackTestCase):
                             "Running",
                             "VM should be in Running state after deployment"
                         )
+        
+                
         self.debug("Stopping instance: %s" % self.virtual_machine.name)
         self.virtual_machine.stop(self.apiclient)
         self.debug("Instance is stopped!")
@@ -938,6 +941,11 @@ class TestDeployVM(cloudstackTestCase):
                 self.storage_id = spool.id
                 self.storage_name = spool.name
                 break
+        
+        self.debug("Detaching volume %s from vm %s" % (vol_response.id, self.virtual_machine.id))
+
+        self.virtual_machine.detach_volume(self.apiclient, vol_response)
+        
         self.debug("Migrating volume to storage pool: %s" % self.storage_name)
         Volume.migrate(
                        self.apiclient,
@@ -946,14 +954,14 @@ class TestDeployVM(cloudstackTestCase):
                        )
         volume = Volume.list(
                               self.apiclient,
-                              virtualmachineid=self.virtual_machine.id,
-                              type='ROOT',
-                              listall=True
+                              virtualmachineid=self.virtual_machine.id,                      
+                              type="ROOT",
+                              listall=True,
                               )
         self.assertEqual(
                          volume[0].storage,
                          self.storage_name,
-                         "Check volume migration response")
+                         "Check volume migration response vol.storage %s self.storage_name %s" % (volume[0].storage, self.storage_name))
         
         return
 
