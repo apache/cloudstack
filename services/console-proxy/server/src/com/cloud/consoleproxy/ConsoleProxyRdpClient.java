@@ -161,28 +161,41 @@ public class ConsoleProxyRdpClient extends ConsoleProxyClientBase {
         updateFrontEndActivityTime();
 
         int mousecode = mapMouseButton(code);
-        int modifier = mapMouseModifier(code, modifiers);
 
-        /*if (event == InputEventType.MOUSE_DOWN) {
-            _mouseEventSource.mousePressed(new MouseEvent(_canvas, MouseEvent.MOUSE_PRESSED, System.currentTimeMillis(), modifier, x, y, 1, false, mousecode));
+        if (event == InputEventType.MOUSE_DOWN) {
+            _mouseEventSource.mousePressed(new MouseEvent(_canvas, MouseEvent.MOUSE_PRESSED, System.currentTimeMillis(), mapMouseDownModifier(code, modifiers), x, y, 1, false,
+                    mousecode));
         }
 
         if (event == InputEventType.MOUSE_UP) {
-            _mouseEventSource.mouseReleased((new MouseEvent(_canvas, MouseEvent.MOUSE_RELEASED, System.currentTimeMillis(), modifier, x, y, 1, false, mousecode)));
+            _mouseEventSource.mouseReleased((new MouseEvent(_canvas, MouseEvent.MOUSE_RELEASED, System.currentTimeMillis(), mapMouseUpModifier(code, modifiers), x, y, 1, false,
+                    mousecode)));
         }
 
-        if (event == InputEventType.MOUSE_DBLCLICK) {
-            _mouseEventSource.mouseReleased((new MouseEvent(_canvas, MouseEvent.MOUSE_RELEASED, System.currentTimeMillis(), modifier, x, y, 2, false, mousecode)));
-        }*/
+        if (event == InputEventType.MOUSE_MOVE) {
+            _mouseEventSource.mouseMoved(new MouseEvent(_canvas, MouseEvent.MOUSE_MOVED, System.currentTimeMillis(), mapModifier(modifiers), x, y, 0, false));
+        }
     }
 
-    public int mapMouseModifier(int code, int modifiers) {
+    public int mapMouseDownModifier(int code, int modifiers) {
         int mod = mapModifier(modifiers);
         switch (code) {
         case 0:
             return mod = mod | MouseEvent.BUTTON1_DOWN_MASK;
         case 2:
             return mod = mod | MouseEvent.BUTTON3_DOWN_MASK;
+        default:
+        }
+        return mod;
+    }
+
+    public int mapMouseUpModifier(int code, int modifiers) {
+        int mod = mapModifier(modifiers);
+        switch (code) {
+        case 0:
+            return mod = mod | MouseEvent.BUTTON1_MASK;
+        case 2:
+            return mod = mod | MouseEvent.BUTTON3_MASK;
         default:
         }
         return mod;
