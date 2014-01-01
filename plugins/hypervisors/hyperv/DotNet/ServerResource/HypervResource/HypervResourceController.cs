@@ -909,18 +909,23 @@ namespace HypervResource
                 var tInfo = new Dictionary<string, string>();
                 long capacityBytes = 0;
                 long availableBytes = 0;
+                string hostPath = null;
                 if (poolType == StoragePoolType.Filesystem)
                 {
                     GetCapacityForLocalPath(localPath, out capacityBytes, out availableBytes);
+                    hostPath = localPath;
                 }
                 else if (poolType == StoragePoolType.NetworkFilesystem)
                 {
                     NFSTO share = new NFSTO();
                     String uriStr = "cifs://" + (string)cmd.pool.host + (string)cmd.pool.path;
                     share.uri = new Uri(uriStr);
+                    hostPath = Utils.NormalizePath(share.UncPath);
+
                     // Check access to share.
                     Utils.ConnectToRemote(share.UncPath, share.Domain, share.User, share.Password);
                     Utils.GetShareDetails(share.UncPath, out capacityBytes, out availableBytes);
+                    config.setPrimaryStorage((string)cmd.pool.uuid, hostPath);
                 }
                 else
                 {
@@ -932,8 +937,8 @@ namespace HypervResource
                 {
                     uuid = uuid,
                     host = cmd.pool.host,
-                    localPath = cmd.pool.host,
-                    hostPath = cmd.localPath,
+                    hostPath = cmd.pool.path,
+                    localPath = hostPath,
                     poolType = cmd.pool.type,
                     capacityBytes = capacityBytes,
                     availableBytes = availableBytes
@@ -943,6 +948,7 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
+                    localPath = hostPath,
                     templateInfo = tInfo,
                     poolInfo = poolInfo,
                     contextMap = contextMap
@@ -1645,11 +1651,42 @@ namespace HypervResource
                 long used = 0;
                 try
                 {
-                    string localPath = (string)cmd.localPath;
-                    GetCapacityForLocalPath(localPath, out capacity, out available);
-                    used = capacity - available;
-                    result = true;
-                    logger.Debug(CloudStackTypes.GetStorageStatsCommand + " set used bytes to " + used);
+                    StoragePoolType poolType;
+                    string poolId = (string)cmd.id;
+                    string hostPath = null;
+                    if (!Enum.TryParse<StoragePoolType>((string)cmd.pooltype, out poolType))
+                    {
+                        details = "Request to get unsupported pool type: " + ((string)cmd.pooltype == null ? "NULL" : (string)cmd.pooltype) + "in cmd " +
+                            JsonConvert.SerializeObject(cmd);
+                        logger.Error(details);
+                    }
+                    else if (poolType == StoragePoolType.Filesystem)
+                    {
+                        hostPath = (string)cmd.localPath;;
+                        GetCapacityForLocalPath(hostPath, out capacity, out available);
+                        used = capacity - available;
+                        result = true;
+                    }
+                    else if (poolType == StoragePoolType.NetworkFilesystem)
+                    {
+                        string sharePath = config.getPrimaryStorage((string)cmd.id);
+                        if (sharePath != null)
+                        {
+                            hostPath = sharePath;
+                            Utils.GetShareDetails(sharePath, out capacity, out available);
+                            used = capacity - available;
+                            result = true;
+                        }
+                    }
+                    else
+                    {
+                        result = false;
+                    }
+
+                    if (result)
+                    {
+                        logger.Debug(CloudStackTypes.GetStorageStatsCommand + " set used bytes for " + hostPath + " to " + used);
+                    }
                 }
                 catch (Exception ex)
                 {
