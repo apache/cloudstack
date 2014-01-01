@@ -635,9 +635,22 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
             clonedVm = cloneResult.first();
 
-            clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateUniqueName, true, false);
+            clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateUniqueName, false, false);
 
-            long physicalSize = new File(installFullPath + "/" + templateUniqueName + ".ova").length();
+            // Get VMDK filename
+            String templateVMDKName = "";
+            File[] files = new File(installFullPath).listFiles();
+            if(files != null) {
+                for(File file : files) {
+                    String fileName = file.getName();
+                    if(fileName.toLowerCase().startsWith(templateUniqueName) && fileName.toLowerCase().endsWith(".vmdk")) {
+                        templateVMDKName += fileName;
+                        break;
+                    }
+                }
+            }
+
+            long physicalSize = new File(installFullPath + "/" + templateVMDKName).length();
             VmdkProcessor processor = new VmdkProcessor();
             Map<String, Object> params = new HashMap<String, Object>();
             params.put(StorageLayer.InstanceConfigKey, _storage);
@@ -645,6 +658,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             long virtualSize = processor.getTemplateVirtualSize(installFullPath, templateUniqueName);
 
             postCreatePrivateTemplate(installFullPath, templateId, templateUniqueName, physicalSize, virtualSize);
+            writeMetaOvaForTemplate(installFullPath, templateUniqueName + ".ovf", templateVMDKName, templateUniqueName, physicalSize);
             return new Ternary<String, Long, Long>(installPath + "/" + templateUniqueName + ".ova", physicalSize, virtualSize);
 
         } finally {
