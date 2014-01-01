@@ -515,6 +515,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
     static final ConfigKey<Boolean> UseExternalDnsServers = new ConfigKey<Boolean>(Boolean.class, "use.external.dns", "Advanced", "false",
         "Bypass internal dns, use external dns1 and dns2", true, ConfigKey.Scope.Zone, null);
+
+    static final ConfigKey<Boolean> routerVersionCheckEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "router.version.check", "true",
+            "If true, router minimum required version is checked before sending command", false);
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
 
@@ -4091,6 +4095,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     //Checks if the router is at the required version
     // Compares MS version and router version
     private boolean checkRouterVersion(VirtualRouter router){
+        if(!routerVersionCheckEnabled.value()){
+            //Router version check is disabled.
+            return true;
+        }
         if(router.getTemplateVersion() == null){
             return false;
         }
@@ -4132,6 +4140,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseExternalDnsServers};
+        return new ConfigKey<?>[] {UseExternalDnsServers, routerVersionCheckEnabled};
     }
 }
