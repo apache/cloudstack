@@ -116,6 +116,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         String name = cmd.getName();
         Long networkId = cmd.getNetworkId();
         Long vpcId = cmd.getVpcId();
+        String keyword = cmd.getKeyword();
         SearchBuilder<NetworkACLVO> sb = _networkACLDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("name", sb.entity().getName(), Op.EQ);
@@ -130,7 +131,15 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
 
         SearchCriteria<NetworkACLVO> sc = sb.create();
-        if (id != null) {
+
+        if (keyword != null) {
+            SearchCriteria<NetworkACLVO> ssc = _networkACLDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if(id != null){
             sc.setParameters("id", id);
         }
 
