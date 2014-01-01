@@ -388,25 +388,22 @@ public class ConsoleProxyServlet extends HttpServlet {
     private String composeConsoleAccessUrl(String rootUrl, VirtualMachine vm, HostVO hostVo) {
         StringBuffer sb = new StringBuffer(rootUrl);
         String host = hostVo.getPrivateIpAddress();
-        String username = _ms.findDetail(hostVo.getId(), "username").getValue();
-        String password = _ms.findDetail(hostVo.getId(), "password").getValue();
 
         Pair<String, Integer> portInfo = _ms.getVncPort(vm);
         if (s_logger.isDebugEnabled())
             s_logger.debug("Port info " + portInfo.first());
 
         Ternary<String, String, String> parsedHostInfo = parseHostInfo(portInfo.first());
+
         int port = -1;
-        String sid;
-        
         if (portInfo.second() == -9) {
             //for hyperv
-            port = 2179;
+            port = Integer.parseInt(_ms.findDetail(hostVo.getId(), "rdp.server.port").getValue());
         } else {
             port = portInfo.second();
         }
 
-        sid = vm.getVncPassword();
+        String sid = vm.getVncPassword();
         UserVmDetailVO details = _userVmDetailsDao.findDetail(vm.getId(), "keyboard");
 
         String tag = vm.getUuid();
@@ -426,8 +423,8 @@ public class ConsoleProxyServlet extends HttpServlet {
         if (portInfo.second() == -9) {
             //For Hyperv Clinet Host Address will send Instance id
             param.setHypervHost(host);
-            param.setUsername(username);
-            param.setPassword(password);
+            param.setUsername(_ms.findDetail(hostVo.getId(), "username").getValue());
+            param.setPassword(_ms.findDetail(hostVo.getId(), "password").getValue());
         }
         if (parsedHostInfo.second() != null && parsedHostInfo.third() != null) {
             param.setClientTunnelUrl(parsedHostInfo.second());
