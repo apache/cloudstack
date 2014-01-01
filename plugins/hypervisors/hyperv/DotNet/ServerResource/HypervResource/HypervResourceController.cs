@@ -1921,6 +1921,7 @@ namespace HypervResource
                     string productVersion = System.Environment.OSVersion.Version.Major.ToString() + "." +
                         System.Environment.OSVersion.Version.Minor.ToString();
                     details.Add("product_version", productVersion);
+                    details.Add("rdp.server.port", 2179);
                 }
 
                 // Detect CPUs, speed, memory
