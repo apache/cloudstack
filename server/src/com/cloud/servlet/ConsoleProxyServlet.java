@@ -361,7 +361,16 @@ public class ConsoleProxyServlet extends HttpServlet {
         String sid = vm.getVncPassword();
         String tag = String.valueOf(vm.getId());
         tag = _identityService.getIdentityUuid("vm_instance", tag);
-        String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
+
+        int port = -1;
+        if (portInfo.second() == -9) {
+            //for hyperv
+            port = Integer.parseInt(_ms.findDetail(hostVo.getId(), "rdp.server.port").getValue());
+        } else {
+            port = portInfo.second();
+        }
+
+        String ticket = genAccessTicket(parsedHostInfo.first(), String.valueOf(port), sid, tag);
 
         ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(getEncryptorPassword());
         ConsoleProxyClientParam param = new ConsoleProxyClientParam();
@@ -370,6 +379,12 @@ public class ConsoleProxyServlet extends HttpServlet {
         param.setClientHostPassword(sid);
         param.setClientTag(tag);
         param.setTicket(ticket);
+        if (portInfo.second() == -9) {
+            //For Hyperv Clinet Host Address will send Instance id
+            param.setHypervHost(host);
+            param.setUsername(_ms.findDetail(hostVo.getId(), "username").getValue());
+            param.setPassword(_ms.findDetail(hostVo.getId(), "password").getValue());
+        }
         if (parsedHostInfo.second() != null && parsedHostInfo.third() != null) {
             param.setClientTunnelUrl(parsedHostInfo.second());
             param.setClientTunnelSession(parsedHostInfo.third());
