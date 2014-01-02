@@ -21,8 +21,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.security.KeyStore;
@@ -449,6 +452,10 @@ public class Link {
         ByteBuffer out_pkgBuf = ByteBuffer.allocate(sslSession.getPacketBufferSize() + 40);
         ByteBuffer out_appBuf = ByteBuffer.allocate(sslSession.getApplicationBufferSize() + 40);
         int count;
+        ch.socket().setSoTimeout(10 * 1000);
+        InputStream inStream = ch.socket().getInputStream();
+        // Use readCh to make sure the timeout on reading is working
+        ReadableByteChannel readCh = Channels.newChannel(inStream);
 
         if (isClient) {
             hsStatus = SSLEngineResult.HandshakeStatus.NEED_WRAP;
@@ -479,7 +486,15 @@ public class Link {
                 // One packet may contained multiply operation
                 if (in_pkgBuf.position() == 0 || !in_pkgBuf.hasRemaining()) {
                     in_pkgBuf.clear();
-                    count = ch.read(in_pkgBuf);
+                    count = 0;
+                    try {
+                    	count = readCh.read(in_pkgBuf);
+                    } catch (SocketTimeoutException ex) {
+                    	if (s_logger.isTraceEnabled()) {
+                            s_logger.trace("Handshake reading time out! Cut the connection");
+                    	}
+                        count = -1;
+                    }
                     if (count == -1) {
                         throw new IOException("Connection closed with -1 on reading size.");
                     }
