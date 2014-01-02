@@ -3525,8 +3525,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     protected boolean sendCommandsToRouter(final VirtualRouter router, Commands cmds) throws AgentUnavailableException {
-        if (!checkRouterVersion(router)) {
-            throw new CloudRuntimeException("Router requires upgrade. Unable to send command to router:" + router.getId());
+        if(!checkRouterVersion(router)){
+            s_logger.debug("Router requires upgrade. Unable to send command to router:" + router.getId());
+            throw new CloudRuntimeException("Unable to send command. Upgrade in progress. Please contact administrator.");
         }
         Answer[] answers = null;
         try {
@@ -3806,13 +3807,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                             " haven't been stopped after it's host coming back!", DataCenter.class, router.getDataCenterId());
                     }
                     s_logger.debug("Router " + router.getInstanceName() + " is stop pending, so not sending apply " + typeString + " commands to the backend");
-                    continue;
-                }
-
-                if (!checkRouterVersion(router)){
-                    //Rules will be applied after VR is upgraded
-                    s_logger.debug("Router " + router.getInstanceName() + " requires upgrade, so not sending apply " +
-                            typeString + " commands to the backend");
                     continue;
                 }
 
