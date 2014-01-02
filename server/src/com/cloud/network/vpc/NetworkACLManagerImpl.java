@@ -381,9 +381,13 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
             throw new CloudRuntimeException("Failed to initialize vpc elements");
         }
 
-        for (VpcProvider provider: vpcElements){
-            return provider.applyACLItemsToPrivateGw(gateway, rules);
+        try {
+            for (VpcProvider provider: vpcElements){
+                return provider.applyACLItemsToPrivateGw(gateway, rules);
             }
+        } catch(ResourceUnavailableException e) {
+            s_logger.debug("Failed to apply acl to private gateway " + gateway);
+        }
         return false;
     }
 
