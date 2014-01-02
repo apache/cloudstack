@@ -241,6 +241,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
                 if (resultObject != null) {
                     job.setResult(resultObject);
+                } else {
+                    job.setResult(null);
                 }
 
                 job.setLastUpdated(DateUtil.currentGMTTime());
