@@ -42,6 +42,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -712,6 +713,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     HostTagsDao _hostTagsDao;
     @Inject
     ConfigurationServer _configServer;
+    @Inject
+    ConfigDepot _configDepot;
     @Inject
     UserVmManager _userVmMgr;
     @Inject
@@ -1680,15 +1683,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
         }
 
-        if (scope != null && !scope.isEmpty()) {
-            // getting the list of parameters at requested scope
-            if (id == null) {
-                throw new InvalidParameterValueException("Invalid id null, id is needed corresponding to the scope");
-            }
-            List<ConfigurationVO> configList = _configServer.getConfigListByScope(scope, id);
-            return new Pair<List<? extends Configuration>, Integer>(configList, configList.size());
-        }
-
         if (keyword != null) {
             SearchCriteria<ConfigurationVO> ssc = _configDao.createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
@@ -1712,7 +1706,28 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // hidden configurations are not displayed using the search API
         sc.addAnd("category", SearchCriteria.Op.NEQ, "Hidden");
 
+        if (scope != null && !scope.isEmpty()) {
+            // getting the list of parameters at requested scope
+            if (id == null) {
+                throw new InvalidParameterValueException("Invalid id null, id is needed corresponding to the scope");
+            }
+            sc.addAnd("scope", SearchCriteria.Op.EQ, scope);
+        }
+
         Pair<List<ConfigurationVO>, Integer> result = _configDao.searchAndCount(sc, searchFilter);
+
+        if (scope != null && !scope.isEmpty()) {
+            // Populate values corresponding the resource id
+            List<ConfigurationVO> configVOList = new ArrayList<ConfigurationVO>();
+            for (ConfigurationVO param: result.first()){
+                ConfigurationVO configVo = _configDao.findByName(param.getName());
+                configVo.setValue(_configDepot.get(param.getName()).valueIn(id).toString());
+                configVOList.add(configVo);
+            }
+
+            return new Pair<List<? extends Configuration>, Integer>(configVOList, configVOList.size());
+        }
+
         return new Pair<List<? extends Configuration>, Integer>(result.first(), result.second());
     }
 
