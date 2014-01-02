@@ -488,11 +488,11 @@ public class Link {
                     in_pkgBuf.clear();
                     count = 0;
                     try {
-                    	count = readCh.read(in_pkgBuf);
+                        count = readCh.read(in_pkgBuf);
                     } catch (SocketTimeoutException ex) {
-                    	if (s_logger.isTraceEnabled()) {
+                        if (s_logger.isTraceEnabled()) {
                             s_logger.trace("Handshake reading time out! Cut the connection");
-                    	}
+                        }
                         count = -1;
                     }
                     if (count == -1) {
