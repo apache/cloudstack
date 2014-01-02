@@ -51,7 +51,9 @@ public class OutcomeImpl<T> implements Outcome<T> {
 
     @Override
     public AsyncJob getJob() {
-        return _job;
+        // always reload job so that we retrieve the latest job result
+        AsyncJob job = s_jobMgr.getAsyncJob(_job.getId());
+        return job;
     }
 
     @Override
