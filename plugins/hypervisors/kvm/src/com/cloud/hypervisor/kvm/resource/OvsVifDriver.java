@@ -74,7 +74,7 @@ public class OvsVifDriver extends VifDriverBase {
         if (nic.getType() == Networks.TrafficType.Guest) {
             Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 128 : 0;
             if ((nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan || nic.getBroadcastType() == Networks.BroadcastDomainType.Pvlan) &&
-                !vlanId.equalsIgnoreCase("untagged")) {
+                    !vlanId.equalsIgnoreCase("untagged")) {
                 if (trafficLabel != null && !trafficLabel.isEmpty()) {
                     s_logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);
                     intf.defBridgeNet(_pifs.get(trafficLabel), null, nic.getMac(), getGuestNicModel(guestOsType), networkRateKBps);
@@ -143,7 +143,7 @@ public class OvsVifDriver extends VifDriverBase {
         }
         if (!foundLinkLocalBr) {
             Script.runSimpleBashScript("ifconfig " + linkLocalBr + " 169.254.0.1;" + "ip route add " + NetUtils.getLinkLocalCIDR() + " dev " + linkLocalBr + " src " +
-                NetUtils.getLinkLocalGateway());
+                    NetUtils.getLinkLocalGateway());
         }
     }
 
@@ -159,7 +159,7 @@ public class OvsVifDriver extends VifDriverBase {
         command.add("-c");
         command.add("ovs-vsctl br-exists " + bridgeName);
         String result = command.execute(null);
-        if ("Ok".equals(result)) {
+        if ("0".equals(result)) {
             return true;
         } else {
             return false;
