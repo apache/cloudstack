@@ -1406,6 +1406,12 @@ public class NetUtils {
         {
             return true;
         }
+        if ((one == null || other == null)
+                &&
+                !(one == null && other == null))
+        {
+            return false;
+        }
         // check 'untagged'
         if (VLAN_UNTAGGED.equalsIgnoreCase(one) && VLAN_UNTAGGED.equalsIgnoreCase(other))
         {

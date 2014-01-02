@@ -178,5 +178,6 @@ public class NetUtilsTest extends TestCase {
     public void testSameIsolationId() {
         assertTrue(NetUtils.isSameIsolationId("1", "vlan://1"));
         assertTrue(NetUtils.isSameIsolationId("", null));
+        assertFalse(NetUtils.isSameIsolationId("bla", null));
     }
 }
