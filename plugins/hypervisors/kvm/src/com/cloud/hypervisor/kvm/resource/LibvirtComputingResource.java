@@ -16,11 +16,11 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.BufferedOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -51,14 +51,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
-
-import com.cloud.agent.api.CheckOnHostCommand;
-import com.cloud.agent.api.routing.*;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
@@ -70,6 +67,14 @@ import org.libvirt.DomainInterfaceStats;
 import org.libvirt.DomainSnapshot;
 import org.libvirt.LibvirtException;
 import org.libvirt.NodeInfo;
+
+import com.ceph.rados.IoCTX;
+import com.ceph.rados.Rados;
+import com.ceph.rados.RadosException;
+import com.ceph.rbd.Rbd;
+import com.ceph.rbd.RbdException;
+import com.ceph.rbd.RbdImage;
+
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -88,6 +93,7 @@ import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
+import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckStateCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
@@ -161,6 +167,15 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
+import com.cloud.agent.api.routing.IpAssocAnswer;
+import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.IpAssocVpcCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.SetMonitorServiceCommand;
+import com.cloud.agent.api.routing.SetNetworkACLAnswer;
+import com.cloud.agent.api.routing.SetNetworkACLCommand;
+import com.cloud.agent.api.routing.SetSourceNatAnswer;
+import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
@@ -240,12 +255,6 @@ import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.State;
-import com.ceph.rados.Rados;
-import com.ceph.rados.RadosException;
-import com.ceph.rados.IoCTX;
-import com.ceph.rbd.Rbd;
-import com.ceph.rbd.RbdImage;
-import com.ceph.rbd.RbdException;
 
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
@@ -1133,7 +1142,7 @@ ServerResource {
         command.add("-c");
         command.add("ovs-vsctl br-exists " + networkName);
         String result = command.execute(null);
-        if ("Ok".equals(result)) {
+        if ("0".equals(result)) {
             return true;
         } else {
             return false;
@@ -2291,8 +2300,6 @@ ServerResource {
                     IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
                     Rbd rbd = new Rbd(io);
                     RbdImage image = rbd.open(snapshotDisk.getName(), snapshotName);
-
-                    long startTime = System.currentTimeMillis() / 1000;
 
                     File fh = new File(snapshotDestPath);
                     BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(fh));
