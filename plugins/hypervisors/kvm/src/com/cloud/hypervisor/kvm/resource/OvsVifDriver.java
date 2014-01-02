@@ -165,7 +165,7 @@ public class OvsVifDriver extends VifDriverBase {
         command.add("-c");
         command.add("ovs-vsctl br-exists " + bridgeName);
         String result = command.execute(null);
-        if ("Ok".equals(result)) {
+        if ("0".equals(result)) {
             return true;
         } else {
             return false;
