@@ -487,7 +487,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
 
-        if (volumeExpungeCommands != null && hostId != null) {
+        if (volumeExpungeCommands != null && volumeExpungeCommands.size() > 0 && hostId != null) {
             Commands cmds = new Commands(Command.OnError.Stop);
 
             for (Command volumeExpungeCommand : volumeExpungeCommands) {
