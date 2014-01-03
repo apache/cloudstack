@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
+import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
 import java.net.URISyntaxException;
 
@@ -48,6 +50,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class,
             required=true, description="the ID of the volume")
     private Long id;

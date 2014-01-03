@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
+import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
 import org.apache.log4j.Logger;
 
@@ -60,6 +62,7 @@ public class AttachVolumeCmd extends BaseAsyncCmd {
             required=true, description="the ID of the disk volume")
     private Long id;
 
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
             required=true, description="    the ID of the virtual machine")
     private Long virtualMachineId;
