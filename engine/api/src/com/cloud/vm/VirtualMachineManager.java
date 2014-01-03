@@ -48,9 +48,10 @@ import com.cloud.utils.fsm.NoTransitionException;
  * Manages allocating resources to vms.
  */
 public interface VirtualMachineManager extends Manager {
+
     static final ConfigKey<Boolean> ExecuteInSequence = new ConfigKey<Boolean>("Advanced", Boolean.class, "execute.in.sequence.hypervisor.commands", "false",
-        "If set to true, StartCommand, StopCommand, CopyCommand, MigrateCommand will be synchronized on the agent side."
-            + " If set to false, these commands become asynchronous. Default value is false.", true);
+            "If set to true, StartCommand, StopCommand, CopyCommand, MigrateCommand will be synchronized on the agent side."
+                    + " If set to false, these commands become asynchronous. Default value is false.", false);
 
     public interface Topics {
         public static final String VM_POWER_STATE = "vm.powerstate";
