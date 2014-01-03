@@ -111,7 +111,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
             volResponse.setCreated(volume.getCreatedOnStore());
 
             if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)
-                volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volume.getFormat()).toString());
+                volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat()).toString());
             if (volume.getDownloadState() != Status.DOWNLOADED) {
                 String volumeStatus = "Processing";
                 if (volume.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
@@ -175,7 +175,7 @@ public class VolumeJoinDaoImpl extends GenericDaoBase<VolumeJoinVO, Long> implem
                 if (volume.getHypervisorType() != null) {
                     volResponse.setHypervisor(volume.getHypervisorType().toString());
                 } else {
-                    volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volume.getFormat()).toString());
+                    volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volume.getDataCenterId(), volume.getFormat()).toString());
                 }
             }
             Long poolId = volume.getPoolId();
