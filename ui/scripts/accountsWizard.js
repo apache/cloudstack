@@ -174,7 +174,7 @@
 
         action: function(args) {
             var array1 = [];
-            var ldapStatus = isLdapEnabled();
+            var ldapStatus = args.isLdap;
             if (args.username) {
                 array1.push("&username=" + args.username);
             }
