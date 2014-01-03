@@ -6689,17 +6689,13 @@
                         },
                         pods: function() {
                             var listView = $.extend(true, {}, cloudStack.sections.system.subsections.pods.listView, {
-                                dataProvider: function(args) {
-                                    var searchByArgs = args.filterBy.search.value.length ?
-                                        '&name=' + args.filterBy.search.value : '';
-
+                                dataProvider: function(args) {                                	
+                                    var data = {};
+                                    listViewDataProvider(args, data);
+                                                                   	
                                     $.ajax({
-                                        url: createURL('listPods' + searchByArgs),
-                                        data: {
-                                            page: args.page,
-                                            pageSize: pageSize,
-                                            listAll: true
-                                        },
+                                        url: createURL('listPods'),
+                                        data: data,
                                         success: function(json) {
                                             args.response.success({
                                                 data: json.listpodsresponse.pod
@@ -6739,17 +6735,13 @@
                         },
                         clusters: function() {
                             var listView = $.extend(true, {}, cloudStack.sections.system.subsections.clusters.listView, {
-                                dataProvider: function(args) {
-                                    var searchByArgs = args.filterBy.search.value.length ?
-                                        '&name=' + args.filterBy.search.value : '';
-
+                                dataProvider: function(args) {                                	
+                                    var data = {};
+                                    listViewDataProvider(args, data);
+                                   
                                     $.ajax({
-                                        url: createURL('listClusters' + searchByArgs),
-                                        data: {
-                                            page: args.page,
-                                            pageSize: pageSize,
-                                            listAll: true
-                                        },
+                                        url: createURL('listClusters'),
+                                        data: data,
                                         success: function(json) {
                                             args.response.success({
                                                 data: json.listclustersresponse.cluster
@@ -6789,19 +6781,14 @@
                         },
                         hosts: function() {
                             var listView = $.extend(true, {}, cloudStack.sections.system.subsections.hosts.listView, {
-                                dataProvider: function(args) {
-                                    var searchByArgs = args.filterBy.search.value.length ?
-                                        '&name=' + args.filterBy.search.value : '';
-
+                                dataProvider: function(args) {                                	
                                     var data = {
-                                        page: args.page,
-                                        pageSize: pageSize,
-                                        type: 'routing',
-                                        listAll: true
+                                    	type: 'routing'	
                                     };
-
+                                    listViewDataProvider(args, data);
+                                                                   	
                                     $.ajax({
-                                        url: createURL('listHosts' + searchByArgs),
+                                        url: createURL('listHosts'),
                                         data: data,
                                         success: function(json) {
                                             args.response.success({
@@ -6842,18 +6829,12 @@
                         },
                         primaryStorage: function() {
                             var listView = $.extend(true, {}, cloudStack.sections.system.subsections['primary-storage'].listView, {
-                                dataProvider: function(args) {
-                                    var searchByArgs = args.filterBy.search.value.length ?
-                                        '&name=' + args.filterBy.search.value : '';
-
-                                    var data = {
-                                        page: args.page,
-                                        pageSize: pageSize,
-                                        listAll: true
-                                    };
+                                dataProvider: function(args) {                                	
+                                    var data = {};
+                                    listViewDataProvider(args, data);                                                                 	            	
 
                                     $.ajax({
-                                        url: createURL('listStoragePools' + searchByArgs),
+                                        url: createURL('listStoragePools'),
                                         data: data,
                                         success: function(json) {
                                             args.response.success({
@@ -6900,19 +6881,14 @@
                                     sections: {
                                         secondaryStorage: {
                                             listView: {
-                                                dataProvider: function(args) {
-                                                    var searchByArgs = args.filterBy.search.value.length ?
-                                                        '&name=' + args.filterBy.search.value : '';
-
+                                                dataProvider: function(args) {                                                	
                                                     var data = {
-                                                        type: 'SecondaryStorage',
-                                                        page: args.page,
-                                                        pageSize: pageSize,
-                                                        listAll: true
+                                                    	type: 'SecondaryStorage'
                                                     };
-
+                                                    listViewDataProvider(args, data);                                                                                                  	
+                                                	
                                                     $.ajax({
-                                                        url: createURL('listImageStores' + searchByArgs),
+                                                        url: createURL('listImageStores'),
                                                         data: data,
                                                         success: function(json) {
                                                             args.response.success({
@@ -6941,17 +6917,12 @@
                                         },
                                         cacheStorage: {
                                             listView: {
-                                                dataProvider: function(args) {
-                                                    var searchByArgs = args.filterBy.search.value.length ?
-                                                        '&name=' + args.filterBy.search.value : '';
-
-                                                    var data = {
-                                                        page: args.page,
-                                                        pageSize: pageSize
-                                                    };
-
+                                                dataProvider: function(args) {                                               
+                                                    var data = {};
+                                                    listViewDataProvider(args, data);                                                                                             	
+                                                	
                                                     $.ajax({
-                                                        url: createURL('listSecondaryStagingStores' + searchByArgs),
+                                                        url: createURL('listSecondaryStagingStores'),
                                                         data: data,
                                                         success: function(json) {
                                                             args.response.success({
@@ -6985,17 +6956,13 @@
                         },
                         systemVms: function() {
                             var listView = $.extend(true, {}, cloudStack.sections.system.subsections.systemVms.listView, {
-                                dataProvider: function(args) {
-                                    var searchByArgs = args.filterBy.search.value.length ?
-                                        '&name=' + args.filterBy.search.value : '';
-
+                                dataProvider: function(args) {                                    
+                                    var data = {};
+                                    listViewDataProvider(args, data);                                    
+                                	
                                     $.ajax({
-                                        url: createURL('listSystemVms' + searchByArgs),
-                                        data: {
-                                            page: args.page,
-                                            pageSize: pageSize,
-                                            listAll: true
-                                        },
+                                        url: createURL('listSystemVms'),
+                                        data: data,
                                         success: function(json) {
                                             var systemvmObjs = json.listsystemvmsresponse.systemvm;
                                             if (systemvmObjs != null) {
