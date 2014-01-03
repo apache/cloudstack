@@ -25,16 +25,18 @@ import java.net.URL;
 import java.text.MessageFormat;
 import java.util.Collections;
 
-import org.apache.cloudstack.network.opendaylight.api.NeutronRestApiException;
-import org.apache.cloudstack.network.opendaylight.api.enums.NeutronNorthboundEnum;
-import org.apache.cloudstack.network.opendaylight.api.model.NeutronNetworkWrapper;
-import org.apache.cloudstack.network.opendaylight.api.model.NeutronNetworksList;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+
+import org.apache.cloudstack.network.opendaylight.api.NeutronRestApiException;
+import org.apache.cloudstack.network.opendaylight.api.enums.NeutronNorthboundEnum;
+import org.apache.cloudstack.network.opendaylight.api.model.NeutronNetwork;
+import org.apache.cloudstack.network.opendaylight.api.model.NeutronNetworkWrapper;
+import org.apache.cloudstack.network.opendaylight.api.model.NeutronNetworksList;
 
 public class NeutronNetworksNorthboundAction extends Action {
 
@@ -50,7 +52,7 @@ public class NeutronNetworksNorthboundAction extends Action {
         String uri = NeutronNorthboundEnum.NETWORKS_URI.getUri();
         String bodystring = executeGet(uri, Collections.<String, String> emptyMap());
 
-        Type returnType = new TypeToken<NeutronNetworksList<NeutronNetworkWrapper>>() {
+        Type returnType = new TypeToken<NeutronNetworksList<NeutronNetwork>>() {
         }.getType();
 
         T returnValue = (T) gsonNeutronNetwork.fromJson(bodystring, returnType);

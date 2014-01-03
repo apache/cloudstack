@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.UUID;
 
 import javax.naming.ConfigurationException;
@@ -46,6 +47,7 @@ import org.apache.cloudstack.network.opendaylight.agent.responses.DestroyPortAns
 import org.apache.cloudstack.network.opendaylight.api.NeutronRestApiException;
 import org.apache.cloudstack.network.opendaylight.api.model.NeutronNetwork;
 import org.apache.cloudstack.network.opendaylight.api.model.NeutronNetworkWrapper;
+import org.apache.cloudstack.network.opendaylight.api.model.NeutronNetworksList;
 import org.apache.cloudstack.network.opendaylight.api.model.NeutronNode;
 import org.apache.cloudstack.network.opendaylight.api.model.NeutronNodeWrapper;
 import org.apache.cloudstack.network.opendaylight.api.model.NeutronNodesList;
@@ -206,6 +208,27 @@ public class OpenDaylightControllerResource implements ServerResource {
 
     private Answer executeRequest(ConfigureNetworkCommand cmd) {
         NeutronNetworksNorthboundAction configureNetwork = new NeutronNetworksNorthboundAction(controllerUrl, controllerUsername, controllerPassword);
+
+        // Find free gre key
+        int gre_key = -1;
+        Random keyGenerator = new Random(System.currentTimeMillis());
+        try {
+            NeutronNetworksList<NeutronNetwork> networks = configureNetwork.listAllNetworks();
+            while (true) {
+                int i = keyGenerator.nextInt();
+                for (NeutronNetwork network : networks.getNetworks()) {
+                    if (network.getSegmentationId() == i) {
+                        continue;
+                    }
+                }
+                gre_key = i;
+                break;
+            }
+        } catch (NeutronRestApiException e) {
+            s_logger.error("Failed to list existing networks on the ODL Controller", e);
+            return new ConfigureNetworkAnswer(cmd, e);
+        }
+
         NeutronNetwork newNetwork = new NeutronNetwork();
 
         // Configuration from the command
@@ -215,7 +238,7 @@ public class OpenDaylightControllerResource implements ServerResource {
         // Static configuation
         newNetwork.setNetworkType("gre");
         newNetwork.setShared(false);
-        newNetwork.setSegmentationId(100);
+        newNetwork.setSegmentationId(gre_key);
         newNetwork.setId(UUID.randomUUID());
 
         NeutronNetworkWrapper wrapper = new NeutronNetworkWrapper();
