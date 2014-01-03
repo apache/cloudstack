@@ -173,7 +173,12 @@ namespace HypervResource
                     {
                         fileName += @"\" + this.path;
                     }
-                    fileName = Utils.NormalizePath(fileName + @"\" + this.name);
+
+                    fileName = Utils.NormalizePath(fileName);
+                    if (Directory.Exists(fileName))
+                    {
+                        fileName = Utils.NormalizePath(fileName + @"\" + this.name);
+                    }
                 }
                 else
                 {
@@ -182,7 +187,7 @@ namespace HypervResource
                     throw new InvalidDataException(errMsg);
                 }
 
-                if (this.format != null)
+                if (!Path.HasExtension(fileName) && this.format != null)
                 {
                     fileName = fileName + "." + this.format.ToLowerInvariant();
                 }

@@ -958,8 +958,19 @@ public class ApiDBUtils {
         return _volumeDao.getHypervisorType(volumeId);
     }
 
-    public static HypervisorType getHypervisorTypeFromFormat(ImageFormat format){
-        return _storageMgr.getHypervisorTypeFromFormat(format);
+    public static HypervisorType getHypervisorTypeFromFormat(long dcId, ImageFormat format){
+        HypervisorType type = _storageMgr.getHypervisorTypeFromFormat(format);
+        if (format == ImageFormat.VHD) {
+            // Xenserver and Hyperv both support vhd format. Additionally hyperv is only supported
+            // in a dc/zone if there aren't any other hypervisor types present in the zone). If the
+            // format type is VHD check is any xenserver clusters are present. If not, we assume it
+            // is a hyperv zone and update the type.
+            List<ClusterVO> xenClusters = _clusterDao.listByDcHyType(dcId, HypervisorType.XenServer.toString());
+            if (xenClusters.isEmpty()) {
+                type = HypervisorType.Hyperv;
+            }
+        }
+        return type;
     }
 
 
