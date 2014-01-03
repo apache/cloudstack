@@ -48,9 +48,9 @@ import org.apache.cloudstack.framework.config.ConfigKey;
  */
 public interface VirtualMachineManager extends Manager {
 
-    static final ConfigKey<Boolean> ExecuteInSequence = new ConfigKey<Boolean>("Advanced", Boolean.class, "execute.in.sequence.hypervisor.commands", "true",
+    static final ConfigKey<Boolean> ExecuteInSequence = new ConfigKey<Boolean>("Advanced", Boolean.class, "execute.in.sequence.hypervisor.commands", "false",
             "If set to true, StartCommand, StopCommand, CopyCommand, MigrateCommand will be synchronized on the agent side."
-                    + " If set to false, these commands become asynchronous. Default value is true.", true);
+                    + " If set to false, these commands become asynchronous. Default value is false.", false);
 
 
     public interface Topics {
