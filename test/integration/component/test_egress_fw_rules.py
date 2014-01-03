@@ -34,12 +34,13 @@ from marvin.integration.lib.common import (get_domain,
                                            list_hosts,
                                            list_routers,
                                            wait_for_cleanup,
-                                           list_virtual_machines)
-from marvin.integration.lib.utils import cleanup_resources
+                                           list_virtual_machines
+                                           )
+from marvin.integration.lib.utils import cleanup_resources, validateList
 from marvin.cloudstackAPI import rebootRouter
 from marvin.cloudstackAPI.createEgressFirewallRule import createEgressFirewallRuleCmd
 from marvin.cloudstackAPI.deleteEgressFirewallRule import deleteEgressFirewallRuleCmd
-
+from marvin.codes import PASS
 from marvin.sshClient import SshClient
 import time
 
@@ -205,6 +206,7 @@ class TestEgressFWRules(cloudstackTestCase):
         self.debug("Deploying instance in the account: %s" % self.account.name)
 
         project = None
+        self.virtual_machine = None
         try:
             self.virtual_machine = VirtualMachine.create(self.apiclient,
                                                          self.services["virtual_machine"],
@@ -215,8 +217,16 @@ class TestEgressFWRules(cloudstackTestCase):
                                                          networkids=[str(self.network.id)],
                                                          projectid=project.id if project else None)
         except Exception as e:
+            self.virtual_machine = None
             self.fail("Virtual machine deployment failed with exception: %s" % e)
-        self.debug("Deployed instance in account: %s" % self.account.name)
+        self.debug("Deployed instance %s in account: %s" % (self.virtual_machine.id,self.account.name))
+
+        # Checking if VM is running or not, in case it is deployed in error state, test case fails
+        self.vm_list = list_virtual_machines(self.apiclient, id=self.virtual_machine.id)
+
+        self.assertEqual(validateList(self.vm_list)[0], PASS, "vm list validation failed, vm list is %s" % self.vm_list)
+        self.assertEqual(str(self.vm_list[0].state).lower(),'running',"VM state should be running, it is %s" % self.vm_list[0].state)
+        return
 
     def exec_script_on_user_vm(self, script, exec_cmd_params, expected_result, negative_test=False):
         try:
@@ -375,19 +385,12 @@ class TestEgressFWRules(cloudstackTestCase):
                 self.debug('remove egress rule id=%s' % self.egressruleid)
                 self.deleteEgressRule()
             self.debug("Cleaning up the resources")
-            self.virtual_machine.delete(self.apiclient)
-            wait_for_cleanup(self.apiclient, ["expunge.interval", "expunge.delay"])
 
-            retriesCount = 5
-            while True:
-                vms = list_virtual_machines(self.apiclient, id=self.virtual_machine.id)
-                if vms is None:
-                    break
-                elif retriesCount == 0:
-                    self.fail("Failed to delete/expunge VM")
-
-                time.sleep(10)
-                retriesCount -= 1
+            if self.virtual_machine is not None:
+                if str(self.vm_list[0].state).lower() == "running":
+                    self.virtual_machine.delete(self.apiclient)
+                # When vm is deployed in error state, it is automatically expunged
+                wait_for_cleanup(self.apiclient, ["expunge.interval", "expunge.delay"])
 
             self.network.delete(self.apiclient)
             self.debug("Sleep for Network cleanup to complete.")
@@ -395,7 +398,7 @@ class TestEgressFWRules(cloudstackTestCase):
             cleanup_resources(self.apiclient, reversed(self.cleanup))
             self.debug("Cleanup complete!")
         except Exception as e:
-            self.fail("Warning! Cleanup failed: %s" % e)            
+            self.fail("Warning! Cleanup failed: %s" % e)
 
     @attr(tags = ["advanced"])
     def test_01_egress_fr1(self):
