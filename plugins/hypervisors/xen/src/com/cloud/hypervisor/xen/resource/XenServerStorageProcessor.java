@@ -1167,6 +1167,16 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
     }
 
+    protected Long getSnapshotSize(Connection conn, String primaryStorageSRUuid, String snapshotUuid, Boolean isISCSI, int wait) {
+        String physicalSize = hypervisorResource.callHostPluginAsync(conn, "vmopsSnapshot", "getSnapshotSize", wait,
+                "primaryStorageSRUuid", primaryStorageSRUuid, "snapshotUuid", snapshotUuid, "isISCSI", isISCSI.toString());
+        if (physicalSize == null || physicalSize.isEmpty()) {
+            return (long) 0;
+        } else {
+            return Long.parseLong(physicalSize);
+        }
+    }
+
     protected String backupSnapshot(Connection conn, String primaryStorageSRUuid, String localMountPoint, String path, String secondaryStorageMountPath, String snapshotUuid, String prevBackupUuid, Boolean isISCSI, int wait) {
         String backupSnapshotUuid = null;
 
@@ -1196,7 +1206,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             if (status != null && status.equalsIgnoreCase("1") && backupSnapshotUuid != null) {
                 s_logger.debug("Successfully copied backupUuid: " + backupSnapshotUuid
                         + " to secondary storage");
-                return backupSnapshotUuid;
+                return results;
             } else {
                 errMsg = "Could not copy backupUuid: " + backupSnapshotUuid
                         + " from primary storage " + primaryStorageSRUuid + " to secondary storage "
@@ -1291,6 +1301,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
         // By default assume failure
         String details = null;
         String snapshotBackupUuid = null;
+        Long physicalSize = null;
         Map<String, String> options = cmd.getOptions();
         boolean fullbackup = Boolean.parseBoolean(options.get("fullSnapshot"));
         try {
@@ -1340,6 +1351,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
                     snapshotSr = hypervisorResource.createNfsSRbyURI(conn, new URI(snapshotMountpoint), false);
                     VDI backedVdi = hypervisorResource.cloudVDIcopy(conn, snapshotVdi, snapshotSr, wait);
                     snapshotBackupUuid = backedVdi.getUuid(conn);
+                    String primarySRuuid = snapshotSr.getUuid(conn);
+                    physicalSize = getSnapshotSize(conn, primarySRuuid, snapshotBackupUuid, isISCSI, wait);
 
                     if( destStore instanceof SwiftTO) {
                         try {
@@ -1390,9 +1403,12 @@ public class XenServerStorageProcessor implements StorageProcessor {
                         throw new CloudRuntimeException("S3 upload of snapshots " + snapshotPaUuid + " failed");
                     }
                 } else {
-                    snapshotBackupUuid = backupSnapshot(conn, primaryStorageSRUuid, localMountPoint, folder,
+                    String results = backupSnapshot(conn, primaryStorageSRUuid, localMountPoint, folder,
                             secondaryStorageMountPath, snapshotUuid, prevBackupUuid, isISCSI, wait);
 
+                    String[] tmp = results.split("#");
+                    snapshotBackupUuid = tmp[1];
+                    physicalSize = Long.parseLong(tmp[2]);
                     finalPath = folder + File.separator + snapshotBackupUuid;
                 }
             }
@@ -1401,6 +1417,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
             SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
             newSnapshot.setPath(finalPath);
+            newSnapshot.setPhysicalSize(physicalSize);
             if (fullbackup) {
                 newSnapshot.setParentSnapshotPath(null);
             } else {
