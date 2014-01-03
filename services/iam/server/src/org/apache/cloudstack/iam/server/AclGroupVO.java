@@ -50,6 +50,9 @@ public class AclGroupVO implements AclGroup {
     @Column(name = "path")
     private String path;
 
+    @Column(name = "account_id")
+    private long accountId;
+
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
@@ -82,12 +85,22 @@ public class AclGroupVO implements AclGroup {
         return description;
     }
 
+    @Override
     public String getPath() {
         return path;
     }
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    @Override
+    public long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(long acctId) {
+        accountId = acctId;
     }
 
     @Override

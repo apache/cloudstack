@@ -36,14 +36,14 @@ import org.apache.cloudstack.iam.server.dao.AclGroupPolicyMapDao;
 import org.apache.cloudstack.iam.server.dao.AclPolicyDao;
 import org.apache.cloudstack.iam.server.dao.AclPolicyPermissionDao;
 
-import com.cloud.event.ActionEvent;
-import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
@@ -204,6 +204,52 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         return group;
     }
 
+    @Override
+    public List<Long> listAccountsByGroup(long groupId) {
+        List<AclGroupAccountMapVO> grpAcctMap = _aclGroupAccountMapDao.listByGroupId(groupId);
+        if (grpAcctMap == null || grpAcctMap.size() == 0) {
+            return new ArrayList<Long>();
+        }
+
+        List<Long> accts = new ArrayList<Long>();
+        for (AclGroupAccountMapVO grpAcct : grpAcctMap) {
+            accts.add(grpAcct.getAccountId());
+        }
+        return accts;
+    }
+
+    @Override
+    public Pair<List<AclGroup>, Integer> listAclGroups(Long aclGroupId, String aclGroupName, String path, Long startIndex, Long pageSize) {
+        if (aclGroupId != null) {
+            AclGroup group = _aclGroupDao.findById(aclGroupId);
+            if (group == null) {
+                throw new InvalidParameterValueException("Unable to find acl group by id " + aclGroupId);
+            }
+        }
+
+        Filter searchFilter = new Filter(AclGroupVO.class, "id", true, startIndex, pageSize);
+
+        SearchBuilder<AclGroupVO> sb = _aclGroupDao.createSearchBuilder();
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("path", sb.entity().getPath(), SearchCriteria.Op.LIKE);
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<AclGroupVO> sc = sb.create();
+
+        if (aclGroupName != null) {
+            sc.setParameters("name", aclGroupName);
+        }
+
+        if (aclGroupId != null) {
+            sc.setParameters("id", aclGroupId);
+        }
+
+        sc.setParameters("path", path + "%");
+
+        Pair<List<AclGroupVO>, Integer> groups = _aclGroupDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<AclGroup>, Integer>(new ArrayList<AclGroup>(groups.first()), groups.second());
+    }
+
     @DB
     @Override
     public AclPolicy createAclPolicy(final String aclPolicyName, final String description, final Long parentPolicyId) {
@@ -302,6 +348,60 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         List<AclPolicyVO> policies = _aclPolicyDao.customSearch(sc, null);
 
         return new ArrayList<AclPolicy>(policies);
+    }
+
+    @Override
+    public List<AclPolicy> listAclPoliciesByGroup(long groupId) {
+        List<AclGroupPolicyMapVO> policyGrpMap = _aclGroupPolicyMapDao.listByGroupId(groupId);
+        if (policyGrpMap == null || policyGrpMap.size() == 0) {
+            return new ArrayList<AclPolicy>();
+        }
+
+        List<Long> policyIds = new ArrayList<Long>();
+        for (AclGroupPolicyMapVO pg : policyGrpMap) {
+            policyIds.add(pg.getAclPolicyId());
+        }
+
+        SearchBuilder<AclPolicyVO> sb = _aclPolicyDao.createSearchBuilder();
+        sb.and("ids", sb.entity().getId(), Op.IN);
+        SearchCriteria<AclPolicyVO> sc = sb.create();
+        sc.setParameters("ids", policyIds.toArray(new Object[policyIds.size()]));
+        List<AclPolicyVO> policies = _aclPolicyDao.customSearch(sc, null);
+
+        return new ArrayList<AclPolicy>(policies);
+    }
+
+    @Override
+    public Pair<List<AclPolicy>, Integer> listAclPolicies(Long aclPolicyId, String aclPolicyName, String path, Long startIndex, Long pageSize) {
+
+        if (aclPolicyId != null) {
+            AclPolicy policy = _aclPolicyDao.findById(aclPolicyId);
+            if (policy == null) {
+                throw new InvalidParameterValueException("Unable to find acl policy by id " + aclPolicyId);
+            }
+        }
+
+        Filter searchFilter = new Filter(AclPolicyVO.class, "id", true, startIndex, pageSize);
+
+        SearchBuilder<AclPolicyVO> sb = _aclPolicyDao.createSearchBuilder();
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("path", sb.entity().getPath(), SearchCriteria.Op.LIKE);
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<AclPolicyVO> sc = sb.create();
+
+        if (aclPolicyName != null) {
+            sc.setParameters("name", aclPolicyName);
+        }
+
+        if (aclPolicyId != null) {
+            sc.setParameters("id", aclPolicyId);
+        }
+
+        sc.setParameters("path", path + "%");
+
+        Pair<List<AclPolicyVO>, Integer> policies = _aclPolicyDao.searchAndCount(sc, searchFilter);
+        return new Pair<List<AclPolicy>, Integer>(new ArrayList<AclPolicy>(policies.first()), policies.second());
     }
 
     @DB
@@ -525,6 +625,14 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
             }
         }
         return entityIds;
+    }
+
+    @Override
+    public List<AclPolicyPermission> listPolicyPermissions(long policyId) {
+        List<AclPolicyPermissionVO> pp = _policyPermissionDao.listByPolicy(policyId);
+        List<AclPolicyPermission> pl = new ArrayList<AclPolicyPermission>();
+        pl.addAll(pp);
+        return pl;
     }
 
     @Override

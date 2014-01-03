@@ -25,4 +25,8 @@ public interface AclGroup {
     long getId();
 
     String getUuid();
+
+    String getPath();
+
+    long getAccountId();
 }

@@ -29,4 +29,8 @@ public interface AclPolicy {
     long getId();
 
     String getUuid();
+
+    String getPath();
+
+    long getAccountId();
 }

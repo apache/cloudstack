@@ -19,10 +19,10 @@ package org.apache.cloudstack.acl.api.response;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.acl.AclEntityType;
-import org.apache.cloudstack.acl.AclPolicyPermission;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.iam.api.AclPolicyPermission;
 
 import com.cloud.serializer.Param;
 

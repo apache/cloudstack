@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.acl.api;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
@@ -24,13 +25,16 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.api.response.AclGroupResponse;
+import org.apache.cloudstack.acl.api.response.AclPermissionResponse;
 import org.apache.cloudstack.acl.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.iam.api.AclGroup;
 import org.apache.cloudstack.iam.api.AclPolicy;
 import org.apache.cloudstack.iam.api.AclPolicyPermission;
@@ -39,6 +43,7 @@ import org.apache.cloudstack.iam.api.IAMService;
 
 import com.cloud.api.ApiServerService;
 import com.cloud.domain.Domain;
+import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -47,7 +52,11 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -66,6 +75,12 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
 
     @Inject
     DomainDao _domainDao;
+
+    @Inject
+    AccountDao _accountDao;
+
+    @Inject
+    AccountManager _accountMgr;
 
 
     public static HashMap<String, Class> entityClassMap = new HashMap<String, Class>();
@@ -278,27 +293,142 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
 
     @Override
     public AclPolicyResponse createAclPolicyResponse(AclPolicy policy) {
-        // TODO Auto-generated method stub
-        return null;
+        AclPolicyResponse response = new AclPolicyResponse();
+        response.setId(policy.getUuid());
+        response.setName(policy.getName());
+        response.setDescription(policy.getDescription());
+        String domainPath = policy.getPath();
+        if (domainPath != null) {
+            DomainVO domain = _domainDao.findDomainByPath(domainPath);
+            if (domain != null) {
+                response.setDomainId(domain.getUuid());
+                response.setDomainName(domain.getName());
+            }
+        }
+        long accountId = policy.getAccountId();
+        AccountVO owner = _accountDao.findById(accountId);
+        if (owner != null) {
+            response.setAccountName(owner.getAccountName());
+        }
+        // find permissions associated with this policy
+        List<AclPolicyPermission> permissions = _iamSrv.listPolicyPermissions(policy.getId());
+        if (permissions != null && permissions.size() > 0) {
+            for (AclPolicyPermission permission : permissions) {
+                AclPermissionResponse perm = new AclPermissionResponse();
+                perm.setAction(permission.getAction());
+                perm.setEntityType(AclEntityType.valueOf(permission.getEntityType()));
+                perm.setScope(PermissionScope.valueOf(permission.getScope()));
+                perm.setScopeId(permission.getScopeId());
+                perm.setPermission(permission.getPermission());
+                response.addPermission(perm);
+            }
+        }
+        response.setObjectName("aclpolicy");
+        return response;
     }
 
     @Override
     public AclGroupResponse createAclGroupResponse(AclGroup group) {
-        // TODO Auto-generated method stub
-        return null;
+        AclGroupResponse response = new AclGroupResponse();
+        response.setId(group.getUuid());
+        response.setName(group.getName());
+        response.setDescription(group.getDescription());
+        String domainPath = group.getPath();
+        if (domainPath != null) {
+            DomainVO domain = _domainDao.findDomainByPath(domainPath);
+            if (domain != null) {
+                response.setDomainId(domain.getUuid());
+                response.setDomainName(domain.getName());
+            }
+        }
+        long accountId = group.getAccountId();
+        AccountVO owner = _accountDao.findById(accountId);
+        if (owner != null) {
+            response.setAccountName(owner.getAccountName());
+        }
+        // find all the members in this group
+        List<Long> members = _iamSrv.listAccountsByGroup(group.getId());
+        if (members != null && members.size() > 0) {
+            for (Long member : members) {
+                AccountVO mem = _accountDao.findById(accountId);
+                if (mem != null) {
+                    response.addMemberAccount(mem.getAccountName());
+                }
+            }
+        }
+
+        // find all the policies attached to this group
+        List<AclPolicy> policies = _iamSrv.listAclPoliciesByGroup(group.getId());
+        if (policies != null && policies.size() > 0) {
+            for (AclPolicy policy : policies) {
+                response.addPolicy(policy.getName());
+            }
+        }
+
+        response.setObjectName("aclgroup");
+        return response;
+
     }
 
     @Override
-    public ListResponse<org.apache.cloudstack.acl.api.response.AclGroupResponse> listAclGroups(Long aclGroupId, String aclGroupName, Long domainId, Long startIndex, Long pageSize) {
-        // TODO Auto-generated method stub
-        return null;
+    public ListResponse<AclGroupResponse> listAclGroups(Long aclGroupId, String aclGroupName, Long domainId, Long startIndex, Long pageSize) {
+        // acl check
+        Account caller = CallContext.current().getCallingAccount();
+
+        Domain domain = null;
+        if (domainId != null) {
+            domain = _domainDao.findById(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
+            }
+
+            _accountMgr.checkAccess(caller, domain);
+        } else {
+            domain = _domainDao.findById(caller.getDomainId());
+        }
+        String domainPath = domain.getPath();
+        // search for groups
+        Pair<List<AclGroup>, Integer> result = _iamSrv.listAclGroups(aclGroupId, aclGroupName, domainPath, startIndex, pageSize);
+        // generate group response
+        ListResponse<AclGroupResponse> response = new ListResponse<AclGroupResponse>();
+        List<AclGroupResponse> groupResponses = new ArrayList<AclGroupResponse>();
+        for (AclGroup group : result.first()) {
+            AclGroupResponse resp = createAclGroupResponse(group);
+            groupResponses.add(resp);
+        }
+        response.setResponses(groupResponses, result.second());
+        return response;
     }
 
     @Override
-    public ListResponse<org.apache.cloudstack.acl.api.response.AclPolicyResponse> listAclPolicies(Long aclPolicyId, String aclPolicyName, Long domainId, Long startIndex,
+    public ListResponse<AclPolicyResponse> listAclPolicies(Long aclPolicyId, String aclPolicyName, Long domainId, Long startIndex,
             Long pageSize) {
-        // TODO Auto-generated method stub
-        return null;
+        // acl check
+        Account caller = CallContext.current().getCallingAccount();
+
+        Domain domain = null;
+        if (domainId != null) {
+            domain = _domainDao.findById(domainId);
+            if (domain == null) {
+                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
+            }
+
+            _accountMgr.checkAccess(caller, domain);
+        } else {
+            domain = _domainDao.findById(caller.getDomainId());
+        }
+        String domainPath = domain.getPath();
+        // search for policies
+        Pair<List<AclPolicy>, Integer> result = _iamSrv.listAclPolicies(aclPolicyId, aclPolicyName, domainPath, startIndex, pageSize);
+        // generate policy response
+        ListResponse<AclPolicyResponse> response = new ListResponse<AclPolicyResponse>();
+        List<AclPolicyResponse> policyResponses = new ArrayList<AclPolicyResponse>();
+        for (AclPolicy policy : result.first()) {
+            AclPolicyResponse resp = createAclPolicyResponse(policy);
+            policyResponses.add(resp);
+        }
+        response.setResponses(policyResponses, result.second());
+        return response;
     }
 
 }

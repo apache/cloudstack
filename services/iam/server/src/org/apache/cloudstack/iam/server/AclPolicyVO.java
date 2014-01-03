@@ -49,8 +49,8 @@ public class AclPolicyVO implements AclPolicy {
     @Column(name = "uuid")
     private String uuid;
 
-    @Column(name = "domain_id")
-    private long domainId;
+    @Column(name = "path")
+    private String path;
 
     @Column(name = "account_id")
     private long accountId;
@@ -109,14 +109,16 @@ public class AclPolicyVO implements AclPolicy {
         return created;
     }
 
-    public long getDomainId() {
-        return domainId;
+    @Override
+    public String getPath() {
+        return path;
     }
 
-    public void setDomainId(long domainId) {
-        this.domainId = domainId;
+    public void setPath(String path) {
+        this.path = path;
     }
 
+    @Override
     public long getAccountId() {
         return accountId;
     }

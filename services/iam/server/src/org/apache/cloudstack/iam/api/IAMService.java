@@ -20,6 +20,8 @@ import java.util.List;
 
 import org.apache.cloudstack.iam.api.AclPolicyPermission.Permission;
 
+import com.cloud.utils.Pair;
+
 public interface IAMService {
 
     /* ACL group related interfaces */
@@ -33,12 +35,20 @@ public interface IAMService {
 
     AclGroup removeAccountsFromGroup(List<Long> acctIds, Long groupId);
 
+    List<Long> listAccountsByGroup(long groupId);
+
+    Pair<List<AclGroup>, Integer> listAclGroups(Long aclGroupId, String aclGroupName, String path, Long startIndex, Long pageSize);
+
     /* ACL Policy related interfaces */
     AclPolicy createAclPolicy(String aclPolicyName, String description, Long parentPolicyId);
 
     boolean deleteAclPolicy(long aclPolicyId);
 
     List<AclPolicy> listAclPolicies(long accountId);
+
+    List<AclPolicy> listAclPoliciesByGroup(long groupId);
+
+    Pair<List<AclPolicy>, Integer> listAclPolicies(Long aclPolicyId, String aclPolicyName, String path, Long startIndex, Long pageSize);
 
     AclGroup attachAclPoliciesToGroup(List<Long> policyIds, Long groupId);
 
@@ -51,6 +61,8 @@ public interface IAMService {
             String action);
 
     AclPolicy getResourceOwnerPolicy();
+
+    List<AclPolicyPermission> listPolicyPermissions(long policyId);
 
     List<AclPolicyPermission> listPolicyPermissionsByScope(long policyId, String action, String scope);
 
