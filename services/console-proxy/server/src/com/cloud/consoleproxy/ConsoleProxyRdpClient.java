@@ -57,8 +57,6 @@ public class ConsoleProxyRdpClient extends ConsoleProxyClientBase {
     private Thread _worker;
     private volatile boolean _workerDone = false;
 
-    private int _lastModifierStates = 0;
-
     private AwtMouseEventSource _mouseEventSource = null;
     private AwtKeyEventSource _keyEventSource = null;
 
@@ -203,26 +201,19 @@ public class ConsoleProxyRdpClient extends ConsoleProxyClientBase {
 
     private int mapModifier(int modifiers) {
         int mod = 0;
-        if ((modifiers & SHIFT_KEY_MASK) != (_lastModifierStates & SHIFT_KEY_MASK)) {
-            if ((modifiers & SHIFT_KEY_MASK) != 0)
-                mod = mod | InputEvent.SHIFT_DOWN_MASK;
-        }
 
-        if ((modifiers & CTRL_KEY_MASK) != (_lastModifierStates & CTRL_KEY_MASK)) {
-            if ((modifiers & CTRL_KEY_MASK) != 0)
-                mod = mod | InputEvent.CTRL_DOWN_MASK;
-        }
+        if ((modifiers & SHIFT_KEY_MASK) != 0)
+            mod = mod | InputEvent.SHIFT_DOWN_MASK;
 
-        if ((modifiers & META_KEY_MASK) != (_lastModifierStates & META_KEY_MASK)) {
-            if ((modifiers & META_KEY_MASK) != 0)
-                mod = mod | InputEvent.META_DOWN_MASK;
-        }
+        if ((modifiers & CTRL_KEY_MASK) != 0)
+            mod = mod | InputEvent.CTRL_DOWN_MASK;
 
-        if ((modifiers & ALT_KEY_MASK) != (_lastModifierStates & ALT_KEY_MASK)) {
-            if ((modifiers & ALT_KEY_MASK) != 0)
-                mod = mod | InputEvent.ALT_DOWN_MASK;
-        }
-        _lastModifierStates = mod;
+        if ((modifiers & META_KEY_MASK) != 0)
+            mod = mod | InputEvent.META_DOWN_MASK;
+
+        if ((modifiers & ALT_KEY_MASK) != 0)
+            mod = mod | InputEvent.ALT_DOWN_MASK;
+
         return mod;
     }
 

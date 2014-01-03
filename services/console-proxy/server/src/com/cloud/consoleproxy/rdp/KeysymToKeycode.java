@@ -20,7 +20,7 @@ import java.awt.event.KeyEvent;
 
 public class KeysymToKeycode {
 
-    // this keymap is taken from http://openwonderland.googlecode.com/svn/trunk/modules/foundation/xremwin/src/classes/org/jdesktop/wonderland/modules/xremwin/client/KeycodeToKeysym.java
+    // some of this keymap is taken from http://openwonderland.googlecode.com/svn/trunk/modules/foundation/xremwin/src/classes/org/jdesktop/wonderland/modules/xremwin/client/KeycodeToKeysym.java
     private final static int[][] map = {
             /* XK_BackSpace         */{0xFF08, KeyEvent.VK_BACK_SPACE},
             /* XK_Tab               */{0xFF09, KeyEvent.VK_TAB},
@@ -101,10 +101,33 @@ public class KeysymToKeycode {
             /* XK_x                 */{0x0078, KeyEvent.VK_X},
             /* XK_y                 */{0x0079, KeyEvent.VK_Y},
             /* XK_z                 */{0x007a, KeyEvent.VK_Z},
+            {0x0060, KeyEvent.VK_BACK_QUOTE},
+            {0x007e, KeyEvent.VK_BACK_QUOTE},
+            {0x0021, KeyEvent.VK_1},
+            {0x0040, KeyEvent.VK_2},
+            {0x0023, KeyEvent.VK_3},
+            {0x0024, KeyEvent.VK_4},
+            {0x0025, KeyEvent.VK_5},
+            {0x005e, KeyEvent.VK_6},
+            {0x0026, KeyEvent.VK_7},
+            {0x002A, KeyEvent.VK_8},
+            {0x0028, KeyEvent.VK_9},
+            {0x0029, KeyEvent.VK_0},
+            {0x005f, KeyEvent.VK_MINUS},
+            {0x002b, KeyEvent.VK_EQUALS},
+            {0x007b, KeyEvent.VK_OPEN_BRACKET},
+            {0x007d, KeyEvent.VK_CLOSE_BRACKET},
+            {0x007c, KeyEvent.VK_BACK_SLASH},
+            {0x003a, KeyEvent.VK_SEMICOLON},
+            {0x0027, KeyEvent.VK_QUOTE},
+            {0x0022, KeyEvent.VK_QUOTE},
+            {0x003c, KeyEvent.VK_COMMA},
+            {0x003e, KeyEvent.VK_PERIOD},
+            {0x003f, KeyEvent.VK_SLASH},
     };
 
     public static int getKeycode(int keysym) {
-        for (int i = 0; i < (map.length - 1); i++) {
+        for (int i = 0; i < (map.length); i++) {
             if (map[i][0] == keysym) {
                 return map[i][1];
             }

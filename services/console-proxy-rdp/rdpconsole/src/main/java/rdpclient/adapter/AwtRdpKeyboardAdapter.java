@@ -21,7 +21,6 @@ import java.awt.event.KeyEvent;
 import streamer.BaseElement;
 import streamer.ByteBuffer;
 import streamer.Link;
-
 import common.KeyOrder;
 
 public class AwtRdpKeyboardAdapter extends BaseElement {
@@ -344,7 +343,7 @@ public class AwtRdpKeyboardAdapter extends BaseElement {
 
         default:
             System.err.println("Key is not mapped: " + event + ".");
-            return 57; // Space
+            return event.getKeyCode();
         }
     }
 
