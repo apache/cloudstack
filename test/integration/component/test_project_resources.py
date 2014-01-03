@@ -376,7 +376,7 @@ class TestNetwork(cloudstackTestCase):
                                             )
         cls._cleanup = [
                         cls.account,
-                        cls.service_offering,
+                        cls.domain
                         ]
         return
 
@@ -543,8 +543,6 @@ class TestNetwork(cloudstackTestCase):
 
         # Wait for expunge interval to cleanup VM
         wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
-
-        self.cleanup.append(domain_network)
         return
 
 
