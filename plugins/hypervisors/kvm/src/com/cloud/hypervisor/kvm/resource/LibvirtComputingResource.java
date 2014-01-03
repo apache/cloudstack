@@ -1092,7 +1092,7 @@ ServerResource {
         command.add("-c");
         command.add("ovs-vsctl br-exists " + networkName);
         String result = command.execute(null);
-        if ("Ok".equals(result)) {
+        if ("0".equals(result)) {
             return true;
         } else {
             return false;
