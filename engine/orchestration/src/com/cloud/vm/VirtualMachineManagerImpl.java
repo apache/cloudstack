@@ -183,7 +183,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
@@ -4158,9 +4158,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
     		@Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
     	    	VmWorkJobVO workJob = null;
 
     	        _vmDao.lockRow(vm.getId(), true);
@@ -4191,16 +4191,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
     	    	}
 
-	            // Transaction syntax sugar has a cost here
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
+                return new Object[] {workJob, new Long(workJob.getId())};
     		}
     	});
 
-    	final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmStateSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmStateSyncOutcome((VmWorkJobVO)result[0],
         	VirtualMachine.PowerState.PowerOn, vm.getId(), null);
     }
 
@@ -4211,9 +4209,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
     		@Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
 		        _vmDao.lockRow(vm.getId(), true);
 
 		        List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
@@ -4243,15 +4241,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 		    	}
 
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
+                return new Object[] {workJob, new Long(workJob.getId())};
     		}
 		});
 
-    	final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmStateSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmStateSyncOutcome((VmWorkJobVO)result[0],
         	VirtualMachine.PowerState.PowerOff, vm.getId(), null);
     }
 
@@ -4264,9 +4261,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
     		@Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
 		        _vmDao.lockRow(vm.getId(), true);
 
 		        List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
@@ -4296,15 +4293,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 		    	}
 
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
+                return new Object[] {workJob, new Long(workJob.getId())};
     		}
 		});
 
-    	final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmJobVirtualMachineOutcome((VmWorkJobVO)result[0],
         	vm.getId());
     }
 
@@ -4315,9 +4311,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
     		@Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
 
 		        _vmDao.lockRow(vm.getId(), true);
 
@@ -4347,15 +4343,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 		        }
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
+                return new Object[] {workJob, new Long(workJob.getId())};
 	    	}
     	});
 
-    	final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmStateSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmStateSyncOutcome((VmWorkJobVO)result[0],
         	VirtualMachine.PowerState.PowerOn, vm.getId(), vm.getPowerHostId());
     }
 
@@ -4369,9 +4364,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
     		@Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
 
 		        _vmDao.lockRow(vm.getId(), true);
 
@@ -4402,15 +4397,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 		        }
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
+                return new Object[] {workJob, new Long(workJob.getId())};
 	    	}
     	});
 
-    	final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmStateSyncOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmStateSyncOutcome((VmWorkJobVO)result[0],
         	VirtualMachine.PowerState.PowerOn, vm.getId(), destHostId);
     }
 
@@ -4423,9 +4417,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
     		@Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
 
 		        _vmDao.lockRow(vm.getId(), true);
 
@@ -4456,15 +4450,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 		        }
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
+
+                return new Object[] {workJob, new Long(workJob.getId())};
 	    	}
     	});
 
-    	final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
+        return new VmJobVirtualMachineOutcome((VmWorkJobVO)result[0], vm.getId());
     }
 
     public Outcome<VirtualMachine> migrateVmStorageThroughJobQueue(
@@ -4476,9 +4470,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
     		@Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
 
 		        _vmDao.lockRow(vm.getId(), true);
 
@@ -4509,15 +4503,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 		        }
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
+
+                return new Object[] {workJob, new Long(workJob.getId())};
 	    	}
     	});
 
-    	final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
+        return new VmJobVirtualMachineOutcome((VmWorkJobVO)result[0], vm.getId());
     }
 
     public Outcome<VirtualMachine> addVmToNetworkThroughJobQueue(
@@ -4527,9 +4521,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final User user = context.getCallingUser();
         final Account account = context.getCallingAccount();
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
     		@Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
 
 		        _vmDao.lockRow(vm.getId(), true);
 
@@ -4560,15 +4554,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 		        }
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
+                return new Object[] {workJob, new Long(workJob.getId())};
 	    	}
     	});
 
-    	final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
+        return new VmJobVirtualMachineOutcome((VmWorkJobVO)result[0], vm.getId());
     }
 
     public Outcome<VirtualMachine> removeNicFromVmThroughJobQueue(
@@ -4578,9 +4571,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final User user = context.getCallingUser();
         final Account account = context.getCallingAccount();
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
+    	Object[] result = Transaction.execute(new TransactionCallback<Object[]> () {
     		@Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
 
 		        _vmDao.lockRow(vm.getId(), true);
 
@@ -4611,15 +4604,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 		        }
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
+		        return new Object[] { workJob, new Long(workJob.getId()) };
 	    	}
     	});
 
-    	final long jobId = (Long)context.getContextParameter("jobId");
+    	final long jobId = (Long)result[1];
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
+        return new VmJobVirtualMachineOutcome((VmWorkJobVO)result[0], vm.getId());
     }
 
     public Outcome<VirtualMachine> removeVmFromNetworkThroughJobQueue(
@@ -4629,9 +4621,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final User user = context.getCallingUser();
         final Account account = context.getCallingAccount();
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
     		@Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
 
 		        _vmDao.lockRow(vm.getId(), true);
 
@@ -4662,15 +4654,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 		        }
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
+                return new Object[] {workJob, new Long(workJob.getId())};
 	    	}
     	});
 
-    	final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
+        return new VmJobVirtualMachineOutcome((VmWorkJobVO)result[0], vm.getId());
     }
 
     public Outcome<VirtualMachine> reconfigureVmThroughJobQueue(
@@ -4682,9 +4673,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
-    	Transaction.execute(new TransactionCallbackNoReturn () {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
     		@Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
 
 		        _vmDao.lockRow(vm.getId(), true);
 
@@ -4715,15 +4706,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 		        }
-	            context.putContextParameter("workJob", workJob);
-	            context.putContextParameter("jobId", new Long(workJob.getId()));
+                return new Object[] {workJob, new Long(workJob.getId())};
 	    	}
     	});
 
-    	final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
     	AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"), vm.getId());
+        return new VmJobVirtualMachineOutcome((VmWorkJobVO)result[0], vm.getId());
     }
 
     private Pair<JobInfo.Status, String> orchestrateStart(VmWorkStart work) throws Exception {

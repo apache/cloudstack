@@ -78,7 +78,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmVO;
@@ -824,9 +824,9 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
         final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
 
-        Transaction.execute(new TransactionCallbackNoReturn() {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
             @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
                 VmWorkJobVO workJob = null;
 
                 _vmInstanceDao.lockRow(vm.getId(), true);
@@ -848,16 +848,14 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
-                // Transaction syntax sugar has a cost here
-                context.putContextParameter("workJob", workJob);
-                context.putContextParameter("jobId", new Long(workJob.getId()));
+                return new Object[] {workJob, new Long(workJob.getId())};
             }
         });
 
-        final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobVMSnapshotOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmJobVMSnapshotOutcome((VmWorkJobVO)result[0],
                 vmSnapshotId);
     }
 
@@ -869,9 +867,9 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
         final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
 
-        Transaction.execute(new TransactionCallbackNoReturn() {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
             @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
                 VmWorkJobVO workJob = null;
 
                 _vmInstanceDao.lockRow(vm.getId(), true);
@@ -893,16 +891,14 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
-                // Transaction syntax sugar has a cost here
-                context.putContextParameter("workJob", workJob);
-                context.putContextParameter("jobId", new Long(workJob.getId()));
+                return new Object[] {workJob, new Long(workJob.getId())};
             }
         });
 
-        final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobVMSnapshotOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmJobVMSnapshotOutcome((VmWorkJobVO)result[0],
                 vmSnapshotId);
     }
 
@@ -914,9 +910,9 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
         final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
 
-        Transaction.execute(new TransactionCallbackNoReturn() {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
             @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
                 VmWorkJobVO workJob = null;
 
                 _vmInstanceDao.lockRow(vm.getId(), true);
@@ -938,16 +934,14 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
-                // Transaction syntax sugar has a cost here
-                context.putContextParameter("workJob", workJob);
-                context.putContextParameter("jobId", new Long(workJob.getId()));
+                return new Object[] {workJob, new Long(workJob.getId())};
             }
         });
 
-        final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobVMSnapshotOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmJobVMSnapshotOutcome((VmWorkJobVO)result[0],
                 vmSnapshotId);
     }
 
@@ -959,9 +953,9 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
         final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
 
-        Transaction.execute(new TransactionCallbackNoReturn() {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
             @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
                 VmWorkJobVO workJob = null;
 
                 _vmInstanceDao.lockRow(vm.getId(), true);
@@ -983,16 +977,14 @@ public class VMSnapshotManagerImpl extends ManagerBase implements VMSnapshotMana
 
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
-                // Transaction syntax sugar has a cost here
-                context.putContextParameter("workJob", workJob);
-                context.putContextParameter("jobId", new Long(workJob.getId()));
+                return new Object[] {workJob, new Long(workJob.getId())};
             }
         });
 
-        final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmJobVirtualMachineOutcome((VmWorkJobVO)result[0],
                 vmId);
     }
 
