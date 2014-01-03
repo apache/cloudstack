@@ -278,6 +278,7 @@ public class SnapshotObject implements SnapshotInfo {
             } else if (answer instanceof CopyCmdAnswer) {
                 SnapshotObjectTO snapshotTO = (SnapshotObjectTO)((CopyCmdAnswer)answer).getNewData();
                 snapshotStore.setInstallPath(snapshotTO.getPath());
+                snapshotStore.setSize(snapshotTO.getPhysicalSize());
                 if (snapshotTO.getParentSnapshotPath() == null) {
                     snapshotStore.setParentSnapshotId(0L);
                 }

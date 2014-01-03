@@ -38,6 +38,7 @@ public class SnapshotObjectTO implements DataTO {
     private long id;
     private boolean quiescevm;
     private String[] parents;
+    private Long physicalSize = (long) 0;
 
 
     public SnapshotObjectTO() {
@@ -92,6 +93,14 @@ public class SnapshotObjectTO implements DataTO {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public Long getPhysicalSize() {
+        return this.physicalSize;
+    }
+
+    public void setPhysicalSize(Long physicalSize ) {
+        this.physicalSize = physicalSize;
     }
 
     public VolumeObjectTO getVolume() {

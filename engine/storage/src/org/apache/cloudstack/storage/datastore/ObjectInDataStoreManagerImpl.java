@@ -115,6 +115,7 @@ public class ObjectInDataStoreManagerImpl implements ObjectInDataStoreManager {
                 ss.setDataStoreId(dataStore.getId());
                 ss.setRole(dataStore.getRole());
                 ss.setVolumeId(snapshotInfo.getVolumeId());
+                ss.setSize(snapshotInfo.getSize()); // this is the virtual size of snapshot in primary storage.
                 SnapshotDataStoreVO snapshotDataStoreVO = snapshotDataStoreDao.findParent(dataStore.getRole(), dataStore.getId(), snapshotInfo.getVolumeId());
                 if (snapshotDataStoreVO != null) {
                     ss.setParentSnapshotId(snapshotDataStoreVO.getSnapshotId());
