@@ -18,6 +18,7 @@ package org.apache.cloudstack.framework.jobs;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobJoinMapVO;
 import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
@@ -103,17 +104,19 @@ public class AsyncJobExecutionContext {
         s_jobMgr.joinJob(_job.getId(), joinJobId);
     }
 
-    public void joinJob(long joinJobId, String wakeupHandler, String wakeupDispatcher, String[] wakeupTopcisOnMessageBus, long wakeupIntervalInMilliSeconds,
-        long timeoutInMilliSeconds) {
+    public void joinJob(long joinJobId, String wakeupHandler, String wakeupDispatcher,
+            String[] wakeupTopcisOnMessageBus, long wakeupIntervalInMilliSeconds, long timeoutInMilliSeconds) {
         assert (_job != null);
-        s_jobMgr.joinJob(_job.getId(), joinJobId, wakeupHandler, wakeupDispatcher, wakeupTopcisOnMessageBus, wakeupIntervalInMilliSeconds, timeoutInMilliSeconds);
+        s_jobMgr.joinJob(_job.getId(), joinJobId, wakeupHandler, wakeupDispatcher, wakeupTopcisOnMessageBus,
+                wakeupIntervalInMilliSeconds, timeoutInMilliSeconds);
     }
 
     //
     // check failure exception before we disjoin the worker job
     // TODO : it is ugly and this will become unnecessary after we switch to full-async mode
     //
-    public void disjoinJob(long joinedJobId) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    public void disjoinJob(long joinedJobId) throws InsufficientCapacityException,
+            ConcurrentOperationException, ResourceUnavailableException {
         assert (_job != null);
 
         AsyncJobJoinMapVO record = s_joinMapDao.getJoinRecord(_job.getId(), joinedJobId);
@@ -170,5 +173,9 @@ public class AsyncJobExecutionContext {
     // This is intended to be package level access for AsyncJobManagerImpl only.
     public static void setCurrentExecutionContext(AsyncJobExecutionContext currentContext) {
         s_currentExectionContext.set(currentContext);
+    }
+
+    public static String getOriginJobContextId() {
+        return String.valueOf(CallContext.current().getContextId());
     }
 }
