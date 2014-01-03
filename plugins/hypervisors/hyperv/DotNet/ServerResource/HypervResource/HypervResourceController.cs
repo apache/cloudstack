@@ -1319,15 +1319,17 @@ namespace HypervResource
                 bool result = false;
                 string details = null;
                 object newData = null;
+                TemplateObjectTO destTemplateObjectTO = null;
+                VolumeObjectTO destVolumeObjectTO = null;
 
                 try
                 {
                     dynamic timeout = cmd.wait;  // TODO: Useful?
 
                     TemplateObjectTO srcTemplateObjectTO = TemplateObjectTO.ParseJson(cmd.srcTO);
-                    TemplateObjectTO destTemplateObjectTO = TemplateObjectTO.ParseJson(cmd.destTO);
+                    destTemplateObjectTO = TemplateObjectTO.ParseJson(cmd.destTO);
                     VolumeObjectTO srcVolumeObjectTO = VolumeObjectTO.ParseJson(cmd.srcTO);
-                    VolumeObjectTO destVolumeObjectTO = VolumeObjectTO.ParseJson(cmd.destTO);
+                    destVolumeObjectTO = VolumeObjectTO.ParseJson(cmd.destTO);
 
                     string destFile = null;
                     if (destTemplateObjectTO != null)
@@ -1469,7 +1471,16 @@ namespace HypervResource
                             {
                                 // TODO: thin provision instead of copying the full file.
                                 File.Copy(srcFile, destFile);
-                                newData = cmd.destTO;
+                                VolumeObjectTO volume = new VolumeObjectTO();
+                                volume.path = destFile;
+                                volume.dataStore = destVolumeObjectTO.dataStore;
+                                volume.name = destVolumeObjectTO.name;
+                                volume.size = ulong.Parse(destVolumeObjectTO.size.ToString());
+                                volume.format = destVolumeObjectTO.format;
+                                volume.nfsDataStore = destVolumeObjectTO.nfsDataStore;
+                                volume.primaryDataStore = destVolumeObjectTO.primaryDataStore;
+                                JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.VolumeObjectTO, volume);
+                                newData = ansObj;
                                 result = true;
                             }
                         }
@@ -1501,7 +1512,12 @@ namespace HypervResource
                                 // doesn't do anything if the directory is already present.
                                 Directory.CreateDirectory(Path.GetDirectoryName(destFile));
                                 File.Copy(srcFile, destFile);
-                                newData = cmd.destTO;
+                                // create volumeto object deserialize and send it 
+                                VolumeObjectTO volume = new VolumeObjectTO();
+                                volume.path = destFile;
+                                volume.size = ulong.Parse(destVolumeObjectTO.size.ToString());
+                                JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.VolumeObjectTO, volume);
+                                newData = ansObj;
                                 result = true;
                             }
                         }
@@ -1533,7 +1549,15 @@ namespace HypervResource
                                 // doesn't do anything if the directory is already present.
                                 Directory.CreateDirectory(Path.GetDirectoryName(destFile));
                                 File.Copy(srcFile, destFile);
-                                newData = cmd.destTO;
+                                TemplateObjectTO destTemplateObject = new TemplateObjectTO();
+                                destTemplateObject.size = srcVolumeObjectTO.size.ToString();
+                                destTemplateObject.format = srcVolumeObjectTO.format;
+                                destTemplateObject.path = destFile;
+                                destTemplateObject.nfsDataStoreTO = destTemplateObjectTO.nfsDataStoreTO;
+                                destTemplateObject.checksum = destTemplateObjectTO.checksum;
+                                newData = destTemplateObject;
+                                JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.TemplateObjectTO, destTemplateObject);
+                                newData = ansObj;
                                 result = true;
                             }
                         }
@@ -1554,7 +1578,7 @@ namespace HypervResource
                 {
                     result = result,
                     details = details,
-                    newData = cmd.destTO,
+                    newData = newData,
                     contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CopyCmdAnswer);
