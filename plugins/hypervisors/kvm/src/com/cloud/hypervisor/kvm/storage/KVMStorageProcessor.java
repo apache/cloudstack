@@ -803,8 +803,13 @@ public class KVMStorageProcessor implements StorageProcessor {
             } catch (Exception ex) {
                 s_logger.debug("Failed to delete snapshots on primary", ex);
             }
-            if (secondaryStoragePool != null) {
-                secondaryStoragePool.delete();
+
+            try {
+                if (secondaryStoragePool != null) {
+                    secondaryStoragePool.delete();
+                }
+            } catch (Exception ex) {
+                s_logger.debug("Failed to delete secondary storage", ex);
             }
         }
     }
