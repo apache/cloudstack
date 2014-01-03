@@ -6965,7 +6965,7 @@
                                         data: data,
                                         success: function(json) {
                                             var systemvmObjs = json.listsystemvmsresponse.systemvm;
-                                            if (systemvmObjs != null) {
+                                            if (systemvmObjs != undefined) {
                                                 $.ajax({
                                                     url: createURL("listHosts&listAll=true"),                                                    
                                                     success: function(json) {
@@ -6981,15 +6981,13 @@
                                                         args.response.success({
                                                             data: systemvmObjs
                                                         });
-                                                    },
-                                                    error: function(json) {
-                                                        args.response.error(parseXMLHttpResponse(json));
                                                     }
                                                 });
+                                            } else {
+                                            	args.response.success({
+                                                    data: []
+                                                });
                                             }
-                                        },
-                                        error: function(json) {
-                                            args.response.error(parseXMLHttpResponse(json));
                                         }
                                     });
                                 },
