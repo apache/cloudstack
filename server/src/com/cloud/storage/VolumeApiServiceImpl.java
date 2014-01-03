@@ -28,7 +28,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -150,7 +149,6 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -1282,7 +1280,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             _asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volumeId);
-            _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, Long.toString(volumeId));
         }
 
         VolumeVO newVol = _volumeDao.findById(volumeOnPrimaryStorage.getId());
@@ -1403,7 +1400,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             _asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volumeId);
-            _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, volumeId.toString());
         }
 
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
@@ -2135,9 +2131,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
 
-        Transaction.execute(new TransactionCallbackNoReturn() {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
             @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
                 VmWorkJobVO workJob = null;
 
                 _vmInstanceDao.lockRow(vm.getId(), true);
@@ -2159,16 +2155,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
-                // Transaction syntax sugar has a cost here
-                context.putContextParameter("workJob", workJob);
-                context.putContextParameter("jobId", new Long(workJob.getId()));
+                AsyncJobVO jobVo = _jobMgr.getAsyncJob(workJob.getId());
+                s_logger.debug("New job " + workJob.getId() + ", result field: " + jobVo.getResult());
+
+                return new Object[] {workJob, new Long(workJob.getId())};
             }
         });
 
-        final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobVolumeOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmJobVolumeOutcome((VmWorkJobVO)result[0],
                 volumeId);
     }
 
@@ -2180,9 +2177,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
 
-        Transaction.execute(new TransactionCallbackNoReturn() {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
             @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
                 VmWorkJobVO workJob = null;
 
                 _vmInstanceDao.lockRow(vm.getId(), true);
@@ -2203,16 +2200,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
-                // Transaction syntax sugar has a cost here
-                context.putContextParameter("workJob", workJob);
-                context.putContextParameter("jobId", new Long(workJob.getId()));
+                return new Object[] {workJob, new Long(workJob.getId())};
             }
         });
 
-        final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobVolumeOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmJobVolumeOutcome((VmWorkJobVO)result[0],
                 volumeId);
     }
 
@@ -2225,9 +2220,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
 
-        Transaction.execute(new TransactionCallbackNoReturn() {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
             @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
                 VmWorkJobVO workJob = null;
 
                 _vmInstanceDao.lockRow(vm.getId(), true);
@@ -2249,16 +2244,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
-                // Transaction syntax sugar has a cost here
-                context.putContextParameter("workJob", workJob);
-                context.putContextParameter("jobId", new Long(workJob.getId()));
+                return new Object[] {workJob, new Long(workJob.getId())};
             }
         });
 
-        final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobVolumeOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmJobVolumeOutcome((VmWorkJobVO)result[0],
                 volumeId);
     }
 
@@ -2271,9 +2264,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
 
-        Transaction.execute(new TransactionCallbackNoReturn() {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
             @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
                 VmWorkJobVO workJob = null;
 
                 _vmInstanceDao.lockRow(vm.getId(), true);
@@ -2295,16 +2288,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
-                // Transaction syntax sugar has a cost here
-                context.putContextParameter("workJob", workJob);
-                context.putContextParameter("jobId", new Long(workJob.getId()));
+                return new Object[] {workJob, new Long(workJob.getId())};
             }
         });
 
-        final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobVolumeOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmJobVolumeOutcome((VmWorkJobVO)result[0],
                 volumeId);
     }
 
@@ -2317,9 +2308,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         final VMInstanceVO vm = _vmInstanceDao.findById(vmId);
 
-        Transaction.execute(new TransactionCallbackNoReturn() {
+        Object[] result = Transaction.execute(new TransactionCallback<Object[]>() {
             @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
+            public Object[] doInTransaction(TransactionStatus status) {
                 VmWorkJobVO workJob = null;
 
                 _vmInstanceDao.lockRow(vm.getId(), true);
@@ -2342,16 +2333,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
 
-                // Transaction syntax sugar has a cost here
-                context.putContextParameter("workJob", workJob);
-                context.putContextParameter("jobId", new Long(workJob.getId()));
+                return new Object[] {workJob, new Long(workJob.getId())};
             }
         });
 
-        final long jobId = (Long)context.getContextParameter("jobId");
+        final long jobId = (Long)result[1];
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
-        return new VmJobSnapshotOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
+        return new VmJobSnapshotOutcome((VmWorkJobVO)result[0],
                 snapshotId);
     }
 
