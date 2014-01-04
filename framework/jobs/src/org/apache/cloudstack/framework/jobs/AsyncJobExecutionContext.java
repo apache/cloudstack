@@ -150,6 +150,10 @@ public class AsyncJobExecutionContext {
 
     public static AsyncJobExecutionContext getCurrentExecutionContext() {
         AsyncJobExecutionContext context = s_currentExectionContext.get();
+        if (context == null) {
+            context = registerPseudoExecutionContext(CallContext.current().getCallingAccountId(),
+                    CallContext.current().getCallingUserId());
+        }
         return context;
     }
 
