@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
+import java.io.Serializable;
 import java.net.URI;
 
 import org.apache.cloudstack.api.InternalIdentity;
@@ -27,7 +28,9 @@ import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.vm.Nic.ReservationStrategy;
 
-public class NicProfile implements InternalIdentity {
+public class NicProfile implements InternalIdentity, Serializable {
+    private static final long serialVersionUID = 4997005771736090304L;
+
     long id;
     long networkId;
     BroadcastDomainType broadcastType;
