@@ -127,6 +127,26 @@ public class AclPolicyResponse extends BaseResponse implements ControlledViewEnt
 
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getDomainId() {
+        return domainId;
+    }
+
+    public String getDomainName() {
+        return domainName;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
     @Override
     public int hashCode() {
         final int prime = 31;

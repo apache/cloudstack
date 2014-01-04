@@ -17,7 +17,6 @@
 package org.apache.cloudstack.acl.api;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import javax.ejb.Local;
@@ -48,14 +47,10 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Volume;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -81,17 +76,6 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
 
     @Inject
     AccountManager _accountMgr;
-
-
-    public static HashMap<String, Class> entityClassMap = new HashMap<String, Class>();
-
-    static {
-        entityClassMap.put("VirtualMachine", UserVm.class);
-        entityClassMap.put("Volume", Volume.class);
-        entityClassMap.put("Template", VirtualMachineTemplate.class);
-        entityClassMap.put("Snapshot", Snapshot.class);
-        // To be filled in later depending on the entity permission grant scope
-    }
 
     @DB
     @Override
@@ -165,70 +149,6 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
         return _iamSrv.removeAclPoliciesFromGroup(policyIds, groupId);
     }
 
-    /*
-    @DB
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_POLICY_GRANT, eventDescription = "Granting permission to Acl Role")
-    public AclP addAclPermissionToAclPolicy(final long aclRoleId, final List<String> apiNames) {
-        Account caller = CallContext.current().getCallingAccount();
-        // get the Acl Role entity
-        AclRole role = _aclPolicyDao.findById(aclRoleId);
-        if (role == null) {
-            throw new InvalidParameterValueException("Unable to find acl role: " + aclRoleId
-                    + "; failed to grant permission to role.");
-        }
-        // check permissions
-        _accountMgr.checkAccess(caller, null, true, role);
-
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-                // add entries in acl_api_permission table
-                for (String api : apiNames) {
-                    AclApiPermissionVO perm = _apiPermissionDao.findByRoleAndApi(aclRoleId, api);
-                    if (perm == null) {
-                        // not there already
-                        perm = new AclApiPermissionVO(aclRoleId, api);
-                        _apiPermissionDao.persist(perm);
-                    }
-                }
-            }
-        });
-            
-        return role;
-
-    }
-
-    @DB
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACL_POLICY_REVOKE, eventDescription = "Revoking permission from Acl Role")
-    public AclRole revokeApiPermissionFromAclRole(final long aclRoleId, final List<String> apiNames) {
-        Account caller = CallContext.current().getCallingAccount();
-        // get the Acl Role entity
-        AclRole role = _aclPolicyDao.findById(aclRoleId);
-        if (role == null) {
-            throw new InvalidParameterValueException("Unable to find acl role: " + aclRoleId
-                    + "; failed to revoke permission from role.");
-        }
-        // check permissions
-        _accountMgr.checkAccess(caller, null, true, role);
-
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-                // remove entries from acl_api_permission table
-                for (String api : apiNames) {
-                    AclApiPermissionVO perm = _apiPermissionDao.findByRoleAndApi(aclRoleId, api);
-                    if (perm != null) {
-                        // not removed yet
-                        _apiPermissionDao.remove(perm.getId());
-                    }
-                }
-            }
-        });
-        return role;
-    }
-    */
 
     @DB
     @Override
@@ -350,7 +270,7 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
         List<Long> members = _iamSrv.listAccountsByGroup(group.getId());
         if (members != null && members.size() > 0) {
             for (Long member : members) {
-                AccountVO mem = _accountDao.findById(accountId);
+                AccountVO mem = _accountDao.findById(member);
                 if (mem != null) {
                     response.addMemberAccount(mem.getAccountName());
                 }

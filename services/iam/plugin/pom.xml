@@ -36,7 +36,7 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-schema</artifactId>
       <version>${project.version}</version>    
-    </dependency>   
+    </dependency> 
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-server</artifactId>
@@ -46,6 +46,13 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-iam</artifactId>
       <version>${project.version}</version>    
-    </dependency>            
+    </dependency>  
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-api</artifactId>
+      <version>${project.version}</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>              
   </dependencies> 
 </project>

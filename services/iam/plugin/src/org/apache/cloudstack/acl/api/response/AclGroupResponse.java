@@ -121,6 +121,30 @@ public class AclGroupResponse extends BaseResponse implements ControlledViewEnti
 
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getDomainId() {
+        return domainId;
+    }
+
+    public String getDomainName() {
+        return domainName;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public Set<String> getAccountNameList() {
+        return accountNameList;
+    }
+
     public void setMemberAccounts(Set<String> accts) {
         accountNameList = accts;
     }
