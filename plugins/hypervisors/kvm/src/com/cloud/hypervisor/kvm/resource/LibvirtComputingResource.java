@@ -4034,6 +4034,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.setCluster(_clusterId);
         cmd.setGatewayIpAddress(_localGateway);
         cmd.setHostVmStateReport(getHostVmStateReport());
+        cmd.setIqn(getIqn());
 
         StartupStorageCommand sscmd = null;
         try {
@@ -4056,6 +4057,32 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return new StartupCommand[] {cmd, sscmd};
         } else {
             return new StartupCommand[] {cmd};
+        }
+    }
+
+    private String getIqn() {
+        try {
+            final String textToFind = "InitiatorName=";
+
+            Script iScsiAdmCmd = new Script(true, "grep", 0, s_logger);
+
+            iScsiAdmCmd.add(textToFind);
+            iScsiAdmCmd.add("/etc/iscsi/initiatorname.iscsi");
+
+            OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+
+            String result = iScsiAdmCmd.execute(parser);
+
+            if (result != null) {
+                return null;
+            }
+
+            String textFound = parser.getLine().trim();
+
+            return textFound.substring(textToFind.length());
+        }
+        catch (Exception ex) {
+            return null;
         }
     }
 
