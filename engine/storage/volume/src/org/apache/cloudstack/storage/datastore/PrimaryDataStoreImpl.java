@@ -23,6 +23,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.log4j.Logger;
 
@@ -358,6 +359,11 @@ public class PrimaryDataStoreImpl implements PrimaryDataStore {
     @Override
     public boolean isInMaintenance() {
         return getStatus() == StoragePoolStatus.PrepareForMaintenance || getStatus() == StoragePoolStatus.Maintenance || getStatus() == StoragePoolStatus.ErrorInMaintenance || getRemoved() != null;
+    }
+
+    @Override
+    public HypervisorType getHypervisor() {
+        return pdsv.getHypervisor();
     }
 
     @Override

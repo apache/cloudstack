@@ -24,6 +24,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -128,7 +129,14 @@ public class SnapshotCommandTest {
         public boolean isInMaintenance() {
             // TODO Auto-generated method stub
             return false;
-        };
+        }
+
+        @Override
+        public Hypervisor.HypervisorType getHypervisor() {
+            return null;
+        }
+
+        ;
     };
 
     SnapshotCommand ssc = new SnapshotCommand(pool,

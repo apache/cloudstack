@@ -40,6 +40,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -4505,7 +4506,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
 		            // save work context info (there are some duplications)
 		            VmWorkStorageMigration workInfo = new VmWorkStorageMigration(user.getId(), account.getId(), vm.getId(),
-                            VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, destPool);
+                            VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, destPool.getId());
 		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
                     _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
@@ -4847,7 +4848,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.info("Unable to find vm " + work.getVmId());
         }
         assert (vm != null);
-        orchestrateStorageMigration(vm.getUuid(), work.getDestStoragePool());
+        StoragePool pool = (PrimaryDataStoreInfo)dataStoreMgr.getPrimaryDataStore(work.getDestStoragePoolId());
+        orchestrateStorageMigration(vm.getUuid(), pool);
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
     }
 

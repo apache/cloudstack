@@ -24,6 +24,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.junit.Test;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
@@ -34,6 +35,11 @@ import com.cloud.storage.StoragePoolStatus;
 
 public class BackupSnapshotCommandTest {
     public StoragePool pool = new StoragePool() {
+        @Override
+        public Hypervisor.HypervisorType getHypervisor() {
+            return null;
+        }
+
         @Override
         public long getId() {
             return 1L;
