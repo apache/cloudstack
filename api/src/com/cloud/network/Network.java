@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +34,7 @@ import com.cloud.utils.fsm.StateObject;
 /**
  * owned by an account.
  */
-public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity {
+public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity, Serializable {
 
     public enum GuestType {
         Shared,
@@ -248,7 +249,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     public class IpAddresses {
     	private String ip4Address;
     	private String ip6Address;
-    	
+
     	public IpAddresses(String ip4Address, String ip6Address) {
     		setIp4Address(ip4Address);
     		setIp6Address(ip6Address);
@@ -270,7 +271,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 			this.ip6Address = ip6Address;
 		}
     }
-    
+
     String getName();
 
     Mode getMode();

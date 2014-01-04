@@ -59,7 +59,6 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.Outcome;
 import org.apache.cloudstack.framework.jobs.dao.VmWorkJobDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
-import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
 import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
@@ -3126,25 +3125,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 throw new RuntimeException("Execution excetion", e);
 			}
 
-	    	AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, outcome.getJob().getId());
-	    	if(jobVo.getResultCode() == JobInfo.Status.SUCCEEDED.ordinal()) {
+            Object jobException = _jobMgr.unmarshallResultObject(outcome.getJob());
+            if (jobException != null) {
+                if (jobException instanceof ResourceUnavailableException)
+                    throw (ResourceUnavailableException)jobException;
+                else if (jobException instanceof ConcurrentOperationException)
+                    throw (ConcurrentOperationException)jobException;
+                else if (jobException instanceof InsufficientCapacityException)
+                    throw (InsufficientCapacityException)jobException;
+                else if (jobException instanceof RuntimeException)
+                    throw (RuntimeException)jobException;
+                else if (jobException instanceof Long)
+                    return requested;
+            }
 
-	    		NicProfile nic = (NicProfile)JobSerializerHelper.fromObjectSerializedString(jobVo.getResult());
-	    		return nic;
-	    	} else {
-                Object jobException = _jobMgr.unmarshallResultObject(outcome.getJob());
-		    	if(jobException != null) {
-		    	    if(jobException instanceof ResourceUnavailableException)
-	                    throw (ResourceUnavailableException)jobException;
-		    		else if(jobException instanceof ConcurrentOperationException)
-			    	    throw (ConcurrentOperationException)jobException;
-		    		else if(jobException instanceof InsufficientCapacityException)
-			    	    throw (InsufficientCapacityException)jobException;
-		    		else if(jobException instanceof RuntimeException)
-			    	    throw (RuntimeException)jobException;
-	            }
-	    	    throw new RuntimeException("Job failed with unhandled exception");
-	    	}
+            throw new RuntimeException("Unexpected job execution result");
     	}
     }
 
@@ -3233,24 +3228,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 throw new RuntimeException("Execution excetion", e);
 			}
 
-	    	AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, outcome.getJob().getId());
+            Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+            if (jobResult != null) {
+                if (jobResult instanceof ResourceUnavailableException)
+                    throw (ResourceUnavailableException)jobResult;
+                else if (jobResult instanceof ConcurrentOperationException)
+                    throw (ConcurrentOperationException)jobResult;
+                else if (jobResult instanceof RuntimeException)
+                    throw (RuntimeException)jobResult;
+                else if (jobResult instanceof Boolean)
+                    return (Boolean)jobResult;
+            }
 
-	    	if(jobVo.getResultCode() == JobInfo.Status.SUCCEEDED.ordinal()) {
-	    		Boolean result = (Boolean)JobSerializerHelper.fromObjectSerializedString(jobVo.getResult());
-	    		return result;
-	    	} else {
-                Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
-                if (jobResult != null) {
-                    if (jobResult instanceof ResourceUnavailableException)
-                        throw (ResourceUnavailableException)jobResult;
-                    else if (jobResult instanceof ConcurrentOperationException)
-                        throw (ConcurrentOperationException)jobResult;
-                    else if (jobResult instanceof RuntimeException)
-                        throw (RuntimeException)jobResult;
-	            }
-
-		    	throw new RuntimeException("Job failed with un-handled exception");
-	    	}
+	    	throw new RuntimeException("Job failed with un-handled exception");
     	}
     }
 
@@ -4558,7 +4548,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
 		            // save work context info (there are some duplications)
 		            VmWorkAddVmToNetwork workInfo = new VmWorkAddVmToNetwork(user.getId(), account.getId(), vm.getId(),
-                            VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, network, requested);
+                            VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, network.getId(), requested);
 		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
                     _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
@@ -4609,7 +4599,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
 		            // save work context info (there are some duplications)
 		            VmWorkRemoveNicFromVm workInfo = new VmWorkRemoveNicFromVm(user.getId(), account.getId(), vm.getId(),
-                            VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, nic);
+                            VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, nic.getId());
 		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
                     _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
@@ -4803,9 +4793,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.info("Unable to find vm " + work.getVmId());
         }
         assert (vm != null);
-        NicProfile nic = orchestrateAddVmToNetwork(vm, work.getNetwork(),
+
+        Network network = _networkDao.findById(work.getNetworkId());
+        NicProfile nic = orchestrateAddVmToNetwork(vm, network,
                 work.getRequestedNicProfile());
-        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(nic));
+
+        return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, _jobMgr.marshallResultObject(new Long(nic.getId())));
     }
 
     private Pair<JobInfo.Status, String> orchestrateRemoveNicFromVm(VmWorkRemoveNicFromVm work) throws Exception {
@@ -4814,7 +4807,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.info("Unable to find vm " + work.getVmId());
         }
         assert (vm != null);
-        boolean result = orchestrateRemoveNicFromVm(vm, work.getNic());
+        NicVO nic = _entityMgr.findById(NicVO.class, work.getNicId());
+        boolean result = orchestrateRemoveNicFromVm(vm, nic);
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED,
                 _jobMgr.marshallResultObject(new Boolean(result)));
     }
