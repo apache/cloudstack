@@ -64,6 +64,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.contrail.api.response.ServiceInstanceResponse;
 import org.apache.cloudstack.network.contrail.model.ServiceInstanceModel;
 import org.apache.cloudstack.network.contrail.model.VirtualMachineModel;
+import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
 
 import net.juniper.contrail.api.ApiConnector;
 import net.juniper.contrail.api.types.ServiceInstance;
@@ -148,17 +149,15 @@ public class ServiceManagerImpl implements ServiceManager {
         }
         
         final ApiConnector api = _manager.getApiConnector();
-        final VirtualNetwork netLeft;
-        try {
-            netLeft = (VirtualNetwork) api.findById(VirtualNetwork.class, left.getUuid());
-        } catch (IOException ex) {
-            throw new CloudRuntimeException("Unable to read virtual-network object", ex);
+        VirtualNetworkModel leftModel = _manager.getDatabase().lookupVirtualNetwork(left.getUuid(),
+                _manager.getCanonicalName(left), left.getTrafficType());
+        if (leftModel == null) {
+            throw new CloudRuntimeException("Unable to read virtual-network object");
         }
-        final VirtualNetwork netRight;
-        try {
-            netRight = (VirtualNetwork) api.findById(VirtualNetwork.class, right.getUuid());
-        } catch (IOException ex) {
-            throw new CloudRuntimeException("Unable to read virtual-network object", ex);
+        VirtualNetworkModel rightModel = _manager.getDatabase().lookupVirtualNetwork(right.getUuid(),
+                _manager.getCanonicalName(right), right.getTrafficType());
+        if (rightModel == null) {
+            throw new CloudRuntimeException("Unable to read virtual-network object");
         }
 
         net.juniper.contrail.api.types.Project project;
@@ -181,7 +180,7 @@ public class ServiceManagerImpl implements ServiceManager {
         
         // 1. Create service-instance.
         ServiceInstanceModel serviceModel = new ServiceInstanceModel(project, name, template, serviceOffering,
-                netLeft, netRight);
+                leftModel, rightModel);
 
         try {
             serviceModel.update(_manager.getModelController());

@@ -19,8 +19,11 @@ package org.apache.cloudstack.network.contrail.management;
 
 
 import java.io.IOException;
+import java.net.URI;
+import java.util.List;
 
 import javax.inject.Inject;
+import javax.ejb.Local;
 
 import net.juniper.contrail.api.types.MacAddressesType;
 import net.juniper.contrail.api.types.VirtualMachineInterface;
@@ -60,18 +63,28 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.NicVO;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.addr.PublicIp;
+import com.cloud.user.AccountManager;
+import com.cloud.network.IpAddressManager;
 
-@Component
+@Local(value = {NetworkGuru.class})
 public class ContrailGuru extends AdapterBase implements NetworkGuru {
     @Inject NetworkDao _networkDao;
     @Inject ContrailManager _manager;
     @Inject NicDao _nicDao;
+    @Inject IPAddressDao _ipAddressDao;
+    @Inject AccountManager _accountMgr;
+    @Inject IpAddressManager _ipAddrMgr;
 
     private static final Logger s_logger = Logger.getLogger(ContrailGuru.class);
     private static final TrafficType[] _trafficTypes = {TrafficType.Guest};
 
     private boolean canHandle(NetworkOffering offering) {
-        return (offering.getName().equals(ContrailManager.offeringName));
+        if (offering.getId() == _manager.getRouterOffering().getId())
+            return true;
+        return false;
     }
 
     @Override
@@ -142,7 +155,13 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
         }
 
         profile.setStrategy(ReservationStrategy.Start);
-        
+        URI broadcastUri = null;
+        try {
+            broadcastUri = new URI("vlan://untagged");
+        } catch (Exception e) {
+            s_logger.warn("unable to instantiate broadcast URI: " + e);
+        }
+        profile.setBroadcastUri(broadcastUri);
         return profile;
     }
 
@@ -225,7 +244,9 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
         if (nic.getIp4Address() == null) {
             s_logger.debug("Allocated IP address " + ipModel.getAddress());
             nic.setIp4Address(ipModel.getAddress());
-            nic.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
+            if (network.getCidr() != null) {
+                nic.setNetmask(NetUtils.cidr2Netmask(network.getCidr()));
+            }
             nic.setGateway(network.getGateway());
             nic.setFormat(AddressFormat.Ip4);
         }
@@ -296,6 +317,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
             return;
         }
         try {
+            _manager.getDatabase().getVirtualNetworks().remove(vnModel);
             vnModel.delete(_manager.getModelController());
         } catch (IOException e) {
             s_logger.warn("virtual-network delete", e);

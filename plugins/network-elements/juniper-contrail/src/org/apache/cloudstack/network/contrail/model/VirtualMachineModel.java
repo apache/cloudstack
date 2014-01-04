@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
-import org.apache.cloudstack.network.contrail.management.ContrailManager;
 import org.apache.log4j.Logger;
+import org.apache.commons.lang.StringUtils;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.dao.NetworkDao;
@@ -40,6 +40,7 @@ import net.juniper.contrail.api.types.Project;
 import net.juniper.contrail.api.types.ServiceInstance;
 import net.juniper.contrail.api.types.VirtualMachine;
 import net.juniper.contrail.api.ApiConnector;
+import org.apache.cloudstack.network.contrail.management.ContrailManager;
 
 public class VirtualMachineModel extends ModelObjectBase {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineModel.class);
@@ -101,18 +102,27 @@ public class VirtualMachineModel extends ModelObjectBase {
         ApiConnector api = controller.getApiAccessor();
         _serviceUuid = serviceUuid;
         
-        ServiceInstanceModel siModel = manager.getDatabase().lookupServiceInstance(serviceUuid);
-        if (siModel == null) {
-            ServiceInstance siObj;
-            try {
-                siObj = (ServiceInstance) api.findById(ServiceInstance.class, serviceUuid);
-            } catch (IOException ex) {
-                s_logger.warn("service-instance read", ex);
-                throw new CloudRuntimeException("Unable to read service-instance object", ex);
-            }
-            if (siObj == null) {
-                siModel = new ServiceInstanceModel(serviceUuid);
-                siModel.build(controller, siObj);
+        ServiceInstance siObj;
+        try {
+            siObj = (ServiceInstance) api.findById(ServiceInstance.class, serviceUuid);
+        } catch (IOException ex) {
+            s_logger.warn("service-instance read", ex);
+            throw new CloudRuntimeException("Unable to read service-instance object", ex);
+        }
+        ServiceInstanceModel siModel;
+        if (siObj == null) {
+            siModel = new ServiceInstanceModel(serviceUuid);
+            siModel.build(controller, siObj);
+            manager.getDatabase().getServiceInstances().add(siModel);
+        } else {
+            String fqn = StringUtils.join(siObj.getQualifiedName(), ':');
+            siModel = manager.getDatabase().lookupServiceInstance(fqn);
+            if (siModel == null) {
+                if (siObj == null) {
+                    siModel = new ServiceInstanceModel(serviceUuid);
+                    siModel.build(controller, siObj);
+                    manager.getDatabase().getServiceInstances().add(siModel);
+                }
             }
         }
         _serviceModel = siModel;
@@ -337,8 +347,23 @@ public class VirtualMachineModel extends ModelObjectBase {
     
     @Override
     public boolean verify(ModelController controller) {
-        // TODO Auto-generated method stub
-        return false;
+        assert _initialized : "initialized is false";
+        assert _uuid != null : "uuid is not set";
+        ApiConnector api = controller.getApiAccessor();
+        try {
+            _vm = (VirtualMachine) api.findById(VirtualMachine.class, _uuid);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (_vm == null) {
+            return false;
+        }
+        for (ModelObject successor: successors()) {
+            if (!successor.verify(controller)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override
