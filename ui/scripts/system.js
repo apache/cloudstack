@@ -6619,7 +6619,7 @@
                                         },
                                         actions: {
                                             destroy: {
-                                                label: 'label.destroy.controller',
+                                                label: 'label.delete.OpenDaylight.device',
                                                 action: function (args) {
                                                     $.ajax({
                                                         url: createURL("deleteOpenDaylightController&id=" + args.data.id),
@@ -18105,6 +18105,33 @@
         });
     }
     
+    function addOpenDaylightController(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
+        var array1 =[];
+        array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
+        array1.push("&username=" + todb(args.data.username));
+        array1.push("&password=" + todb(args.data.password));
+        array1.push("&url=" + todb(args.data.url));
+        
+        $.ajax({
+            url: createURL(apiCmd + array1.join("")),
+            dataType: "json",
+            type: "POST",
+            success: function (json) {
+                var jid = json[apiCmdRes].jobid;
+                args.response.success({
+                    _custom: {
+                        jobId: jid,
+                        getUpdatedItem: function (json) {
+                            var item = json.queryasyncjobresultresponse.jobresult[apiCmdObj];
+                            
+                            return item;
+                        }
+                    }
+                });
+            }
+        });
+    }
+    
     function addBigSwitchVnsDevice(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
         var array1 =[];
         array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
@@ -18804,6 +18831,9 @@
                             case "Ovs":
                             nspMap[ "Ovs"] = items[i];
                             break;
+                            case "Opendaylight":
+                            nspMap[ "Opendaylight"] = items[i];
+                            break;
                         }
                     }
                 }
@@ -18844,6 +18874,11 @@
             id: 'Ovs',
             name: 'Ovs',
             state: nspMap.Ovs ? nspMap.Ovs.state: 'Disabled'
+        },
+        {
+            id: 'Opendaylight',
+            name: 'OpenDaylight (Experimental)',
+            state: nspMap.Opendaylight ? nspMap.Opendaylight.state: 'Disabled'
         }];
         
         $(window).trigger('cloudStack.system.serviceProviders.makeHarcodedArray', {

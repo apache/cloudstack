@@ -709,3 +709,5 @@ createServiceInstance=1
 
 ### OpenDaylight plugin commands
 addOpenDaylightController=1
+deleteOpenDaylightController=1
+listOpenDaylightControllers=1

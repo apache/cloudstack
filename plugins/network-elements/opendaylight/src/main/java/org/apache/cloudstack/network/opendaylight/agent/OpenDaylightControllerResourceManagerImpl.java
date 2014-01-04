@@ -33,15 +33,19 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import org.apache.cloudstack.network.opendaylight.api.commands.AddOpenDaylightControllerCmd;
 import org.apache.cloudstack.network.opendaylight.api.commands.DeleteOpenDaylightControllerCmd;
+import org.apache.cloudstack.network.opendaylight.api.commands.ListOpenDaylightControllersCmd;
+import org.apache.cloudstack.network.opendaylight.api.responses.OpenDaylightControllerResponse;
 import org.apache.cloudstack.network.opendaylight.dao.OpenDaylightControllerMappingDao;
 import org.apache.cloudstack.network.opendaylight.dao.OpenDaylightControllerVO;
 
+import com.cloud.api.ApiDBUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.Networks;
+import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -77,6 +81,8 @@ public class OpenDaylightControllerResourceManagerImpl implements OpenDaylightCo
     public List<Class<?>> getCommands() {
         List<Class<?>> commands = new ArrayList<Class<?>>();
         commands.add(AddOpenDaylightControllerCmd.class);
+        commands.add(DeleteOpenDaylightControllerCmd.class);
+        commands.add(ListOpenDaylightControllersCmd.class);
         return commands;
     }
 
@@ -168,6 +174,41 @@ public class OpenDaylightControllerResourceManagerImpl implements OpenDaylightCo
         resourceManager.deleteHost(hostId, false, false);
 
         openDaylightControllerMappingDao.remove(cmd.getId());
+    }
+
+    @Override
+    public List<OpenDaylightControllerVO> listControllers(ListOpenDaylightControllersCmd cmd) {
+        if (cmd.getId() != null) {
+            List<OpenDaylightControllerVO> foundControllers = new ArrayList<OpenDaylightControllerVO>();
+            OpenDaylightControllerVO controller = openDaylightControllerMappingDao.findById(cmd.getId());
+            if (controller != null) {
+                foundControllers.add(controller);
+            }
+            return foundControllers;
+        } else if (cmd.getPhysicalNetworkId() != null) {
+            return openDaylightControllerMappingDao.listByPhysicalNetwork(cmd.getPhysicalNetworkId());
+        }
+        return openDaylightControllerMappingDao.listAll();
+    }
+
+    @Override
+    public OpenDaylightControllerResponse createResponseFromVO(OpenDaylightControllerVO controller) {
+        OpenDaylightControllerResponse response = new OpenDaylightControllerResponse();
+        HostVO controllerHost = hostDao.findById(controller.getHostId());
+        hostDao.loadDetails(controllerHost);
+
+        PhysicalNetwork pnw = ApiDBUtils.findPhysicalNetworkById(controller.getPhysicalNetworkId());
+        if (pnw != null) {
+            response.setPhysicalNetworkId(pnw.getUuid());
+        }
+
+        response.setObjectName("opendaylightcontroller");
+        response.setId(controller.getUuid());
+        response.setUrl(controllerHost.getDetail("url"));
+        response.setName(controllerHost.getDetail("name"));
+        response.setUsername(controllerHost.getDetail("username"));
+
+        return response;
     }
 
 }

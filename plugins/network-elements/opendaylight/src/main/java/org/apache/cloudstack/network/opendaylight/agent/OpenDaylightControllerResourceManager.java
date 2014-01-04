@@ -19,8 +19,12 @@
 
 package org.apache.cloudstack.network.opendaylight.agent;
 
+import java.util.List;
+
 import org.apache.cloudstack.network.opendaylight.api.commands.AddOpenDaylightControllerCmd;
 import org.apache.cloudstack.network.opendaylight.api.commands.DeleteOpenDaylightControllerCmd;
+import org.apache.cloudstack.network.opendaylight.api.commands.ListOpenDaylightControllersCmd;
+import org.apache.cloudstack.network.opendaylight.api.responses.OpenDaylightControllerResponse;
 import org.apache.cloudstack.network.opendaylight.dao.OpenDaylightControllerVO;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -31,4 +35,8 @@ public interface OpenDaylightControllerResourceManager extends PluggableService 
     public OpenDaylightControllerVO addController(AddOpenDaylightControllerCmd cmd);
 
     public void deleteController(DeleteOpenDaylightControllerCmd cmd) throws InvalidParameterValueException;
+
+    public List<OpenDaylightControllerVO> listControllers(ListOpenDaylightControllersCmd cmd);
+
+    public OpenDaylightControllerResponse createResponseFromVO(OpenDaylightControllerVO controller);
 }

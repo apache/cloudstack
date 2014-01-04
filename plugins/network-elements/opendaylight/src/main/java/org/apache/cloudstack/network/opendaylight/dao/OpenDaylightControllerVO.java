@@ -70,8 +70,7 @@ public class OpenDaylightControllerVO implements InternalIdentity {
 
     @Override
     public long getId() {
-        // TODO Auto-generated method stub
-        return 0;
+        return id;
     }
 
     public String getUuid() {
