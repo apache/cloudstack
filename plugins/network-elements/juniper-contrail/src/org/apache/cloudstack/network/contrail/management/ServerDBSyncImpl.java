@@ -117,7 +117,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
      * Order has to be maintained 
      */
     @Override
-    public short syncAll(short syncMode) {
+    public short syncAll(short syncMode) throws Exception {
         short syncState = SYNC_STATE_IN_SYNC;
         
         /* vnc classes need to be synchronized with cloudstack */
@@ -158,6 +158,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
             if (_lockSyncMode.isLocked()) {
                 _lockSyncMode.unlock();
             }
+            throw ex;
         }
 
         return syncState;

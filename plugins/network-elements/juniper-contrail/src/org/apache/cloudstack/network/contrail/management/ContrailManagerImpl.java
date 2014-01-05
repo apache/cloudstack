@@ -416,7 +416,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
 
     }
 
-    public void syncNetworkDB(short syncMode) throws IOException {
+    public void syncNetworkDB(short syncMode) throws Exception {
         if (_dbSync.syncAll(syncMode) == ServerDBSync.SYNC_STATE_OUT_OF_SYNC) {
              if (syncMode == DBSyncGeneric.SYNC_MODE_CHECK) {
                 s_logger.info("# Cloudstack DB & VNC are out of sync #");
@@ -440,6 +440,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
             } catch (Exception ex) {
                 s_logger.debug(ex);
                 s_logger.info("Unable to sync network db");
+                //resync will be done after _dbSyncInterval seconds since _syncMode is still set to SYNC_MODE_UPDATE
             }
         }
     }
