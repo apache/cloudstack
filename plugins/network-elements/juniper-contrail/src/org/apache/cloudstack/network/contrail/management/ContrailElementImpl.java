@@ -78,6 +78,7 @@ public class ContrailElementImpl extends AdapterBase
 	private static final Map<Service, Map<Capability, String>> _capabilities = InitCapabilities();
 
         @Inject ResourceManager _resourceMgr;
+        @Inject ConfigurationServer _configServer;
         @Inject NetworkDao _networksDao;
 	@Inject ContrailManager _manager;
 	@Inject NicDao _nicDao;
@@ -284,6 +285,32 @@ public class ContrailElementImpl extends AdapterBase
 
 	@Override
 	public boolean isReady(PhysicalNetworkServiceProvider provider) {
+                Map<String, String> serviceMap = ((ConfigurationServerImpl)_configServer).getServicesAndProvidersForNetwork( _manager.getRouterOffering().getId());
+                List<TrafficType> types = new ArrayList<TrafficType>();
+                types.add(TrafficType.Control);
+                types.add(TrafficType.Management);
+                types.add(TrafficType.Storage);
+                List<NetworkVO> systemNets = _manager.findSystemNetworks(types);
+                if (systemNets != null && !systemNets.isEmpty()) {
+                    for (NetworkVO net: systemNets) {
+                        s_logger.debug("update system network service: " + net.getName() + "; service provider: " + serviceMap);
+                        _networksDao.update(net.getId(), net, serviceMap);
+                    }
+                } else {
+                    s_logger.debug("no system networks created yet");
+                }
+                serviceMap = ((ConfigurationServerImpl)_configServer).getServicesAndProvidersForNetwork( _manager.getPublicRouterOffering().getId());
+                types = new ArrayList<TrafficType>();
+                types.add(TrafficType.Public);
+                systemNets = _manager.findSystemNetworks(types);
+                if (systemNets != null && !systemNets.isEmpty()) {
+                    for (NetworkVO net: systemNets) {
+                        s_logger.debug("update system network service: " + net.getName() + "; service provider: " + serviceMap);
+                        _networksDao.update(net.getId(), net, serviceMap);
+                    }
+                } else {
+                    s_logger.debug("no system networks created yet");
+                }
 		return true;
 	}
 
