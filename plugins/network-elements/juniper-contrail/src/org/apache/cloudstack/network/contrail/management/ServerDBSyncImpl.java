@@ -33,6 +33,7 @@ import net.juniper.contrail.api.ApiPropertyBase;
 import net.juniper.contrail.api.ObjectReference;
 import net.juniper.contrail.api.types.FloatingIp;
 import net.juniper.contrail.api.types.FloatingIpPool;
+import net.juniper.contrail.api.types.NetworkPolicy;
 import net.juniper.contrail.api.types.InstanceIp;
 import net.juniper.contrail.api.types.ServiceInstance;
 import net.juniper.contrail.api.types.VirtualMachine;
@@ -45,6 +46,7 @@ import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.network.contrail.model.FloatingIpModel;
 import org.apache.cloudstack.network.contrail.model.FloatingIpPoolModel;
+import org.apache.cloudstack.network.contrail.model.NetworkPolicyModel;
 import org.apache.cloudstack.network.contrail.model.ServiceInstanceModel;
 import org.apache.cloudstack.network.contrail.model.VMInterfaceModel;
 import org.apache.cloudstack.network.contrail.model.VirtualMachineModel;
@@ -62,6 +64,10 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
+import com.cloud.network.vpc.NetworkACLItemDao;
+import com.cloud.network.vpc.NetworkACLItemVO;
+import com.cloud.network.vpc.NetworkACLVO;
+import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.vm.NicVO;
@@ -90,6 +96,11 @@ public class ServerDBSyncImpl implements ServerDBSync {
     PhysicalNetworkServiceProviderDao _physProviderDao;
     @Inject
     ContrailManager _manager;
+    @Inject
+    NetworkACLItemDao _networkACLItemDao;
+    @Inject
+    NetworkACLDao _networkACLDao;
+
     DBSyncGeneric _dbSync;
     Class<?>[] _vncClasses;
     // Read-Write (true) or Read-Only mode.
@@ -98,8 +109,8 @@ public class ServerDBSyncImpl implements ServerDBSync {
 
     ServerDBSyncImpl() {
         _vncClasses =
-            new Class[] {net.juniper.contrail.api.types.Domain.class, net.juniper.contrail.api.types.Project.class, VirtualNetwork.class, VirtualMachine.class,
-                ServiceInstance.class, FloatingIp.class};
+            new Class[] {net.juniper.contrail.api.types.Domain.class, net.juniper.contrail.api.types.Project.class, NetworkPolicy.class, VirtualNetwork.class,
+                VirtualMachine.class, ServiceInstance.class, FloatingIp.class};
         _dbSync = new DBSyncGeneric(this);
     }
 
@@ -440,7 +451,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
             List<TrafficType> types = new ArrayList<TrafficType>();
             types.add(TrafficType.Public);
             types.add(TrafficType.Guest);
-            List<NetworkVO> dbNets = _manager.findJuniperManagedNetworks(types);
+            List<NetworkVO> dbNets = _manager.findManagedNetworks(types);
 
             List<VirtualNetwork> vList = (List<VirtualNetwork>)api.list(VirtualNetwork.class, null);
             List<VirtualNetwork> vncList = new ArrayList<VirtualNetwork>();
@@ -499,6 +510,16 @@ public class ServerDBSyncImpl implements ServerDBSync {
         }
 
         VirtualNetworkModel vnModel = new VirtualNetworkModel(dbNet, dbNet.getUuid(), _manager.getCanonicalName(dbNet), dbNet.getTrafficType());
+        if (dbNet.getTrafficType() == TrafficType.Guest && dbNet.getNetworkACLId() != null) {
+            NetworkACLVO acl = _networkACLDao.findById(dbNet.getNetworkACLId());
+            NetworkPolicyModel policyModel = _manager.getDatabase().lookupNetworkPolicy(acl.getUuid());
+            if (policyModel == null) {
+                s_logger.error("Network(" + dbNet.getName() + ") has ACL but policy model not created: " +
+                                       acl.getUuid() + ", name: " + acl.getName());
+            } else {
+                vnModel.addToNetworkPolicy(policyModel);
+            }
+        }
         vnModel.build(_manager.getModelController(), dbNet);
 
         if (_rwMode) {
@@ -569,6 +590,16 @@ public class ServerDBSyncImpl implements ServerDBSync {
         VirtualNetworkModel current = _manager.getDatabase().lookupVirtualNetwork(vnet.getUuid(), _manager.getCanonicalName(dbn), dbn.getTrafficType());
 
         VirtualNetworkModel vnModel = new VirtualNetworkModel(dbn, vnet.getUuid(), _manager.getCanonicalName(dbn), dbn.getTrafficType());
+        if (dbn.getTrafficType() == TrafficType.Guest && dbn.getNetworkACLId() != null) {
+            NetworkACLVO acl = _networkACLDao.findById(dbn.getNetworkACLId());
+            NetworkPolicyModel policyModel = _manager.getDatabase().lookupNetworkPolicy(acl.getUuid());
+            if (policyModel == null) {
+                s_logger.error("Network(" + dbn.getName() + ") has ACL but policy model not created: " +
+                                       acl.getUuid() + ", name: " + acl.getName());
+            } else {
+                vnModel.addToNetworkPolicy(policyModel);
+            }
+        }
         vnModel.build(_manager.getModelController(), dbn);
 
         if (_rwMode) {
@@ -588,6 +619,23 @@ public class ServerDBSyncImpl implements ServerDBSync {
                 }
             } catch (Exception ex) {
                 s_logger.warn("update virtual-network", ex);
+            }
+            if (current != null) {
+                NetworkPolicyModel oldPolicyModel = current.getNetworkPolicyModel();
+                if (oldPolicyModel != vnModel.getNetworkPolicyModel()) {
+                    /*
+                     * if no other VNs are associated with the old policy,
+                     * we could delete it from the Contrail VNC
+                     */
+                    if (oldPolicyModel != null && !oldPolicyModel.hasDescendents()) {
+                        try {
+                            oldPolicyModel.delete(_manager.getModelController());
+                            _manager.getDatabase().getNetworkPolicys().remove(oldPolicyModel);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
             }
         } else {
             //compare
@@ -780,7 +828,7 @@ public class ServerDBSyncImpl implements ServerDBSync {
 
     public boolean syncFloatingIp() throws Exception {
 
-        List<IPAddressVO> ipList = _manager.findJuniperManagedPublicIps();
+        List<IPAddressVO> ipList = _manager.findManagedPublicIps();
         List<FloatingIp> vncList = _manager.getFloatingIps();
         if (ipList == null) {
             ipList = new ArrayList<IPAddressVO>();
@@ -878,6 +926,164 @@ public class ServerDBSyncImpl implements ServerDBSync {
                 fipModel.update(_manager.getModelController());
             } catch (Exception ex) {
                 s_logger.warn("floating-ip create: ", ex);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /*
+     *  Network Policy Synchronization methods
+     */
+    @SuppressWarnings({ "unchecked" })
+    public boolean syncNetworkPolicy() throws Exception {
+        final ApiConnector api = _manager.getApiConnector();
+        try {
+
+            List<NetworkACLVO> dbAcls = _manager.findManagedACLs();
+            if (dbAcls == null) {
+                dbAcls = new ArrayList<NetworkACLVO>();
+            }
+
+            List<NetworkPolicy> pList = (List<NetworkPolicy>) api.list(NetworkPolicy.class, null);
+            List<NetworkPolicy> vncList = new ArrayList<NetworkPolicy>();
+
+            for (NetworkPolicy policy:pList) {
+                if (!_manager.isSystemDefaultNetworkPolicy(policy)) {
+                    vncList.add(policy);
+                }
+            }
+            s_logger.debug("sync Network Policy - DB size: " + dbAcls.size() + " VNC Size: " + vncList.size());
+            return _dbSync.syncGeneric(NetworkPolicy.class, dbAcls, vncList);
+        } catch (Exception ex) {
+            s_logger.warn("sync network-policys", ex);
+            throw ex;
+        }
+    }
+
+    public Comparator<NetworkACLVO> dbComparatorNetworkPolicy() {
+        Comparator<NetworkACLVO> comparator = new Comparator<NetworkACLVO>() {
+            public int compare(NetworkACLVO u1, NetworkACLVO u2) {
+                return u1.getUuid().compareTo(u2.getUuid());
+            }
+        };
+        return comparator;
+    }
+
+    public Comparator<?> vncComparatorNetworkPolicy() {
+        Comparator<?> comparator = new Comparator<NetworkPolicy>() {
+            public int compare(NetworkPolicy u1, NetworkPolicy u2) {
+                return u1.getUuid().compareTo(u2.getUuid());
+            }
+        };
+        return comparator;
+    }
+
+    public void createNetworkPolicy(NetworkACLVO db, StringBuffer syncLogMesg) throws IOException {
+        syncLogMesg.append("Policy# DB: " + db.getName() +
+                "(" + db.getUuid() + "); VNC: none;  action: create\n");
+
+        if (_manager.getDatabase().lookupNetworkPolicy(db.getUuid()) != null) {
+             s_logger.warn("Policy model object is already present in DB: " +
+                                   db.getUuid() + ", name: " + db.getName());
+        }
+        NetworkPolicyModel policyModel = new NetworkPolicyModel(db.getUuid(), db.getName());
+        net.juniper.contrail.api.types.Project project = null;
+        try {
+            project = _manager.getDefaultVncProject();
+        } catch (IOException ex) {
+            s_logger.warn("read project", ex);
+            throw ex;
+        }
+        policyModel.setProject(project);
+        List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(db.getId());
+        try {
+            policyModel.build(_manager.getModelController(), rules);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        if (_rwMode) {
+            try {
+                if (!policyModel.verify(_manager.getModelController())) {
+                    policyModel.update(_manager.getModelController());
+                }
+            } catch (Exception ex) {
+                s_logger.warn("create network-policy", ex);
+                syncLogMesg.append("Error: Policy# VNC : Unable to create network policy " +
+                    db.getName() + "\n");
+                return;
+            }
+            s_logger.debug("add model " + policyModel.getName());
+            _manager.getDatabase().getNetworkPolicys().add(policyModel);
+            syncLogMesg.append("Policy# VNC: " + db.getUuid() + ", " + policyModel.getName() + " created\n");
+        } else {
+            syncLogMesg.append("Policy# VNC: " + policyModel.getName() + " created \n");
+        }
+    }
+
+    public void deleteNetworkPolicy(NetworkPolicy policy, StringBuffer syncLogMesg) throws IOException {
+        final ApiConnector api = _manager.getApiConnector();
+        if (_manager.isSystemDefaultNetworkPolicy(policy)) {
+            syncLogMesg.append("Policy# System default Network Policy# VNC: " + policy.getName() + " can not be deleted\n");
+            return;
+        }
+        syncLogMesg.append("Policy# DB: none; VNC: " + policy.getName() + "(" + policy.getUuid() + "); action: delete\n");
+        api.delete(policy);
+        syncLogMesg.append("Policy# VNC: " + policy.getName() + " deleted\n");
+    }
+
+    public Integer compareNetworkPolicy(NetworkACLVO dbn, NetworkPolicy policy, StringBuffer syncLogMesg) {
+        if (_manager.isSystemDefaultNetworkPolicy(policy)) {
+            return 1;
+        }
+        return dbn.getUuid().compareTo(policy.getUuid());
+    }
+
+    public Boolean filterNetworkPolicy(NetworkPolicy policy, StringBuffer syncLogMesg)  {
+        if (_manager.isSystemDefaultNetworkPolicy(policy)) {
+            syncLogMesg.append("Policy# VNC: " + policy.getName() + " filtered; action: don't delete\n");
+            return true;
+        }
+        return false;
+    }
+
+    public Boolean equalNetworkPolicy(NetworkACLVO db, NetworkPolicy policy, StringBuffer syncLogMesg) {
+        syncLogMesg.append("Policy# DB: " + db.getName() +
+                "; VNC: " + policy.getName() + "; action: equal\n");
+        NetworkPolicyModel current = _manager.getDatabase().lookupNetworkPolicy(policy.getUuid());
+        NetworkPolicyModel policyModel = new NetworkPolicyModel(db.getUuid(), db.getName());
+        net.juniper.contrail.api.types.Project project = null;
+        try {
+            project = _manager.getDefaultVncProject();
+        } catch (IOException ex) {
+            s_logger.warn("read project", ex);
+        }
+        policyModel.setProject(project);
+        List<NetworkACLItemVO> rules = _networkACLItemDao.listByACL(db.getId());
+        try {
+            policyModel.build(_manager.getModelController(), rules);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (_rwMode) {
+            if (current != null) {
+                _manager.getDatabase().getNetworkPolicys().remove(current);
+            }
+            s_logger.debug("add policy model " + policyModel.getName());
+            _manager.getDatabase().getNetworkPolicys().add(policyModel);
+            try {
+                if (!policyModel.verify(_manager.getModelController())) {
+                    policyModel.update(_manager.getModelController());
+                }
+            } catch (Exception ex) {
+                s_logger.warn("update network-policy", ex);
+            }
+        } else {
+            //compare
+            if (current != null && current.compare(_manager.getModelController(), policyModel) == false) {
+                syncLogMesg.append("Policy# DB: " + db.getName() +
+                        "; VNC: " + policy.getName() + "; attributes differ\n");
                 return false;
             }
         }

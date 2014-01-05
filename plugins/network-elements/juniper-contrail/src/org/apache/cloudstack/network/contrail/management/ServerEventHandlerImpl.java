@@ -87,14 +87,6 @@ public class ServerEventHandlerImpl implements ServerEventHandler {
     public void defaultMessageHandler(String subject, String topic, Object args) {
         s_logger.info("DB Event Received - topic: " + topic + "; subject: " + subject);
 
-        if (subject.equals("VLAN.IP.RANGE.CREATE")) {
-            _manager.createPublicNetworks();
-            return;
-        } else if (subject.equals("VLAN.IP.RANGE.DELETE")) {
-            // TODO
-            return;
-        }
-
         org.apache.cloudstack.framework.events.Event event = (org.apache.cloudstack.framework.events.Event)args;
 
         /* Method name should be on<ClassName><Operation> for example: onDomainCreate */
@@ -244,7 +236,5 @@ public class ServerEventHandlerImpl implements ServerEventHandler {
         _messageBus.subscribe(EventTypes.EVENT_PROJECT_DELETE, MessageDispatcher.getDispatcher(this));
         _messageBus.subscribe(EventTypes.EVENT_DOMAIN_CREATE, MessageDispatcher.getDispatcher(this));
         _messageBus.subscribe(EventTypes.EVENT_DOMAIN_DELETE, MessageDispatcher.getDispatcher(this));
-        _messageBus.subscribe(EventTypes.EVENT_VLAN_IP_RANGE_CREATE, MessageDispatcher.getDispatcher(this));
-        _messageBus.subscribe(EventTypes.EVENT_VLAN_IP_RANGE_DELETE, MessageDispatcher.getDispatcher(this));
     }
 }

@@ -42,6 +42,10 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.resource.ResourceManager;
+
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -51,6 +55,8 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.StaticNatServiceProvider;
+import com.cloud.network.element.SourceNatServiceProvider;
+import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
@@ -60,13 +66,22 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.server.ConfigurationServer;
+import com.cloud.server.ConfigurationServerImpl;
 
 @Component
-@Local(value = {ContrailElement.class, StaticNatServiceProvider.class})
-public class ContrailElementImpl extends AdapterBase implements ContrailElement, IpDeployer, StaticNatServiceProvider {
+@Local(value = {ContrailElement.class, StaticNatServiceProvider.class, IpDeployer.class, SourceNatServiceProvider.class})
 
+public class ContrailElementImpl extends AdapterBase
+    implements ContrailElement, StaticNatServiceProvider, IpDeployer, SourceNatServiceProvider, DhcpServiceProvider {
     private final Map<Service, Map<Capability, String>> _capabilities = InitCapabilities();
 
+    @Inject
+    ResourceManager _resourceMgr;
+    @Inject
+    ConfigurationServer _configServer;
+    @Inject
+    NetworkDao _networksDao;
     @Inject
     ContrailManager _manager;
     @Inject
@@ -92,7 +107,7 @@ public class ContrailElementImpl extends AdapterBase implements ContrailElement,
     // NetworkElement API
     @Override
     public Provider getProvider() {
-        return Provider.JuniperContrail;
+        return Provider.JuniperContrailRouter;
     }
 
     private static Map<Service, Map<Capability, String>> InitCapabilities() {
@@ -261,8 +276,34 @@ public class ContrailElementImpl extends AdapterBase implements ContrailElement,
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
-        return true;
-    }
+                Map<String, String> serviceMap = ((ConfigurationServerImpl)_configServer).getServicesAndProvidersForNetwork( _manager.getRouterOffering().getId());
+                List<TrafficType> types = new ArrayList<TrafficType>();
+                types.add(TrafficType.Control);
+                types.add(TrafficType.Management);
+                types.add(TrafficType.Storage);
+                List<NetworkVO> systemNets = _manager.findSystemNetworks(types);
+                if (systemNets != null && !systemNets.isEmpty()) {
+                    for (NetworkVO net: systemNets) {
+                        s_logger.debug("update system network service: " + net.getName() + "; service provider: " + serviceMap);
+                        _networksDao.update(net.getId(), net, serviceMap);
+                    }
+                } else {
+                    s_logger.debug("no system networks created yet");
+                }
+                serviceMap = ((ConfigurationServerImpl)_configServer).getServicesAndProvidersForNetwork( _manager.getPublicRouterOffering().getId());
+                types = new ArrayList<TrafficType>();
+                types.add(TrafficType.Public);
+                systemNets = _manager.findSystemNetworks(types);
+                if (systemNets != null && !systemNets.isEmpty()) {
+                    for (NetworkVO net: systemNets) {
+                        s_logger.debug("update system network service: " + net.getName() + "; service provider: " + serviceMap);
+                        _networksDao.update(net.getId(), net, serviceMap);
+                    }
+                } else {
+                    s_logger.debug("no system networks created yet");
+                }
+                return true;
+       }
 
     @Override
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
@@ -319,5 +360,29 @@ public class ContrailElementImpl extends AdapterBase implements ContrailElement,
             return true;
         }
         return false;
+    }
+
+    @Override
+    public boolean addDhcpEntry(Network network, NicProfile nic,
+               VirtualMachineProfile vm,
+               DeployDestination dest, ReservationContext context)
+                               throws ConcurrentOperationException, InsufficientCapacityException,
+                               ResourceUnavailableException {
+       return false;
+    }
+
+    @Override
+    public boolean configDhcpSupportForSubnet(Network network, NicProfile nic,
+               VirtualMachineProfile vm,
+               DeployDestination dest, ReservationContext context)
+                               throws ConcurrentOperationException, InsufficientCapacityException,
+                               ResourceUnavailableException {
+       return false;
+    }
+
+    @Override
+    public boolean removeDhcpSupportForSubnet(Network network)
+               throws ResourceUnavailableException {
+       return false;
     }
 }
