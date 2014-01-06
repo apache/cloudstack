@@ -77,8 +77,6 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
     @Inject
     StorageManager storageMgr;
     @Inject
-    VolumeOrchestrationService volumeMgr;
-    @Inject
     VMInstanceDao vmDao;
     @Inject
     SnapshotDao snapshotDao;
