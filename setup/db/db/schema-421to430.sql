@@ -872,8 +872,6 @@ INSERT IGNORE INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, c
 
 UPDATE `cloud`.`configuration` SET `component` = 'VMSnapshotManager' WHERE `name` IN ("vmsnapshot.create.wait", "vmsnapshot.max");
 
-ALTER TABLE `cloud`.`external_load_balancer_devices` ADD COLUMN `is_exclusive_gslb_provider` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is acting exclusively as gslb service provider in the zone and can not be used for LB';
-
 CREATE TABLE `cloud`.`s2s_customer_gateway_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `s2s_customer_gateway_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
