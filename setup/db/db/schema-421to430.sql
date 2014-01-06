@@ -897,3 +897,5 @@ ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `cpu`;
 ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `ram`;
 ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `speed`;
 
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) VALUES (UUID(), 'VMware', '5.5', 128, 0, 13, 32, 1, 1);
+
