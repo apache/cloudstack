@@ -458,7 +458,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             return;
         }
 
-        advanceStop(vm, false);
+        advanceStop(vm.getUuid(), false);
 
         try {
             if (!stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, vm.getHostId())) {
@@ -1493,13 +1493,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.debug("Destroying vm " + vm);
         }
 
-        advanceStop(vm, VmDestroyForcestop.value());
+        advanceStop(vmUuid, VmDestroyForcestop.value());
 
         if (!_vmSnapshotMgr.deleteAllVMSnapshots(vm.getId(), null)) {
             s_logger.debug("Unable to delete all snapshots for " + vm);
             throw new CloudRuntimeException("Unable to delete vm snapshots for " + vm);
         }
 
+        // reload the vm object from db
+        vm = _vmDao.findByUuid(vmUuid);
         try {
             if (!stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
                 s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
@@ -2100,7 +2102,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
             try {
-                advanceStop(vm, true);
+                advanceStop(vmUuid, true);
                 throw new CloudRuntimeException("Unable to migrate " + vm);
             } catch (ResourceUnavailableException e) {
                 s_logger.debug("Unable to stop VM due to " + e.getMessage());
@@ -2658,7 +2660,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (agentState == State.Shutdowned) {
             if (serverState == State.Running || serverState == State.Starting || serverState == State.Stopping) {
                 try {
-                    advanceStop(vm, true);
+                    advanceStop(vm.getUuid(), true);
                 } catch (AgentUnavailableException e) {
                     assert (false) : "How do we hit this with forced on?";
                     return null;
@@ -4205,7 +4207,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _vmDao.lockRow(vm.getId(), true);
 
                 List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
-                        VirtualMachine.Type.Instance, vm.getId(),
+                        vm.getType(), vm.getId(),
                         VmWorkStop.class.getName());
 
                 VmWorkJobVO workJob = null;
