@@ -187,7 +187,7 @@ namespace HypervResource
                     throw new InvalidDataException(errMsg);
                 }
 
-                if (!Path.HasExtension(fileName) && this.format != null)
+                if (fileName != null && !Path.HasExtension(fileName) && this.format != null)
                 {
                     fileName = fileName + "." + this.format.ToLowerInvariant();
                 }
