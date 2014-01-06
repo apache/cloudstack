@@ -54,7 +54,6 @@ class Services:
                 {
                 "basedn": "dc=cloudstack,dc=org",
                 "emailAttribute": "mail",
-                "realnameAttribute": "cn",
                 "userObject": "inetOrgPerson",
                 "usernameAttribute": "uid",
                 "hostname": "localhost",
@@ -178,14 +177,6 @@ class TestLdap(cloudstackTestCase):
         updateConfigurationCmd.value = ldapConfiguration['emailAttribute']
         updateConfigurationResponse = self.apiClient.updateConfiguration(updateConfigurationCmd)
         self.debug("updated the parameter %s with value %s"%(updateConfigurationResponse.name, updateConfigurationResponse.value))
-
-
-        updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
-        updateConfigurationCmd.name = "ldap.realname.attribute"
-        updateConfigurationCmd.value = ldapConfiguration['realnameAttribute']
-        updateConfigurationResponse = self.apiClient.updateConfiguration(updateConfigurationCmd)
-        self.debug("updated the parameter %s with value %s"%(updateConfigurationResponse.name, updateConfigurationResponse.value))
-
 
         updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
         updateConfigurationCmd.name = "ldap.user.object"
