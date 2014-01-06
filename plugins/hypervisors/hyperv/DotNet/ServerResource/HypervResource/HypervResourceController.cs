@@ -1321,14 +1321,16 @@ namespace HypervResource
                 object newData = null;
                 TemplateObjectTO destTemplateObjectTO = null;
                 VolumeObjectTO destVolumeObjectTO = null;
+                VolumeObjectTO srcVolumeObjectTO = null;
+                TemplateObjectTO srcTemplateObjectTO = null;
 
                 try
                 {
                     dynamic timeout = cmd.wait;  // TODO: Useful?
 
-                    TemplateObjectTO srcTemplateObjectTO = TemplateObjectTO.ParseJson(cmd.srcTO);
+                    srcTemplateObjectTO = TemplateObjectTO.ParseJson(cmd.srcTO);
                     destTemplateObjectTO = TemplateObjectTO.ParseJson(cmd.destTO);
-                    VolumeObjectTO srcVolumeObjectTO = VolumeObjectTO.ParseJson(cmd.srcTO);
+                    srcVolumeObjectTO = VolumeObjectTO.ParseJson(cmd.srcTO);
                     destVolumeObjectTO = VolumeObjectTO.ParseJson(cmd.destTO);
 
                     string destFile = null;
@@ -1512,11 +1514,9 @@ namespace HypervResource
                                 // doesn't do anything if the directory is already present.
                                 Directory.CreateDirectory(Path.GetDirectoryName(destFile));
                                 File.Copy(srcFile, destFile);
-                                // create volumeto object deserialize and send it 
-                                VolumeObjectTO volume = new VolumeObjectTO();
-                                volume.path = destFile;
-                                volume.size = ulong.Parse(destVolumeObjectTO.size.ToString());
-                                JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.VolumeObjectTO, volume);
+                                // Create volumeto object deserialize and send it
+                                destVolumeObjectTO.path = destFile;
+                                JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.VolumeObjectTO, destVolumeObjectTO);
                                 newData = ansObj;
                                 result = true;
                             }
