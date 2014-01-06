@@ -19,14 +19,14 @@
 
 package org.apache.cloudstack.mom.inmemory;
 
-import java.util.*;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.events.Event;
