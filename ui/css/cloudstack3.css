@@ -12051,6 +12051,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .add .icon,
 .addNew .icon,
+.addLdapAccount .icon,
 .assignVm .icon,
 .rootAdminAddGuestNetwork .icon {
   background-position: -37px -61px;
@@ -12058,6 +12059,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .add:hover .icon,
 .addNew:hover .icon,
+.addLdapAccount:hover .icon,
 .assignVm:hover .icon,
 .rootAdminAddGuestNetwork:hover .icon {
   background-position: -37px -643px;
