@@ -22,6 +22,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.cloud.dc.Vlan;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -53,6 +54,20 @@ public class NetworksTest {
         Assert.assertEquals("uri1 should be of broadcasttype vlan", BroadcastDomainType.Vlan, type1);
         Assert.assertEquals("id1 should be \"1\"", "1", id1);
         Assert.assertEquals("id2 should be \"2\"", "2", id2);
+    }
+
+    @Test
+    public void vlanValueTest() throws URISyntaxException {
+        String uri1 = "vlan://1";
+        String uri2 = "1";
+        String vtag = BroadcastDomainType.Vlan.getValueFrom(BroadcastDomainType.fromString(uri1));
+        Assert.assertEquals("vtag should be \"1\"", "1", vtag);
+        BroadcastDomainType tiep1 = BroadcastDomainType.getTypeOf(uri1);
+        Assert.assertEquals("the type of uri1 should be 'Vlan'", BroadcastDomainType.Vlan, tiep1);
+        BroadcastDomainType tiep2 = BroadcastDomainType.getTypeOf(uri2);
+        Assert.assertEquals("the type of uri1 should be 'Undecided'", BroadcastDomainType.UnDecided, tiep2);
+        BroadcastDomainType tiep3 = BroadcastDomainType.getTypeOf(Vlan.UNTAGGED);
+        Assert.assertEquals("the type of uri1 should be 'vlan'", BroadcastDomainType.Native, tiep3);
     }
 
     @Test
