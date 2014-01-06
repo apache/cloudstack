@@ -1000,32 +1000,26 @@ public class VmwareStorageProcessor implements StorageProcessor {
             CopyCmdAnswer answer = null;
 
             try {
-                vmMo = hyperHost.findVmOnHyperHost(vmName);
-                if (vmMo == null) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Unable to find owner VM for BackupSnapshotCommand on host " + hyperHost.getHyperHostName() + ", will try within datacenter");
-                    }
-
-                    vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
+                if(vmName != null) {
+                    vmMo = hyperHost.findVmOnHyperHost(vmName);
                     if (vmMo == null) {
-                        dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
-
-                        workerVMName = hostService.getWorkerName(context, cmd, 0);
-
-                        vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVMName);
-
-                        if (vmMo == null) {
-                            throw new Exception("Failed to find the newly create or relocated VM. vmName: " + workerVMName);
+                        if(s_logger.isDebugEnabled()) {
+                            s_logger.debug("Unable to find owner VM for BackupSnapshotCommand on host " + hyperHost.getHyperHostName() + ", will try within datacenter");
                         }
-                        workerVm = vmMo;
-
-                        // attach volume to worker VM
-                        String datastoreVolumePath = dsMo.getDatastorePath(volumePath + ".vmdk");
-                        vmMo.attachDisk(new String[] {datastoreVolumePath}, morDs);
-                    } else {
-                        s_logger.info("Using owner VM " + vmName + " for snapshot operation");
-                        hasOwnerVm = true;
+                        vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
                     }
+                }
+                if(vmMo == null) {
+                    dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
+                    workerVMName = hostService.getWorkerName(context, cmd, 0);
+                    vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVMName);
+                    if (vmMo == null) {
+                        throw new Exception("Failed to find the newly create or relocated VM. vmName: " + workerVMName);
+                    }
+                    workerVm = vmMo;
+                    // attach volume to worker VM
+                    String datastoreVolumePath = dsMo.getDatastorePath(volumePath + ".vmdk");
+                    vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);
                 } else {
                     s_logger.info("Using owner VM " + vmName + " for snapshot operation");
                     hasOwnerVm = true;
