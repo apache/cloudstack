@@ -182,5 +182,6 @@ public class NetUtilsTest extends TestCase {
         assertTrue(NetUtils.isSameIsolationId("UnTagged", "vlan://uNtAGGED"));
         assertFalse(NetUtils.isSameIsolationId("2", "vlan://uNtAGGED"));
         assertFalse(NetUtils.isSameIsolationId("2", "vlan://3"));
+        assertFalse(NetUtils.isSameIsolationId("bla", null));
     }
 }
