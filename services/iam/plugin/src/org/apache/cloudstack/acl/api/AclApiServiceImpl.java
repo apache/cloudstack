@@ -25,7 +25,6 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.AclEntityType;
-import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.acl.api.response.AclGroupResponse;
@@ -190,21 +189,6 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
         return curPerm;
     }
 
-
-    @Override
-    public List<AclPolicy> getEffectivePolicies(Account caller, ControlledEntity entity) {
-
-        // Get the static Policies of the Caller
-        List<AclPolicy> policies = _iamSrv.listAclPolicies(caller.getId());
-
-        // add any dynamic policies w.r.t the entity
-        if (caller.getId() == entity.getAccountId()) {
-            // The caller owns the entity
-            policies.add(_iamSrv.getResourceOwnerPolicy());
-        }
-
-        return policies;
-    }
 
     @Override
     public AclPolicyResponse createAclPolicyResponse(AclPolicy policy) {

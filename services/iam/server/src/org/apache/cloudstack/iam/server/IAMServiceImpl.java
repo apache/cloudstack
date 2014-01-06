@@ -131,6 +131,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         return true;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public List<AclGroup> listAclGroups(long accountId) {
 
@@ -145,9 +146,9 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         sb.and("ids", sb.entity().getId(), Op.IN);
         SearchCriteria<AclGroupVO> sc = sb.create();
         sc.setParameters("ids", groupIds.toArray(new Object[groupIds.size()]));
-        List<AclGroupVO> groups = _aclGroupDao.search(sc, null);
-
-        return new ArrayList<AclGroup>(groups);
+        @SuppressWarnings("rawtypes")
+        List groups = _aclGroupDao.search(sc, null);
+        return groups;
     }
 
     @DB
@@ -324,6 +325,7 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     }
 
 
+    @SuppressWarnings("unchecked")
     @Override
     public List<AclPolicy> listAclPolicies(long accountId) {
 
@@ -345,11 +347,13 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         sb.and("ids", sb.entity().getId(), Op.IN);
         SearchCriteria<AclPolicyVO> sc = sb.create();
         sc.setParameters("ids", policyIds.toArray(new Object[policyIds.size()]));
-        List<AclPolicyVO> policies = _aclPolicyDao.customSearch(sc, null);
+        @SuppressWarnings("rawtypes")
+        List policies = _aclPolicyDao.customSearch(sc, null);
+        return policies;
 
-        return new ArrayList<AclPolicy>(policies);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public List<AclPolicy> listAclPoliciesByGroup(long groupId) {
         List<AclGroupPolicyMapVO> policyGrpMap = _aclGroupPolicyMapDao.listByGroupId(groupId);
@@ -366,11 +370,13 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         sb.and("ids", sb.entity().getId(), Op.IN);
         SearchCriteria<AclPolicyVO> sc = sb.create();
         sc.setParameters("ids", policyIds.toArray(new Object[policyIds.size()]));
-        List<AclPolicyVO> policies = _aclPolicyDao.customSearch(sc, null);
+        @SuppressWarnings("rawtypes")
+        List policies = _aclPolicyDao.customSearch(sc, null);
 
-        return new ArrayList<AclPolicy>(policies);
+        return policies;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public Pair<List<AclPolicy>, Integer> listAclPolicies(Long aclPolicyId, String aclPolicyName, String path, Long startIndex, Long pageSize) {
 
@@ -401,7 +407,9 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
         sc.setParameters("path", path + "%");
 
         Pair<List<AclPolicyVO>, Integer> policies = _aclPolicyDao.searchAndCount(sc, searchFilter);
-        return new Pair<List<AclPolicy>, Integer>(new ArrayList<AclPolicy>(policies.first()), policies.second());
+        @SuppressWarnings("rawtypes")
+        List policyList = policies.first();
+        return new Pair<List<AclPolicy>, Integer>(policyList, policies.second());
     }
 
     @DB
@@ -649,35 +657,35 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public List<AclPolicyPermission> listPolicyPermissions(long policyId) {
-        List<AclPolicyPermissionVO> pp = _policyPermissionDao.listByPolicy(policyId);
-        List<AclPolicyPermission> pl = new ArrayList<AclPolicyPermission>();
-        pl.addAll(pp);
-        return pl;
+        @SuppressWarnings("rawtypes")
+        List pp = _policyPermissionDao.listByPolicy(policyId);
+        return pp;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public List<AclPolicyPermission> listPolicyPermissionsByScope(long policyId, String action, String scope) {
-        List<AclPolicyPermissionVO> pp = _policyPermissionDao.listGrantedByActionAndScope(policyId, action, scope);
-        List<AclPolicyPermission> pl = new ArrayList<AclPolicyPermission>();
-        pl.addAll(pp);
-        return pl;
+        @SuppressWarnings("rawtypes")
+        List pp = _policyPermissionDao.listGrantedByActionAndScope(policyId, action, scope);
+        return pp;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public List<AclPolicyPermission> listPolicyPermissionByEntityType(long policyId, String action, String entityType) {
-        List<AclPolicyPermissionVO> pp = _policyPermissionDao.listByPolicyActionAndEntity(policyId, action, entityType);
-        List<AclPolicyPermission> pl = new ArrayList<AclPolicyPermission>();
-        pl.addAll(pp);
-        return pl;
+        @SuppressWarnings("rawtypes")
+        List pp = _policyPermissionDao.listByPolicyActionAndEntity(policyId, action, entityType);
+        return pp;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public List<AclPolicyPermission> listPolicyPermissionByAccessType(long policyId, String accessType, String entityType, String action) {
-        List<AclPolicyPermissionVO> pp = _policyPermissionDao.listByPolicyAccessAndEntity(policyId, accessType, entityType, action);
-        List<AclPolicyPermission> pl = new ArrayList<AclPolicyPermission>();
-        pl.addAll(pp);
-        return pl;
+        @SuppressWarnings("rawtypes")
+        List pp = _policyPermissionDao.listByPolicyAccessAndEntity(policyId, accessType, entityType, action);
+        return pp;
     }
     
     @Override

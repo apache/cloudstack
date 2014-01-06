@@ -24,7 +24,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.api.AclApiService;
 import org.apache.cloudstack.iam.api.AclPolicy;
 import org.apache.cloudstack.iam.api.AclPolicyPermission;
 import org.apache.cloudstack.iam.api.IAMService;
@@ -41,8 +40,6 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
 
     @Inject
     AccountService _accountService;
-    @Inject
-    AclApiService _aclService;
     
     @Inject DomainDao _domainDao;
 
@@ -67,7 +64,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         }
 
         // get all Policies of this caller w.r.t the entity
-        List<AclPolicy> policies = _aclService.getEffectivePolicies(caller, entity);
+        List<AclPolicy> policies = getEffectivePolicies(caller, entity);
         HashMap<AclPolicy, Boolean> policyPermissionMap = new HashMap<AclPolicy, Boolean>();
 
         for (AclPolicy policy : policies) {
@@ -119,5 +116,19 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         }
         
         return false;
+    }
+
+    private List<AclPolicy> getEffectivePolicies(Account caller, ControlledEntity entity) {
+
+        // Get the static Policies of the Caller
+        List<AclPolicy> policies = _iamSrv.listAclPolicies(caller.getId());
+
+        // add any dynamic policies w.r.t the entity
+        if (caller.getId() == entity.getAccountId()) {
+            // The caller owns the entity
+            policies.add(_iamSrv.getResourceOwnerPolicy());
+        }
+
+        return policies;
     }
 }

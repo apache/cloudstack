@@ -18,7 +18,6 @@ package org.apache.cloudstack.acl.api;
 
 import java.util.List;
 
-import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.api.response.AclGroupResponse;
 import org.apache.cloudstack.acl.api.response.AclPolicyResponse;
@@ -59,8 +58,6 @@ public interface AclApiService {
     AclPolicy removeAclPermissionFromAclPolicy(long aclPolicyId, String entityType, PermissionScope scope, Long scopeId, String action);
 
     AclPolicyPermission getAclPolicyPermission(long accountId, String entityType, String action);
-
-    List<AclPolicy> getEffectivePolicies(Account caller, ControlledEntity entity);
 
     /* Response Generation */
     AclPolicyResponse createAclPolicyResponse(AclPolicy policy);
