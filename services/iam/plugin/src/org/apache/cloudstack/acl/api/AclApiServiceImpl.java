@@ -174,7 +174,8 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
         List<AclPolicy> policies = _iamSrv.listAclPolicies(accountId);
         AclPolicyPermission curPerm = null;
         for (AclPolicy policy : policies) {
-            List<AclPolicyPermission> perms = _iamSrv.listPollcyPermissionByEntityType(policy.getId(), action, entityType);
+            List<AclPolicyPermission> perms = _iamSrv.listPolicyPermissionByEntityType(policy.getId(), action,
+                    entityType);
             if (perms == null || perms.size() == 0)
                 continue;
             AclPolicyPermission perm = perms.get(0); // just pick one
@@ -189,12 +190,6 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
         return curPerm;
     }
 
-
-
-    @Override
-    public boolean isAPIAccessibleForPolicies(String apiName, List<AclPolicy> policies) {
-        return _iamSrv.isAPIAccessibleForPolicies(apiName, policies);
-    }
 
     @Override
     public List<AclPolicy> getEffectivePolicies(Account caller, ControlledEntity entity) {

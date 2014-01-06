@@ -601,9 +601,9 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     }
 
     @Override
-    public boolean isAPIAccessibleForPolicies(String apiName, List<AclPolicy> policies) {
+    public boolean isActionAllowedForPolicies(String action, List<AclPolicy> policies) {
 
-        boolean accessible = false;
+        boolean allowed = false;
 
         List<Long> policyIds = new ArrayList<Long>();
         for (AclPolicy policy : policies) {
@@ -616,14 +616,15 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
         SearchCriteria<AclPolicyPermissionVO> sc = sb.create();
         sc.setParameters("policyId", policyIds.toArray(new Object[policyIds.size()]));
+        sc.setParameters("action", action);
 
         List<AclPolicyPermissionVO> permissions = _policyPermissionDao.customSearch(sc, null);
 
         if (permissions != null && !permissions.isEmpty()) {
-            accessible = true;
+            allowed = true;
         }
 
-        return accessible;
+        return allowed;
     }
 
 
@@ -664,13 +665,21 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     }
 
     @Override
-    public List<AclPolicyPermission> listPollcyPermissionByEntityType(long policyId, String action, String entityType) {
+    public List<AclPolicyPermission> listPolicyPermissionByEntityType(long policyId, String action, String entityType) {
         List<AclPolicyPermissionVO> pp = _policyPermissionDao.listByPolicyActionAndEntity(policyId, action, entityType);
         List<AclPolicyPermission> pl = new ArrayList<AclPolicyPermission>();
         pl.addAll(pp);
         return pl;
     }
 
+    @Override
+    public List<AclPolicyPermission> listPolicyPermissionByAccessType(long policyId, String accessType, String entityType, String action) {
+        List<AclPolicyPermissionVO> pp = _policyPermissionDao.listByPolicyAccessAndEntity(policyId, accessType, entityType, action);
+        List<AclPolicyPermission> pl = new ArrayList<AclPolicyPermission>();
+        pl.addAll(pp);
+        return pl;
+    }
+    
     @Override
     public AclPolicy getResourceOwnerPolicy() {
         return _aclPolicyDao.findByName("RESOURCE_OWNER");

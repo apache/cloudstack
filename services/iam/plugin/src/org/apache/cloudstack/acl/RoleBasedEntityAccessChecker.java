@@ -25,9 +25,9 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.api.AclApiService;
-import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
-import org.apache.cloudstack.acl.dao.AclPolicyPermissionDao;
 import org.apache.cloudstack.iam.api.AclPolicy;
+import org.apache.cloudstack.iam.api.AclPolicyPermission;
+import org.apache.cloudstack.iam.api.IAMService;
 
 import com.cloud.acl.DomainChecker;
 import com.cloud.domain.dao.DomainDao;
@@ -47,10 +47,7 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
     @Inject DomainDao _domainDao;
 
     @Inject
-    AclGroupAccountMapDao _aclGroupAccountMapDao;
-
-    @Inject
-    AclPolicyPermissionDao _policyPermissionDao;
+    IAMService _iamSrv;
 
 
     @Override
@@ -74,15 +71,15 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         HashMap<AclPolicy, Boolean> policyPermissionMap = new HashMap<AclPolicy, Boolean>();
 
         for (AclPolicy policy : policies) {
-            List<AclPolicyPermissionVO> permissions = new ArrayList<AclPolicyPermissionVO>();
+            List<AclPolicyPermission> permissions = new ArrayList<AclPolicyPermission>();
 
             if (action != null) {
-                permissions = _policyPermissionDao.listByPolicyActionAndEntity(policy.getId(),
-                    action, entityType);
+                permissions = _iamSrv.listPolicyPermissionByEntityType(policy.getId(), action, entityType);
             } else {
-                permissions = _policyPermissionDao.listByPolicyAccessAndEntity(policy.getId(), accessType, entityType);
+                permissions = _iamSrv.listPolicyPermissionByAccessType(policy.getId(), accessType.toString(),
+                        entityType, action);
             }
-            for (AclPolicyPermissionVO permission : permissions) {
+            for (AclPolicyPermission permission : permissions) {
                 if (checkPermissionScope(caller, permission.getScope(), entity)) {
                     if (permission.getEntityType().equals(entityType)) {
                         policyPermissionMap.put(policy, permission.getPermission().isGranted());
@@ -109,13 +106,13 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
         return false;
     }
 
-    private boolean checkPermissionScope(Account caller, PermissionScope scope, ControlledEntity entity) {
+    private boolean checkPermissionScope(Account caller, String scope, ControlledEntity entity) {
         
-        if(scope.equals(PermissionScope.ACCOUNT)){
+        if (scope.equals(PermissionScope.ACCOUNT.name())) {
             if(caller.getAccountId() == entity.getAccountId()){
                 return true;
             }
-        }else if(scope.equals(PermissionScope.DOMAIN)){
+        } else if (scope.equals(PermissionScope.DOMAIN.name())) {
             if (_domainDao.isChildDomain(caller.getDomainId(), entity.getDomainId())) {
                 return true;
             }

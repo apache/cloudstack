@@ -60,8 +60,6 @@ public interface AclApiService {
 
     AclPolicyPermission getAclPolicyPermission(long accountId, String entityType, String action);
 
-    boolean isAPIAccessibleForPolicies(String apiName, List<AclPolicy> policies);
-
     List<AclPolicy> getEffectivePolicies(Account caller, ControlledEntity entity);
 
     /* Response Generation */

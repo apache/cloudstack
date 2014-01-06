@@ -86,7 +86,7 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
 
         List<AclPolicy> policies = _iamSrv.listAclPolicies(account.getAccountId());
 
-        boolean isAllowed = _iamSrv.isAPIAccessibleForPolicies(commandName, policies);
+        boolean isAllowed = _iamSrv.isActionAllowedForPolicies(commandName, policies);
         if (!isAllowed) {
             throw new PermissionDeniedException("The API does not exist or is blacklisted. api: " + commandName);
         }

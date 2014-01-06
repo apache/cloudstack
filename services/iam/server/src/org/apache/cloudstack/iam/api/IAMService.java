@@ -66,12 +66,14 @@ public interface IAMService {
 
     List<AclPolicyPermission> listPolicyPermissionsByScope(long policyId, String action, String scope);
 
-    List<AclPolicyPermission> listPollcyPermissionByEntityType(long policyId, String action, String entityType);
+    List<AclPolicyPermission> listPolicyPermissionByEntityType(long policyId, String action, String entityType);
 
-    boolean isAPIAccessibleForPolicies(String apiName, List<AclPolicy> policies);
+    boolean isActionAllowedForPolicies(String action, List<AclPolicy> policies);
 
     List<Long> getGrantedEntities(long accountId, String action, String scope);
 
     AclPolicy resetAclPolicy(long aclPolicyId);
+
+    List<AclPolicyPermission> listPolicyPermissionByAccessType(long policyId, String accessType, String entityType, String action);
 
 }
