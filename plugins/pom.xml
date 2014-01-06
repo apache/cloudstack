@@ -39,6 +39,7 @@
     <module>hypervisors/xen</module>
     <module>hypervisors/kvm</module>
     <module>event-bus/rabbitmq</module>
+    <module>event-bus/inmemory</module>
     <module>hypervisors/baremetal</module>
     <module>hypervisors/ucs</module>
     <module>hypervisors/hyperv</module>
