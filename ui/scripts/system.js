@@ -7875,7 +7875,11 @@
                                             var systemvmObjs = json.listsystemvmsresponse.systemvm;
                                             if (systemvmObjs != undefined) {
                                                 $.ajax({
-                                                    url: createURL("listHosts&listAll=true"),
+                                                    url: createURL('listHosts'),
+                                                    data: {
+                                                        listAll: true,
+                                                        details: 'min'
+                                                    },
                                                     success: function(json) {
                                                         var hostObjs = json.listhostsresponse.host;
                                                         for (var i = 0; i < systemvmObjs.length; i++) {
