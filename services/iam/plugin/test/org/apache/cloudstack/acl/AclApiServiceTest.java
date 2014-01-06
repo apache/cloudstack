@@ -268,7 +268,8 @@ public class AclApiServiceTest {
         policies.add(policy);
         Long policyId = policy.getId();
         Long resId = 200L;
-        when(_apiServer.getCmdClass("listVirtualMachines")).thenReturn(ListVMsCmd.class);
+        Class clz = ListVMsCmd.class;
+        when(_apiServer.getCmdClass("listVirtualMachines")).thenReturn(clz);
         when(
                 _iamSrv.addAclPermissionToAclPolicy(policyId, AclEntityType.VirtualMachine.toString(), PermissionScope.RESOURCE.toString(), resId, "listVirtualMachines",
                         AccessType.ListEntry.toString(), Permission.Allow)).thenReturn(policy);
