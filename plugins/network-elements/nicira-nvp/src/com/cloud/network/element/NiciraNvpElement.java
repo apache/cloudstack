@@ -245,7 +245,15 @@ public class NiciraNvpElement extends AdapterBase implements ConnectivityProvide
             PublicIp sourceNatIp = ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, network);
             String publicCidr = sourceNatIp.getAddress().addr() + "/" + NetUtils.getCidrSize(sourceNatIp.getVlanNetmask());
             String internalCidr = network.getGateway() + "/" + network.getCidr().split("/")[1];
-            long vlanid = (Vlan.UNTAGGED.equals(sourceNatIp.getVlanTag())) ? 0 : Long.parseLong(sourceNatIp.getVlanTag());
+            // assuming a vlan:
+            String vtag = sourceNatIp.getVlanTag();
+            BroadcastDomainType tiep = BroadcastDomainType.toEnumValue(vtag);
+            if (tiep == BroadcastDomainType.Vlan) {
+                vtag = BroadcastDomainType.Vlan.getValueFrom(BroadcastDomainType.fromString(vtag));
+            } else if (tiep != BroadcastDomainType.UnDecided) {
+                throw new CloudRuntimeException("only vlans are supported for sourceNatIp, at this moment: " + vtag);
+            }
+            long vlanid = (Vlan.UNTAGGED.equals(sourceNatIp.getVlanTag())) ? 0 : Long.parseLong(vtag);
 
             CreateLogicalRouterCommand cmd =
                 new CreateLogicalRouterCommand(niciraNvpHost.getDetail("l3gatewayserviceuuid"), vlanid, BroadcastDomainType.getValue(network.getBroadcastUri()),
