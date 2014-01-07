@@ -41,13 +41,12 @@ import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.log4j.Logger;
 
-import com.googlecode.ipv6.IPv6Address;
-import com.googlecode.ipv6.IPv6AddressRange;
-import com.googlecode.ipv6.IPv6Network;
-
 import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.script.Script;
+import com.googlecode.ipv6.IPv6Address;
+import com.googlecode.ipv6.IPv6AddressRange;
+import com.googlecode.ipv6.IPv6Network;
 
 public class NetUtils {
     protected final static Logger s_logger = Logger.getLogger(NetUtils.class);
@@ -770,6 +769,14 @@ public class NetUtils {
     }
 
     public static String ipAndNetMaskToCidr(String ip, String netmask) {
+
+        if (!isValidIp(ip)) {
+            return null;
+        }
+
+        if (!isValidNetmask(netmask)) {
+            return null;
+        }
         long ipAddr = ip2Long(ip);
         long subnet = ip2Long(netmask);
         long result = ipAddr & subnet;
