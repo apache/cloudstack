@@ -35,8 +35,11 @@ import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
@@ -68,6 +71,8 @@ import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.SnapshotDao;
@@ -149,8 +154,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     private TemplateDataStoreDao _vmTemplateStoreDao;
     @Inject
     private VlanDao _vlanDao;
+    @Inject
+    private SnapshotDataStoreDao _snapshotDataStoreDao;
 
     protected GenericSearchBuilder<TemplateDataStoreVO, SumCount> templateSizeSearch;
+    protected GenericSearchBuilder<SnapshotDataStoreVO, SumCount> snapshotSizeSearch;
 
     protected SearchBuilder<ResourceCountVO> ResourceCountSearch;
     ScheduledExecutorService _rcExecutor;
@@ -188,6 +196,15 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         join1.and("accountId", join1.entity().getAccountId(), Op.EQ);
         templateSizeSearch.join("templates", join1, templateSizeSearch.entity().getTemplateId(), join1.entity().getId(), JoinBuilder.JoinType.INNER);
         templateSizeSearch.done();
+
+        snapshotSizeSearch = _snapshotDataStoreDao.createSearchBuilder(SumCount.class);
+        snapshotSizeSearch.select("sum", Func.SUM, snapshotSizeSearch.entity().getSize());
+        snapshotSizeSearch.and("state", snapshotSizeSearch.entity().getState(), Op.EQ);
+        snapshotSizeSearch.and("storeRole", snapshotSizeSearch.entity().getRole(), Op.EQ);
+        SearchBuilder<SnapshotVO> join2 = _snapshotDao.createSearchBuilder();
+        join2.and("accountId", join2.entity().getAccountId(), Op.EQ);
+        snapshotSizeSearch.join("snapshots", join2, snapshotSizeSearch.entity().getSnapshotId(), join2.entity().getId(), JoinBuilder.JoinType.INNER);
+        snapshotSizeSearch.done();
 
         _resourceCountCheckInterval = NumbersUtil.parseInt(_configDao.getValue(Config.ResourceCountCheckInterval.key()), 0);
         if (_resourceCountCheckInterval > 0) {
@@ -922,7 +939,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     public long calculateSecondaryStorageForAccount(long accountId) {
         long totalVolumesSize = _volumeDao.secondaryStorageUsedForAccount(accountId);
-        long totalSnapshotsSize = _snapshotDao.secondaryStorageUsedForAccount(accountId);
+        long totalSnapshotsSize = 0;
         long totalTemplatesSize = 0;
 
         SearchCriteria<SumCount> sc = templateSizeSearch.create();
@@ -934,6 +951,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             totalTemplatesSize = templates.get(0).sum;
         }
 
+        SearchCriteria<SumCount> sc2 = snapshotSizeSearch.create();
+        sc2.setParameters("state", ObjectInDataStoreStateMachine.State.Ready);
+        sc2.setParameters("storeRole", DataStoreRole.Image);
+        sc2.setJoinParameters("snapshots", "accountId", accountId);
+        List<SumCount> snapshots = _snapshotDataStoreDao.customSearch(sc2, null);
+        if (snapshots != null) {
+            totalSnapshotsSize = snapshots.get(0).sum;
+        }
         return totalVolumesSize + totalSnapshotsSize + totalTemplatesSize;
     }
 

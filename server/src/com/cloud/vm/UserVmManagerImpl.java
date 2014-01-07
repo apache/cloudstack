@@ -1663,7 +1663,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // Update Resource count
             if (vm.getAccountId() != Account.ACCOUNT_ID_SYSTEM && !rootVol.isEmpty()) {
                 _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.volume);
-                _resourceLimitMgr.decrementResourceCount(vm.getAccountId(), ResourceType.primary_storage, new Long(rootVol.get(0).getSize()));
+                _resourceLimitMgr.recalculateResourceCount(vm.getAccountId(), vm.getDomainId(), ResourceType.primary_storage.getOrdinal());
             }
 
             // Only if vm is not expunged already, cleanup it's resources

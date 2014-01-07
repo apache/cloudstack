@@ -759,7 +759,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (!created) {
                 s_logger.trace("Decrementing volume resource count for account id=" + volume.getAccountId() + " as volume failed to create on the backend");
                 _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume, cmd.getDisplayVolume());
-                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, cmd.getDisplayVolume(), new Long(volume.getSize()));
+                _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(), ResourceType.primary_storage.getOrdinal());
             }
         }
     }
@@ -1005,7 +1005,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     /* If volume is in primary storage, decrement primary storage count else decrement secondary
                      storage count (in case of upload volume). */
                     if (volume.getFolder() != null || volume.getPath() != null || volume.getState() == Volume.State.Allocated) {
-                        _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplayVolume(), new Long(volume.getSize()));
+                        _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(), ResourceType.primary_storage.getOrdinal());
                     } else {
                         _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(), ResourceType.secondary_storage.getOrdinal());
                     }

@@ -57,13 +57,4 @@ public interface SnapshotDao extends GenericDao<SnapshotVO, Long>, StateDao<Snap
 
     List<SnapshotVO> listAllByStatus(Snapshot.State... status);
 
-    /**
-     * Gets the Total Secondary Storage space (in bytes) used by snapshots
-     * allocated for an account
-     *
-     * @param account
-     * @return total Secondary Storage space allocated
-     */
-    long secondaryStorageUsedForAccount(long accountId);
-
 }

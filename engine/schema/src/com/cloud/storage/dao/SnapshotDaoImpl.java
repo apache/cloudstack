@@ -36,7 +36,6 @@ import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VolumeDaoImpl.SumCount;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -46,7 +45,6 @@ import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
-import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -72,7 +70,6 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private SearchBuilder<SnapshotVO> InstanceIdSearch;
     private SearchBuilder<SnapshotVO> StatusSearch;
     private GenericSearchBuilder<SnapshotVO, Long> CountSnapshotsByAccount;
-    private GenericSearchBuilder<SnapshotVO, SumCount> secondaryStorageSearch;
     @Inject
     ResourceTagDao _tagsDao;
     @Inject
@@ -193,12 +190,6 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
 
         InstanceIdSearch.join("instanceSnapshots", volumeSearch, volumeSearch.entity().getId(), InstanceIdSearch.entity().getVolumeId(), JoinType.INNER);
         InstanceIdSearch.done();
-
-        secondaryStorageSearch = createSearchBuilder(SumCount.class);
-        secondaryStorageSearch.select("sum", Func.SUM, secondaryStorageSearch.entity().getSize());
-        secondaryStorageSearch.and("accountId", secondaryStorageSearch.entity().getAccountId(), Op.EQ);
-        secondaryStorageSearch.and("isRemoved", secondaryStorageSearch.entity().getRemoved(), Op.NULL);
-        secondaryStorageSearch.done();
     }
 
     @Override
@@ -333,15 +324,4 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         return true;
     }
 
-    @Override
-    public long secondaryStorageUsedForAccount(long accountId) {
-        SearchCriteria<SumCount> sc = secondaryStorageSearch.create();
-        sc.setParameters("accountId", accountId);
-        List<SumCount> storageSpace = customSearch(sc, null);
-        if (storageSpace != null) {
-            return storageSpace.get(0).sum;
-        } else {
-            return 0;
-        }
-    }
 }
