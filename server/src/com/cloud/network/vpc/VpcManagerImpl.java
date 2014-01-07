@@ -1474,7 +1474,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             if (!success) {
                 if (destroyOnFailure) {
                     s_logger.debug("Destroying private gateway " + vo + " that failed to start");
-                    if (deleteVpcPrivateGateway(gatewayId)) {
+                    // calling deleting from db because on createprivategateway fail, destroyPrivateGateway is already called
+                    if (deletePrivateGatewayFromTheDB(getVpcPrivateGateway(gatewayId))) {
                         s_logger.warn("Successfully destroyed vpc " + vo + " that failed to start");
                     } else {
                         s_logger.warn("Failed to destroy vpc " + vo + " that failed to start");
