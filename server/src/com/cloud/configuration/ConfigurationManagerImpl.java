@@ -1207,6 +1207,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     public Pod createPod(long zoneId, String name, String startIp, String endIp, String gateway, String netmask,
             String allocationState) {
+
+        // Check if the gateway is a valid IP address
+        if (!NetUtils.isValidIp(gateway)) {
+            throw new InvalidParameterValueException("The gateway is invalid");
+        }
+
+        if (!NetUtils.isValidNetmask(netmask)) {
+            throw new InvalidParameterValueException("The netmask is invalid");
+        }
+
         String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
         Long userId = UserContext.current().getCallerUserId();
 
