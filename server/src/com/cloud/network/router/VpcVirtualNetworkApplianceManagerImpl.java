@@ -914,6 +914,11 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         try {
             Network network = _networkModel.getNetwork(gateway.getNetworkId());
             NicProfile requested = createPrivateNicProfileForGateway(gateway);
+
+            if (!checkRouterVersion(router)) {
+                s_logger.warn("Router requires upgrade. Unable to send command to router: " + router.getId());
+                return false;
+            }
             
             NicProfile guestNic = _itMgr.addVmToNetwork(router, network, requested);
             
@@ -963,12 +968,17 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             privateIps.add(ip);
             Commands cmds = new Commands(Command.OnError.Stop);
             createVpcAssociatePrivateIPCommands(router, privateIps, cmds, add);
-            
-            if (sendCommandsToRouter(router, cmds)) {
-                s_logger.debug("Successfully applied ip association for ip " + ip + " in vpc network " + network);
-                return true;
-            } else {
-                s_logger.warn("Failed to associate ip address " + ip + " in vpc network " + network);
+
+            try{
+                if (sendCommandsToRouter(router, cmds)) {
+                    s_logger.debug("Successfully applied ip association for ip " + ip + " in vpc network " + network);
+                    return true;
+                } else {
+                    s_logger.warn("Failed to associate ip address " + ip + " in vpc network " + network);
+                    return false;
+                }
+            }catch (Exception ex) {
+                s_logger.warn("Failed to send  " + (add ?"add ":"delete ") + " private network " + network + " commands to rotuer ");
                 return false;
             }
         } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {

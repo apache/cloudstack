@@ -3897,8 +3897,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         List<NicVO> nics = _nicDao.listByVmId(routerId);
         for (NicVO n : nics) {
             NetworkVO nc = _networkDao.findById(n.getNetworkId());
-            if (nc.getTrafficType() == TrafficType.Control) {
+            if (nc !=null && nc.getTrafficType() == TrafficType.Control) {
                 routerControlIpAddress = n.getIp4Address();
+                break;
             }
         }
         
@@ -4088,7 +4089,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     //Checks if the router is at the required version
     // Compares MS version and router version
-    private boolean checkRouterVersion(VirtualRouter router){
+    protected boolean checkRouterVersion(VirtualRouter router){
         if(!routerVersionCheckEnabled.value()){
             //Router version check is disabled.
             return true;
