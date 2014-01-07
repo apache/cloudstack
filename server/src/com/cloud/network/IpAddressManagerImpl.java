@@ -1888,8 +1888,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     }
 
     @Override
-    public String allocatePublicIpForGuestNic(Network network, Account owner, String requestedIp) throws InsufficientAddressCapacityException {
-        PublicIp ip = assignPublicIpAddress(network.getDataCenterId(), null, owner, VlanType.DirectAttached, network.getId(), requestedIp, false);
+    public String allocatePublicIpForGuestNic(Network network, Long podId, Account owner, String requestedIp) throws InsufficientAddressCapacityException {
+        PublicIp ip = assignPublicIpAddress(network.getDataCenterId(), podId, owner, VlanType.DirectAttached, network.getId(), requestedIp, false);
         if (ip == null) {
             s_logger.debug("There is no free public ip address");
             return null;

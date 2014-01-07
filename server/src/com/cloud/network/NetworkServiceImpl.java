@@ -679,8 +679,20 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
                 throw new InvalidParameterValueException("Allocating guest ip for nic failed");
             }
         } else if (network.getGuestType() == Network.GuestType.Shared) {
+            //for basic zone, need to provide the podId to ensure proper ip alloation
+            Long podId = null;
+            DataCenter dc = _dcDao.findById(network.getDataCenterId());
+
+            if (dc.getNetworkType() == NetworkType.Basic) {
+                VMInstanceVO vmi = (VMInstanceVO)vm;
+                podId = vmi.getPodIdToDeployIn();
+                if (podId == null) {
+                    throw new InvalidParameterValueException("vm pod id is null in Basic zone; can't decide the range for ip allocation");
+                }
+            }
+
             try {
-                ipaddr = _ipAddrMgr.allocatePublicIpForGuestNic(network, ipOwner, requestedIp);
+                ipaddr = _ipAddrMgr.allocatePublicIpForGuestNic(network, podId, ipOwner, requestedIp);
                 if (ipaddr == null) {
                     throw new InvalidParameterValueException("Allocating ip to guest nic " + nicId + " failed");
                 }

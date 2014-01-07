@@ -170,6 +170,6 @@ public interface IpAddressManager {
 
     public String allocateGuestIP(Network network, String requestedIp) throws InsufficientAddressCapacityException;
 
-    String allocatePublicIpForGuestNic(Network network, Account ipOwner, String requestedIp) throws InsufficientAddressCapacityException;
+    String allocatePublicIpForGuestNic(Network network, Long podId, Account ipOwner, String requestedIp) throws InsufficientAddressCapacityException;
 
 }
