@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.vm;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -44,7 +45,7 @@ public class RestoreVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RestoreVMCmd.class);
     private static final String s_name = "restorevmresponse";
 
-    @ACL
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.UUID, entityType=UserVmResponse.class,
             required=true, description="Virtual Machine ID")
     private Long vmId;

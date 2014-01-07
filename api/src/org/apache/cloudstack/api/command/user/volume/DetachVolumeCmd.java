@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
 import org.apache.log4j.Logger;
@@ -37,7 +38,7 @@ import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 
-@APICommand(name = "detachVolume", description = "Detaches a disk volume from a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted)
+@APICommand(name = "detachVolume", description = "Detaches a disk volume from a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.Volume })
 public class DetachVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DetachVolumeCmd.class.getName());
     private static final String s_name = "detachvolumeresponse";

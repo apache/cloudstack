@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.snapshot;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -33,7 +34,7 @@ import org.apache.log4j.Logger;
 import com.cloud.storage.Snapshot;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listSnapshots", description="Lists all available snapshots for the account.", responseObject=SnapshotResponse.class)
+@APICommand(name = "listSnapshots", description = "Lists all available snapshots for the account.", responseObject = SnapshotResponse.class, entityType = { AclEntityType.Snapshot })
 public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListSnapshotsCmd.class.getName());
 
@@ -63,7 +64,7 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class, description = "list snapshots by zone id")
     private Long zoneId;
 
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -90,7 +91,7 @@ public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
 
     public Long getZoneId() {
         return zoneId;
-    }    
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

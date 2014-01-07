@@ -16,9 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-
-import java.net.URISyntaxException;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -40,7 +39,7 @@ import com.cloud.storage.Upload;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-@APICommand(name = "extractVolume", description="Extracts volume", responseObject=ExtractResponse.class)
+@APICommand(name = "extractVolume", description = "Extracts volume", responseObject = ExtractResponse.class, entityType = { AclEntityType.Volume })
 public class ExtractVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ExtractVolumeCmd.class.getName());
 

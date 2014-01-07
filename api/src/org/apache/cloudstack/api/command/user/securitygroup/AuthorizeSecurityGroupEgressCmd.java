@@ -22,6 +22,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -42,7 +45,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.utils.StringUtils;
 
-@APICommand(name = "authorizeSecurityGroupEgress", responseObject = SecurityGroupRuleResponse.class, description = "Authorizes a particular egress rule for this security group", since="3.0.0")
+@APICommand(name = "authorizeSecurityGroupEgress", responseObject = SecurityGroupRuleResponse.class, description = "Authorizes a particular egress rule for this security group", since = "3.0.0", entityType = { AclEntityType.SecurityGroup })
 @SuppressWarnings("rawtypes")
 public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AuthorizeSecurityGroupIngressCmd.class.getName());
@@ -83,9 +86,11 @@ public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.UUID, description="an optional project of the security group", entityType=ProjectResponse.class)
     private Long projectId;
 
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.SECURITY_GROUP_ID, type=CommandType.UUID, description="The ID of the security group. Mutually exclusive with securityGroupName parameter", entityType=SecurityGroupResponse.class)
     private Long securityGroupId;
 
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, description="The name of the security group. Mutually exclusive with securityGroupName parameter")
     private String securityGroupName;
 

@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
 import org.apache.log4j.Logger;
@@ -36,7 +37,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-@APICommand(name = "attachVolume", description = "Attaches a disk volume to a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted)
+@APICommand(name = "attachVolume", description = "Attaches a disk volume to a virtual machine.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.VirtualMachine })
 public class AttachVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AttachVolumeCmd.class.getName());
     private static final String s_name = "attachvolumeresponse";

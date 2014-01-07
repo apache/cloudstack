@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.securitygroup;
 
+import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,7 +35,7 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.user.Account;
 
-@APICommand(name = "revokeSecurityGroupIngress", responseObject = SuccessResponse.class, description = "Deletes a particular ingress rule from this security group")
+@APICommand(name = "revokeSecurityGroupIngress", responseObject = SuccessResponse.class, description = "Deletes a particular ingress rule from this security group", entityType = { AclEntityType.SecurityGroup })
 public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RevokeSecurityGroupIngressCmd.class.getName());
 
@@ -42,6 +45,7 @@ public class RevokeSecurityGroupIngressCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
+    @ACL(accessType = AccessType.OperateEntry, pointerToEntity = "securityGroupId")
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true, description = "The ID of the ingress rule", entityType=SecurityGroupRuleResponse.class)
     private Long id;
 

@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
 import org.apache.cloudstack.api.APICommand;
@@ -34,7 +35,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteVolume", description="Deletes a detached disk volume.", responseObject=SuccessResponse.class)
+@APICommand(name = "deleteVolume", description = "Deletes a detached disk volume.", responseObject = SuccessResponse.class, entityType = { AclEntityType.Volume })
 public class DeleteVolumeCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVolumeCmd.class.getName());
     private static final String s_name = "deletevolumeresponse";

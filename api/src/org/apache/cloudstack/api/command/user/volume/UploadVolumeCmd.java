@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.volume;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -39,7 +40,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.Volume;
 
-@APICommand(name = "uploadVolume", description = "Uploads a data disk.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted)
+@APICommand(name = "uploadVolume", description = "Uploads a data disk.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.Volume })
 public class UploadVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UploadVolumeCmd.class.getName());
     private static final String s_name = "uploadvolumeresponse";
@@ -70,7 +71,7 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.CHECKSUM, type=CommandType.STRING, description="the MD5 checksum value of this volume")
     private String checksum;
-    
+
     @Parameter(name=ApiConstants.IMAGE_STORE_UUID, type=CommandType.STRING,
             description="Image store uuid")
     private String imageStoreUuid;
@@ -110,7 +111,7 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
     public String getChecksum() {
         return checksum;
     }
-    
+
     public String getImageStoreUuid() {
         return imageStoreUuid;
     }

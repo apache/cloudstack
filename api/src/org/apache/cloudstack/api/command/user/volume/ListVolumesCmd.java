@@ -15,11 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
-import org.apache.cloudstack.api.ACL;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -37,7 +35,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 
 
 
-@APICommand(name = "listVolumes", description = "Lists all volumes.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted)
+@APICommand(name = "listVolumes", description = "Lists all volumes.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.Volume })
 public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVolumesCmd.class.getName());
 
@@ -51,7 +49,6 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
             description="list volumes on specified host")
     private Long hostId;
 
-    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name=ApiConstants.ID, type=CommandType.UUID, entityType=VolumeResponse.class,
             description="the ID of the disk volume")
     private Long id;
@@ -73,12 +70,12 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType=ZoneResponse.class,
             description="the ID of the availability zone")
     private Long zoneId;
-    
+
     @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.UUID, entityType=StoragePoolResponse.class,
             description="the ID of the storage pool, available to ROOT admin only", since="4.3", authorized = { RoleType.Admin })
     private Long storageId;
 
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -115,7 +112,7 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
     public Long getStorageId() {
         return storageId;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

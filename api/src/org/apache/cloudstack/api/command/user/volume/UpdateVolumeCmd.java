@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 
 import org.apache.log4j.Logger;
@@ -36,7 +37,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.Volume;
 
-@APICommand(name = "updateVolume", description = "Updates the volume.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted)
+@APICommand(name = "updateVolume", description = "Updates the volume.", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = { AclEntityType.Volume })
 public class UpdateVolumeCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVolumeCmd.class.getName());
     private static final String s_name = "updatevolumeresponse";
@@ -51,11 +52,11 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
 
     @Parameter(name=ApiConstants.PATH, type=CommandType.STRING, description="The path of the volume")
     private String path;
-    
+
     @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.UUID, entityType=StoragePoolResponse.class,
             description="Destination storage pool UUID for the volume", since="4.3")
     private Long storageId;
-    
+
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="The state of the volume", since="4.3")
     private String state;
 
@@ -73,7 +74,7 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
     public Long getId() {
         return id;
     }
-    
+
     public Long getStorageId() {
         return storageId;
     }
@@ -129,7 +130,7 @@ public class UpdateVolumeCmd extends BaseAsyncCmd {
         if (getStorageId() != null) {
             desc.append(", storage id " + getStorageId());
         }
-        
+
         if (getState() != null) {
             desc.append(", state " + getState());
         }

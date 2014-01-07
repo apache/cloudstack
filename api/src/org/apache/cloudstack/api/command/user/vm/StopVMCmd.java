@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.vm;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.AclEntityType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -46,7 +47,7 @@ public class StopVMCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @ACL
+    @ACL(accessType = AccessType.OperateEntry)
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType=UserVmResponse.class,
             required = true, description = "The ID of the virtual machine")
     private Long id;

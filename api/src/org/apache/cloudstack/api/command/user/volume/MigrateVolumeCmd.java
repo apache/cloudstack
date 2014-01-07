@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -31,7 +32,7 @@ import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
 
-@APICommand(name = "migrateVolume", description = "Migrate volume", responseObject = VolumeResponse.class, since = "3.0.0", responseView = ResponseView.Restricted)
+@APICommand(name = "migrateVolume", description = "Migrate volume", responseObject = VolumeResponse.class, since = "3.0.0", responseView = ResponseView.Restricted, entityType = { AclEntityType.Volume })
 public class MigrateVolumeCmd extends BaseAsyncCmd {
     private static final String s_name = "migratevolumeresponse";
 
