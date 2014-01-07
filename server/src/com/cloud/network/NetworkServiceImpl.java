@@ -693,15 +693,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
             VMInstanceVO vmi = (VMInstanceVO)vm;
             Long podId = vmi.getPodIdToDeployIn();
             if (podId == null) {
-                throw new InvalidParameterValueException("vm pod id is null");
+                throw new InvalidParameterValueException("vm pod id is null; can't decide the range for ip allocation");
             }
             Pod pod = _hostPodDao.findById(podId);
             if (pod == null) {
-                throw new InvalidParameterValueException("vm pod is null");
+                throw new InvalidParameterValueException("vm pod is null; can't decide the range for ip allocation");
             }
 
             try {
-                ipaddr = _ipAddrMgr.allocatePublicIpForGuestNic(networkId, dc, pod, caller, requestedIp);
+                ipaddr = _ipAddrMgr.allocatePublicIpForGuestNic(network, podId, ipOwner, requestedIp);
                 if (ipaddr == null) {
                     throw new InvalidParameterValueException("Allocating ip to guest nic " + nicId + " failed");
                 }
