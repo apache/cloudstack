@@ -1190,18 +1190,6 @@ class TestPublicIpAddress(cloudstackTestCase):
                                           public_ip.ipaddress.id,
                                           accountid=self.account.name
                                           )
-        self.debug(
-                "Creating firewall rule for public IP: %s outside project" %
-                                                public_ip.ipaddress)
-        with self.assertRaises(Exception):
-            FireWallRule.create(
-                            self.apiclient,
-                            ipaddressid=public_ip.ipaddress.id,
-                            protocol='TCP',
-                            cidrlist=[self.services["fw_rule"]["cidr"]],
-                            startport=self.services["fw_rule"]["startport"],
-                            endport=self.services["fw_rule"]["endport"],
-                            )
         return
 
 
