@@ -208,7 +208,7 @@ public interface NetworkOrchestrationService {
 
     boolean isSecondaryIpSetForNic(long nicId);
 
-    List<? extends Nic> listVmNics(Long vmId, Long nicId);
+    List<? extends Nic> listVmNics(long vmId, Long nicId, Long networkId);
 
     Nic savePlaceholderNic(Network network, String ip4Address, String ip6Address, Type vmType);
 

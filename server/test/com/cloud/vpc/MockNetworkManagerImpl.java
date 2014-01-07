@@ -803,7 +803,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public List<? extends Nic> listVmNics(Long vmId, Long nicId) {
+    public List<? extends Nic> listVmNics(long vmId, Long nicId, Long networkId) {
         // TODO Auto-generated method stub
         return null;
     }

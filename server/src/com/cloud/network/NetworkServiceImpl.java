@@ -3988,17 +3988,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
     public List<? extends Nic> listNics(ListNicsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
         Long nicId = cmd.getNicId();
-        Long vmId = cmd.getVmId();
+        long vmId = cmd.getVmId();
+        Long networkId = cmd.getNetworkId();
 
         UserVmVO userVm = _userVmDao.findById(vmId);
 
         if (userVm == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Virtual mahine id does not exist");
-            ex.addProxyObject(vmId.toString(), "vmId");
+            ex.addProxyObject(Long.valueOf(vmId).toString(), "vmId");
             throw ex;
         }
         _accountMgr.checkAccess(caller, null, true, userVm);
-        return _networkMgr.listVmNics(vmId, nicId);
+        return _networkMgr.listVmNics(vmId, nicId, networkId);
     }
 
     public List<NetworkGuru> getNetworkGurus() {
