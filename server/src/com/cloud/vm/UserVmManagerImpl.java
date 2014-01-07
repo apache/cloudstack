@@ -371,6 +371,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     protected NicDao _nicDao;
     @Inject
+    protected ServiceOfferingDao _offerringDao;
+    @Inject
     protected VpcDao _vpcDao;
     @Inject
     protected RulesManager _rulesMgr;
@@ -1618,7 +1620,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _itMgr.registerGuru(VirtualMachine.Type.User, this);
 
-        VirtualMachine.State.getStateMachine().registerListener(new UserVmStateListener(_usageEventDao, _networkDao, _nicDao));
+        VirtualMachine.State.getStateMachine().registerListener(
+                new UserVmStateListener(_usageEventDao, _networkDao, _nicDao, _offeringDao));
 
         String value = _configDao.getValue(Config.SetVmInternalNameUsingDisplayName.key());
         _instanceNameFlag = (value == null) ? false : Boolean.parseBoolean(value);
