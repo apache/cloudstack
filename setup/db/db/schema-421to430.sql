@@ -126,6 +126,7 @@ ALTER TABLE `cloud`.`volumes` ADD COLUMN `hv_ss_reserve` int(32) unsigned DEFAUL
 UPDATE `cloud`.`disk_offering` SET `state`='Inactive' WHERE `removed` IS NOT NULL;
 UPDATE `cloud`.`disk_offering` SET `removed`=NULL;
 
+UPDATE `cloud`.`vm_template` SET `guest_os_id`= "142" WHERE `id` = "5";
 UPDATE `cloud`.`vm_template` SET `state`='Inactive' WHERE `removed` IS NOT NULL;
 UPDATE `cloud`.`vm_template` SET `state`='Active' WHERE `removed` IS NULL;
 UPDATE `cloud`.`vm_template` SET `removed`=NULL;

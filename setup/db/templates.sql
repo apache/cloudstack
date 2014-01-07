@@ -28,7 +28,7 @@ INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created,
     VALUES (4, UUID(), 'centos55-x86_64', 'CentOS 5.5(64-bit) no GUI (KVM)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloud.com/releases/2.2.0/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2', 'ed0e788280ff2912ea40f7f91ca7a249', 'CentOS 5.5(64-bit) no GUI (KVM)', 0, 'QCOW2', 112, 1, 1, 'KVM', 1);
 
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
-    VALUES (5, UUID(), 'centos56-x86_64-xen', 'CentOS 5.6(64-bit) no GUI (XenServer)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloud.com/templates/builtin/centos56-x86_64.vhd.bz2', '905cec879afd9c9d22ecc8036131a180', 0, 'CentOS 5.6(64-bit) no GUI (XenServer)', 'VHD', 12, 1, 1, 'XenServer', 1);
+    VALUES (5, UUID(), 'centos56-x86_64-xen', 'CentOS 5.6(64-bit) no GUI (XenServer)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloud.com/templates/builtin/centos56-x86_64.vhd.bz2', '905cec879afd9c9d22ecc8036131a180', 0, 'CentOS 5.6(64-bit) no GUI (XenServer)', 'VHD', 142, 1, 1, 'XenServer', 1);
 
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
     VALUES (7, UUID(), 'centos53-x64', 'CentOS 5.3(64-bit) no GUI (vSphere)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloud.com/releases/2.2.0/CentOS5.3-x86_64.ova', 'f6f881b7f2292948d8494db837fe0f47', 0, 'CentOS 5.3(64-bit) no GUI (vSphere)', 'OVA', 12, 1, 1, 'VMware', 1);
