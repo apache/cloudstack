@@ -12065,6 +12065,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -37px -643px;
 }
 
+.assignVmToAnotherAccount .icon {
+  background-position: -232px -97px;
+}
+
+.assignVmToAnotherAccount:hover .icon {
+  background-position: -231px -678px;
+}
+
 .create .icon,
 .createTemplate .icon,
 .enableSwift .icon,
@@ -12334,14 +12342,6 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .addAccount:hover .icon {
   background-position: -230px -677px;
-}
-
-.assignVmToAnotherAccount .icon {
-  background-position: -270px -36px;
-}
-
-.assignVmToAnotherAccount:hover .icon {
-  background-position: -270px -615px;
 }
 
 .label-hovered {
