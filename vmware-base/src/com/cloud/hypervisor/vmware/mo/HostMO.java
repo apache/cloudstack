@@ -893,6 +893,12 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 		return hostDsMo.findDatastore(poolUuid);
 	}
 
+    @Override
+    public ManagedObjectReference findDatastoreByName(String datastoreName) throws Exception {
+        HostDatastoreSystemMO hostDsMo = getHostDatastoreSystemMO();
+        return hostDsMo.findDatastoreByName(datastoreName);
+    }
+
 	@Override
 	public ManagedObjectReference findDatastoreByExportPath(String exportPath) throws Exception {
 		HostDatastoreSystemMO datastoreSystemMo = getHostDatastoreSystemMO();

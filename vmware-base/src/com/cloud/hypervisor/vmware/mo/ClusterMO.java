@@ -384,6 +384,11 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
 		return null;
 	}
 
+    @Override
+    public ManagedObjectReference findDatastoreByName(String datastoreName) throws Exception {
+       throw new UnsupportedOperationException();
+   }
+
 	@Override
 	public ManagedObjectReference findDatastoreByExportPath(String exportPath) throws Exception {
 	    if(s_logger.isTraceEnabled())
