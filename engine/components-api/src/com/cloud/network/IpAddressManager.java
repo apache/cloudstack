@@ -21,7 +21,6 @@ import java.util.List;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -169,8 +168,8 @@ public interface IpAddressManager {
 
     int getRuleCountForIp(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state);
 
-    public String allocateGuestIP(Account ipOwner, boolean isSystem, long zoneId, Long networkId, String requestedIp) throws InsufficientAddressCapacityException;
+    public String allocateGuestIP(Network network, String requestedIp) throws InsufficientAddressCapacityException;
 
-    String allocatePublicIpForGuestNic(Long networkId, DataCenter dc, Pod pod, Account caller, String requestedIp) throws InsufficientAddressCapacityException;
+    String allocatePublicIpForGuestNic(Network network, Account ipOwner, String requestedIp) throws InsufficientAddressCapacityException;
 
 }

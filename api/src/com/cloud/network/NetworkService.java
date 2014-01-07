@@ -168,7 +168,7 @@ public interface NetworkService {
         InsufficientCapacityException;
 
     /* Requests an IP address for the guest nic */
-    NicSecondaryIp allocateSecondaryGuestIP(Account account, long zoneId, Long nicId, Long networkId, String ipaddress) throws InsufficientAddressCapacityException;
+    NicSecondaryIp allocateSecondaryGuestIP(long nicId, String ipaddress) throws InsufficientAddressCapacityException;
 
     boolean releaseSecondaryIpFromNic(long ipAddressId);
 

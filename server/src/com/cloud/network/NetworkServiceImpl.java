@@ -63,7 +63,6 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenterVnetVO;
-import com.cloud.dc.Pod;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
@@ -640,14 +639,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
     }
 
     @Override
-    public NicSecondaryIp allocateSecondaryGuestIP(Account ipOwner, long zoneId, final Long nicId, final Long networkId, String requestedIp)
-            throws InsufficientAddressCapacityException {
-
-        String ipaddr = null;
-
-        if (networkId == null) {
-            throw new InvalidParameterValueException("Invalid network id is given");
-        }
+    public NicSecondaryIp allocateSecondaryGuestIP(final long nicId, String requestedIp) throws InsufficientAddressCapacityException {
 
         Account caller = CallContext.current().getCallingAccount();
 
@@ -665,47 +657,30 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         if (vm == null) {
             throw new InvalidParameterValueException("There is no vm with the nic");
         }
+
+        final long networkId = nicVO.getNetworkId();
+        final Account ipOwner = _accountMgr.getAccount(vm.getAccountId());
+
         // verify permissions
-        _accountMgr.checkAccess(ipOwner, null, true, vm);
+        _accountMgr.checkAccess(caller, null, true, vm);
 
         Network network = _networksDao.findById(networkId);
         if (network == null) {
             throw new InvalidParameterValueException("Invalid network id is given");
         }
-        final Long accountId = ipOwner.getAccountId();
-        final Long domainId = ipOwner.getDomainId();
-
-        // Validate network offering
-        NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(network.getNetworkOfferingId());
-
-        DataCenter dc = _dcDao.findById(network.getDataCenterId());
-
-        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
-        if (zone == null) {
-            throw new InvalidParameterValueException("Invalid zone Id is given");
-        }
 
         s_logger.debug("Calling the ip allocation ...");
-        if (dc.getNetworkType() == NetworkType.Advanced && network.getGuestType() == Network.GuestType.Isolated) {
+        String ipaddr = null;
+        //Isolated network can exist in Basic zone only, so no need to verify the zone type
+        if (network.getGuestType() == Network.GuestType.Isolated) {
             try {
-                ipaddr = _ipAddrMgr.allocateGuestIP(ipOwner, false, zoneId, networkId, requestedIp);
+                ipaddr = _ipAddrMgr.allocateGuestIP(network, requestedIp);
             } catch (InsufficientAddressCapacityException e) {
                 throw new InvalidParameterValueException("Allocating guest ip for nic failed");
             }
-        } else if (dc.getNetworkType() == NetworkType.Basic || ntwkOff.getGuestType() == Network.GuestType.Shared) {
-            //handle the basic networks here
-            VMInstanceVO vmi = (VMInstanceVO)vm;
-            Long podId = vmi.getPodIdToDeployIn();
-            if (podId == null) {
-                throw new InvalidParameterValueException("vm pod id is null");
-            }
-            Pod pod = _hostPodDao.findById(podId);
-            if (pod == null) {
-                throw new InvalidParameterValueException("vm pod is null");
-            }
-
+        } else if (network.getGuestType() == Network.GuestType.Shared) {
             try {
-                ipaddr = _ipAddrMgr.allocatePublicIpForGuestNic(networkId, dc, pod, caller, requestedIp);
+                ipaddr = _ipAddrMgr.allocatePublicIpForGuestNic(network, ipOwner, requestedIp);
                 if (ipaddr == null) {
                     throw new InvalidParameterValueException("Allocating ip to guest nic " + nicId + " failed");
                 }
@@ -734,7 +709,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
                     s_logger.debug("Setting nic_secondary_ip table ...");
                     Long vmId = nicVO.getInstanceId();
-                    NicSecondaryIpVO secondaryIpVO = new NicSecondaryIpVO(nicId, addrFinal, vmId, accountId, domainId, networkId);
+                    NicSecondaryIpVO secondaryIpVO = new NicSecondaryIpVO(nicId, addrFinal, vmId, ipOwner.getId(), ipOwner.getDomainId(), networkId);
                     _nicSecondaryIpDao.persist(secondaryIpVO);
                     return secondaryIpVO.getId();
                 }

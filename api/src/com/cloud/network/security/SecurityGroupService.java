@@ -47,5 +47,5 @@ public interface SecurityGroupService {
 
     public List<? extends SecurityRule> authorizeSecurityGroupEgress(AuthorizeSecurityGroupEgressCmd cmd);
 
-    public boolean securityGroupRulesForVmSecIp(Long nicId, Long networkId, String secondaryIp, boolean ruleAction);
+    public boolean securityGroupRulesForVmSecIp(long nicId, String secondaryIp, boolean ruleAction);
 }
