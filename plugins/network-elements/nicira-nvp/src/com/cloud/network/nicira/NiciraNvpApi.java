@@ -280,7 +280,7 @@ public class NiciraNvpApi {
      * @throws NiciraNvpApiException
      */
     public void deleteSecurityProfile(final String securityProfileUuid)
-                    throws NiciraNvpApiException {
+            throws NiciraNvpApiException {
         delete(securityProfileUuid, SecurityProfile.class);
     }
 
@@ -412,7 +412,7 @@ public class NiciraNvpApi {
      * @throws NiciraNvpApiException
      */
     public <T> void delete(final String uuid, final Class<T> clazz)
-                    throws NiciraNvpApiException {
+            throws NiciraNvpApiException {
         final String uri = prefixMap.get(clazz) + "/" + uuid;
         executeDeleteObject(uri);
     }
@@ -426,12 +426,12 @@ public class NiciraNvpApi {
     }
 
     public void deleteLogicalSwitch(final String uuid) throws NiciraNvpApiException {
-        final String uri = SWITCH_URI_PREFIX + uuid;
+        final String uri = SWITCH_URI_PREFIX + "/" + uuid;
         executeDeleteObject(uri);
     }
 
     public LogicalSwitchPort createLogicalSwitchPort(final String logicalSwitchUuid, final LogicalSwitchPort logicalSwitchPort) throws NiciraNvpApiException {
-        final String uri = SWITCH_URI_PREFIX + logicalSwitchUuid + "/lport";
+        final String uri = SWITCH_URI_PREFIX + "/" + logicalSwitchUuid + "/lport";
         final LogicalSwitchPort createdLogicalSwitchPort = executeCreateObject(logicalSwitchPort, new TypeToken<LogicalSwitchPort>() {
         }.getType(), uri, Collections.<String, String> emptyMap());
 
@@ -439,17 +439,17 @@ public class NiciraNvpApi {
     }
 
     public void modifyLogicalSwitchPortAttachment(final String logicalSwitchUuid, final String logicalSwitchPortUuid, final Attachment attachment) throws NiciraNvpApiException {
-        final String uri = SWITCH_URI_PREFIX + logicalSwitchUuid + "/lport/" + logicalSwitchPortUuid + "/attachment";
+        final String uri = SWITCH_URI_PREFIX + "/" + logicalSwitchUuid + "/lport/" + logicalSwitchPortUuid + "/attachment";
         executeUpdateObject(attachment, uri, Collections.<String, String> emptyMap());
     }
 
     public void deleteLogicalSwitchPort(final String logicalSwitchUuid, final String logicalSwitchPortUuid) throws NiciraNvpApiException {
-        final String uri = SWITCH_URI_PREFIX + logicalSwitchUuid + "/lport/" + logicalSwitchPortUuid;
+        final String uri = SWITCH_URI_PREFIX + "/" + logicalSwitchUuid + "/lport/" + logicalSwitchPortUuid;
         executeDeleteObject(uri);
     }
 
     public String findLogicalSwitchPortUuidByVifAttachmentUuid(final String logicalSwitchUuid, final String vifAttachmentUuid) throws NiciraNvpApiException {
-        final String uri = SWITCH_URI_PREFIX + logicalSwitchUuid + "/lport";
+        final String uri = SWITCH_URI_PREFIX + "/" + logicalSwitchUuid + "/lport";
         final Map<String, String> params = new HashMap<String, String>();
         params.put("attachment_vif_uuid", vifAttachmentUuid);
         params.put("fields", "uuid");
@@ -474,7 +474,7 @@ public class NiciraNvpApi {
     }
 
     public NiciraNvpList<LogicalSwitchPort> findLogicalSwitchPortsByUuid(final String logicalSwitchUuid, final String logicalSwitchPortUuid) throws NiciraNvpApiException {
-        final String uri = SWITCH_URI_PREFIX + logicalSwitchUuid + "/lport";
+        final String uri = SWITCH_URI_PREFIX + "/" + logicalSwitchUuid + "/lport";
         final Map<String, String> params = new HashMap<String, String>();
         params.put("uuid", logicalSwitchPortUuid);
         params.put("fields", "uuid");
@@ -499,13 +499,13 @@ public class NiciraNvpApi {
     }
 
     public void deleteLogicalRouter(final String logicalRouterUuid) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + logicalRouterUuid;
+        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid;
 
         executeDeleteObject(uri);
     }
 
     public LogicalRouterPort createLogicalRouterPort(final String logicalRouterUuid, final LogicalRouterPort logicalRouterPort) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/lport";
+        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport";
 
         final LogicalRouterPort lrp = executeCreateObject(logicalRouterPort, new TypeToken<LogicalRouterPort>() {
         }.getType(), uri, Collections.<String, String> emptyMap());
@@ -513,45 +513,45 @@ public class NiciraNvpApi {
     }
 
     public void deleteLogicalRouterPort(final String logicalRouterUuid, final String logicalRouterPortUuid) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/lport/" + logicalRouterPortUuid;
+        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport/" + logicalRouterPortUuid;
 
         executeDeleteObject(uri);
     }
 
     public void modifyLogicalRouterPort(final String logicalRouterUuid, final LogicalRouterPort logicalRouterPort) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/lport/" + logicalRouterPort.getUuid();
+        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport/" + logicalRouterPort.getUuid();
 
         executeUpdateObject(logicalRouterPort, uri, Collections.<String, String> emptyMap());
     }
 
     public void modifyLogicalRouterPortAttachment(final String logicalRouterUuid, final String logicalRouterPortUuid, final Attachment attachment)
-        throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/lport/" + logicalRouterPortUuid + "/attachment";
+            throws NiciraNvpApiException {
+        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport/" + logicalRouterPortUuid + "/attachment";
         executeUpdateObject(attachment, uri, Collections.<String, String> emptyMap());
     }
 
     public NatRule createLogicalRouterNatRule(final String logicalRouterUuid, final NatRule natRule) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/nat";
+        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/nat";
 
         return executeCreateObject(natRule, new TypeToken<NatRule>() {
         }.getType(), uri, Collections.<String, String> emptyMap());
     }
 
     public void modifyLogicalRouterNatRule(final String logicalRouterUuid, final NatRule natRule) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/nat/" + natRule.getUuid();
+        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/nat/" + natRule.getUuid();
 
         executeUpdateObject(natRule, uri, Collections.<String, String> emptyMap());
     }
 
     public void deleteLogicalRouterNatRule(final String logicalRouterUuid, final UUID natRuleUuid) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/nat/" + natRuleUuid.toString();
+        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/nat/" + natRuleUuid.toString();
 
         executeDeleteObject(uri);
     }
 
     public NiciraNvpList<LogicalRouterPort> findLogicalRouterPortByGatewayServiceAndVlanId(final String logicalRouterUuid, final String gatewayServiceUuid,
-        final long vlanId) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/lport";
+            final long vlanId) throws NiciraNvpApiException {
+        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport";
         final Map<String, String> params = new HashMap<String, String>();
         params.put("attachment_gwsvc_uuid", gatewayServiceUuid);
         params.put("attachment_vlan", "0");
@@ -562,20 +562,20 @@ public class NiciraNvpApi {
     }
 
     public LogicalRouterConfig findOneLogicalRouterByUuid(final String logicalRouterUuid) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + logicalRouterUuid;
+        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid;
 
         return executeRetrieveObject(new TypeToken<LogicalRouterConfig>() {
         }.getType(), uri, Collections.<String, String> emptyMap());
     }
 
     public void updateLogicalRouterPortConfig(final String logicalRouterUuid, final LogicalRouterPort logicalRouterPort) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/lport" + logicalRouterPort.getUuid();
+        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport" + logicalRouterPort.getUuid();
 
         executeUpdateObject(logicalRouterPort, uri, Collections.<String, String> emptyMap());
     }
 
     public NiciraNvpList<NatRule> findNatRulesByLogicalRouterUuid(final String logicalRouterUuid) throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/nat";
+        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/nat";
         final Map<String, String> params = new HashMap<String, String>();
         params.put("fields", "*");
 
@@ -584,8 +584,8 @@ public class NiciraNvpApi {
     }
 
     public NiciraNvpList<LogicalRouterPort> findLogicalRouterPortByGatewayServiceUuid(final String logicalRouterUuid, final String l3GatewayServiceUuid)
-        throws NiciraNvpApiException {
-        final String uri = ROUTER_URI_PREFIX + logicalRouterUuid + "/lport";
+            throws NiciraNvpApiException {
+        final String uri = ROUTER_URI_PREFIX + "/" + logicalRouterUuid + "/lport";
         final Map<String, String> params = new HashMap<String, String>();
         params.put("fields", "*");
         params.put("attachment_gwsvc_uuid", l3GatewayServiceUuid);
@@ -620,7 +620,7 @@ public class NiciraNvpApi {
 
     @SuppressWarnings("unchecked")
     protected <T> T executeCreateObject(final T newObject, final Type returnObjectType, final String uri, final Map<String, String> parameters)
-        throws NiciraNvpApiException {
+            throws NiciraNvpApiException {
         if (host == null || host.isEmpty() || adminuser == null || adminuser.isEmpty() || adminpass == null || adminpass.isEmpty()) {
             throw new NiciraNvpApiException("Hostname/credentials are null or empty");
         }
@@ -805,7 +805,7 @@ public class NiciraNvpApi {
 
         @Override
         public Socket createSocket(final String host, final int port, final InetAddress localAddress, final int localPort, final HttpConnectionParams params)
-            throws IOException, UnknownHostException, ConnectTimeoutException {
+                throws IOException, UnknownHostException, ConnectTimeoutException {
             final int timeout = params.getConnectionTimeout();
             if (timeout == 0) {
                 return createSocket(host, port, localAddress, localPort);
