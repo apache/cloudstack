@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 import com.cloud.server.auth.DefaultUserAuthenticator;
 import com.cloud.user.UserAccount;
 import com.cloud.user.dao.UserAccountDao;
+import com.cloud.utils.Pair;
 
 public class LdapAuthenticator extends DefaultUserAuthenticator {
 	private static final Logger s_logger = Logger
@@ -46,23 +47,27 @@ public class LdapAuthenticator extends DefaultUserAuthenticator {
 		_userAccountDao = userAccountDao;
 	}
 
-	@Override
-	public boolean authenticate(final String username, final String password,
-			final Long domainId, final Map<String, Object[]> requestParameters) {
+    @Override
+    public Pair<Boolean, ActionOnFailedAuthentication> authenticate(final String username, final String password, final Long domainId, final Map<String, Object[]> requestParameters) {
 
 		final UserAccount user = _userAccountDao.getUserAccount(username,
 				domainId);
 
-		if (user == null) {
-			s_logger.debug("Unable to find user with " + username
-					+ " in domain " + domainId);
-			return false;
-		} else if (_ldapManager.isLdapEnabled()) {
-			return _ldapManager.canAuthenticate(username, password);
-		} else {
-			return false;
-		}
-	}
+        if (user == null) {
+            s_logger.debug("Unable to find user with " + username + " in domain " + domainId);
+            return new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+        } else if (_ldapManager.isLdapEnabled()) {
+            boolean result = _ldapManager.canAuthenticate(username, password);
+            ActionOnFailedAuthentication action = null;
+            if (result == false) {
+                action = ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT;
+            }
+            return new Pair<Boolean, ActionOnFailedAuthentication>(result, action);
+
+        } else {
+            return new Pair<Boolean, ActionOnFailedAuthentication>(false, ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
+        }
+    }
 
 	@Override
 	public String encode(final String password) {
