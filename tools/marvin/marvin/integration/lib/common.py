@@ -209,7 +209,9 @@ def get_pod(apiclient, zoneid, services=None):
         raise Exception("Exception: Failed to find specified pod.")
 
 
-def get_template(apiclient, zoneid, ostype, services=None):
+def get_template(apiclient, zoneid, ostype, services=None,
+                 templatefilter='featured',
+                 templatetype='BUILTIN'):
     "Returns a template"
 
     cmd = listOsTypes.listOsTypesCmd()
@@ -223,7 +225,7 @@ def get_template(apiclient, zoneid, ostype, services=None):
             "Failed to find OS type with description: %s" % ostype)
 
     cmd = listTemplates.listTemplatesCmd()
-    cmd.templatefilter = 'featured'
+    cmd.templatefilter = templatefilter
     cmd.zoneid = zoneid
 
     if services:
@@ -237,7 +239,7 @@ def get_template(apiclient, zoneid, ostype, services=None):
         for template in list_templates:
             if template.ostypeid == ostypeid:
                 return template
-            elif template.isready:
+            elif template.isready and template.templatetype == templatetype:
                 return template
 
     raise Exception("Exception: Failed to find template with OSTypeID: %s" %
