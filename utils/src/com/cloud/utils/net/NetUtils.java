@@ -41,13 +41,12 @@ import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.log4j.Logger;
 
-import com.googlecode.ipv6.IPv6Address;
-import com.googlecode.ipv6.IPv6AddressRange;
-import com.googlecode.ipv6.IPv6Network;
-
 import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.script.Script;
+import com.googlecode.ipv6.IPv6Address;
+import com.googlecode.ipv6.IPv6AddressRange;
+import com.googlecode.ipv6.IPv6Network;
 
 public class NetUtils {
     protected final static Logger s_logger = Logger.getLogger(NetUtils.class);
@@ -458,7 +457,7 @@ public class NetUtils {
         StringBuilder result = new StringBuilder(17);
         Formatter formatter = new Formatter(result);
         formatter.format("%02x:%02x:%02x:%02x:%02x:%02x", (macAddress >> 40) & 0xff, (macAddress >> 32) & 0xff, (macAddress >> 24) & 0xff, (macAddress >> 16) & 0xff,
-            (macAddress >> 8) & 0xff, (macAddress & 0xff));
+                (macAddress >> 8) & 0xff, (macAddress & 0xff));
 
         return result.toString();
     }
@@ -768,6 +767,14 @@ public class NetUtils {
     }
 
     public static String ipAndNetMaskToCidr(String ip, String netmask) {
+        if (!isValidIp(ip)) {
+            return null;
+        }
+
+        if (!isValidNetmask(netmask)) {
+            return null;
+        }
+
         long ipAddr = ip2Long(ip);
         long subnet = ip2Long(netmask);
         long result = ipAddr & subnet;
@@ -1388,39 +1395,28 @@ public class NetUtils {
 
     static final String VLAN_UNTAGGED = "untagged";
 
-    public static boolean isSameIsolationId(String one, String other)
-    {
+    public static boolean isSameIsolationId(String one, String other) {
         // check nulls
         // check empty strings
-        if ((one == null || one.equals(""))
-                &&
-                (other == null || other.equals("")))
-        {
+        if ((one == null || one.equals("")) && (other == null || other.equals(""))) {
             return true;
         }
-        if ((one == null || other == null)
-                &&
-                !(one == null && other == null))
-        {
+        if ((one == null || other == null) && !(one == null && other == null)) {
             return false;
         }
         // check 'untagged'
-        if (VLAN_UNTAGGED.equalsIgnoreCase(one) && VLAN_UNTAGGED.equalsIgnoreCase(other))
-        {
+        if (VLAN_UNTAGGED.equalsIgnoreCase(one) && VLAN_UNTAGGED.equalsIgnoreCase(other)) {
             return true;
         }
         // if one is a number check the other as number and as 'vlan://' + number
-        if (one.startsWith(VLAN_PREFIX))
-        {
+        if (one.startsWith(VLAN_PREFIX)) {
             one = one.substring(VLAN_PREFIX_LENGTH);
         }
-        if (other.startsWith(VLAN_PREFIX))
-        {
+        if (other.startsWith(VLAN_PREFIX)) {
             other = other.substring(VLAN_PREFIX_LENGTH);
         }
         // check valid uris or numbers
-        if (one.equalsIgnoreCase(other))
-        {
+        if (one.equalsIgnoreCase(other)) {
             return true;
         }
 
