@@ -188,7 +188,7 @@ public class LDAPConfigCmd extends BaseCmd {
         } else {
             boolean result = this.updateLDAP();
             if (result) {
-                LDAPConfigResponse lr = this.createLDAPConfigResponse(getHostname(), getPort().toString(), getUseSSL(), getQueryFilter(), getSearchBase(), getBindDN());
+                LDAPConfigResponse lr = this.createLDAPConfigResponse(getHostname(), getPort(), getUseSSL(), getQueryFilter(), getSearchBase(), getBindDN());
                 lr.setResponseName(getCommandName());
                 this.setResponseObject(lr);
             }
@@ -196,10 +196,10 @@ public class LDAPConfigCmd extends BaseCmd {
 
     }
 
-    private LDAPConfigResponse createLDAPConfigResponse(String hostname, String port, Boolean useSSL, String queryFilter, String searchBase, String bindDN) {
+    private LDAPConfigResponse createLDAPConfigResponse(String hostname, Integer port, Boolean useSSL, String queryFilter, String searchBase, String bindDN) {
         LDAPConfigResponse lr = new LDAPConfigResponse();
         lr.setHostname(hostname);
-        lr.setPort(port);
+        lr.setPort(port.toString());
         lr.setUseSSL(useSSL.toString());
         lr.setQueryFilter(queryFilter);
         lr.setBindDN(bindDN);

@@ -67,10 +67,10 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
             try {
                 final String providerUrl = "ldap://" + hostname + ":" + port;
                 _ldapContextFactory.createBindContext(providerUrl);
-                configuration = new LdapConfigurationVO(hostname, Integer.toString(port));
+                configuration = new LdapConfigurationVO(hostname, port);
                 _ldapConfigurationDao.persist(configuration);
                 s_logger.info("Added new ldap server with hostname: " + hostname);
-                return new LdapConfigurationResponse(hostname, Integer.toString(port));
+                return new LdapConfigurationResponse(hostname, port);
             } catch (final NamingException e) {
                 throw new InvalidParameterValueException("Unable to bind to the given LDAP server");
             }
