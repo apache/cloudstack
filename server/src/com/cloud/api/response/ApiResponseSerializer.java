@@ -28,6 +28,7 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseObject;
+
 import org.apache.cloudstack.api.response.*;
 import org.apache.log4j.Logger;
 
@@ -232,6 +233,8 @@ public class ApiResponseSerializer {
                             if (idFieldName != null) {
                                 sb.append("<" + "uuidProperty" + ">" + idFieldName + "</" + "uuidProperty" + ">");
                             }
+                        } else if (value instanceof String) {
+                            sb.append("<").append(serializedName.value()).append(">").append(value).append("</").append(serializedName.value()).append(">");
                         }
                     }
                     if (usedUuidList) {
