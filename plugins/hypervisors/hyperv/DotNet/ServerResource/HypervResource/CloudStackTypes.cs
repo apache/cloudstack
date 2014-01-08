@@ -347,6 +347,7 @@ namespace HypervResource
         public string path;
         public string checksum;
         public string size;
+        public string id;
 
         public static TemplateObjectTO ParseJson(dynamic json)
         {
@@ -362,7 +363,8 @@ namespace HypervResource
                     uuid = (string)templateObjectTOJson.uuid,
                     path = (string)templateObjectTOJson.path,
                     checksum = (string)templateObjectTOJson.checksum,
-                    size = (string)templateObjectTOJson.size
+                    size = (string)templateObjectTOJson.size,
+                    id = (string)templateObjectTOJson.id
                 };
                 result.s3DataStoreTO = S3TO.ParseJson(templateObjectTOJson.imageDataStore);
                 result.nfsDataStoreTO = NFSTO.ParseJson(templateObjectTOJson.imageDataStore);
