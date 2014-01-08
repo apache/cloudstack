@@ -2683,6 +2683,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setServices(services);
 
+        Provider serviceProvider = Provider.getProvider(result.getProviderName());
+        boolean canEnableIndividualServices = ApiDBUtils.canElementEnableIndividualServices(serviceProvider);
+        response.setCanEnableIndividualServices(canEnableIndividualServices);
+
         response.setObjectName("networkserviceprovider");
         return response;
     }
