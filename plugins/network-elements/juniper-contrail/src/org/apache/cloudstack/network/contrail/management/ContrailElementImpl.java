@@ -26,7 +26,6 @@ import java.util.Set;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -89,12 +88,6 @@ public class ContrailElementImpl extends AdapterBase
     @Inject
     ServerDBSync _dbSync;
     private static final Logger s_logger = Logger.getLogger(ContrailElement.class);
-
-    @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        s_logger.debug("configure");
-        return true;
-    }
 
     // PluggableService
     @Override
