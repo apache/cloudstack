@@ -171,6 +171,11 @@ public class KVMStoragePoolManager {
 
                 KVMStoragePool pool = getStoragePool(store.getPoolType(), store.getUuid());
 
+                if (pool == null) {
+                    s_logger.error("Pool " + store.getUuid() + " of type " + store.getPoolType() + " was not found, skipping disconnect logic");
+                    continue;
+                }
+
                 StorageAdaptor adaptor = getStorageAdaptor(pool.getType());
 
                 // if a disk fails to disconnect, still try to disconnect remaining
