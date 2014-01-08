@@ -523,10 +523,11 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         self.assertEqual(
                             snapshot_1.state in [
                                                  'BackedUp',
-                                                 'CreatedOnPrimary'
+                                                 'CreatedOnPrimary',
+                                                 'Allocated'
                                                  ],
                             True,
-                            "Check Snapshot state is Running or not"
+                            "Snapshot state is not valid, it is %s" % snapshot_1.state
                         )
 
         # Exception should be raised for second snapshot (account_1)
@@ -563,10 +564,11 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         self.assertEqual(
                             snapshot_2.state in [
                                                  'BackedUp',
-                                                 'CreatedOnPrimary'
+                                                 'CreatedOnPrimary',
+                                                 'Allocated'
                                                  ],
                             True,
-                            "Check Snapshot state is Running or not"
+                            "Snapshot state is not valid, it is %s" % snapshot_2.state
                         )
 
         self.debug("Creating snapshot from volume: %s" % volumes[0].id)
@@ -581,10 +583,11 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         self.assertEqual(
                             snapshot_3.state in [
                                                  'BackedUp',
-                                                 'CreatedOnPrimary'
+                                                 'CreatedOnPrimary',
+                                                 'Allocated'
                                                  ],
                             True,
-                            "Check Snapshot state is Running or not"
+                            "Snapshot state is not valid, it is %s" % snapshot_3.state
                         )
         return
 
@@ -1168,10 +1171,11 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         self.assertEqual(
                             snapshot_1.state in [
                                                  'BackedUp',
-                                                 'CreatedOnPrimary'
+                                                 'CreatedOnPrimary',
+                                                 'Allocated'
                                                  ],
                             True,
-                            "Check Snapshot state is Running or not"
+                            "Snapshot state is not valid, it is %s" % snapshot_1.state
                         )
 
         # Exception should be raised for second snapshot

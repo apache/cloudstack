@@ -268,18 +268,6 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
                             "kvm": "",
                             "xenserver": ".vhd"}
 
-    from base import ImageStore
-    secondaryStores = ImageStore.list(apiclient, zoneid=zoneid)
-
-    assert isinstance(secondaryStores, list), "Not a valid response for listImageStores"
-    assert len(secondaryStores) != 0, "No image stores found in zone %s" % zoneid
-
-    secondaryStore = secondaryStores[0]
-
-    if str(secondaryStore.providername).lower() != "nfs":
-        raise Exception(
-            "is_snapshot_on_nfs works only against nfs secondary storage. found %s" % str(secondaryStore.providername))
-
     qresultset = dbconn.execute(
                         "select id from snapshots where uuid = '%s';" \
                         % str(snapshotid)
@@ -291,7 +279,7 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
 
     snapshotid = qresultset[0][0]
     qresultset = dbconn.execute(
-        "select install_path from snapshot_store_ref where snapshot_id='%s' and store_role='Image';" % snapshotid
+        "select install_path,store_id from snapshot_store_ref where snapshot_id='%s' and store_role='Image';" % snapshotid
     )
 
     assert isinstance(qresultset, list), "Invalid db query response for snapshot %s" % snapshotid
@@ -299,6 +287,19 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
     if len(qresultset) == 0:
         #Snapshot does not exist
         return False
+
+    from base import ImageStore
+    #pass store_id to get the exact storage pool where snapshot is stored
+    secondaryStores = ImageStore.list(apiclient, zoneid=zoneid, id=int(qresultset[0][1]))
+
+    assert isinstance(secondaryStores, list), "Not a valid response for listImageStores"
+    assert len(secondaryStores) != 0, "No image stores found in zone %s" % zoneid
+
+    secondaryStore = secondaryStores[0]
+
+    if str(secondaryStore.providername).lower() != "nfs":
+        raise Exception(
+            "is_snapshot_on_nfs works only against nfs secondary storage. found %s" % str(secondaryStore.providername))
 
     hypervisor = get_hypervisor_type(apiclient)
     # append snapshot extension based on hypervisor, to the snapshot path
