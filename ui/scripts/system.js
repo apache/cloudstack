@@ -18019,6 +18019,8 @@
                         		groupbyObj.routerCount = routerCountFromAllPages;
                         		
                             	routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;      	        	                                                		
+                        	} else {
+                        		groupbyObj.routerCount = routerCountFromAllPages;
                         	}
                         }    	                                                		
                 	});    	                                                	
@@ -18047,13 +18049,31 @@
                                 		projectid: -1
                                 	}),
                             		success: function(json) {  
-                            			routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;    	                                                    			                                                    			
-                            			var items = json.listroutersresponse.router;
-                            			for (var k = 0; k < items.length; k++) {    	                                                    				
-                            				if (items[k].requiresupgrade) {
-                            					routerRequiresUpgrade++;
-                            				}
-                            			}       	    	                                                    			
+                            			if (json.listroutersresponse.count != undefined) {                            		                                            		    	                                            		
+                                    		routerCountFromAllPages += json.listroutersresponse.count;    
+                                    		groupbyObj.routerCount = routerCountFromAllPages;
+                                    		
+                                        	routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;      	        	                                                		
+                                    	} else {
+                                    		groupbyObj.routerCount = routerCountFromAllPages;
+                                    	}
+                            			
+                            			
+                            			if (json.listroutersresponse.count != undefined) {                            		                                            		    	                                            		
+                                    		routerCountFromAllPages += json.listroutersresponse.count;    
+                                    		groupbyObj.routerCount = routerCountFromAllPages;
+                                    		
+                                        	routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;                                                        			                                                    			
+	                            			
+	                            			var items = json.listroutersresponse.router;
+	                            			for (var k = 0; k < items.length; k++) {    	                                                    				
+	                            				if (items[k].requiresupgrade) {
+	                            					routerRequiresUpgrade++;
+	                            				}
+	                            			}  
+                            			} else {
+                                    		groupbyObj.routerCount = routerCountFromAllPages;
+                                    	}
                             		}
                     			});    	                                                    			
                     			
