@@ -40,7 +40,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -48,6 +47,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -336,7 +336,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     // TODO, remove it after transient period is over
     static final ConfigKey<Boolean> VmJobEnabled = new ConfigKey<Boolean>("Advanced",
-            Boolean.class, "vm.job.enabled", "true",
+            Boolean.class, "vm.job.enabled", "false",
             "True to enable new VM sync model. false to use the old way", false);
 
     static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced",
@@ -3698,7 +3698,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public VMInstanceVO reConfigureVm(String vmUuid, ServiceOffering oldServiceOffering,
     	boolean reconfiguringOnExistingHost)
-    	throws ResourceUnavailableException, ConcurrentOperationException {
+            throws ResourceUnavailableException, InsufficientServerCapacityException, ConcurrentOperationException {
 
     	AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
@@ -3716,20 +3716,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 				throw new RuntimeException("Execution excetion", e);
 			}
 
-	    	AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, outcome.getJob().getId());
-	    	if(jobVo.getResultCode() == JobInfo.Status.SUCCEEDED.ordinal()) {
-	    		return _entityMgr.findById(VMInstanceVO.class, vm.getId());
-	    	} else {
-                Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
-                if (jobResult != null) {
-                    if (jobResult instanceof ResourceUnavailableException)
-                        throw (ResourceUnavailableException)jobResult;
-                    else if (jobResult instanceof ConcurrentOperationException)
-                        throw (ConcurrentOperationException)jobResult;
-		    	}
+            Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+            if (jobResult != null) {
+                if (jobResult instanceof ResourceUnavailableException)
+                    throw (ResourceUnavailableException)jobResult;
+                else if (jobResult instanceof ConcurrentOperationException)
+                    throw (ConcurrentOperationException)jobResult;
+                else if (jobResult instanceof InsufficientServerCapacityException)
+                    throw (InsufficientServerCapacityException)jobResult;
+                else if (jobResult instanceof Throwable) {
+                    s_logger.error("Unhandled exception", (Throwable)jobResult);
+                    throw new RuntimeException("Unhandled exception", (Throwable)jobResult);
+                }
+            }
 
-		    	throw new RuntimeException("Failed with un-handled exception");
-	    	}
+            return (VMInstanceVO)vm;
     	}
     }
 
@@ -4668,7 +4669,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public Outcome<VirtualMachine> reconfigureVmThroughJobQueue(
-    	final String vmUuid, final ServiceOffering oldServiceOffering, final boolean reconfiguringOnExistingHost) {
+    	final String vmUuid, final ServiceOffering newServiceOffering, final boolean reconfiguringOnExistingHost) {
 
         final CallContext context = CallContext.current();
         final User user = context.getCallingUser();
@@ -4705,7 +4706,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
 		            // save work context info (there are some duplications)
 		            VmWorkReconfigure workInfo = new VmWorkReconfigure(user.getId(), account.getId(), vm.getId(),
-                            VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, oldServiceOffering, reconfiguringOnExistingHost);
+                            VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, newServiceOffering.getId(), reconfiguringOnExistingHost);
 		            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
                     _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
@@ -4833,7 +4834,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.info("Unable to find vm " + work.getVmId());
         }
         assert (vm != null);
-        reConfigureVm(vm.getUuid(), work.getNewServiceOffering(),
+
+        ServiceOffering newServiceOffering = _offeringDao.findById(vm.getId(), work.getNewServiceOfferingId());
+
+        reConfigureVm(vm.getUuid(), newServiceOffering,
                 work.isSameHost());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
     }

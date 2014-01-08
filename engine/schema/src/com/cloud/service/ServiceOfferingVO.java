@@ -18,7 +18,12 @@ package com.cloud.service;
 
 import java.util.Map;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.Entity;
+import javax.persistence.PrimaryKeyJoinColumn;
+import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.DiskOfferingVO;
@@ -93,9 +98,9 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.rateMbps = rateMbps;
         this.multicastRateMbps = multicastRateMbps;
         this.offerHA = offerHA;
-        this.limitCpuUse = false;
-        this.volatileVm = false;
-        this.default_use = defaultUse;
+        limitCpuUse = false;
+        volatileVm = false;
+        default_use = defaultUse;
         this.vm_type = vm_type == null ? null : vm_type.toString().toLowerCase();
     }
 
@@ -131,16 +136,16 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 
     public ServiceOfferingVO(ServiceOfferingVO offering) {
         super(offering.getId(), offering.getName(), offering.getDisplayText(), false, offering.getTags(), offering.isRecreatable(), offering.getUseLocalStorage(), offering.getSystemUse(), true, offering.getDomainId());
-        this.cpu = offering.getCpu();
-        this.ramSize = offering.getRamSize();
-        this.speed = offering.getSpeed();
-        this.rateMbps = offering.getRateMbps();
-        this.multicastRateMbps = offering.getMulticastRateMbps();
-        this.offerHA = offering.getOfferHA();
-        this.limitCpuUse = offering.getLimitCpuUse();
-        this.volatileVm = offering.getVolatileVm();
-        this.hostTag = offering.getHostTag();
-        this.vm_type = offering.getSystemVmType();
+        cpu = offering.getCpu();
+        ramSize = offering.getRamSize();
+        speed = offering.getSpeed();
+        rateMbps = offering.getRateMbps();
+        multicastRateMbps = offering.getMulticastRateMbps();
+        offerHA = offering.getOfferHA();
+        limitCpuUse = offering.getLimitCpuUse();
+        volatileVm = offering.getVolatileVm();
+        hostTag = offering.getHostTag();
+        vm_type = offering.getSystemVmType();
     }
 
     @Override
@@ -226,19 +231,23 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 		this.hostTag = hostTag;
 	}
 
-	public String getHostTag() {
+	@Override
+    public String getHostTag() {
 		return hostTag;
 	}
 
-	public String getSystemVmType(){
+	@Override
+    public String getSystemVmType(){
 	    return vm_type;
 	}
 
-	public void setSortKey(int key) {
+	@Override
+    public void setSortKey(int key) {
 		sortKey = key;
 	}
 
-	public int getSortKey() {
+	@Override
+    public int getSortKey() {
 		return sortKey;
 	}
 
@@ -272,11 +281,12 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.details = details;
     }
 
+    @Override
     public boolean isDynamic() {
         return cpu == null || speed == null || ramSize == null || isDynamic;
     }
 
     public void setDynamicFlag(boolean isdynamic) {
-        this.isDynamic = isdynamic;
+        isDynamic = isdynamic;
     }
 }

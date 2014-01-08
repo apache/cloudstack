@@ -20,6 +20,8 @@ import java.net.URI;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DeployDestination;
@@ -41,7 +43,6 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.fsm.NoTransitionException;
-import org.apache.cloudstack.framework.config.ConfigKey;
 
 /**
  * Manages allocating resources to vms.
@@ -56,12 +57,12 @@ public interface VirtualMachineManager extends Manager {
     public interface Topics {
         public static final String VM_POWER_STATE = "vm.powerstate";
 	}
-	 
+
     /**
      * Allocates a new virtual machine instance in the CloudStack DB.  This
      * orchestrates the creation of all virtual resources needed in CloudStack
      * DB to bring up a VM.
-     * 
+     *
      * @param vmInstanceName Instance name of the VM.  This name uniquely
      *        a VM in CloudStack's deploy environment.  The caller gets to
      *        define this VM but it must be unqiue for all of CloudStack.
@@ -121,9 +122,9 @@ public interface VirtualMachineManager extends Manager {
     void migrateAway(String vmUuid, long hostId, DeploymentPlanner planner) throws InsufficientServerCapacityException;
 
     void migrate(String vmUuid, long srcHostId, DeployDestination dest) throws ResourceUnavailableException, ConcurrentOperationException;
-    
+
     void migrateWithStorage(String vmUuid, long srcId, long destId, Map<Volume, StoragePool> volumeToPool) throws ResourceUnavailableException, ConcurrentOperationException;
-    
+
     void reboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException;
 
     void advanceReboot(String vmUuid, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException,
@@ -131,13 +132,13 @@ public interface VirtualMachineManager extends Manager {
 
     /**
      * Check to see if a virtual machine can be upgraded to the given service offering
-     * 
+     *
      * @param vm
      * @param offering
      * @return true if the host can handle the upgrade, false otherwise
      */
     boolean isVirtualMachineUpgradable(final VirtualMachine vm, final ServiceOffering offering);
-    
+
     VirtualMachine findById(long vmId);
 
     void storageMigration(String vmUuid, StoragePool storagePoolId);
@@ -166,7 +167,7 @@ public interface VirtualMachineManager extends Manager {
      */
     NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException,
         ResourceUnavailableException, InsufficientCapacityException;
-    
+
     /**
      * @param vm
      * @param nic
@@ -185,7 +186,7 @@ public interface VirtualMachineManager extends Manager {
      * @throws ConcurrentOperationException
      */
     boolean removeVmFromNetwork(VirtualMachine vm, Network network, URI broadcastUri) throws ConcurrentOperationException, ResourceUnavailableException;
-    
+
     /**
      * @param nic
      * @param hypervisorType
@@ -200,8 +201,9 @@ public interface VirtualMachineManager extends Manager {
      */
     VirtualMachineTO toVmTO(VirtualMachineProfile profile);
 
-    VirtualMachine reConfigureVm(String vmUuid, ServiceOffering newServiceOffering, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException;
-    
+    VirtualMachine reConfigureVm(String vmUuid, ServiceOffering newServiceOffering, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException,
+            InsufficientServerCapacityException;
+
     void findHostAndMigrate(String vmUuid, Long newSvcOfferingId, DeploymentPlanner.ExcludeList excludeHostList) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException;
 

@@ -116,19 +116,18 @@ public class VmWorkJobHandlerProxy implements VmWorkJobHandler {
 
                 // legacy CloudStack code relies on checked exception for error handling
                 // we need to re-throw the real exception here
-                if (e.getCause() != null && e.getCause() instanceof Exception)
+                if (e.getCause() != null && e.getCause() instanceof Exception) {
+                    s_logger.info("Rethrow exception " + e.getCause());
                     throw (Exception)e.getCause();
+                }
 
                 throw e;
             }
         } else {
             s_logger.error("Unable to find handler for VM work job: " + work.getClass().getName() + _gsonLogger.toJson(work));
 
-            RuntimeException e = new RuntimeException("Unsupported VM work job: " + work.getClass().getName() + _gsonLogger.toJson(work));
-            String exceptionJson = JobSerializerHelper.toSerializedString(e);
-
-            s_logger.error("Serialize exception object into json: " + exceptionJson);
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.FAILED, exceptionJson);
+            RuntimeException ex = new RuntimeException("Unable to find handler for VM work job: " + work.getClass().getName());
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.FAILED, JobSerializerHelper.toObjectSerializedString(ex));
         }
     }
 }
