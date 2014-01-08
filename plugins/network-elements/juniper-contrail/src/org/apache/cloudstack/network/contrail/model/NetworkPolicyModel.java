@@ -73,7 +73,7 @@ public class NetworkPolicyModel extends ModelObjectBase {
 
         SearchCriteria<NetworkVO> sc = searchBuilder.create();
 
-        sc.setParameters("networkOfferingId", controller.getManager().getRouterOffering().getId());
+        sc.setParameters("networkOfferingId", controller.getManager().getVpcRouterOffering().getId());
         sc.setParameters("cidr", cidr);
         sc.setParameters("trafficType", Networks.TrafficType.Guest);
 

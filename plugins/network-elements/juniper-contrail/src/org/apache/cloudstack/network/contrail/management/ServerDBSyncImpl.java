@@ -68,6 +68,8 @@ import com.cloud.network.vpc.NetworkACLItemDao;
 import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.NetworkACLVO;
 import com.cloud.network.vpc.dao.NetworkACLDao;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.vm.NicVO;
@@ -96,6 +98,8 @@ public class ServerDBSyncImpl implements ServerDBSync {
     PhysicalNetworkServiceProviderDao _physProviderDao;
     @Inject
     ContrailManager _manager;
+    @Inject
+    VpcDao _vpcDao;
     @Inject
     NetworkACLItemDao _networkACLItemDao;
     @Inject
@@ -990,7 +994,12 @@ public class ServerDBSyncImpl implements ServerDBSync {
         NetworkPolicyModel policyModel = new NetworkPolicyModel(db.getUuid(), db.getName());
         net.juniper.contrail.api.types.Project project = null;
         try {
-            project = _manager.getDefaultVncProject();
+            VpcVO vpc = _vpcDao.findById(db.getVpcId());
+            if (vpc != null) {
+                project = _manager.getVncProject(vpc.getDomainId(), vpc.getAccountId());
+            } else {
+                project = _manager.getDefaultVncProject();
+            }
         } catch (IOException ex) {
             s_logger.warn("read project", ex);
             throw ex;
@@ -1055,7 +1064,12 @@ public class ServerDBSyncImpl implements ServerDBSync {
         NetworkPolicyModel policyModel = new NetworkPolicyModel(db.getUuid(), db.getName());
         net.juniper.contrail.api.types.Project project = null;
         try {
-            project = _manager.getDefaultVncProject();
+            VpcVO vpc = _vpcDao.findById(db.getVpcId());
+            if (vpc != null) {
+                project = _manager.getVncProject(vpc.getDomainId(), vpc.getAccountId());
+            } else {
+                project = _manager.getDefaultVncProject();
+            }
         } catch (IOException ex) {
             s_logger.warn("read project", ex);
         }

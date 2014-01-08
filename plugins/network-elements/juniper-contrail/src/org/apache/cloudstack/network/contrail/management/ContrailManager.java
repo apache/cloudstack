@@ -38,12 +38,19 @@ import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.projects.ProjectVO;
 import com.cloud.network.vpc.NetworkACLVO;
+import com.cloud.network.vpc.VpcOffering;
+import com.cloud.network.vpc.VpcVO;
 
 public interface ContrailManager {
     public static final String routerOfferingName = "Juniper Contrail Network Offering";
     public static final String routerOfferingDisplayText = "Juniper Contrail Network Offering";
     public static final String routerPublicOfferingName = "Juniper Contrail Public Network Offering";
     public static final String routerPublicOfferingDisplayText = "Juniper Contrail Public Network Offering";
+    public static final String vpcRouterOfferingName = "Juniper Contrail VPC Network Offering";
+    public static final String vpcRouterOfferingDisplayText = "Juniper Contrail VPC Network Offering";
+    public static final String juniperVPCOfferingName = "Juniper Contrail VPC Offering";
+    public static final String juniperVPCOfferingDisplayText = "Juniper Contrail VPC Offering";
+
     public static final int DB_SYNC_INTERVAL_DEFAULT = 600000;
     public static final String VNC_ROOT_DOMAIN = "default-domain";
     public static final String VNC_DEFAULT_PROJECT = "default-project";
@@ -51,6 +58,8 @@ public interface ContrailManager {
 
     public NetworkOffering getRouterOffering();
     public NetworkOffering getPublicRouterOffering();
+    public NetworkOffering getVpcRouterOffering();
+    public VpcOffering getVpcOffering();
 
     public void syncNetworkDB(short syncMode) throws IOException;
 
@@ -115,6 +124,8 @@ public interface ContrailManager {
     public List<NetworkVO> findSystemNetworks(List<TrafficType> types);
 
     public List<IPAddressVO> findManagedPublicIps();
+
+    public List<VpcVO> findManagedVpcs();
 
     public List<NetworkACLVO> findManagedACLs();
 
