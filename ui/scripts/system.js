@@ -6524,7 +6524,300 @@
                                 }
                             }
                         }
-                    }
+                    },
+                    Opendaylight: {
+                        type: 'detailView',
+                        id: 'openDaylightProvider',
+                        label: 'label.openDaylight',
+                        tabs: {
+                            details: {
+                                title: 'label.details',
+                                fields:[ {
+                                    name: {
+                                        label: 'label.name'
+                                    }
+                                },
+                                {
+                                    state: {
+                                        label: 'label.state'
+                                    }
+                                }],
+                                dataProvider: function (args) {
+                                    refreshNspData("Opendaylight");
+                                    var providerObj;
+                                    $(nspHardcodingArray).each(function () {
+                                        if (this.id == "Opendaylight") {
+                                            providerObj = this;
+                                            return false; //break each loop
+                                        }
+                                    });
+                                    args.response.success({
+                                        data: providerObj,
+                                        actionFilter: networkProviderActionFilter('Opendaylight')
+                                    });
+                                }
+                            },
+                            controllers: {
+                                title: 'label.opendaylight.controllers',
+                                listView: {
+                                    id: 'openDaylightControllerList',
+                                    fields: {
+                                        name: {
+                                            label: 'label.name'
+                                        },
+                                        url: {
+                                            label: 'label.url'
+                                        },
+                                        username: {
+                                            label: 'label.username'
+                                        }
+                                    },
+                                    dataProvider: function (args) {
+                                        var providerObj
+                                        $.ajax({
+                                            url: createURL("listOpenDaylightControllers"),
+                                            async: false,
+                                            success: function (json) {
+                                                providerObj = json.listOpenDaylightControllers.opendaylightcontroller
+                                            }
+                                        });
+                                        args.response.success({
+                                            data: providerObj
+                                        });
+                                    },
+                                    detailView: {
+                                        name: "OpenDaylight Controller",
+                                        tabs: {
+                                            details: {
+                                                title: 'label.opendaylight.controllerdetail',
+                                                fields:[ {
+                                                    name: {
+                                                        label: 'label.name'
+                                                    },
+                                                    url: {
+                                                        label: 'label.url', header: true
+                                                    },
+                                                    username: {
+                                                        label: 'label.username'
+                                                    }
+                                                }],
+                                                dataProvider: function (args) {
+                                                    var providerObj
+                                                    $.ajax({
+                                                        url: createURL("listOpenDaylightControllers&id=" + args.id),
+                                                        async: false,
+                                                        success: function (json) {
+                                                            providerObj = json.listOpenDaylightControllers.opendaylightcontroller
+                                                        }
+                                                    });
+                                                    args.response.success({
+                                                        data: providerObj[0],
+                                                        actionFilter: function(args) { return [ 'destroy' ] }
+                                                    });
+                                                }
+                                            }
+                                        },
+                                        actions: {
+                                            destroy: {
+                                                label: 'label.destroy.controller',
+                                                action: function (args) {
+                                                    $.ajax({
+                                                        url: createURL("deleteOpenDaylightController&id=" + args.data.id),
+                                                        dataType: "json",
+                                                        success: function (json) {
+                                                            var jid = json.deleteOpenDaylightController.jobid;
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId: jid,
+                                                                    getUpdatedItem: function (json) {
+                                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                                    }
+                                                                }
+                                                            });
+                                                        }
+                                                    });
+                                                },
+                                                messages: {
+                                                    notification: function(args) {
+                                                        return 'label.openaylight.destroycontroller'
+                                                    }
+                                                },
+                                                notification: {
+                                                    poll: pollAsyncJobResult
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        actions: {
+                            add: {
+                                label: 'label.add.OpenDaylight.device',
+                                createForm: {
+                                    title: 'label.add.OpenDaylight.device',
+                                    preFilter: function (args) {
+                                    },
+                                    // TODO What is this?
+                                    fields: {
+                                        url: {
+                                            label: 'label.url'
+                                        },
+                                        username: {
+                                            label: 'label.username'
+                                        },
+                                        password: {
+                                            label: 'label.password',
+                                            isPassword: true
+                                        },
+                                        numretries: {
+                                            label: 'label.numretries',
+                                            defaultValue: '2'
+                                        }
+                                    }
+                                },
+                                action: function (args) {
+                                    if (nspMap[ "Opendaylight"] == null) {
+                                        $.ajax({
+                                            url: createURL("addNetworkServiceProvider&name=Opendaylight&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                                            dataType: "json",
+                                            async: true,
+                                            success: function (json) {
+                                                var jobId = json.addnetworkserviceproviderresponse.jobid;
+                                                var addOpenDaylightProviderIntervalID = setInterval(function () {
+                                                    $.ajax({
+                                                        url: createURL("queryAsyncJobResult&jobId=" + jobId),
+                                                        dataType: "json",
+                                                        success: function (json) {
+                                                            var result = json.queryasyncjobresultresponse;
+                                                            if (result.jobstatus == 0) {
+                                                                return; //Job has not completed
+                                                            } else {
+                                                                clearInterval(addOpenDaylightProviderIntervalID);
+                                                                if (result.jobstatus == 1) {
+                                                                    nspMap[ "Opendaylight"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                                                    addOpenDaylightController(args, selectedPhysicalNetworkObj, "addOpenDaylightController", "addopendaylightcontrollerresponse", "opendaylightcontroller")
+                                                                } else if (result.jobstatus == 2) {
+                                                                    alert("addNetworkServiceProvider&name=OpenDaylight failed. Error: " + _s(result.jobresult.errortext));
+                                                                }
+                                                            }
+                                                        },
+                                                        error: function (XMLHttpResponse) {
+                                                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                            alert("addNetworkServiceProvider&name=OpenDaylight failed. Error: " + errorMsg);
+                                                        }
+                                                    });
+                                                },
+                                                g_queryAsyncJobResultInterval);
+                                            }
+                                        });
+                                    } else {
+                                        addOpenDaylightController(args, selectedPhysicalNetworkObj, "addOpenDaylightController", "addOpenDaylightController", "opendaylightcontroller")
+                                    }
+                                },
+                                messages: {
+                                    notification: function (args) {
+                                        return 'label.add.OpenDaylight.device';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            enable: {
+                                label: 'label.enable.provider',
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap[ "Opendaylight"].id + "&state=Enabled"),
+                                        dataType: "json",
+                                        success: function (json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function (json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.confirm.enable.provider';
+                                    },
+                                    notification: function () {
+                                        return 'label.enable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            disable: {
+                                label: 'label.disable.provider',
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap[ "Opendaylight"].id + "&state=Disabled"),
+                                        dataType: "json",
+                                        success: function (json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function (json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.confirm.disable.provider';
+                                    },
+                                    notification: function () {
+                                        return 'label.disable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            destroy: {
+                                label: 'label.shutdown.provider',
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("deleteNetworkServiceProvider&id=" + nspMap[ "Opendaylight"].id),
+                                        dataType: "json",
+                                        success: function (json) {
+                                            var jid = json.deletenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                            
+                                            $(window).trigger('cloudStack.fullRefresh');
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.confirm.shutdown.provider';
+                                    },
+                                    notification: function (args) {
+                                        return 'label.shutdown.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }
+                        }
+                    }                    
                 }
             }
         },
