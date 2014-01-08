@@ -26,11 +26,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ResponseObject;
@@ -39,6 +34,7 @@ import org.apache.cloudstack.api.response.CreateCmdResponse;
 import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseGsonHelper;
@@ -46,6 +42,8 @@ import com.cloud.api.ApiServer;
 import com.cloud.utils.encoding.URLEncoder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
+import com.google.gson.Gson;
+import com.google.gson.annotations.SerializedName;
 
 public class ApiResponseSerializer {
     private static final Logger s_logger = Logger.getLogger(ApiResponseSerializer.class.getName());
@@ -241,6 +239,8 @@ public class ApiResponseSerializer {
                             if (idFieldName != null) {
                                 sb.append("<" + "uuidProperty" + ">" + idFieldName + "</" + "uuidProperty" + ">");
                             }
+                        } else if (value instanceof String) {
+                            sb.append("<").append(serializedName.value()).append(">").append(value).append("</").append(serializedName.value()).append(">");
                         }
                     }
                     if (usedUuidList) {
