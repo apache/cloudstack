@@ -1278,7 +1278,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             if (!snapshotDir.exists()) {
                 details = "snapshot directory " + snapshotDir.getName() + " doesn't exist";
                 s_logger.debug(details);
-                return new Answer(cmd, false, details);
+                return new Answer(cmd, true, details);
             }
             // delete snapshot in the directory if exists
             String lPath = absoluteSnapshotPath + "/*" + snapshotName + "*";

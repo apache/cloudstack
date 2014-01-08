@@ -599,7 +599,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                 SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Image);
 
                 if (snapshotStrategy.deleteSnapshot(snapshot.getId())) {
-                    if (snapshot.getRecurringType() == Type.MANUAL) {
+                    if (Type.MANUAL == snapshot.getRecurringType()) {
                         _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.snapshot);
                         _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.secondary_storage, new Long(snapshotStoreRef.getSize()));
                     }
