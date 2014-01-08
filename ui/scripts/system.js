@@ -19015,16 +19015,6 @@
                                     		routerCountFromAllPages += json.listroutersresponse.count;    
                                     		groupbyObj.routerCount = routerCountFromAllPages;
                                     		
-                                        	routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;      	        	                                                		
-                                    	} else {
-                                    		groupbyObj.routerCount = routerCountFromAllPages;
-                                    	}
-                            			
-                            			
-                            			if (json.listroutersresponse.count != undefined) {                            		                                            		    	                                            		
-                                    		routerCountFromAllPages += json.listroutersresponse.count;    
-                                    		groupbyObj.routerCount = routerCountFromAllPages;
-                                    		
                                         	routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;                                                        			                                                    			
 	                            			
 	                            			var items = json.listroutersresponse.router;
