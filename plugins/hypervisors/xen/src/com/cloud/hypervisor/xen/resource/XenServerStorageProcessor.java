@@ -1352,6 +1352,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
         Long physicalSize = null;
         Map<String, String> options = cmd.getOptions();
         boolean fullbackup = Boolean.parseBoolean(options.get("fullSnapshot"));
+        boolean result = false;
         try {
             SR primaryStorageSR = hypervisorResource.getSRByNameLabelandHost(conn, primaryStorageNameLabel);
             if (primaryStorageSR == null) {
@@ -1477,17 +1478,23 @@ public class XenServerStorageProcessor implements StorageProcessor {
             } else {
                 newSnapshot.setParentSnapshotPath(prevBackupUuid);
             }
+            result = true;
             return new CopyCmdAnswer(newSnapshot);
         } catch (XenAPIException e) {
             details = "BackupSnapshot Failed due to " + e.toString();
             s_logger.warn(details, e);
-            // remove last bad primary snapshot when exception happens
-            destroySnapshotOnPrimaryStorage(conn, snapshotUuid);
         } catch (Exception e) {
             details = "BackupSnapshot Failed due to " + e.getMessage();
             s_logger.warn(details, e);
-            // remove last bad primary snapshot when exception happens
-            destroySnapshotOnPrimaryStorage(conn, snapshotUuid);
+        } finally {
+            if (!result) {
+                // remove last bad primary snapshot when exception happens
+                try {
+                    destroySnapshotOnPrimaryStorage(conn, snapshotUuid);
+                } catch (Exception e) {
+                    s_logger.debug("clean up snapshot failed", e);
+                }
+            }
         }
 
         return new CopyCmdAnswer(details);
