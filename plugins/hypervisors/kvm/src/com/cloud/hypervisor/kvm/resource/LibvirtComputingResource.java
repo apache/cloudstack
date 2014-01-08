@@ -1805,6 +1805,15 @@ ServerResource {
 
     private PlugNicAnswer execute(PlugNicCommand cmd) {
         NicTO nic = cmd.getNic();
+        // rely on broadcastType as authoritiative rather than broadcast uri
+        // TODO: fix mismatches in mgmt server
+        if (nic.getBroadcastType() == BroadcastDomainType.Vxlan && !nic.getBroadcastUri().getScheme().equals("vxlan")) {
+            s_logger.error("mismatch in broadcast type and uri for nic " + nic +" find what is doing this and fix it");
+            String vnet = nic.getBroadcastUri().getAuthority();
+            nic.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(vnet));
+            nic.setIsolationuri(BroadcastDomainType.Vxlan.toUri(vnet));
+            s_logger.error("mismatch now resolved to " + nic);
+        }
         String vmName = cmd.getVmName();
         Domain vm = null;
         try {

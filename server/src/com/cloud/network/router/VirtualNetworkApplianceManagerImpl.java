@@ -1718,9 +1718,17 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             defaultNic.setGateway(sourceNatIp.getGateway());
             defaultNic.setNetmask(sourceNatIp.getNetmask());
             defaultNic.setMacAddress(sourceNatIp.getMacAddress());
-            defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
-            defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
-            defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
+            // get broadcast from public network
+            Network pubNet = _networkDao.findById(sourceNatIp.getNetworkId());
+            if (pubNet.getBroadcastDomainType() == BroadcastDomainType.Vxlan) {
+                defaultNic.setBroadcastType(BroadcastDomainType.Vxlan);
+                defaultNic.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(sourceNatIp.getVlanTag()));
+                defaultNic.setIsolationUri(BroadcastDomainType.Vxlan.toUri(sourceNatIp.getVlanTag()));
+            } else {
+                defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
+                defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
+                defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
+            }
             if (hasGuestNetwork) {
                 defaultNic.setDeviceId(2);
             }

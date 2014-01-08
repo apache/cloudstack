@@ -66,6 +66,9 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="The VLAN id to be used for Management traffic by VMware host")
     private String vlan;
 
+    @Parameter(name=ApiConstants.ISOLATION_METHOD, type=CommandType.STRING, description="Used if physical network has multiple isolation types and traffic type is public. Choose which isolation method. Valid options currently 'vlan' or 'vxlan', defaults to 'vlan'.")
+    private String isolationMethod;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -108,6 +111,14 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
         return vlan;
     }
 
+    public String getIsolationMethod() {
+        if (isolationMethod != null && !isolationMethod.isEmpty()) {
+            return isolationMethod;
+        } else {
+            return "vlan";
+        }
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -137,7 +148,7 @@ public class AddTrafficTypeCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        PhysicalNetworkTrafficType result = _networkService.addTrafficTypeToPhysicalNetwork(getPhysicalNetworkId(), getTrafficType(), getXenLabel(), getKvmLabel(), getVmwareLabel(), getSimulatorLabel(), getVlan(), getHypervLabel());
+        PhysicalNetworkTrafficType result = _networkService.addTrafficTypeToPhysicalNetwork(getPhysicalNetworkId(), getTrafficType(), getIsolationMethod(), getXenLabel(), getKvmLabel(), getVmwareLabel(), getSimulatorLabel(), getVlan(), getHypervLabel());
         if (result != null) {
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());

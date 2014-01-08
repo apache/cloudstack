@@ -108,7 +108,20 @@ public class Networks {
         },
         Mido("mido", String.class),
         Pvlan("pvlan", String.class),
-        Vxlan("vxlan", Long.class),
+        Vxlan("vxlan", Long.class) {
+            @Override
+            public <T> URI toUri(T value) {
+                try {
+                    if (value.toString().contains("://"))
+                        return new URI(value.toString());
+                    else
+                        return new URI("vxlan://" + value.toString());
+                } catch (URISyntaxException e) {
+                    throw new CloudRuntimeException(
+                            "Unable to convert to broadcast URI: " + value);
+                }
+            }
+        },
         UnDecided(null, null);
 
         private final String scheme;

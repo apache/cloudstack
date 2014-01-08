@@ -343,6 +343,7 @@ public class ApiConstants {
     public static final String CAPACITY_IOPS = "capacityiops";
     public static final String NETWORK_SPEED = "networkspeed";
     public static final String BROADCAST_DOMAIN_RANGE = "broadcastdomainrange";
+    public static final String ISOLATION_METHOD = "isolationmethod";
     public static final String ISOLATION_METHODS = "isolationmethods";
     public static final String PHYSICAL_NETWORK_ID = "physicalnetworkid";
     public static final String DEST_PHYSICAL_NETWORK_ID = "destinationphysicalnetworkid";
