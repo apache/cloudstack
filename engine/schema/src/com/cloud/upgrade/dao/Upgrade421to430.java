@@ -21,8 +21,11 @@ import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -88,6 +91,39 @@ public class Upgrade421to430 implements DbUpgrade {
                 pstmt.setString(3, desc);
                 pstmt.executeUpdate();
             }
+
+            /**
+             * if encrypted, decrypt the ldap hostname and port and then update as they are not encrypted now.
+             */
+            pstmt = conn.prepareStatement("SELECT conf.value FROM `cloud`.`configuration` conf WHERE conf.name='ldap.hostname'");
+            ResultSet resultSet = pstmt.executeQuery();
+            String hostname = null;
+            String port;
+            int portNumber = 0;
+            if (resultSet.next()) {
+                hostname = DBEncryptionUtil.decrypt(resultSet.getString(1));
+            }
+
+            pstmt = conn.prepareStatement("SELECT conf.value FROM `cloud`.`configuration` conf WHERE conf.name='ldap.port'");
+            resultSet = pstmt.executeQuery();
+            if (resultSet.next()) {
+                port = DBEncryptionUtil.decrypt(resultSet.getString(1));
+                if (StringUtils.isNotBlank(port)) {
+                    portNumber = Integer.valueOf(port);
+                }
+            }
+
+            if (StringUtils.isNotBlank(hostname)) {
+                pstmt = conn.prepareStatement("INSERT INTO `cloud`.`ldap_configuration`(hostname, port) VALUES(?,?)");
+                pstmt.setString(1, hostname);
+                if (portNumber != 0) {
+                    pstmt.setInt(2, portNumber);
+                } else {
+                    pstmt.setNull(2, Types.INTEGER);
+                }
+                pstmt.executeUpdate();
+            }
+
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to insert ldap configuration values ", e);
         } catch (UnsupportedEncodingException e) {
