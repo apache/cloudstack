@@ -24,6 +24,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.server.ManagementService;
 import org.apache.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -36,7 +37,6 @@ import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.component.ComponentContext;
@@ -44,10 +44,6 @@ import com.cloud.utils.fsm.StateListener;
 import com.cloud.vm.VirtualMachine.Event;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.NicDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 public class UserVmStateListener implements StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
@@ -57,8 +53,8 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
     @Inject protected ServiceOfferingDao _offeringDao;
     private static final Logger s_logger = Logger.getLogger(UserVmStateListener.class);
 
-    protected static EventBus _eventBus = null;
-    
+    protected static EventBus s_eventBus = null;
+
     public UserVmStateListener(UsageEventDao usageEventDao, NetworkDao networkDao, NicDao nicDao, ServiceOfferingDao offeringDao) {
         this._usageEventDao = usageEventDao;
         this._networkDao = networkDao;
@@ -98,7 +94,7 @@ public class UserVmStateListener implements StateListener<State, VirtualMachine.
             }
         } else if (VirtualMachine.State.isVmDestroyed(oldState, event, newState)) {
             generateUsageEvent(vo.getServiceOfferingId(), vo, EventTypes.EVENT_VM_DESTROY);
-        } 
+        }
         return true;
     }
 
