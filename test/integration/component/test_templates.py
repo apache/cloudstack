@@ -231,7 +231,7 @@ class TestCreateTemplate(cloudstackTestCase):
         self.assertEqual(
                             template_response.isready,
                             True,
-                            "Check display text of newly created template"
+                            "Template state is not ready, it is %s" % template_response.isready
                         )
 
         # Deploy new virtual machine using template
@@ -455,7 +455,8 @@ class TestTemplates(cloudstackTestCase):
         self.assertEqual(
                             template_response.id,
                             self.template.id,
-                            "Check display text of updated template"
+                            "Template id %s in the list is not matching with created template id %s" %
+                            (template_response.id, self.template.id)
                         )
 
         self.debug("Deleting template: %s" % self.template)
