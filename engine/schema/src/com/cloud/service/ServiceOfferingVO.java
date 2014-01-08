@@ -97,8 +97,8 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         this.rateMbps = rateMbps;
         this.multicastRateMbps = multicastRateMbps;
         this.offerHA = offerHA;
-        this.limitCpuUse = false;
-        this.volatileVm = false;
+        limitCpuUse = false;
+        volatileVm = false;
         this.defaultUse = defaultUse;
         this.vmType = vmType == null ? null : vmType.toString().toLowerCase();
     }
@@ -174,16 +174,16 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
             offering.getSystemUse(),
             true,
             offering.getDomainId());
-        this.cpu = offering.getCpu();
-        this.ramSize = offering.getRamSize();
-        this.speed = offering.getSpeed();
-        this.rateMbps = offering.getRateMbps();
-        this.multicastRateMbps = offering.getMulticastRateMbps();
-        this.offerHA = offering.getOfferHA();
-        this.limitCpuUse = offering.getLimitCpuUse();
-        this.volatileVm = offering.getVolatileVm();
-        this.hostTag = offering.getHostTag();
-        this.vmType = offering.getSystemVmType();
+        cpu = offering.getCpu();
+        ramSize = offering.getRamSize();
+        speed = offering.getSpeed();
+        rateMbps = offering.getRateMbps();
+        multicastRateMbps = offering.getMulticastRateMbps();
+        offerHA = offering.getOfferHA();
+        limitCpuUse = offering.getLimitCpuUse();
+        volatileVm = offering.getVolatileVm();
+        hostTag = offering.getHostTag();
+        vmType = offering.getSystemVmType();
     }
 
     @Override
@@ -325,6 +325,6 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     }
 
     public void setDynamicFlag(boolean isdynamic) {
-        this.isDynamic = isdynamic;
+        isDynamic = isdynamic;
     }
 }

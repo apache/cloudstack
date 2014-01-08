@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.deploy;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -89,7 +90,9 @@ public interface DeploymentPlanner extends Adapter {
         Shared, Dedicated;
     }
 
-    public static class ExcludeList {
+    public static class ExcludeList implements Serializable {
+        private static final long serialVersionUID = -482175549460148301L;
+
         private Set<Long> _dcIds;
         private Set<Long> _podIds;
         private Set<Long> _clusterIds;

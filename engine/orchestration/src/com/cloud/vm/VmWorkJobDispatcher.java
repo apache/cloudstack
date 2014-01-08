@@ -26,7 +26,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
 import org.apache.cloudstack.jobs.JobInfo;
 
 import com.cloud.utils.Pair;
@@ -105,9 +104,8 @@ public class VmWorkJobDispatcher extends AdapterBase implements AsyncJobDispatch
         } catch(Throwable e) {
             s_logger.error("Unable to complete " + job + ", job origin:" + job.getRelated(), e);
 
-            String exceptionJson = JobSerializerHelper.toSerializedString(e);
-            s_logger.info("Serialize exception object into json: " + exceptionJson + ", job origin: " + job.getRelated());
-            _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, exceptionJson);
+            RuntimeException ex = new RuntimeException("Job failed due to exception " + e.getMessage());
+            _asyncJobMgr.completeAsyncJob(job.getId(), JobInfo.Status.FAILED, 0, _asyncJobMgr.marshallResultObject(ex));
         } finally {
             CallContext.unregister();
         }

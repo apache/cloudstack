@@ -190,7 +190,9 @@ public interface VirtualMachineManager extends Manager {
      */
     VirtualMachineTO toVmTO(VirtualMachineProfile profile);
 
-    VirtualMachine reConfigureVm(String vmUuid, ServiceOffering newServiceOffering, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException;
+    VirtualMachine reConfigureVm(String vmUuid, ServiceOffering newServiceOffering, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException,
+            InsufficientServerCapacityException;
+
     void findHostAndMigrate(String vmUuid, Long newSvcOfferingId, DeploymentPlanner.ExcludeList excludeHostList) throws InsufficientCapacityException,
         ConcurrentOperationException, ResourceUnavailableException;
 

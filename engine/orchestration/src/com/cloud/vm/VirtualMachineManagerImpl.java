@@ -3670,7 +3670,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public VMInstanceVO reConfigureVm(String vmUuid, ServiceOffering oldServiceOffering,
             boolean reconfiguringOnExistingHost)
-            throws ResourceUnavailableException, ConcurrentOperationException {
+            throws ResourceUnavailableException, InsufficientServerCapacityException, ConcurrentOperationException {
 
         AsyncJobExecutionContext jobContext = AsyncJobExecutionContext.getCurrentExecutionContext();
         if (!VmJobEnabled.value() || jobContext.isJobDispatchedBy(VmWorkConstants.VM_WORK_JOB_DISPATCHER)) {
@@ -3688,20 +3688,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 throw new RuntimeException("Execution excetion", e);
             }
 
-            AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, outcome.getJob().getId());
-            if (jobVo.getResultCode() == JobInfo.Status.SUCCEEDED.ordinal()) {
-                return _entityMgr.findById(VMInstanceVO.class, vm.getId());
-            } else {
-                Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
-                if (jobResult != null) {
-                    if (jobResult instanceof ResourceUnavailableException)
-                        throw (ResourceUnavailableException)jobResult;
-                    else if (jobResult instanceof ConcurrentOperationException)
-                        throw (ConcurrentOperationException)jobResult;
+            Object jobResult = _jobMgr.unmarshallResultObject(outcome.getJob());
+            if (jobResult != null) {
+                if (jobResult instanceof ResourceUnavailableException)
+                    throw (ResourceUnavailableException)jobResult;
+                else if (jobResult instanceof ConcurrentOperationException)
+                    throw (ConcurrentOperationException)jobResult;
+                else if (jobResult instanceof InsufficientServerCapacityException)
+                    throw (InsufficientServerCapacityException)jobResult;
+                else if (jobResult instanceof Throwable) {
+                    s_logger.error("Unhandled exception", (Throwable)jobResult);
+                    throw new RuntimeException("Unhandled exception", (Throwable)jobResult);
                 }
-
-                throw new RuntimeException("Failed with un-handled exception");
             }
+
+            return (VMInstanceVO)vm;
         }
     }
 
@@ -4633,7 +4634,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public Outcome<VirtualMachine> reconfigureVmThroughJobQueue(
-            final String vmUuid, final ServiceOffering oldServiceOffering, final boolean reconfiguringOnExistingHost) {
+            final String vmUuid, final ServiceOffering newServiceOffering, final boolean reconfiguringOnExistingHost) {
 
         final CallContext context = CallContext.current();
         final User user = context.getCallingUser();
@@ -4668,7 +4669,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     // save work context info (there are some duplications)
                     VmWorkReconfigure workInfo = new VmWorkReconfigure(user.getId(), account.getId(), vm.getId(),
-                            VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, oldServiceOffering, reconfiguringOnExistingHost);
+                            VirtualMachineManagerImpl.VM_WORK_JOB_HANDLER, newServiceOffering.getId(), reconfiguringOnExistingHost);
                     workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
 
                     _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vm.getId());
@@ -4796,7 +4797,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.info("Unable to find vm " + work.getVmId());
         }
         assert (vm != null);
-        reConfigureVm(vm.getUuid(), work.getNewServiceOffering(),
+
+        ServiceOffering newServiceOffering = _offeringDao.findById(vm.getId(), work.getNewServiceOfferingId());
+
+        reConfigureVm(vm.getUuid(), newServiceOffering,
                 work.isSameHost());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
     }

@@ -116,8 +116,10 @@ public class VmWorkJobHandlerProxy implements VmWorkJobHandler {
 
                 // legacy CloudStack code relies on checked exception for error handling
                 // we need to re-throw the real exception here
-                if (e.getCause() != null && e.getCause() instanceof Exception)
+                if (e.getCause() != null && e.getCause() instanceof Exception) {
+                    s_logger.info("Rethrow exception " + e.getCause());
                     throw (Exception)e.getCause();
+                }
 
                 throw e;
             }
