@@ -616,9 +616,6 @@ CREATE TABLE `cloud`.`ldap_configuration` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `cloud`.`ldap_configuration`(hostname) SELECT conf.value FROM `cloud`.`configuration` conf WHERE conf.name='ldap.hostname' ;
-UPDATE `cloud`.`ldap_configuration` SET port=(SELECT conf.value FROM `cloud`.`configuration` conf WHERE conf.name='ldap.port') WHERE hostname = (SELECT conf.value FROM `cloud` .`configuration` conf WHERE conf.name='ldap.hostname');
-
 UPDATE `cloud`.`volumes` SET display_volume=1 where id>0;
 
 create table `cloud`.`monitoring_services` (
