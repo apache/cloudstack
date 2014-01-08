@@ -6524,7 +6524,7 @@
                                 }
                             }
                         }
-                    },
+                    }
                 }
             }
         },
@@ -14491,7 +14491,8 @@
                                                 id: 'zone',
                                                 description: _l('label.zone.wide')
                                             }
-                                            // { id: 'host', description: _l('label.host') }];
+                                            // { id: 'host', description: _l('label.host') }
+                                            ];
                                             
                                             args.response.success({
                                                 data: scope
