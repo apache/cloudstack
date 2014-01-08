@@ -18962,87 +18962,102 @@
                 page: currentPage
             }),
             async: false,
-            success: function (json) {
-                if (json.listroutersresponse.count != undefined) {
-                    var routerCountFromAllPages = json.listroutersresponse.count;
-                    var routerCountFromFirstPageToCurrentPage = json.listroutersresponse.router.length;
-                    var routerRequiresUpgrade = 0;
-                    
-                    $.ajax({
-                        url: createURL('listRouters'),
-                        data: $.extend({
-                        },
-                        listRoutersData, {
-                            page: currentPage,
-                            projectid: -1
-                        }),
-                        async: false,
-                        success: function (json) {
-                            if (json.listroutersresponse.count != undefined) {
-                                routerCountFromAllPages += json.listroutersresponse.count;
-                                groupbyObj.routerCount = routerCountFromAllPages;
-                                
-                                routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
-                            }
-                        }
-                    });
-                    
-                    var callListApiWithPage = function () {
-                        $.ajax({
-                            url: createURL('listRouters'),
-                            async: false,
-                            data: $.extend({
-                            },
-                            listRoutersData, {
-                                page: currentPage
-                            }),
-                            success: function (json) {
-                                routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
-                                var items = json.listroutersresponse.router;
-                                for (var k = 0; k < items.length; k++) {
-                                    if (items[k].requiresupgrade) {
-                                        routerRequiresUpgrade++;
-                                    }
-                                }
-                                
-                                $.ajax({
-                                    url: createURL('listRouters'),
-                                    async: false,
-                                    data: $.extend({
-                                    },
-                                    listRoutersData, {
-                                        page: currentPage,
-                                        projectid: -1
-                                    }),
-                                    success: function (json) {
-                                        routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
-                                        var items = json.listroutersresponse.router;
-                                        for (var k = 0; k < items.length; k++) {
-                                            if (items[k].requiresupgrade) {
-                                                routerRequiresUpgrade++;
-                                            }
-                                        }
-                                    }
-                                });
-                                
-                                if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
-                                    currentPage++;
-                                    callListApiWithPage();
-                                }
-                            }
-                        });
-                    }
-                    
-                    if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
-                        currentPage++;
-                        callListApiWithPage();
-                    }
-                    
-                    groupbyObj.routerRequiresUpgrade = routerRequiresUpgrade;
-                } else {
-                    groupbyObj.routerCount = 0;
-                    groupbyObj.routerRequiresUpgrade = 0;
-                }
+            success: function(json) {
+            	if (json.listroutersresponse.count != undefined) {                		                                            		    	                                            		
+            		var routerCountFromAllPages = json.listroutersresponse.count;        
+                	var routerCountFromFirstPageToCurrentPage = json.listroutersresponse.router.length;  
+                	var routerRequiresUpgrade = 0;    
+                	
+                	$.ajax({
+                		url: createURL('listRouters'),
+                        data: $.extend({}, listRoutersData, {
+                        	page: currentPage,
+                    		projectid: -1
+                    	}),
+                        async: false,    	        	                                            
+                        success: function(json) {    	        	                                            	
+                        	if (json.listroutersresponse.count != undefined) {                            		                                            		    	                                            		
+                        		routerCountFromAllPages += json.listroutersresponse.count;    
+                        		groupbyObj.routerCount = routerCountFromAllPages;
+                        		
+                            	routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;      	        	                                                		
+                        	} else {
+                        		groupbyObj.routerCount = routerCountFromAllPages;
+                        	}
+                        }    	                                                		
+                	});    	                                                	
+                	
+                	var callListApiWithPage = function() {        	                                                		
+                		$.ajax({
+        					url: createURL('listRouters'),
+                    		async: false,
+                    		data: $.extend({}, listRoutersData, {
+                            	page: currentPage
+                        	}),
+                    		success: function(json) {                           			
+                    			routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;    	                                                    			                                                    			
+                    			var items = json.listroutersresponse.router;
+                    			for (var k = 0; k < items.length; k++) {    	                                                    				
+                    				if (items[k].requiresupgrade) {
+                    					routerRequiresUpgrade++;
+                    				}
+                    			}    
+                    			
+                    			$.ajax({
+                    				url: createURL('listRouters'),
+                            		async: false,
+                            		data: $.extend({}, listRoutersData, {
+                            			page: currentPage,
+                                		projectid: -1
+                                	}),
+                            		success: function(json) {  
+                            			if (json.listroutersresponse.count != undefined) {                            		                                            		    	                                            		
+                                    		routerCountFromAllPages += json.listroutersresponse.count;    
+                                    		groupbyObj.routerCount = routerCountFromAllPages;
+                                    		
+                                        	routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;      	        	                                                		
+                                    	} else {
+                                    		groupbyObj.routerCount = routerCountFromAllPages;
+                                    	}
+                            			
+                            			
+                            			if (json.listroutersresponse.count != undefined) {                            		                                            		    	                                            		
+                                    		routerCountFromAllPages += json.listroutersresponse.count;    
+                                    		groupbyObj.routerCount = routerCountFromAllPages;
+                                    		
+                                        	routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;                                                        			                                                    			
+	                            			
+	                            			var items = json.listroutersresponse.router;
+	                            			for (var k = 0; k < items.length; k++) {    	                                                    				
+	                            				if (items[k].requiresupgrade) {
+	                            					routerRequiresUpgrade++;
+	                            				}
+	                            			}  
+                            			} else {
+                                    		groupbyObj.routerCount = routerCountFromAllPages;
+                                    	}
+                            		}
+                    			});    	                                                    			
+                    			
+                    			if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
+                    				currentPage++;
+                    				callListApiWithPage();
+                    			}                                                    			
+                    		}
+        				});                                                		
+                	} 
+                	
+                	if (routerCountFromFirstPageToCurrentPage < routerCountFromAllPages) {
+        				currentPage++;
+        				callListApiWithPage();
+        			}  
+                	
+                	groupbyObj.routerRequiresUpgrade = routerRequiresUpgrade;
+            		
+            	} else {
+            		groupbyObj.routerCount = 0;
+            		groupbyObj.routerRequiresUpgrade = 0;
+            	}    	  
             }
         });
     }
