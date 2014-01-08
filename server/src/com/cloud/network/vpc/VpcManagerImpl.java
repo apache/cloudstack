@@ -1519,6 +1519,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     s_logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
                 } else {
                     s_logger.warn("Private gateway " + gateway + " failed to apply on the backend");
+                    gatewayVO.setState(VpcGateway.State.Ready);
+                    _vpcGatewayDao.update(gatewayVO.getId(), gatewayVO);
+                    s_logger.debug("Marked gateway " + gatewayVO + " with state " + VpcGateway.State.Ready);
+
                     return false;
                 }
             }
