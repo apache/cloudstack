@@ -291,8 +291,8 @@ class TestEgressFWRules(cloudstackTestCase):
             self.debug("%s %s" % (script_file, exec_cmd_params))
 
             exec_success = False
-            #Timeout set to 6 minutes
-            timeout = 360
+            #Timeout set to 12 minutes
+            timeout = 720
             while timeout:
                 self.debug('sleep %s seconds for egress rule to affect on Router.' % self.services['sleep'])
                 time.sleep(self.services['sleep'])
@@ -304,17 +304,15 @@ class TestEgressFWRules(cloudstackTestCase):
                     exec_success = True
                     break
                 else:
-                    if result == []:
-                        self.fail("Router is not accessible")
                     # This means router network did not come up as yet loop back.
-                    if "send" in result[0]:
+                    if ((result == []) or ("send" in result[0])):
                         timeout -= self.services['sleep']
                     else: # Failed due to some other error
                         break
             #end while
 
             if timeout == 0:
-                self.fail("Router network failed to come up after 6 minutes.")
+                self.fail("Router network failed to come up after 12 minutes.")
 
             ssh.execute('rm -rf %s' % script_file)
 
