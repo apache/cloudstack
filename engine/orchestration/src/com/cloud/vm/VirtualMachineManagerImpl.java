@@ -459,6 +459,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         advanceStop(vm.getUuid(), false);
+        vm = _vmDao.findByUuid(vm.getUuid());
 
         try {
             if (!stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, vm.getHostId())) {
