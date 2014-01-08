@@ -1535,12 +1535,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     liveMigrateVolume = capabilities.isStorageMotionSupported();
                 }
             }
-        }
 
-        // If the disk is not attached to any VM then it can be moved. Otherwise, it needs to be attached to a vm
-        // running on a hypervisor that supports storage motion so that it be be migrated.
-        if (instanceId != null && !liveMigrateVolume) {
-            throw new InvalidParameterValueException("Volume needs to be detached from VM");
+            // If vm is running, and hypervisor doesn't support live migration, then return error
+            if (!liveMigrateVolume) {
+                throw new InvalidParameterValueException("Volume needs to be detached from VM");
+            }
         }
 
         if (liveMigrateVolume && !cmd.isLiveMigrate()) {
