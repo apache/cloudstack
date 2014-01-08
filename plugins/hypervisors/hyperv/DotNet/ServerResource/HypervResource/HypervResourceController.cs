@@ -31,6 +31,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Web.Http;
@@ -1549,6 +1550,12 @@ namespace HypervResource
                                 // doesn't do anything if the directory is already present.
                                 Directory.CreateDirectory(Path.GetDirectoryName(destFile));
                                 File.Copy(srcFile, destFile);
+
+                                FileInfo destFileInfo = new FileInfo(destFile);
+                                // Write the template.properties file
+                                PostCreateTemplate(Path.GetDirectoryName(destFile), destTemplateObjectTO.id, destTemplateObjectTO.name,
+                                    destFileInfo.Length.ToString(), srcVolumeObjectTO.size.ToString(), destTemplateObjectTO.format);
+
                                 TemplateObjectTO destTemplateObject = new TemplateObjectTO();
                                 destTemplateObject.size = srcVolumeObjectTO.size.ToString();
                                 destTemplateObject.format = srcVolumeObjectTO.format;
@@ -1582,6 +1589,25 @@ namespace HypervResource
                     contextMap = contextMap
                 };
                 return ReturnCloudStackTypedJArray(ansContent, CloudStackTypes.CopyCmdAnswer);
+            }
+        }
+
+        private static void PostCreateTemplate(string path, string templateId, string templateUuid, string physicalSize, string virtualSize, string format)
+        {
+            string templatePropFile = Path.Combine(path, "template.properties");
+            using (StreamWriter sw = new StreamWriter(File.Open(templatePropFile, FileMode.Create), Encoding.GetEncoding("iso-8859-1")))
+            {
+                sw.NewLine = "\n";
+                sw.WriteLine("id=" + templateId);
+                sw.WriteLine("filename=" + templateUuid + "." + format);
+                sw.WriteLine(format + ".filename=" + templateUuid + "." + format);
+                sw.WriteLine("uniquename=" + templateUuid);
+                sw.WriteLine(format + "=true");
+                sw.WriteLine("virtualsize=" + virtualSize);
+                sw.WriteLine(format + ".virtualsize=" + virtualSize);
+                sw.WriteLine("size=" + physicalSize);
+                sw.WriteLine("vhd.size=" + physicalSize);
+                sw.WriteLine("public=false");
             }
         }
 
