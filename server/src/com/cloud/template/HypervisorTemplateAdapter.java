@@ -399,6 +399,11 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             }
         }
         if (success) {
+            if ((imageStores.size() > 1) && (profile.getZoneId() != null)) {
+                //if template is stored in more than one image stores, and the zone id is not null, then don't delete other templates.
+                return success;
+            }
+
             // delete all cache entries for this template
             List<TemplateInfo> cacheTmpls = imageFactory.listTemplateOnCache(template.getId());
             for (TemplateInfo tmplOnCache : cacheTmpls) {
