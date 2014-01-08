@@ -820,18 +820,8 @@ class TestVPCOffering(cloudstackTestCase):
         """Test VPC offering with invalid services"""
 
         # Validate the following
-        # 1. Creating VPC Offering with no SourceNat service should FAIL.
-        # 2. Creating VPC Offering with services NOT supported by VPC
+        # 1. Creating VPC Offering with services NOT supported by VPC
         #    like Firewall should not be allowed
-
-        self.debug("Creating a VPC offering without sourceNAT")
-        self.services["vpc_offering"]["supportedservices"] = 'Dhcp,Dns,PortForwarding,Vpn,Lb,UserData,StaticNat'
-
-        with self.assertRaises(Exception):
-            VpcOffering.create(
-                                self.apiclient,
-                                self.services["vpc_offering"]
-                             )
 
         self.debug("Creating a VPC offering with Firewall")
         self.services["vpc_offering"]["supportedservices"] = 'Dhcp,Dns,PortForwarding,Firewall,Vpn,SourceNat,Lb,UserData,StaticNat'
