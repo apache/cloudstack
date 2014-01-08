@@ -133,18 +133,15 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return new SolidFireConnection(mVip, mPort, clusterAdminUsername, clusterAdminPassword);
     }
 
-    private SolidFireUtil.SolidFireAccount createSolidFireAccount(String sfAccountName,
-            SolidFireConnection sfConnection) {
+    private SolidFireUtil.SolidFireAccount createSolidFireAccount(String sfAccountName, SolidFireConnection sfConnection) {
         String mVip = sfConnection.getManagementVip();
         int mPort = sfConnection.getManagementPort();
         String clusterAdminUsername = sfConnection.getClusterAdminUsername();
         String clusterAdminPassword = sfConnection.getClusterAdminPassword();
 
-        long accountNumber = SolidFireUtil.createSolidFireAccount(mVip, mPort,
-                clusterAdminUsername, clusterAdminPassword, sfAccountName);
+        long accountNumber = SolidFireUtil.createSolidFireAccount(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfAccountName);
 
-        return SolidFireUtil.getSolidFireAccountById(mVip, mPort,
-                clusterAdminUsername, clusterAdminPassword, accountNumber);
+        return SolidFireUtil.getSolidFireAccountById(mVip, mPort, clusterAdminUsername, clusterAdminPassword, accountNumber);
     }
 
     private void updateCsDbWithAccountInfo(long csAccountId, SolidFireUtil.SolidFireAccount sfAccount) {
@@ -185,8 +182,7 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         private final String _targetUsername;
         private final String _targetSecret;
 
-        public ChapInfoImpl(String initiatorUsername, String initiatorSecret,
-                String targetUsername, String targetSecret) {
+        public ChapInfoImpl(String initiatorUsername, String initiatorSecret, String targetUsername, String targetSecret) {
             _initiatorUsername = initiatorUsername;
             _initiatorSecret = initiatorSecret;
             _targetUsername = targetUsername;
@@ -269,16 +265,39 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             SolidFireUtil.SolidFireVag sfVag = SolidFireUtil.getSolidFireVag(sfConnection.getManagementVip(), sfConnection.getManagementPort(),
                 sfConnection.getClusterAdminUsername(), sfConnection.getClusterAdminPassword(), Long.parseLong(vagId));
 
+            String[] hostIqns = getNewHostIqns(sfVag.getInitiators(), getIqnsFromHosts(hosts));
             long[] volumeIds = getNewVolumeIds(sfVag.getVolumeIds(), sfVolumeId, true);
 
             SolidFireUtil.modifySolidFireVag(sfConnection.getManagementVip(), sfConnection.getManagementPort(),
                 sfConnection.getClusterAdminUsername(), sfConnection.getClusterAdminPassword(), sfVag.getId(),
-                getIqnsFromHosts(hosts), volumeIds);
+                hostIqns, volumeIds);
         }
         else {
-            long lVagId = SolidFireUtil.createSolidFireVag(sfConnection.getManagementVip(), sfConnection.getManagementPort(),
-                sfConnection.getClusterAdminUsername(), sfConnection.getClusterAdminPassword(), "CloudStack-" + UUID.randomUUID().toString(),
-                getIqnsFromHosts(hosts), new long[] { sfVolumeId });
+            long lVagId;
+
+            try {
+                lVagId = SolidFireUtil.createSolidFireVag(sfConnection.getManagementVip(), sfConnection.getManagementPort(),
+                    sfConnection.getClusterAdminUsername(), sfConnection.getClusterAdminPassword(), "CloudStack-" + UUID.randomUUID().toString(),
+                    getIqnsFromHosts(hosts), new long[] { sfVolumeId });
+            }
+            catch (Exception ex) {
+                String iqnInVagAlready = "Exceeded maximum number of Volume Access Groups per initiator";
+
+                if (!ex.getMessage().contains(iqnInVagAlready)) {
+                    throw new CloudRuntimeException(ex.getMessage());
+                }
+
+                // getCompatibleVag throws an exception if an existing VAG can't be located
+                SolidFireUtil.SolidFireVag sfVag = getCompatibleVag(hosts, sfConnection);
+
+                long[] volumeIds = getNewVolumeIds(sfVag.getVolumeIds(), sfVolumeId, true);
+
+                SolidFireUtil.modifySolidFireVag(sfConnection.getManagementVip(), sfConnection.getManagementPort(),
+                    sfConnection.getClusterAdminUsername(), sfConnection.getClusterAdminPassword(), sfVag.getId(),
+                    sfVag.getInitiators(), volumeIds);
+
+                lVagId = sfVag.getId();
+            }
 
             clusterDetail = new ClusterDetailsVO(clusterId, getVagKey(storagePoolId), String.valueOf(lVagId));
 
@@ -287,6 +306,48 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         return true;
     }
+
+    // this method takes in a collection of hosts and tries to find an existing VAG that has all three of them in it
+    // if successful, the VAG is returned; else, a CloudRuntimeException is thrown and this issue should be corrected by an admin
+    private SolidFireUtil.SolidFireVag getCompatibleVag(List<HostVO> hosts, SolidFireConnection sfConnection) {
+        List<SolidFireUtil.SolidFireVag> sfVags = SolidFireUtil.getAllSolidFireVags(sfConnection.getManagementVip(), sfConnection.getManagementPort(),
+                sfConnection.getClusterAdminUsername(), sfConnection.getClusterAdminPassword());
+
+        if (sfVags != null) {
+            List<String> hostIqns = new ArrayList<String>();
+
+            // where the method we're in is called, hosts should not be null
+            for (HostVO host : hosts) {
+                // where the method we're in is called, host.getStorageUrl() should not be null (it actually should start with "iqn")
+                hostIqns.add(host.getStorageUrl().toLowerCase());
+            }
+
+            for (SolidFireUtil.SolidFireVag sfVag : sfVags) {
+                List<String> lstInitiators = getStringArrayAsLowerCaseStringList(sfVag.getInitiators());
+
+                // lstInitiators should not be returned from getStringArrayAsLowerCaseStringList as null
+                if (lstInitiators.containsAll(hostIqns)) {
+                    return sfVag;
+                }
+            }
+        }
+
+        throw new CloudRuntimeException("Unable to locate the appropriate SolidFire Volume Access Group");
+    }
+
+    private List<String> getStringArrayAsLowerCaseStringList(String[] aString) {
+        List<String> lstLowerCaseString = new ArrayList<String>();
+
+        if (aString != null) {
+            for (String str : aString) {
+                if (str != null) {
+                    lstLowerCaseString.add(str.toLowerCase());
+                }
+            }
+        }
+
+        return lstLowerCaseString;
+      }
 
     // get the VAG associated with volumeInfo's cluster, if any (ListVolumeAccessGroups) // might not exist if using CHAP
     // if the VAG exists
@@ -314,11 +375,12 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             SolidFireUtil.SolidFireVag sfVag = SolidFireUtil.getSolidFireVag(sfConnection.getManagementVip(), sfConnection.getManagementPort(),
                 sfConnection.getClusterAdminUsername(), sfConnection.getClusterAdminPassword(), Long.parseLong(vagId));
 
+            String[] hostIqns = getNewHostIqns(sfVag.getInitiators(), getIqnsFromHosts(hosts));
             long[] volumeIds = getNewVolumeIds(sfVag.getVolumeIds(), sfVolumeId, false);
 
             SolidFireUtil.modifySolidFireVag(sfConnection.getManagementVip(), sfConnection.getManagementPort(),
                 sfConnection.getClusterAdminUsername(), sfConnection.getClusterAdminPassword(), sfVag.getId(),
-                getIqnsFromHosts(hosts), volumeIds);
+                hostIqns, volumeIds);
         }
     }
 
@@ -334,6 +396,26 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         return true;
+    }
+
+    private String[] getNewHostIqns(String[] currentIqns, String[] newIqns) {
+        List<String> lstIqns = new ArrayList<String>();
+
+        if (currentIqns != null) {
+            for (String currentIqn : currentIqns) {
+                lstIqns.add(currentIqn);
+            }
+        }
+
+        if (newIqns != null) {
+            for (String newIqn : newIqns) {
+                if (!lstIqns.contains(newIqn)) {
+                    lstIqns.add(newIqn);
+                }
+            }
+        }
+
+        return lstIqns.toArray(new String[0]);
     }
 
     private long[] getNewVolumeIds(long[] volumeIds, long volumeIdToAddOrRemove, boolean add) {

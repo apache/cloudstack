@@ -276,8 +276,7 @@ public class SolidFireUtil
         }
     }
 
-    public static long createSolidFireAccount(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword,
-            String strAccountName)
+    public static long createSolidFireAccount(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, String strAccountName)
     {
         final Gson gson = new GsonBuilder().create();
 
@@ -294,8 +293,7 @@ public class SolidFireUtil
         return accountAddResult.result.accountID;
     }
 
-    public static SolidFireAccount getSolidFireAccountById(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword,
-            long lSfAccountId)
+    public static SolidFireAccount getSolidFireAccountById(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, long lSfAccountId)
     {
         final Gson gson = new GsonBuilder().create();
 
@@ -316,8 +314,7 @@ public class SolidFireUtil
         return new SolidFireAccount(lSfAccountId, strSfAccountName, strSfAccountInitiatorSecret, strSfAccountTargetSecret);
     }
 
-    public static SolidFireAccount getSolidFireAccountByName(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword,
-            String strSfAccountName)
+    public static SolidFireAccount getSolidFireAccountByName(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, String strSfAccountName)
     {
         final Gson gson = new GsonBuilder().create();
 
@@ -338,8 +335,7 @@ public class SolidFireUtil
         return new SolidFireAccount(lSfAccountId, strSfAccountName, strSfAccountInitiatorSecret, strSfAccountTargetSecret);
     }
 
-    public static void deleteSolidFireAccount(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword,
-            long lAccountId)
+    public static void deleteSolidFireAccount(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, long lAccountId)
     {
         final Gson gson = new GsonBuilder().create();
 
@@ -465,6 +461,33 @@ public class SolidFireUtil
         long[] vagVolumeIds = getVagVolumeIds(vagGetResult, lVagId);
 
         return new SolidFireVag(lVagId, vagIqns, vagVolumeIds);
+    }
+
+    public static List<SolidFireVag> getAllSolidFireVags(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword)
+    {
+        final Gson gson = new GsonBuilder().create();
+
+        AllVags allVags = new AllVags();
+
+        String strAllVagsJson = gson.toJson(allVags);
+
+        String strAllVagsGetResultJson = executeJsonRpc(strAllVagsJson, strSfMvip, iSfPort, strSfAdmin, strSfPassword);
+
+        VagGetResult allVagsGetResult = gson.fromJson(strAllVagsGetResultJson, VagGetResult.class);
+
+        verifyResult(allVagsGetResult.result, strAllVagsGetResultJson, gson);
+
+        List<SolidFireVag> lstSolidFireVags = new ArrayList<SolidFireVag>();
+
+        if (allVagsGetResult.result.volumeAccessGroups != null ) {
+            for (VagGetResult.Result.Vag vag : allVagsGetResult.result.volumeAccessGroups) {
+                SolidFireVag sfVag = new SolidFireVag(vag.volumeAccessGroupID, vag.initiators, vag.volumes);
+
+                lstSolidFireVags.add(sfVag);
+            }
+        }
+
+        return lstSolidFireVags;
     }
 
     public static void deleteSolidFireVag(String strSfMvip, int iSfPort, String strSfAdmin, String strSfPassword, long lVagId)
@@ -852,6 +875,21 @@ public class SolidFireUtil
                 startVolumeAccessGroupID = lVagId;
             }
         }
+    }
+
+    @SuppressWarnings("unused")
+    private static final class AllVags
+    {
+        private final String method = "ListVolumeAccessGroups";
+        private final VagToGetParams params;
+
+        private AllVags()
+        {
+            params = new VagToGetParams();
+        }
+
+        private static final class VagToGetParams
+        {}
     }
 
     @SuppressWarnings("unused")
