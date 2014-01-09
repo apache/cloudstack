@@ -149,7 +149,6 @@ known_categories = {
     'createSecondaryStagingStore': 'Image Store',
     'deleteSecondaryStagingStore': 'Image Store',
     'listSecondaryStagingStores': 'Image Store',
-    'prepareSecondaryStorageForMigration' : 'Image Store',
     'InternalLoadBalancer': 'Internal LB',
 	'DeploymentPlanners': 'Configuration',
 	'ObjectStore': 'Image Store',
