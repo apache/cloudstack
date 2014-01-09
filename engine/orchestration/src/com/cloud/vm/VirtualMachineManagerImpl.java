@@ -4282,7 +4282,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(jobId);
 
         return new VmJobVirtualMachineOutcome((VmWorkJobVO)context.getContextParameter("workJob"),
-        	vm.getId());
+                vm.getId());
     }
 
     public Outcome<VirtualMachine> migrateVmThroughJobQueue(final String vmUuid, final long srcHostId, final DeployDestination dest) {
