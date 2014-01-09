@@ -27,23 +27,16 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
-import com.cloud.agent.api.StartAnswer;
-import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import com.cloud.vm.VirtualMachine;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.XenAPIException;
@@ -139,25 +132,6 @@ public class XcpOssResource extends CitrixResourceBase {
         } else {
             return super.executeRequest(cmd);
         }
-    }
-
-    @Override
-    public StartAnswer execute(StartCommand cmd) {
-    	StartAnswer answer = super.execute(cmd);
-
-    	VirtualMachineTO vmSpec = cmd.getVirtualMachine();
-    	if (vmSpec.getType() == VirtualMachine.Type.ConsoleProxy) {
-    		Connection conn = getConnection();
-    		String publicIp = null;
-    		for (NicTO nic : vmSpec.getNics()) {
-    			if (nic.getType() == TrafficType.Guest) {
-    				publicIp = nic.getIp();
-    			}
-    		}
-    		callHostPlugin(conn, "vmops", "setDNATRule", "ip", publicIp, "port", "8443", "add", "true");
-    	}
-
-    	return answer;
     }
 
     @Override
