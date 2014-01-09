@@ -48,34 +48,6 @@
     </testResources>
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-        <dependencies>
-          <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>checkstyle</artifactId>
-            <version>${project.version}</version>
-          </dependency>
-        </dependencies>
-        <executions>
-          <execution>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <failsOnError>true</failsOnError>
-          <configLocation>tooling/checkstyle.xml</configLocation>
-          <consoleOutput>true</consoleOutput>
-          <includeTestSourceDirectory>true</includeTestSourceDirectory>
-          <sourceDirectory>${project.basedir}</sourceDirectory>
-          <includes>**\/*.java,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat</includes>
-          <excludes>**\/target\/,**\/bin\/</excludes>
-        </configuration>
-      </plugin>
-      <plugin>
         <groupId>com.mycila.maven-license-plugin</groupId>
         <artifactId>maven-license-plugin</artifactId>
         <version>1.9.0</version>

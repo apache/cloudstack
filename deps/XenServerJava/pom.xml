@@ -35,4 +35,26 @@
       <version>${cs.xmlrpc.version}</version>
     </dependency>
   </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${cs.checkstyle.version}</version>
+        <executions>
+          <execution>
+            <phase>none</phase>
+          </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>checkstyle</artifactId>
+            <!-- this project.version differs -->
+            <version>${project.parent.version}</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+    </plugins>
+  </build>
 </project>

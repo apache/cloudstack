@@ -160,6 +160,7 @@
   </organization>
 
   <modules>
+    <module>tools/checkstyle</module>
     <module>api</module>
     <module>agent</module>
     <module>core</module>
@@ -447,7 +448,22 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <inherited>false</inherited>
+      </plugin>
+    </plugins>
+    <pluginManagement>
+      <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>${cs.checkstyle.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>${project.version}</version>
+          </dependency>
+        </dependencies>
+
         <executions>
           <execution>
             <phase>validate</phase>
@@ -458,7 +474,7 @@
         </executions>
         <configuration>
           <failsOnError>true</failsOnError>
-          <configLocation>${project.basedir}/tools/checkstyle/cloud-style.xml</configLocation>
+          <configLocation>cloud-style.xml</configLocation>
           <consoleOutput>true</consoleOutput>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
           <sourceDirectory>${project.basedir}</sourceDirectory>
@@ -466,14 +482,6 @@
           <excludes>**\/deps\/,**\/test\/,**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat,**\/awsapi\/,**\/XenServerJava\/,**\/apidoc\/</excludes>
         </configuration>
       </plugin>
-    </plugins>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>${cs.checkstyle.version}</version>
-        </plugin>
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
           <configuration>
