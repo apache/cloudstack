@@ -9072,12 +9072,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
 }
 
 .system-dashboard.zone .status_box li.sockets .icon {
-  background-image: url(../images/sprites.png);
-  background-position: -85px -1379px;
-  /*+placement:shift 37px 68px;*/
-  position: relative;
-  left: 37px;
-  top: 68px;
+  background-position: -14px -581px;
 }
 
 .system-dashboard.zone .status_box li.secondary-storage .icon {
