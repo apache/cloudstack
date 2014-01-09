@@ -3037,18 +3037,21 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     }
 
     @Override
-    public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName, String affinityGroupType, Long vmId,
-        String accountName, Long domainId, boolean isRecursive, boolean listAll, Long startIndex, Long pageSize) {
-        Pair<List<AffinityGroupJoinVO>, Integer> result =
-            listAffinityGroupsInternal(affinityGroupId, affinityGroupName, affinityGroupType, vmId, accountName, domainId, isRecursive, listAll, startIndex, pageSize);
+    public ListResponse<AffinityGroupResponse> listAffinityGroups(Long affinityGroupId, String affinityGroupName,
+            String affinityGroupType, Long vmId, String accountName, Long domainId, boolean isRecursive,
+            boolean listAll, Long startIndex, Long pageSize, String keyword) {
+        Pair<List<AffinityGroupJoinVO>, Integer> result = listAffinityGroupsInternal(affinityGroupId,
+                affinityGroupName, affinityGroupType, vmId, accountName, domainId, isRecursive, listAll, startIndex,
+                pageSize, keyword);
         ListResponse<AffinityGroupResponse> response = new ListResponse<AffinityGroupResponse>();
         List<AffinityGroupResponse> agResponses = ViewResponseHelper.createAffinityGroupResponses(result.first());
         response.setResponses(agResponses, result.second());
         return response;
     }
 
-    public Pair<List<AffinityGroupJoinVO>, Integer> listAffinityGroupsInternal(Long affinityGroupId, String affinityGroupName, String affinityGroupType, Long vmId,
-        String accountName, Long domainId, boolean isRecursive, boolean listAll, Long startIndex, Long pageSize) {
+    public Pair<List<AffinityGroupJoinVO>, Integer> listAffinityGroupsInternal(Long affinityGroupId,
+            String affinityGroupName, String affinityGroupType, Long vmId, String accountName, Long domainId,
+            boolean isRecursive, boolean listAll, Long startIndex, Long pageSize, String keyword) {
 
         Account caller = CallContext.current().getCallingAccount();
 
@@ -3072,9 +3075,8 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(AffinityGroupJoinVO.class, "id", true, startIndex, pageSize);
-        SearchCriteria<AffinityGroupJoinVO> sc =
-            buildAffinityGroupSearchCriteria(domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria, affinityGroupId, affinityGroupName,
-                affinityGroupType);
+        SearchCriteria<AffinityGroupJoinVO> sc = buildAffinityGroupSearchCriteria(domainId, isRecursive,
+                permittedAccounts, listProjectResourcesCriteria, affinityGroupId, affinityGroupName, affinityGroupType, keyword);
 
         Pair<List<AffinityGroupJoinVO>, Integer> uniqueGroupsPair = _affinityGroupJoinDao.searchAndCount(sc, searchFilter);
         // search group details by ids
@@ -3093,26 +3095,26 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         if (!permittedAccounts.isEmpty()) {
             // add domain level affinity groups
             if (domainId != null) {
-                SearchCriteria<AffinityGroupJoinVO> scDomain =
-                    buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId, affinityGroupName,
-                        affinityGroupType);
+                SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive,
+                        new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId, affinityGroupName,
+                        affinityGroupType, keyword);
                 vrs.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, domainId));
             } else {
 
                 for (Long permAcctId : permittedAccounts) {
                     Account permittedAcct = _accountDao.findById(permAcctId);
-                    SearchCriteria<AffinityGroupJoinVO> scDomain =
-                        buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId, affinityGroupName,
-                            affinityGroupType);
+                    SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(
+                            null, isRecursive, new ArrayList<Long>(),
+                            listProjectResourcesCriteria, affinityGroupId, affinityGroupName, affinityGroupType, keyword);
 
                     vrs.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, permittedAcct.getDomainId()));
                 }
             }
         } else if (((permittedAccounts.isEmpty()) && (domainId != null) && isRecursive)) {
             // list all domain level affinity groups for the domain admin case
-            SearchCriteria<AffinityGroupJoinVO> scDomain =
-                buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId, affinityGroupName,
-                    affinityGroupType);
+            SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive,
+                    new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId, affinityGroupName,
+                    affinityGroupType, keyword);
             vrs.addAll(listDomainLevelAffinityGroups(scDomain, searchFilter, domainId));
         }
 
@@ -3120,8 +3122,9 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     }
 
-    private SearchCriteria<AffinityGroupJoinVO> buildAffinityGroupSearchCriteria(Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-        ListProjectResourcesCriteria listProjectResourcesCriteria, Long affinityGroupId, String affinityGroupName, String affinityGroupType) {
+    private SearchCriteria<AffinityGroupJoinVO> buildAffinityGroupSearchCriteria(Long domainId, boolean isRecursive,
+            List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria,
+            Long affinityGroupId, String affinityGroupName, String affinityGroupType, String keyword) {
 
         SearchBuilder<AffinityGroupJoinVO> groupSearch = _affinityGroupJoinDao.createSearchBuilder();
         _accountMgr.buildACLViewSearchBuilder(groupSearch, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
@@ -3142,6 +3145,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         if (affinityGroupType != null) {
             sc.addAnd("type", SearchCriteria.Op.EQ, affinityGroupType);
+        }
+
+        if (keyword != null) {
+            SearchCriteria<AffinityGroupJoinVO> ssc = _affinityGroupJoinDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("type", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }
 
         return sc;

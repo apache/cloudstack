@@ -17,7 +17,6 @@
 package org.apache.cloudstack.api.command.user.affinitygroup;
 
 import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -79,9 +78,9 @@ public class ListAffinityGroupsCmd extends BaseListAccountResourcesCmd {
     @Override
     public void execute() {
 
-        ListResponse<AffinityGroupResponse> response =
-            _queryService.listAffinityGroups(id, affinityGroupName, affinityGroupType, virtualMachineId, this.getAccountName(), this.getDomainId(), this.isRecursive(),
-                this.listAll(), this.getStartIndex(), this.getPageSizeVal());
+        ListResponse<AffinityGroupResponse> response = _queryService.listAffinityGroups(id, affinityGroupName,
+                affinityGroupType, virtualMachineId, this.getAccountName(), this.getDomainId(), this.isRecursive(),
+                this.listAll(), this.getStartIndex(), this.getPageSizeVal(), this.getKeyword());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
 
