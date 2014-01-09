@@ -35,7 +35,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.capacity.Capacity;
-import com.cloud.exception.InsufficientServerCapacityException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -829,11 +828,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _accountMgr.checkAccess(caller, null, true, vmInstance);
 
         // Check resource limits for CPU and Memory.
-        Map<String,String> customParameters = cmd.getCustomParameters();
+        Map<String,String> customParameters = cmd.getDetails();
         ServiceOfferingVO newServiceOffering = _offeringDao.findById(svcOffId);
         if (newServiceOffering.isDynamic()) {
             newServiceOffering.setDynamicFlag(true);
-            validateCustomParameters(newServiceOffering, cmd.getCustomParameters());
+            validateCustomParameters(newServiceOffering, cmd.getDetails());
             newServiceOffering = _offeringDao.getcomputeOffering(newServiceOffering, customParameters);
         }
         ServiceOfferingVO currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getId(), vmInstance.getServiceOfferingId());
@@ -890,7 +889,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // Generate usage event for VM upgrade
-        generateUsageEvent(newServiceOffering, cmd.getCustomParameters(), _vmDao.findById(vmId), EventTypes.EVENT_VM_UPGRADE);
+        generateUsageEvent(newServiceOffering, cmd.getDetails(), _vmDao.findById(vmId), EventTypes.EVENT_VM_UPGRADE);
 
         return _vmDao.findById(vmInstance.getId());
     }
@@ -1233,16 +1232,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long newServiceOfferingId = cmd.getServiceOfferingId();
         CallContext.current().setEventDetails("Vm Id: " + vmId);
 
-        boolean  result = upgradeVirtualMachine(vmId, newServiceOfferingId, cmd.getCustomParameters());
+        boolean  result = upgradeVirtualMachine(vmId, newServiceOfferingId, cmd.getDetails());
         if(result){
             UserVmVO vmInstance = _vmDao.findById(vmId);
             if(vmInstance.getState().equals(State.Stopped)){
                 // Generate usage event for VM upgrade
-                generateUsageEvent(_offeringDao.findById(newServiceOfferingId), cmd.getCustomParameters(), _vmDao.findById(vmId), EventTypes.EVENT_VM_UPGRADE);
+                generateUsageEvent(_offeringDao.findById(newServiceOfferingId), cmd.getDetails(), _vmDao.findById(vmId), EventTypes.EVENT_VM_UPGRADE);
             }
             if(vmInstance.getState().equals(State.Running)){
                 // Generate usage event for Dynamic scaling of VM
-                generateUsageEvent(_offeringDao.findById(newServiceOfferingId), cmd.getCustomParameters(), _vmDao.findById(vmId), EventTypes.EVENT_VM_UPGRADE);
+                generateUsageEvent(_offeringDao.findById(newServiceOfferingId), cmd.getDetails(), _vmDao.findById(vmId), EventTypes.EVENT_VM_UPGRADE);
             }
             return vmInstance;
         } else {

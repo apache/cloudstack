@@ -3837,7 +3837,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (vmInstance.getHypervisorType() == HypervisorType.XenServer && vmInstance.getState().equals(State.Running)) {
             throw new InvalidParameterValueException("Dynamic Scaling operation is not permitted for this hypervisor on system vm");
         }
-        boolean result = _userVmMgr.upgradeVirtualMachine(cmd.getId(), cmd.getServiceOfferingId(), cmd.getCustomParameters());
+        boolean result = _userVmMgr.upgradeVirtualMachine(cmd.getId(), cmd.getServiceOfferingId(), cmd.getDetails());
         if(result){
             VirtualMachine vm = _vmInstanceDao.findById(cmd.getId());
             return vm;
@@ -3851,7 +3851,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public VirtualMachine upgradeSystemVM(UpgradeSystemVMCmd cmd) {
         Long systemVmId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
-        return upgradeStoppedSystemVm(systemVmId, serviceOfferingId, cmd.getCustomParameters());
+        return upgradeStoppedSystemVm(systemVmId, serviceOfferingId, cmd.getDetails());
 
     }
 

@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.*;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.context.CallContext;
 
 import org.apache.log4j.Logger;
 
@@ -55,8 +54,8 @@ public class ScaleVMCmd extends BaseAsyncCmd {
             required=true, description="the ID of the service offering for the virtual machine")
     private Long serviceOfferingId;
 
-    @Parameter(name=ApiConstants.CUSTOM_PARAMETERS,type = BaseCmd.CommandType.MAP, description = "name value pairs of custom parameters for cpu,memory and cpunumber. example customparameters[i].name=value")
-    private Map<String, String> customParameters;
+    @Parameter(name=ApiConstants.DETAILS,type = BaseCmd.CommandType.MAP, description = "name value pairs of custom parameters for cpu,memory and cpunumber. example details[i].name=value")
+    private Map<String, String> details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -71,12 +70,12 @@ public class ScaleVMCmd extends BaseAsyncCmd {
     }
 
     //instead of reading a map directly we are using collections.
-    //it is because customParameters.values() cannot be cast to a map.
+    //it is because details.values() cannot be cast to a map.
     //it gives a exception
-    public Map<String, String> getCustomParameters() {
+    public Map<String, String> getDetails() {
         Map<String,String> customparameterMap = new HashMap<String, String>();
-        if (customParameters != null && customParameters.size() !=0){
-            Collection parameterCollection = customParameters.values();
+        if (details != null && details.size() !=0){
+            Collection parameterCollection = details.values();
             Iterator iter = parameterCollection.iterator();
             while (iter.hasNext()) {
                 HashMap<String, String> value = (HashMap<String, String>) iter.next();
