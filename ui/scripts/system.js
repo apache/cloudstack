@@ -17051,38 +17051,7 @@
                             detailView: {
                                 name: 'Secondary storage details',
                                 isMaximized: true,
-                                actions: {
-                                    prepareObjectStoreMigration: {
-                                        label: 'Prepare Object Store Migration',
-                                        messages: {
-                                            confirm: function (args) {
-                                                return 'Please confirm you want to prepare migration of secondary storage to object store.';
-                                            },
-                                            notification: function (args) {
-                                                return 'Prepare Object Store Migration';
-                                            }
-                                        },
-                                        action: function (args) {
-                                            $.ajax({
-                                                url: createURL('prepareSecondaryStorageForMigration'),
-                                                data: {
-                                                    id: args.context.secondaryStorage[0].id
-                                                },
-                                                success: function (json) {
-                                                    var jid = json.preparesecondarystorageformigrationresponse.jobid;
-                                                    args.response.success({
-                                                        _custom: {
-                                                            jobId: jid
-                                                        }
-                                                    });
-                                                }
-                                            });
-                                        },
-                                        notification: {
-                                            poll: pollAsyncJobResult
-                                        }
-                                    },
-                                    
+                                actions: { 
                                     remove: {
                                         label: 'label.action.delete.secondary.storage',
                                         messages: {
@@ -18621,13 +18590,8 @@
     
     var secondarystorageActionfilter = function (args) {
         var jsonObj = args.context.item;
-        var allowedActions =[];
-        allowedActions.push("remove");
-        
-        if (jsonObj.providername == 'NFS') {
-            allowedActions.push("prepareObjectStoreMigration");
-        }
-        
+        var allowedActions = [];
+        allowedActions.push("remove");  
         return allowedActions;
     }
     
