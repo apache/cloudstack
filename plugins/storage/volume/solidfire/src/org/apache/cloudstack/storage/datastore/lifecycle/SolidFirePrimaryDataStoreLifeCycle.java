@@ -171,12 +171,19 @@ public class SolidFirePrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeC
         details.put(SolidFireUtil.CLUSTER_DEFAULT_MAX_IOPS, String.valueOf(lClusterDefaultMaxIops));
         details.put(SolidFireUtil.CLUSTER_DEFAULT_BURST_IOPS_PERCENT_OF_MAX_IOPS, String.valueOf(fClusterDefaultBurstIopsPercentOfMaxIops));
 
-        String useMutualChapForVMware = getValue(SolidFireUtil.USE_MUTUAL_CHAP_FOR_VMWARE, url);
+        String useMutualChapForVMware = Boolean.TRUE.toString();
 
-        if (useMutualChapForVMware == null || new Boolean(useMutualChapForVMware)) {
-            useMutualChapForVMware = Boolean.TRUE.toString();
-        } else {
-            useMutualChapForVMware = Boolean.FALSE.toString();
+        try {
+            useMutualChapForVMware = getValue(SolidFireUtil.USE_MUTUAL_CHAP_FOR_VMWARE, url);
+
+            if (useMutualChapForVMware == null || new Boolean(useMutualChapForVMware)) {
+                useMutualChapForVMware = Boolean.TRUE.toString();
+            }
+            else {
+                useMutualChapForVMware = Boolean.FALSE.toString();
+            }
+        }
+        catch (Exception ex) {
         }
 
         details.put(SolidFireUtil.USE_MUTUAL_CHAP_FOR_VMWARE, useMutualChapForVMware);
