@@ -45,6 +45,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
@@ -119,7 +120,6 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotPolicyDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolWorkDao;
-import com.cloud.storage.dao.UploadDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -129,7 +129,6 @@ import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotApiService;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.snapshot.SnapshotScheduler;
-import com.cloud.storage.upload.UploadMonitor;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
@@ -315,9 +314,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     SnapshotApiService snapshotMgr;
     @Inject
-    UploadMonitor _uploadMonitor;
-    @Inject
-    UploadDao _uploadDao;
+    SnapshotService snapshotSrv;
 
     @Inject
     protected HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
@@ -596,7 +593,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             diskOfferingId = snapshotCheck.getDiskOfferingId();
             diskOffering = _diskOfferingDao.findById(diskOfferingId);
-            zoneId = snapshotCheck.getDataCenterId();
+            if (zoneId == null) {
+                // if zoneId is not provided, we default to create volume in the same zone as the snapshot zone.
+                zoneId = snapshotCheck.getDataCenterId();
+            }
             size = snapshotCheck.getSize(); // ; disk offering is used for tags
             // purposes
 
@@ -768,11 +768,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throws StorageUnavailableException {
         VolumeInfo createdVolume = null;
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
+        long snapshotVolId = snapshot.getVolumeId();
 
         UserVmVO vm = null;
         if (vmId != null) {
             vm = _userVmDao.findById(vmId);
         }
+
+        // sync old snapshots to region store if necessary
+
         createdVolume = _volumeMgr.createVolumeFromSnapshot(volume, snapshot, vm);
 
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(), createdVolume.getDataCenterId(), createdVolume.getId(),

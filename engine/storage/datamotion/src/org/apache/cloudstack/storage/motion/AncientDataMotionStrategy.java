@@ -23,10 +23,22 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.engine.subsystem.api.storage.*;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageAction;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
@@ -36,8 +48,6 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.MigrateVolumeAnswer;
@@ -189,9 +199,9 @@ AncientDataMotionStrategy implements DataMotionStrategy {
         }
     }
 
-    protected DataObject cacheSnapshotChain(SnapshotInfo snapshot) {
+    protected DataObject cacheSnapshotChain(SnapshotInfo snapshot, Scope scope) {
         DataObject leafData = null;
-        DataStore store = cacheMgr.getCacheStorage(snapshot.getDataStore().getScope());
+        DataStore store = cacheMgr.getCacheStorage(scope);
         while (snapshot != null) {
             DataObject cacheData = cacheMgr.createCacheObject(snapshot, store);
             if (leafData == null) {
@@ -201,6 +211,7 @@ AncientDataMotionStrategy implements DataMotionStrategy {
         }
         return leafData;
     }
+
 
     protected void deleteSnapshotCacheChain(SnapshotInfo snapshot) {
         while (snapshot != null) {
@@ -226,7 +237,8 @@ AncientDataMotionStrategy implements DataMotionStrategy {
         DataObject srcData = snapObj;
         try {
             if (!(storTO instanceof NfsTO)) {
-                srcData = cacheSnapshotChain(snapshot);
+                // cache snapshot to zone-wide staging store for the volume to be created
+                srcData = cacheSnapshotChain(snapshot, new ZoneScope(pool.getDataCenterId()));
             }
 
             String value = configDao.getValue(Config.CreateVolumeFromSnapshotWait.toString());
@@ -440,7 +452,7 @@ AncientDataMotionStrategy implements DataMotionStrategy {
         if (needCacheStorage(srcData, destData)) {
             needCache = true;
             SnapshotInfo snapshot = (SnapshotInfo) srcData;
-            srcData = cacheSnapshotChain(snapshot);
+            srcData = cacheSnapshotChain(snapshot, snapshot.getDataStore().getScope());
         }
 
         EndPoint ep = null;
