@@ -1225,28 +1225,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return (PrimaryDataStoreInfo)dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
     }
 
-    @Override
-    @DB
-    public ImageStore prepareSecondaryStorageForObjectStoreMigration(Long storeId) throws ResourceUnavailableException, InsufficientCapacityException {
-        // Verify that image store exists
-        ImageStoreVO store = _imageStoreDao.findById(storeId);
-        if (store == null) {
-            throw new InvalidParameterValueException("Image store with id " + storeId + " doesn't exist");
-        } else if (!store.getProviderName().equals(DataStoreProvider.NFS_IMAGE)) {
-            throw new InvalidParameterValueException("We only support migrate NFS secondary storage to use object store!");
-        }
-        _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), store.getDataCenterId());
-
-        DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider(store.getProviderName());
-        DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
-        DataStore secStore = dataStoreMgr.getDataStore(storeId, DataStoreRole.Image);
-        lifeCycle.migrateToObjectStore(secStore);
-        // update store_role in template_store_ref and snapshot_store_ref to ImageCache
-        _templateStoreDao.updateStoreRoleToCachce(storeId);
-        _snapshotStoreDao.updateStoreRoleToCache(storeId);
-        // converted to an image cache store
-        return (ImageStore)_dataStoreMgr.getDataStore(storeId, DataStoreRole.ImageCache);
-    }
 
     protected class StorageGarbageCollector extends ManagedContextRunnable {
 
