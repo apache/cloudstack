@@ -165,6 +165,7 @@ import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmWork;
 import com.cloud.vm.VmWorkConstants;
 import com.cloud.vm.VmWorkJobHandler;
+import com.cloud.vm.VmWorkJobHandlerProxy;
 import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
