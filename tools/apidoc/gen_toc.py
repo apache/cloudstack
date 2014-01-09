@@ -152,6 +152,7 @@ known_categories = {
     'prepareSecondaryStorageForMigration' : 'Image Store',
     'InternalLoadBalancer': 'Internal LB',
 	'DeploymentPlanners': 'Configuration',
+	'ObjectStore': 'Image Store',
     'PortableIp': 'Portable IP',
     'dedicateHost': 'Dedicate Resources',
     'releaseDedicatedHost': 'Dedicate Resources',
