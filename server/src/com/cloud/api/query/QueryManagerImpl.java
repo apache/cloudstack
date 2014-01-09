@@ -1642,6 +1642,10 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         for(VolumeResponse vr : volumeResponses) {
             String poolId = vr.getStoragePoolId();
+            if (poolId == null) {
+                continue;
+            }
+
             DataStore store = dataStoreManager.getPrimaryDataStore(poolId);
             if (store == null) {
                 continue;
