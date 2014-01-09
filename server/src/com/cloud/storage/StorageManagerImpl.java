@@ -41,7 +41,9 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
@@ -84,8 +86,6 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -269,7 +269,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     public void setDiscoverers(List<StoragePoolDiscoverer> discoverers) {
-        this._discoverers = discoverers;
+        _discoverers = discoverers;
     }
 
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
@@ -1634,8 +1634,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public ImageStore discoverImageStore(AddImageStoreCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
-        String providerName = cmd.getProviderName();
+    public ImageStore discoverImageStore(String name, String url, String providerName, Long dcId, Map details) throws IllegalArgumentException, DiscoveryException,
+            InvalidParameterValueException {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
 
         if (storeProvider == null) {
@@ -1646,16 +1646,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             providerName = storeProvider.getName(); // ignored passed provider name and use default image store provider name
         }
 
-        Long dcId = cmd.getZoneId();
-        Map details = cmd.getDetails();
         ScopeType scopeType = ScopeType.ZONE;
         if (dcId == null) {
             scopeType = ScopeType.REGION;
         }
 
-        String name = cmd.getName();
         if (name == null) {
-            name = cmd.getUrl();
+            name = url;
         }
         ImageStoreVO imageStore = _imageStoreDao.findByName(name);
         if (imageStore != null) {
@@ -1694,8 +1691,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("zoneId", dcId);
-        params.put("url", cmd.getUrl());
-        params.put("name", cmd.getName());
+        params.put("url", url);
+        params.put("name", name);
         params.put("details", details);
         params.put("scope", scopeType);
         params.put("providerName", storeProvider.getName());
@@ -1706,8 +1703,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         try {
             store = lifeCycle.initialize(params);
         } catch (Exception e) {
-            s_logger.debug("Failed to add data store: "+e.getMessage(), e);
-            throw new CloudRuntimeException("Failed to add data store: "+e.getMessage(), e);
+            s_logger.debug("Failed to add data store: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to add data store: " + e.getMessage(), e);
         }
 
         if (((ImageStoreProvider)storeProvider).needDownloadSysTemplate()) {
@@ -1728,6 +1725,41 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         return (ImageStore)_dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Image);
+    }
+
+    @Override
+    public ImageStore migrateToObjectStore(String name, String url, String providerName, Map details) throws IllegalArgumentException, DiscoveryException,
+            InvalidParameterValueException {
+        // check if current cloud is ready to migrate, we only support cloud with only NFS secondary storages
+        List<ImageStoreVO> imgStores = _imageStoreDao.listImageStores();
+        List<ImageStoreVO> nfsStores = new ArrayList<ImageStoreVO>();
+        if (imgStores != null && imgStores.size() > 0) {
+            for (ImageStoreVO store : imgStores) {
+                if (!store.getProviderName().equals(DataStoreProvider.NFS_IMAGE)) {
+                    throw new InvalidParameterValueException("We only support migrate NFS secondary storage to use object store!");
+                } else {
+                    nfsStores.add(store);
+                }
+            }
+        }
+        // convert all NFS secondary storage to staging store
+        if (nfsStores != null && nfsStores.size() > 0) {
+            for (ImageStoreVO store : nfsStores) {
+                long storeId = store.getId();
+
+                _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), store.getDataCenterId());
+
+                DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider(store.getProviderName());
+                DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
+                DataStore secStore = dataStoreMgr.getDataStore(storeId, DataStoreRole.Image);
+                lifeCycle.migrateToObjectStore(secStore);
+                // update store_role in template_store_ref and snapshot_store_ref to ImageCache
+                _templateStoreDao.updateStoreRoleToCachce(storeId);
+                _snapshotStoreDao.updateStoreRoleToCache(storeId);
+            }
+        }
+        // add object store
+        return discoverImageStore(name, url, providerName, null, details);
     }
 
     private void duplicateCacheStoreRecordsToRegionStore(long storeId) {

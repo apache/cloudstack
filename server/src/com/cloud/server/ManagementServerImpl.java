@@ -42,9 +42,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
-import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -166,7 +163,7 @@ import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStore
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageProvidersCmd;
 import org.apache.cloudstack.api.command.admin.storage.PreparePrimaryStorageForMaintenanceCmd;
-import org.apache.cloudstack.api.command.admin.storage.PrepareSecondaryStorageForMigrationCmd;
+import org.apache.cloudstack.api.command.admin.storage.UpdateCloudToUseObjectStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.swift.AddSwiftCmd;
 import org.apache.cloudstack.api.command.admin.swift.ListSwiftsCmd;
@@ -444,6 +441,7 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
@@ -535,6 +533,8 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.auth.UserAuthenticator;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
@@ -752,7 +752,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     public void setPlanners(List<DeploymentPlanner> planners) {
-        this._planners = planners;
+        _planners = planners;
     }
 
     @Inject
@@ -2842,7 +2842,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CreateSecondaryStagingStoreCmd.class);
         cmdList.add(ListSecondaryStagingStoresCmd.class);
         cmdList.add(DeleteSecondaryStagingStoreCmd.class);
-        cmdList.add(PrepareSecondaryStorageForMigrationCmd.class);
+        cmdList.add(UpdateCloudToUseObjectStoreCmd.class);
         cmdList.add(CreateApplicationLoadBalancerCmd.class);
         cmdList.add(ListApplicationLoadBalancersCmd.class);
         cmdList.add(DeleteApplicationLoadBalancerCmd.class);

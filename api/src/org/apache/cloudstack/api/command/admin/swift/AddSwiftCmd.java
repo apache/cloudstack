@@ -27,7 +27,6 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 
 import com.cloud.exception.DiscoveryException;
@@ -91,27 +90,19 @@ public class AddSwiftCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        AddImageStoreCmd cmd = new AddImageStoreCmd() {
-            @Override
-            public Map<String, String> getDetails() {
-                Map<String, String> dm = new HashMap<String, String>();
-                dm.put(ApiConstants.ACCOUNT, getAccount());
-                dm.put(ApiConstants.USERNAME, getUsername());
-                dm.put(ApiConstants.KEY, getKey());
-                return dm;
-            }
-        };
-        cmd.setProviderName("Swift");
-        cmd.setUrl(this.getUrl());
+        Map<String, String> dm = new HashMap<String, String>();
+        dm.put(ApiConstants.ACCOUNT, getAccount());
+        dm.put(ApiConstants.USERNAME, getUsername());
+        dm.put(ApiConstants.KEY, getKey());
 
-        try {
-            ImageStore result = _storageService.discoverImageStore(cmd);
+        try{
+            ImageStore result = _storageService.discoverImageStore(null, getUrl(), "Swift", null, dm);
             ImageStoreResponse storeResponse = null;
             if (result != null) {
                 storeResponse = _responseGenerator.createImageStoreResponse(result);
                 storeResponse.setResponseName(getCommandName());
                 storeResponse.setObjectName("secondarystorage");
-                this.setResponseObject(storeResponse);
+                setResponseObject(storeResponse);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add Swift secondary storage");
             }

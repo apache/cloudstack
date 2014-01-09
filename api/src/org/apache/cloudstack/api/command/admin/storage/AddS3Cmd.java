@@ -86,33 +86,27 @@ public final class AddS3Cmd extends BaseCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
         ResourceAllocationException, NetworkRuleConflictException {
 
-        AddImageStoreCmd cmd = new AddImageStoreCmd() {
-            @Override
-            public Map<String, String> getDetails() {
-                Map<String, String> dm = new HashMap<String, String>();
-                dm.put(ApiConstants.S3_ACCESS_KEY, getAccessKey());
-                dm.put(ApiConstants.S3_SECRET_KEY, getSecretKey());
-                dm.put(ApiConstants.S3_END_POINT, getEndPoint());
-                dm.put(ApiConstants.S3_BUCKET_NAME, getBucketName());
-                if (getHttpsFlag() != null) {
-                    dm.put(ApiConstants.S3_HTTPS_FLAG, getHttpsFlag().toString());
-                }
-                if (getConnectionTimeout() != null) {
-                    dm.put(ApiConstants.S3_CONNECTION_TIMEOUT, getConnectionTimeout().toString());
-                }
-                if (getMaxErrorRetry() != null) {
-                    dm.put(ApiConstants.S3_MAX_ERROR_RETRY, getMaxErrorRetry().toString());
-                }
-                if (getSocketTimeout() != null) {
-                    dm.put(ApiConstants.S3_SOCKET_TIMEOUT, getSocketTimeout().toString());
-                }
-                return dm;
-            }
-        };
-        cmd.setProviderName("S3");
+        Map<String, String> dm = new HashMap<String, String>();
+        dm.put(ApiConstants.S3_ACCESS_KEY, getAccessKey());
+        dm.put(ApiConstants.S3_SECRET_KEY, getSecretKey());
+        dm.put(ApiConstants.S3_END_POINT, getEndPoint());
+        dm.put(ApiConstants.S3_BUCKET_NAME, getBucketName());
+        if (getHttpsFlag() != null) {
+            dm.put(ApiConstants.S3_HTTPS_FLAG, getHttpsFlag().toString());
+        }
+        if (getConnectionTimeout() != null) {
+            dm.put(ApiConstants.S3_CONNECTION_TIMEOUT, getConnectionTimeout().toString());
+        }
+        if (getMaxErrorRetry() != null) {
+            dm.put(ApiConstants.S3_MAX_ERROR_RETRY, getMaxErrorRetry().toString());
+        }
+        if (getSocketTimeout() != null) {
+            dm.put(ApiConstants.S3_SOCKET_TIMEOUT, getSocketTimeout().toString());
+        }
 
-        try {
-            ImageStore result = _storageService.discoverImageStore(cmd);
+
+        try{
+            ImageStore result = _storageService.discoverImageStore(null, null, "S3", null, dm);
             ImageStoreResponse storeResponse = null;
             if (result != null) {
                 storeResponse = _responseGenerator.createImageStoreResponse(result);
