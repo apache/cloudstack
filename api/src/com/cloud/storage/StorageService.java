@@ -17,8 +17,8 @@
 package com.cloud.storage;
 
 import java.net.UnknownHostException;
+import java.util.Map;
 
-import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
@@ -95,7 +95,8 @@ public interface StorageService{
 
     boolean deleteSecondaryStagingStore(DeleteSecondaryStagingStoreCmd cmd);
 
-    ImageStore discoverImageStore(AddImageStoreCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+    public ImageStore discoverImageStore(String name, String url, String providerName, Long dcId, Map details) throws IllegalArgumentException, DiscoveryException,
+            InvalidParameterValueException;
 
     /**
      * Prepare NFS secondary storage for object store migration
@@ -108,6 +109,9 @@ public interface StorageService{
      * @throws InsufficientCapacityException
      *             TODO
      */
+    public ImageStore migrateToObjectStore(String name, String url, String providerName, Map details) throws IllegalArgumentException, DiscoveryException,
+            InvalidParameterValueException;
+
     public ImageStore prepareSecondaryStorageForObjectStoreMigration(Long storeId) throws ResourceUnavailableException,
             InsufficientCapacityException;
 

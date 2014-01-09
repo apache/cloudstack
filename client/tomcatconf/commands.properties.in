@@ -266,7 +266,7 @@ deleteImageStore=1
 createSecondaryStagingStore=1
 listSecondaryStagingStores=1
 deleteSecondaryStagingStore=1
-prepareSecondaryStorageForMigration=1
+updateCloudToUseObjectStore=1
 
 #### host commands
 addHost=3
