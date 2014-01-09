@@ -29,6 +29,10 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -72,6 +76,7 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.DateUtil;
@@ -135,6 +140,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     ClusterDao _clusterDao;
     @Inject
     ConfigDepot _configDepot;
+    @Inject
+    DataStoreProviderManager _dataStoreProviderMgr;
 
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
@@ -498,14 +505,41 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     }
 
+    private long getUsedBytes(StoragePoolVO pool) {
+        long usedBytes = 0;
+
+        List<VolumeVO> volumes = _volumeDao.findByPoolId(pool.getId(), null);
+
+        if (volumes != null && volumes.size() > 0) {
+            DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+            DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+            PrimaryDataStoreDriver primaryStoreDriver = null;
+
+            if (storeDriver instanceof PrimaryDataStoreDriver) {
+                primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
+            }
+
+            for (VolumeVO volume : volumes) {
+                if (primaryStoreDriver != null) {
+                    usedBytes += primaryStoreDriver.getVolumeSizeIncludingHypervisorSnapshotReserve(volume, pool);
+                }
+                else {
+                    usedBytes += volume.getSize();
+                }
+            }
+        }
+
+        return usedBytes;
+    }
+
     @Override
     public long getAllocatedPoolCapacity(StoragePoolVO pool, VMTemplateVO templateForVmCreation) {
         long totalAllocatedSize = 0;
 
         // if the storage pool is managed, the used bytes can be larger than the sum of the sizes of all of the non-destroyed volumes
-        // in this case, just get the used bytes from the storage pool object
+        // in this case, call getUsedBytes(StoragePoolVO)
         if (pool.isManaged()) {
-            totalAllocatedSize = pool.getUsedBytes();
+            totalAllocatedSize = getUsedBytes(pool);
         }
         else {
             // Get size for all the non-destroyed volumes

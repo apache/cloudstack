@@ -1485,11 +1485,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (requestedVolumes == null || requestedVolumes.isEmpty() || pool == null) {
             return false;
         }
-        // Only Solidfire type primary storage is using/setting Iops.
-        // This check will fix to return the storage has enough Iops when capacityIops is set to NULL for any PS Storage provider
-        if (pool.getCapacityIops() == null) {
+
+        // Only SolidFire-type primary storage is using/setting IOPS.
+        // This check returns true for storage that does not specify IOPS.
+        if (pool.getCapacityIops() == null ) {
             return true;
         }
+
         long currentIops = 0;
         List<VolumeVO> volumesInPool = _volumeDao.findByPoolId(pool.getId(), null);
 
