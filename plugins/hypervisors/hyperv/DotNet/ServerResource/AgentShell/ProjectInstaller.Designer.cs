@@ -46,22 +46,35 @@ namespace CloudStack.Plugin.AgentShell
         {
             this.serviceProcessInstaller = new System.ServiceProcess.ServiceProcessInstaller();
             this.serviceInstaller = new System.ServiceProcess.ServiceInstaller();
-            // 
+            //
             // serviceProcessInstaller
-            // 
-            this.serviceProcessInstaller.Account = System.ServiceProcess.ServiceAccount.LocalSystem;
-            this.serviceProcessInstaller.Password = null;
-            this.serviceProcessInstaller.Username = null;
-            // 
+            //
+            string user = Program.GetUser();
+            string password = Program.GetPassword();
+
+            if (string.IsNullOrEmpty(user))
+            {
+                this.serviceProcessInstaller.Account = System.ServiceProcess.ServiceAccount.LocalSystem;
+                this.serviceProcessInstaller.Password = null;
+                this.serviceProcessInstaller.Username = null;
+            }
+            else
+            {
+                this.serviceProcessInstaller.Account = System.ServiceProcess.ServiceAccount.User;
+                this.serviceProcessInstaller.Password = password;
+                this.serviceProcessInstaller.Username = user;
+            }
+
+            //
             // serviceInstaller
-            // 
+            //
             this.serviceInstaller.Description = "CloudStack agent for managing a hyper-v host";
             this.serviceInstaller.DisplayName = Program.serviceName;
             this.serviceInstaller.ServiceName = Program.serviceName;
             this.serviceInstaller.StartType = System.ServiceProcess.ServiceStartMode.Automatic;
-            // 
+            //
             // ProjectInstaller
-            // 
+            //
             this.Installers.AddRange(new System.Configuration.Install.Installer[] {
             this.serviceProcessInstaller,
             this.serviceInstaller});
