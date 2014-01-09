@@ -2222,12 +2222,14 @@
                                 }
                             }
 
-                            if (ipAddress.vpcid && ipAddress.issourcenat) {
+                            if (ipAddress.vpcid || ipAddress.issourcenat) {
                                 disableIpRules = true;
                             }
 
-                            if (disableVpn) disabledTabs.push('vpn');
-                            if (disableIpRules) disabledTabs.push('ipRules');
+                            if (disableVpn) 
+                            	disabledTabs.push('vpn');
+                            if (disableIpRules) 
+                            	disabledTabs.push('ipRules');
 
                             return disabledTabs;
                         },
