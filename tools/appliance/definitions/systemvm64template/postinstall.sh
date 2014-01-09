@@ -105,7 +105,7 @@ install_packages() {
   apt-get update
   apt-get --no-install-recommends -q -y --force-yes install links:i386 libuuid1:i386
 
-  apt-get --no-install-recommends -q -y --force=yes install radvd
+  apt-get --no-install-recommends -q -y --force-yes install radvd
 }
 
 setup_accounts() {
