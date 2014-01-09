@@ -30,6 +30,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.PBD;
+import com.xensource.xenapi.Pool;
+import com.xensource.xenapi.SR;
+import com.xensource.xenapi.Types;
+import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.VmPowerState;
+import com.xensource.xenapi.Types.XenAPIException;
+import com.xensource.xenapi.VBD;
+import com.xensource.xenapi.VDI;
+import com.xensource.xenapi.VM;
+import com.xensource.xenapi.VMGuestMetrics;
+
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
@@ -72,18 +86,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.storage.encoding.DecodedDataObject;
 import com.cloud.utils.storage.encoding.DecodedDataStore;
 import com.cloud.utils.storage.encoding.Decoder;
-import com.xensource.xenapi.Connection;
-import com.xensource.xenapi.Host;
-import com.xensource.xenapi.PBD;
-import com.xensource.xenapi.Pool;
-import com.xensource.xenapi.SR;
-import com.xensource.xenapi.Types;
-import com.xensource.xenapi.Types.BadServerResponse;
-import com.xensource.xenapi.Types.XenAPIException;
-import com.xensource.xenapi.VBD;
-import com.xensource.xenapi.VDI;
-import com.xensource.xenapi.VM;
-import com.xensource.xenapi.VMGuestMetrics;
 
 public class XenServerStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
@@ -161,18 +163,38 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
     @Override
     public AttachAnswer attachVolume(AttachCommand cmd) {
-        String vmName = cmd.getVmName();
-        String vdiNameLabel = vmName + "-DATA";
         DiskTO disk = cmd.getDisk();
         DataTO data = disk.getData();
 
         try {
-            Connection conn = hypervisorResource.getConnection();
+            String vmName = cmd.getVmName();
+            String vdiNameLabel = vmName + "-DATA";
 
-            VDI vdi = null;
+            Connection conn = this.hypervisorResource.getConnection();
+            VM vm = null;
+
+            boolean vmNotRunning = true;
+
+            try {
+                vm = this.hypervisorResource.getVM(conn, vmName);
+
+                VM.Record vmr = vm.getRecord(conn);
+
+                vmNotRunning = vmr.powerState != VmPowerState.RUNNING;
+            }
+            catch (CloudRuntimeException ex) {
+            }
 
             Map<String, String> details = cmd.getDisk().getDetails();
             boolean isManaged = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+
+            // if the VM is not running and we're not dealing with managed storage, just return success (nothing to do here)
+            // this should probably never actually happen
+            if (vmNotRunning && !isManaged) {
+                return new AttachAnswer(disk);
+            }
+
+            VDI vdi = null;
 
             if (isManaged) {
                 String iScsiName = details.get(DiskTO.IQN);
@@ -188,47 +210,57 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 if (vdi == null) {
                     vdi = hypervisorResource.createVdi(sr, vdiNameLabel, volumeSize);
                 }
-            } else {
+
+                if (vmNotRunning) {
+                    DiskTO newDisk = new DiskTO(disk.getData(), disk.getDiskSeq(), vdi.getUuid(conn), disk.getType());
+
+                    return new AttachAnswer(newDisk);
+                }
+            }
+            else {
                 vdi = hypervisorResource.mount(conn, null, null, data.getPath());
             }
 
-            // Look up the VM
-            VM vm = hypervisorResource.getVM(conn, vmName);
             /* For HVM guest, if no pv driver installed, no attach/detach */
-            boolean isHVM;
-            if (vm.getPVBootloader(conn).equalsIgnoreCase("")) {
-                isHVM = true;
-            } else {
-                isHVM = false;
-            }
+            boolean isHVM = vm.getPVBootloader(conn).equalsIgnoreCase("");
+
             VMGuestMetrics vgm = vm.getGuestMetrics(conn);
             boolean pvDrvInstalled = false;
-            if (!hypervisorResource.isRefNull(vgm) && vgm.getPVDriversUpToDate(conn)) {
+
+            if (!this.hypervisorResource.isRefNull(vgm) && vgm.getPVDriversUpToDate(conn)) {
                 pvDrvInstalled = true;
             }
+
             if (isHVM && !pvDrvInstalled) {
                 s_logger.warn(": You attempted an operation on a VM which requires PV drivers to be installed but the drivers were not detected");
+
                 return new AttachAnswer("You attempted an operation that requires PV drivers to be installed on the VM. Please install them by inserting xen-pv-drv.iso.");
             }
 
             // Figure out the disk number to attach the VM to
             String diskNumber = null;
             Long deviceId = disk.getDiskSeq();
+
             if (deviceId != null) {
                 if (deviceId.longValue() == 3) {
                     String msg = "Device 3 is reserved for CD-ROM, choose other device";
+
                     return new AttachAnswer(msg);
                 }
+
                 if (hypervisorResource.isDeviceUsed(conn, vm, deviceId)) {
                     String msg = "Device " + deviceId + " is used in VM " + vmName;
+
                     return new AttachAnswer(msg);
                 }
+
                 diskNumber = deviceId.toString();
             } else {
                 diskNumber = hypervisorResource.getUnusedDeviceNum(conn, vm);
             }
-            // Create a new VBD
+
             VBD.Record vbdr = new VBD.Record();
+
             vbdr.VM = vm;
             vbdr.VDI = vdi;
             vbdr.bootable = false;
@@ -236,6 +268,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             vbdr.mode = Types.VbdMode.RW;
             vbdr.type = Types.VbdType.DISK;
             vbdr.unpluggable = true;
+
             VBD vbd = VBD.create(conn, vbdr);
 
             // Attach the VBD to the VM
@@ -243,9 +276,10 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
             // Update the VDI's label to include the VM name
             vdi.setNameLabel(conn, vdiNameLabel);
-            DiskTO newDisk = new DiskTO(disk.getData(), Long.parseLong(diskNumber), vdi.getUuid(conn), disk.getType());
-            return new AttachAnswer(newDisk);
 
+            DiskTO newDisk = new DiskTO(disk.getData(), Long.parseLong(diskNumber), vdi.getUuid(conn), disk.getType());
+
+            return new AttachAnswer(newDisk);
         } catch (XenAPIException e) {
             String msg = "Failed to attach volume" + " for uuid: " + data.getPath() + "  due to " + e.toString();
             s_logger.warn(msg, e);
@@ -323,51 +357,70 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer dettachVolume(DettachCommand cmd) {
-        String vmName = cmd.getVmName();
         DiskTO disk = cmd.getDisk();
         DataTO data = disk.getData();
+
         try {
-            Connection conn = hypervisorResource.getConnection();
-            // Look up the VDI
-            VDI vdi = hypervisorResource.mount(conn, null, null, data.getPath());
-            // Look up the VM
-            VM vm = hypervisorResource.getVM(conn, vmName);
-            /* For HVM guest, if no pv driver installed, no attach/detach */
-            boolean isHVM;
-            if (vm.getPVBootloader(conn).equalsIgnoreCase("")) {
-                isHVM = true;
-            } else {
-                isHVM = false;
+            Connection conn = this.hypervisorResource.getConnection();
+
+            String vmName = cmd.getVmName();
+            VM vm = null;
+
+            boolean vmNotRunning = true;
+
+            try {
+                vm = this.hypervisorResource.getVM(conn, vmName);
+
+                VM.Record vmr = vm.getRecord(conn);
+
+                vmNotRunning = vmr.powerState != VmPowerState.RUNNING;
             }
-            VMGuestMetrics vgm = vm.getGuestMetrics(conn);
-            boolean pvDrvInstalled = false;
-            if (!hypervisorResource.isRefNull(vgm) && vgm.getPVDriversUpToDate(conn)) {
-                pvDrvInstalled = true;
-            }
-            if (isHVM && !pvDrvInstalled) {
-                s_logger.warn(": You attempted an operation on a VM which requires PV drivers to be installed but the drivers were not detected");
-                return new DettachAnswer(
-                    "You attempted an operation that requires PV drivers to be installed on the VM. Please install them by inserting xen-pv-drv.iso.");
+            catch (CloudRuntimeException ex) {
             }
 
-            // Look up all VBDs for this VDI
-            Set<VBD> vbds = vdi.getVBDs(conn);
+            // if the VM is not running and we're not dealing with managed storage, just return success (nothing to do here)
+            // this should probably never actually happen
+            if (vmNotRunning && !cmd.isManaged()) {
+                return new DettachAnswer(disk);
+            }
 
-            // Detach each VBD from its VM, and then destroy it
-            for (VBD vbd : vbds) {
-                VBD.Record vbdr = vbd.getRecord(conn);
+            if (!vmNotRunning) {
+                /* For HVM guest, if no pv driver installed, no attach/detach */
+                boolean isHVM = vm.getPVBootloader(conn).equalsIgnoreCase("");
 
-                if (vbdr.currentlyAttached) {
-                    vbd.unplug(conn);
+                VMGuestMetrics vgm = vm.getGuestMetrics(conn);
+                boolean pvDrvInstalled = false;
+
+                if (!this.hypervisorResource.isRefNull(vgm) && vgm.getPVDriversUpToDate(conn)) {
+                    pvDrvInstalled = true;
                 }
 
-                vbd.destroy(conn);
+                if (isHVM && !pvDrvInstalled) {
+                    s_logger.warn(": You attempted an operation on a VM which requires PV drivers to be installed but the drivers were not detected");
+                    return new DettachAnswer("You attempted an operation that requires PV drivers to be installed on the VM. Please install them by inserting xen-pv-drv.iso.");
+                }
+
+                VDI vdi = this.hypervisorResource.mount(conn, null, null, data.getPath());
+
+                // Look up all VBDs for this VDI
+                Set<VBD> vbds = vdi.getVBDs(conn);
+
+                // Detach each VBD from its VM, and then destroy it
+                for (VBD vbd : vbds) {
+                    VBD.Record vbdr = vbd.getRecord(conn);
+
+                    if (vbdr.currentlyAttached) {
+                        vbd.unplug(conn);
+                    }
+
+                    vbd.destroy(conn);
+                }
+
+                // Update the VDI's label to be "detached"
+                vdi.setNameLabel(conn, "detached");
+
+                this.hypervisorResource.umount(conn, vdi);
             }
-
-            // Update the VDI's label to be "detached"
-            vdi.setNameLabel(conn, "detached");
-
-            hypervisorResource.umount(conn, vdi);
 
             if (cmd.isManaged()) {
                 hypervisorResource.handleSrAndVdiDetach(cmd.get_iScsiName());

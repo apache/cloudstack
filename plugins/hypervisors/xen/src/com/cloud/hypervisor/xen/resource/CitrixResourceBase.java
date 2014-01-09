@@ -1262,14 +1262,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected VBD createVbd(Connection conn, DiskTO volume, String vmName, VM vm, BootloaderType bootLoaderType, VDI vdi) throws XmlRpcException, XenAPIException {
+    protected VBD createVbd(Connection conn, DiskTO volume, String vmName, VM vm, BootloaderType bootLoaderType) throws XmlRpcException, XenAPIException {
         Volume.Type type = volume.getType();
 
-        if (vdi == null) {
-            vdi = mount(conn, vmName, volume);
-        }
+        VDI vdi = mount(conn, vmName, volume);
 
         if (vdi != null) {
+            if ("detached".equals(vdi.getNameLabel(conn))) {
+                vdi.setNameLabel(conn, vmName + "-DATA");
+            }
+
             Map<String, String> smConfig = vdi.getSmConfig(conn);
             for (String key : smConfig.keySet()) {
                 if (key.startsWith("host_")) {
@@ -1752,35 +1754,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vm = createVmFromTemplate(conn, vmSpec, host);
 
             for (DiskTO disk : vmSpec.getDisks()) {
-                VDI vdi = null;
-
-                if (disk.getData() instanceof VolumeObjectTO) {
-                    Map<String, String> details = disk.getDetails();
-                    boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
-
-                    if (isManaged) {
-                        String iScsiName = details.get(DiskTO.IQN);
-                        String storageHost = details.get(DiskTO.STORAGE_HOST);
-                        String chapInitiatorUsername = disk.getDetails().get(DiskTO.CHAP_INITIATOR_USERNAME);
-                        String chapInitiatorSecret = disk.getDetails().get(DiskTO.CHAP_INITIATOR_SECRET);
-                        Long volumeSize = Long.parseLong(details.get(DiskTO.VOLUME_SIZE));
-                        String vdiNameLabel = vmName + "-DATA";
-
-                        SR sr = getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, true);
-
-                        vdi = getVDIbyUuid(conn, disk.getPath(), false);
-
-                        if (vdi == null) {
-                            vdi = createVdi(sr, vdiNameLabel, volumeSize);
-
-                            iqnToPath.put(iScsiName, vdi.getUuid(conn));
-                        } else {
-                            vdi.setNameLabel(conn, vdiNameLabel);
-                        }
-                    }
-                }
-
-                createVbd(conn, disk, vmName, vm, vmSpec.getBootloader(), vdi);
+                createVbd(conn, disk, vmName, vm, vmSpec.getBootloader());
             }
 
             if (vmSpec.getType() != VirtualMachine.Type.User) {
@@ -1889,45 +1863,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     s_logger.debug("The VM is in stopped state, detected problem during startup : " + vmName);
                 }
             }
-
-            if (state != State.Running) {
-                disconnectManagedVolumes(conn, vm);
-            }
-        }
-    }
-
-    private void disconnectManagedVolumes(Connection conn, VM vm) {
-        try {
-            Set<VBD> vbds = vm.getVBDs(conn);
-
-            for (VBD vbd : vbds) {
-                VDI vdi = vbd.getVDI(conn);
-                SR sr = null;
-
-                try {
-                    sr = vdi.getSR(conn);
-                } catch (Exception ex) {
-                    continue;
-                }
-
-                if (sr.getNameLabel(conn).startsWith("/iqn.")) {
-                    VBD.Record vbdr = vbd.getRecord(conn);
-
-                    if (vbdr.currentlyAttached) {
-                        vbd.unplug(conn);
-                    }
-
-                    vbd.destroy(conn);
-
-                    vdi.setNameLabel(conn, "detached");
-
-                    umount(conn, vdi);
-
-                    handleSrAndVdiDetach(sr.getNameLabel(conn));
-                }
-            }
-        } catch (Exception ex) {
-            s_logger.debug(ex.getMessage());
         }
     }
 
@@ -4104,8 +4039,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
                     try {
                         if (vm.getPowerState(conn) == VmPowerState.HALTED) {
-                            disconnectManagedVolumes(conn, vm);
-
                             Set<VIF> vifs = vm.getVIFs(conn);
                             List<Network> networks = new ArrayList<Network>();
                             for (VIF vif : vifs) {

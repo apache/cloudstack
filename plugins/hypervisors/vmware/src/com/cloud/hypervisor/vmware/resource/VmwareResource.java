@@ -4810,12 +4810,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         auth.setChapName(chapName);
         auth.setChapSecret(chapSecret);
 
-        if (StringUtils.isNotBlank(mutualChapName) && StringUtils.isNotBlank(mutualChapSecret)) {
-            auth.setMutualChapInherited(false);
-            auth.setMutualChapAuthenticationType(strAuthType);
-            auth.setMutualChapName(mutualChapName);
-            auth.setMutualChapSecret(mutualChapSecret);
-        }
+        auth.setMutualChapInherited(false);
+        auth.setMutualChapAuthenticationType(strAuthType);
+        auth.setMutualChapName(mutualChapName);
+        auth.setMutualChapSecret(mutualChapSecret);
 
         target.setAuthenticationProperties(auth);
 

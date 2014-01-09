@@ -216,22 +216,13 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         String chapInitiatorSecret = accountDetail.getValue();
 
-        StoragePoolDetailVO storagePoolDetail = _storagePoolDetailsDao.findDetail(volumeInfo.getPoolId(), SolidFireUtil.USE_MUTUAL_CHAP_FOR_VMWARE);
+        accountDetail = _accountDetailsDao.findDetail(accountId, SolidFireUtil.CHAP_TARGET_USERNAME);
 
-        boolean useMutualChapForVMware = new Boolean(storagePoolDetail.getValue());
+        String chapTargetUsername = accountDetail.getValue();
 
-        String chapTargetUsername = null;
-        String chapTargetSecret = null;
+        accountDetail = _accountDetailsDao.findDetail(accountId, SolidFireUtil.CHAP_TARGET_SECRET);
 
-        if (useMutualChapForVMware) {
-            accountDetail = _accountDetailsDao.findDetail(accountId, SolidFireUtil.CHAP_TARGET_USERNAME);
-
-            chapTargetUsername = accountDetail.getValue();
-
-            accountDetail = _accountDetailsDao.findDetail(accountId, SolidFireUtil.CHAP_TARGET_SECRET);
-
-            chapTargetSecret = accountDetail.getValue();
-        }
+        String chapTargetSecret = accountDetail.getValue();
 
         return new ChapInfoImpl(chapInitiatorUsername, chapInitiatorSecret, chapTargetUsername, chapTargetSecret);
     }
