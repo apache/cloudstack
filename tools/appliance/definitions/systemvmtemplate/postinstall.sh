@@ -88,6 +88,8 @@ install_packages() {
   # apt-get -q -y --force-yes purge build-essential
 
   apt-get --no-install-recommends -q -y --force-yes install haproxy
+
+  apt-get --no-install-recommends -q -y --force=yes install radvd
 }
 
 setup_accounts() {

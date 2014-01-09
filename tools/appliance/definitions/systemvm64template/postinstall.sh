@@ -105,7 +105,7 @@ install_packages() {
   apt-get update
   apt-get --no-install-recommends -q -y --force-yes install links:i386 libuuid1:i386
 
-
+  apt-get --no-install-recommends -q -y --force=yes install radvd
 }
 
 setup_accounts() {
@@ -239,6 +239,7 @@ configure_services() {
   chkconfig cloud off
   chkconfig xl2tpd off
   chkconfig hv_kvp_daemon off
+  chkconfig radvd off
 }
 
 do_signature() {
