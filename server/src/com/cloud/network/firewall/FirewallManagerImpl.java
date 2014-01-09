@@ -284,7 +284,6 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         sb.and("networkId", sb.entity().getNetworkId(), Op.EQ);
         sb.and("ip", sb.entity().getSourceIpAddressId(), Op.EQ);
         sb.and("purpose", sb.entity().getPurpose(), Op.EQ);
-        sb.and("state", sb.entity().getState(), Op.NEQ);
 
         if (tags != null && !tags.isEmpty()) {
             SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
@@ -325,7 +324,6 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
         sc.setParameters("purpose", Purpose.Firewall);
         sc.setParameters("trafficType", trafficType);
-        sc.setParameters("state", State.Revoke);
 
         Pair<List<FirewallRuleVO>, Integer> result = _firewallDao.searchAndCount(sc, filter);
         return new Pair<List<? extends FirewallRule>, Integer>(result.first(), result.second());
