@@ -125,6 +125,8 @@ Requires: jakarta-commons-daemon
 Requires: jakarta-commons-daemon-jsvc
 Requires: perl
 Requires: libvirt-python
+Requires: qemu-img
+Requires: qemu-kvm
 Provides: cloud-agent
 Obsoletes: cloud-agent < 4.1.0
 Obsoletes: cloud-agent-libs < 4.1.0
