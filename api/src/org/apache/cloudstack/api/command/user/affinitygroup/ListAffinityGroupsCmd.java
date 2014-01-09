@@ -78,7 +78,7 @@ public class ListAffinityGroupsCmd extends BaseListAccountResourcesCmd {
 
         ListResponse<AffinityGroupResponse> response = _queryService.listAffinityGroups(id, affinityGroupName,
                 affinityGroupType, virtualMachineId, this.getAccountName(), this.getDomainId(), this.isRecursive(),
-                this.listAll(), this.getStartIndex(), this.getPageSizeVal());
+                this.listAll(), this.getStartIndex(), this.getPageSizeVal(), this.getKeyword());
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
 
