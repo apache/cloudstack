@@ -36,6 +36,8 @@ import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.Volume;
 
 public class FakePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     boolean snapshotResult = true;
@@ -43,6 +45,11 @@ public class FakePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public ChapInfo getChapInfo(VolumeInfo volumeInfo) {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public long getVolumeSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool) {
+        return volume.getSize();
     }
 
     @Override

@@ -46,6 +46,8 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
@@ -284,8 +286,20 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             iops = new Iops(volumeInfo.getMinIops(), volumeInfo.getMaxIops(), getDefaultBurstIops(storagePoolId, volumeInfo.getMaxIops()));
         }
 
-        long volumeSize = volumeInfo.getSize();
-        Integer hypervisorSnapshotReserve = volumeInfo.getHypervisorSnapshotReserve();
+        long volumeSize = getVolumeSizeIncludingHypervisorSnapshotReserve(volumeInfo, _storagePoolDao.findById(storagePoolId));
+
+        long sfVolumeId = SolidFireUtil.createSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword,
+                getSolidFireVolumeName(volumeInfo.getName()), sfAccountId, volumeSize, true,
+                NumberFormat.getInstance().format(volumeInfo.getSize()),
+                iops.getMinIops(), iops.getMaxIops(), iops.getBurstIops());
+
+        return SolidFireUtil.getSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfVolumeId);
+    }
+
+    @Override
+    public long getVolumeSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool) {
+        long volumeSize = volume.getSize();
+        Integer hypervisorSnapshotReserve = volume.getHypervisorSnapshotReserve();
 
         if (hypervisorSnapshotReserve != null) {
             if (hypervisorSnapshotReserve < 25) {
@@ -295,11 +309,7 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             volumeSize += volumeSize * (hypervisorSnapshotReserve / 100f);
         }
 
-        long sfVolumeId =
-            SolidFireUtil.createSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword, getSolidFireVolumeName(volumeInfo.getName()), sfAccountId,
-                volumeSize, true, NumberFormat.getNumberInstance().format(volumeInfo.getSize().toString()), iops.getMinIops(), iops.getMaxIops(), iops.getBurstIops());
-
-        return SolidFireUtil.getSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfVolumeId);
+        return volumeSize;
     }
 
     private String getSolidFireVolumeName(String strCloudStackVolumeName) {
@@ -356,11 +366,12 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
     }
 
-    private void deleteSolidFireVolume(VolumeInfo volumeInfo, SolidFireConnection sfConnection) {
+    private SolidFireUtil.SolidFireVolume deleteSolidFireVolume(VolumeInfo volumeInfo, SolidFireConnection sfConnection)
+    {
         Long storagePoolId = volumeInfo.getPoolId();
 
         if (storagePoolId == null) {
-            return; // this volume was never assigned to a storage pool, so no SAN volume should exist for it
+            return null; // this volume was never assigned to a storage pool, so no SAN volume should exist for it
         }
 
         String mVip = sfConnection.getManagementVip();
@@ -370,7 +381,7 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         long sfVolumeId = Long.parseLong(volumeInfo.getFolder());
 
-        SolidFireUtil.deleteSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfVolumeId);
+        return SolidFireUtil.deleteSolidFireVolume(mVip, mPort, clusterAdminUsername, clusterAdminPassword, sfVolumeId);
     }
 
     private String getSfAccountName(String csAccountUuid, long csAccountId) {
@@ -429,7 +440,7 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             long capacityBytes = storagePool.getCapacityBytes();
             long usedBytes = storagePool.getUsedBytes();
 
-            usedBytes += volumeInfo.getSize();
+            usedBytes += sfVolume.getTotalSize();
 
             storagePool.setUsedBytes(usedBytes > capacityBytes ? capacityBytes : usedBytes);
 
@@ -493,31 +504,31 @@ public class SolidfirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         if (dataObject.getType() == DataObjectType.VOLUME) {
             VolumeInfo volumeInfo = (VolumeInfo)dataObject;
-            AccountVO account = _accountDao.findById(volumeInfo.getAccountId());
-            AccountDetailVO accountDetails = _accountDetailsDao.findDetail(account.getAccountId(), SolidFireUtil.ACCOUNT_ID);
-            long sfAccountId = Long.parseLong(accountDetails.getValue());
+            // AccountVO account = _accountDao.findById(volumeInfo.getAccountId());
+            // AccountDetailVO accountDetails = _accountDetailsDao.findDetail(account.getAccountId(), SolidFireUtil.ACCOUNT_ID);
+            // long sfAccountId = Long.parseLong(accountDetails.getValue());
 
             long storagePoolId = dataStore.getId();
             SolidFireConnection sfConnection = getSolidFireConnection(storagePoolId);
 
-            deleteSolidFireVolume(volumeInfo, sfConnection);
+            SolidFireUtil.SolidFireVolume sfVolume = deleteSolidFireVolume(volumeInfo, sfConnection);
 
             _volumeDao.deleteVolumesByInstance(volumeInfo.getId());
 
-            //            if (!sfAccountHasVolume(sfAccountId, sfConnection)) {
-            //                // delete the account from the SolidFire SAN
-            //                deleteSolidFireAccount(sfAccountId, sfConnection);
+            //  if (!sfAccountHasVolume(sfAccountId, sfConnection)) {
+            //      // delete the account from the SolidFire SAN
+            //      deleteSolidFireAccount(sfAccountId, sfConnection);
             //
-            //                // delete the info in the account_details table
-            //                // that's related to the SolidFire account
-            //                _accountDetailsDao.deleteDetails(account.getAccountId());
-            //            }
+            //      // delete the info in the account_details table
+            //      // that's related to the SolidFire account
+            //      _accountDetailsDao.deleteDetails(account.getAccountId());
+            //  }
 
             StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
 
             long usedBytes = storagePool.getUsedBytes();
 
-            usedBytes -= volumeInfo.getSize();
+            usedBytes -= sfVolume != null ? sfVolume.getTotalSize() : 0;
 
             storagePool.setUsedBytes(usedBytes < 0 ? 0 : usedBytes);
 

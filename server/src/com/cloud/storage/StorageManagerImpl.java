@@ -54,6 +54,7 @@ import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -62,6 +63,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -1542,7 +1544,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
             if (volume.getState() != Volume.State.Ready) {
-                totalAskingSize = totalAskingSize + volume.getSize();
+                totalAskingSize = totalAskingSize + getVolumeSizeIncludingHvSsReserve(volume, pool);
             }
         }
 
@@ -1579,6 +1581,19 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return false;
         }
         return true;
+    }
+
+    private long getVolumeSizeIncludingHvSsReserve(Volume volume, StoragePool pool) {
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+
+        if (storeDriver instanceof PrimaryDataStoreDriver) {
+            PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
+
+            return primaryStoreDriver.getVolumeSizeIncludingHypervisorSnapshotReserve(volume, pool);
+        }
+
+        return volume.getSize();
     }
 
     @Override

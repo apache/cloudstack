@@ -21,8 +21,13 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.Volume;
+
 public interface PrimaryDataStoreDriver extends DataStoreDriver {
     public ChapInfo getChapInfo(VolumeInfo volumeInfo);
+
+    public long getVolumeSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool);
 
     public void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback);
 

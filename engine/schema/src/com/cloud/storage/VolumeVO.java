@@ -587,7 +587,6 @@ public class VolumeVO implements Volume {
         this.state = state;
     }
 
-    @Override
     public void setHypervisorSnapshotReserve(Integer hypervisorSnapshotReserve) {
         this.hypervisorSnapshotReserve = hypervisorSnapshotReserve;
     }

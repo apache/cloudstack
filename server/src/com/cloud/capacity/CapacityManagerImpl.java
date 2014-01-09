@@ -500,10 +500,19 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     @Override
     public long getAllocatedPoolCapacity(StoragePoolVO pool, VMTemplateVO templateForVmCreation) {
+        long totalAllocatedSize = 0;
 
-        // Get size for all the non-destroyed volumes
-        Pair<Long, Long> sizes = _volumeDao.getNonDestroyedCountAndTotalByPool(pool.getId());
-        long totalAllocatedSize = sizes.second() + sizes.first() * _extraBytesPerVolume;
+        // if the storage pool is managed, the used bytes can be larger than the sum of the sizes of all of the non-destroyed volumes
+        // in this case, just get the used bytes from the storage pool object
+        if (pool.isManaged()) {
+            totalAllocatedSize = pool.getUsedBytes();
+        }
+        else {
+            // Get size for all the non-destroyed volumes
+            Pair<Long, Long> sizes = _volumeDao.getNonDestroyedCountAndTotalByPool(pool.getId());
+
+            totalAllocatedSize = sizes.second() + sizes.first() * _extraBytesPerVolume;
+        }
 
         // Get size for VM Snapshots
         totalAllocatedSize = totalAllocatedSize + _volumeDao.getVMSnapshotSizeByPool(pool.getId());
