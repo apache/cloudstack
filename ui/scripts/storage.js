@@ -1751,13 +1751,50 @@
                                 createForm: {
                                     title: 'label.action.create.volume',
                                     desc: '',
+                                    preFilter: function(args) {
+                                	    debugger;
+                                	    if (g_regionsecondaryenabled == true) {
+                                	    	args.$form.find('.form-item[rel=zoneid]').css('display', 'inline-block');
+                                	    } else {
+                                	    	args.$form.find('.form-item[rel=zoneid]').hide();
+                                	    }
+                                    },
                                     fields: {
                                         name: {
                                             label: 'label.name',
                                             validation: {
                                                 required: true
                                             }
-                                        }
+                                        },                                        
+                                        zoneid: {
+                                            label: 'label.availability.zone',  
+                                            isHidden: true,
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL("listZones&available=true"),
+                                                    dataType: "json",
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var zoneObjs = json.listzonesresponse.zone;                                                        
+                                                        var items = [{
+                                                            id: '',
+                                                            description: ''
+                                                        }];                                                        
+                                                        if (zoneObjs != null) {
+                                                        	for (i = 0; i < zoneObjs.length; i++) {
+                                                        		items.push({
+                                                        			id: zoneObjs[i].id,
+                                                        			description: zoneObjs[i].name
+                                                        		});
+                                                        	}
+                                                        }     
+                                                        args.response.success({                                                            
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        }                                        
                                     }
                                 },
                                 action: function(args) {
@@ -1765,7 +1802,13 @@
                                         snapshotid: args.context.snapshots[0].id,
                                         name: args.data.name
                                     };
-
+                                    
+                                    if (args.$form.find('.form-item[rel=zoneid]').css("display") != "none" && args.data.zoneid != '') {                                    
+	                                    $.extend(data, {
+	                                    	zoneId: args.data.zoneid
+	                                    });   
+                                    }                                    
+                                    
                                     $.ajax({
                                         url: createURL('createVolume'),
                                         data: data,
