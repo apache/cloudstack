@@ -27,6 +27,9 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -38,8 +41,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -211,7 +212,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
     @Override
     public EndPoint select(DataObject srcData, DataObject destData, StorageAction action) {
-        if (action == StorageAction.BACKUPSNAPSHOT) {
+        if (action == StorageAction.BACKUPSNAPSHOT && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
             SnapshotInfo srcSnapshot = (SnapshotInfo)srcData;
             if (srcSnapshot.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
                 VolumeInfo volumeInfo = srcSnapshot.getBaseVolume();

@@ -30,12 +30,15 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
@@ -52,7 +55,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
@@ -140,6 +142,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     SnapshotDataFactory snapshotFactory;
     @Inject
     ConfigDepot _configDepot;
+    @Inject
+    SnapshotService _snapshotSrv;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -149,7 +153,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     public void setStoragePoolAllocators(List<StoragePoolAllocator> storagePoolAllocators) {
-        this._storagePoolAllocators = storagePoolAllocators;
+        _storagePoolAllocators = storagePoolAllocators;
     }
 
     protected List<PodAllocator> _podAllocators;
@@ -159,7 +163,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     public void setPodAllocators(List<PodAllocator> podAllocators) {
-        this._podAllocators = podAllocators;
+        _podAllocators = podAllocators;
     }
 
     protected VolumeOrchestrator() {
@@ -326,6 +330,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         VolumeInfo vol = volFactory.getVolume(volume.getId());
         DataStore store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
         SnapshotInfo snapInfo = snapshotFactory.getSnapshot(snapshot.getId(), DataStoreRole.Image);
+        // sync snapshot to region store if necessary
+        DataStore snapStore = snapInfo.getDataStore();
+        long snapVolId = snapInfo.getVolumeId();
+        try {
+            _snapshotSrv.syncVolumeSnapshotsToRegionStore(snapVolId, snapStore);
+        } catch (Exception ex) {
+            // log but ignore the sync error to avoid any potential S3 down issue, it should be sync next time
+            s_logger.warn(ex.getMessage(), ex);
+        }
+        // create volume on primary from snapshot
         AsyncCallFuture<VolumeApiResult> future = volService.createVolumeFromSnapshot(vol, store, snapInfo);
         try {
             VolumeApiResult result = future.get();

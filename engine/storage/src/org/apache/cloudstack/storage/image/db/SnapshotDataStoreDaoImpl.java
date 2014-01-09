@@ -103,6 +103,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         storeSnapshotSearch.and("snapshot_id", storeSnapshotSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
         storeSnapshotSearch.and("store_id", storeSnapshotSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         storeSnapshotSearch.and("store_role", storeSnapshotSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        storeSnapshotSearch.and("state", storeSnapshotSearch.entity().getState(), SearchCriteria.Op.EQ);
         storeSnapshotSearch.done();
 
         snapshotIdSearch = createSearchBuilder();
@@ -332,6 +333,15 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
             }
         }
 
+    }
+
+    @Override
+    public SnapshotDataStoreVO findReadyOnCache(long snapshotId) {
+        SearchCriteria<SnapshotDataStoreVO> sc = storeSnapshotSearch.create();
+        sc.setParameters("snapshot_id", snapshotId);
+        sc.setParameters("store_role", DataStoreRole.ImageCache);
+        sc.setParameters("state", ObjectInDataStoreStateMachine.State.Ready);
+        return findOneIncludingRemovedBy(sc);
     }
 
     @Override

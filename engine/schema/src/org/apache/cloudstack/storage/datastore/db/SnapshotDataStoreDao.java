@@ -49,6 +49,8 @@ public interface SnapshotDataStoreDao extends GenericDao<SnapshotDataStoreVO, Lo
     // delete the snapshot entry on primary data store to make sure that next snapshot will be full snapshot
     void deleteSnapshotRecordsOnPrimary();
 
+    SnapshotDataStoreVO findReadyOnCache(long snapshotId);
+
     List<SnapshotDataStoreVO> listOnCache(long snapshotId);
 
     void updateStoreRoleToCache(long storeId);

@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.storage.snapshot;
 
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
@@ -37,6 +38,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
@@ -49,6 +51,9 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.template.TemplateConstants;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -56,13 +61,17 @@ import com.cloud.utils.fsm.NoTransitionException;
 public class SnapshotServiceImpl implements SnapshotService {
     private static final Logger s_logger = Logger.getLogger(SnapshotServiceImpl.class);
     @Inject
+    protected SnapshotDao _snapshotDao;
+    @Inject
     protected SnapshotDataStoreDao _snapshotStoreDao;
     @Inject
-    SnapshotDataFactory snapshotfactory;
+    SnapshotDataFactory _snapshotFactory;
     @Inject
     DataStoreManager dataStoreMgr;
     @Inject
     DataMotionService motionSrv;
+    @Inject
+    StorageCacheManager _cacheMgr;
 
     static private class CreateSnapshotContext<T> extends AsyncRpcContext<T> {
         final SnapshotInfo snapshot;
@@ -244,7 +253,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         try {
             snapObj.processEvent(Snapshot.Event.BackupToSecondary);
 
-            DataStore imageStore = this.findSnapshotImageStore(snapshot);
+            DataStore imageStore = findSnapshotImageStore(snapshot);
             if (imageStore == null) {
                 throw new CloudRuntimeException("can not find an image stores");
             }
@@ -255,7 +264,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             CopySnapshotContext<CommandResult> context = new CopySnapshotContext<CommandResult>(null, snapshot, snapshotOnImageStore, future);
             AsyncCallbackDispatcher<SnapshotServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher.create(this);
             caller.setCallback(caller.getTarget().copySnapshotAsyncCallback(null, null)).setContext(context);
-            this.motionSrv.copyAsync(snapshot, snapshotOnImageStore, caller);
+            motionSrv.copyAsync(snapshot, snapshotOnImageStore, caller);
         } catch (Exception e) {
             s_logger.debug("Failed to copy snapshot", e);
             result.setResult("Failed to copy snapshot:" + e.toString());
@@ -306,7 +315,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             CopyCmdAnswer answer = (CopyCmdAnswer)result.getAnswer();
             destSnapshot.processEvent(Event.OperationSuccessed, result.getAnswer());
             srcSnapshot.processEvent(Snapshot.Event.OperationSucceeded);
-            snapResult = new SnapshotResult(this.snapshotfactory.getSnapshot(destSnapshot.getId(), destSnapshot.getDataStore()), answer);
+            snapResult = new SnapshotResult(_snapshotFactory.getSnapshot(destSnapshot.getId(), destSnapshot.getDataStore()), answer);
             future.complete(snapResult);
         } catch (Exception e) {
             s_logger.debug("Failed to update snapshot state", e);
@@ -391,7 +400,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
     @Override
     public boolean revertSnapshot(Long snapshotId) {
-        SnapshotInfo snapshot = snapshotfactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+        SnapshotInfo snapshot = _snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
         PrimaryDataStore store = (PrimaryDataStore)snapshot.getDataStore();
 
         AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
@@ -417,4 +426,92 @@ public class SnapshotServiceImpl implements SnapshotService {
         return false;
     }
 
+    // This routine is used to push snapshots currently on cache store, but not in region store to region store.
+    // used in migrating existing NFS secondary storage to S3. We chose to push all volume related snapshots to handle delta snapshots smoothly.
+    @Override
+    public void syncVolumeSnapshotsToRegionStore(long volumeId, DataStore store) {
+        if (dataStoreMgr.isRegionStore(store)) {
+            // list all backed up snapshots for the given volume
+            List<SnapshotVO> snapshots = _snapshotDao.listByStatus(volumeId, Snapshot.State.BackedUp);
+            if (snapshots != null) {
+                for (SnapshotVO snapshot : snapshots) {
+                    syncSnapshotToRegionStore(snapshot.getId(), store);
+                }
+            }
+        }
+    }
+
+    // push one individual snapshots currently on cache store to region store if it is not there already
+    private void syncSnapshotToRegionStore(long snapshotId, DataStore store) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("sync snapshot " + snapshotId + " from cache to object store...");
+        }
+        // if snapshot is already on region wide object store, check if it is really downloaded there (by checking install_path). Sync snapshot to region
+        // wide store if it is not there physically.
+        SnapshotInfo snapOnStore = _snapshotFactory.getSnapshot(snapshotId, store);
+        if (snapOnStore == null) {
+            throw new CloudRuntimeException("Cannot find an entry in snapshot_store_ref for snapshot " + snapshotId + " on region store: " + store.getName());
+        }
+        if (snapOnStore.getPath() == null || snapOnStore.getPath().length() == 0) {
+            // snapshot is not on region store yet, sync to region store
+            SnapshotInfo srcSnapshot = _snapshotFactory.getReadySnapshotOnCache(snapshotId);
+            if (srcSnapshot == null) {
+                throw new CloudRuntimeException("Cannot find snapshot " + snapshotId + "  on cache store");
+            }
+            AsyncCallFuture<SnapshotResult> future = syncToRegionStoreAsync(srcSnapshot, store);
+            try {
+                SnapshotResult result = future.get();
+                if (result.isFailed()) {
+                    throw new CloudRuntimeException("sync snapshot from cache to region wide store failed for image store " + store.getName() + ":"
+                            + result.getResult());
+                }
+                _cacheMgr.releaseCacheObject(srcSnapshot); // reduce reference count for template on cache, so it can recycled by schedule
+            } catch (Exception ex) {
+                throw new CloudRuntimeException("sync snapshot from cache to region wide store failed for image store " + store.getName());
+            }
+        }
+
+    }
+
+    private AsyncCallFuture<SnapshotResult> syncToRegionStoreAsync(SnapshotInfo snapshot, DataStore store) {
+        AsyncCallFuture<SnapshotResult> future = new AsyncCallFuture<SnapshotResult>();
+        // no need to create entry on snapshot_store_ref here, since entries are already created when updateCloudToUseObjectStore is invoked.
+        // But we need to set default install path so that sync can be done in the right s3 path
+        SnapshotInfo snapshotOnStore = _snapshotFactory.getSnapshot(snapshot, store);
+        String installPath = TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR + "/"
+                + snapshot.getAccountId() + "/" + snapshot.getVolumeId();
+        ((SnapshotObject)snapshotOnStore).setPath(installPath);
+        CopySnapshotContext<CommandResult> context = new CopySnapshotContext<CommandResult>(null, snapshot,
+                snapshotOnStore, future);
+        AsyncCallbackDispatcher<SnapshotServiceImpl, CopyCommandResult> caller = AsyncCallbackDispatcher
+                .create(this);
+        caller.setCallback(caller.getTarget().syncSnapshotCallBack(null, null)).setContext(context);
+        motionSrv.copyAsync(snapshot, snapshotOnStore, caller);
+        return future;
+    }
+
+    protected Void syncSnapshotCallBack(AsyncCallbackDispatcher<SnapshotServiceImpl, CopyCommandResult> callback,
+            CopySnapshotContext<CommandResult> context) {
+        CopyCommandResult result = callback.getResult();
+        SnapshotInfo destSnapshot = context.destSnapshot;
+        SnapshotResult res = new SnapshotResult(destSnapshot, null);
+
+        AsyncCallFuture<SnapshotResult> future = context.future;
+        try {
+            if (result.isFailed()) {
+                res.setResult(result.getResult());
+                // no change to existing snapshot_store_ref, will try to re-sync later if other call triggers this sync operation
+            } else {
+                // this will update install path properly, next time it will not sync anymore.
+                destSnapshot.processEvent(Event.OperationSuccessed, result.getAnswer());
+            }
+            future.complete(res);
+        } catch (Exception e) {
+            s_logger.debug("Failed to process sync snapshot callback", e);
+            res.setResult(e.toString());
+            future.complete(res);
+        }
+
+        return null;
+    }
 }

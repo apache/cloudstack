@@ -689,6 +689,9 @@ public class TemplateServiceImpl implements TemplateService {
     @Override
     public void syncTemplateToRegionStore(long templateId, DataStore store) {
         if (_storeMgr.isRegionStore(store)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Sync template " + templateId + " from cache to object store...");
+            }
             // if template is on region wide object store, check if it is really downloaded there (by checking install_path). Sync template to region
             // wide store if it is not there physically.
             TemplateInfo tmplOnStore = _templateFactory.getTemplate(templateId, store);
