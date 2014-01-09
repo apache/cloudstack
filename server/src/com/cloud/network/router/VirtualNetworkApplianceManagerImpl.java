@@ -3525,10 +3525,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     protected boolean sendCommandsToRouter(final VirtualRouter router, Commands cmds) throws AgentUnavailableException {
-        if(!checkRouterVersion(router)){
+        /*if(!checkRouterVersion(router)){
             s_logger.debug("Router requires upgrade. Unable to send command to router:" + router.getId());
             throw new CloudRuntimeException("Unable to send command. Upgrade in progress. Please contact administrator.");
-        }
+        }*/
         Answer[] answers = null;
         try {
             answers = _agentMgr.send(router.getHostId(), cmds);

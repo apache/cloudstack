@@ -145,6 +145,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
             userVmResponse.setServiceOfferingId(userVm.getServiceOfferingUuid());
             userVmResponse.setServiceOfferingName(userVm.getServiceOfferingName());
         }
+        if (details.contains(VMDetails.all) || details.contains(VMDetails.diskoff)) {
+            userVmResponse.setDiskOfferingId(userVm.getDiskOfferingUuid());
+            userVmResponse.setDiskOfferingName(userVm.getDiskOfferingName());
+        }
         if (details.contains(VMDetails.all) || details.contains(VMDetails.servoff) || details.contains(VMDetails.stats)) {
             userVmResponse.setCpuNumber(userVm.getCpu());
             userVmResponse.setCpuSpeed(userVm.getSpeed());

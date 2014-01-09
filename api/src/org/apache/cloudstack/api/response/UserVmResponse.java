@@ -139,6 +139,14 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @Param(description = "the name of the service offering of the virtual machine")
     private String serviceOfferingName;
 
+    @SerializedName(ApiConstants.DISK_OFFERING_ID)
+    @Param(description = "the ID of the disk offering of the virtual machine")
+    private String diskOfferingId;
+
+    @SerializedName("diskofferingname")
+    @Param(description = "the name of the disk offering of the virtual machine")
+    private String diskOfferingName;
+
     @SerializedName("forvirtualnetwork")
     @Param(description = "the virtual network for the service offering")
     private Boolean forVirtualNetwork;
@@ -387,6 +395,14 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         return serviceOfferingName;
     }
 
+    public String getDiskOfferingId() {
+        return diskOfferingId;
+    }
+
+    public String getDiskOfferingName() {
+        return diskOfferingName;
+    }
+
     public Boolean getForVirtualNetwork() {
         return forVirtualNetwork;
     }
@@ -604,6 +620,14 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public void setServiceOfferingName(String serviceOfferingName) {
         this.serviceOfferingName = serviceOfferingName;
+    }
+
+    public void setDiskOfferingId(String diskOfferingId) {
+        this.diskOfferingId = diskOfferingId;
+    }
+
+    public void setDiskOfferingName(String diskOfferingName) {
+        this.diskOfferingName = diskOfferingName;
     }
 
     public void setCpuNumber(Integer cpuNumber) {
