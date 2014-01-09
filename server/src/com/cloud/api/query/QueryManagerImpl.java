@@ -26,6 +26,7 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.*;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -84,10 +85,6 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 
@@ -1645,6 +1642,24 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         List<VolumeResponse> volumeResponses = ViewResponseHelper.createVolumeResponse(result.first().toArray(
                 new VolumeJoinVO[result.first().size()]));
+        for(VolumeResponse vr : volumeResponses) {
+            String poolId = vr.getStoragePoolId();
+            DataStore store = dataStoreManager.getPrimaryDataStore(poolId);
+            if (store == null) {
+                continue;
+            }
+
+            DataStoreDriver driver = store.getDriver();
+            if (driver == null) {
+                continue;
+            }
+
+            Map<String, String> caps = driver.getCapabilities();
+            if (caps != null) {
+                boolean quiescevm = Boolean.parseBoolean(caps.get(DataStoreCapabilities.VOLUME_SNAPSHOT_QUIESCEVM.toString()));
+                vr.setNeedQuiescevm(quiescevm);
+            }
+        }
         response.setResponses(volumeResponses, result.second());
         return response;
     }
