@@ -19,9 +19,10 @@
 package org.apache.cloudstack.storage.snapshot;
 
 import java.util.Date;
-import java.util.List;
 
 import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -30,7 +31,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
-import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -40,7 +40,6 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -79,6 +78,7 @@ public class SnapshotObject implements SnapshotInfo {
     SnapshotDataStoreDao snapshotStoreDao;
     @Inject
     StorageStrategyFactory storageStrategyFactory;
+    private String installPath; // temporarily set installPath before passing to resource for entries with empty installPath for object store migration case
 
     public SnapshotObject() {
 
@@ -200,11 +200,18 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public String getPath() {
+        if (installPath != null)
+            return installPath;
+
         DataObjectInStore objectInStore = objectInStoreMgr.findObject(this, getDataStore());
         if (objectInStore != null) {
             return objectInStore.getInstallPath();
         }
         return null;
+    }
+
+    public void setPath(String installPath) {
+        this.installPath = installPath;
     }
 
     @Override
@@ -360,12 +367,12 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public void addPayload(Object data) {
-        this.payload = data;
+        payload = data;
     }
 
     @Override
     public Object getPayload() {
-        return this.payload;
+        return payload;
     }
 
     @Override
