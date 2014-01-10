@@ -9232,6 +9232,9 @@
                                                         return 'No';
                                                     }
                                                 }
+                                            },                                            
+                                            numberOfRouterRequiresUpgrade: {
+                                            	label: 'Total of Virtual Routers that require upgrade'
                                             }
                                         }],
                                         dataProvider: function (args) {
@@ -9356,6 +9359,9 @@
                                                         return 'No';
                                                     }
                                                 }
+                                            },
+                                            numberOfRouterRequiresUpgrade: {
+                                            	label: 'Total of Virtual Routers that require upgrade'
                                             },
                                             zonename: {
                                                 label: 'label.zone'
@@ -9484,6 +9490,9 @@
                                                     }
                                                 }
                                             },
+                                            numberOfRouterRequiresUpgrade: {
+                                            	label: 'Total of Virtual Routers that require upgrade'
+                                            },
                                             podname: {
                                                 label: 'label.pod'
                                             },
@@ -9567,6 +9576,14 @@
                                                             var routerCountFromAllPages = json.listroutersresponse.count;
                                                             var routerCountFromFirstPageToCurrentPage = json.listroutersresponse.router.length;
                                                             var routerRequiresUpgrade = 0;
+                                                            
+                                                            var items = json.listroutersresponse.router;
+                	                            			for (var k = 0; k < items.length; k++) {    	                                                    				
+                	                            				if (items[k].requiresupgrade) {
+                	                            					routerRequiresUpgrade++;
+                	                            				}
+                	                            			}  
+                                                            
                                                             var callListApiWithPage = function () {
                                                                 $.ajax({
                                                                     url: createURL('listRouters'),
@@ -9581,8 +9598,8 @@
                                                                     success: function (json) {
                                                                         routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
                                                                         var items = json.listroutersresponse.router;
-                                                                        for (var i = 0; i < items.length; i++) {
-                                                                            if (items[i].requiresupgrade) {
+                            	                            			for (var k = 0; k < items.length; k++) {    	                                                    				
+                            	                            				if (items[k].requiresupgrade) {
                                                                                 routerRequiresUpgrade++;
                                                                             }
                                                                         }
@@ -9673,6 +9690,9 @@
                                                         return 'No';
                                                     }
                                                 }
+                                            },                                            
+                                            numberOfRouterRequiresUpgrade: {
+                                            	label: 'Total of Virtual Routers that require upgrade'
                                             }
                                         }],
                                         dataProvider: function (args) {
@@ -9693,6 +9713,14 @@
                                                         var routerCountFromAllPages = json.listroutersresponse.count;
                                                         var routerCountFromFirstPageToCurrentPage = json.listroutersresponse.router.length;
                                                         var routerRequiresUpgrade = 0;
+                                                        
+                                                        var items = json.listroutersresponse.router;
+            	                            			for (var k = 0; k < items.length; k++) {    	                                                    				
+            	                            				if (items[k].requiresupgrade) {
+            	                            					routerRequiresUpgrade++;
+            	                            				}
+            	                            			}  
+                                                        
                                                         var callListApiWithPage = function () {
                                                             $.ajax({
                                                                 url: createURL('listRouters'),
@@ -9707,8 +9735,8 @@
                                                                 success: function (json) {
                                                                     routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;
                                                                     var items = json.listroutersresponse.router;
-                                                                    for (var i = 0; i < items.length; i++) {
-                                                                        if (items[i].requiresupgrade) {
+                        	                            			for (var k = 0; k < items.length; k++) {    	                                                    				
+                        	                            				if (items[k].requiresupgrade) {
                                                                             routerRequiresUpgrade++;
                                                                         }
                                                                     }
@@ -9724,9 +9752,11 @@
                                                             callListApiWithPage();
                                                         }
                                                         args.context.routerGroupByAccount[0].routerRequiresUpgrade = routerRequiresUpgrade;
+                                                        args.context.routerGroupByAccount[0].numberOfRouterRequiresUpgrade = routerRequiresUpgrade;
                                                     } else {
                                                         args.context.routerGroupByAccount[0].routerCount = 0;
                                                         args.context.routerGroupByAccount[0].routerRequiresUpgrade = 0;
+                                                        args.context.routerGroupByAccount[0].numberOfRouterRequiresUpgrade = 0;
                                                     }
                                                 }
                                             });
@@ -18946,6 +18976,13 @@
                 	var routerCountFromFirstPageToCurrentPage = json.listroutersresponse.router.length;  
                 	var routerRequiresUpgrade = 0;    
                 	
+                	var items = json.listroutersresponse.router;
+        			for (var k = 0; k < items.length; k++) {    	                                                    				
+        				if (items[k].requiresupgrade) {
+        					routerRequiresUpgrade++;
+        				}
+        			}   
+                	
                 	$.ajax({
                 		url: createURL('listRouters'),
                         data: $.extend({}, listRoutersData, {
@@ -18959,6 +18996,13 @@
                         		groupbyObj.routerCount = routerCountFromAllPages;
                         		
                             	routerCountFromFirstPageToCurrentPage += json.listroutersresponse.router.length;      	        	                                                		
+                            	
+                            	var items = json.listroutersresponse.router;
+                    			for (var k = 0; k < items.length; k++) {    	                                                    				
+                    				if (items[k].requiresupgrade) {
+                    					routerRequiresUpgrade++;
+                    				}
+                    			}   
                         	} else {
                         		groupbyObj.routerCount = routerCountFromAllPages;
                         	}
@@ -19021,10 +19065,11 @@
         			}  
                 	
                 	groupbyObj.routerRequiresUpgrade = routerRequiresUpgrade;
-            		
+                	groupbyObj.numberOfRouterRequiresUpgrade = routerRequiresUpgrade;
             	} else {
             		groupbyObj.routerCount = 0;
             		groupbyObj.routerRequiresUpgrade = 0;
+            		groupbyObj.numberOfRouterRequiresUpgrade = 0;
             	}    	  
             }
         });
