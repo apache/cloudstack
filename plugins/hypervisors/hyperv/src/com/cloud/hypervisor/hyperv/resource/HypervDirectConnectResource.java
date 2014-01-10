@@ -25,6 +25,12 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.SocketChannel;
 import java.rmi.RemoteException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,10 +46,19 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.BasicClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
+
+import com.google.gson.Gson;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckRouterAnswer;
@@ -115,7 +130,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineName;
-import com.google.gson.Gson;
 
 /**
  * Implementation of dummy resource to be returned from discoverer.
@@ -131,7 +145,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
     private String _clusterId;
     private String _guid;
     private String _agentIp;
-    private int _port = DEFAULT_AGENT_PORT;
+    private final int _port = DEFAULT_AGENT_PORT;
     protected final long _ops_timeout = 900000;  // 15 minutes time out to time
 
     protected final int _retry = 24;
@@ -340,7 +354,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         try {
             String cmdName = StartupCommand.class.getName();
             agentUri =
-                    new URI("http", null, _agentIp, _port,
+                    new URI("https", null, _agentIp, _port,
                             "/api/HypervResource/" + cmdName, null, null);
         } catch (URISyntaxException e) {
             // TODO add proper logging
@@ -380,7 +394,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         try {
             String cmdName = cmd.getClass().getName();
             agentUri =
-                    new URI("http", null, _agentIp, _port,
+                    new URI("https", null, _agentIp, _port,
                             "/api/HypervResource/" + cmdName, null, null);
         } catch (URISyntaxException e) {
             // TODO add proper logging
@@ -1731,7 +1745,31 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                 + " with contents" + jsonCmd);
 
         // Create request
-        HttpClient httpClient = new DefaultHttpClient();
+        HttpClient httpClient = null;
+        TrustStrategy easyStrategy = new TrustStrategy() {
+            @Override
+            public boolean isTrusted(X509Certificate[] chain, String authType)
+                    throws CertificateException {
+                return true;
+            }
+        };
+
+        try {
+            SSLSocketFactory sf = new SSLSocketFactory(easyStrategy, new AllowAllHostnameVerifier());
+            SchemeRegistry registry = new SchemeRegistry();
+            registry.register(new Scheme("https", DEFAULT_AGENT_PORT, sf));
+            ClientConnectionManager ccm = new BasicClientConnectionManager(registry);
+            httpClient = new DefaultHttpClient(ccm);
+        } catch (KeyManagementException e) {
+            s_logger.error("failed to initialize http client " + e.getMessage());
+        } catch (UnrecoverableKeyException e) {
+            s_logger.error("failed to initialize http client " + e.getMessage());
+        } catch (NoSuchAlgorithmException e) {
+            s_logger.error("failed to initialize http client " + e.getMessage());
+        } catch (KeyStoreException e) {
+            s_logger.error("failed to initialize http client " + e.getMessage());
+        }
+
         String result = null;
 
         // TODO: are there timeout settings and worker thread settings to tweak?
