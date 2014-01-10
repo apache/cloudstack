@@ -8422,6 +8422,13 @@
                                     $.ajax({
                                         url: createURL('listHypervisors'),
                                         success: function (json) {
+                                        	var supportSocketHypervisors = {
+                                        		"Hyperv": 1, 
+                                        		"KVM": 1, 
+                                        		"XenServer": 1, 
+                                        		"VMware": 1
+                                        	};                                        	
+                                        	
                                             args.response.success({
                                                 data: $(json.listhypervisorsresponse.hypervisor).map(function (index, hypervisor) {
                                                     var totalHostCount = 0;
@@ -8466,6 +8473,10 @@
                                                     
                                                     callListHostsWithPage(true);
                                                     
+                                                	if ((hypervisor.name in supportSocketHypervisors) == false) {                                                		
+                                                		returnedHostCpusocketsSum = 'N/A';                                                		                                              		
+                                                	}
+                                                	                                                	
                                                     return {
                                                         hypervisor: hypervisor.name,
                                                         hosts: totalHostCount,
