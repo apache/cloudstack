@@ -91,7 +91,6 @@ import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.agent.api.SecStorageSetupAnswer;
 import com.cloud.agent.api.SecStorageSetupCommand;
-import com.cloud.agent.api.SecStorageSetupCommand.Certificates;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
@@ -113,11 +112,13 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.keystore.KeystoreManager;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.template.OVAProcessor;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
@@ -125,7 +126,6 @@ import com.cloud.storage.template.RawImageProcessor;
 import com.cloud.storage.template.TemplateLocation;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.storage.template.VhdProcessor;
-import com.cloud.storage.template.OVAProcessor;
 import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.S3Utils;
@@ -152,7 +152,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     public void setTimeout(int timeout) {
-        this._timeout = timeout;
+        _timeout = timeout;
     }
 
     String _instance;
@@ -1201,7 +1201,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return new Answer(cmd, true, checksum);
     }
 
-    private void configCerts(Certificates certs) {
+    private void configCerts(KeystoreManager.Certificates certs) {
         if (certs == null) {
             configureSSL();
         } else {

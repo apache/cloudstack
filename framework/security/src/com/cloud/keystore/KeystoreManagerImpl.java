@@ -33,7 +33,6 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -123,7 +122,7 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
     }
 
     @Override
-    public SecStorageSetupCommand.Certificates getCertificates(String name) {
+    public Certificates getCertificates(String name) {
         KeystoreVO ksVo = _ksDao.findByName(name);
         if (ksVo == null) {
             return null;
@@ -140,7 +139,7 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
             }
             certChain = chains.toString();
         }
-        SecStorageSetupCommand.Certificates certs = new SecStorageSetupCommand.Certificates(prvKey, prvCert, certChain);
+        Certificates certs = new Certificates(prvKey, prvCert, certChain);
         return certs;
     }
 

@@ -779,10 +779,6 @@ public class ApiDBUtils {
         return s_userVmMgr.searchForUserVMs(c, s_accountDao.findById(Account.ACCOUNT_ID_SYSTEM), null, false, permittedAccounts, false, null, null).first();
     }
 
-    public static List<? extends StoragePoolVO> searchForStoragePools(Criteria c) {
-        return s_ms.searchForStoragePools(c).first();
-    }
-
     // ///////////////////////////////////////////////////////////
     // Manager methods //
     // ///////////////////////////////////////////////////////////

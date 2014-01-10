@@ -2954,58 +2954,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
     }
 
-    @Override
-    public Pair<List<StoragePoolVO>, Integer> searchForStoragePools(Criteria c) {
-        Filter searchFilter = new Filter(StoragePoolVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
-        SearchCriteria<StoragePoolVO> sc = _poolDao.createSearchCriteria();
-
-        Object id = c.getCriteria(Criteria.ID);
-        Object name = c.getCriteria(Criteria.NAME);
-        Object host = c.getCriteria(Criteria.HOST);
-        Object path = c.getCriteria(Criteria.PATH);
-        Object zone = c.getCriteria(Criteria.DATACENTERID);
-        Object pod = c.getCriteria(Criteria.PODID);
-        Object cluster = c.getCriteria(Criteria.CLUSTERID);
-        Object address = c.getCriteria(Criteria.ADDRESS);
-        Object keyword = c.getCriteria(Criteria.KEYWORD);
-
-        if (keyword != null) {
-            SearchCriteria<StoragePoolVO> ssc = _poolDao.createSearchCriteria();
-            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("poolType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-
-            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
-        }
-
-        if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
-        }
-
-        if (name != null) {
-            sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
-        }
-        if (host != null) {
-            sc.addAnd("host", SearchCriteria.Op.EQ, host);
-        }
-        if (path != null) {
-            sc.addAnd("path", SearchCriteria.Op.EQ, path);
-        }
-        if (zone != null) {
-            sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zone);
-        }
-        if (pod != null) {
-            sc.addAnd("podId", SearchCriteria.Op.EQ, pod);
-        }
-        if (address != null) {
-            sc.addAnd("hostAddress", SearchCriteria.Op.EQ, address);
-        }
-        if (cluster != null) {
-            sc.addAnd("clusterId", SearchCriteria.Op.EQ, cluster);
-        }
-
-        return _poolDao.searchAndCount(sc, searchFilter);
-    }
-
     private SecondaryStorageVmVO startSecondaryStorageVm(long instanceId) {
         return _secStorageVmMgr.startSecStorageVm(instanceId);
     }

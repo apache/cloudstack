@@ -16,10 +16,42 @@
 // under the License.
 package com.cloud.keystore;
 
-import com.cloud.agent.api.SecStorageSetupCommand.Certificates;
+import com.cloud.agent.api.LogLevel;
+import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.utils.component.Manager;
 
 public interface KeystoreManager extends Manager {
+    public static class Certificates {
+        @LogLevel(Log4jLevel.Off)
+        private String privKey;
+        @LogLevel(Log4jLevel.Off)
+        private String privCert;
+        @LogLevel(Log4jLevel.Off)
+        private String certChain;
+
+        public Certificates() {
+
+        }
+
+        public Certificates(String prvKey, String privCert, String certChain) {
+            privKey = prvKey;
+            this.privCert = privCert;
+            this.certChain = certChain;
+        }
+
+        public String getPrivKey() {
+            return privKey;
+        }
+
+        public String getPrivCert() {
+            return privCert;
+        }
+
+        public String getCertChain() {
+            return certChain;
+        }
+    }
+
     boolean validateCertificate(String certificate, String key, String domainSuffix);
 
     void saveCertificate(String name, String certificate, String key, String domainSuffix);
