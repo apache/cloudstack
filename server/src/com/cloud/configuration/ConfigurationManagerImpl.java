@@ -2480,8 +2480,6 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
         String newVlanNetmask = cmd.getNetmask();
         String vlanId = cmd.getVlan();
         // TODO decide if we should be forgiving or demand a valid and complete URI
-        if (NetUtils.isSameIsolationId(Vlan.UNTAGGED, vlanId))
-            vlanId = null;
         if (!((vlanId == null)
                 || ("".equals(vlanId))
                 || vlanId.startsWith(BroadcastDomainType.Vlan.scheme())))
@@ -2923,8 +2921,7 @@ ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, Co
                 vlanId = networkVlanId;
             }
         } else if (network.getTrafficType() == TrafficType.Public && vlanId == null) {
-            // vlan id is required for public network
-            throw new InvalidParameterValueException("Vlan id is required when add ip range to the public network");
+            throw new InvalidParameterValueException("Unable to determine vlan id or untagged vlan for public network");
         }
 
         if (vlanId == null) {

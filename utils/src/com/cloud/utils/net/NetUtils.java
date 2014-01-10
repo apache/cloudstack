@@ -1420,7 +1420,7 @@ public class NetUtils {
             return false;
         }
         // check 'untagged'
-        if (VLAN_UNTAGGED.equalsIgnoreCase(one) && VLAN_UNTAGGED.equalsIgnoreCase(other))
+        if (one.contains(VLAN_UNTAGGED) && other.contains(VLAN_UNTAGGED))
         {
             return true;
         }
