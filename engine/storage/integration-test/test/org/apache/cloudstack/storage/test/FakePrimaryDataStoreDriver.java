@@ -44,11 +44,6 @@ public class FakePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     boolean snapshotResult = true;
 
     @Override
-    public Map<String, String> getCapabilities() {
-        return null;
-    }
-
-    @Override
     public ChapInfo getChapInfo(VolumeInfo volumeInfo) {
         return null; // To change body of implemented methods, use File | Settings | File Templates.
     }
