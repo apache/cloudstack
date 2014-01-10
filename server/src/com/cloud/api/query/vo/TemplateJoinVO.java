@@ -27,6 +27,7 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import com.cloud.template.VirtualMachineTemplate.State;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -199,6 +200,10 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     @Column(name = "size")
     private long size;
+
+    @Column(name = "template_state")
+    @Enumerated(EnumType.STRING)
+    private State templateState;
 
     @Column(name = "destroyed")
     boolean destroyed = false;
@@ -532,4 +537,6 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
     public String getTempZonePair() {
         return tempZonePair;
     }
+
+    public State getTemplateState() { return templateState; }
 }

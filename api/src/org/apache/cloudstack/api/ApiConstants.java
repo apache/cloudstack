@@ -209,6 +209,7 @@ public class ApiConstants {
     public static final String SENT_BYTES = "sentbytes";
     public static final String SERVICE_OFFERING_ID = "serviceofferingid";
     public static final String SHOW_CAPACITIES = "showcapacities";
+    public static final String SHOW_REMOVED = "showremoved";
     public static final String SIZE = "size";
     public static final String SNAPSHOT_ID = "snapshotid";
     public static final String SNAPSHOT_POLICY_ID = "snapshotpolicyid";
