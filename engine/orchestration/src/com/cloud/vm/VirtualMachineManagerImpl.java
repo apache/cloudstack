@@ -489,28 +489,30 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         List<Command> volumeExpungeCommands = hvGuru.finalizeExpungeVolumes(vm);
 
-        if (volumeExpungeCommands != null) {
-            Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+        Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
 
-            if (hostId != null) {
-                Commands cmds = new Commands(Command.OnError.Stop);
+        if (volumeExpungeCommands != null && hostId != null) {
+            Commands cmds = new Commands(Command.OnError.Stop);
 
-                for (Command volumeExpungeCommand : volumeExpungeCommands) {
-                    cmds.addCommand(volumeExpungeCommand);
-                }
+            for (Command volumeExpungeCommand : volumeExpungeCommands) {
+                cmds.addCommand(volumeExpungeCommand);
+            }
 
-                _agentMgr.send(hostId, cmds);
+            _agentMgr.send(hostId, cmds);
 
-                if (!cmds.isSuccessful()) {
-                    for (Answer answer : cmds.getAnswers()) {
-                        if (!answer.getResult()) {
-                            s_logger.warn("Failed to expunge vm due to: " + answer.getDetails());
+            if (!cmds.isSuccessful()) {
+                for (Answer answer : cmds.getAnswers()) {
+                    if (!answer.getResult()) {
+                        s_logger.warn("Failed to expunge vm due to: " + answer.getDetails());
 
-                            throw new CloudRuntimeException("Unable to expunge " + vm + " due to " + answer.getDetails());
-                        }
+                        throw new CloudRuntimeException("Unable to expunge " + vm + " due to " + answer.getDetails());
                     }
                 }
             }
+        }
+
+        if (hostId != null) {
+            volumeMgr.disconnectVolumesFromHost(vm.getId(), hostId);
         }
 
         // Clean up volumes based on the vm's instance id
@@ -524,7 +526,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         // send hypervisor-dependent commands before removing
         List<Command> finalizeExpungeCommands = hvGuru.finalizeExpunge(vm);
         if (finalizeExpungeCommands != null && finalizeExpungeCommands.size() > 0) {
-            Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
             if (hostId != null) {
                 Commands cmds = new Commands(Command.OnError.Stop);
                 for (Command command : finalizeExpungeCommands) {

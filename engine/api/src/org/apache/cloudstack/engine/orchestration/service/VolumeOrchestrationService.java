@@ -94,6 +94,8 @@ public interface VolumeOrchestrationService {
 
     void cleanupVolumes(long vmId) throws ConcurrentOperationException;
 
+    void disconnectVolumesFromHost(long vmId, long hostId);
+
     void migrateVolumes(VirtualMachine vm, VirtualMachineTO vmTo, Host srcHost, Host destHost, Map<Volume, StoragePool> volumeToPool);
 
     boolean storageMigration(VirtualMachineProfile vm, StoragePool destPool) throws StorageUnavailableException;
