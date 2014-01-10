@@ -1184,9 +1184,10 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         return "snapshots/" + accountId + "/" + volumeId;
     }
 
-    private long getVMSnapshotChainSize(VmwareContext context, VmwareHypervisorHost hyperHost, String fileName, String poolUuid, String exceptFileName) throws Exception {
+    private long getVMSnapshotChainSize(VmwareContext context, VmwareHypervisorHost hyperHost,
+            String fileName, ManagedObjectReference morDs, String exceptFileName)
+                    throws Exception{
         long size = 0;
-        ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolUuid);
         DatastoreMO dsMo = new DatastoreMO(context, morDs);
         HostDatastoreBrowserMO browserMo = dsMo.getHostDatastoreBrowserMO();
         String datastorePath = "[" + dsMo.getName() + "]";
@@ -1245,15 +1246,17 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         boolean quiescevm = cmd.getTarget().getQuiescevm();
         VirtualMachineMO vmMo = null;
         VmwareContext context = hostService.getServiceContext(cmd);
-        Map<String, String> mapNewDisk = new HashMap<String, String>();
+
         try {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
 
             // wait if there are already VM snapshot task running
             ManagedObjectReference taskmgr = context.getServiceContent().getTaskManager();
             List<ManagedObjectReference> tasks = (ArrayList<ManagedObjectReference>)context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
+
             for (ManagedObjectReference taskMor : tasks) {
                 TaskInfo info = (TaskInfo)(context.getVimClient().getDynamicProperty(taskMor, "info"));
+
                 if (info.getEntityName().equals(cmd.getVmName()) && info.getName().equalsIgnoreCase("CreateSnapshot_Task")) {
                     s_logger.debug("There is already a VM snapshot task running, wait for it");
                     context.getVimClient().waitForTask(taskMor);
@@ -1261,12 +1264,15 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             }
 
             vmMo = hyperHost.findVmOnHyperHost(vmName);
+
             if (vmMo == null) {
                 vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
             }
+
             if (vmMo == null) {
                 String msg = "Unable to find VM for CreateVMSnapshotCommand";
                 s_logger.debug(msg);
+
                 return new CreateVMSnapshotAnswer(cmd, false, msg);
             } else {
                 if (vmMo.getSnapshotMor(vmSnapshotName) != null) {
@@ -1274,47 +1280,123 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 } else if (!vmMo.createSnapshot(vmSnapshotName, vmSnapshotDesc, snapshotMemory, quiescevm)) {
                     return new CreateVMSnapshotAnswer(cmd, false, "Unable to create snapshot due to esxi internal failed");
                 }
-                // find VM disk file path after creating snapshot
-                VirtualDisk[] vdisks = vmMo.getAllDiskDevice();
-                for (int i = 0; i < vdisks.length; i++) {
-                    List<Pair<String, ManagedObjectReference>> vmdkFiles = vmMo.getDiskDatastorePathChain(vdisks[i], false);
-                    for (Pair<String, ManagedObjectReference> fileItem : vmdkFiles) {
-                        String vmdkName = fileItem.first().split(" ")[1];
-                        if (vmdkName.endsWith(".vmdk")) {
-                            vmdkName = vmdkName.substring(0, vmdkName.length() - (".vmdk").length());
-                        }
-                        String baseName = extractSnapshotBaseFileName(vmdkName);
-                        mapNewDisk.put(baseName, vmdkName);
-                    }
-                }
-                for (VolumeObjectTO volumeTO : volumeTOs) {
-                    String baseName = extractSnapshotBaseFileName(volumeTO.getPath());
-                    String newPath = mapNewDisk.get(baseName);
-                    // get volume's chain size for this VM snapshot, exclude current volume vdisk
-                    DataStoreTO store = volumeTO.getDataStore();
-                    long size = getVMSnapshotChainSize(context, hyperHost, baseName + "*.vmdk", store.getUuid(), newPath);
 
-                    if (volumeTO.getVolumeType() == Volume.Type.ROOT) {
-                        // add memory snapshot size
-                        size = size + getVMSnapshotChainSize(context, hyperHost, cmd.getVmName() + "*.vmsn", store.getUuid(), null);
-                    }
+                Map<String, String> mapNewDisk = getNewDiskMap(vmMo);
 
-                    volumeTO.setSize(size);
-                    volumeTO.setPath(newPath);
-                }
+                setVolumeToPathAndSize(volumeTOs, mapNewDisk, context, hyperHost, cmd.getVmName());
+
                 return new CreateVMSnapshotAnswer(cmd, cmd.getTarget(), volumeTOs);
             }
         } catch (Exception e) {
             String msg = e.getMessage();
             s_logger.error("failed to create snapshot for vm:" + vmName + " due to " + msg);
+
             try {
                 if (vmMo.getSnapshotMor(vmSnapshotName) != null) {
                     vmMo.removeSnapshot(vmSnapshotName, false);
                 }
             } catch (Exception e1) {
             }
+
             return new CreateVMSnapshotAnswer(cmd, false, e.getMessage());
         }
+    }
+
+    private Map<String, String> getNewDiskMap(VirtualMachineMO vmMo) throws Exception {
+        Map<String, String> mapNewDisk = new HashMap<String, String>();
+
+        // find VM disk file path after creating snapshot
+        VirtualDisk[] vdisks = vmMo.getAllDiskDevice();
+
+        for (int i = 0; i < vdisks.length; i++) {
+            List<Pair<String, ManagedObjectReference>> vmdkFiles = vmMo.getDiskDatastorePathChain(vdisks[i], false);
+
+            for (Pair<String, ManagedObjectReference> fileItem : vmdkFiles) {
+                String fullPath = fileItem.first();
+                String baseName = null;
+                String vmdkName = null;
+
+                // if this is managed storage
+                if (fullPath.startsWith("[-iqn.")) { // ex. [-iqn.2010-01.com.company:3y8w.vol-10.64-0] -iqn.2010-01.com.company:3y8w.vol-10.64-0-000001.vmdk
+                    baseName = fullPath.split(" ")[0]; // ex. [-iqn.2010-01.com.company:3y8w.vol-10.64-0]
+
+                    // remove '[' and ']'
+                    baseName = baseName.substring(1, baseName.length() - 1);
+
+                    vmdkName = fullPath; // for managed storage, vmdkName == fullPath
+                }
+                else {
+                    vmdkName = fullPath.split(" ")[1];
+
+                    if (vmdkName.endsWith(".vmdk")) {
+                        vmdkName = vmdkName.substring(0, vmdkName.length() - (".vmdk").length());
+                    }
+
+                    String token = "/";
+
+                    if (vmdkName.contains(token)) {
+                        vmdkName = vmdkName.substring(vmdkName.indexOf(token) + token.length());
+                    }
+
+                    baseName = extractSnapshotBaseFileName(vmdkName);
+                }
+
+                mapNewDisk.put(baseName, vmdkName);
+            }
+        }
+
+        return mapNewDisk;
+    }
+
+    private void setVolumeToPathAndSize(List<VolumeObjectTO> volumeTOs, Map<String, String> mapNewDisk, VmwareContext context,
+            VmwareHypervisorHost hyperHost, String vmName) throws Exception {
+        for (VolumeObjectTO volumeTO : volumeTOs) {
+            String oldPath = volumeTO.getPath();
+
+            final String baseName;
+
+            // if this is managed storage
+            if (oldPath.startsWith("[-iqn.")) { // ex. [-iqn.2010-01.com.company:3y8w.vol-10.64-0] -iqn.2010-01.com.company:3y8w.vol-10.64-0-000001.vmdk
+                oldPath = oldPath.split(" ")[0]; // ex. [-iqn.2010-01.com.company:3y8w.vol-10.64-0]
+
+                // remove '[' and ']'
+                baseName = oldPath.substring(1, oldPath.length() - 1);
+            }
+            else {
+                baseName = extractSnapshotBaseFileName(volumeTO.getPath());
+            }
+
+            String newPath = mapNewDisk.get(baseName);
+
+            // get volume's chain size for this VM snapshot; exclude current volume vdisk
+            DataStoreTO store = volumeTO.getDataStore();
+            ManagedObjectReference morDs = getDatastoreAsManagedObjectReference(baseName, hyperHost, store);
+            long size = getVMSnapshotChainSize(context, hyperHost, baseName + "*.vmdk", morDs, newPath);
+
+            if (volumeTO.getVolumeType()== Volume.Type.ROOT) {
+                // add memory snapshot size
+                size += getVMSnapshotChainSize(context, hyperHost, vmName + "*.vmsn", morDs, null);
+            }
+
+            volumeTO.setSize(size);
+            volumeTO.setPath(newPath);
+        }
+    }
+
+    private ManagedObjectReference getDatastoreAsManagedObjectReference(String baseName, VmwareHypervisorHost hyperHost, DataStoreTO store)  throws Exception {
+        try {
+            // if baseName equates to a datastore name, this should be managed storage
+            ManagedObjectReference morDs = hyperHost.findDatastoreByName(baseName);
+
+            if (morDs != null) {
+                return morDs;
+            }
+        }
+        catch (Exception ex) {
+        }
+
+        // not managed storage, so use the standard way of getting a ManagedObjectReference for a datastore
+        return HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, store.getUuid());
     }
 
     @Override
@@ -1322,18 +1404,21 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         List<VolumeObjectTO> listVolumeTo = cmd.getVolumeTOs();
         VirtualMachineMO vmMo = null;
         VmwareContext context = hostService.getServiceContext(cmd);
-        Map<String, String> mapNewDisk = new HashMap<String, String>();
         String vmName = cmd.getVmName();
         String vmSnapshotName = cmd.getTarget().getSnapshotName();
+
         try {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
             vmMo = hyperHost.findVmOnHyperHost(vmName);
+
             if (vmMo == null) {
                 vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
             }
+
             if (vmMo == null) {
                 String msg = "Unable to find VM for RevertToVMSnapshotCommand";
                 s_logger.debug(msg);
+
                 return new DeleteVMSnapshotAnswer(cmd, false, msg);
             } else {
                 if (vmMo.getSnapshotMor(vmSnapshotName) == null) {
@@ -1342,41 +1427,25 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                     if (!vmMo.removeSnapshot(vmSnapshotName, false)) {
                         String msg = "delete vm snapshot " + vmSnapshotName + " due to error occured in vmware";
                         s_logger.error(msg);
+
                         return new DeleteVMSnapshotAnswer(cmd, false, msg);
                     }
                 }
+
                 s_logger.debug("snapshot: " + vmSnapshotName + " is removed");
+
                 // after removed snapshot, the volumes' paths have been changed for the VM, needs to report new paths to manager
-                VirtualDisk[] vdisks = vmMo.getAllDiskDevice();
-                for (int i = 0; i < vdisks.length; i++) {
-                    @SuppressWarnings("deprecation")
-                    List<Pair<String, ManagedObjectReference>> vmdkFiles = vmMo.getDiskDatastorePathChain(vdisks[i], false);
-                    for (Pair<String, ManagedObjectReference> fileItem : vmdkFiles) {
-                        String vmdkName = fileItem.first().split(" ")[1];
-                        if (vmdkName.endsWith(".vmdk")) {
-                            vmdkName = vmdkName.substring(0, vmdkName.length() - (".vmdk").length());
-                        }
-                        String baseName = extractSnapshotBaseFileName(vmdkName);
-                        mapNewDisk.put(baseName, vmdkName);
-                    }
-                }
-                for (VolumeObjectTO volumeTo : listVolumeTo) {
-                    String baseName = extractSnapshotBaseFileName(volumeTo.getPath());
-                    String newPath = mapNewDisk.get(baseName);
-                    DataStoreTO store = volumeTo.getDataStore();
-                    long size = getVMSnapshotChainSize(context, hyperHost, baseName + "*.vmdk", store.getUuid(), newPath);
-                    if (volumeTo.getVolumeType() == Volume.Type.ROOT) {
-                        // add memory snapshot size
-                        size = size + getVMSnapshotChainSize(context, hyperHost, cmd.getVmName() + "*.vmsn", store.getUuid(), null);
-                    }
-                    volumeTo.setSize(size);
-                    volumeTo.setPath(newPath);
-                }
+
+                Map<String, String> mapNewDisk = getNewDiskMap(vmMo);
+
+                setVolumeToPathAndSize(listVolumeTo, mapNewDisk, context, hyperHost, cmd.getVmName());
+
                 return new DeleteVMSnapshotAnswer(cmd, listVolumeTo);
             }
         } catch (Exception e) {
             String msg = e.getMessage();
             s_logger.error("failed to delete vm snapshot " + vmSnapshotName + " of vm " + vmName + " due to " + msg);
+
             return new DeleteVMSnapshotAnswer(cmd, false, msg);
         }
     }
@@ -1390,15 +1459,17 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         VirtualMachine.State vmState = VirtualMachine.State.Running;
         VirtualMachineMO vmMo = null;
         VmwareContext context = hostService.getServiceContext(cmd);
-        Map<String, String> mapNewDisk = new HashMap<String, String>();
+
         try {
             VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
 
             // wait if there are already VM revert task running
             ManagedObjectReference taskmgr = context.getServiceContent().getTaskManager();
             List<ManagedObjectReference> tasks = (ArrayList<ManagedObjectReference>)context.getVimClient().getDynamicProperty(taskmgr, "recentTask");
+
             for (ManagedObjectReference taskMor : tasks) {
                 TaskInfo info = (TaskInfo)(context.getVimClient().getDynamicProperty(taskMor, "info"));
+
                 if (info.getEntityName().equals(cmd.getVmName()) && info.getName().equalsIgnoreCase("RevertToSnapshot_Task")) {
                     s_logger.debug("There is already a VM snapshot task running, wait for it");
                     context.getVimClient().waitForTask(taskMor);
@@ -1407,58 +1478,49 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 
             HostMO hostMo = (HostMO)hyperHost;
             vmMo = hyperHost.findVmOnHyperHost(vmName);
+
             if (vmMo == null) {
                 vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
             }
+
             if (vmMo == null) {
                 String msg = "Unable to find VM for RevertToVMSnapshotCommand";
                 s_logger.debug(msg);
+
                 return new RevertToVMSnapshotAnswer(cmd, false, msg);
             } else {
                 if (cmd.isReloadVm()) {
                     vmMo.reload();
                 }
+
                 boolean result = false;
+
                 if (snapshotName != null) {
                     ManagedObjectReference morSnapshot = vmMo.getSnapshotMor(snapshotName);
+
                     result = hostMo.revertToSnapshot(morSnapshot);
                 } else {
                     return new RevertToVMSnapshotAnswer(cmd, false, "Unable to find the snapshot by name " + snapshotName);
                 }
 
                 if (result) {
-                    VirtualDisk[] vdisks = vmMo.getAllDiskDevice();
-                    // build a map<volumeName, vmdk>
-                    for (int i = 0; i < vdisks.length; i++) {
-                        @SuppressWarnings("deprecation")
-                        List<Pair<String, ManagedObjectReference>> vmdkFiles = vmMo.getDiskDatastorePathChain(vdisks[i], false);
-                        for (Pair<String, ManagedObjectReference> fileItem : vmdkFiles) {
-                            String vmdkName = fileItem.first().split(" ")[1];
-                            if (vmdkName.endsWith(".vmdk")) {
-                                vmdkName = vmdkName.substring(0, vmdkName.length() - (".vmdk").length());
-                            }
-                            String[] s = vmdkName.split("-");
-                            mapNewDisk.put(s[0], vmdkName);
-                        }
-                    }
-                    String key = null;
-                    for (VolumeObjectTO volumeTo : listVolumeTo) {
-                        String parentUUID = volumeTo.getPath();
-                        String[] s = parentUUID.split("-");
-                        key = s[0];
-                        volumeTo.setPath(mapNewDisk.get(key));
-                    }
+                    Map<String, String> mapNewDisk = getNewDiskMap(vmMo);
+
+                    setVolumeToPathAndSize(listVolumeTo, mapNewDisk, context, hyperHost, cmd.getVmName());
+
                     if (!snapshotMemory) {
                         vmState = VirtualMachine.State.Stopped;
                     }
+
                     return new RevertToVMSnapshotAnswer(cmd, listVolumeTo, vmState);
                 } else {
-                    return new RevertToVMSnapshotAnswer(cmd, false, "Error while reverting to snapshot due to execute in esxi");
+                    return new RevertToVMSnapshotAnswer(cmd, false, "Error while reverting to snapshot due to execute in ESXi");
                 }
             }
         } catch (Exception e) {
             String msg = "revert vm " + vmName + " to snapshot " + snapshotName + " failed due to " + e.getMessage();
             s_logger.error(msg);
+
             return new RevertToVMSnapshotAnswer(cmd, false, msg);
         }
     }
