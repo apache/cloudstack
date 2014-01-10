@@ -147,6 +147,9 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     }
 
     public String getVlan() {
+        if (vlan.isEmpty()) {
+            vlan = "untagged";
+        }
         return vlan;
     }
 

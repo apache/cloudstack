@@ -1405,7 +1405,7 @@ public class NetUtils {
             return false;
         }
         // check 'untagged'
-        if (VLAN_UNTAGGED.equalsIgnoreCase(one) && VLAN_UNTAGGED.equalsIgnoreCase(other)) {
+        if (one.contains(VLAN_UNTAGGED) && other.contains(VLAN_UNTAGGED)) {
             return true;
         }
         // if one is a number check the other as number and as 'vlan://' + number
