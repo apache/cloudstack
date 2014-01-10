@@ -16,8 +16,9 @@
 // under the License.
 package com.cloud.agent.api;
 
+import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
+
 import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.keystore.KeystoreManager;
 
 public class SecStorageSetupCommand extends Command {
     private DataStoreTO store;

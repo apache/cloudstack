@@ -26,6 +26,5 @@
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd"
                       >
-	<bean id="keystoreManagerImpl" class="com.cloud.keystore.KeystoreManagerImpl" />
-					  
+    <bean id="keystoreManagerImpl" class="org.apache.cloudstack.framework.security.KeystoreManagerImpl" />
 </beans>

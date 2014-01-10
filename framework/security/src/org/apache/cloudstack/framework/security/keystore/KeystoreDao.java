@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.keystore;
+package org.apache.cloudstack.framework.security.keystore;
 
 import java.util.List;
 

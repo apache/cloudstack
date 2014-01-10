@@ -61,6 +61,7 @@ import org.apache.log4j.Logger;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
+import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -112,7 +113,6 @@ import com.cloud.exception.InternalErrorException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.keystore.KeystoreManager;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
