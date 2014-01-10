@@ -47,7 +47,7 @@ namespace CloudStack.Plugin.AgentShell
             logger.Info("Starting CloudStack agent");
             InitializeComponent();
 
-            UriBuilder baseUri = new UriBuilder("http", AgentSettings.Default.private_ip_address, AgentSettings.Default.port);
+            UriBuilder baseUri = new UriBuilder("https", AgentSettings.Default.private_ip_address, AgentSettings.Default.port);
 
             var config = new HttpSelfHostConfiguration(baseUri.Uri);
 

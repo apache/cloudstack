@@ -25,6 +25,12 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.SocketChannel;
 import java.rmi.RemoteException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,8 +46,15 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.conn.ClientConnectionManager;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.TrustStrategy;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.conn.BasicClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
 
@@ -302,7 +315,9 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         URI agentUri = null;
         try {
             String cmdName = StartupCommand.class.getName();
-            agentUri = new URI("http", null, _agentIp, _port, "/api/HypervResource/" + cmdName, null, null);
+            agentUri =
+                    new URI("https", null, _agentIp, _port,
+                            "/api/HypervResource/" + cmdName, null, null);
         } catch (URISyntaxException e) {
             // TODO add proper logging
             String errMsg = "Could not generate URI for Hyper-V agent";
@@ -339,7 +354,9 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         Answer answer = null;
         try {
             String cmdName = cmd.getClass().getName();
-            agentUri = new URI("http", null, _agentIp, _port, "/api/HypervResource/" + cmdName, null, null);
+            agentUri =
+                    new URI("https", null, _agentIp, _port,
+                            "/api/HypervResource/" + cmdName, null, null);
         } catch (URISyntaxException e) {
             // TODO add proper logging
             String errMsg = "Could not generate URI for Hyper-V agent";
@@ -1665,7 +1682,31 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         s_logger.debug("POST request to" + agentUri.toString() + " with contents" + jsonCmd);
 
         // Create request
-        HttpClient httpClient = new DefaultHttpClient();
+        HttpClient httpClient = null;
+        TrustStrategy easyStrategy = new TrustStrategy() {
+            @Override
+            public boolean isTrusted(X509Certificate[] chain, String authType)
+                    throws CertificateException {
+                return true;
+            }
+        };
+
+        try {
+            SSLSocketFactory sf = new SSLSocketFactory(easyStrategy, new AllowAllHostnameVerifier());
+            SchemeRegistry registry = new SchemeRegistry();
+            registry.register(new Scheme("https", DEFAULT_AGENT_PORT, sf));
+            ClientConnectionManager ccm = new BasicClientConnectionManager(registry);
+            httpClient = new DefaultHttpClient(ccm);
+        } catch (KeyManagementException e) {
+            s_logger.error("failed to initialize http client " + e.getMessage());
+        } catch (UnrecoverableKeyException e) {
+            s_logger.error("failed to initialize http client " + e.getMessage());
+        } catch (NoSuchAlgorithmException e) {
+            s_logger.error("failed to initialize http client " + e.getMessage());
+        } catch (KeyStoreException e) {
+            s_logger.error("failed to initialize http client " + e.getMessage());
+        }
+
         String result = null;
 
         // TODO: are there timeout settings and worker thread settings to tweak?
