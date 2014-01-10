@@ -168,16 +168,23 @@ namespace HypervResource
                 }
                 else if (this.nfsDataStore != null)
                 {
-                    fileName = this.nfsDataStore.UncPath;
-                    if (this.path != null)
+                    if (this.path != null && File.Exists(this.path))
                     {
-                        fileName += @"\" + this.path;
+                        fileName = this.path;
                     }
-
-                    fileName = Utils.NormalizePath(fileName);
-                    if (Directory.Exists(fileName))
+                    else
                     {
-                        fileName = Utils.NormalizePath(fileName + @"\" + this.name);
+                        fileName = this.nfsDataStore.UncPath;
+                        if (this.path != null)
+                        {
+                            fileName += @"\" + this.path;
+                        }
+
+                        fileName = Utils.NormalizePath(fileName);
+                        if (Directory.Exists(fileName))
+                        {
+                            fileName = Utils.NormalizePath(fileName + @"\" + this.name);
+                        }
                     }
                 }
                 else
