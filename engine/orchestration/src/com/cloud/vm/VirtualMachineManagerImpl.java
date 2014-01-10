@@ -485,6 +485,34 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         List<Command> nicExpungeCommands = hvGuru.finalizeExpungeNics(vm, profile.getNics());
         _networkMgr.cleanupNics(profile);
 
+        s_logger.debug("Cleaning up hypervisor data structures (ex. SRs in XenServer) for managed storage");
+
+        List<Command> volumeExpungeCommands = hvGuru.finalizeExpungeVolumes(vm);
+
+        if (volumeExpungeCommands != null) {
+            Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+
+            if (hostId != null) {
+                Commands cmds = new Commands(Command.OnError.Stop);
+
+                for (Command volumeExpungeCommand : volumeExpungeCommands) {
+                    cmds.addCommand(volumeExpungeCommand);
+                }
+
+                _agentMgr.send(hostId, cmds);
+
+                if (!cmds.isSuccessful()) {
+                    for (Answer answer : cmds.getAnswers()) {
+                        if (!answer.getResult()) {
+                            s_logger.warn("Failed to expunge vm due to: " + answer.getDetails());
+
+                            throw new CloudRuntimeException("Unable to expunge " + vm + " due to " + answer.getDetails());
+                        }
+                    }
+                }
+            }
+        }
+
         // Clean up volumes based on the vm's instance id
         volumeMgr.cleanupVolumes(vm.getId());
 

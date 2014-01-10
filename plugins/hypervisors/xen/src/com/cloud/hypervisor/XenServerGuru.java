@@ -16,18 +16,17 @@
 // under the License.
 package com.cloud.hypervisor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.ejb.Local;
 import javax.inject.Inject;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.storage.command.CopyCommand;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.HostInfo;
@@ -35,10 +34,23 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOSVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 @Local(value = HypervisorGuru.class)
 public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru {
@@ -48,6 +60,12 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru 
     EndPointSelector endPointSelector;
     @Inject
     HostDao hostDao;
+    @Inject
+    VolumeDao _volumeDao;
+    @Inject
+    PrimaryDataStoreDao _storagePoolDao;
+    @Inject
+    VolumeDataFactory _volFactory;
 
     protected XenServerGuru() {
         super();
@@ -77,6 +95,39 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru 
     @Override
     public boolean trackVmHostChange() {
         return true;
+    }
+
+    @Override
+    public List<Command> finalizeExpungeVolumes(VirtualMachine vm) {
+        List<Command> commands = new ArrayList<Command>();
+
+        List<VolumeVO> volumes = _volumeDao.findByInstance(vm.getId());
+
+        if (volumes != null) {
+            for (VolumeVO volume : volumes) {
+                if (volume.getVolumeType() == Volume.Type.DATADISK) {
+                    StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
+
+                    if (storagePool.isManaged()) {
+                        DataTO volTO = _volFactory.getVolume(volume.getId()).getTO();
+                        DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
+
+                        DettachCommand cmd = new DettachCommand(disk, vm.getInstanceName());
+
+                        cmd.setManaged(true);
+
+                        cmd.setStorageHost(storagePool.getHostAddress());
+                        cmd.setStoragePort(storagePool.getPort());
+
+                        cmd.set_iScsiName(volume.get_iScsiName());
+
+                        commands.add(cmd);
+                    }
+                }
+            }
+        }
+
+        return commands;
     }
 
     @Override

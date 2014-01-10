@@ -423,7 +423,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             }
 
             if (cmd.isManaged()) {
-                hypervisorResource.handleSrAndVdiDetach(cmd.get_iScsiName());
+                hypervisorResource.handleSrAndVdiDetach(cmd.get_iScsiName(), conn);
             }
 
             return new DettachAnswer(disk);
