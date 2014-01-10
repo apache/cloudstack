@@ -176,6 +176,12 @@ public interface DeploymentPlanner extends Adapter {
             _poolIds.add(poolId);
         }
 
+        public void removePool(long poolId) {
+            if (_poolIds != null) {
+                _poolIds.remove(poolId);
+            }
+        }
+
         public void addDataCenter(long dataCenterId) {
             if (_dcIds == null) {
                 _dcIds = new HashSet<Long>();
