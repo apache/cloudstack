@@ -304,7 +304,7 @@ CREATE TABLE `cloud`.`acl_group` (
   `name` varchar(255) NOT NULL,
   `description` varchar(255) default NULL,
   `uuid` varchar(40),
-  `domain_id` bigint unsigned NOT NULL,  
+  `path` varchar(255) NOT NULL,  
   `account_id` bigint unsigned NOT NULL,
   `view` varchar(40) default 'User' COMMENT 'response review this group account should see for result',
   `removed` datetime COMMENT 'date the group was removed',
@@ -331,7 +331,7 @@ CREATE TABLE `acl_policy` (
   `name` varchar(255) NOT NULL,
   `description` varchar(255) DEFAULT NULL,
   `uuid` varchar(40) DEFAULT NULL,
-  `domain_id` bigint(20) unsigned NOT NULL,
+  `path` varchar(255) NOT NULL,
   `account_id` bigint unsigned NOT NULL,  
   `removed` datetime DEFAULT NULL COMMENT 'date the role was removed',
   `created` datetime DEFAULT NULL COMMENT 'date the role was created',
@@ -372,7 +372,6 @@ CREATE TABLE `acl_policy_permission` (
   CONSTRAINT `fk_acl_policy_permission__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `acl_policy` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-
 INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (1, 'NORMAL', 'Domain user role', UUID(), 1, 1, Now(), 'Static');
 INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (2, 'ADMIN', 'Root admin role', UUID(), 1, 1, Now(), 'Static');
 INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin role', UUID(), 1, 1, Now(), 'Static');
@@ -393,6 +392,9 @@ INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values
 INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values(4, 4, Now());
 INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values(5, 5, Now());
 
+INSERT IGNORE INTO `cloud`.`acl_policy_permission` (id, policy_id, action, permission, created) VALUES (1, 2, 'SystemCapability', 'Allow', Now());
+INSERT IGNORE INTO `cloud`.`acl_policy_permission` (id, policy_id, action, permission, created) VALUES (1, 3, 'DomainCapability', 'Allow', Now());
+INSERT IGNORE INTO `cloud`.`acl_policy_permission` (id, policy_id, action, permission, created) VALUES (1, 4, 'DomainResourceCapability', 'Allow', Now());
 
 CREATE OR REPLACE VIEW `cloud`.`acl_policy_view` AS
     select 
