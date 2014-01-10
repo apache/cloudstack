@@ -79,6 +79,11 @@ public interface Host extends StateObject<Status>, Identity, InternalIdentity {
     String getPrivateIpAddress();
 
     /**
+     * @return the ip address of the host.
+     */
+    String getStorageUrl();
+
+    /**
      * @return the ip address of the host attached to the storage network.
      */
     String getStorageIpAddress();

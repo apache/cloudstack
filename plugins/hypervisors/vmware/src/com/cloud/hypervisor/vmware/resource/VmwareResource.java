@@ -4800,22 +4800,26 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         target.setPort(storagePortNumber);
         target.setIScsiName(iqn);
 
-        HostInternetScsiHbaAuthenticationProperties auth = new HostInternetScsiHbaAuthenticationProperties();
+        if (StringUtils.isNotBlank(chapName) && StringUtils.isNotBlank(chapSecret)) {
+            HostInternetScsiHbaAuthenticationProperties auth = new HostInternetScsiHbaAuthenticationProperties();
 
-        String strAuthType = "chapRequired";
+            String strAuthType = "chapRequired";
 
-        auth.setChapAuthEnabled(true);
-        auth.setChapInherited(false);
-        auth.setChapAuthenticationType(strAuthType);
-        auth.setChapName(chapName);
-        auth.setChapSecret(chapSecret);
+            auth.setChapAuthEnabled(true);
+            auth.setChapInherited(false);
+            auth.setChapAuthenticationType(strAuthType);
+            auth.setChapName(chapName);
+            auth.setChapSecret(chapSecret);
 
-        auth.setMutualChapInherited(false);
-        auth.setMutualChapAuthenticationType(strAuthType);
-        auth.setMutualChapName(mutualChapName);
-        auth.setMutualChapSecret(mutualChapSecret);
+            if (StringUtils.isNotBlank(mutualChapName) && StringUtils.isNotBlank(mutualChapSecret)) {
+                auth.setMutualChapInherited(false);
+                auth.setMutualChapAuthenticationType(strAuthType);
+                auth.setMutualChapName(mutualChapName);
+                auth.setMutualChapSecret(mutualChapSecret);
+            }
 
-        target.setAuthenticationProperties(auth);
+            target.setAuthenticationProperties(auth);
+        }
 
         final List<HostInternetScsiHbaStaticTarget> lstTargets = new ArrayList<HostInternetScsiHbaStaticTarget>();
 
@@ -6052,9 +6056,32 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         cmd.setName(_url);
         cmd.setGuid(_guid);
         cmd.setDataCenter(_dcId);
+        cmd.setIqn(getIqn());
         cmd.setPod(_pod);
         cmd.setCluster(_cluster);
         cmd.setVersion(VmwareResource.class.getPackage().getImplementationVersion());
+    }
+
+    private String getIqn() {
+        try {
+            VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+
+            if (hyperHost instanceof HostMO) {
+                HostMO host = (HostMO)hyperHost;
+                HostStorageSystemMO hostStorageSystem = host.getHostStorageSystemMO();
+
+                for (HostHostBusAdapter hba : hostStorageSystem.getStorageDeviceInfo().getHostBusAdapter()) {
+                    if (hba instanceof HostInternetScsiHba) {
+                        return ((HostInternetScsiHba)hba).getIScsiName();
+                    }
+                }
+            }
+        }
+        catch (Exception ex) {
+            s_logger.info("Could not locate an IQN for this host.");
+        }
+
+        return null;
     }
 
     private void fillHostHardwareInfo(VmwareContext serviceContext, StartupRoutingCommand cmd) throws RuntimeFaultFaultMsg, RemoteException, Exception {

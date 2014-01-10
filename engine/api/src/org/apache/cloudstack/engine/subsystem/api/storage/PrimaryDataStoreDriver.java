@@ -21,11 +21,16 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.command.CommandResult;
 
+import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 
 public interface PrimaryDataStoreDriver extends DataStoreDriver {
     public ChapInfo getChapInfo(VolumeInfo volumeInfo);
+
+    public boolean connectVolumeToHost(VolumeInfo volumeInfo, Host host, DataStore dataStore);
+
+    public void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore);
 
     public long getVolumeSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool);
 
