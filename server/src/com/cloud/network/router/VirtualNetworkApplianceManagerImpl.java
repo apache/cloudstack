@@ -4116,10 +4116,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 if(account == null){
                     throw new InvalidParameterValueException("Account :"+accountName+" does not exist in domain: "+domainId);
                 }
-                routers = _routerDao.listBy(account.getId());
+                routers = _routerDao.listRunningByAccountId(account.getId());
             } else {
             //List by domainId, account name not specified
-                routers = _routerDao.listByDomain(domainId);
+                routers = _routerDao.listRunningByDomain(domainId);
             }
             params++;
         }
@@ -4127,19 +4127,19 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         Long clusterId = cmd.getClusterId();
         if (clusterId != null) {
             params++;
-            routers = _routerDao.listByClusterId(clusterId);
+            routers = _routerDao.listRunningByClusterId(clusterId);
         }
 
         Long podId = cmd.getPodId();
         if (podId != null) {
             params++;
-            routers = _routerDao.listByPodId(podId);
+            routers = _routerDao.listRunningByPodId(podId);
         }
 
         Long zoneId = cmd.getZoneId();
         if (zoneId != null) {
             params++;
-            routers = _routerDao.listByDataCenter(zoneId);
+            routers = _routerDao.listRunningByDataCenter(zoneId);
         }
 
         if (params > 1) {
