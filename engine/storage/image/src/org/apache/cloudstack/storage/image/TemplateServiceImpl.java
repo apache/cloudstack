@@ -465,7 +465,8 @@ public class TemplateServiceImpl implements TemplateService {
     // persist entry in template_zone_ref table. zoneId can be empty for
     // region-wide image store, in that case,
     // we will associate the template to all the zones.
-    private void associateTemplateToZone(long templateId, Long zoneId) {
+    @Override
+    public void associateTemplateToZone(long templateId, Long zoneId) {
         List<Long> dcs = new ArrayList<Long>();
         if (zoneId != null) {
             dcs.add(zoneId);

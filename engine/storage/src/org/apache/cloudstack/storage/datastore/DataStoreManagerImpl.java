@@ -19,6 +19,7 @@
 package org.apache.cloudstack.storage.datastore;
 
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
 import com.cloud.utils.exception.CloudRuntimeException;
 import edu.emory.mathcs.backport.java.util.Collections;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -79,6 +80,14 @@ public class DataStoreManagerImpl implements DataStoreManager {
         return stores.get(0);
     }
 
+    @Override
+    public boolean isRegionStore(DataStore store) {
+        if (store.getScope().getScopeType() == ScopeType.ZONE && store.getScope().getScopeId() == null)
+            return true;
+        else
+            return false;
+    }
+    
     @Override
     public DataStore getPrimaryDataStore(long storeId) {
         return primaryStoreMgr.getPrimaryDataStore(storeId);

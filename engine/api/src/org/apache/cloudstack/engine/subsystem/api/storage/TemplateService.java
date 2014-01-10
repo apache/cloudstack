@@ -62,5 +62,7 @@ public interface TemplateService {
 
     void addSystemVMTemplatesToSecondary(DataStore store);
     
+    void associateTemplateToZone(long templateId, Long zoneId);    
+    
     void associateCrosszoneTemplatesToZone(long dcId);
 }
