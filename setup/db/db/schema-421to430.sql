@@ -232,6 +232,7 @@ CREATE VIEW `cloud`.`template_view` AS
         vm_template.display_text,
         vm_template.enable_password,
         vm_template.dynamically_scalable,
+        vm_template.state template_state,
         vm_template.guest_os_id,
         guest_os.uuid guest_os_uuid,
         guest_os.display_name guest_os_name,
@@ -262,7 +263,7 @@ CREATE VIEW `cloud`.`template_view` AS
         data_center.name data_center_name,
         launch_permission.account_id lp_account_id,
         template_store_ref.store_id,
-		image_store.scope as store_scope,
+        image_store.scope as store_scope,
         template_store_ref.state,
         template_store_ref.download_state,
         template_store_ref.download_pct,
@@ -282,7 +283,7 @@ CREATE VIEW `cloud`.`template_view` AS
         resource_tags.resource_uuid tag_resource_uuid,
         resource_tags.resource_type tag_resource_type,
         resource_tags.customer tag_customer,
-		CONCAT(vm_template.id, '_', IFNULL(data_center.id, 0)) as temp_zone_pair
+        CONCAT(vm_template.id, '_', IFNULL(data_center.id, 0)) as temp_zone_pair
     from
         `cloud`.`vm_template`
             inner join
@@ -301,7 +302,7 @@ CREATE VIEW `cloud`.`template_view` AS
         `cloud`.`template_store_ref` ON template_store_ref.template_id = vm_template.id and template_store_ref.store_role = 'Image'
             left join
         `cloud`.`image_store` ON image_store.removed is NULL AND template_store_ref.store_id is not NULL AND image_store.id = template_store_ref.store_id 
-        	left join
+            left join
         `cloud`.`template_zone_ref` ON template_zone_ref.template_id = vm_template.id AND template_store_ref.store_id is NULL AND template_zone_ref.removed is null    
             left join
         `cloud`.`data_center` ON (image_store.data_center_id = data_center.id OR template_zone_ref.zone_id = data_center.id)
@@ -309,9 +310,7 @@ CREATE VIEW `cloud`.`template_view` AS
         `cloud`.`launch_permission` ON launch_permission.template_id = vm_template.id
             left join
         `cloud`.`resource_tags` ON resource_tags.resource_id = vm_template.id
-            and (resource_tags.resource_type = 'Template' or resource_tags.resource_type='ISO')
-    where
-        vm_template.state='Active';
+            and (resource_tags.resource_type = 'Template' or resource_tags.resource_type='ISO');
 
 DROP VIEW IF EXISTS `cloud`.`volume_view`;
 CREATE VIEW `cloud`.`volume_view` AS

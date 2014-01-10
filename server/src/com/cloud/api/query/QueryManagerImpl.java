@@ -173,6 +173,7 @@ import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
+import com.cloud.template.VirtualMachineTemplate.State;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
@@ -2811,6 +2812,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         TemplateFilter templateFilter = TemplateFilter.valueOf(cmd.getTemplateFilter());
         Long id = cmd.getId();
         Map<String, String> tags = cmd.getTags();
+        boolean showRemovedTmpl = cmd.getShowRemoved();
         Account caller = CallContext.current().getCallingAccount();
 
         boolean listAll = false;
@@ -2838,14 +2840,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         return searchForTemplatesInternal(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null,
                 cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, showDomr,
-                cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags);
+                cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedTmpl);
     }
 
     private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name,
             String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long pageSize,
             Long startIndex, Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady,
             List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria,
-            Map<String, String> tags) {
+            Map<String, String> tags, boolean showRemovedTmpl) {
 
         // check if zone is configured, if not, just return empty list
         List<HypervisorType> hypers = null;
@@ -3069,7 +3071,14 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         // sc.addAnd("removed", SearchCriteria.Op.NULL);
 
         // search unique templates and find details by Ids
-        Pair<List<TemplateJoinVO>, Integer> uniqueTmplPair = _templateJoinDao.searchAndCount(sc, searchFilter);
+        Pair<List<TemplateJoinVO>, Integer> uniqueTmplPair = null;
+        if(showRemovedTmpl){
+            uniqueTmplPair = _templateJoinDao.searchIncludingRemovedAndCount(sc, searchFilter);
+        } else {
+            sc.addAnd("templateState", SearchCriteria.Op.EQ, State.Active);
+            uniqueTmplPair = _templateJoinDao.searchAndCount(sc, searchFilter);
+        }
+
         Integer count = uniqueTmplPair.second();
         if (count.intValue() == 0) {
             // empty result
@@ -3081,7 +3090,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         for (TemplateJoinVO v : uniqueTmpls) {
             tzIds[i++] = v.getTempZonePair();
         }
-        List<TemplateJoinVO> vrs = _templateJoinDao.searchByTemplateZonePair(tzIds);
+        List<TemplateJoinVO> vrs = _templateJoinDao.searchByTemplateZonePair(showRemovedTmpl, tzIds);
         return new Pair<List<TemplateJoinVO>, Integer>(vrs, count);
 
         // TODO: revisit the special logic for iso search in
@@ -3106,6 +3115,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         TemplateFilter isoFilter = TemplateFilter.valueOf(cmd.getIsoFilter());
         Long id = cmd.getId();
         Map<String, String> tags = cmd.getTags();
+        boolean showRemovedISO = cmd.getShowRemoved();
         Account caller = CallContext.current().getCallingAccount();
 
         boolean listAll = false;
@@ -3132,7 +3142,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         return searchForTemplatesInternal(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true,
                 cmd.isBootable(), cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, true,
-                cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags);
+                cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags, showRemovedISO);
     }
 
     @Override
