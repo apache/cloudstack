@@ -129,6 +129,25 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
         return _iamSrv.addAccountsToGroup(acctIds, groupId);
     }
 
+    @Override
+    public void removeAccountFromAclGroups(long accountId) {
+        List<AclGroup> groups = listAclGroups(accountId);
+        List<Long> accts = new ArrayList<Long>();
+        accts.add(accountId);
+        if (groups != null) {
+            for (AclGroup grp : groups) {
+                removeAccountsFromGroup(accts, grp.getId());
+            }
+        }
+    }
+
+    @Override
+    public void addAccountToAclGroup(long accountId, long groupId) {
+        List<Long> accts = new ArrayList<Long>();
+        accts.add(accountId);
+        addAccountsToGroup(accts, groupId);
+    }
+
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACL_GROUP_UPDATE, eventDescription = "Removing accounts from acl group")

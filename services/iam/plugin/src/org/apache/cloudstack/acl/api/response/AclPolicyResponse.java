@@ -21,11 +21,11 @@ import java.util.Set;
 
 import com.google.gson.annotations.SerializedName;
 
-import org.apache.cloudstack.acl.AclPolicy;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
+import org.apache.cloudstack.iam.api.AclPolicy;
 
 import com.cloud.serializer.Param;
 

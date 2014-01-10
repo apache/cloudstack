@@ -40,18 +40,12 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclEntityType;
-import org.apache.cloudstack.acl.AclGroupAccountMapVO;
-import org.apache.cloudstack.acl.AclPolicyPermission;
-import org.apache.cloudstack.acl.AclService;
+import org.apache.cloudstack.acl.AclProxyService;
 import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.acl.dao.AclGroupAccountMapDao;
-import org.apache.cloudstack.acl.dao.AclPolicyPermissionDao;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
@@ -258,16 +252,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private GlobalLoadBalancerRuleDao _gslbRuleDao;
 
     @Inject
-    private AclGroupAccountMapDao _aclGroupAccountDao;
-
-    @Inject
-    private AclService _aclService;
+    private AclProxyService _aclProxy;
 
     @Inject
     QuerySelector _aclQuerySelector;  // we assume that there should be one type of QuerySelector adapter
 
-    @Inject
-    private AclPolicyPermissionDao _aclPolicyPermissionDao;
 
     @Inject
     public com.cloud.region.ha.GlobalLoadBalancingRulesService _gslbService;
@@ -370,9 +359,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public boolean isRootAdmin(long accountId) {
-        // refer to account_group_map and check if account is in Root 'Admin' group
-        AclGroupAccountMapVO rootAdminGroupMember = _aclGroupAccountDao.findAccountInAdminGroup(accountId);
-        if (rootAdminGroupMember != null) {
+        AccountVO acct = _accountDao.findById(accountId);
+        if (acct != null && acct.getType() == Account.ACCOUNT_TYPE_ADMIN) {
             return true;
         }
         return false;
@@ -380,9 +368,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public boolean isDomainAdmin(long accountId) {
-        // refer to account_group_map and check if account is in Domain 'Admin' group
-        AclGroupAccountMapVO domainAdminGroupMember = _aclGroupAccountDao.findAccountInDomainAdminGroup(accountId);
-        if (domainAdminGroupMember != null) {
+        AccountVO acct = _accountDao.findById(accountId);
+        if (acct != null && acct.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
             return true;
         }
         return false;
@@ -390,9 +377,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public boolean isNormalUser(long accountId) {
-        // refer to account_group_map and check if account is in 'User' group
-        AclGroupAccountMapVO user = _aclGroupAccountDao.findAccountInUserGroup(accountId);
-        if (user != null) {
+        AccountVO acct = _accountDao.findById(accountId);
+        if (acct != null && acct.getType() == Account.ACCOUNT_TYPE_NORMAL) {
             return true;
         }
         return false;
@@ -638,7 +624,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             _projectAccountDao.removeAccountFromProjects(accountId);
 
             //delete the account from group
-            _aclGroupAccountDao.removeAccountFromGroups(accountId);
+            _aclProxy.removeAccountFromAclGroups(accountId);
 
             // delete all vm groups belonging to accont
             List<InstanceGroupVO> groups = _vmGroupDao.listByAccountId(accountId);
@@ -991,8 +977,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
                 // create correct account and group association based on accountType
                 if (accountType != Account.ACCOUNT_TYPE_PROJECT) {
-                    AclGroupAccountMapVO grpAcct = new AclGroupAccountMapVO(accountType + 1, accountId);
-                    _aclGroupAccountDao.persist(grpAcct);
+                    _aclProxy.addAccountToAclGroup(accountId, accountType + 1);
                 }
 
                 return new Pair<Long, Account>(user.getId(), account);
@@ -2343,11 +2328,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             checkAccess(caller, domain);
         }
 
-        if (id != null) {
-            // look for an individual entity, no other permission criteria are needed
-            return;
-        }
-
         if (accountName != null) {
             if (projectId != null) {
                 throw new InvalidParameterValueException("Account and projectId can't be specified together");
@@ -2365,7 +2345,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             if (userAccount != null) {
                 checkAccess(caller, null, false, userAccount);
-                //check permissions
+                // check permissions
                 permittedAccounts.add(userAccount.getId());
             } else {
                 throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domain.getUuid());
@@ -2376,7 +2356,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (projectId != null) {
             if (!forProjectInvitation) {
                 if (projectId.longValue() == -1) {
-                    if (isNormalUser(caller.getId())) {
+                    if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                         permittedAccounts.addAll(_projectMgr.listPermittedProjectAccounts(caller.getId()));
                     } else {
                         domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.ListProjectResourcesOnly);
@@ -2393,27 +2373,33 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             }
         } else {
-            domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.SkipProjectResources);
-            // get caller role permission on VM List
-            //TODO: this method needs to pass the entity type instead of current hard-code to VM for now. Also, api action name
-            // should be passed in caller context.
-            AclPolicyPermission policyPerm = _aclService.getAclPolicyPermission(caller.getId(),
-                    AclEntityType.VirtualMachine.toString(), "listVirtualMachine");
-            if (policyPerm == null) {
-                // no list entry permission
-                throw new PermissionDeniedException("Caller has no policy permission assigned to list VM");
+            if (id == null) {
+                domainIdRecursiveListProject.third(Project.ListProjectResourcesCriteria.SkipProjectResources);
             }
-            if (permittedAccounts.isEmpty()) {
-                // no account name is specified
-                if (policyPerm.getScope() == PermissionScope.ACCOUNT || !listAll) {
-                    // only resource owner can see it, only match account
+            if (permittedAccounts.isEmpty() && domainId == null) {
+                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                     permittedAccounts.add(caller.getId());
-                } else if (policyPerm.getScope() == PermissionScope.DOMAIN) {
-                    // match domain tree based on cmd.isRecursive flag or not
-                    domainIdRecursiveListProject.first(caller.getDomainId());
+                } else if (!listAll) {
+                    if (id == null) {
+                        permittedAccounts.add(caller.getId());
+                    } else if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                        domainIdRecursiveListProject.first(caller.getDomainId());
+                        domainIdRecursiveListProject.second(true);
+                    }
+                } else if (domainId == null) {
+                    if (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
+                        domainIdRecursiveListProject.first(caller.getDomainId());
+                        domainIdRecursiveListProject.second(true);
+                    }
+                }
+            } else if (domainId != null) {
+                if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                    permittedAccounts.add(caller.getId());
                 }
             }
+
         }
+
     }
 
 

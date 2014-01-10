@@ -28,7 +28,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclService;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
@@ -147,8 +146,6 @@ public abstract class BaseCmd {
     @Inject public ApplicationLoadBalancerService _newLbSvc;
     @Inject public ApplicationLoadBalancerService _appLbService;
     @Inject public AffinityGroupService _affinityGroupService;
-    @Inject
-    public AclService _aclService;
     @Inject public InternalLoadBalancerElementService _internalLbElementSvc;
     @Inject public InternalLoadBalancerVMService _internalLbSvc;
     @Inject public NetworkModel _ntwkModel;

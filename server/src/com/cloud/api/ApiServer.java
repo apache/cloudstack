@@ -83,13 +83,6 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.APIChecker;
-import org.apache.cloudstack.acl.AclEntityType;
-import org.apache.cloudstack.acl.AclPolicyPermission.Permission;
-import org.apache.cloudstack.acl.AclPolicyPermissionVO;
-import org.apache.cloudstack.acl.PermissionScope;
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.acl.dao.AclPolicyPermissionDao;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -149,14 +142,12 @@ import com.cloud.user.UserAccount;
 import com.cloud.user.UserVO;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -181,8 +172,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     List<PluggableService> _pluggableServices;
     List<APIChecker> _apiAccessCheckers;
-    @Inject
-    private AclPolicyPermissionDao _aclPermissionDao;
 
     @Inject
     protected ApiAsyncJobDispatcher _asyncDispatcher;
