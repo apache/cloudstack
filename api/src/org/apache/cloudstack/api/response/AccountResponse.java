@@ -188,8 +188,8 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     private Boolean isDefault;
 
     @SerializedName(ApiConstants.ACL_GROUPS)
-    @Param(description = "the list of acl groups that account belongs to", responseObject = AclGroupResponse.class)
-    private List<AclGroupResponse> groups;
+    @Param(description = "the list of acl groups that account belongs to")
+    private List<String> groups;
 
     @Override
     public String getObjectId() {
@@ -439,7 +439,7 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
         this.isDefault = isDefault;
     }
 
-    public void setGroups(List<AclGroupResponse> groups) {
+    public void setGroups(List<String> groups) {
         this.groups = groups;
     }
 

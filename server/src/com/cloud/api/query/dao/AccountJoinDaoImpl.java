@@ -24,16 +24,15 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import org.apache.cloudstack.acl.AclProxyService;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.AclGroupResponse;
 import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
-import com.cloud.api.query.vo.AclGroupJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.user.Account;
@@ -50,6 +49,8 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
     private final SearchBuilder<AccountJoinVO> acctIdSearch;
     @Inject
     public AccountManager _accountMgr;
+    @Inject
+    AclProxyService _aclProxy;
 
     protected AccountJoinDaoImpl() {
 
@@ -105,9 +106,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         accountResponse.setObjectName("account");
         
         // add all the acl groups for an account
-        List<AclGroupJoinVO> groupsForAccount = ApiDBUtils.findAclGroupByAccountId(account.getId());
-        List<AclGroupResponse> groupResponses = ViewResponseHelper.createAclGroupResponses(groupsForAccount);
-        accountResponse.setGroups(groupResponses);
+        accountResponse.setGroups(_aclProxy.listAclGroupsByAccount(account.getId()));
 
         return accountResponse;
     }

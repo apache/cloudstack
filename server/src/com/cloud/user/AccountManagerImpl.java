@@ -46,6 +46,7 @@ import org.apache.cloudstack.acl.AclPolicyPermission;
 import org.apache.cloudstack.acl.AclService;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.PermissionScope;
+import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -261,6 +262,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Inject
     private AclService _aclService;
+
+    @Inject
+    QuerySelector _aclQuerySelector;  // we assume that there should be one type of QuerySelector adapter
 
     @Inject
     private AclPolicyPermissionDao _aclPolicyPermissionDao;
@@ -2490,16 +2494,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // search for policy permissions associated with caller to get all his authorized domains, accounts, and resources
             // Assumption: if a domain is in grantedDomains, then all the accounts under this domain will not be returned in "grantedAccounts". Similarly, if an account
             // is in grantedAccounts, then all the resources owned by this account will not be returned in "grantedResources".
-            boolean grantedAll = _aclService.isGrantedAll(caller.getId(), action);
+            boolean grantedAll = _aclQuerySelector.isGrantedAll(caller, action);
             if ( grantedAll ){
                 if ( domainId != null ){
                     permittedDomains.add(domainId);
                 }
             }
             else {
-                List<Long> grantedDomains = _aclService.getGrantedDomains(caller.getId(), action);
-                List<Long> grantedAccounts = _aclService.getGrantedAccounts(caller.getId(), action);
-                List<Long> grantedResources = _aclService.getGrantedResources(caller.getId(), action);
+                List<Long> grantedDomains = _aclQuerySelector.getAuthorizedDomains(caller, action);
+                List<Long> grantedAccounts = _aclQuerySelector.getAuthorizedAccounts(caller, action);
+                List<Long> grantedResources = _aclQuerySelector.getAuthorizedResources(caller, action);
 
                 if (domainId != null) {
                     // specific domain is specified

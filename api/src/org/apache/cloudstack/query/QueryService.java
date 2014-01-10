@@ -44,8 +44,6 @@ import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.AclGroupResponse;
-import org.apache.cloudstack.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -126,11 +124,5 @@ public interface QueryService {
     public List<ResourceDetailResponse> listResourceDetails(ListResourceDetailsCmd cmd);
 
     ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd);
-
-    public ListResponse<AclPolicyResponse> listAclPolicies(Long aclPolicyId, String aclPolicyName,
-            Long domainId, Long startIndex, Long pageSize);
-
-    public ListResponse<AclGroupResponse> listAclGroups(Long aclGroupId, String aclGroupName,
-            Long domainId, Long startIndex, Long pageSize);
 
 }

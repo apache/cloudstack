@@ -29,12 +29,7 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.acl.AclGroup;
-import org.apache.cloudstack.acl.AclPolicy;
-import org.apache.cloudstack.acl.AclService;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.acl.dao.AclGroupDao;
-import org.apache.cloudstack.acl.dao.AclPolicyDao;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
@@ -74,8 +69,6 @@ import org.apache.cloudstack.api.command.user.volume.ListResourceDetailsCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.AclGroupResponse;
-import org.apache.cloudstack.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -103,8 +96,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 
 import com.cloud.api.query.dao.AccountJoinDao;
-import com.cloud.api.query.dao.AclGroupJoinDao;
-import com.cloud.api.query.dao.AclPolicyJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.api.query.dao.DataCenterJoinDao;
@@ -125,9 +116,6 @@ import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
-import com.cloud.api.query.vo.AclGroupJoinVO;
-import com.cloud.api.query.vo.AclPolicyJoinVO;
-import com.cloud.api.query.vo.AclRoleJoinVO;
 import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.DataCenterJoinVO;
@@ -217,8 +205,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 public class QueryManagerImpl extends ManagerBase implements QueryService {
 
     public static final Logger s_logger = Logger.getLogger(QueryManagerImpl.class);
-
-    // public static ViewResponseHelper _responseGenerator;
 
     @Inject
     private AccountManager _accountMgr;
@@ -354,20 +340,6 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
     @Inject
     AffinityGroupDomainMapDao _affinityGroupDomainMapDao;
 
-    @Inject
-    AclPolicyJoinDao _aclPolicyJoinDao;
-
-    @Inject
-    AclPolicyDao _aclPolicyDao;
-
-    @Inject
-    AclGroupJoinDao _aclGroupJoinDao;
-
-    @Inject
-    AclGroupDao _aclGroupDao;
-
-    @Inject
-    AclService _aclService;
     
     @Inject NetworkDetailsDao _networkDetailsDao;
     
@@ -3334,214 +3306,4 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
         return resourceDetailResponse;
     }
 
-    @Override
-    public ListResponse<AclPolicyResponse> listAclPolicies(Long aclPolicyId, String aclPolicyName, Long domainId, Long startIndex, Long pageSize) {
-        Pair<List<AclPolicyJoinVO>, Integer> result = listAclPoliciesInternal(aclPolicyId, aclPolicyName, domainId, true, true, startIndex, pageSize);
-        ListResponse<AclPolicyResponse> response = new ListResponse<AclPolicyResponse>();
-
-        List<AclPolicyResponse> roleResponses = ViewResponseHelper.createAclPolicyResponses(result.first());
-        response.setResponses(roleResponses, result.second());
-        return response;
-    }
-
-    private Pair<List<AclPolicyJoinVO>, Integer> listAclPoliciesInternal(Long aclPolicyId, String aclPolicyName, Long domainId, boolean isRecursive, boolean listAll,
-            Long startIndex,
-            Long pageSize) {
-
-        Account caller = CallContext.current().getCallingAccount();
-        Boolean listForDomain = false;
-
-        if (aclPolicyId != null) {
-            AclPolicy policy = _aclPolicyDao.findById(aclPolicyId);
-            if (policy == null) {
-                throw new InvalidParameterValueException("Unable to find acl policy by id " + aclPolicyId);
-            }
-
-            _accountMgr.checkAccess(caller, null, true, policy);
-        }
-
-        if (domainId != null) {
-            Domain domain = _domainDao.findById(domainId);
-            if (domain == null) {
-                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
-            }
-
-            _accountMgr.checkAccess(caller, domain);
-
-            if (aclPolicyName != null) {
-                AclPolicy policy = _aclPolicyDao.findByName(domainId, aclPolicyName);
-                if (policy == null) {
-                    throw new InvalidParameterValueException("Unable to find acl policy by name " + aclPolicyName
-                            + " in domain " + domainId);
-                }
-                _accountMgr.checkAccess(caller, null, true, policy);
-            }
-        }
-
-        if (aclPolicyId == null) {
-            if (_accountMgr.isAdmin(caller.getType()) && listAll && domainId == null) {
-                listForDomain = true;
-                isRecursive = true;
-                if (domainId == null) {
-                    domainId = caller.getDomainId();
-                }
-            } else if (_accountMgr.isAdmin(caller.getType()) && domainId != null) {
-                listForDomain = true;
-            }
-        }
-
-        Filter searchFilter = new Filter(AclRoleJoinVO.class, "id", true, startIndex, pageSize);
-
-
-        SearchBuilder<AclPolicyJoinVO> sb = _aclPolicyJoinDao.createSearchBuilder();
-        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct ids
-
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-
-        if (listForDomain && isRecursive) {
-            sb.and("path", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
-        }
-
-        SearchCriteria<AclPolicyJoinVO> sc = sb.create();
-
-        if (aclPolicyName != null) {
-            sc.setParameters("name", aclPolicyName);
-        }
-
-        if (aclPolicyId != null) {
-            sc.setParameters("id", aclPolicyId);
-        }
-
-        if (listForDomain) {
-            if (isRecursive) {
-                Domain domain = _domainDao.findById(domainId);
-                sc.setParameters("path", domain.getPath() + "%");
-            } else {
-                sc.setParameters("domainId", domainId);
-            }
-        }
-
-
-        // search policy details by ids
-        Pair<List<AclPolicyJoinVO>, Integer> uniqueRolePair = _aclPolicyJoinDao.searchAndCount(sc, searchFilter);
-        Integer count = uniqueRolePair.second();
-        if (count.intValue() == 0) {
-            // empty result
-            return uniqueRolePair;
-        }
-        List<AclPolicyJoinVO> uniqueRoles = uniqueRolePair.first();
-        Long[] vrIds = new Long[uniqueRoles.size()];
-        int i = 0;
-        for (AclPolicyJoinVO v : uniqueRoles) {
-            vrIds[i++] = v.getId();
-        }
-        List<AclPolicyJoinVO> vrs = _aclPolicyJoinDao.searchByIds(vrIds);
-        return new Pair<List<AclPolicyJoinVO>, Integer>(vrs, count);
-    }
-
-    @Override
-    public ListResponse<AclGroupResponse> listAclGroups(Long aclGroupId, String aclGroupName, Long domainId, Long startIndex, Long pageSize) {
-        Pair<List<AclGroupJoinVO>, Integer> result = listAclGroupsInternal(aclGroupId, aclGroupName, domainId, true, true, startIndex, pageSize);
-        ListResponse<AclGroupResponse> response = new ListResponse<AclGroupResponse>();
-
-        List<AclGroupResponse> groupResponses = ViewResponseHelper.createAclGroupResponses(result.first());
-        response.setResponses(groupResponses, result.second());
-        return response;
-    }
-
-    private Pair<List<AclGroupJoinVO>, Integer> listAclGroupsInternal(Long aclGroupId, String aclGroupName, Long domainId, boolean isRecursive, boolean listAll, Long startIndex,
-            Long pageSize) {
-
-        Account caller = CallContext.current().getCallingAccount();
-        Boolean listForDomain = false;
-
-        if (aclGroupId != null) {
-            AclGroup group = _aclGroupDao.findById(aclGroupId);
-            if (group == null) {
-                throw new InvalidParameterValueException("Unable to find acl group by id " + aclGroupId);
-            }
-
-            _accountMgr.checkAccess(caller, null, true, group);
-        }
-
-        if (domainId != null) {
-            Domain domain = _domainDao.findById(domainId);
-            if (domain == null) {
-                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
-            }
-
-            _accountMgr.checkAccess(caller, domain);
-
-            if (aclGroupName != null) {
-                AclGroup group = _aclGroupDao.findByName(domainId, aclGroupName);
-                if (group == null) {
-                    throw new InvalidParameterValueException("Unable to find acl group by name " + aclGroupName
-                            + " in domain " + domainId);
-                }
-                _accountMgr.checkAccess(caller, null, true, group);
-            }
-        }
-
-        if (aclGroupId == null) {
-            if (_accountMgr.isAdmin(caller.getType()) && listAll && domainId == null) {
-                listForDomain = true;
-                isRecursive = true;
-                if (domainId == null) {
-                    domainId = caller.getDomainId();
-                }
-            } else if (_accountMgr.isAdmin(caller.getType()) && domainId != null) {
-                listForDomain = true;
-            }
-        }
-
-        Filter searchFilter = new Filter(AclGroupJoinVO.class, "id", true, startIndex, pageSize);
-
-        SearchBuilder<AclGroupJoinVO> sb = _aclGroupJoinDao.createSearchBuilder();
-        sb.select(null, Func.DISTINCT, sb.entity().getId()); // select distinct ids
-
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.EQ);
-        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-
-        if (listForDomain && isRecursive) {
-            sb.and("path", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
-        }
-
-        SearchCriteria<AclGroupJoinVO> sc = sb.create();
-
-        if (aclGroupName != null) {
-            sc.setParameters("name", aclGroupName);
-        }
-
-        if (aclGroupId != null) {
-            sc.setParameters("id", aclGroupId);
-        }
-
-        if (listForDomain) {
-            if (isRecursive) {
-                Domain domain = _domainDao.findById(domainId);
-                sc.setParameters("path", domain.getPath() + "%");
-            } else {
-                sc.setParameters("domainId", domainId);
-            }
-        }
-
-        // search group details by ids
-        Pair<List<AclGroupJoinVO>, Integer> uniqueGroupPair = _aclGroupJoinDao.searchAndCount(sc, searchFilter);
-        Integer count = uniqueGroupPair.second();
-        if (count.intValue() == 0) {
-            // empty result
-            return uniqueGroupPair;
-        }
-        List<AclGroupJoinVO> uniqueGroups = uniqueGroupPair.first();
-        Long[] vrIds = new Long[uniqueGroups.size()];
-        int i = 0;
-        for (AclGroupJoinVO v : uniqueGroups) {
-            vrIds[i++] = v.getId();
-        }
-        List<AclGroupJoinVO> vrs = _aclGroupJoinDao.searchByIds(vrIds);
-        return new Pair<List<AclGroupJoinVO>, Integer>(vrs, count);
-    }
 }

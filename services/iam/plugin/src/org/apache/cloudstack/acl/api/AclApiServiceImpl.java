@@ -27,6 +27,18 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.acl.api.command.AddAccountToAclGroupCmd;
+import org.apache.cloudstack.acl.api.command.AddAclPermissionToAclPolicyCmd;
+import org.apache.cloudstack.acl.api.command.AttachAclPolicyToAclGroupCmd;
+import org.apache.cloudstack.acl.api.command.CreateAclGroupCmd;
+import org.apache.cloudstack.acl.api.command.CreateAclPolicyCmd;
+import org.apache.cloudstack.acl.api.command.DeleteAclGroupCmd;
+import org.apache.cloudstack.acl.api.command.DeleteAclPolicyCmd;
+import org.apache.cloudstack.acl.api.command.ListAclGroupsCmd;
+import org.apache.cloudstack.acl.api.command.ListAclPoliciesCmd;
+import org.apache.cloudstack.acl.api.command.RemoveAccountFromAclGroupCmd;
+import org.apache.cloudstack.acl.api.command.RemoveAclPermissionFromAclPolicyCmd;
+import org.apache.cloudstack.acl.api.command.RemoveAclPolicyFromAclGroupCmd;
 import org.apache.cloudstack.acl.api.response.AclGroupResponse;
 import org.apache.cloudstack.acl.api.response.AclPermissionResponse;
 import org.apache.cloudstack.acl.api.response.AclPolicyResponse;
@@ -98,6 +110,16 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
     @Override
     public List<AclGroup> listAclGroups(long accountId) {
         return _iamSrv.listAclGroups(accountId);
+    }
+
+    @Override
+    public List<String> listAclGroupsByAccount(long accountId) {
+        List<AclGroup> groups = listAclGroups(accountId);
+        List<String> groupNames = new ArrayList<String>();
+        for (AclGroup grp : groups) {
+            groupNames.add(grp.getName());
+        }
+        return groupNames;
     }
 
     @DB
@@ -330,4 +352,21 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
         return response;
     }
 
+    @Override
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        cmdList.add(CreateAclPolicyCmd.class);
+        cmdList.add(DeleteAclPolicyCmd.class);
+        cmdList.add(ListAclPoliciesCmd.class);
+        cmdList.add(AddAclPermissionToAclPolicyCmd.class);
+        cmdList.add(RemoveAclPermissionFromAclPolicyCmd.class);
+        cmdList.add(AttachAclPolicyToAclGroupCmd.class);
+        cmdList.add(RemoveAclPolicyFromAclGroupCmd.class);
+        cmdList.add(CreateAclGroupCmd.class);
+        cmdList.add(DeleteAclGroupCmd.class);
+        cmdList.add(ListAclGroupsCmd.class);
+        cmdList.add(AddAccountToAclGroupCmd.class);
+        cmdList.add(RemoveAccountFromAclGroupCmd.class);
+        return cmdList;
+    }
 }

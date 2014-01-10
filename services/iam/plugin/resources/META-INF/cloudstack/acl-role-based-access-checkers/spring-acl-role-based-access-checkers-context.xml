@@ -27,6 +27,8 @@
                       http://www.springframework.org/schema/context/spring-context-3.0.xsd"
                       >                     
 
-    <bean id="RoleBasedEntityAccessChecker" class="org.apache.cloudstack.acl.entity.RoleBasedEntityAccessChecker" />
+    <bean id="RoleBasedAPIAccessChecker" class="org.apache.cloudstack.acl.RoleBasedAPIAccessChecker" />
+    <bean id="RoleBasedEntityAccessChecker" class="org.apache.cloudstack.acl.RoleBasedEntityAccessChecker" />
+    <bean id="RoleBasedEntityQuerySelector" class="org.apache.cloudstack.acl.RoleBasedEntityQuerySelector" />
 
 </beans>

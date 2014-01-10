@@ -18,6 +18,7 @@ package org.apache.cloudstack.acl.api;
 
 import java.util.List;
 
+import org.apache.cloudstack.acl.AclProxyService;
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.acl.api.response.AclGroupResponse;
 import org.apache.cloudstack.acl.api.response.AclPolicyResponse;
@@ -28,8 +29,9 @@ import org.apache.cloudstack.iam.api.AclPolicyPermission;
 import org.apache.cloudstack.iam.api.AclPolicyPermission.Permission;
 
 import com.cloud.user.Account;
+import com.cloud.utils.component.PluggableService;
 
-public interface AclApiService {
+public interface AclApiService extends AclProxyService, PluggableService {
 
     /* ACL group related interfaces */
     AclGroup createAclGroup(Account caller, String aclGroupName, String description);

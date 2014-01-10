@@ -57,18 +57,6 @@ import org.apache.cloudstack.api.command.admin.account.DisableAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.EnableAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.LockAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
-import org.apache.cloudstack.api.command.admin.acl.AddAccountToAclGroupCmd;
-import org.apache.cloudstack.api.command.admin.acl.AddAclPermissionToAclPolicyCmd;
-import org.apache.cloudstack.api.command.admin.acl.AttachAclPolicyToAclGroupCmd;
-import org.apache.cloudstack.api.command.admin.acl.CreateAclGroupCmd;
-import org.apache.cloudstack.api.command.admin.acl.CreateAclPolicyCmd;
-import org.apache.cloudstack.api.command.admin.acl.DeleteAclGroupCmd;
-import org.apache.cloudstack.api.command.admin.acl.DeleteAclPolicyCmd;
-import org.apache.cloudstack.api.command.admin.acl.ListAclGroupsCmd;
-import org.apache.cloudstack.api.command.admin.acl.ListAclPoliciesCmd;
-import org.apache.cloudstack.api.command.admin.acl.RemoveAccountFromAclGroupCmd;
-import org.apache.cloudstack.api.command.admin.acl.RemoveAclPermissionFromAclPolicyCmd;
-import org.apache.cloudstack.api.command.admin.acl.RemoveAclPolicyFromAclGroupCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.DeleteCounterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
@@ -2880,18 +2868,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ReplaceNetworkACLListCmd.class);
         cmdList.add(UpdateNetworkACLItemCmd.class);
         cmdList.add(CleanVMReservationsCmd.class);
-        cmdList.add(CreateAclPolicyCmd.class);
-        cmdList.add(DeleteAclPolicyCmd.class);
-        cmdList.add(ListAclPoliciesCmd.class);
-        cmdList.add(AddAclPermissionToAclPolicyCmd.class);
-        cmdList.add(RemoveAclPermissionFromAclPolicyCmd.class);
-        cmdList.add(AttachAclPolicyToAclGroupCmd.class);
-        cmdList.add(RemoveAclPolicyFromAclGroupCmd.class);
-        cmdList.add(CreateAclGroupCmd.class);
-        cmdList.add(DeleteAclGroupCmd.class);
-        cmdList.add(ListAclGroupsCmd.class);
-        cmdList.add(AddAccountToAclGroupCmd.class);
-        cmdList.add(RemoveAccountFromAclGroupCmd.class);
         return cmdList;
     }
 

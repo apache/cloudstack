@@ -54,5 +54,12 @@ public interface QuerySelector extends Adapter {
     */
     List<Long> getAuthorizedResources(Account caller, String action);
 
+    /**
+     * Check if this account is associated with a policy with scope of ALL
+     * @param caller account to check
+     * @param action action.
+     * @return true if this account is attached with a policy for the given action of ALL scope.
+     */
+    boolean isGrantedAll(Account caller, String action);
 
 }

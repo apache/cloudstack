@@ -22,8 +22,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.cloudstack.acl.AclGroup;
-import org.apache.cloudstack.acl.AclPolicy;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -31,8 +29,6 @@ import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.AclGroupResponse;
-import org.apache.cloudstack.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
@@ -439,9 +435,5 @@ public interface ResponseGenerator {
     InternalLoadBalancerElementResponse createInternalLbElementResponse(VirtualRouterProvider result);
 
     IsolationMethodResponse createIsolationMethodResponse(IsolationType method);
-
-    AclPolicyResponse createAclPolicyResponse(AclPolicy policy);
-
-    AclGroupResponse createAclGroupResponse(AclGroup group);
 
 }

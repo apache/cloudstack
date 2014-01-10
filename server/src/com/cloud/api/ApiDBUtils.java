@@ -25,8 +25,6 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.acl.AclGroup;
-import org.apache.cloudstack.acl.AclPolicy;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
@@ -35,8 +33,6 @@ import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.AclGroupResponse;
-import org.apache.cloudstack.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -69,8 +65,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import com.cloud.api.query.dao.AccountJoinDao;
-import com.cloud.api.query.dao.AclGroupJoinDao;
-import com.cloud.api.query.dao.AclPolicyJoinDao;
 import com.cloud.api.query.dao.AffinityGroupJoinDao;
 import com.cloud.api.query.dao.AsyncJobJoinDao;
 import com.cloud.api.query.dao.DataCenterJoinDao;
@@ -91,8 +85,6 @@ import com.cloud.api.query.dao.UserAccountJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.dao.VolumeJoinDao;
 import com.cloud.api.query.vo.AccountJoinVO;
-import com.cloud.api.query.vo.AclGroupJoinVO;
-import com.cloud.api.query.vo.AclPolicyJoinVO;
 import com.cloud.api.query.vo.AffinityGroupJoinVO;
 import com.cloud.api.query.vo.AsyncJobJoinVO;
 import com.cloud.api.query.vo.DataCenterJoinVO;
@@ -411,8 +403,6 @@ public class ApiDBUtils {
     static GlobalLoadBalancingRulesService _gslbService;
     static NetworkACLDao _networkACLDao;
     static AccountService _accountService;
-    static AclPolicyJoinDao _aclPolicyJoinDao;
-    static AclGroupJoinDao _aclGroupJoinDao;
     static ResourceMetaDataService _resourceDetailsService;
 
     @Inject
@@ -526,10 +516,6 @@ public class ApiDBUtils {
     @Inject private NetworkACLDao networkACLDao;
     @Inject private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
     @Inject private AccountService accountService;
-    @Inject
-    private AclPolicyJoinDao aclPolicyJoinDao;
-    @Inject
-    private AclGroupJoinDao aclGroupJoinDao;
     @Inject private ConfigurationManager configMgr;
     @Inject private DataCenterDetailsDao zoneDetailsDao;
     @Inject private  ResourceMetaDataService resourceDetailsService;
@@ -643,8 +629,6 @@ public class ApiDBUtils {
         _statsCollector = StatsCollector.getInstance();
         _networkACLDao = networkACLDao;
         _accountService = accountService;
-        _aclPolicyJoinDao = aclPolicyJoinDao;
-        _aclGroupJoinDao = aclGroupJoinDao;
         _resourceDetailsService = resourceDetailsService;
     }
 
@@ -1520,9 +1504,6 @@ public class ApiDBUtils {
         return _userAccountJoinDao.searchByAccountId(accountId);
     }
 
-    public static List<AclGroupJoinVO> findAclGroupByAccountId(long accountId) {
-        return _aclGroupJoinDao.findAclGroupsByAccount(accountId);
-    }
 
     public static ProjectAccountResponse newProjectAccountResponse(ProjectAccountJoinVO proj) {
         return _projectAccountJoinDao.newProjectAccountResponse(proj);
@@ -1698,29 +1679,6 @@ public class ApiDBUtils {
         return _affinityGroupJoinDao.setAffinityGroupResponse(resp, group);
     }
 
-    public static List<AclPolicyJoinVO> newAclPolicyView(AclPolicy policy) {
-        return _aclPolicyJoinDao.newAclPolicyView(policy);
-    }
-
-    public static AclPolicyResponse newAclPolicyResponse(AclPolicyJoinVO policy) {
-        return _aclPolicyJoinDao.newAclPolicyResponse(policy);
-    }
-
-    public static AclPolicyResponse fillAclPolicyDetails(AclPolicyResponse resp, AclPolicyJoinVO policy) {
-        return _aclPolicyJoinDao.setAclPolicyResponse(resp, policy);
-    }
-
-    public static List<AclGroupJoinVO> newAclGroupView(AclGroup group) {
-        return _aclGroupJoinDao.newAclGroupView(group);
-    }
-
-    public static AclGroupResponse newAclGroupResponse(AclGroupJoinVO group) {
-        return _aclGroupJoinDao.newAclGroupResponse(group);
-    }
-
-    public static AclGroupResponse fillAclGroupDetails(AclGroupResponse resp, AclGroupJoinVO group) {
-        return _aclGroupJoinDao.setAclGroupResponse(resp, group);
-    }
 
     public static List<? extends LoadBalancer> listSiteLoadBalancers(long gslbRuleId) {
         return _gslbService.listSiteLoadBalancers(gslbRuleId);

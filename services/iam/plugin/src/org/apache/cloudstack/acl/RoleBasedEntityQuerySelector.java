@@ -23,8 +23,6 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.PermissionScope;
-import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.iam.api.AclPolicy;
 import org.apache.cloudstack.iam.api.AclPolicyPermission;
 import org.apache.cloudstack.iam.api.IAMService;
@@ -99,5 +97,19 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
         return entityIds;
     }
 
+    @Override
+    public boolean isGrantedAll(Account caller, String action) {
+        long accountId = caller.getAccountId();
+        // Get the static Policies of the Caller
+        List<AclPolicy> policies = _iamService.listAclPolicies(accountId);
+        // for each policy, find granted permission with ALL scope
+        for (AclPolicy policy : policies) {
+            List<AclPolicyPermission> pp = _iamService.listPolicyPermissionsByScope(policy.getId(), action, PermissionScope.ALL.toString());
+            if (pp != null && pp.size() > 0) {
+                return true;
+            }
+        }
+        return false;
+    }
 
 }
