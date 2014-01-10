@@ -3933,6 +3933,10 @@
                                                     });
                                                 }
                                             },
+                                            'state' : {
+                                            	edit: 'ignore',
+                                            	label: 'label.state'
+                                            },
                                             'add-vm': {
                                                 label: 'label.add.vm',
                                                 addButton: true
@@ -3993,7 +3997,10 @@
                                                     success: function(data) {
                                                         args.response.success({
                                                             _custom: {
-                                                                jobId: data.createportforwardingruleresponse.jobid
+                                                                jobId: data.createportforwardingruleresponse.jobid,
+                                                                getUpdatedItem: function(json) {                                                        	        
+                                                                    return json.queryasyncjobresultresponse.jobresult.portforwardingrule;
+                                                                }
                                                             },
                                                             notification: {
                                                                 label: 'label.add.port.forwarding.rule',
