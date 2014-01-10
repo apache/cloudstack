@@ -13691,6 +13691,9 @@
                                         },                                        
                                         disconnected: {
                                             label: 'label.last.disconnected'
+                                        },
+                                        cpusockets: {
+                                        	label: 'The Number of CPU Sockets'
                                         }
                                     },
 
