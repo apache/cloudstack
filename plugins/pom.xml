@@ -27,7 +27,6 @@
     <module>api/rate-limit</module>
     <module>api/discovery</module>
     <module>acl/static-role-based</module>
-    <module>acl/role-based-access-checkers</module>
     <module>affinity-group-processors/host-anti-affinity</module>
     <module>affinity-group-processors/explicit-dedication</module>
     <module>deployment-planners/user-concentrated-pod</module>
