@@ -360,17 +360,28 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public boolean isRootAdmin(long accountId) {
         AccountVO acct = _accountDao.findById(accountId);
-        if (acct != null && acct.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-            return true;
+        for (SecurityChecker checker : _securityCheckers) {
+            if (checker.checkAccess(acct, null, null, "SystemCapability")) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Root Access granted to " + acct + " by " + checker.getName());
+                }
+                return true;
+            }
         }
+
         return false;
     }
 
     @Override
     public boolean isDomainAdmin(long accountId) {
         AccountVO acct = _accountDao.findById(accountId);
-        if (acct != null && acct.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            return true;
+        for (SecurityChecker checker : _securityCheckers) {
+            if (checker.checkAccess(acct, null, null, "DomainCapability")) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Root Access granted to " + acct + " by " + checker.getName());
+                }
+                return true;
+            }
         }
         return false;
     }

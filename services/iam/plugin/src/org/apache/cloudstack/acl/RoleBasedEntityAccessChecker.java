@@ -57,6 +57,17 @@ public class RoleBasedEntityAccessChecker extends DomainChecker implements Secur
     public boolean checkAccess(Account caller, ControlledEntity entity, AccessType accessType, String action)
             throws PermissionDeniedException {
 
+        if (entity == null && action != null) {
+            // check if caller can do this action
+            List<AclPolicy> policies = _iamSrv.listAclPolicies(caller.getAccountId());
+
+            boolean isAllowed = _iamSrv.isActionAllowedForPolicies(action, policies);
+            if (!isAllowed) {
+                throw new PermissionDeniedException("The action '" + action + "' not allowed for account " + caller);
+            }
+            return true;
+        }
+
         String entityType = entity.getEntityType().toString();
 
         if (accessType == null) {
