@@ -11,7 +11,7 @@
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the 
+// KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network.resource;
@@ -68,7 +68,6 @@ import com.cloud.host.Host;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
-import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.ExecutionException;
@@ -108,38 +107,38 @@ public class JuniperSrxResource implements ServerResource {
     private final Logger s_logger = Logger.getLogger(JuniperSrxResource.class);
 
     private enum SrxXml {
-        LOGIN("login.xml"), 
-        PRIVATE_INTERFACE_ADD("private-interface-add.xml"), 
+        LOGIN("login.xml"),
+        PRIVATE_INTERFACE_ADD("private-interface-add.xml"),
         PRIVATE_INTERFACE_WITH_FILTERS_ADD("private-interface-with-filters-add.xml"),
-        PRIVATE_INTERFACE_GETONE("private-interface-getone.xml"), 
-        PROXY_ARP_ADD("proxy-arp-add.xml"), 
-        PROXY_ARP_GETONE("proxy-arp-getone.xml"), 
+        PRIVATE_INTERFACE_GETONE("private-interface-getone.xml"),
+        PROXY_ARP_ADD("proxy-arp-add.xml"),
+        PROXY_ARP_GETONE("proxy-arp-getone.xml"),
         PROXY_ARP_GETALL("proxy-arp-getall.xml"),
-        ZONE_INTERFACE_ADD("zone-interface-add.xml"), 
-        ZONE_INTERFACE_GETONE("zone-interface-getone.xml"), 
-        SRC_NAT_POOL_ADD("src-nat-pool-add.xml"), 
-        SRC_NAT_POOL_GETONE("src-nat-pool-getone.xml"), 
-        SRC_NAT_RULE_ADD("src-nat-rule-add.xml"), 
-        SRC_NAT_RULE_GETONE("src-nat-rule-getone.xml"), 
-        SRC_NAT_RULE_GETALL("src-nat-rule-getall.xml"),		
+        ZONE_INTERFACE_ADD("zone-interface-add.xml"),
+        ZONE_INTERFACE_GETONE("zone-interface-getone.xml"),
+        SRC_NAT_POOL_ADD("src-nat-pool-add.xml"),
+        SRC_NAT_POOL_GETONE("src-nat-pool-getone.xml"),
+        SRC_NAT_RULE_ADD("src-nat-rule-add.xml"),
+        SRC_NAT_RULE_GETONE("src-nat-rule-getone.xml"),
+        SRC_NAT_RULE_GETALL("src-nat-rule-getall.xml"),
         DEST_NAT_POOL_ADD("dest-nat-pool-add.xml"),
         DEST_NAT_POOL_GETONE("dest-nat-pool-getone.xml"),
         DEST_NAT_POOL_GETALL("dest-nat-pool-getall.xml"),
         DEST_NAT_RULE_ADD("dest-nat-rule-add.xml"),
         DEST_NAT_RULE_GETONE("dest-nat-rule-getone.xml"),
-        DEST_NAT_RULE_GETALL("dest-nat-rule-getall.xml"),	
-        STATIC_NAT_RULE_ADD("static-nat-rule-add.xml"), 
-        STATIC_NAT_RULE_GETONE("static-nat-rule-getone.xml"), 
+        DEST_NAT_RULE_GETALL("dest-nat-rule-getall.xml"),
+        STATIC_NAT_RULE_ADD("static-nat-rule-add.xml"),
+        STATIC_NAT_RULE_GETONE("static-nat-rule-getone.xml"),
         STATIC_NAT_RULE_GETALL("static-nat-rule-getall.xml"),
-        ADDRESS_BOOK_ENTRY_ADD("address-book-entry-add.xml"), 
-        ADDRESS_BOOK_ENTRY_GETONE("address-book-entry-getone.xml"), 
+        ADDRESS_BOOK_ENTRY_ADD("address-book-entry-add.xml"),
+        ADDRESS_BOOK_ENTRY_GETONE("address-book-entry-getone.xml"),
         ADDRESS_BOOK_ENTRY_GETALL("address-book-entry-getall.xml"),
-        APPLICATION_ADD("application-add.xml"), 
-        APPLICATION_GETONE("application-getone.xml"), 
-        SECURITY_POLICY_ADD("security-policy-add.xml"), 
-        SECURITY_POLICY_GETONE("security-policy-getone.xml"), 
-        SECURITY_POLICY_GETALL("security-policy-getall.xml"), 
-        SECURITY_POLICY_GROUP("security-policy-group.xml"), 
+        APPLICATION_ADD("application-add.xml"),
+        APPLICATION_GETONE("application-getone.xml"),
+        SECURITY_POLICY_ADD("security-policy-add.xml"),
+        SECURITY_POLICY_GETONE("security-policy-getone.xml"),
+        SECURITY_POLICY_GETALL("security-policy-getall.xml"),
+        SECURITY_POLICY_GROUP("security-policy-group.xml"),
         GUEST_VLAN_FILTER_TERM_ADD("guest-vlan-filter-term-add.xml"),
         PUBLIC_IP_FILTER_TERM_ADD("public-ip-filter-term-add.xml"),
         FILTER_TERM_GETONE("filter-term-getone.xml"),
@@ -168,8 +167,8 @@ public class JuniperSrxResource implements ServerResource {
         TEMPLATE_ENTRY("template-entry.xml"),
         OPEN_CONFIGURATION("open-configuration.xml"),
         CLOSE_CONFIGURATION("close-configuration.xml"),
-        COMMIT("commit.xml"), 
-        ROLLBACK("rollback.xml"), 
+        COMMIT("commit.xml"),
+        ROLLBACK("rollback.xml"),
         TEST("test.xml");
 
         private final String scriptsDir = "scripts/network/juniper";
@@ -207,7 +206,7 @@ public class JuniperSrxResource implements ServerResource {
                 return null;
             }
         }
-    }	
+    }
 
     public class UsageFilter {
         private final String name;
@@ -215,7 +214,7 @@ public class JuniperSrxResource implements ServerResource {
         private final String addressType;
 
         private UsageFilter(String name, String addressType, String counterIdentifier) {
-            this.name = name;    		
+            this.name = name;
             this.addressType = addressType;
 
             if (_usageInterface != null) {
@@ -236,7 +235,7 @@ public class JuniperSrxResource implements ServerResource {
         public String getAddressType() {
             return addressType;
         }
-    }	
+    }
 
     public class FirewallFilterTerm {
         private final String name;
@@ -298,7 +297,7 @@ public class JuniperSrxResource implements ServerResource {
         public String getCountName() {
             return countName;
         }
-    }	
+    }
 
     private enum SrxCommand {
         LOGIN, OPEN_CONFIGURATION, CLOSE_CONFIGURATION, COMMIT, ROLLBACK, CHECK_IF_EXISTS, CHECK_IF_IN_USE, ADD, DELETE, GET_ALL;
@@ -388,7 +387,7 @@ public class JuniperSrxResource implements ServerResource {
             _password = (String) params.get("password");
             if (_password == null) {
                 throw new ConfigurationException("Unable to find password");
-            }			
+            }
 
             _publicInterface = (String) params.get("publicinterface");
             if (_publicInterface == null) {
@@ -447,7 +446,7 @@ public class JuniperSrxResource implements ServerResource {
     }
 
     @Override
-    public StartupCommand[] initialize() {   
+    public StartupCommand[] initialize() {
         StartupExternalFirewallCommand cmd = new StartupExternalFirewallCommand();
         cmd.setName(_name);
         cmd.setDataCenter(_zoneId);
@@ -508,7 +507,7 @@ public class JuniperSrxResource implements ServerResource {
     }
 
     private ExternalNetworkResourceUsageAnswer execute(ExternalNetworkResourceUsageCommand cmd) {
-        try {	
+        try {
             return getUsageAnswer(cmd);
         } catch (ExecutionException e) {
             return new ExternalNetworkResourceUsageAnswer(cmd, e);
@@ -521,7 +520,7 @@ public class JuniperSrxResource implements ServerResource {
 
     private boolean refreshSrxConnection() {
         if (!(closeSocket() && openSocket())) {
-            return false;			
+            return false;
         }
 
         try {
@@ -557,7 +556,7 @@ public class JuniperSrxResource implements ServerResource {
         try {
             if (_toSrx != null) {
                 _toSrx.close();
-            } 
+            }
 
             if (_fromSrx != null) {
                 _fromSrx.close();
@@ -571,7 +570,7 @@ public class JuniperSrxResource implements ServerResource {
     }
 
     /*
-     * The usage data will be handled on it's own socket, so usage 
+     * The usage data will be handled on it's own socket, so usage
      * commands will use the following methods...
      */
     private boolean usageLogin() throws ExecutionException {
@@ -600,7 +599,7 @@ public class JuniperSrxResource implements ServerResource {
         try {
             if (_UsagetoSrx != null) {
                 _UsagetoSrx.close();
-            } 
+            }
 
             if (_UsagefromSrx != null) {
                 _UsagefromSrx.close();
@@ -637,7 +636,7 @@ public class JuniperSrxResource implements ServerResource {
         try {
             if (!sendRequestAndCheckResponse(SrxCommand.CLOSE_CONFIGURATION, xml)) {
                 s_logger.error(errorMsg);
-            } 
+            }
         } catch (ExecutionException e) {
             s_logger.error(errorMsg);
         }
@@ -652,7 +651,7 @@ public class JuniperSrxResource implements ServerResource {
 
         if (!sendRequestAndCheckResponse(SrxCommand.COMMIT, xml)) {
             throw new ExecutionException(errorMsg);
-        } else {			
+        } else {
             s_logger.debug(successMsg);
             closeConfiguration();
         }
@@ -667,7 +666,7 @@ public class JuniperSrxResource implements ServerResource {
         return execute(cmd, _numRetries);
     }
 
-    private Answer execute(IpAssocCommand cmd, int numRetries) {        
+    private Answer execute(IpAssocCommand cmd, int numRetries) {
         String[] results = new String[cmd.getIpAddresses().length];
         int i = 0;
         try {
@@ -676,9 +675,9 @@ public class JuniperSrxResource implements ServerResource {
                 throw new ExecutionException("Received an invalid number of guest IPs to associate.");
             } else {
                 ip = cmd.getIpAddresses()[0];
-            }                               
+            }
 
-            String sourceNatIpAddress = null; 
+            String sourceNatIpAddress = null;
             GuestNetworkType type = GuestNetworkType.INTERFACE_NAT;
 
             if (ip.isSourceNat()) {
@@ -695,7 +694,7 @@ public class JuniperSrxResource implements ServerResource {
             String guestVlanGateway = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
             String cidr = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR);
             long cidrSize = NetUtils.cidrToLong(cidr)[1];
-            String guestVlanSubnet = NetUtils.getCidrSubNet(guestVlanGateway, cidrSize);    
+            String guestVlanSubnet = NetUtils.getCidrSubNet(guestVlanGateway, cidrSize);
             
             Long publicVlanTag = null;
             if (ip.getBroadcastUri() != null && !ip.getBroadcastUri().equals("untagged")) {
@@ -704,19 +703,19 @@ public class JuniperSrxResource implements ServerResource {
             	} catch (Exception e) {
 			throw new ExecutionException("Could not parse public VLAN tag: " + ip.getBroadcastUri());
             	}
-            } 
+            }
 
             openConfiguration();
 
             // Remove the guest network:
             // Remove source, static, and destination NAT rules
-            // Remove VPN 
+            // Remove VPN
             shutdownGuestNetwork(type, ip.getAccountId(), publicVlanTag, sourceNatIpAddress, guestVlanTag, guestVlanGateway, guestVlanSubnet, cidrSize);
             
-            if (ip.isAdd()) {                                       
+            if (ip.isAdd()) {
                 // Implement the guest network for this VLAN
                 implementGuestNetwork(type, publicVlanTag, sourceNatIpAddress, guestVlanTag, guestVlanGateway, guestVlanSubnet, cidrSize);
-            } 
+            }
 
             commitConfiguration();
             results[i++] = ip.getPublicIp() + " - success";
@@ -744,13 +743,13 @@ public class JuniperSrxResource implements ServerResource {
         manageZoneInterface(SrxCommand.ADD, privateVlanTag);
 
         if (type.equals(GuestNetworkType.SOURCE_NAT)) {
-            manageSourceNatPool(SrxCommand.ADD, publicIp);    
-            manageSourceNatRule(SrxCommand.ADD, publicIp, privateSubnet); 		    				
-            manageProxyArp(SrxCommand.ADD, publicVlanTag, publicIp);			
+            manageSourceNatPool(SrxCommand.ADD, publicIp);
+            manageSourceNatRule(SrxCommand.ADD, publicIp, privateSubnet);
+            manageProxyArp(SrxCommand.ADD, publicVlanTag, publicIp);
             manageUsageFilter(SrxCommand.ADD, _usageFilterIPOutput, privateSubnet, null, genIpFilterTermName(publicIp));
             manageUsageFilter(SrxCommand.ADD, _usageFilterIPInput, publicIp, null, genIpFilterTermName(publicIp));
-        } else if (type.equals(GuestNetworkType.INTERFACE_NAT)){		    
-            manageUsageFilter(SrxCommand.ADD, _usageFilterVlanOutput, null, privateVlanTag, null);		    
+        } else if (type.equals(GuestNetworkType.INTERFACE_NAT)){
+            manageUsageFilter(SrxCommand.ADD, _usageFilterVlanOutput, null, privateVlanTag, null);
             manageUsageFilter(SrxCommand.ADD, _usageFilterVlanInput, null, privateVlanTag, null);
         }
 
@@ -766,20 +765,20 @@ public class JuniperSrxResource implements ServerResource {
         privateGateway = privateGateway + "/" + privateCidrSize;
         privateSubnet = privateSubnet + "/" + privateCidrSize;
 
-        managePrivateInterface(SrxCommand.DELETE, false, privateVlanTag, privateGateway);  
-        manageZoneInterface(SrxCommand.DELETE, privateVlanTag);   
+        managePrivateInterface(SrxCommand.DELETE, false, privateVlanTag, privateGateway);
+        manageZoneInterface(SrxCommand.DELETE, privateVlanTag);
         deleteVpnObjectsForAccount(accountId);
 
-        if (type.equals(GuestNetworkType.SOURCE_NAT)) {		    
+        if (type.equals(GuestNetworkType.SOURCE_NAT)) {
             manageSourceNatRule(SrxCommand.DELETE, sourceNatIpAddress, privateSubnet);
             manageSourceNatPool(SrxCommand.DELETE, sourceNatIpAddress);
             manageProxyArp(SrxCommand.DELETE, publicVlanTag, sourceNatIpAddress);
             manageUsageFilter(SrxCommand.DELETE, _usageFilterIPOutput, privateSubnet, null, genIpFilterTermName(sourceNatIpAddress));
             manageUsageFilter(SrxCommand.DELETE, _usageFilterIPInput, sourceNatIpAddress, null, genIpFilterTermName(sourceNatIpAddress));
         } else if (type.equals(GuestNetworkType.INTERFACE_NAT)) {
-            manageUsageFilter(SrxCommand.DELETE, _usageFilterVlanOutput, null, privateVlanTag, null);         
+            manageUsageFilter(SrxCommand.DELETE, _usageFilterVlanOutput, null, privateVlanTag, null);
             manageUsageFilter(SrxCommand.DELETE, _usageFilterVlanInput, null, privateVlanTag, null);
-        }				
+        }
 
         String msg = "Shut down guest network with type " + type +". Guest VLAN tag: " + privateVlanTag + ", guest gateway: " + privateGateway;
         msg += type.equals(GuestNetworkType.SOURCE_NAT) ? ", source NAT IP: " + sourceNatIpAddress : "";
@@ -923,9 +922,9 @@ public class JuniperSrxResource implements ServerResource {
     private synchronized Answer execute(SetStaticNatRulesCommand cmd) {
     	refreshSrxConnection();
         return execute(cmd, _numRetries);
-    }       
+    }
 
-    private Answer execute(SetStaticNatRulesCommand cmd, int numRetries) {      
+    private Answer execute(SetStaticNatRulesCommand cmd, int numRetries) {
         StaticNatRuleTO[] allRules = cmd.getRules();
         Map<String, ArrayList<FirewallRuleTO>> activeRules = getActiveRules(allRules);
         Map<String, String> vlanTagMap = getVlanTagMap(allRules);
@@ -934,12 +933,12 @@ public class JuniperSrxResource implements ServerResource {
             openConfiguration();
 
             Set<String> ipPairs = activeRules.keySet();
-            for (String ipPair : ipPairs) {             
+            for (String ipPair : ipPairs) {
                 String[] ipPairComponents = ipPair.split("-");
                 String publicIp = ipPairComponents[0];
-                String privateIp = ipPairComponents[1];                                                                     
+                String privateIp = ipPairComponents[1];
 
-                List<FirewallRuleTO> activeRulesForIpPair = activeRules.get(ipPair);      
+                List<FirewallRuleTO> activeRulesForIpPair = activeRules.get(ipPair);
                 Long publicVlanTag = getVlanTag(vlanTagMap.get(publicIp));
 
                 // Delete the existing static NAT rule for this IP pair
@@ -948,8 +947,8 @@ public class JuniperSrxResource implements ServerResource {
                 if (activeRulesForIpPair.size() > 0) {
                     // If there are active FirewallRules for this IP pair, add the static NAT rule and open the specified port ranges
                     addStaticNatRule(publicVlanTag, publicIp, privateIp, activeRulesForIpPair);
-                } 
-            }           
+                }
+            }
 
             commitConfiguration();
             return new Answer(cmd);
@@ -975,15 +974,15 @@ public class JuniperSrxResource implements ServerResource {
         addSecurityPolicyAndApplications(SecurityPolicyType.STATIC_NAT, privateIp, extractApplications(rules));
 
         s_logger.debug("Added static NAT rule for public IP " + publicIp + ", and private IP " + privateIp);
-    }		
+    }
 
-    private void removeStaticNatRule(Long publicVlanTag, String publicIp, String privateIp) throws ExecutionException {	    
+    private void removeStaticNatRule(Long publicVlanTag, String publicIp, String privateIp) throws ExecutionException {
         manageStaticNatRule(SrxCommand.DELETE, publicIp, privateIp);
 
         // Remove any existing security policy and clean up applications
         removeSecurityPolicyAndApplications(SecurityPolicyType.STATIC_NAT, privateIp);
 
-        manageAddressBookEntry(SrxCommand.DELETE, _privateZone, privateIp, null);     
+        manageAddressBookEntry(SrxCommand.DELETE, _privateZone, privateIp, null);
 
         s_logger.debug("Removed static NAT rule for public IP " + publicIp + ", and private IP " + privateIp);
     }
@@ -1025,14 +1024,14 @@ public class JuniperSrxResource implements ServerResource {
     		openConfiguration();
     		
     		// Delete existing VPN objects for this account
-    		deleteVpnObjectsForAccount(accountId);   		
+    		deleteVpnObjectsForAccount(accountId);
     		
     		if (cmd.isCreate()) {
     			// Add IKE policy
     			manageIkePolicy(SrxCommand.ADD, null, accountId, preSharedKey);
     		
     			// Add address pool
-    			manageAddressPool(SrxCommand.ADD, null, accountId, guestNetworkCidr, ipRange[0], ipRange[1], _primaryDnsAddress);    		    			    			
+    			manageAddressPool(SrxCommand.ADD, null, accountId, guestNetworkCidr, ipRange[0], ipRange[1], _primaryDnsAddress);
     		}
     		
     		commitConfiguration();
@@ -1062,7 +1061,7 @@ public class JuniperSrxResource implements ServerResource {
 		// Delete all address pools
 		for (String addressPoolName : getVpnObjectNames(SrxXml.ADDRESS_POOL_GETALL, accountId)) {
 			manageAddressPool(SrxCommand.DELETE, addressPoolName, null, null, null, null, null);
-		}   		
+		}
 		
 		// Delete all IKE gateways
 		for (String ikeGatewayName : getVpnObjectNames(SrxXml.IKE_GATEWAY_GETALL, accountId)) {
@@ -1072,24 +1071,24 @@ public class JuniperSrxResource implements ServerResource {
 		// Delete all IPsec VPNs
 		for (String ipsecVpnName : getVpnObjectNames(SrxXml.IPSEC_VPN_GETALL, accountId)) {
 			manageIpsecVpn(SrxCommand.DELETE, ipsecVpnName, null, null, null, null);
-		}    		
+		}
 
 		// Delete all dynamic VPN clients
 		for (String dynamicVpnClientName : getVpnObjectNames(SrxXml.DYNAMIC_VPN_CLIENT_GETALL, accountId)) {
 			manageDynamicVpnClient(SrxCommand.DELETE, dynamicVpnClientName, null, null, null, null);
-		}    		
+		}
 		
 		// Delete all access profiles
 		for (String accessProfileName : getVpnObjectNames(SrxXml.ACCESS_PROFILE_GETALL, accountId)) {
 			manageAccessProfile(SrxCommand.DELETE, accessProfileName, null, null, null, null);
-		}     	
+		}
 		
 		// Delete all security policies
 		for (String securityPolicyName : getVpnObjectNames(SrxXml.SECURITY_POLICY_GETALL, accountId)) {
             manageSecurityPolicy(SecurityPolicyType.VPN, SrxCommand.DELETE, accountId, null, null, null, null, securityPolicyName, false);
 		}
 		
-		// Delete all address book entries 
+		// Delete all address book entries
 		for (String addressBookEntryName : getVpnObjectNames(SrxXml.ADDRESS_BOOK_ENTRY_GETALL, accountId)) {
 			manageAddressBookEntry(SrxCommand.DELETE, _privateZone, null, addressBookEntryName);
 		}
@@ -1097,9 +1096,9 @@ public class JuniperSrxResource implements ServerResource {
     }
     
     public List<String> getVpnObjectNames(SrxXml xmlObj, long accountId) throws ExecutionException {
-    	List<String> vpnObjectNames = new ArrayList<String>();    
+    	List<String> vpnObjectNames = new ArrayList<String>();
     	
-    	String xmlRequest = xmlObj.getXml();   	
+    	String xmlRequest = xmlObj.getXml();
     	if (xmlObj.equals(SrxXml.SECURITY_POLICY_GETALL)) {
     		xmlRequest = replaceXmlValue(xmlRequest, "from-zone", _publicZone);
     		xmlRequest = replaceXmlValue(xmlRequest, "to-zone", _privateZone);
@@ -1107,17 +1106,17 @@ public class JuniperSrxResource implements ServerResource {
     		xmlRequest = replaceXmlValue(xmlRequest, "zone", _privateZone);
     	}
     		
-        String xmlResponse = sendRequest(xmlRequest);       
+        String xmlResponse = sendRequest(xmlRequest);
         Document doc = getDocument(xmlResponse);
         NodeList vpnObjectNameNodes = doc.getElementsByTagName("name");
         for (int i = 0; i < vpnObjectNameNodes.getLength(); i++) {
-            NodeList vpnObjectNameEntries = vpnObjectNameNodes.item(i).getChildNodes();               
+            NodeList vpnObjectNameEntries = vpnObjectNameNodes.item(i).getChildNodes();
             for (int j = 0; j < vpnObjectNameEntries.getLength(); j++) {
                 String vpnObjectName = vpnObjectNameEntries.item(j).getNodeValue();
                 if (vpnObjectName.startsWith(genObjectName(_vpnObjectPrefix, String.valueOf(accountId)))) {
                 	vpnObjectNames.add(vpnObjectName);
                 }
-            }               
+            }
         }
 
         return vpnObjectNames;
@@ -1128,7 +1127,7 @@ public class JuniperSrxResource implements ServerResource {
     	return execute(cmd, _numRetries);
     }
     
-    private Answer execute(VpnUsersCfgCommand cmd, int numRetries) {    	
+    private Answer execute(VpnUsersCfgCommand cmd, int numRetries) {
     	long accountId = Long.parseLong(cmd.getAccessDetail(NetworkElementCommand.ACCOUNT_ID));
     	String guestNetworkCidr = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_CIDR);
     	String ikePolicyName = genIkePolicyName(accountId);
@@ -1143,7 +1142,7 @@ public class JuniperSrxResource implements ServerResource {
     			String ipsecVpnName =  genIpsecVpnName(accountId, user.getUsername());
     			
     			// IKE gateway
-        		manageIkeGateway(srxCmd, null, accountId, ikePolicyName, _ikeGatewayHostname , user.getUsername()); 
+        		manageIkeGateway(srxCmd, null, accountId, ikePolicyName, _ikeGatewayHostname , user.getUsername());
 
         		// IPSec VPN
         		manageIpsecVpn(srxCmd, null, accountId, guestNetworkCidr, user.getUsername(), _ipsecPolicyName);
@@ -1188,7 +1187,7 @@ public class JuniperSrxResource implements ServerResource {
         return execute(cmd, _numRetries);
     }
 
-    private Answer execute(SetPortForwardingRulesCommand cmd, int numRetries) {     
+    private Answer execute(SetPortForwardingRulesCommand cmd, int numRetries) {
         PortForwardingRuleTO[] allRules = cmd.getRules();
         Map<String, ArrayList<FirewallRuleTO>> activeRules = getActiveRules(allRules);
 
@@ -1196,12 +1195,12 @@ public class JuniperSrxResource implements ServerResource {
             openConfiguration();
 
             Set<String> ipPairs = activeRules.keySet();
-            for (String ipPair : ipPairs) {             
+            for (String ipPair : ipPairs) {
                 String[] ipPairComponents = ipPair.split("-");
                 String publicIp = ipPairComponents[0];
-                String privateIp = ipPairComponents[1];                                                                     
+                String privateIp = ipPairComponents[1];
 
-                List<FirewallRuleTO> activeRulesForIpPair = activeRules.get(ipPair);                
+                List<FirewallRuleTO> activeRulesForIpPair = activeRules.get(ipPair);
 
                 // Get a list of all destination NAT rules for the public/private IP address pair
                 List<String[]> destNatRules = getDestNatRules(RuleMatchCondition.PUBLIC_PRIVATE_IPS, publicIp, privateIp, null, null);
@@ -1214,11 +1213,11 @@ public class JuniperSrxResource implements ServerResource {
                 for (FirewallRuleTO rule : activeRulesForIpPair) {
                 	Long publicVlanTag = getVlanTag(rule.getSrcVlanTag());
                     PortForwardingRuleTO portForwardingRule = (PortForwardingRuleTO) rule;
-                    addDestinationNatRule(getProtocol(rule.getProtocol()), publicVlanTag, portForwardingRule.getSrcIp(), portForwardingRule.getDstIp(), 
+                    addDestinationNatRule(getProtocol(rule.getProtocol()), publicVlanTag, portForwardingRule.getSrcIp(), portForwardingRule.getDstIp(),
                                           portForwardingRule.getSrcPortRange()[0], portForwardingRule.getSrcPortRange()[1],
                                           portForwardingRule.getDstPortRange()[0], portForwardingRule.getDstPortRange()[1]);
                 }
-            }           
+            }
 
             commitConfiguration();
             return new Answer(cmd);
@@ -1241,8 +1240,8 @@ public class JuniperSrxResource implements ServerResource {
         int offset = 0;
         for (int srcPort = srcPortStart; srcPort <= srcPortEnd; srcPort++) {
             int destPort = destPortStart + offset;
-            manageDestinationNatPool(SrxCommand.ADD, privateIp, destPort);      
-            manageDestinationNatRule(SrxCommand.ADD, publicIp, privateIp, srcPort, destPort); 
+            manageDestinationNatPool(SrxCommand.ADD, privateIp, destPort);
+            manageDestinationNatRule(SrxCommand.ADD, publicIp, privateIp, srcPort, destPort);
             offset += 1;
         }
                 
@@ -1257,15 +1256,15 @@ public class JuniperSrxResource implements ServerResource {
         s_logger.debug("Added destination NAT rule for protocol " + protocol + ", public IP " + publicIp + ", private IP " + privateIp +  ", source port range " + srcPortRange + ", and dest port range " + destPortRange);
     }
 
-    private void removeDestinationNatRule(Long publicVlanTag, String publicIp, String privateIp, int srcPort, int destPort) throws ExecutionException {               
+    private void removeDestinationNatRule(Long publicVlanTag, String publicIp, String privateIp, int srcPort, int destPort) throws ExecutionException {
         manageDestinationNatRule(SrxCommand.DELETE, publicIp, privateIp, srcPort, destPort);
-        manageDestinationNatPool(SrxCommand.DELETE, privateIp, destPort);   
+        manageDestinationNatPool(SrxCommand.DELETE, privateIp, destPort);
 
         removeSecurityPolicyAndApplications(SecurityPolicyType.DESTINATION_NAT, privateIp);
 
-        manageAddressBookEntry(SrxCommand.DELETE, _privateZone, privateIp, null);             
+        manageAddressBookEntry(SrxCommand.DELETE, _privateZone, privateIp, null);
 
-        s_logger.debug("Removed destination NAT rule for public IP " + publicIp + ", private IP " + privateIp +  ", source port " + srcPort + ", and dest port " + destPort);   
+        s_logger.debug("Removed destination NAT rule for public IP " + publicIp + ", private IP " + privateIp +  ", source port " + srcPort + ", and dest port " + destPort);
     }
 
 
@@ -1282,8 +1281,8 @@ public class JuniperSrxResource implements ServerResource {
             }
 
             if (privateVlanTag != null) {
-                s_logger.warn("Found a destination NAT rule (public IP: " + publicIp + ", private IP: " + privateIp + 
-                        ", public port: " + srcPort + ", private port: " + destPort + ") for guest VLAN with tag " + 
+                s_logger.warn("Found a destination NAT rule (public IP: " + publicIp + ", private IP: " + privateIp +
+                        ", public port: " + srcPort + ", private port: " + destPort + ") for guest VLAN with tag " +
                         privateVlanTag + " that is active when the guest network is being removed. Removing rule...");
             }
 
@@ -1296,11 +1295,11 @@ public class JuniperSrxResource implements ServerResource {
      */
     
     private List<String[]> getAllStaticAndDestNatRules() throws ExecutionException {
-        List<String[]> staticAndDestNatRules = new ArrayList<String[]>(); 
+        List<String[]> staticAndDestNatRules = new ArrayList<String[]>();
         staticAndDestNatRules.addAll(getStaticNatRules(RuleMatchCondition.ALL, null, null));
-        staticAndDestNatRules.addAll(getDestNatRules(RuleMatchCondition.ALL, null, null, null, null));      
+        staticAndDestNatRules.addAll(getDestNatRules(RuleMatchCondition.ALL, null, null, null, null));
         return staticAndDestNatRules;
-    }  
+    }
     
     private void removeStaticAndDestNatRulesInPrivateVlan(long privateVlanTag, String privateGateway, long privateCidrSize) throws ExecutionException {
         List<String[]> staticNatRulesToRemove = getStaticNatRules(RuleMatchCondition.PRIVATE_SUBNET, privateGateway, privateCidrSize);
@@ -1314,7 +1313,7 @@ public class JuniperSrxResource implements ServerResource {
         
         removeStaticNatRules(privateVlanTag, publicVlanTags, staticNatRulesToRemove);
         removeDestinationNatRules(privateVlanTag, publicVlanTags, destNatRulesToRemove);
-    }            
+    }
 
     private Map<String, ArrayList<FirewallRuleTO>> getActiveRules(FirewallRuleTO[] allRules) {
         Map<String, ArrayList<FirewallRuleTO>> activeRules = new HashMap<String, ArrayList<FirewallRuleTO>>();
@@ -1863,19 +1862,19 @@ public class JuniperSrxResource implements ServerResource {
     	
         String xmlRequest = SrxXml.PROXY_ARP_GETALL.getXml();
         xmlRequest = replaceXmlValue(xmlRequest, "interface-name", "");
-        String xmlResponse = sendRequest(xmlRequest);       
+        String xmlResponse = sendRequest(xmlRequest);
 
         Document doc = getDocument(xmlResponse);
         NodeList interfaces = doc.getElementsByTagName("interface");
         for (int i = 0; i < interfaces.getLength(); i++) {
         	String interfaceName = null;
-            NodeList interfaceEntries = interfaces.item(i).getChildNodes();               
+            NodeList interfaceEntries = interfaces.item(i).getChildNodes();
             for (int j = 0; j < interfaceEntries.getLength(); j++) {
                 Node interfaceEntry = interfaceEntries.item(j);
                 if (interfaceEntry.getNodeName().equals("name")) {
                 	interfaceName = interfaceEntry.getFirstChild().getNodeValue();
                 	break;
-                } 
+                }
             }
             
             if (interfaceName != null) {
@@ -2057,15 +2056,15 @@ public class JuniperSrxResource implements ServerResource {
         }
     }
     
-    private List<String[]> getStaticNatRules(RuleMatchCondition condition, String privateGateway, Long privateCidrSize) throws ExecutionException {             
+    private List<String[]> getStaticNatRules(RuleMatchCondition condition, String privateGateway, Long privateCidrSize) throws ExecutionException {
         List<String[]> staticNatRules = new ArrayList<String[]>();
 
         String xmlRequest = SrxXml.STATIC_NAT_RULE_GETALL.getXml();
-        String xmlResponse = sendRequest(xmlRequest);       
+        String xmlResponse = sendRequest(xmlRequest);
         Document doc = getDocument(xmlResponse);
         NodeList rules = doc.getElementsByTagName("rule");
         for (int i = 0; i < rules.getLength(); i++) {
-            NodeList ruleEntries = rules.item(i).getChildNodes();               
+            NodeList ruleEntries = rules.item(i).getChildNodes();
             for (int j = 0; j < ruleEntries.getLength(); j++) {
                 Node ruleEntry = ruleEntries.item(j);
                 if (ruleEntry.getNodeName().equals("name")) {
@@ -2094,7 +2093,7 @@ public class JuniperSrxResource implements ServerResource {
                         staticNatRules.add(new String[]{rulePublicIp, rulePrivateIp});
                     }
                 }
-            }               
+            }
         }
 
         return staticNatRules;
@@ -2322,7 +2321,7 @@ public class JuniperSrxResource implements ServerResource {
         }
 
         return destNatRules;
-    }        
+    }
 
     /*
      * Source NAT pools
@@ -2680,10 +2679,10 @@ public class JuniperSrxResource implements ServerResource {
         for (int i = 0; i < applicationNodes.getLength(); i++) {
             Node applicationNode = applicationNodes.item(i);
             policyApplications.add(applicationNode.getFirstChild().getNodeValue());
-        }               
+        }
 
         return policyApplications;
-    }       
+    }
 
     private List<Object[]> extractApplications(List<FirewallRuleTO> rules) throws ExecutionException {
         List<Object[]> applications = new ArrayList<Object[]>();
@@ -2731,7 +2730,7 @@ public class JuniperSrxResource implements ServerResource {
         	return genObjectName(_vpnObjectPrefix, String.valueOf(accountId), username);
         } else {
         	return genObjectName(type.getIdentifier(), fromZone, toZone, genIpIdentifier(translatedIp));
-        }    		    
+        }
     }
 
     private boolean manageSecurityPolicy(SecurityPolicyType type, SrxCommand command, Long accountId, String username, String privateIp, List<String> applicationNames, List<String> cidrs, String ipsecVpnName, boolean defaultEgressAction) throws ExecutionException {
@@ -2751,7 +2750,7 @@ public class JuniperSrxResource implements ServerResource {
         } else {
         	securityPolicyName = genSecurityPolicyName(type, accountId, username, fromZone, toZone, privateIp);
             addressBookEntryName = genAddressBookEntryName(privateIp);
-        }        
+        }
 
         String xml;
 
@@ -2767,7 +2766,7 @@ public class JuniperSrxResource implements ServerResource {
             return sendRequestAndCheckResponse(command, xml, "name", securityPolicyName);
 
         case CHECK_IF_IN_USE:
-            List<String[]> rulesToCheck = null; 
+            List<String[]> rulesToCheck = null;
             if (type.equals(SecurityPolicyType.STATIC_NAT)) {
                 // Check if any static NAT rules rely on this security policy
                 rulesToCheck = getStaticNatRules(RuleMatchCondition.ALL, null, null);
@@ -2776,7 +2775,7 @@ public class JuniperSrxResource implements ServerResource {
                 rulesToCheck = getDestNatRules(RuleMatchCondition.ALL, null, null, null, null);
             } else {
                 return false;
-            }					
+            }
 
             for (String[] rule : rulesToCheck) {
                 String rulePrivateIp = rule[1];
@@ -2842,7 +2841,7 @@ public class JuniperSrxResource implements ServerResource {
 
             if (type.equals(SecurityPolicyType.VPN) && ipsecVpnName != null) {
                 xml = replaceXmlValue(xml, "tunnel", "<permit><tunnel><ipsec-vpn>" + ipsecVpnName + "</ipsec-vpn></tunnel></permit>");
-            } else {      	
+            } else {
             	xml = replaceXmlValue(xml, "tunnel", "");
                 if (!(type.equals(SecurityPolicyType.SECURITYPOLICY_EGRESS_DEFAULT) || type.equals(SecurityPolicyType.SECURITYPOLICY_EGRESS))) {
                     action = "<permit></permit>";
@@ -2858,7 +2857,7 @@ public class JuniperSrxResource implements ServerResource {
             	for (String applicationName : applicationNames) {
                     applications += "<application>" + applicationName + "</application>";
                 }
-            }           
+            }
 
             xml = replaceXmlValue(xml, "applications", applications);
 
@@ -2893,7 +2892,7 @@ public class JuniperSrxResource implements ServerResource {
 
                 if (getAllResponseXml == null) {
                     throw new ExecutionException("Deleted security policy, but failed to delete security policy group.");
-                } 
+                }
                 
                 if (!getAllResponseXml.contains(fromZone) || !getAllResponseXml.contains(toZone)) {
                     return true;
@@ -2919,12 +2918,12 @@ public class JuniperSrxResource implements ServerResource {
             return false;
 
         }
-    }	
+    }
     
     private boolean addSecurityPolicyAndApplications(SecurityPolicyType type, String privateIp, List<Object[]> applications) throws ExecutionException {
         // Add all necessary applications
         List<String> applicationNames = new ArrayList<String>();
-        for (Object[] application : applications) {         
+        for (Object[] application : applications) {
             Protocol protocol = (Protocol) application[0];
             int startPort = application[1] != null ? ((Integer) application[1]) : -1;
             int endPort = application[2] != null ? ((Integer) application[2]) : -1;
@@ -3052,19 +3051,19 @@ public class JuniperSrxResource implements ServerResource {
         return genIpIdentifier(ipAddress);
     }
 
-    private boolean manageUsageFilter(SrxCommand command, UsageFilter filter, String ip, Long guestVlanTag, String filterTermName) throws ExecutionException {	    	    
+    private boolean manageUsageFilter(SrxCommand command, UsageFilter filter, String ip, Long guestVlanTag, String filterTermName) throws ExecutionException {
         String filterName;
         String filterDescription;
         String xml;
 
         if (filter.equals(_usageFilterIPInput) || filter.equals(_usageFilterIPOutput)) {
-            assert (ip != null && guestVlanTag == null);	        
+            assert (ip != null && guestVlanTag == null);
             filterName = filter.getName();
             filterDescription = filter.toString() + ", public IP = " + ip;
             xml = SrxXml.PUBLIC_IP_FILTER_TERM_ADD.getXml();
         } else if (filter.equals(_usageFilterVlanInput) || filter.equals(_usageFilterVlanOutput)) {
-            assert (ip == null && guestVlanTag != null);	        
-            filterName = filter.getName() + "-" + guestVlanTag;	     
+            assert (ip == null && guestVlanTag != null);
+            filterName = filter.getName() + "-" + guestVlanTag;
             filterDescription = filter.toString() + ", guest VLAN tag = " + guestVlanTag;
             filterTermName = filterName;
             xml = SrxXml.GUEST_VLAN_FILTER_TERM_ADD.getXml();
@@ -3081,7 +3080,7 @@ public class JuniperSrxResource implements ServerResource {
             xml = replaceXmlValue(xml, "term-name", filterTermName);
             return sendRequestAndCheckResponse(command, xml, "name", filterTermName);
 
-        case ADD:	
+        case ADD:
             if (manageUsageFilter(SrxCommand.CHECK_IF_EXISTS, filter, ip, guestVlanTag, filterTermName)) {
                 return true;
             }
@@ -3122,7 +3121,7 @@ public class JuniperSrxResource implements ServerResource {
             return false;
 
         }
-    }	
+    }
 
     private String genNameValueEntry(String name, String value) {
         String xml = SrxXml.TEMPLATE_ENTRY.getXml();
@@ -3162,7 +3161,7 @@ public class JuniperSrxResource implements ServerResource {
         return result;
     }
     
-    private boolean manageFirewallFilter(SrxCommand command, FirewallFilterTerm term, String filterName) throws ExecutionException {	    	    
+    private boolean manageFirewallFilter(SrxCommand command, FirewallFilterTerm term, String filterName) throws ExecutionException {
         String xml;
 
         switch(command) {
@@ -3174,7 +3173,7 @@ public class JuniperSrxResource implements ServerResource {
             xml = replaceXmlValue(xml, "term-name", term.getName());
             return sendRequestAndCheckResponse(command, xml, "name", term.getName());
 
-        case ADD:	
+        case ADD:
             if (manageFirewallFilter(SrxCommand.CHECK_IF_EXISTS, term, filterName)) {
                 return true;
             }
@@ -3224,14 +3223,14 @@ public class JuniperSrxResource implements ServerResource {
             return false;
 
         }
-    }	
+    }
 
     /*
-     * Usage	
+     * Usage
      */
 
     private ExternalNetworkResourceUsageAnswer getUsageAnswer(ExternalNetworkResourceUsageCommand cmd) throws ExecutionException {
-        try {	
+        try {
         	String socOpenException = "Failed to open a connection for Usage data.";
         	String socCloseException = "Unable to close connection for Usage data.";
         	if (!openUsageSocket()) {
@@ -3241,7 +3240,7 @@ public class JuniperSrxResource implements ServerResource {
             ExternalNetworkResourceUsageAnswer answer = new ExternalNetworkResourceUsageAnswer(cmd);
 
             String xml = SrxXml.FIREWALL_FILTER_BYTES_GETALL.getXml();
-            String rawUsageData = sendUsageRequest(xml);		
+            String rawUsageData = sendUsageRequest(xml);
             Document doc = getDocument(rawUsageData);
 
             NodeList counters = doc.getElementsByTagName("counter");
@@ -3263,13 +3262,13 @@ public class JuniperSrxResource implements ServerResource {
                                 s_logger.debug(e);
                                 byteCount = 0;
                             }
-                        }	            		
+                        }
                     }
 
                     if (byteCount >= 0) {
-                    	updateUsageAnswer(answer, counterName, byteCount);     
+                    	updateUsageAnswer(answer, counterName, byteCount);
                     }
-                } 
+                }
             }
             if (!closeUsageSocket()) {
             	throw new ExecutionException(socCloseException);
@@ -3280,10 +3279,10 @@ public class JuniperSrxResource implements ServerResource {
         	throw new ExecutionException(e.getMessage());
         }
 
-    }		
+    }
 
     private void updateBytesMap(Map<String, long[]> bytesMap, UsageFilter filter, String usageAnswerKey, long additionalBytes) {
-        long[] bytesSentAndReceived = bytesMap.get(usageAnswerKey);	    
+        long[] bytesSentAndReceived = bytesMap.get(usageAnswerKey);
         if (bytesSentAndReceived == null) {
             bytesSentAndReceived = new long[]{0,0};
         }
@@ -3327,7 +3326,7 @@ public class JuniperSrxResource implements ServerResource {
             return _usageFilterIPInput;
         } else if (counterName.contains(_usageFilterIPOutput.getCounterIdentifier())) {
             return _usageFilterIPOutput;
-        } 
+        }
  
         return null;
     }
@@ -3339,7 +3338,7 @@ public class JuniperSrxResource implements ServerResource {
             return getIpAddress(counterName);
         } else {
             return null;
-        } 
+        }
     }
 
     private Map<String, long[]> getBytesMap(ExternalNetworkResourceUsageAnswer answer, UsageFilter filter, String usageAnswerKey) {
@@ -3349,22 +3348,22 @@ public class JuniperSrxResource implements ServerResource {
             return answer.ipBytes;
         } else {
             return null;
-        } 
+        }
     }
 
     private void updateUsageAnswer(ExternalNetworkResourceUsageAnswer answer, String counterName, long byteCount) {
         if (counterName == null || byteCount <= 0) {
-            return;                   
-        }	    	    
+            return;
+        }
 
-        UsageFilter filter = getUsageFilter(counterName);	    
+        UsageFilter filter = getUsageFilter(counterName);
         if (filter == null) {
             s_logger.debug("Failed to parse counter name in usage answer: " + counterName);
             return;
         }
-        String usageAnswerKey = getUsageAnswerKey(filter, counterName);	    
+        String usageAnswerKey = getUsageAnswerKey(filter, counterName);
         Map<String, long[]> bytesMap = getBytesMap(answer, filter, usageAnswerKey);
-        updateBytesMap(bytesMap, filter, usageAnswerKey, byteCount);          
+        updateBytesMap(bytesMap, filter, usageAnswerKey, byteCount);
     }
 
     /*
@@ -3384,7 +3383,7 @@ public class JuniperSrxResource implements ServerResource {
             sendStream.write(xmlRequest);
             sendStream.flush();
 
-            String line = "";           
+            String line = "";
             while ((line = recvStream.readLine()) != null) {
                 xmlResponseBuffer.append(line);
                 if (line.contains("</rpc-reply>")) {
@@ -3509,48 +3508,48 @@ public class JuniperSrxResource implements ServerResource {
         return checkResponse(xmlResponse, errorKeyAndValue, key, value);
     }
     
-    private boolean sendUsageRequestAndCheckResponse(SrxCommand command, String xmlRequest, String... keyAndValue) throws ExecutionException {                                                            
-        boolean errorKeyAndValue = false;                                                                                                                                                                 
-        String key;                                                                                                                                                                                       
-        String value;                                                                                                                                                                                     
+    private boolean sendUsageRequestAndCheckResponse(SrxCommand command, String xmlRequest, String... keyAndValue) throws ExecutionException {
+        boolean errorKeyAndValue = false;
+        String key;
+        String value;
                                                                                                                                                                                                           
-        switch (command) {                                                                                                                                                                                
+        switch (command) {
                                                                                                                                                                                                           
-        case LOGIN:                                                                                                                                                                                       
-            key = "status";                                                                                                                                                                               
-            value = "success";                                                                                                                                                                            
-            break;                                                                                                                                                                                        
+        case LOGIN:
+            key = "status";
+            value = "success";
+            break;
                                                                                                                                                                                                           
-        case OPEN_CONFIGURATION:                                                                                                                                                                          
-        case CLOSE_CONFIGURATION:                                                                                                                                                                         
-            errorKeyAndValue = true;                                                                                                                                                                      
-            key = "error";                                                                                                                                                                                
-            value = null;                                                                                                                                                                                 
-            break;                                                                                                                                                                                        
+        case OPEN_CONFIGURATION:
+        case CLOSE_CONFIGURATION:
+            errorKeyAndValue = true;
+            key = "error";
+            value = null;
+            break;
                                                                                                                                                                                                           
-        case COMMIT:                                                                                                                                                                                      
-            key = "commit-success";                                                                                                                                                                       
-            value = null;                                                                                                                                                                                 
-            break;                                                                                                                                                                                        
+        case COMMIT:
+            key = "commit-success";
+            value = null;
+            break;
                                                                                                                                                                                                           
-        case CHECK_IF_EXISTS:                                                                                                                                                                             
-        case CHECK_IF_IN_USE:                                                                                                                                                                             
-            assert (keyAndValue != null && keyAndValue.length == 2) : "If the SrxCommand is " + command + ", both a key and value must be specified.";                                                    
+        case CHECK_IF_EXISTS:
+        case CHECK_IF_IN_USE:
+            assert (keyAndValue != null && keyAndValue.length == 2) : "If the SrxCommand is " + command + ", both a key and value must be specified.";
                                                                                                                                                                                                           
-            key = keyAndValue[0];                                                                                                                                                                         
-            value = keyAndValue[1];                                                                                                                                                                       
-            break;                                                                                                                                                                                        
+            key = keyAndValue[0];
+            value = keyAndValue[1];
+            break;
                                                                                                                                                                                                           
-        default:                                                                                                                                                                                          
-            key = "load-success";                                                                                                                                                                         
-            value = null;                                                                                                                                                                                 
-            break;                                                                                                                                                                                        
+        default:
+            key = "load-success";
+            value = null;
+            break;
                                                                                                                                                                                                           
-        }                                                                                                                                                                                                 
+        }
                                                                                                                                                                                                           
-        String xmlResponse = sendUsageRequest(xmlRequest);                                                                                                                                                
-        return checkResponse(xmlResponse, errorKeyAndValue, key, value);                                                                                                                                  
-    }                                                                                                                                                                                                     
+        String xmlResponse = sendUsageRequest(xmlRequest);
+        return checkResponse(xmlResponse, errorKeyAndValue, key, value);
+    }
 
 
     /*
@@ -3597,14 +3596,14 @@ public class JuniperSrxResource implements ServerResource {
 
     /*
      * Misc
-     */    
+     */
     
     private Long getVlanTag(String vlan) throws ExecutionException {
     	Long publicVlanTag = null;
     	if (!vlan.equals("untagged")) {
     		try {
                 // make sure this vlan is numeric
-                publicVlanTag = Long.parseLong(BroadcastDomainType.getValue(vlan));
+                publicVlanTag = Long.parseLong(BroadcastDomainType.getValue(BroadcastDomainType.fromString(vlan)));
     		} catch (Exception e) {
     			throw new ExecutionException("Unable to parse VLAN tag: " + vlan);
     		}
@@ -3623,7 +3622,7 @@ public class JuniperSrxResource implements ServerResource {
             }
         }
 
-        return objectName;			
+        return objectName;
     }
 
 
@@ -3638,13 +3637,13 @@ public class JuniperSrxResource implements ServerResource {
             return Protocol.valueOf(protocolName);
         } catch (Exception e) {
             throw new ExecutionException("Invalid protocol: " + protocolName);
-        }		
+        }
     }
 
     private Document getDocument(String xml) throws ExecutionException {
         StringReader srcNatRuleReader = new StringReader(xml);
         InputSource srcNatRuleSource = new InputSource(srcNatRuleReader);
-        Document doc = null; 
+        Document doc = null;
 
         try {
             doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(srcNatRuleSource);
@@ -3688,6 +3687,6 @@ public class JuniperSrxResource implements ServerResource {
 	public void setRunLevel(int level) {
 		// TODO Auto-generated method stub
 		
-	}    
+	}
     
 }
