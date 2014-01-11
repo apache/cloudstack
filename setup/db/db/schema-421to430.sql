@@ -372,19 +372,20 @@ CREATE TABLE `acl_policy_permission` (
   CONSTRAINT `fk_acl_policy_permission__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `acl_policy` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8;
 
-INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (1, 'NORMAL', 'Domain user role', UUID(), 1, 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (2, 'ADMIN', 'Root admin role', UUID(), 1, 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin role', UUID(), 1, 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin role', UUID(), 1, 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin role', UUID(), 1, 1, Now(), 'Static');
-INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, domain_id, account_id, created, policy_type) VALUES (6, 'RESOURCE_OWNER', 'Resource owner role', UUID(), 1, 1, Now(), 'Dynamic');
+
+INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (1, 'NORMAL', 'Domain user role', UUID(), '/', 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (2, 'ADMIN', 'Root admin role', UUID(), '/', 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin role', UUID(), '/', 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin role', UUID(), '/', 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin role', UUID(), '/', 1, Now(), 'Static');
+INSERT IGNORE INTO `cloud`.`acl_policy` (id, name, description, uuid, path, account_id, created, policy_type) VALUES (6, 'RESOURCE_OWNER', 'Resource owner role', UUID(), '/', 1, Now(), 'Dynamic');
 
 
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, account_id, created) VALUES (1, 'NORMAL', 'Domain user group', UUID(), 1, 1, Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, account_id, created) VALUES (2, 'ADMIN', 'Root admin group', UUID(), 1, 1, Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, account_id, created) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin group', UUID(), 1, 1, Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, account_id, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin group', UUID(), 1, 1, Now());
-INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, domain_id, account_id, created) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin group', UUID(), 1, 1, Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, path, account_id, created) VALUES (1, 'NORMAL', 'Domain user group', UUID(), '/', 1, Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, path, account_id, created) VALUES (2, 'ADMIN', 'Root admin group', UUID(), '/', 1, Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, path, account_id, created) VALUES (3, 'DOMAIN_ADMIN', 'Domain admin group', UUID(), '/', 1, Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, path, account_id, created) VALUES (4, 'RESOURCE_DOMAIN_ADMIN', 'Resource domain admin group', UUID(), '/', 1, Now());
+INSERT IGNORE INTO `cloud`.`acl_group` (id, name, description, uuid, path, account_id, created) VALUES (5, 'READ_ONLY_ADMIN', 'Read only admin group', UUID(), '/', 1, Now());
 
 INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values(1, 1, Now());
 INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values(2, 2, Now());
@@ -393,8 +394,8 @@ INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values
 INSERT INTO `cloud`.`acl_group_policy_map` (group_id, policy_id, created) values(5, 5, Now());
 
 INSERT IGNORE INTO `cloud`.`acl_policy_permission` (id, policy_id, action, permission, created) VALUES (1, 2, 'SystemCapability', 'Allow', Now());
-INSERT IGNORE INTO `cloud`.`acl_policy_permission` (id, policy_id, action, permission, created) VALUES (1, 3, 'DomainCapability', 'Allow', Now());
-INSERT IGNORE INTO `cloud`.`acl_policy_permission` (id, policy_id, action, permission, created) VALUES (1, 4, 'DomainResourceCapability', 'Allow', Now());
+INSERT IGNORE INTO `cloud`.`acl_policy_permission` (id, policy_id, action, permission, created) VALUES (2, 3, 'DomainCapability', 'Allow', Now());
+INSERT IGNORE INTO `cloud`.`acl_policy_permission` (id, policy_id, action, permission, created) VALUES (3, 4, 'DomainResourceCapability', 'Allow', Now());
 
 CREATE OR REPLACE VIEW `cloud`.`acl_policy_view` AS
     select 
