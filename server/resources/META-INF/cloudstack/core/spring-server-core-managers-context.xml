@@ -223,6 +223,4 @@
     <bean id="GlobalLoadBalancingRulesServiceImpl"
         class="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" />
         
-    <bean id="AclServiceImpl" class="org.apache.cloudstack.acl.AclServiceImpl"/>         
-
-</beans>
+ </beans>
