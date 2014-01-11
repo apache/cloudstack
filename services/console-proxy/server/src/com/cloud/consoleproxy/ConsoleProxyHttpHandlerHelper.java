@@ -23,7 +23,7 @@ import com.cloud.consoleproxy.util.Logger;
 
 public class ConsoleProxyHttpHandlerHelper {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyHttpHandlerHelper.class);
-    
+
     public static Map<String, String> getQueryMap(String query) {
         String[] params = query.split("&");
         Map<String, String> map = new HashMap<String, String>();
@@ -43,26 +43,45 @@ public class ConsoleProxyHttpHandlerHelper {
                     s_logger.debug("Invalid paramemter in URL found. param: " + param);
             }
         }
-        
+
         // This is a ugly solution for now. We will do encryption/decryption translation
         // here to make it transparent to rest of the code.
         if(map.get("token") != null) {
             ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(
                 ConsoleProxy.getEncryptorPassword());
-    
+
             ConsoleProxyClientParam param = encryptor.decryptObject(ConsoleProxyClientParam.class, map.get("token"));
 
             // make sure we get information from token only
             guardUserInput(map);
             if(param != null) {
-                if(param.getClientHostAddress() != null)
+                if (param.getClientHostAddress() != null) {
+                    s_logger.debug("decode token. host: " + param.getClientHostAddress());
                     map.put("host", param.getClientHostAddress());
-                if(param.getClientHostPort() != 0)
+                } else {
+                    s_logger.error("decode token. host info is not found!");
+                }
+
+                if (param.getClientHostPort() != 0) {
+                    s_logger.debug("decode token. port: " + param.getClientHostPort());
                     map.put("port", String.valueOf(param.getClientHostPort()));
-                if(param.getClientTag() != null)
+                } else {
+                    s_logger.error("decode token. port info is not found!");
+                }
+
+                if (param.getClientTag() != null) {
+                    s_logger.debug("decode token. tag: " + param.getClientTag());
                     map.put("tag", param.getClientTag());
-                if(param.getClientHostPassword() != null)
+                } else {
+                    s_logger.error("decode token. tag info is not found!");
+                }
+
+                if (param.getClientHostPassword() != null) {
                     map.put("sid", param.getClientHostPassword());
+                } else {
+                    s_logger.error("decode token. sid info is not found!");
+                }
+
                 if(param.getClientTunnelUrl() != null)
                     map.put("consoleurl", param.getClientTunnelUrl());
                 if(param.getClientTunnelSession() != null)
@@ -77,6 +96,8 @@ public class ConsoleProxyHttpHandlerHelper {
                     map.put("username", param.getUsername());
                 if (param.getPassword() != null)
                     map.put("password", param.getPassword());
+            } else {
+                s_logger.error("Unable to decode token");
             }
         } else {
         	// we no longer accept information from parameter other than token

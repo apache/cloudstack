@@ -334,6 +334,8 @@ public class ConsoleProxyServlet extends HttpServlet {
                 }
             } else if (hostInfo.startsWith("instanceId")) {
                 host = hostInfo.substring(hostInfo.indexOf('=') + 1);
+            } else {
+                host = hostInfo;
             }
         } else {
             host = hostInfo;
