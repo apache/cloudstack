@@ -348,12 +348,12 @@ public class ManagementServerMock {
         }
 
         Pair<List<? extends PhysicalNetworkServiceProvider>, Integer> providers =
-                _networkService.listNetworkServiceProviders(_znet.getId(), Provider.JuniperContrailRouter.getName(),
+                _networkService.listNetworkServiceProviders(_znet.getId(), Provider.JuniperContrail.getName(),
                         null, null, null);
         if (providers.second() == 0) {
-            s_logger.debug("Add " + Provider.JuniperContrailRouter.getName() + " to network " + _znet.getName());
+            s_logger.debug("Add " + Provider.JuniperContrail.getName() + " to network " + _znet.getName());
             PhysicalNetworkServiceProvider provider =
-                    _networkService.addProviderToPhysicalNetwork(_znet.getId(), Provider.JuniperContrailRouter.getName(),
+                    _networkService.addProviderToPhysicalNetwork(_znet.getId(), Provider.JuniperContrail.getName(),
                             null, null);
             _networkService.updateNetworkServiceProvider(provider.getId(),
                     PhysicalNetworkServiceProvider.State.Enabled.toString(), null);
@@ -369,7 +369,7 @@ public class ManagementServerMock {
                 PhysicalNetworkServiceProvider.State.Enabled.toString(), null, null);
         s_logger.debug(_znet.getName() + " has " + providers.second().toString() + " Enabled providers");
         for (PhysicalNetworkServiceProvider provider: providers.first()) {
-            if (provider.getProviderName().equals(Provider.JuniperContrailRouter.getName())) {
+            if (provider.getProviderName().equals(Provider.JuniperContrail.getName())) {
                 continue;
             }
             s_logger.debug("Disabling " + provider.getProviderName());

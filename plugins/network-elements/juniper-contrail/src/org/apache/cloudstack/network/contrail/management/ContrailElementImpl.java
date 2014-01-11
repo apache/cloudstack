@@ -52,8 +52,12 @@ import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.SourceNatServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
+import com.cloud.network.element.VpcProvider;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpc.NetworkACLItem;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRouteProfile;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
@@ -64,21 +68,14 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.network.IpAddress;
-import com.cloud.server.ConfigurationServer;
-import com.cloud.server.ConfigurationServerImpl;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.resource.ResourceManager;
 
 @Component
-@Local(value = {ContrailElement.class, StaticNatServiceProvider.class, IpDeployer.class, SourceNatServiceProvider.class})
+@Local(value = {ContrailElement.class, StaticNatServiceProvider.class})
 public class ContrailElementImpl extends AdapterBase
-    implements ContrailElement, StaticNatServiceProvider, IpDeployer, SourceNatServiceProvider, DhcpServiceProvider {
+    implements ContrailElement, IpDeployer, StaticNatServiceProvider {
 
 	private static final Map<Service, Map<Capability, String>> _capabilities = InitCapabilities();
 
-        @Inject ResourceManager _resourceMgr;
-        @Inject NetworkDao _networksDao;
 	@Inject ContrailManager _manager;
 	@Inject NicDao _nicDao;
 	@Inject ServerDBSync  _dbSync;
@@ -102,7 +99,7 @@ public class ContrailElementImpl extends AdapterBase
     // NetworkElement API
     @Override
     public Provider getProvider() {
-        return Provider.JuniperContrailRouter;
+        return Provider.JuniperContrail;
     }
 
     private static Map<Service, Map<Capability, String>> InitCapabilities() {
@@ -348,29 +345,5 @@ public class ContrailElementImpl extends AdapterBase
             return true;
         }
         return false;        
-    }
-
-    @Override
-    public boolean addDhcpEntry(Network network, NicProfile nic,
-    		VirtualMachineProfile vm,
-    		DeployDestination dest, ReservationContext context)
-    				throws ConcurrentOperationException, InsufficientCapacityException,
-    				ResourceUnavailableException {
-    	return false;
-    }
-
-    @Override
-    public boolean configDhcpSupportForSubnet(Network network, NicProfile nic,
-    		VirtualMachineProfile vm,
-    		DeployDestination dest, ReservationContext context)
-    				throws ConcurrentOperationException, InsufficientCapacityException,
-    				ResourceUnavailableException {
-    	return false;
-    }
-
-    @Override
-    public boolean removeDhcpSupportForSubnet(Network network)
-    		throws ResourceUnavailableException {
-    	return false;
     }
 }

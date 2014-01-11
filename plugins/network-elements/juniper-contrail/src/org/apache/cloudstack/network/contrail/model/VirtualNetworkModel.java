@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.cloudstack.network.contrail.management.ContrailManager;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.VlanVO;
@@ -38,10 +39,8 @@ import net.juniper.contrail.api.types.NetworkIpam;
 import net.juniper.contrail.api.types.Project;
 import net.juniper.contrail.api.types.SubnetType;
 import net.juniper.contrail.api.types.VirtualNetwork;
-import net.juniper.contrail.api.types.VirtualNetworkPolicyType;
 import net.juniper.contrail.api.types.VnSubnetsType;
 import net.juniper.contrail.api.ApiConnector;
-import org.apache.cloudstack.network.contrail.management.ContrailManager;
 
 public class VirtualNetworkModel extends ModelObjectBase {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkModel.class);
@@ -66,7 +65,6 @@ public class VirtualNetworkModel extends ModelObjectBase {
     private NetworkIpam _ipam;
 
     private FloatingIpPoolModel _fipPoolModel;
-    private NetworkPolicyModel _policyModel;
 
     public VirtualNetworkModel(Network network, String uuid, String name, TrafficType trafficType) {
         _uuid = uuid;
@@ -134,10 +132,6 @@ public class VirtualNetworkModel extends ModelObjectBase {
             successor.delete(controller);
         }
 
-        if (_policyModel != null) {
-            _policyModel.removeSuccessor(this);
-        }
-
         try {
             api.delete(VirtualNetwork.class, _uuid);
         } catch (IOException ex) {
@@ -186,8 +180,6 @@ public class VirtualNetworkModel extends ModelObjectBase {
                 s_logger.warn("Unable to read virtual-network", ex);
             }
         }
-
-        _id = network.getId();
         
         try {
             _projectId = manager.getProjectId(network.getDomainId(), network.getAccountId());
@@ -232,16 +224,6 @@ public class VirtualNetworkModel extends ModelObjectBase {
                 vn.setName(_name);
                 vn.setUuid(_uuid);
             } 
-        }
-
-        if (_policyModel == null) {
-            vn.clearNetworkPolicy();
-        } else if (!_policyModel.hasPolicyRules()) {
-            vn.clearNetworkPolicy();
-            _policyModel.removeSuccessor(this);
-        } else {
-            vn.setNetworkPolicy(_policyModel.getPolicy(), new VirtualNetworkPolicyType(
-                    new VirtualNetworkPolicyType.SequenceType(1, 0), null));
         }
      
         if (_ipam == null) {
@@ -421,23 +403,7 @@ public class VirtualNetworkModel extends ModelObjectBase {
                     "; db: " + dbSubnets + ", vnc: " + vncSubnets + ", diff: " + diff);
             return false;
         }
-
-        List<ObjectReference<VirtualNetworkPolicyType>> policyRefs = _vn.getNetworkPolicy();
-        if ((policyRefs == null || policyRefs.isEmpty()) && _policyModel != null) {
-            return false;
-        }
-
-        if ((policyRefs != null && !policyRefs.isEmpty()) && _policyModel == null) {
-            return false;
-        }
-
-        if (policyRefs != null && !policyRefs.isEmpty() && _policyModel != null) {
-            ObjectReference<VirtualNetworkPolicyType> ref = policyRefs.get(0);
-            if (!ref.getUuid().equals(_policyModel.getUuid())) {
-                return false; 
-            }
-        }
-
+        
         for (ModelObject successor: successors()) {
             if (!successor.verify(controller)) {
                 return false;
@@ -449,6 +415,8 @@ public class VirtualNetworkModel extends ModelObjectBase {
     @Override
     public boolean compare(ModelController controller, ModelObject o) {
         VirtualNetworkModel latest;
+        ApiConnector api = controller.getApiAccessor();
+
         assert this._vn != null : "vnc virtual network current is not initialized";
 
         try {
@@ -513,64 +481,14 @@ public class VirtualNetworkModel extends ModelObjectBase {
                     "; db: " + currentSubnets + ", vnc: " + newSubnets + ", diff: " + diff);
             return false;
         }
-
-        List<ObjectReference<VirtualNetworkPolicyType>> currentPolicyRefs = this._vn.getNetworkPolicy();
-        List<ObjectReference<VirtualNetworkPolicyType>> latestPolicyRefs = latest._vn.getNetworkPolicy();
-
-        if (currentPolicyRefs == null && latestPolicyRefs == null) {
-            return true;
-        }
-
-        if ((currentPolicyRefs == null && latestPolicyRefs != null) ||
-                (currentPolicyRefs != null && latestPolicyRefs == null) || 
-                (currentPolicyRefs.size() != latestPolicyRefs.size())) {
-            return false;
-        }
-
-        if (currentPolicyRefs.isEmpty() && latestPolicyRefs.isEmpty()) {
-            return true;
-        }
-
-        //both must be non empty lists
-        ObjectReference<VirtualNetworkPolicyType> ref1 = currentPolicyRefs.get(0);
-        ObjectReference<VirtualNetworkPolicyType> ref2 = latestPolicyRefs.get(0);
-
-        if ((ref1 != null && ref2 == null) || (ref1 == null && ref2 != null)) {
-            return false;
-        }
-
-        if ((ref1.getUuid() != null && ref2.getUuid() == null) || (ref1.getUuid() == null && ref2.getUuid() != null)) {
-            return false;
-        }
-        if (ref1.getUuid() == null && ref2.getUuid() == null) {
-            return true;
-        }
-        if (!ref1.getUuid().equals(ref2.getUuid())) {
-            return false; 
-        }
+                
         return true;
     }
 
     public FloatingIpPoolModel getFipPoolModel() {
         return _fipPoolModel;
     }
-
     public void setFipPoolModel(FloatingIpPoolModel fipPoolModel) {
         _fipPoolModel = fipPoolModel;
     }
-
-    public NetworkPolicyModel getNetworkPolicyModel() {
-        return _policyModel;
-    }
-
-    public void addToNetworkPolicy(NetworkPolicyModel policyModel) {
-        if (_policyModel != null) {
-            _policyModel.removeSuccessor(this);
-        }
-        _policyModel = policyModel;
-        if (_policyModel != null) {
-            _policyModel.addSuccessor(this);
-        }
-    } 
-
 }

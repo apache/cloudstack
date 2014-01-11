@@ -20,7 +20,6 @@ package org.apache.cloudstack.network.contrail.management;
 import java.util.TreeSet;
 
 import org.apache.cloudstack.network.contrail.model.ModelObjectBase;
-import org.apache.cloudstack.network.contrail.model.NetworkPolicyModel;
 import org.apache.cloudstack.network.contrail.model.ServiceInstanceModel;
 import org.apache.cloudstack.network.contrail.model.VirtualMachineModel;
 import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
@@ -31,9 +30,8 @@ public class ModelDatabase {
     TreeSet<ServiceInstanceModel> _serviceInstanceTable;
     TreeSet<VirtualMachineModel> _vmTable;
     TreeSet<VirtualNetworkModel> _vnTable;
-    TreeSet<NetworkPolicyModel> _policyTable;
     
-    public ModelDatabase() {
+    ModelDatabase() {
         initDb();
     }
 
@@ -41,17 +39,16 @@ public class ModelDatabase {
         _serviceInstanceTable = new TreeSet<ServiceInstanceModel>(new ModelObjectBase.UuidComparator());
         _vmTable = new TreeSet<VirtualMachineModel>(new ModelObjectBase.UuidComparator());
         _vnTable = new TreeSet<VirtualNetworkModel>(new ModelObjectBase.UuidComparator());
-        _policyTable = new TreeSet<NetworkPolicyModel>(new ModelObjectBase.UuidComparator());
     }
     
     public TreeSet<ServiceInstanceModel> getServiceInstances() {
         return _serviceInstanceTable;
     }
     
-    public ServiceInstanceModel lookupServiceInstance(String fqn) {
-        ServiceInstanceModel siKey = new ServiceInstanceModel(fqn);
+    public ServiceInstanceModel lookupServiceInstance(String uuid) {
+        ServiceInstanceModel siKey = new ServiceInstanceModel(uuid);
         ServiceInstanceModel current = _serviceInstanceTable.ceiling(siKey);
-        if  (current != null && current.getQualifiedName().equals(fqn)) {
+        if  (current != null && current.getUuid().equals(uuid)) {
             return current;
         }
         return null;
@@ -86,19 +83,6 @@ public class ModelDatabase {
             } else if (current.getUuid().equals(uuid)) {
                 return current;
             } 
-        }
-        return null;
-    }
-
-    public TreeSet<NetworkPolicyModel> getNetworkPolicys() {
-        return _policyTable;
-    }
-
-    public NetworkPolicyModel lookupNetworkPolicy(String uuid) {
-        NetworkPolicyModel vmKey = new NetworkPolicyModel(uuid, null);
-        NetworkPolicyModel current = _policyTable.ceiling(vmKey);
-        if (current != null && current.getUuid().equals(uuid)) {
-            return current;
         }
         return null;
     }
