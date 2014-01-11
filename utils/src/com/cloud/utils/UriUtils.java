@@ -147,6 +147,8 @@ public class UriUtils {
             URI uri = new URI(url);
             if (uri.getScheme().equalsIgnoreCase("http")) {
                 httpConn = (HttpURLConnection)uri.toURL().openConnection();
+                httpConn.setConnectTimeout(2000);
+                httpConn.setReadTimeout(5000);
                 if (httpConn != null) {
                     String contentLength = httpConn.getHeaderField("content-length");
                     if (contentLength != null) {
