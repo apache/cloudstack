@@ -572,20 +572,10 @@
                                             label: 'label.quiesce.vm',
                                             isBoolean: true,
                                             isHidden: function(args) {
-                                                var hidden = true;
-                                                $.ajax({
-                                                    url: createURL('listStoragePools&id='+args.context.volumes[0].storageid),
-                                                    dataType: "json",
-                                                    async: false,
-                                                    success: function(json) {
-                                                        if (json.liststoragepoolsresponse.storagepool[0].storagecapabilities.VOLUME_SNAPSHOT_QUIESCEVM == 'true')
-                                                            hidden = false;
-                                                        else
-                                                            hidden = true;
-                                                    }
-                                                });
-
-                                                return hidden;
+                                                if (args.context.volumes[0].quiescevm == true)
+                                                    return false;   
+                                                else
+                                                	return true;
                                             }
                                         }
                                     }
@@ -1744,8 +1734,7 @@
                                 createForm: {
                                     title: 'label.action.create.volume',
                                     desc: '',
-                                    preFilter: function(args) {
-                                	    debugger;
+                                    preFilter: function(args) {                                	
                                 	    if (g_regionsecondaryenabled == true) {
                                 	    	args.$form.find('.form-item[rel=zoneid]').css('display', 'inline-block');
                                 	    } else {
