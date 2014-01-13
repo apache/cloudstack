@@ -252,7 +252,12 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     @Override
     public boolean delete() {
-        return this._storageAdaptor.deleteStoragePool(this);
+        try {
+            return this._storageAdaptor.deleteStoragePool(this);
+        } catch (Exception e) {
+            s_logger.debug("Failed to delete storage pool", e);
+        }
+        return false;
     }
 
     @Override

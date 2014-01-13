@@ -237,8 +237,12 @@ public class KVMStorageProcessor implements StorageProcessor {
         } catch (CloudRuntimeException e) {
             return new CopyCmdAnswer(e.toString());
         } finally {
-            if (secondaryPool != null) {
-                secondaryPool.delete();
+            try {
+                if (secondaryPool != null) {
+                    secondaryPool.delete();
+                }
+            } catch(Exception e) {
+                s_logger.debug("Failed to clean up secondary storage", e);
             }
         }
     }

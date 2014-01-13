@@ -617,7 +617,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 }
                 s_logger.error("failed in umount retry");
             }
-            throw new CloudRuntimeException(e.toString());
+            throw new CloudRuntimeException(e.toString(), e);
         }
     }
 
