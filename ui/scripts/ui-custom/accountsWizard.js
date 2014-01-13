@@ -16,10 +16,10 @@
 // under the License.
 
 (function($, cloudStack) {
-    cloudStack.uiCustom.accountsWizard = function(args) {
+    cloudStack.uiCustom.accountsWizard = function(args, isLdap) {
         return function(listViewArgs) {
             var context = listViewArgs.context;
-            var ldapStatus = isLdapEnabled();
+            var ldapStatus = isLdap;
             var accountsWizard = function(data) {
                 var $wizard = $('#template').find('div.accounts-wizard').clone();
                 var $form = $wizard.find('form');
@@ -39,6 +39,7 @@
                         args.action({
                             context: context,
                             data: data,
+                            isLdap: isLdap,
                             groupname: groupname,
                             response: {
                                 error: function(message) {
@@ -58,6 +59,7 @@
                                 args.action({
                                     context: context,
                                     data: data,
+                                    isLdap: isLdap,
                                     username: username[i],
                                     response: {
                                         error: function(message) {
@@ -74,6 +76,7 @@
                             args.action({
                                 context: context,
                                 data: data,
+                                isLdap: isLdap,
                                 username: username,
                                 response: {
                                     error: function(message) {
@@ -188,7 +191,7 @@
                 $wizard.find('.manual-account-details').append(informationNotInLdapForm);
 
                 return $wizard.dialog({
-                    title: _l('label.add.account'),
+                    title: ldapStatus ? _l('Add LDAP Account') : _l('label.add.account'),
                     width: ldapStatus ? 800 : 330,
                     height: ldapStatus ? 500 : 500,
                     closeOnEscape: false,

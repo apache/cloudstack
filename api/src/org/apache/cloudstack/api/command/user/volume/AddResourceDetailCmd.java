@@ -21,13 +21,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.server.ResourceTag;
@@ -35,7 +34,7 @@ import com.cloud.server.ResourceTag;
 @APICommand(name = "addResourceDetail", description = "Adds detail for the Resource.", responseObject = SuccessResponse.class)
 public class AddResourceDetailCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(AddResourceDetailCmd.class.getName());
-    private static final String s_name = "addResourceDetailresponse";
+    private static final String s_name = "addresourcedetailresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -47,11 +46,7 @@ public class AddResourceDetailCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, required = true, description = "type of the resource")
     private String resourceType;
 
-    @Parameter(name = ApiConstants.RESOURCE_ID,
-               type = CommandType.STRING,
-               required = true,
-               collectionType = CommandType.STRING,
-               description = "resource id to create the details for")
+    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, required = true, collectionType = CommandType.STRING, description = "resource id to create the details for")
     private String resourceId;
 
     /////////////////////////////////////////////////////

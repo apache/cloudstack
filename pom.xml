@@ -160,7 +160,7 @@
   </organization>
 
   <modules>
-    <module>build/checkstyle</module>
+    <module>tools/checkstyle</module>
     <module>api</module>
     <module>agent</module>
     <module>core</module>
@@ -448,27 +448,33 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-		<!--
+      </plugin>
+    </plugins>
+    <pluginManagement>
+      <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>${cs.checkstyle.version}</version>
         <dependencies>
           <dependency>
             <groupId>org.apache.cloudstack</groupId>
-            <artifactId>build-checkstyle</artifactId>
+            <artifactId>checkstyle</artifactId>
             <version>${project.version}</version>
           </dependency>
         </dependencies>
-		-->
-		<inherited>false</inherited>
+
         <executions>
           <execution>
             <phase>validate</phase>
             <goals>
               <goal>check</goal>
             </goals>
-          </execution> 
+          </execution>
         </executions>
         <configuration>
           <failsOnError>true</failsOnError>
-          <configLocation>${project.basedir}/build/checkstyle/src/main/resources/tooling/checkstyle.xml</configLocation>
+          <configLocation>cloud-style.xml</configLocation>
           <consoleOutput>true</consoleOutput>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
           <sourceDirectory>${project.basedir}</sourceDirectory>
@@ -476,14 +482,6 @@
           <excludes>**\/deps\/,**\/test\/,**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat,**\/awsapi\/,**\/XenServerJava\/,**\/apidoc\/</excludes>
         </configuration>
       </plugin>
-    </plugins>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>${cs.checkstyle.version}</version>
-        </plugin>
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
           <configuration>
@@ -543,6 +541,19 @@
                     <versionRange>[1.7,)</versionRange>
                     <goals>
                       <goal>run</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore />
+                  </action>
+                </pluginExecution>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <versionRange>[2.0,)</versionRange>
+                    <goals>
+                      <goal>copy-dependencies</goal>
                     </goals>
                   </pluginExecutionFilter>
                   <action>
@@ -653,7 +664,6 @@
               <exclude>ui/lib/qunit/qunit.js</exclude>
               <exclude>ui/lib/reset.css</exclude>
               <exclude>ui/lib/require.js</exclude>
-              <exclude>waf</exclude>
               <exclude>systemvm/conf/agent.properties</exclude>
               <exclude>systemvm/conf/environment.properties</exclude>
               <exclude>systemvm/js/jquery.js</exclude>
@@ -753,25 +763,6 @@
       </plugins>
     </pluginManagement>
   </build>
-  <!--
-  <reporting>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-        <configuration>
-          <failsOnError>true</failsOnError>
-          <configLocation>tooling/checkstyle.xml</configLocation>
-          <consoleOutput>true</consoleOutput>
-          <includeTestSourceDirectory>true</includeTestSourceDirectory>
-          <sourceDirectory>${project.basedir}</sourceDirectory>
-          <includes>**\/*.java</includes>
-          <excludes>**\/deps\/,**\/test\/,**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat,**\/awsapi\/,**\/XenServerJava\/,**\/apidoc\/</excludes>
-        </configuration>
-      </plugin>
-    </plugins>  
-  </reporting>
-  -->
   <profiles>
     <profile>
       <id>awsapi</id>
@@ -813,7 +804,6 @@
       </properties>
       <modules>
         <module>developer</module>
-        <!--module>tools/devcloud</module -->
       </modules>
     </profile>
     <profile>

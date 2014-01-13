@@ -184,8 +184,9 @@ public class QemuImg {
     public void convert(QemuImgFile srcFile, QemuImgFile destFile, Map<String, String> options) throws QemuImgException {
         Script s = new Script(_qemuImgPath, timeout);
         s.add("convert");
-        s.add("-f");
-        s.add(srcFile.getFormat().toString());
+        // autodetect source format. Sometime int he future we may teach KVMPhysicalDisk about more formats, then we can explicitly pass them if necessary
+        //s.add("-f");
+        //s.add(srcFile.getFormat().toString());
         s.add("-O");
         s.add(destFile.getFormat().toString());
 

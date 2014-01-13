@@ -86,11 +86,44 @@
 
                             action: {
                                 custom: cloudStack.uiCustom.accountsWizard(
-                                    cloudStack.accountsWizard
+                                    cloudStack.accountsWizard,
+                                    false
                                 )
                             }
 
-                        }
+                        },
+                                                
+                        addLdapAccount: {
+                            label: 'Add LDAP Account',
+                            isHeader: true,
+                            preFilter: function(args) {
+                                if ((isAdmin() || isDomainAdmin()) && isLdapEnabled()) {
+                                    return true;
+                                } else {
+                                    return false;
+                                }
+                            },
+                            messages: {
+                                notification: function(args) {
+                                    return 'Add LDAP Account';
+                                }
+                            },
+                            notification: {
+                                poll: function(args) {
+                                    args.complete({
+                                        actionFilter: accountActionfilter
+                                    });
+                                }
+                            },
+
+                            action: {
+                                custom: cloudStack.uiCustom.accountsWizard(
+                                    cloudStack.accountsWizard,
+                                    true
+                                )
+                            }
+
+                        }                        
                     },
 
                     dataProvider: function(args) {
@@ -851,15 +884,10 @@
                                     dataProvider: function(args) {
                                         $.ajax({
                                             url: createURL('listConfigurations&accountid=' + args.context.accounts[0].id),
-                                            data: {
-                                                page: args.page,
-                                                pageSize: pageSize,
-                                                listAll: true
-                                            },
+                                            data: listViewDataProvider(args, {}, { searchBy: 'name' }),
                                             success: function(json) {
                                                 args.response.success({
                                                     data: json.listconfigurationsresponse.configuration
-
                                                 });
 
                                             },

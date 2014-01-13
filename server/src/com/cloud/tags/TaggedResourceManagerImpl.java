@@ -57,6 +57,7 @@ import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -64,6 +65,7 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
+import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -147,6 +149,10 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     Site2SiteCustomerGatewayDao _customerGatewayDao;
     @Inject
     Site2SiteVpnConnectionDao _vpnConnectionDao;
+    @Inject
+    UserDao _userDao;
+    @Inject
+    DiskOfferingDao _diskOffDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -176,6 +182,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         s_daoMap.put(ResourceObjectType.VpnGateway, _vpnGatewayDao);
         s_daoMap.put(ResourceObjectType.CustomerGateway, _customerGatewayDao);
         s_daoMap.put(ResourceObjectType.VpnConnection, _vpnConnectionDao);
+        s_daoMap.put(ResourceObjectType.User, _userDao);
+        s_daoMap.put(ResourceObjectType.DiskOffering, _diskOffDao);
 
         return true;
     }

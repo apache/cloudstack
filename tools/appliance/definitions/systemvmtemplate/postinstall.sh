@@ -88,6 +88,8 @@ install_packages() {
   # apt-get -q -y --force-yes purge build-essential
 
   apt-get --no-install-recommends -q -y --force-yes install haproxy
+
+  apt-get --no-install-recommends -q -y --force-yes install radvd
 }
 
 setup_accounts() {
@@ -220,6 +222,7 @@ configure_services() {
   chkconfig --add cloud
   chkconfig cloud off
   chkconfig xl2tpd off
+  chkconfig radvd off
 }
 
 do_signature() {

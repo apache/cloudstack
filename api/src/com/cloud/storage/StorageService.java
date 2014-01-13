@@ -17,8 +17,8 @@
 package com.cloud.storage;
 
 import java.net.UnknownHostException;
+import java.util.Map;
 
-import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
@@ -92,19 +92,23 @@ public interface StorageService {
 
     boolean deleteSecondaryStagingStore(DeleteSecondaryStagingStoreCmd cmd);
 
-    ImageStore discoverImageStore(AddImageStoreCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException;
+    public ImageStore discoverImageStore(String name, String url, String providerName, Long dcId, Map details) throws IllegalArgumentException, DiscoveryException,
+            InvalidParameterValueException;
 
-    /**
-     * Prepare NFS secondary storage for object store migration
-     *
-     * @param cmd
-     *            - the command specifying secondaryStorageId
-     * @return the storage pool
-     * @throws ResourceUnavailableException
-     *             TODO
-     * @throws InsufficientCapacityException
-     *             TODO
+
+        /**
+     * Migrate existing NFS to use object store.
+     * @param name object store name.
+     * @param url object store url.
+     * @param providerName object store provider Name.
+     * @param details object store other details
+     * @return Object store created.
+     * @throws IllegalArgumentException
+     * @throws DiscoveryException
+     * @throws InvalidParameterValueException
      */
-    public ImageStore prepareSecondaryStorageForObjectStoreMigration(Long storeId) throws ResourceUnavailableException, InsufficientCapacityException;
+    public ImageStore migrateToObjectStore(String name, String url, String providerName, Map details) throws IllegalArgumentException, DiscoveryException,
+            InvalidParameterValueException;
+
 
 }

@@ -16,7 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.systemvm;
 
-import org.apache.log4j.Logger;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,21 +31,15 @@ import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
 import com.cloud.vm.VirtualMachine;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
-@APICommand(name = "changeServiceForSystemVm",
-            responseObject = SystemVmResponse.class,
-            description = "Changes the service offering for a system vm (console proxy or secondary storage). " + "The system vm must be in a \"Stopped\" state for "
-                + "this command to take effect.")
+@APICommand(name = "changeServiceForSystemVm", responseObject = SystemVmResponse.class, description = "Changes the service offering for a system vm (console proxy or secondary storage). "
+        + "The system vm must be in a \"Stopped\" state for " + "this command to take effect.")
 public class UpgradeSystemVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeVMCmd.class.getName());
     private static final String s_name = "changeserviceforsystemvmresponse";
@@ -54,17 +51,11 @@ public class UpgradeSystemVMCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = SystemVmResponse.class, required = true, description = "The ID of the system vm")
     private Long id;
 
-    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
-               type = CommandType.UUID,
-               entityType = ServiceOfferingResponse.class,
-               required = true,
-               description = "the service offering ID to apply to the system vm")
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, required = true, description = "the service offering ID to apply to the system vm")
     private Long serviceOfferingId;
 
-    @Parameter(name = ApiConstants.CUSTOM_PARAMETERS,
-               type = CommandType.MAP,
-               description = "name value pairs of custom parameters for cpu, memory and cpunumber. example customparameters[i].name=value")
-    private Map<String, String> customParameters;
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "name value pairs of custom parameters for cpu, memory and cpunumber. example details[i].name=value")
+    private Map<String, String> details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -78,10 +69,10 @@ public class UpgradeSystemVMCmd extends BaseCmd {
         return serviceOfferingId;
     }
 
-    public Map<String, String> getCustomParameters() {
+    public Map<String, String> getDetails() {
         Map<String, String> customparameterMap = new HashMap<String, String>();
-        if (customParameters != null && customParameters.size() != 0) {
-            Collection parameterCollection = customParameters.values();
+        if (details != null && details.size() != 0) {
+            Collection parameterCollection = details.values();
             Iterator iter = parameterCollection.iterator();
             while (iter.hasNext()) {
                 HashMap<String, String> value = (HashMap<String, String>)iter.next();

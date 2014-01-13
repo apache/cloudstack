@@ -1609,6 +1609,29 @@ public class VDI extends XenAPIObject {
     }
 
     /**
+     * Copy either a full VDI or the block differences between two VDIs into either a fresh VDI or an existing VDI.
+     *
+     * @param sr The destination SR (only required if the destination VDI is not specified
+     * @param baseVdi The base VDI (only required if copying only changed blocks, by default all blocks will be copied)
+     * @param intoVdi The destination VDI to copy blocks into (if omitted then a destination SR must be provided and a fresh VDI will be created)
+     * @return Task
+     */
+    public Task copyAsync2(Connection c, SR sr, VDI baseVdi, VDI intoVdi) throws
+        BadServerResponse,
+        XenAPIException,
+        XmlRpcException,
+        Types.VdiReadonly,
+        Types.VdiTooSmall,
+        Types.VdiNotSparse {
+        String method_call = "Async.VDI.copy";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(this.ref), Marshalling.toXMLRPC(sr), Marshalling.toXMLRPC(baseVdi), Marshalling.toXMLRPC(intoVdi)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        return Types.toTask(result);
+    }
+
+    /**
      * Make a fresh VDI in the specified SR and copy the supplied VDI's data to the new disk
      *
      * @param sr The destination SR

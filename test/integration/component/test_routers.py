@@ -350,16 +350,31 @@ class TestRouterServices(cloudstackTestCase):
                              "Check list router response"
                              )
         # Router associated with account should be in running state
-        for router in routers:
-            self.debug("Router ID: %s & Router state: %s" % (
+        timeout = 180
+        router = routers[0]
+        self.debug("Router ID: %s & Router state: %s" % (
                                                              router.id,
                                                              router.state
                                                              ))
-            self.assertEqual(
+        self.debug("Wait for %s secs max for router to reach Running state" % timeout)
+        while timeout:
+            time.sleep(60)
+            routers = list_routers(
+                               self.apiclient,
+                               account=self.account.name,
+                               domainid=self.account.domainid,
+                               id=router.id)
+            router = routers[0]
+            if router.state == 'Running':
+                break
+
+            timeout = timeout - 60
+            if timeout == 0:
+                self.assertEqual(
                         router.state,
                         'Running',
-                        "Check list router response for router state"
-                    )
+                        "Router not in Running state")
+
 
         # Network state associated with account should be 'Implemented'
         networks = list_networks(

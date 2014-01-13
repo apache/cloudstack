@@ -78,7 +78,7 @@ import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
-import com.cloud.storage.template.VmdkProcessor;
+import com.cloud.storage.template.OVAProcessor;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.script.Script;
@@ -253,16 +253,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
             s_logger.error(msg);
             throw new Exception(msg);
         }
-
-        s_logger.info("Move volume out of volume-wrapper VM ");
-        String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkName, VmwareStorageLayoutType.VMWARE, true);
-        String[] legacyCloudStackLayoutFilePair =
-            VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, true);
-
-        dsMo.moveDatastoreFile(vmwareLayoutFilePair[0], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[0], dcMo.getMor(), true);
-
-        dsMo.moveDatastoreFile(vmwareLayoutFilePair[1], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[1], dcMo.getMor(), true);
-
         return true;
     }
 
@@ -275,15 +265,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
             s_logger.error(msg);
             throw new Exception(msg);
         }
-
-        s_logger.info("Move volume out of volume-wrapper VM ");
-        String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkName, VmwareStorageLayoutType.VMWARE, false);
-        String[] legacyCloudStackLayoutFilePair =
-            VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, false);
-
-        dsMo.moveDatastoreFile(vmwareLayoutFilePair[0], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[0], dcMo.getMor(), true);
-
-        dsMo.moveDatastoreFile(vmwareLayoutFilePair[1], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[1], dcMo.getMor(), true);
         return true;
     }
 
@@ -309,6 +290,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
 
             String vmdkName = volume.getName();
+            String vmdkFileBaseName = null;
             if (srcStore == null) {
                 // create a root volume for blank VM (created from ISO)
                 String dummyVmName = this.hostService.getWorkerName(context, cmd, 0);
@@ -319,8 +301,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         throw new Exception("Unable to create a dummy VM for volume creation");
                     }
 
-                    String vmdkFilePair[] = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, null, vmdkName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, true    // we only use the first file in the pair, linked or not will not matter
-                    );
+                    vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);
+                    // we only use the first file in the pair, linked or not will not matter
+                    String vmdkFilePair[] = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, null, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, true);
                     String volumeDatastorePath = vmdkFilePair[0];
                     synchronized (this) {
                         s_logger.info("Delete file if exists in datastore to clear the way for creating the volume. file: " + volumeDatastorePath);
@@ -353,6 +336,14 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(vmdkName);
                 assert (vmMo != null);
 
+                vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0); // TO-DO: Support for base template containing multiple disks
+                s_logger.info("Move volume out of volume-wrapper VM ");
+                String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.VMWARE, !_fullCloneFlag);
+                String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, !_fullCloneFlag);
+
+                dsMo.moveDatastoreFile(vmwareLayoutFilePair[0], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[0], dcMo.getMor(), true);
+                dsMo.moveDatastoreFile(vmwareLayoutFilePair[1], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[1], dcMo.getMor(), true);
+
                 s_logger.info("detach disks from volume-wrapper VM " + vmdkName);
                 vmMo.detachAllDisks();
 
@@ -365,11 +356,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
             // restoreVM - move the new ROOT disk into corresponding VM folder
             String vmInternalCSName = volume.getVmName();
             if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmInternalCSName)) {
-                VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmInternalCSName, dsMo, vmdkName);
+                VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmInternalCSName, dsMo, vmdkFileBaseName);
             }
 
             VolumeObjectTO newVol = new VolumeObjectTO();
-            newVol.setPath(vmdkName);
+            newVol.setPath(vmdkFileBaseName);
             newVol.setSize(volume.getSize());
             return new CopyCmdAnswer(newVol);
         } catch (Throwable e) {
@@ -623,16 +614,31 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 vmMo.cloneFromCurrentSnapshot(workerVmName, 0, 4, volumeDeviceInfo.second(), VmwareHelper.getDiskDeviceDatastore(volumeDeviceInfo.first()));
             clonedVm = cloneResult.first();
 
-            clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateUniqueName, true, false);
+            clonedVm.exportVm(secondaryMountPoint + "/" + installPath, templateUniqueName, false, false);
 
-            long physicalSize = new File(installFullPath + "/" + templateUniqueName + ".ova").length();
-            VmdkProcessor processor = new VmdkProcessor();
+            // Get VMDK filename
+            String templateVMDKName = "";
+            File[] files = new File(installFullPath).listFiles();
+            if(files != null) {
+                for(File file : files) {
+                    String fileName = file.getName();
+                    if(fileName.toLowerCase().startsWith(templateUniqueName) && fileName.toLowerCase().endsWith(".vmdk")) {
+                        templateVMDKName += fileName;
+                        break;
+                    }
+                }
+            }
+
+            long physicalSize = new File(installFullPath + "/" + templateVMDKName).length();
+            OVAProcessor processor = new OVAProcessor();
+
             Map<String, Object> params = new HashMap<String, Object>();
             params.put(StorageLayer.InstanceConfigKey, _storage);
-            processor.configure("VMDK Processor", params);
+            processor.configure("OVA Processor", params);
             long virtualSize = processor.getTemplateVirtualSize(installFullPath, templateUniqueName);
 
             postCreatePrivateTemplate(installFullPath, templateId, templateUniqueName, physicalSize, virtualSize);
+            writeMetaOvaForTemplate(installFullPath, templateUniqueName + ".ovf", templateVMDKName, templateUniqueName, physicalSize);
             return new Ternary<String, Long, Long>(installPath + "/" + templateUniqueName + ".ova", physicalSize, virtualSize);
 
         } finally {
@@ -850,11 +856,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             long physicalSize = new File(installFullPath + "/" + templateVMDKName).length();
-            VmdkProcessor processor = new VmdkProcessor();
+            OVAProcessor processor = new OVAProcessor();
             // long physicalSize = new File(installFullPath + "/" + templateUniqueName + ".ova").length();
             Map<String, Object> params = new HashMap<String, Object>();
             params.put(StorageLayer.InstanceConfigKey, _storage);
-            processor.configure("VMDK Processor", params);
+            processor.configure("OVA Processor", params);
             long virtualSize = processor.getTemplateVirtualSize(installFullPath, templateUniqueName);
 
             postCreatePrivateTemplate(installFullPath, templateId, templateUniqueName, physicalSize, virtualSize);
@@ -994,32 +1000,26 @@ public class VmwareStorageProcessor implements StorageProcessor {
             CopyCmdAnswer answer = null;
 
             try {
-                vmMo = hyperHost.findVmOnHyperHost(vmName);
-                if (vmMo == null) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Unable to find owner VM for BackupSnapshotCommand on host " + hyperHost.getHyperHostName() + ", will try within datacenter");
-                    }
-
-                    vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
+                if(vmName != null) {
+                    vmMo = hyperHost.findVmOnHyperHost(vmName);
                     if (vmMo == null) {
-                        dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
-
-                        workerVMName = hostService.getWorkerName(context, cmd, 0);
-
-                        vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVMName);
-
-                        if (vmMo == null) {
-                            throw new Exception("Failed to find the newly create or relocated VM. vmName: " + workerVMName);
+                        if(s_logger.isDebugEnabled()) {
+                            s_logger.debug("Unable to find owner VM for BackupSnapshotCommand on host " + hyperHost.getHyperHostName() + ", will try within datacenter");
                         }
-                        workerVm = vmMo;
-
-                        // attach volume to worker VM
-                        String datastoreVolumePath = dsMo.getDatastorePath(volumePath + ".vmdk");
-                        vmMo.attachDisk(new String[] {datastoreVolumePath}, morDs);
-                    } else {
-                        s_logger.info("Using owner VM " + vmName + " for snapshot operation");
-                        hasOwnerVm = true;
+                        vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
                     }
+                }
+                if(vmMo == null) {
+                    dsMo = new DatastoreMO(hyperHost.getContext(), morDs);
+                    workerVMName = hostService.getWorkerName(context, cmd, 0);
+                    vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, workerVMName);
+                    if (vmMo == null) {
+                        throw new Exception("Failed to find the newly create or relocated VM. vmName: " + workerVMName);
+                    }
+                    workerVm = vmMo;
+                    // attach volume to worker VM
+                    String datastoreVolumePath = dsMo.getDatastorePath(volumePath + ".vmdk");
+                    vmMo.attachDisk(new String[] { datastoreVolumePath }, morDs);
                 } else {
                     s_logger.info("Using owner VM " + vmName + " for snapshot operation");
                     hasOwnerVm = true;
@@ -1272,9 +1272,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     if (isAttach) {
                         vmMo.mountToolsInstaller();
                     } else {
-                        try {
-                            vmMo.unmountToolsInstaller();
-                        } catch (Throwable e) {
+                        try{
+                            if (!vmMo.unmountToolsInstaller()) {
+                                return new AttachAnswer("Failed to unmount vmware-tools installer ISO as the corresponding CDROM device is locked by VM. Please unmount the CDROM device inside the VM and ret-try.");
+                            }
+                        } catch(Throwable e){
                             vmMo.detachIso(null);
                         }
                     }

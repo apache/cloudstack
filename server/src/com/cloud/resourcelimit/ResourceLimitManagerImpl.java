@@ -35,8 +35,11 @@ import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 
@@ -68,6 +71,8 @@ import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.SnapshotDao;
@@ -149,8 +154,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     private TemplateDataStoreDao _vmTemplateStoreDao;
     @Inject
     private VlanDao _vlanDao;
+    @Inject
+    private SnapshotDataStoreDao _snapshotDataStoreDao;
 
     protected GenericSearchBuilder<TemplateDataStoreVO, SumCount> templateSizeSearch;
+    protected GenericSearchBuilder<SnapshotDataStoreVO, SumCount> snapshotSizeSearch;
 
     protected SearchBuilder<ResourceCountVO> ResourceCountSearch;
     ScheduledExecutorService _rcExecutor;
@@ -188,6 +196,15 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         join1.and("accountId", join1.entity().getAccountId(), Op.EQ);
         templateSizeSearch.join("templates", join1, templateSizeSearch.entity().getTemplateId(), join1.entity().getId(), JoinBuilder.JoinType.INNER);
         templateSizeSearch.done();
+
+        snapshotSizeSearch = _snapshotDataStoreDao.createSearchBuilder(SumCount.class);
+        snapshotSizeSearch.select("sum", Func.SUM, snapshotSizeSearch.entity().getSize());
+        snapshotSizeSearch.and("state", snapshotSizeSearch.entity().getState(), Op.EQ);
+        snapshotSizeSearch.and("storeRole", snapshotSizeSearch.entity().getRole(), Op.EQ);
+        SearchBuilder<SnapshotVO> join2 = _snapshotDao.createSearchBuilder();
+        join2.and("accountId", join2.entity().getAccountId(), Op.EQ);
+        snapshotSizeSearch.join("snapshots", join2, snapshotSizeSearch.entity().getSnapshotId(), join2.entity().getId(), JoinBuilder.JoinType.INNER);
+        snapshotSizeSearch.done();
 
         _resourceCountCheckInterval = NumbersUtil.parseInt(_configDao.getValue(Config.ResourceCountCheckInterval.key()), 0);
         if (_resourceCountCheckInterval > 0) {
@@ -879,6 +896,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         join1.and("accountId", join1.entity().getAccountId(), Op.EQ);
         join1.and("type", join1.entity().getType(), Op.EQ);
         join1.and("state", join1.entity().getState(), SearchCriteria.Op.NIN);
+        join1.and("displayVm", join1.entity().isDisplayVm(), Op.EQ);
         cpuSearch.join("offerings", join1, cpuSearch.entity().getId(), join1.entity().getServiceOfferingId(), JoinBuilder.JoinType.INNER);
         cpuSearch.done();
 
@@ -886,6 +904,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         sc.setJoinParameters("offerings", "accountId", accountId);
         sc.setJoinParameters("offerings", "type", VirtualMachine.Type.User);
         sc.setJoinParameters("offerings", "state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+        sc.setJoinParameters("offerings", "displayVm", 1);
         List<SumCount> cpus = _serviceOfferingDao.customSearch(sc, null);
         if (cpus != null) {
             return cpus.get(0).sum;
@@ -901,6 +920,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         join1.and("accountId", join1.entity().getAccountId(), Op.EQ);
         join1.and("type", join1.entity().getType(), Op.EQ);
         join1.and("state", join1.entity().getState(), SearchCriteria.Op.NIN);
+        join1.and("displayVm", join1.entity().isDisplayVm(), Op.EQ);
         memorySearch.join("offerings", join1, memorySearch.entity().getId(), join1.entity().getServiceOfferingId(), JoinBuilder.JoinType.INNER);
         memorySearch.done();
 
@@ -908,6 +928,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         sc.setJoinParameters("offerings", "accountId", accountId);
         sc.setJoinParameters("offerings", "type", VirtualMachine.Type.User);
         sc.setJoinParameters("offerings", "state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+        sc.setJoinParameters("offerings", "displayVm", 1);
         List<SumCount> memory = _serviceOfferingDao.customSearch(sc, null);
         if (memory != null) {
             return memory.get(0).sum;
@@ -918,7 +939,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     public long calculateSecondaryStorageForAccount(long accountId) {
         long totalVolumesSize = _volumeDao.secondaryStorageUsedForAccount(accountId);
-        long totalSnapshotsSize = _snapshotDao.secondaryStorageUsedForAccount(accountId);
+        long totalSnapshotsSize = 0;
         long totalTemplatesSize = 0;
 
         SearchCriteria<SumCount> sc = templateSizeSearch.create();
@@ -930,6 +951,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             totalTemplatesSize = templates.get(0).sum;
         }
 
+        SearchCriteria<SumCount> sc2 = snapshotSizeSearch.create();
+        sc2.setParameters("state", ObjectInDataStoreStateMachine.State.Ready);
+        sc2.setParameters("storeRole", DataStoreRole.Image);
+        sc2.setJoinParameters("snapshots", "accountId", accountId);
+        List<SumCount> snapshots = _snapshotDataStoreDao.customSearch(sc2, null);
+        if (snapshots != null) {
+            totalSnapshotsSize = snapshots.get(0).sum;
+        }
         return totalVolumesSize + totalSnapshotsSize + totalTemplatesSize;
     }
 
@@ -954,14 +983,17 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         return _resourceCountDao.getResourceCount(account.getId(), ResourceOwnerType.Account, type);
     }
 
+    private boolean isDisplayFlagOn(Boolean displayResource){
+
+        // 1. If its null assume displayResource = 1
+        // 2. If its not null then send true if displayResource = 1
+        return (displayResource == null) || (displayResource != null && displayResource);
+    }
+
     @Override
     public void checkResourceLimit(Account account, ResourceType type, Boolean displayResource, long... count) throws ResourceAllocationException {
 
-        // By default its always on.
-        // TODO boilerplate code.
-        boolean displayflag = (displayResource == null) || (displayResource != null && displayResource);
-
-        if (displayflag) {
+        if (isDisplayFlagOn(displayResource)) {
             checkResourceLimit(account, type, count);
         }
     }
@@ -969,9 +1001,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     @Override
     public void incrementResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta) {
 
-        // 1. If its null assume displayResource = 1
-        // 2. If its not null then increment if displayResource = 1
-        if (displayResource == null || (displayResource != null && displayResource)) {
+        if (isDisplayFlagOn(displayResource)) {
             incrementResourceCount(accountId, type, delta);
         }
     }
@@ -979,9 +1009,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     @Override
     public void decrementResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta) {
 
-        // 1. If its null assume displayResource = 1
-        // 2. If its not null then decrement if displayResource = 1
-        if (displayResource == null || (displayResource != null && displayResource)) {
+        if (isDisplayFlagOn(displayResource)) {
             decrementResourceCount(accountId, type, delta);
         }
     }
@@ -995,7 +1023,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         // Increment because the display is turned on.
         if (displayResource) {
-            //            checkResourceLimit((Account)_accountDao.findById(accountId), type, delta);
             incrementResourceCount(accountId, type, delta);
         } else {
             decrementResourceCount(accountId, type, delta);

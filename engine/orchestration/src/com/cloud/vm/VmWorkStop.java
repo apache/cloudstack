@@ -21,8 +21,8 @@ public class VmWorkStop extends VmWork {
 
     private final boolean cleanup;
 
-    public VmWorkStop(long userId, long accountId, long vmId, boolean cleanup) {
-        super(userId, accountId, vmId);
+    public VmWorkStop(long userId, long accountId, long vmId, String handlerName, boolean cleanup) {
+        super(userId, accountId, vmId, handlerName);
         this.cleanup = cleanup;
     }
 

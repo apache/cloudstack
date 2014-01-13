@@ -75,7 +75,6 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -394,7 +393,7 @@ public class TemplateServiceImpl implements TemplateService {
                             s_logger.info("Template Sync did not find " + uniqueName + " on image store " + storeId +
                                 ", may request download based on available hypervisor types");
                             if (tmpltStore != null) {
-                                if (isRegionStore(store) && tmpltStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED
+                                if (_storeMgr.isRegionStore(store) && tmpltStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED
                                         && tmpltStore.getState() == State.Ready
                                         && tmpltStore.getInstallPath() == null) {
                                     s_logger.info("Keep fake entry in template store table for migration of previous NFS to object store");
@@ -435,7 +434,7 @@ public class TemplateServiceImpl implements TemplateService {
 
                             // if this is a region store, and there is already an DOWNLOADED entry there without install_path information, which
                             // means that this is a duplicate entry from migration of previous NFS to staging.
-                            if (isRegionStore(store)) {
+                            if (_storeMgr.isRegionStore(store)) {
                                 TemplateDataStoreVO tmpltStore = _vmTemplateStoreDao.findByStoreTemplate(storeId, tmplt.getId());
                                 if (tmpltStore != null && tmpltStore.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED && tmpltStore.getState() == State.Ready
                                         && tmpltStore.getInstallPath() == null) {
@@ -685,18 +684,14 @@ public class TemplateServiceImpl implements TemplateService {
         return null;
     }
 
-    private boolean isRegionStore(DataStore store) {
-        if (store.getScope().getScopeType() == ScopeType.ZONE && store.getScope().getScopeId() == null)
-            return true;
-        else
-            return false;
-    }
-
     // This routine is used to push templates currently on cache store, but not in region store to region store.
     // used in migrating existing NFS secondary storage to S3.
     @Override
     public void syncTemplateToRegionStore(long templateId, DataStore store) {
-        if (isRegionStore(store)) {
+        if (_storeMgr.isRegionStore(store)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Sync template " + templateId + " from cache to object store...");
+            }
             // if template is on region wide object store, check if it is really downloaded there (by checking install_path). Sync template to region
             // wide store if it is not there physically.
             TemplateInfo tmplOnStore = _templateFactory.getTemplate(templateId, store);

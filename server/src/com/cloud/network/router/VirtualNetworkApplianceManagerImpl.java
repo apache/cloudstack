@@ -665,6 +665,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     static final ConfigKey<Boolean> UseExternalDnsServers = new ConfigKey<Boolean>(Boolean.class, "use.external.dns", "Advanced", "false",
         "Bypass internal dns, use external dns1 and dns2", true, ConfigKey.Scope.Zone, null);
 
+    static final ConfigKey<Boolean> routerVersionCheckEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class, "router.version.check", "true",
+            "If true, router minimum required version is checked before sending command", false);
+
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
 
@@ -2044,7 +2048,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
             } else if (nic.getTrafficType() == TrafficType.Control) {
                 controlNic = nic;
                 // DOMR control command is sent over management server in VMware
-                if (dest.getHost().getHypervisorType() == HypervisorType.VMware) {
+                if (dest.getHost().getHypervisorType() == HypervisorType.VMware || dest.getHost().getHypervisorType() == HypervisorType.Hyperv) {
                     s_logger.info("Check if we need to add management server explicit route to DomR. pod cidr: " + dest.getPod().getCidrAddress() + "/" +
                         dest.getPod().getCidrSize() + ", pod gateway: " + dest.getPod().getGateway() + ", management host: " + ClusterManager.ManagementHostIPAdr.value());
 
@@ -2137,7 +2141,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
             boolean useExtDns = !dnsProvided;
             /* For backward compatibility */
-            useExtDns = UseExternalDnsServers.valueIn(dc.getId());
+            useExtDns = useExtDns || UseExternalDnsServers.valueIn(dc.getId());
 
             if (useExtDns) {
                 buf.append(" useextdns=true");
@@ -2571,7 +2575,16 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     protected ArrayList<? extends PublicIpAddress> getPublicIpsToApply(VirtualRouter router, Provider provider, Long guestNetworkId,
         com.cloud.network.IpAddress.State... skipInStates) {
         long ownerId = router.getAccountId();
-        final List<? extends IpAddress> userIps = _networkModel.listPublicIpsAssignedToGuestNtwk(ownerId, guestNetworkId, null);
+        final List<? extends IpAddress> userIps;
+
+        Network guestNetwork = _networkDao.findById(guestNetworkId);
+        if (guestNetwork.getGuestType() == GuestType.Shared) {
+            // ignore the account id for the shared network
+            userIps = _networkModel.listPublicIpsAssignedToGuestNtwk(guestNetworkId, null);
+        } else {
+            userIps = _networkModel.listPublicIpsAssignedToGuestNtwk(ownerId, guestNetworkId, null);
+        }
+
         List<PublicIp> allPublicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             boolean addIp = true;
@@ -2755,7 +2768,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         throws StorageUnavailableException, InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting router " + router);
         try {
-            _itMgr.advanceStart(router.getUuid(), params, planToDeploy);
+            _itMgr.advanceStart(router.getUuid(), params, planToDeploy, null);
         } catch (OperationTimedoutException e) {
             throw new ResourceUnavailableException("Starting router " + router + " failed! " + e.toString(), DataCenter.class, router.getDataCenterId());
         }
@@ -3512,8 +3525,9 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
     }
 
     protected boolean sendCommandsToRouter(final VirtualRouter router, Commands cmds) throws AgentUnavailableException {
-        if (!checkRouterVersion(router)) {
-            throw new CloudRuntimeException("Router requires upgrade. Unable to send command to router:" + router.getId());
+        if(!checkRouterVersion(router)){
+            s_logger.debug("Router requires upgrade. Unable to send command to router:" + router.getId());
+            throw new CloudRuntimeException("Unable to send command. Upgrade in progress. Please contact administrator.");
         }
         Answer[] answers = null;
         try {
@@ -3795,6 +3809,7 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                     s_logger.debug("Router " + router.getInstanceName() + " is stop pending, so not sending apply " + typeString + " commands to the backend");
                     continue;
                 }
+
                 try {
                     result = applier.execute(network, router);
                     connectedRouters.add(router);
@@ -3952,8 +3967,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         List<NicVO> nics = _nicDao.listByVmId(routerId);
         for (NicVO n : nics) {
             NetworkVO nc = _networkDao.findById(n.getNetworkId());
-            if (nc.getTrafficType() == TrafficType.Control) {
+            if (nc != null && nc.getTrafficType() == TrafficType.Control) {
                 routerControlIpAddress = n.getIp4Address();
+                // router will have only one control ip
+                break;
             }
         }
 
@@ -4099,10 +4116,10 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
                 if(account == null){
                     throw new InvalidParameterValueException("Account :"+accountName+" does not exist in domain: "+domainId);
                 }
-                routers = _routerDao.listBy(account.getId());
+                routers = _routerDao.listRunningByAccountId(account.getId());
             } else {
             //List by domainId, account name not specified
-                routers = _routerDao.listByDomain(domainId);
+                routers = _routerDao.listRunningByDomain(domainId);
             }
             params++;
         }
@@ -4110,19 +4127,19 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
         Long clusterId = cmd.getClusterId();
         if (clusterId != null) {
             params++;
-            routers = _routerDao.listByClusterId(clusterId);
+            routers = _routerDao.listRunningByClusterId(clusterId);
         }
 
         Long podId = cmd.getPodId();
         if (podId != null) {
             params++;
-            routers = _routerDao.listByPodId(podId);
+            routers = _routerDao.listRunningByPodId(podId);
         }
 
         Long zoneId = cmd.getZoneId();
         if (zoneId != null) {
             params++;
-            routers = _routerDao.listByDataCenter(zoneId);
+            routers = _routerDao.listRunningByDataCenter(zoneId);
         }
 
         if (params > 1) {
@@ -4138,7 +4155,14 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     //Checks if the router is at the required version
     // Compares MS version and router version
-    private boolean checkRouterVersion(VirtualRouter router) {
+    protected boolean checkRouterVersion(VirtualRouter router){
+        if(!routerVersionCheckEnabled.value()){
+            //Router version check is disabled.
+            return true;
+        }
+        if(router.getTemplateVersion() == null){
+            return false;
+        }
         String trimmedVersion = Version.trimRouterVersion(router.getTemplateVersion());
         return (Version.compare(trimmedVersion, MinVRVersion) >= 0);
     }
@@ -4178,6 +4202,6 @@ public class VirtualNetworkApplianceManagerImpl extends ManagerBase implements V
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {UseExternalDnsServers};
+        return new ConfigKey<?>[] {UseExternalDnsServers, routerVersionCheckEnabled};
     }
 }

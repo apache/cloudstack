@@ -28,10 +28,13 @@ import email
 import socket
 import urlparse
 import datetime
-from marvin.cloudstackAPI import *
+from marvin.cloudstackAPI import cloudstackAPIClient, listHosts
 from marvin.sshClient import SshClient
-from marvin.codes import *
-
+from marvin.codes import (FAIL,
+                          PASS,
+                          MATCH_NOT_FOUND,
+                          INVALID_INPUT,
+                          EMPTY_LIST)
 
 def restart_mgmt_server(server):
     """Restarts the management server"""
@@ -237,6 +240,18 @@ def xsplit(txt, seps):
         txt = txt.replace(sep, default_sep)
     return [i.strip() for i in txt.split(default_sep)]
 
+def get_hypervisor_type(apiclient):
+
+    """Return the hypervisor type of the hosts in setup"""
+
+    cmd = listHosts.listHostsCmd()
+    cmd.type = 'Routing'
+    cmd.listall = True
+    hosts = apiclient.listHosts(cmd)
+    hosts_list_validation_result = validateList(hosts)
+    assert hosts_list_validation_result[0] == PASS, "host list validation failed"
+    return hosts_list_validation_result[1].hypervisor
+
 def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
     """
     Checks whether a snapshot with id (not UUID) `snapshotid` is present on the nfs storage
@@ -248,18 +263,10 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
     @param snapshotid: uuid of the snapshot
     @return: True if snapshot is found, False otherwise
     """
-
-    from base import ImageStore, Snapshot
-    secondaryStores = ImageStore.list(apiclient, zoneid=zoneid)
-
-    assert isinstance(secondaryStores, list), "Not a valid response for listImageStores"
-    assert len(secondaryStores) != 0, "No image stores found in zone %s" % zoneid
-
-    secondaryStore = secondaryStores[0]
-
-    if str(secondaryStore.providername).lower() != "nfs":
-        raise Exception(
-            "is_snapshot_on_nfs works only against nfs secondary storage. found %s" % str(secondaryStore.providername))
+    # snapshot extension to be appended to the snapshot path obtained from db
+    snapshot_extensions = {"vmware": ".ovf",
+                            "kvm": "",
+                            "xenserver": ".vhd"}
 
     qresultset = dbconn.execute(
                         "select id from snapshots where uuid = '%s';" \
@@ -272,7 +279,7 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
 
     snapshotid = qresultset[0][0]
     qresultset = dbconn.execute(
-        "select install_path from snapshot_store_ref where snapshot_id='%s' and store_role='Image';" % snapshotid
+        "select install_path,store_id from snapshot_store_ref where snapshot_id='%s' and store_role='Image';" % snapshotid
     )
 
     assert isinstance(qresultset, list), "Invalid db query response for snapshot %s" % snapshotid
@@ -281,7 +288,22 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
         #Snapshot does not exist
         return False
 
-    snapshotPath = qresultset[0][0]
+    from base import ImageStore
+    #pass store_id to get the exact storage pool where snapshot is stored
+    secondaryStores = ImageStore.list(apiclient, zoneid=zoneid, id=int(qresultset[0][1]))
+
+    assert isinstance(secondaryStores, list), "Not a valid response for listImageStores"
+    assert len(secondaryStores) != 0, "No image stores found in zone %s" % zoneid
+
+    secondaryStore = secondaryStores[0]
+
+    if str(secondaryStore.providername).lower() != "nfs":
+        raise Exception(
+            "is_snapshot_on_nfs works only against nfs secondary storage. found %s" % str(secondaryStore.providername))
+
+    hypervisor = get_hypervisor_type(apiclient)
+    # append snapshot extension based on hypervisor, to the snapshot path
+    snapshotPath = str(qresultset[0][0]) + snapshot_extensions[str(hypervisor).lower()]
 
     nfsurl = secondaryStore.url
     from urllib2 import urlparse

@@ -1233,6 +1233,26 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    public boolean checkAndMaintain(final long hostId) {
+        boolean hostInMaintenance = false;
+        HostVO host = _hostDao.findById(hostId);
+
+        try {
+            if (host.getType() != Host.Type.Storage) {
+                List<VMInstanceVO> vos = _vmDao.listByHostId(hostId);
+                List<VMInstanceVO> vosMigrating = _vmDao.listVmsMigratingFromHost(hostId);
+                if (vos.isEmpty() && vosMigrating.isEmpty()) {
+                    resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _nodeId);
+                    hostInMaintenance = true;
+                }
+            }
+        } catch (NoTransitionException e) {
+            s_logger.debug("Cannot transmit host " + host.getId() + "to Maintenance state", e);
+        }
+        return hostInMaintenance;
+    }
+
+    @Override
     public Host updateHost(UpdateHostCmd cmd) throws NoTransitionException {
         Long hostId = cmd.getId();
         Long guestOSCategoryId = cmd.getOsCategoryId();
@@ -1254,23 +1274,29 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         if (guestOSCategoryId != null) {
             // Verify that the guest OS Category exists
-            if (guestOSCategoryId > 0) {
-                if (_guestOSCategoryDao.findById(guestOSCategoryId) == null) {
-                    throw new InvalidParameterValueException("Please specify a valid guest OS category.");
-                }
+            if (!(guestOSCategoryId > 0) || _guestOSCategoryDao.findById(guestOSCategoryId) == null) {
+                throw new InvalidParameterValueException("Please specify a valid guest OS category.");
             }
 
             GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
-            Map<String, String> hostDetails = _hostDetailsDao.findDetails(hostId);
+            DetailVO guestOSDetail = _hostDetailsDao.findDetail(hostId, "guest.os.category.id");
 
-            if (guestOSCategory != null) {
-                // Save a new entry for guest.os.category.id
-                hostDetails.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
+            if (guestOSCategory != null && !GuestOSCategoryVO.CATEGORY_NONE.equalsIgnoreCase(guestOSCategory.getName())) {
+                // Create/Update an entry for guest.os.category.id
+                if (guestOSDetail != null) {
+                    guestOSDetail.setValue(String.valueOf(guestOSCategory.getId()));
+                    _hostDetailsDao.update(guestOSDetail.getId(), guestOSDetail);
+                } else {
+                    Map<String, String> detail = new HashMap<String, String>();
+                    detail.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
+                    _hostDetailsDao.persist(hostId, detail);
+                }
             } else {
                 // Delete any existing entry for guest.os.category.id
-                hostDetails.remove("guest.os.category.id");
+                if (guestOSDetail != null) {
+                    _hostDetailsDao.remove(guestOSDetail.getId());
+                }
             }
-            _hostDetailsDao.persist(hostId, hostDetails);
         }
 
         List<String> hostTags = cmd.getHostTags();

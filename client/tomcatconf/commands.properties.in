@@ -266,7 +266,7 @@ deleteImageStore=1
 createSecondaryStagingStore=1
 listSecondaryStagingStores=1
 deleteSecondaryStagingStore=1
-prepareSecondaryStorageForMigration=1
+updateCloudToUseObjectStore=1
 
 #### host commands
 addHost=3
@@ -706,3 +706,8 @@ importLdapUsers=3
 
 #### juniper-contrail commands
 createServiceInstance=1
+
+### OpenDaylight plugin commands
+addOpenDaylightController=1
+deleteOpenDaylightController=1
+listOpenDaylightControllers=1

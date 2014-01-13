@@ -80,6 +80,18 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     }
 
     @Override
+    public SnapshotInfo getReadySnapshotOnCache(long snapshotId) {
+        SnapshotDataStoreVO snapStore = snapshotStoreDao.findReadyOnCache(snapshotId);
+        if (snapStore != null) {
+            DataStore store = storeMgr.getDataStore(snapStore.getDataStoreId(), DataStoreRole.ImageCache);
+            return getSnapshot(snapshotId, store);
+        } else {
+            return null;
+        }
+
+    }
+
+    @Override
     public List<SnapshotInfo> listSnapshotOnCache(long snapshotId) {
         List<SnapshotDataStoreVO> cacheSnapshots = snapshotStoreDao.listOnCache(snapshotId);
         List<SnapshotInfo> snapObjs = new ArrayList<SnapshotInfo>();

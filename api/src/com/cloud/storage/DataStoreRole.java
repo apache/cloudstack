@@ -24,13 +24,13 @@ public enum DataStoreRole {
     Primary("primary"), Image("image"), ImageCache("imagecache"), Backup("backup");
 
     public boolean isImageStore() {
-        return (this.role.equalsIgnoreCase("image") || this.role.equalsIgnoreCase("imagecache")) ? true : false;
+        return (role.equalsIgnoreCase("image") || role.equalsIgnoreCase("imagecache")) ? true : false;
     }
 
     private final String role;
 
     DataStoreRole(String type) {
-        this.role = type;
+        role = type;
     }
 
     public static DataStoreRole getRole(String role) {

@@ -19,7 +19,7 @@ package streamer;
 import java.util.Set;
 
 /**
- * Element is for processing of data. It has one or more contact pads, which can
+ * Element is basic building block for constructing data processing pipes. It has one or more contact pads, which can
  * be wired with other elements using links.
  */
 public interface Element {

@@ -142,7 +142,7 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
         if (getNetworkType() == NetworkType.Basic) {
             //remove the security group rules for this secondary ip
             boolean success = false;
-            success = _securityGroupService.securityGroupRulesForVmSecIp(nicSecIp.getNicId(), nicSecIp.getNetworkId(), nicSecIp.getIp4Address(), false);
+            success = _securityGroupService.securityGroupRulesForVmSecIp(nicSecIp.getNicId(), nicSecIp.getIp4Address(), false);
             if (success == false) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to set security group rules for the secondary ip");
             }

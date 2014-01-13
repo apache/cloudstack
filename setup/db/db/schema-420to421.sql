@@ -91,9 +91,18 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         iso.display_text iso_display_text,
         service_offering.id service_offering_id,
         disk_offering.uuid service_offering_uuid,
-        service_offering.cpu cpu,
-        service_offering.speed speed,
-        service_offering.ram_size ram_size,
+        Case
+             When (`cloud`.`service_offering`.`cpu` is null) then (`custom_cpu`.`value`)
+             Else ( `cloud`.`service_offering`.`cpu`)
+        End as `cpu`,
+        Case
+            When (`cloud`.`service_offering`.`speed` is null) then (`custom_speed`.`value`)
+            Else ( `cloud`.`service_offering`.`speed`)
+        End as `speed`,
+        Case
+            When (`cloud`.`service_offering`.`ram_size` is null) then (`custom_ram_size`.`value`)
+            Else ( `cloud`.`service_offering`.`ram_size`)
+        END as `ram_size`,
         disk_offering.name service_offering_name,
         storage_pool.id pool_id,
         storage_pool.uuid pool_uuid,
@@ -215,7 +224,13 @@ CREATE VIEW `cloud`.`user_vm_view` AS
             left join
         `cloud`.`affinity_group` ON affinity_group_vm_map.affinity_group_id = affinity_group.id
             left join
-        `cloud`.`user_vm_details` as all_details ON all_details.vm_id = vm_instance.id;
+        `cloud`.`user_vm_details` as all_details ON all_details.vm_id = vm_instance.id
+            left join
+        `cloud`.`user_vm_details` `custom_cpu`  ON (((`custom_cpu`.`vm_id` = `cloud`.`vm_instance`.`id`) and (`custom_cpu`.`name` = 'CpuNumber')))
+            left join
+        `cloud`.`user_vm_details` `custom_speed`  ON (((`custom_speed`.`vm_id` = `cloud`.`vm_instance`.`id`) and (`custom_speed`.`name` = 'CpuSpeed')))
+           left join
+        `cloud`.`user_vm_details` `custom_ram_size`  ON (((`custom_ram_size`.`vm_id` = `cloud`.`vm_instance`.`id`) and (`custom_ram_size`.`name` = 'memory')));
 
 --Add the format for volumes table for uploaded volumes (CLOUDSTACK-5013)
 update  `cloud`.`volumes` v,  `cloud`.`volume_host_ref` vhr  set v.format=vhr.format where v.id=vhr.volume_id and v.format is null;

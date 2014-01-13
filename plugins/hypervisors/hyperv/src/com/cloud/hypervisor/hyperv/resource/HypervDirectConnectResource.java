@@ -19,10 +19,12 @@ package com.cloud.hypervisor.hyperv.resource;
 import java.io.File;
 import java.io.IOException;
 import java.net.ConnectException;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.SocketChannel;
+import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,9 +78,11 @@ import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetMonitorServiceCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetSourceNatAnswer;
@@ -89,6 +93,7 @@ import com.cloud.agent.api.routing.SetStaticRouteAnswer;
 import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
+import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.DhcpTO;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
@@ -183,8 +188,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
         s_logger.debug("Generated StartupRoutingCommand for _agentIp \"" + _agentIp + "\"");
 
-        // TODO: does version need to be hard coded.
-        defaultStartRoutCmd.setVersion("4.2.0");
+        defaultStartRoutCmd.setVersion(this.getClass().getPackage().getImplementationVersion());
 
         // Specifics of the host's resource capacity and network configuration
         // comes from the host itself. CloudStack sanity checks network
@@ -380,9 +384,15 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         } else if (clazz == Site2SiteVpnCfgCommand.class) {
             answer = execute((Site2SiteVpnCfgCommand)cmd);
         } else if (clazz == CheckS2SVpnConnectionsCommand.class) {
-            answer = execute((CheckS2SVpnConnectionsCommand)cmd);
+            answer = execute((CheckS2SVpnConnectionsCommand) cmd);
+        } else if (clazz == RemoteAccessVpnCfgCommand.class) {
+            answer = execute((RemoteAccessVpnCfgCommand) cmd);
+        } else if (clazz == VpnUsersCfgCommand.class) {
+            answer = execute((VpnUsersCfgCommand) cmd);
         } else if (clazz == SetStaticRouteCommand.class) {
-            answer = execute((SetStaticRouteCommand)cmd);
+            answer = execute((SetStaticRouteCommand) cmd);
+        } else if (clazz == SetMonitorServiceCommand.class) {
+            answer = execute((SetMonitorServiceCommand) cmd);
         } else {
             if (clazz == StartCommand.class) {
                 VirtualMachineTO vmSpec = ((StartCommand)cmd).getVirtualMachine();
@@ -413,7 +423,87 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         }
         return answer;
     }
+    protected Answer execute(final RemoteAccessVpnCfgCommand cmd) {
+        String controlIp = getRouterSshControlIp(cmd);
+        StringBuffer argsBuf = new StringBuffer();
+        if (cmd.isCreate()) {
+            argsBuf.append(" -r ").append(cmd.getIpRange()).append(" -p ").append(cmd.getPresharedKey()).append(" -s ").append(cmd.getVpnServerIp()).append(" -l ").append(cmd.getLocalIp())
+            .append(" -c ");
 
+        } else {
+            argsBuf.append(" -d ").append(" -s ").append(cmd.getVpnServerIp());
+        }
+        argsBuf.append(" -C ").append(cmd.getLocalCidr());
+        argsBuf.append(" -i ").append(cmd.getPublicInterface());
+
+        try {
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Executing /opt/cloud/bin/vpn_lt2p.sh ");
+            }
+
+            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/vpn_l2tp.sh " + argsBuf.toString());
+
+            if (!result.first()) {
+                s_logger.error("RemoteAccessVpnCfg command on domR failed, message: " + result.second());
+
+                return new Answer(cmd, false, "RemoteAccessVpnCfg command failed due to " + result.second());
+            }
+
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("RemoteAccessVpnCfg command on domain router " + argsBuf.toString() + " completed");
+            }
+
+        } catch (Throwable e) {
+            if (e instanceof RemoteException) {
+                s_logger.warn(e.getMessage());
+            }
+
+            String msg = "RemoteAccessVpnCfg command failed due to " + e.getMessage();
+            s_logger.error(msg, e);
+            return new Answer(cmd, false, msg);
+        }
+
+        return new Answer(cmd);
+    }
+
+    protected Answer execute(final VpnUsersCfgCommand cmd) {
+
+        String controlIp = getRouterSshControlIp(cmd);
+        for (VpnUsersCfgCommand.UsernamePassword userpwd : cmd.getUserpwds()) {
+            StringBuffer argsBuf = new StringBuffer();
+            if (!userpwd.isAdd()) {
+                argsBuf.append(" -U ").append(userpwd.getUsername());
+            } else {
+                argsBuf.append(" -u ").append(userpwd.getUsernamePassword());
+            }
+
+            try {
+
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Executing /opt/cloud/bin/vpn_lt2p.sh ");
+                }
+
+                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/vpn_l2tp.sh " + argsBuf.toString());
+
+                if (!result.first()) {
+                    s_logger.error("VpnUserCfg command on domR failed, message: " + result.second());
+
+                    return new Answer(cmd, false, "VpnUserCfg command failed due to " + result.second());
+                }
+            } catch (Throwable e) {
+                if (e instanceof RemoteException) {
+                    s_logger.warn(e.getMessage());
+                }
+
+                String msg = "VpnUserCfg command failed due to " + e.getMessage();
+                s_logger.error(msg, e);
+                return new Answer(cmd, false, msg);
+            }
+        }
+
+        return new Answer(cmd);
+    }
     private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource SetStaticRouteCommand: " + s_gson.toJson(cmd));
@@ -1451,6 +1541,35 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         return stats;
     }
 
+    protected Answer execute(SetMonitorServiceCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource SetMonitorServiceCommand: " + s_gson.toJson(cmd));
+        }
+
+        String controlIp = getRouterSshControlIp(cmd);
+        String config = cmd.getConfiguration();
+
+        String args = "";
+
+        args += " -c " + config;
+
+        try {
+            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "/opt/cloud/bin/monitor_service.sh " + args);
+
+            if (!result.first()) {
+                String msg=  "monitor_service.sh failed on domain router " + controlIp + " failed " + result.second();
+                s_logger.error(msg);
+                return new Answer(cmd, false, msg);
+            }
+
+            return new Answer(cmd);
+
+        } catch (Throwable e) {
+            s_logger.error("Unexpected exception: " + e.toString(), e);
+            return new Answer(cmd, false, "SetMonitorServiceCommand failed due to " + e);
+        }
+    }
+
     protected CheckSshAnswer execute(CheckSshCommand cmd) {
         String vmName = cmd.getName();
         String privateIp = cmd.getIp();
@@ -1667,10 +1786,9 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                 sch = SocketChannel.open();
                 sch.configureBlocking(true);
                 sch.socket().setSoTimeout(5000);
-                // we need to connect to the public ip address to check the status of the VM
-                /*
+                // we need to connect to the control ip address to check the status of the system vm
                 InetSocketAddress addr = new InetSocketAddress(ipAddress, port);
-                sch.connect(addr);*/
+                sch.connect(addr);
                 return null;
             } catch (IOException e) {
                 s_logger.info("Could not connect to " + ipAddress + " due to " + e.toString());

@@ -140,7 +140,7 @@ public interface ResourceLimitService {
     public long getResourceCount(Account account, ResourceType type);
 
     /**
-     * Checks if a limit has been exceeded for an account depending on the displayResource flag
+     * Checks if a limit has been exceeded for an account if displayResource flag is on
      *
      * @param account
      * @param type
@@ -153,7 +153,7 @@ public interface ResourceLimitService {
     void checkResourceLimit(Account account, ResourceType type, Boolean displayResource, long... count) throws ResourceAllocationException;
 
     /**
-     * Increments the resource count  depending on the displayResource flag
+     * Increments the resource count  if displayResource flag is on
      *
      * @param accountId
      * @param type
@@ -163,7 +163,7 @@ public interface ResourceLimitService {
     void incrementResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta);
 
     /**
-     * Increments/Decrements the resource count  depending on the displayResource flag
+     * Increments/Decrements the resource count  depending on the displayResource flag is turned on or off respectively
      *
      * @param accountId
      * @param type
@@ -172,5 +172,13 @@ public interface ResourceLimitService {
      */
     void changeResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta);
 
+    /**
+     * Decrements the resource count  if displayResource flag is on
+     *
+     * @param accountId
+     * @param type
+     * @param displayResource
+     * @param delta
+     */
     void decrementResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta);
 }

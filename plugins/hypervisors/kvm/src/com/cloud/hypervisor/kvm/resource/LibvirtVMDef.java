@@ -949,6 +949,8 @@ public class LibvirtVMDef {
     public static class CpuModeDef {
         private String _mode;
         private String _model;
+        private int _coresPerSocket = -1;
+        private int _sockets = -1;
 
         public void setMode(String mode) {
             _mode = mode;
@@ -958,17 +960,34 @@ public class LibvirtVMDef {
             _model = model;
         }
 
+        public void setTopology(int coresPerSocket, int sockets) {
+            _coresPerSocket = coresPerSocket;
+            _sockets = sockets;
+        }
+
         @Override
         public String toString() {
-            StringBuilder modeBuidler = new StringBuilder();
-            if ("custom".equalsIgnoreCase(_mode) && _model != null) {
-                modeBuidler.append("<cpu mode='custom' match='exact'><model fallback='allow'>" + _model + "</model></cpu>");
+            StringBuilder modeBuilder = new StringBuilder();
+
+            // start cpu def, adding mode, model
+            if ("custom".equalsIgnoreCase(_mode) && _model != null){
+                modeBuilder.append("<cpu mode='custom' match='exact'><model fallback='allow'>" + _model + "</model>");
             } else if ("host-model".equals(_mode)) {
-                modeBuidler.append("<cpu mode='host-model'><model fallback='allow'></model></cpu>");
+                modeBuilder.append("<cpu mode='host-model'><model fallback='allow'></model>");
             } else if ("host-passthrough".equals(_mode)) {
-                modeBuidler.append("<cpu mode='host-passthrough'></cpu>");
+                modeBuilder.append("<cpu mode='host-passthrough'>");
+            } else {
+                modeBuilder.append("<cpu>");
             }
-            return modeBuidler.toString();
+
+            // add topology
+            if (_sockets > 0 && _coresPerSocket > 0) {
+                modeBuilder.append("<topology sockets='" + _sockets + "' cores='" + _coresPerSocket + "' threads='1' />");
+            }
+
+            // close cpu def
+            modeBuilder.append("</cpu>");
+            return modeBuilder.toString();
         }
     }
 

@@ -16,8 +16,11 @@
 # under the License.
 
 from marvin.cloudstackTestCase import cloudstackTestCase
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import get_template, get_zone, list_virtual_machines, cleanup_resources
+from marvin.integration.lib.base import (ServiceOffering,
+                                         VirtualMachine,
+                                         Account)
+from marvin.integration.lib.common import get_template, get_zone, list_virtual_machines
+from marvin.integration.lib.utils import cleanup_resources
 from nose.plugins.attrib import attr
 
 import random

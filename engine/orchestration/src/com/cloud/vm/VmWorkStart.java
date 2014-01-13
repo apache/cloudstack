@@ -50,8 +50,8 @@ public class VmWorkStart extends VmWork {
     // use serialization friendly map
     private Map<String, String> rawParams;
 
-    public VmWorkStart(long userId, long accountId, long vmId) {
-        super(userId, accountId, vmId);
+    public VmWorkStart(long userId, long accountId, long vmId, String handlerName) {
+        super(userId, accountId, vmId, handlerName);
     }
 
     public DeploymentPlan getPlan() {
@@ -63,13 +63,13 @@ public class VmWorkStart extends VmWork {
             if (reservationId != null) {
                 Journal journal = new Journal.LogJournal("VmWorkStart", s_logger);
                 context = new ReservationContextImpl(reservationId, journal,
-                    CallContext.current().getCallingUser(),
-                    CallContext.current().getCallingAccount());
+                        CallContext.current().getCallingUser(),
+                        CallContext.current().getCallingAccount());
             }
 
             DeploymentPlan plan = new DataCenterDeployment(
-                dcId, podId, clusterId, hostId, poolId, physicalNetworkId,
-                context);
+                    dcId, podId, clusterId, hostId, poolId, physicalNetworkId,
+                    context);
             return plan;
         }
 
@@ -118,7 +118,7 @@ public class VmWorkStart extends VmWork {
             rawParams = new HashMap<String, String>();
             for (Map.Entry<VirtualMachineProfile.Param, Object> entry : params.entrySet()) {
                 rawParams.put(entry.getKey().getName(), JobSerializerHelper.toObjectSerializedString(
-                    entry.getValue() instanceof Serializable ? (Serializable)entry.getValue() : entry.getValue().toString()));
+                        entry.getValue() instanceof Serializable ? (Serializable)entry.getValue() : entry.getValue().toString()));
             }
         }
     }

@@ -89,6 +89,9 @@ public class VmwareStorageSubsystemCommandHandler extends StorageSubsystemComman
                 String name = path.substring(index + 1);
                 storageManager.createOva(parentPath + File.separator + path, name);
                 vol.setPath(path + File.separator + name + ".ova");
+            } else if (srcData.getObjectType() == DataObjectType.TEMPLATE) {
+                // sync template from NFS cache to S3 in NFS migration to S3 case
+                storageManager.createOvaForTemplate((TemplateObjectTO)srcData);
             } else if (srcData.getObjectType() == DataObjectType.SNAPSHOT && destData.getObjectType() == DataObjectType.TEMPLATE) {
                 //create template from snapshot on src at first, then copy it to s3
                 TemplateObjectTO cacheTemplate = (TemplateObjectTO)destData;

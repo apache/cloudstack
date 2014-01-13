@@ -67,6 +67,8 @@ public interface VmwareHypervisorHost {
 
     ManagedObjectReference findDatastore(String poolUuid) throws Exception;
 
+    ManagedObjectReference findDatastoreByName(String datastoreName) throws Exception;
+
     @Deprecated
     ManagedObjectReference findDatastoreByExportPath(String exportPath) throws Exception;
 

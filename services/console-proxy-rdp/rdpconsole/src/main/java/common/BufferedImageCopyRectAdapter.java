@@ -81,23 +81,23 @@ public class BufferedImageCopyRectAdapter extends BaseElement {
         Element renderer = new BufferedImageCopyRectAdapter("renderer", canvas);
 
         int[] pixelsBeforeCopy = new int[] {
-            // 0
-            1, 2, 3, 4,
-            // 1
-            5, 6, 7, 8,
-            // 2
-            9, 10, 11, 12,
-            // 3
-            13, 14, 15, 16};
+                // 0
+                1, 2, 3, 4,
+                // 1
+                5, 6, 7, 8,
+                // 2
+                9, 10, 11, 12,
+                // 3
+                13, 14, 15, 16};
         int[] pixelsAfterCopy = new int[] {
-            // 0
-            11, 12, 3, 4,
-            // 1
-            15, 16, 7, 8,
-            // 2
-            9, 10, 11, 12,
-            // 3
-            13, 14, 15, 16};
+                // 0
+                11, 12, 3, 4,
+                // 1
+                15, 16, 7, 8,
+                // 2
+                9, 10, 11, 12,
+                // 3
+                13, 14, 15, 16};
 
         // Initalize image
         int[] data = ((DataBufferInt)canvas.getOfflineImage().getRaster().getDataBuffer()).getData();

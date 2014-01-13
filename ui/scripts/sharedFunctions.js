@@ -1120,7 +1120,7 @@ cloudStack.converters = {
 
 //data parameter passed to API call in listView
 
-function listViewDataProvider(args, data) {
+function listViewDataProvider(args, data, options) {
     //search
     if (args.filterBy != null) {
         if (args.filterBy.advSearch != null && typeof(args.filterBy.advSearch) == "object") { //advanced search
@@ -1141,9 +1141,13 @@ function listViewDataProvider(args, data) {
             switch (args.filterBy.search.by) {
                 case "name":
                     if (args.filterBy.search.value.length > 0) {
-                        $.extend(data, {
-                            keyword: args.filterBy.search.value
-                        });
+                        if (options && options.searchBy) {
+                            data[options.searchBy] = args.filterBy.search.value;
+                        } else {
+                            $.extend(data, {
+                                keyword: args.filterBy.search.value
+                            });
+                        }
                     }
                     break;
             }
@@ -1156,6 +1160,8 @@ function listViewDataProvider(args, data) {
         page: args.page,
         pagesize: pageSize
     });
+
+    return data;
 }
 
 //used by infrastructure page and network page
@@ -2066,6 +2072,11 @@ cloudStack.api = {
                 }
             },
             dataProvider: function(args) {
+            	args.response.success({
+                    data: args.jsonObj.tags
+                });
+            	
+            	/*
                 var resourceId = args.context[contextId][0].id;
                 var data = {
                     resourceId: resourceId,
@@ -2096,6 +2107,7 @@ cloudStack.api = {
                         args.response.error(parseXMLHttpResponse(json));
                     }
                 });
+                */
             }
         };
     }

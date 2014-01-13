@@ -17,14 +17,29 @@
 """ P1 tests for Resource limits
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
-import datetime
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.integration.lib.base import (VirtualMachine,
+                                         Snapshot,
+                                         Template,
+                                         PublicIPAddress,
+                                         Account,
+                                         Domain,
+                                         Volume,
+                                         Network,
+                                         DiskOffering,
+                                         NetworkOffering,
+                                         ServiceOffering,
+                                         Configurations)
+from marvin.integration.lib.common import (list_volumes,
+                                           get_domain,
+                                           get_zone,
+                                           get_template,
+                                           update_resource_limit,
+                                           list_configurations,
+                                           wait_for_cleanup)
+from marvin.integration.lib.utils import cleanup_resources
+import time
 
 
 class Services:
@@ -174,6 +189,8 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         try:
             #Clean up, terminate the created instance, volumes and snapshots
             cleanup_resources(self.apiclient, self.cleanup)
+            # Wait for VMs to expunge
+            wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -362,13 +379,13 @@ class TestResourceLimitsAccount(cloudstackTestCase):
 
         # Exception should be raised for second instance (account_1)
         with self.assertRaises(Exception):
-            public_ip_2 = PublicIPAddress.create(
-                                           self.apiclient,
-                                           virtual_machine_1.account,
-                                           virtual_machine_1.zoneid,
-                                           virtual_machine_1.domainid,
-                                           self.services["server"]
-                                           )
+            PublicIPAddress.create(
+                                   self.apiclient,
+                                   virtual_machine_1.account,
+                                   virtual_machine_1.zoneid,
+                                   virtual_machine_1.domainid,
+                                   self.services["server"]
+                                   )
 
         self.debug(
             "Associating public IP for account: %s" %
@@ -506,10 +523,11 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         self.assertEqual(
                             snapshot_1.state in [
                                                  'BackedUp',
-                                                 'CreatedOnPrimary'
+                                                 'CreatedOnPrimary',
+                                                 'Allocated'
                                                  ],
                             True,
-                            "Check Snapshot state is Running or not"
+                            "Snapshot state is not valid, it is %s" % snapshot_1.state
                         )
 
         # Exception should be raised for second snapshot (account_1)
@@ -537,7 +555,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         self.debug("Creating snapshot from volume: %s" % volumes[0].id)
         # Create a snapshot from the ROOTDISK (Account 2)
         snapshot_2 = Snapshot.create(self.apiclient,
-                            volumes[0].id,
+                            volume.id,
                             account=self.account_2.name,
                             domainid=self.account_2.domainid,
                             )
@@ -546,16 +564,17 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         self.assertEqual(
                             snapshot_2.state in [
                                                  'BackedUp',
-                                                 'CreatedOnPrimary'
+                                                 'CreatedOnPrimary',
+                                                 'Allocated'
                                                  ],
                             True,
-                            "Check Snapshot state is Running or not"
+                            "Snapshot state is not valid, it is %s" % snapshot_2.state
                         )
 
         self.debug("Creating snapshot from volume: %s" % volumes[0].id)
         # Create a second snapshot from the ROOTDISK (Account 2)
         snapshot_3 = Snapshot.create(self.apiclient,
-                            volumes[0].id,
+                            volume.id,
                             account=self.account_2.name,
                             domainid=self.account_2.domainid,
                             )
@@ -564,10 +583,11 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         self.assertEqual(
                             snapshot_3.state in [
                                                  'BackedUp',
-                                                 'CreatedOnPrimary'
+                                                 'CreatedOnPrimary',
+                                                 'Allocated'
                                                  ],
                             True,
-                            "Check Snapshot state is Running or not"
+                            "Snapshot state is not valid, it is %s" % snapshot_3.state
                         )
         return
 
@@ -940,6 +960,8 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         try:
             #Clean up, terminate the created instance, volumes and snapshots
             cleanup_resources(self.apiclient, self.cleanup)
+            # Wait for VMs to expunge
+            wait_for_cleanup(self.apiclient, ["expunge.delay", "expunge.interval"])
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
@@ -1071,13 +1093,13 @@ class TestResourceLimitsDomain(cloudstackTestCase):
 
         # Exception should be raised for second Public IP
         with self.assertRaises(Exception):
-            public_ip_2 = PublicIPAddress.create(
-                                           self.apiclient,
-                                           virtual_machine_1.account,
-                                           virtual_machine_1.zoneid,
-                                           virtual_machine_1.domainid,
-                                           self.services["server"]
-                                           )
+            PublicIPAddress.create(
+                                   self.apiclient,
+                                   virtual_machine_1.account,
+                                   virtual_machine_1.zoneid,
+                                   virtual_machine_1.domainid,
+                                   self.services["server"]
+                                   )
         return
 
     @attr(speed="slow")
@@ -1140,7 +1162,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         self.debug("Creating snapshot from volume: %s" % volumes[0].id)
         # Create a snapshot from the ROOTDISK
         snapshot_1 = Snapshot.create(self.apiclient,
-                            volumes[0].id,
+                            volume.id,
                             account=self.account.name,
                             domainid=self.account.domainid,
                             )
@@ -1149,16 +1171,17 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         self.assertEqual(
                             snapshot_1.state in [
                                                  'BackedUp',
-                                                 'CreatedOnPrimary'
+                                                 'CreatedOnPrimary',
+                                                 'Allocated'
                                                  ],
                             True,
-                            "Check Snapshot state is Running or not"
+                            "Snapshot state is not valid, it is %s" % snapshot_1.state
                         )
 
         # Exception should be raised for second snapshot
         with self.assertRaises(Exception):
             Snapshot.create(self.apiclient,
-                            volumes[0].id,
+                            volume.id,
                             account=self.account.name,
                             domainid=self.account.domainid,
                             )

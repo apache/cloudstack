@@ -194,6 +194,15 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "iso_display_text", length = 4096)
     private String isoDisplayText;
 
+    @Column(name = "disk_offering_id")
+    private long diskOfferingId;
+
+    @Column(name = "disk_offering_uuid")
+    private String diskOfferingUuid;
+
+    @Column(name = "disk_offering_name")
+    private String diskOfferingName;
+
     @Column(name = "service_offering_id")
     private long serviceOfferingId;
 
@@ -414,6 +423,18 @@ public class UserVmJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public String getPassword() {
         return password;
+    }
+
+    public String getDiskOfferingName() {
+        return diskOfferingName;
+    }
+
+    public String getDiskOfferingUuid() {
+        return diskOfferingUuid;
+    }
+
+    public long getDiskOfferingId() {
+        return diskOfferingId;
     }
 
     public void setPassword(String password) {

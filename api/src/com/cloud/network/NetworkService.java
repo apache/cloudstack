@@ -62,7 +62,7 @@ public interface NetworkService {
 
     Network createGuestNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException;
 
-    List<? extends Network> searchForNetworks(ListNetworksCmd cmd);
+    Pair<List<? extends Network>, Integer> searchForNetworks(ListNetworksCmd cmd);
 
     boolean deleteNetwork(long networkId);
 
@@ -168,7 +168,7 @@ public interface NetworkService {
         InsufficientCapacityException;
 
     /* Requests an IP address for the guest nic */
-    NicSecondaryIp allocateSecondaryGuestIP(Account account, long zoneId, Long nicId, Long networkId, String ipaddress) throws InsufficientAddressCapacityException;
+    NicSecondaryIp allocateSecondaryGuestIP(long nicId, String ipaddress) throws InsufficientAddressCapacityException;
 
     boolean releaseSecondaryIpFromNic(long ipAddressId);
 

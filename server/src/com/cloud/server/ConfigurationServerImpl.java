@@ -32,6 +32,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
@@ -801,7 +802,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
     public List<ConfigurationVO> getConfigListByScope(String scope, Long resourceId) {
 
         // Getting the list of parameters defined at the scope
-        List<ConfigKey<?>> configList = _configDepot.getConfigListByScope(scope);
+        Set<ConfigKey<?>> configList = _configDepot.getConfigListByScope(scope);
         List<ConfigurationVO> configVOList = new ArrayList<ConfigurationVO>();
         for (ConfigKey<?> param : configList) {
             ConfigurationVO configVo = _configDao.findByName(param.toString());

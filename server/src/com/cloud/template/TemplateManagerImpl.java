@@ -689,36 +689,45 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Account caller = CallContext.current().getCallingAccount();
 
         // Verify parameters
-        if (sourceZoneId.equals(destZoneId)) {
-            throw new InvalidParameterValueException("Please specify different source and destination zones.");
-        }
-
-        DataCenterVO sourceZone = _dcDao.findById(sourceZoneId);
-        if (sourceZone == null) {
-            throw new InvalidParameterValueException("Please specify a valid source zone.");
-        }
-
-        DataCenterVO dstZone = _dcDao.findById(destZoneId);
-        if (dstZone == null) {
-            throw new InvalidParameterValueException("Please specify a valid destination zone.");
-        }
-
         VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null || template.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find template with id");
         }
 
-        DataStore srcSecStore = getImageStore(sourceZoneId, templateId);
+        DataStore srcSecStore = null;
+        if (sourceZoneId != null) {
+            // template is on zone-wide secondary storage
+            srcSecStore = getImageStore(sourceZoneId, templateId);
+        } else {
+            // template is on region store
+            srcSecStore = getImageStore(templateId);
+        }
+
         if (srcSecStore == null) {
-            throw new InvalidParameterValueException("There is no template " + templateId + " in zone " + sourceZoneId);
+            throw new InvalidParameterValueException("There is no template " + templateId + " ready on image store.");
         }
 
         if (template.isCrossZones()) {
-            //TODO: we may need UI still enable CopyTemplate in case of cross zone template to trigger sync to region store.
             // sync template from cache store to region store if it is not there, for cases where we are going to migrate existing NFS to S3.
             _tmpltSvr.syncTemplateToRegionStore(templateId, srcSecStore);
             s_logger.debug("Template " + templateId + " is cross-zone, don't need to copy");
             return template;
+        }
+
+        if (sourceZoneId != null) {
+            if (sourceZoneId.equals(destZoneId)) {
+                throw new InvalidParameterValueException("Please specify different source and destination zones.");
+            }
+
+            DataCenterVO sourceZone = _dcDao.findById(sourceZoneId);
+            if (sourceZone == null) {
+                throw new InvalidParameterValueException("Please specify a valid source zone.");
+            }
+        }
+
+        DataCenterVO dstZone = _dcDao.findById(destZoneId);
+        if (dstZone == null) {
+            throw new InvalidParameterValueException("Please specify a valid destination zone.");
         }
 
         DataStore dstSecStore = getImageStore(destZoneId, templateId);
@@ -1386,8 +1395,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     throw new CloudRuntimeException("Failed to create template" + result.getResult());
                 }
 
-                VMTemplateZoneVO templateZone = new VMTemplateZoneVO(zoneId, templateId, new Date());
-                _tmpltZoneDao.persist(templateZone);
+                // create entries in template_zone_ref table
+                if (_dataStoreMgr.isRegionStore(store)) {
+                    // template created on region store
+                    _tmpltSvr.associateTemplateToZone(templateId, null);
+                } else {
+                    VMTemplateZoneVO templateZone = new VMTemplateZoneVO(zoneId, templateId, new Date());
+                    _tmpltZoneDao.persist(templateZone);
+                }
 
                 privateTemplate = _tmpltDao.findById(templateId);
                 if (snapshotId != null) {
@@ -1685,6 +1700,18 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     @Override
     public DataStore getImageStore(long zoneId, long tmpltId) {
         TemplateDataStoreVO tmpltStore = _tmplStoreDao.findByTemplateZoneDownloadStatus(tmpltId, zoneId, VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+        if (tmpltStore != null) {
+            return _dataStoreMgr.getDataStore(tmpltStore.getDataStoreId(), DataStoreRole.Image);
+        }
+
+        return null;
+    }
+
+    // get the region wide image store where a template is READY on,
+    // just pick one is enough.
+    @Override
+    public DataStore getImageStore(long tmpltId) {
+        TemplateDataStoreVO tmpltStore = _tmplStoreDao.findReadyByTemplate(tmpltId, DataStoreRole.Image);
         if (tmpltStore != null) {
             return _dataStoreMgr.getDataStore(tmpltStore.getDataStoreId(), DataStoreRole.Image);
         }

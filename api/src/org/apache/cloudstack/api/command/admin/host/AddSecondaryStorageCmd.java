@@ -24,7 +24,6 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
@@ -74,20 +73,15 @@ public class AddSecondaryStorageCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() {
-        AddImageStoreCmd cmd = new AddImageStoreCmd();
-        cmd.setUrl(this.getUrl());
-        cmd.setZoneId(this.getZoneId());
-        cmd.setProviderName("NFS");
-
-        try {
-            ImageStore result = _storageService.discoverImageStore(cmd);
+    public void execute(){
+        try{
+            ImageStore result = _storageService.discoverImageStore(null, getUrl(), "NFS", getZoneId(), null);
             ImageStoreResponse storeResponse = null;
-            if (result != null) {
-                storeResponse = _responseGenerator.createImageStoreResponse(result);
-                storeResponse.setResponseName(getCommandName());
-                storeResponse.setObjectName("secondarystorage");
-                this.setResponseObject(storeResponse);
+            if (result != null ) {
+                    storeResponse = _responseGenerator.createImageStoreResponse(result);
+                    storeResponse.setResponseName(getCommandName());
+                    storeResponse.setObjectName("secondarystorage");
+                    setResponseObject(storeResponse);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add secondary storage");
             }

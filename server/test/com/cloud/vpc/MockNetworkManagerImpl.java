@@ -194,7 +194,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      * @see com.cloud.network.NetworkService#searchForNetworks(com.cloud.api.commands.ListNetworksCmd)
      */
     @Override
-    public List<? extends Network> searchForNetworks(ListNetworksCmd cmd) {
+    public Pair<List<? extends Network>, Integer> searchForNetworks(ListNetworksCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -791,7 +791,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public NicSecondaryIp allocateSecondaryGuestIP(Account account, long zoneId, Long nicId, Long networkId, String ipaddress) {
+    public NicSecondaryIp allocateSecondaryGuestIP(long nicId, String ipaddress) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -803,7 +803,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public List<? extends Nic> listVmNics(Long vmId, Long nicId) {
+    public List<? extends Nic> listVmNics(long vmId, Long nicId, Long networkId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -833,6 +833,11 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     @Override
     public void removeDhcpServiceInSubnet(Nic nic) {
         //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public boolean resourceCountNeedsUpdate(NetworkOffering ntwkOff, ACLType aclType) {
+        return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override

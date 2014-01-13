@@ -300,4 +300,19 @@ public class Event extends XenAPIObject {
         return Types.toString(result);
     }
 
+    public static Map properFrom(Connection c, Set<String> classes, String token, Double timeout) throws BadServerResponse, XenAPIException, XmlRpcException,
+            Types.SessionNotRegistered,
+            Types.EventsLost {
+        String method_call = "event.from";
+        String session = c.getSessionReference();
+        Object[] method_params = {Marshalling.toXMLRPC(session), Marshalling.toXMLRPC(classes), Marshalling.toXMLRPC(token), Marshalling.toXMLRPC(timeout)};
+        Map response = c.dispatch(method_call, method_params);
+        Object result = response.get("Value");
+        Map value = (Map)result;
+        Map<String, Object> from = new HashMap<String, Object>();
+        from.put("token", value.get("token"));
+        from.put("events", Types.toSetOfEventRecord(value.get("events")));
+        return from;
+    }
+
 }

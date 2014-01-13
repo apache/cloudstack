@@ -17,12 +17,19 @@
 """ BVT tests for Service offerings"""
 
 #Import Local Modules
-import marvin
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import isAlmostEqual
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.cloudstackAPI import changeServiceForVirtualMachine,updateServiceOffering
+from marvin.integration.lib.utils import (isAlmostEqual,
+                                          cleanup_resources,
+                                          random_gen)
+from marvin.integration.lib.base import (ServiceOffering,
+                                         Account,
+                                         VirtualMachine)
+from marvin.integration.lib.common import (list_service_offering,
+                                           list_virtual_machines,
+                                           get_domain,
+                                           get_zone,
+                                           get_template)
 from nose.plugins.attrib import attr
 
 

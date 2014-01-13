@@ -35,7 +35,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageAction;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
 
@@ -43,6 +46,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.TemplateType;
@@ -51,6 +55,7 @@ import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine;
 
 @Component
 public class DefaultEndPointSelector implements EndPointSelector {
@@ -60,6 +65,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
     private final String findOneHostOnPrimaryStorage =
         "select h.id from host h, storage_pool_host_ref s  where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and"
             + " h.id = s.host_id and s.pool_id = ? ";
+    private String findOneHypervisorHostInScope = "select h.id from host h where h.status = 'Up' and h.hypervisor_type is not null ";
 
     protected boolean moveBetweenPrimaryImage(DataStore srcStore, DataStore destStore) {
         DataStoreRole srcRole = srcStore.getRole();
@@ -140,7 +146,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
             return null;
         }
 
-        return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(), host.getPublicIpAddress());
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
     }
 
     protected EndPoint findEndPointForImageMove(DataStore srcStore, DataStore destStore) {
@@ -204,6 +210,21 @@ public class DefaultEndPointSelector implements EndPointSelector {
         return null;
     }
 
+    @Override
+    public EndPoint select(DataObject srcData, DataObject destData, StorageAction action) {
+        if (action == StorageAction.BACKUPSNAPSHOT && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
+            SnapshotInfo srcSnapshot = (SnapshotInfo)srcData;
+            if (srcSnapshot.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
+                VolumeInfo volumeInfo = srcSnapshot.getBaseVolume();
+                VirtualMachine vm = volumeInfo.getAttachedVM();
+                if (vm != null && vm.getState() == VirtualMachine.State.Running) {
+                    return getEndPointFromHostId(vm.getHostId());
+                }
+            }
+        }
+        return select(srcData, destData);
+    }
+
     protected EndPoint findEndpointForPrimaryStorage(DataStore store) {
         return findEndPointInScope(store.getScope(), findOneHostOnPrimaryStorage, store.getId());
     }
@@ -223,7 +244,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
         Collections.shuffle(ssAHosts);
         HostVO host = ssAHosts.get(0);
-        return RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(), host.getPublicIpAddress());
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
     }
 
     private List<HostVO> listUpAndConnectingSecondaryStorageVmHost(Long dcId) {
@@ -266,6 +287,27 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
     }
 
+    private EndPoint getEndPointFromHostId(Long hostId) {
+        HostVO host = hostDao.findById(hostId);
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
+    }
+
+    @Override
+    public EndPoint select(DataObject object, StorageAction action) {
+        if (action == StorageAction.TAKESNAPSHOT) {
+            SnapshotInfo snapshotInfo = (SnapshotInfo)object;
+            if (snapshotInfo.getHypervisorType() == Hypervisor.HypervisorType.KVM) {
+                VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
+                VirtualMachine vm = volumeInfo.getAttachedVM();
+                if ((vm != null) && (vm.getState() == VirtualMachine.State.Running)) {
+                    Long hostId = vm.getHostId();
+                    return getEndPointFromHostId(hostId);
+                }
+            }
+        }
+        return select(object);
+    }
+
     @Override
     public EndPoint select(Scope scope, Long storeId) {
         return findEndPointInScope(scope, findOneHostOnPrimaryStorage, storeId);
@@ -276,19 +318,67 @@ public class DefaultEndPointSelector implements EndPointSelector {
         List<EndPoint> endPoints = new ArrayList<EndPoint>();
         if (store.getScope().getScopeType() == ScopeType.HOST) {
             HostVO host = hostDao.findById(store.getScope().getScopeId());
-            endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(), host.getPublicIpAddress()));
+
+            endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
         } else if (store.getScope().getScopeType() == ScopeType.CLUSTER) {
             QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
             sc.and(sc.entity().getClusterId(), Op.EQ, store.getScope().getScopeId());
             sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
             List<HostVO> hosts = sc.list();
             for (HostVO host : hosts) {
-                endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host.getId(), host.getPrivateIpAddress(), host.getPublicIpAddress()));
+                endPoints.add(RemoteHostEndPoint.getHypervisorHostEndPoint(host));
             }
 
         } else {
             throw new CloudRuntimeException("shouldn't use it for other scope");
         }
         return endPoints;
+    }
+
+    @Override
+    public EndPoint selectHypervisorHost(Scope scope) {
+        StringBuilder sbuilder = new StringBuilder();
+        sbuilder.append(findOneHypervisorHostInScope);
+        if (scope.getScopeType() == ScopeType.ZONE) {
+            sbuilder.append(" and h.data_center_id = ");
+            sbuilder.append(scope.getScopeId());
+        } else if (scope.getScopeType() == ScopeType.CLUSTER) {
+            sbuilder.append(" and h.cluster_id = ");
+            sbuilder.append(scope.getScopeId());
+        }
+        sbuilder.append(" ORDER by rand() limit 1");
+
+        String sql = sbuilder.toString();
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        HostVO host = null;
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+
+        try {
+            pstmt = txn.prepareStatement(sql);
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                long id = rs.getLong(1);
+                host = hostDao.findById(id);
+            }
+        } catch (SQLException e) {
+            s_logger.warn("can't find endpoint", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+
+        if (host == null) {
+            return null;
+        }
+
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
     }
 }

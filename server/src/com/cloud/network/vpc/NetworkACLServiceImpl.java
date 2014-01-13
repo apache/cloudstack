@@ -116,6 +116,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         String name = cmd.getName();
         Long networkId = cmd.getNetworkId();
         Long vpcId = cmd.getVpcId();
+        String keyword = cmd.getKeyword();
         SearchBuilder<NetworkACLVO> sb = _networkACLDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("name", sb.entity().getName(), Op.EQ);
@@ -130,7 +131,15 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
 
         SearchCriteria<NetworkACLVO> sc = sb.create();
-        if (id != null) {
+
+        if (keyword != null) {
+            SearchCriteria<NetworkACLVO> ssc = _networkACLDao.createSearchCriteria();
+            ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            ssc.addOr("description", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if(id != null){
             sc.setParameters("id", id);
         }
 
@@ -579,8 +588,16 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     @Override
     public boolean revokeNetworkACLItem(long ruleId) {
         NetworkACLItemVO aclItem = _networkACLItemDao.findById(ruleId);
-        if (aclItem != null) {
-            if ((aclItem.getAclId() == NetworkACL.DEFAULT_ALLOW) || (aclItem.getAclId() == NetworkACL.DEFAULT_DENY)) {
+        if(aclItem != null){
+            NetworkACL acl = _networkAclMgr.getNetworkACL(aclItem.getAclId());
+
+            Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
+
+            Account caller = CallContext.current().getCallingAccount();
+
+            _accountMgr.checkAccess(caller, null, true, vpc);
+
+            if((aclItem.getAclId() == NetworkACL.DEFAULT_ALLOW) || (aclItem.getAclId() == NetworkACL.DEFAULT_DENY)){
                 throw new InvalidParameterValueException("ACL Items in default ACL cannot be deleted");
             }
         }

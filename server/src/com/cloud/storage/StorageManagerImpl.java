@@ -44,7 +44,6 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.api.command.admin.storage.AddImageStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
@@ -55,6 +54,7 @@ import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -63,6 +63,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -270,7 +271,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     public void setDiscoverers(List<StoragePoolDiscoverer> discoverers) {
-        this._discoverers = discoverers;
+        _discoverers = discoverers;
     }
 
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
@@ -658,12 +659,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 lifeCycle.attachZone(store, zoneScope, hypervisorType);
             }
         } catch (Exception e) {
-            s_logger.debug("Failed to add data store", e);
+            s_logger.debug("Failed to add data store: "+e.getMessage(), e);
             // clean up the db
             if (store != null) {
                 lifeCycle.deleteDataStore(store);
             }
-            throw new CloudRuntimeException("Failed to add data store", e);
+            throw new CloudRuntimeException("Failed to add data store: "+e.getMessage(), e);
         }
 
         return (PrimaryDataStoreInfo)dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Primary);
@@ -1226,28 +1227,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return (PrimaryDataStoreInfo)dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
     }
 
-    @Override
-    @DB
-    public ImageStore prepareSecondaryStorageForObjectStoreMigration(Long storeId) throws ResourceUnavailableException, InsufficientCapacityException {
-        // Verify that image store exists
-        ImageStoreVO store = _imageStoreDao.findById(storeId);
-        if (store == null) {
-            throw new InvalidParameterValueException("Image store with id " + storeId + " doesn't exist");
-        } else if (!store.getProviderName().equals(DataStoreProvider.NFS_IMAGE)) {
-            throw new InvalidParameterValueException("We only support migrate NFS secondary storage to use object store!");
-        }
-        _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), store.getDataCenterId());
-
-        DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider(store.getProviderName());
-        DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
-        DataStore secStore = dataStoreMgr.getDataStore(storeId, DataStoreRole.Image);
-        lifeCycle.migrateToObjectStore(secStore);
-        // update store_role in template_store_ref and snapshot_store_ref to ImageCache
-        _templateStoreDao.updateStoreRoleToCachce(storeId);
-        _snapshotStoreDao.updateStoreRoleToCache(storeId);
-        // converted to an image cache store
-        return (ImageStore)_dataStoreMgr.getDataStore(storeId, DataStoreRole.ImageCache);
-    }
 
     protected class StorageGarbageCollector extends ManagedContextRunnable {
 
@@ -1506,11 +1485,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (requestedVolumes == null || requestedVolumes.isEmpty() || pool == null) {
             return false;
         }
-        // Only Solidfire type primary storage is using/setting Iops.
-        // This check will fix to return the storage has enough Iops when capacityIops is set to NULL for any PS Storage provider
-        if (pool.getCapacityIops() == null) {
+
+        // Only SolidFire-type primary storage is using/setting IOPS.
+        // This check returns true for storage that does not specify IOPS.
+        if (pool.getCapacityIops() == null ) {
             return true;
         }
+
         long currentIops = 0;
         List<VolumeVO> volumesInPool = _volumeDao.findByPoolId(pool.getId(), null);
 
@@ -1565,7 +1546,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
             if (volume.getState() != Volume.State.Ready) {
-                totalAskingSize = totalAskingSize + volume.getSize();
+                totalAskingSize = totalAskingSize + getVolumeSizeIncludingHvSsReserve(volume, pool);
             }
         }
 
@@ -1604,6 +1585,19 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return true;
     }
 
+    private long getVolumeSizeIncludingHvSsReserve(Volume volume, StoragePool pool) {
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+
+        if (storeDriver instanceof PrimaryDataStoreDriver) {
+            PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
+
+            return primaryStoreDriver.getVolumeSizeIncludingHypervisorSnapshotReserve(volume, pool);
+        }
+
+        return volume.getSize();
+    }
+
     @Override
     public void createCapacityEntry(long poolId) {
         StoragePoolVO storage = _storagePoolDao.findById(poolId);
@@ -1635,8 +1629,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public ImageStore discoverImageStore(AddImageStoreCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
-        String providerName = cmd.getProviderName();
+    public ImageStore discoverImageStore(String name, String url, String providerName, Long dcId, Map details) throws IllegalArgumentException, DiscoveryException,
+            InvalidParameterValueException {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
 
         if (storeProvider == null) {
@@ -1647,11 +1641,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             providerName = storeProvider.getName(); // ignored passed provider name and use default image store provider name
         }
 
-        Long dcId = cmd.getZoneId();
-        Map details = cmd.getDetails();
         ScopeType scopeType = ScopeType.ZONE;
         if (dcId == null) {
             scopeType = ScopeType.REGION;
+        }
+
+        if (name == null) {
+            name = url;
+        }
+        ImageStoreVO imageStore = _imageStoreDao.findByName(name);
+        if (imageStore != null) {
+            throw new InvalidParameterValueException("The image store with name " + name + " already exists, try creating with another name");
         }
 
         // check if scope is supported by store provider
@@ -1686,8 +1686,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         Map<String, Object> params = new HashMap<String, Object>();
         params.put("zoneId", dcId);
-        params.put("url", cmd.getUrl());
-        params.put("name", cmd.getName());
+        params.put("url", url);
+        params.put("name", name);
         params.put("details", details);
         params.put("scope", scopeType);
         params.put("providerName", storeProvider.getName());
@@ -1698,8 +1698,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         try {
             store = lifeCycle.initialize(params);
         } catch (Exception e) {
-            s_logger.debug("Failed to add data store", e);
-            throw new CloudRuntimeException("Failed to add data store", e);
+            s_logger.debug("Failed to add data store: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to add data store: " + e.getMessage(), e);
         }
 
         if (((ImageStoreProvider)storeProvider).needDownloadSysTemplate()) {
@@ -1720,6 +1720,41 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         return (ImageStore)_dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Image);
+    }
+
+    @Override
+    public ImageStore migrateToObjectStore(String name, String url, String providerName, Map details) throws IllegalArgumentException, DiscoveryException,
+            InvalidParameterValueException {
+        // check if current cloud is ready to migrate, we only support cloud with only NFS secondary storages
+        List<ImageStoreVO> imgStores = _imageStoreDao.listImageStores();
+        List<ImageStoreVO> nfsStores = new ArrayList<ImageStoreVO>();
+        if (imgStores != null && imgStores.size() > 0) {
+            for (ImageStoreVO store : imgStores) {
+                if (!store.getProviderName().equals(DataStoreProvider.NFS_IMAGE)) {
+                    throw new InvalidParameterValueException("We only support migrate NFS secondary storage to use object store!");
+                } else {
+                    nfsStores.add(store);
+                }
+            }
+        }
+        // convert all NFS secondary storage to staging store
+        if (nfsStores != null && nfsStores.size() > 0) {
+            for (ImageStoreVO store : nfsStores) {
+                long storeId = store.getId();
+
+                _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), store.getDataCenterId());
+
+                DataStoreProvider provider = dataStoreProviderMgr.getDataStoreProvider(store.getProviderName());
+                DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
+                DataStore secStore = dataStoreMgr.getDataStore(storeId, DataStoreRole.Image);
+                lifeCycle.migrateToObjectStore(secStore);
+                // update store_role in template_store_ref and snapshot_store_ref to ImageCache
+                _templateStoreDao.updateStoreRoleToCachce(storeId);
+                _snapshotStoreDao.updateStoreRoleToCache(storeId);
+            }
+        }
+        // add object store
+        return discoverImageStore(name, url, providerName, null, details);
     }
 
     private void duplicateCacheStoreRecordsToRegionStore(long storeId) {
@@ -1862,8 +1897,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         try {
             store = lifeCycle.initialize(params);
         } catch (Exception e) {
-            s_logger.debug("Failed to add data store", e);
-            throw new CloudRuntimeException("Failed to add data store", e);
+            s_logger.debug("Failed to add data store: "+e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to add data store: "+e.getMessage(), e);
         }
 
         return (ImageStore)_dataStoreMgr.getDataStore(store.getId(), DataStoreRole.ImageCache);

@@ -189,6 +189,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             }
 
             /* Copy volume to primary storage */
+            s_logger.debug("Copying template to primary storage, template format is " + tmplVol.getFormat() );
             KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
 
             KVMPhysicalDisk primaryVol = null;

@@ -132,6 +132,11 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-network-opendaylight</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-xen</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -177,6 +182,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+       <groupId>org.apache.cloudstack</groupId>
+       <artifactId>cloud-plugin-planner-skip-heurestics</artifactId>
+       <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-planner-user-concentrated-pod</artifactId>
       <version>${project.version}</version>
@@ -199,6 +209,11 @@
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-mom-rabbitmq</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-mom-inmemory</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

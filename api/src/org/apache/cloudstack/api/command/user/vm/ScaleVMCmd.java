@@ -16,20 +16,24 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
-
-import org.apache.log4j.Logger;
+import java.util.Map;
 
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -38,11 +42,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 @APICommand(name = "scaleVirtualMachine", description = "Scales the virtual machine to a new service offering.", responseObject = SuccessResponse.class)
 public class ScaleVMCmd extends BaseAsyncCmd {
@@ -58,17 +57,11 @@ public class ScaleVMCmd extends BaseAsyncCmd {
     private Long id;
 
     @ACL
-    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID,
-               type = CommandType.UUID,
-               entityType = ServiceOfferingResponse.class,
-               required = true,
-               description = "the ID of the service offering for the virtual machine")
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, required = true, description = "the ID of the service offering for the virtual machine")
     private Long serviceOfferingId;
 
-    @Parameter(name = ApiConstants.CUSTOM_PARAMETERS,
-               type = CommandType.MAP,
-               description = "name value pairs of custom parameters for cpu, memory and cpunumber. example customparameters[i].name=value")
-    private Map<String, String> customParameters;
+    @Parameter(name = ApiConstants.DETAILS, type = BaseCmd.CommandType.MAP, description = "name value pairs of custom parameters for cpu,memory and cpunumber. example details[i].name=value")
+    private Map<String, String> details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -83,12 +76,12 @@ public class ScaleVMCmd extends BaseAsyncCmd {
     }
 
     //instead of reading a map directly we are using collections.
-    //it is because customParameters.values() cannot be cast to a map.
+    //it is because details.values() cannot be cast to a map.
     //it gives a exception
-    public Map<String, String> getCustomParameters() {
+    public Map<String, String> getDetails() {
         Map<String, String> customparameterMap = new HashMap<String, String>();
-        if (customParameters != null && customParameters.size() != 0) {
-            Collection parameterCollection = customParameters.values();
+        if (details != null && details.size() != 0) {
+            Collection parameterCollection = details.values();
             Iterator iter = parameterCollection.iterator();
             while (iter.hasNext()) {
                 HashMap<String, String> value = (HashMap<String, String>)iter.next();

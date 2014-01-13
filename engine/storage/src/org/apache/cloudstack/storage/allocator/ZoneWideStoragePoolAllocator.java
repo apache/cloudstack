@@ -89,6 +89,12 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
             avoid.addPool(pool.getId());
         }
 
+        // make sure our matching pool was not in avoid set
+        for (StoragePoolVO pool : storagePoolsByHypervisor) {
+            s_logger.debug("Removing pool " + pool + " from avoid set, must have been inserted when searching for another disk's tag");
+            avoid.removePool(pool.getId());
+        }
+
         for (StoragePoolVO storage : storagePools) {
             if (suitablePools.size() == returnUpTo) {
                 break;

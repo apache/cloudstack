@@ -1,3 +1,4 @@
+
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -82,6 +83,8 @@ public interface ResourceManager extends ResourceService {
     boolean maintenanceFailed(long hostId);
 
     public boolean maintain(final long hostId) throws AgentUnavailableException;
+
+    public boolean checkAndMaintain(final long hostId);
 
     @Override
     public boolean deleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage);

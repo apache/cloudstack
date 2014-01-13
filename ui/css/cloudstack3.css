@@ -176,14 +176,18 @@ table tbody td.truncated > span {
 /** Multiselect*/
 table thead th.multiselect,
 table tbody td.multiselect {
-  width: 40px;
-  min-width: 40px;
-  max-width: 40px;
+  width: 20px;
+  min-width: 20px;
+  max-width: 20px;
 }
 
 table thead th.multiselect input,
 table tbody td.multiselect input {
   margin: 0;
+  /*+placement:shift -8px 0px;*/
+  position: relative;
+  left: -8px;
+  top: 0px;
 }
 
 table thead th.multiselect input {
@@ -1642,11 +1646,11 @@ div.list-view td.state.off span {
 
 .ui-tabs li a {
   float: left;
-  padding: 15px;
+  padding: 15px 10px;
   min-width: 91px;
   text-align: center;
   font-size: 11px;
-  margin-right: 12px;
+  margin-right: 5px;
   color: #4E6070;
   text-decoration: none;
   /*+placement:shift 0px 2px;*/
@@ -3529,6 +3533,10 @@ div.view table td.editable div.edit input {
   border: none;
   position: relative;
   z-index: 1;
+}
+
+.detail-view div.view table td.editable div.edit {
+  width: 116px;
 }
 
 div.view table td.editable div.action {
@@ -7569,20 +7577,6 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   min-width: 100px;
 }
 
-div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody tr.even td {
-  border-right: 1px solid #BFBFBF;
-  clear: none;
-  color: #495A76;
-  font-size: 10px;
-  margin-right: 25px;
-  min-width: -moz-available;
-  max-width: 90px;
-  overflow: hidden;
-  padding: 9px 5px 8px 0;
-  position: relative;
-  vertical-align: middle;
-}
-
 .multi-edit {
   overflow: auto;
 }
@@ -7629,10 +7623,10 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
 }
 
 .multi-edit .range input {
-  width: 41px;
-  margin-left: 13px;
+  width: 35px;
+  margin-left: 6px;
+  margin-right: 2px;
   position: relative;
-  float: left;
 }
 
 .multi-edit .range label {
@@ -9077,6 +9071,10 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   top: 68px;
 }
 
+.system-dashboard.zone .status_box li.sockets .icon {
+  background-position: -14px -581px;
+}
+
 .system-dashboard.zone .status_box li.secondary-storage .icon {
   background-position: -216px -404px;
   /*+placement:shift 37px 68px;*/
@@ -10306,6 +10304,11 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   color: #000000;
 }
 
+.tagger ul li span.label span.value {
+  max-width: 100px;
+  overflow: hidden;
+}
+
 .tagger ul li span.label {
   font-size: 10px;
   position: relative;
@@ -10317,11 +10320,35 @@ div.ui-dialog div.multi-edit-add-list div.view div.data-table table.body tbody t
   left: 6px;
 }
 
+.tagger ul li span.label > span {
+  float: left;
+  display: block;
+  margin-top: 2px;
+}
+
+.tagger ul li span.label > span.key {
+  font-weight: bold;
+  max-width: 134px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  margin-left: 15px;
+  margin-right: 5px;
+}
+
+.tagger ul li span.label > span.value {
+  max-width: 160px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  margin-left: 6px;
+}
+
 .tagger ul li span.remove {
   width: 15px !important;
   overflow: hidden !important;
   height: 11px !important;
-  background: #DFDFDF url(../images/sprites.png) no-repeat -596px -1183px;
+  background: #DFDFDF;
   display: block;
   top: 0px !important;
   left: -3px !important;
@@ -12028,6 +12055,7 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .add .icon,
 .addNew .icon,
+.addLdapAccount .icon,
 .assignVm .icon,
 .rootAdminAddGuestNetwork .icon {
   background-position: -37px -61px;
@@ -12035,9 +12063,18 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .add:hover .icon,
 .addNew:hover .icon,
+.addLdapAccount:hover .icon,
 .assignVm:hover .icon,
 .rootAdminAddGuestNetwork:hover .icon {
   background-position: -37px -643px;
+}
+
+.assignVmToAnotherAccount .icon {
+  background-position: -232px -97px;
+}
+
+.assignVmToAnotherAccount:hover .icon {
+  background-position: -231px -678px;
 }
 
 .create .icon,
@@ -12309,14 +12346,6 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .addAccount:hover .icon {
   background-position: -230px -677px;
-}
-
-.assignVmToAnotherAccount .icon {
-  background-position: -270px -36px;
-}
-
-.assignVmToAnotherAccount:hover .icon {
-  background-position: -270px -615px;
 }
 
 .label-hovered {

@@ -487,6 +487,18 @@ def getVhdParent(session, args):
 
     return  baseCopyUuid
 
+def getSnapshotSize(session, args):
+    primaryStorageSRUuid      = args['primaryStorageSRUuid']
+    snapshotUuid              = args['snapshotUuid']
+    isISCSI                   = getIsTrueString(args['isISCSI'])
+
+    primarySRPath = getPrimarySRPath(primaryStorageSRUuid, isISCSI)
+    logging.debug("primarySRPath: " + primarySRPath)
+
+    snapshotVHD  = getVHD(snapshotUuid, isISCSI)
+    snapshotPath = os.path.join(primarySRPath, snapshotVHD)
+    physicalSize = vhdutil.getSizePhys(snapshotPath)
+    return str(physicalSize)
 
 def backupSnapshot(session, args):
     logging.debug("Called backupSnapshot with " + str(args))
@@ -515,6 +527,7 @@ def backupSnapshot(session, args):
     prevBackupUuid = prevBackupUuid.split("/")[-1]
     # Check existence of snapshot on primary storage
     isfile(baseCopyPath, isISCSI)
+    physicalSize = vhdutil.getSizePhys(baseCopyPath)
     if prevBackupUuid:
         # Check existence of prevBackupFile
         prevBackupVHD = getBackupVHD(prevBackupUuid)
@@ -535,7 +548,7 @@ def backupSnapshot(session, args):
         # If there was a previous snapshot
         setParent(prevBackupFile, backupFile)
 
-    txt = "1#" + backupUuid
+    txt = "1#" + backupUuid + "#" + str(physicalSize)
     return txt
 
 @echo
@@ -596,6 +609,6 @@ def revert_memory_snapshot(session, args):
     return "0"
 
 if __name__ == "__main__":
-    XenAPIPlugin.dispatch({"getVhdParent":getVhdParent,  "create_secondary_storage_folder":create_secondary_storage_folder, "delete_secondary_storage_folder":delete_secondary_storage_folder, "post_create_private_template":post_create_private_template, "backupSnapshot": backupSnapshot, "deleteSnapshotBackup": deleteSnapshotBackup, "unmountSnapshotsDir": unmountSnapshotsDir, "revert_memory_snapshot":revert_memory_snapshot})
+    XenAPIPlugin.dispatch({"getVhdParent":getVhdParent,  "create_secondary_storage_folder":create_secondary_storage_folder, "delete_secondary_storage_folder":delete_secondary_storage_folder, "post_create_private_template":post_create_private_template, "backupSnapshot": backupSnapshot, "deleteSnapshotBackup": deleteSnapshotBackup, "unmountSnapshotsDir": unmountSnapshotsDir, "revert_memory_snapshot":revert_memory_snapshot, "getSnapshotSize":getSnapshotSize})
     
 

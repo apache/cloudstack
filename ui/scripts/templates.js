@@ -361,6 +361,18 @@
                                                     id: 'QCOW2',
                                                     description: 'QCOW2'
                                                 });
+                                                items.push({
+                                                    id: 'RAW',
+                                                    description: 'RAW'
+                                                });
+                                                items.push({
+                                                    id: 'VHD',
+                                                    description: 'VHD'
+                                                });
+                                                items.push({
+                                                    id: 'VMDK',
+                                                    description: 'VMDK'
+                                                });
                                             } else if (args.hypervisor == "BareMetal") {
                                                 //formatSelect.append("<option value='BareMetal'>BareMetal</option>");
                                                 items.push({
@@ -783,11 +795,20 @@
                                         }
                                     }
                                 },
-                                action: function(args) {
-                                    $.ajax({
-                                        url: createURL("copyTemplate&id=" + args.context.templates[0].id + "&sourcezoneid=" + args.context.templates[0].zoneid + "&destzoneid=" + args.data.destinationZoneId),
-                                        dataType: "json",
-                                        async: true,
+                                action: function(args) {                                    
+                                    var data = {
+                                    	id: args.context.templates[0].id,
+                                    	destzoneid: args.data.destinationZoneId
+                                    };                                	
+                                    if (args.context.templates[0].zoneid != undefined) {
+                                        $.extend(data, {
+                                        	sourcezoneid: args.context.templates[0].zoneid
+                                        });	
+                                    }                                    
+                                    
+                                	$.ajax({
+                                        url: createURL('copyTemplate'),
+                                        data: data,                                        
                                         success: function(json) {
                                             var jid = json.copytemplateresponse.jobid;
                                             args.response.success({
@@ -1545,11 +1566,20 @@
                                         }
                                     }
                                 },
-                                action: function(args) {
-                                    $.ajax({
-                                        url: createURL("copyIso&id=" + args.context.isos[0].id + "&sourcezoneid=" + args.context.isos[0].zoneid + "&destzoneid=" + args.data.destinationZoneId),
-                                        dataType: "json",
-                                        async: true,
+                                action: function(args) {                                    
+                                    var data = {
+                                    	id: args.context.isos[0].id,
+                                    	destzoneid: args.data.destinationZoneId
+                                    };                                	
+                                    if (args.context.isos[0].zoneid != undefined) {
+                                        $.extend(data, {
+                                        	sourcezoneid: args.context.isos[0].zoneid
+                                        });	
+                                    }                                    
+                                	
+                                	$.ajax({
+                                        url: createURL('copyIso'),
+                                        data: data,
                                         success: function(json) {
                                             var jid = json.copytemplateresponse.jobid;
                                             args.response.success({
@@ -1814,9 +1844,12 @@
         } else {
             allowedActions.push("edit");
             
+            allowedActions.push("copyTemplate");
+            /*
             if(g_regionsecondaryenabled != true) {
                 allowedActions.push("copyTemplate");
             }
+            */
 			
             //allowedActions.push("createVm"); // For Beta2, this simply doesn't work without a network.
         }
@@ -1852,9 +1885,12 @@
         } else {
             allowedActions.push("edit");
 
+            allowedActions.push("copyISO");
+            /*
             if(g_regionsecondaryenabled != true) {
                 allowedActions.push("copyISO");
 			}
+			*/
         }
 
         // "Create VM"

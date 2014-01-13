@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.vmware.manager;
 
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CreatePrivateTemplateFromSnapshotCommand;
@@ -50,4 +52,6 @@ public interface VmwareStorageManager {
     boolean execute(VmwareHostService hostService, CreateEntityDownloadURLCommand cmd);
 
     public void createOva(String path, String name);
+
+    public String createOvaForTemplate(TemplateObjectTO template);
 }

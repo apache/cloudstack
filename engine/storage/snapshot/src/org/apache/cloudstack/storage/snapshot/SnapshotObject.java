@@ -78,6 +78,7 @@ public class SnapshotObject implements SnapshotInfo {
     SnapshotDataStoreDao snapshotStoreDao;
     @Inject
     StorageStrategyFactory storageStrategyFactory;
+    private String installPath; // temporarily set installPath before passing to resource for entries with empty installPath for object store migration case
 
     public SnapshotObject() {
 
@@ -198,11 +199,18 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public String getPath() {
+        if (installPath != null)
+            return installPath;
+
         DataObjectInStore objectInStore = objectInStoreMgr.findObject(this, getDataStore());
         if (objectInStore != null) {
             return objectInStore.getInstallPath();
         }
         return null;
+    }
+
+    public void setPath(String installPath) {
+        this.installPath = installPath;
     }
 
     @Override
@@ -278,6 +286,7 @@ public class SnapshotObject implements SnapshotInfo {
             } else if (answer instanceof CopyCmdAnswer) {
                 SnapshotObjectTO snapshotTO = (SnapshotObjectTO)((CopyCmdAnswer)answer).getNewData();
                 snapshotStore.setInstallPath(snapshotTO.getPath());
+                snapshotStore.setSize(snapshotTO.getPhysicalSize());
                 if (snapshotTO.getParentSnapshotPath() == null) {
                     snapshotStore.setParentSnapshotId(0L);
                 }
@@ -353,12 +362,12 @@ public class SnapshotObject implements SnapshotInfo {
 
     @Override
     public void addPayload(Object data) {
-        this.payload = data;
+        payload = data;
     }
 
     @Override
     public Object getPayload() {
-        return this.payload;
+        return payload;
     }
 
     @Override

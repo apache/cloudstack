@@ -16,6 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.test;
 
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+
+import java.util.Map;
+
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
@@ -56,7 +62,8 @@ public class AddSecondaryStorageCmdTest extends TestCase {
 
         ImageStore store = Mockito.mock(ImageStore.class);
 
-        Mockito.when(resourceService.discoverImageStore(addImageStoreCmd)).thenReturn(store);
+        Mockito.when(resourceService.discoverImageStore(anyString(), anyString(), anyString(), anyLong(), (Map)anyObject()))
+                .thenReturn(store);
 
         ResponseGenerator responseGenerator = Mockito.mock(ResponseGenerator.class);
         addImageStoreCmd._responseGenerator = responseGenerator;
@@ -83,7 +90,8 @@ public class AddSecondaryStorageCmdTest extends TestCase {
         StorageService resourceService = Mockito.mock(StorageService.class);
         addImageStoreCmd._storageService = resourceService;
 
-        Mockito.when(resourceService.discoverImageStore(addImageStoreCmd)).thenReturn(null);
+        Mockito.when(resourceService.discoverImageStore(anyString(), anyString(), anyString(), anyLong(), (Map)anyObject()))
+                .thenReturn(null);
 
         try {
             addImageStoreCmd.execute();

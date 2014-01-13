@@ -61,11 +61,18 @@
       <version>3.8.1</version>
       <scope>test</scope>
     </dependency>
+    <!-- Apache Portable Runtime implementation of SSL protocol, which is compatible with broken MS RDP SSL suport.
+    NOTE: tomcat-native package with /usr/lib/libtcnative-1.so library is necessary for APR to work. -->
     <dependency>
       <groupId>org.apache.tomcat.embed</groupId>
       <artifactId>tomcat-embed-core</artifactId>
       <version>7.0.30</version>
-      <scope>test</scope>
+    </dependency>
+    <!-- Another implementation of SSL protocol. Does not work with broken MS RDP SSL too. -->
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcprov-jdk16</artifactId>
+      <version>1.46</version>
     </dependency>
   </dependencies>
 </project>

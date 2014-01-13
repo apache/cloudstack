@@ -93,7 +93,7 @@ class Services:
             "SSHEnabledTemplate": "SSHkey",
             "SSHPasswordEnabledTemplate": "SSHKeyPassword",
             "sleep": 60,
-            "timeout": 10,
+            "timeout": 20,
             "mode": 'advanced',
         }
 

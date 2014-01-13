@@ -28,15 +28,14 @@ import java.util.Set;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
@@ -47,9 +46,11 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmStats;
+import com.cloud.vm.dao.UserVmDetailsDao;
 
 @Component
 @Local(value = {UserVmJoinDao.class})
@@ -58,6 +59,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
 
     @Inject
     private ConfigurationDao _configDao;
+    @Inject
+    private UserVmDetailsDao _userVmDetailsDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
@@ -142,6 +145,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
             userVmResponse.setServiceOfferingId(userVm.getServiceOfferingUuid());
             userVmResponse.setServiceOfferingName(userVm.getServiceOfferingName());
         }
+        if (details.contains(VMDetails.all) || details.contains(VMDetails.diskoff)) {
+            userVmResponse.setDiskOfferingId(userVm.getDiskOfferingUuid());
+            userVmResponse.setDiskOfferingName(userVm.getDiskOfferingName());
+        }
         if (details.contains(VMDetails.all) || details.contains(VMDetails.servoff) || details.contains(VMDetails.stats)) {
             userVmResponse.setCpuNumber(userVm.getCpu());
             userVmResponse.setCpuSpeed(userVm.getSpeed());
@@ -164,6 +171,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         userVmResponse.setPublicIpId(userVm.getPublicIpUuid());
         userVmResponse.setPublicIp(userVm.getPublicIpAddress());
         userVmResponse.setKeyPairName(userVm.getKeypairName());
+        userVmResponse.setOsTypeId(userVm.getGuestOsId());
 
         if (details.contains(VMDetails.all) || details.contains(VMDetails.stats)) {
             // stats calculation
@@ -175,8 +183,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
 
                 userVmResponse.setNetworkKbsWrite((long)vmStats.getNetworkWriteKBs());
 
-                if ((userVm.getHypervisorType() != null) &&
-                    (userVm.getHypervisorType().equals(HypervisorType.KVM) || userVm.getHypervisorType().equals(HypervisorType.XenServer))) { // support KVM and XenServer only util 2013.06.25
+                if ((userVm.getHypervisorType() != null) && (userVm.getHypervisorType().equals(HypervisorType.KVM) || userVm.getHypervisorType().equals(HypervisorType.XenServer))) { // support KVM and XenServer only util 2013.06.25
                     userVmResponse.setDiskKbsRead((long)vmStats.getDiskReadKBs());
 
                     userVmResponse.setDiskKbsWrite((long)vmStats.getDiskWriteKBs());
@@ -261,10 +268,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBase<UserVmJoinVO, Long> implem
         }
 
         // set resource details map
-        // only hypervisortoolsversion can be returned to the end user       }
-        if (userVm.getDetailName() != null && userVm.getDetailName().equalsIgnoreCase(VmDetailConstants.HYPERVISOR_TOOLS_VERSION)) {
+        // only hypervisortoolsversion can be returned to the end user
+        UserVmDetailVO hypervisorToolsVersion = _userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.HYPERVISOR_TOOLS_VERSION);
+        if (hypervisorToolsVersion != null) {
             Map<String, String> resourceDetails = new HashMap<String, String>();
-            resourceDetails.put(userVm.getDetailName(), userVm.getDetailValue());
+            resourceDetails.put(hypervisorToolsVersion.getName(), hypervisorToolsVersion.getValue());
             userVmResponse.setDetails(resourceDetails);
         }
 

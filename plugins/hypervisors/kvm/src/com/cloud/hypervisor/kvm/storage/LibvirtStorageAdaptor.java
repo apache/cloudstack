@@ -684,10 +684,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     @Override
     public boolean disconnectPhysicalDiskByPath(String localPath) {
         // we've only ever cleaned up ISOs that are NFS mounted
-
         String poolUuid = null;
-
-        if (localPath != null && localPath.startsWith(_mountPoint)) {
+        if (localPath != null && localPath.startsWith(_mountPoint) && localPath.endsWith(".iso")) {
             String[] token = localPath.split("/");
 
             if (token.length > 3) {
@@ -978,6 +976,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         String sourcePath = disk.getPath();
 
         KVMPhysicalDisk newDisk;
+        s_logger.debug("copyPhysicalDisk: disk size:" + disk.getSize() + ", virtualsize:" + disk.getVirtualSize()+" format:"+disk.getFormat());
         if (destPool.getType() != StoragePoolType.RBD) {
             if (disk.getFormat() == PhysicalDiskFormat.TAR) {
                 newDisk = destPool.createPhysicalDisk(name, PhysicalDiskFormat.DIR, disk.getVirtualSize());
@@ -1015,7 +1014,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 try {
                     Map<String, String> info = qemu.info(srcFile);
                     String backingFile = info.get(new String("backing_file"));
-                    if (sourceFormat.equals(destFormat) && backingFile == null) {
+                    // qcow2 templates can just be copied into place
+                    if (sourceFormat.equals(destFormat) && backingFile == null && sourcePath.endsWith(".qcow2")) {
                         String result = Script.runSimpleBashScript("cp -f " + sourcePath + " " + destPath, timeout);
                         if (result != null) {
                             throw new CloudRuntimeException("Failed to create disk: " + result);

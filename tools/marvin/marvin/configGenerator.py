@@ -330,7 +330,10 @@ class ConfigManager(object):
     '''
 
     def __init__(self):
-        self.filePath = "config/config.cfg"
+        # Joining path with current directory will avoid relative path issue
+        # It will take correct path irrespective of from where the test case is run
+        dirPath = os.path.dirname(__file__)
+        self.filePath = os.path.join(dirPath, 'config/config.cfg')
         self.parsedDict = None
         if self.__verifyFile(self.filePath) is not False:
             self.parsedDict = self.__parseConfig(self.filePath)

@@ -61,6 +61,7 @@ import org.apache.log4j.Logger;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 
+import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
@@ -91,7 +92,6 @@ import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.agent.api.SecStorageSetupAnswer;
 import com.cloud.agent.api.SecStorageSetupCommand;
-import com.cloud.agent.api.SecStorageSetupCommand.Certificates;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
@@ -118,6 +118,7 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.template.OVAProcessor;
 import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.storage.template.QCOW2Processor;
@@ -151,7 +152,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     public void setTimeout(int timeout) {
-        this._timeout = timeout;
+        _timeout = timeout;
     }
 
     String _instance;
@@ -443,7 +444,14 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             File srcFile = getFile(srcData.getPath(), srcDataStore.getUrl());
             File destFile = getFile(destData.getPath(), destDataStore.getUrl());
 
-            ImageFormat srcFormat = srcData.getVolume().getFormat();
+            VolumeObjectTO volumeObjectTO = srcData.getVolume();
+            ImageFormat srcFormat = null;
+            //TODO: the image format should be stored in snapshot table, instead of getting from volume
+            if (volumeObjectTO != null) {
+                srcFormat = volumeObjectTO.getFormat();
+            } else {
+                srcFormat = ImageFormat.QCOW2;
+            }
 
             // get snapshot file name
             String templateName = srcFile.getName();
@@ -771,6 +779,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (ext != null) {
             if (ext.equalsIgnoreCase("vhd")) {
                 return ImageFormat.VHD;
+            } else if (ext.equalsIgnoreCase("vhdx")) {
+                return ImageFormat.VHDX;
             } else if (ext.equalsIgnoreCase("qcow2")) {
                 return ImageFormat.QCOW2;
             } else if (ext.equalsIgnoreCase("ova")) {
@@ -779,6 +789,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                 return ImageFormat.TAR;
             } else if (ext.equalsIgnoreCase("img") || ext.equalsIgnoreCase("raw")) {
                 return ImageFormat.RAW;
+            } else if (ext.equalsIgnoreCase("vmdk")) {
+                return ImageFormat.VMDK;
+            } else if (ext.equalsIgnoreCase("vdi")) {
+                return ImageFormat.VDI;
             }
         }
 
@@ -794,11 +808,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             } else if (format == ImageFormat.QCOW2) {
                 processor = new QCOW2Processor();
             } else if (format == ImageFormat.OVA) {
-                processor = new VmdkProcessor();
+                processor = new OVAProcessor();
             } else if (format == ImageFormat.VHD) {
                 processor = new VhdProcessor();
             } else if (format == ImageFormat.RAW) {
                 processor = new RawImageProcessor();
+            } else if (format == ImageFormat.VMDK) {
+                processor = new VmdkProcessor();
             }
 
             if (processor == null) {
@@ -840,7 +856,10 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     if (!srcFile.exists()) {
                         srcFile = _storage.getFile(templatePath + ".ova");
                         if (!srcFile.exists()) {
-                            return new CopyCmdAnswer("Can't find src file:" + templatePath);
+                            srcFile = _storage.getFile(templatePath + ".vmdk");
+                            if (!srcFile.exists()) {
+                                return new CopyCmdAnswer("Can't find src file:" + templatePath);
+                            }
                         }
                     }
                 }
@@ -1182,7 +1201,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return new Answer(cmd, true, checksum);
     }
 
-    private void configCerts(Certificates certs) {
+    private void configCerts(KeystoreManager.Certificates certs) {
         if (certs == null) {
             configureSSL();
         } else {

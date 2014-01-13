@@ -77,14 +77,14 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
 
     HashMap<String, Pair<String, ConfigKey<?>>> _allKeys = new HashMap<String, Pair<String, ConfigKey<?>>>(1007);
 
-    HashMap<ConfigKey.Scope, List<ConfigKey<?>>> _scopeLevelConfigsMap = new HashMap<ConfigKey.Scope, List<ConfigKey<?>>>();
+    HashMap<ConfigKey.Scope, Set<ConfigKey<?>>> _scopeLevelConfigsMap = new HashMap<ConfigKey.Scope, Set<ConfigKey<?>>>();
 
     public ConfigDepotImpl() {
         ConfigKey.init(this);
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.Zone, new ArrayList<ConfigKey<?>>());
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.Cluster, new ArrayList<ConfigKey<?>>());
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.StoragePool, new ArrayList<ConfigKey<?>>());
-        _scopeLevelConfigsMap.put(ConfigKey.Scope.Account, new ArrayList<ConfigKey<?>>());
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.Zone, new HashSet<ConfigKey<?>>());
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.Cluster, new HashSet<ConfigKey<?>>());
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.StoragePool, new HashSet<ConfigKey<?>>());
+        _scopeLevelConfigsMap.put(ConfigKey.Scope.Account, new HashSet<ConfigKey<?>>());
     }
 
     @Override
@@ -123,16 +123,18 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
                 _configDao.persist(vo);
             } else {
                 if (vo.isDynamic() != key.isDynamic() || !ObjectUtils.equals(vo.getDescription(), key.description()) ||
-                    !ObjectUtils.equals(vo.getDefaultValue(), key.defaultValue())) {
+                    !ObjectUtils.equals(vo.getDefaultValue(), key.defaultValue()) ||
+                    !ObjectUtils.equals(vo.getScope(), key.scope().toString())) {
                     vo.setDynamic(key.isDynamic());
                     vo.setDescription(key.description());
                     vo.setDefaultValue(key.defaultValue());
+                    vo.setScope(key.scope().toString());
                     vo.setUpdated(date);
                     _configDao.persist(vo);
                 }
             }
-            if (key.scope() != ConfigKey.Scope.Global) {
-                List<ConfigKey<?>> currentConfigs = _scopeLevelConfigsMap.get(key.scope());
+            if ((key.scope() != null) && (key.scope() != ConfigKey.Scope.Global)) {
+                Set<ConfigKey<?>> currentConfigs = _scopeLevelConfigsMap.get(key.scope());
                 currentConfigs.add(key);
             }
         }
@@ -183,7 +185,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     }
 
     @Override
-    public List<ConfigKey<?>> getConfigListByScope(String scope) {
+    public Set<ConfigKey<?>> getConfigListByScope(String scope) {
         return _scopeLevelConfigsMap.get(ConfigKey.Scope.valueOf(scope));
     }
 

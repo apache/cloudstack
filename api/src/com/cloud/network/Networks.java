@@ -94,7 +94,7 @@ public class Networks {
                 return uri.getSchemeSpecificPart();
             }
         },
-        Mido("mido", String.class), Pvlan("pvlan", String.class), Vxlan("vxlan", Long.class), UnDecided(null, null);
+        Mido("mido", String.class), Pvlan("pvlan", String.class), Vxlan("vxlan", Long.class), UnDecided(null, null), OpenDaylight("opendaylight", String.class);
 
         private final String scheme;
         private final Class<?> type;

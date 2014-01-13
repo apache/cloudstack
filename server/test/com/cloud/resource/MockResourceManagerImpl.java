@@ -309,6 +309,15 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     /* (non-Javadoc)
+     * @see com.cloud.resource.ResourceManager#maintain(long)
+     */
+    @Override
+    public boolean checkAndMaintain(long hostId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /* (non-Javadoc)
      * @see com.cloud.resource.ResourceManager#deleteHost(long, boolean, boolean)
      */
     @Override

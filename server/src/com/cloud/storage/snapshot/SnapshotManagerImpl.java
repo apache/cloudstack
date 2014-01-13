@@ -322,16 +322,10 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(),
                     null, null, volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
             }
-
             _resourceLimitMgr.incrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
 
         } catch (Exception e) {
             s_logger.debug("Failed to create snapshot", e);
-            if (backup) {
-                _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage, new Long(volume.getSize()));
-            } else {
-                _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.primary_storage, new Long(volume.getSize()));
-            }
             throw new CloudRuntimeException("Failed to create snapshot", e);
         }
 
@@ -427,6 +421,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
             s_logger.error("Unable to find snaphot strategy to handle snapshot with id '" + snapshotId + "'");
             return false;
         }
+        SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Image);
 
         try {
             boolean result = snapshotStrategy.deleteSnapshot(snapshotId);
@@ -435,8 +430,10 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshotCheck.getAccountId(), snapshotCheck.getDataCenterId(), snapshotId,
                         snapshotCheck.getName(), null, null, 0L, snapshotCheck.getClass().getName(), snapshotCheck.getUuid());
                 }
-                _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.snapshot);
-                _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.secondary_storage, new Long(snapshotCheck.getSize()));
+                if (snapshotCheck.getState() != Snapshot.State.Error && snapshotCheck.getState() != Snapshot.State.Destroyed)
+                    _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.snapshot);
+                if (snapshotCheck.getState() == Snapshot.State.BackedUp)
+                    _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.secondary_storage, new Long(snapshotStoreRef.getSize()));
             }
             return result;
         } catch (Exception e) {
@@ -621,11 +618,12 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
                     s_logger.error("Unable to find snaphot strategy to handle snapshot with id '" + snapshot.getId() + "'");
                     continue;
                 }
+                SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshot.getId(), DataStoreRole.Image);
 
                 if (snapshotStrategy.deleteSnapshot(snapshot.getId())) {
                     if (snapshot.getRecurringType() == Type.MANUAL) {
                         _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.snapshot);
-                        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.secondary_storage, new Long(snapshot.getSize()));
+                        _resourceLimitMgr.decrementResourceCount(accountId, ResourceType.secondary_storage, new Long(snapshotStoreRef.getSize()));
                     }
 
                     // Log event after successful deletion
@@ -953,17 +951,16 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(),
                     null, null, volume.getSize(), snapshot.getClass().getName(), snapshot.getUuid());
-                _resourceLimitMgr.incrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
+                SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Image);
+                // Correct the resource count of snapshot in case of delta snapshots.
+                _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage, new Long(volume.getSize() - snapshotStoreRef.getSize()));
             } catch (Exception e) {
                 s_logger.debug("post process snapshot failed", e);
             }
         } catch (Exception e) {
             s_logger.debug("Failed to create snapshot", e);
-            if (backup) {
-                _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage, new Long(volume.getSize()));
-            } else {
-                _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.primary_storage, new Long(volume.getSize()));
-            }
+            _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
+            _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage, new Long(volume.getSize()));
             throw new CloudRuntimeException("Failed to create snapshot", e);
         }
         return snapshot;
@@ -1068,11 +1065,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
 
         try {
             _resourceLimitMgr.checkResourceLimit(owner, ResourceType.snapshot);
-            if (backup) {
-                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.secondary_storage, new Long(volume.getSize()));
-            } else {
-                _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, new Long(volume.getSize()));
-            }
+            _resourceLimitMgr.checkResourceLimit(owner, ResourceType.secondary_storage, new Long(volume.getSize()));
         } catch (ResourceAllocationException e) {
             if (snapshotType != Type.MANUAL) {
                 String msg = "Snapshot resource limit exceeded for account id : " + owner.getId() + ". Failed to create recurring snapshots";
@@ -1111,11 +1104,8 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         if (snapshot == null) {
             throw new CloudRuntimeException("Failed to create snapshot for volume: " + volume.getId());
         }
-        if (backup) {
-            _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, new Long(volume.getSize()));
-        } else {
-            _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, new Long(volume.getSize()));
-        }
+        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.snapshot);
+        _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, new Long(volume.getSize()));
         return snapshot;
     }
 

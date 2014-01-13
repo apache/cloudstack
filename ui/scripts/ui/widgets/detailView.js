@@ -380,13 +380,7 @@
                 }
             });
         },
-
-        prepareObjectStoreMigration: function($detailView, args) {        	
-            var tab = args.tabs[args.activeTab];
-            var isMultiple = tab.multiple;
-            uiActions.remove($detailView, args);
-        },            
-               
+            
         destroy: function($detailView, args) {
             var tab = args.tabs[args.activeTab];
             var isMultiple = tab.multiple;

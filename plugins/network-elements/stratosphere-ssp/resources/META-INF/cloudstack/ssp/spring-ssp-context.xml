@@ -38,5 +38,4 @@
     <bean id="StratosphereSsp" class="org.apache.cloudstack.network.element.SspElement">
         <property name="name" value="StratosphereSsp" />
     </bean>
-    
 </beans>

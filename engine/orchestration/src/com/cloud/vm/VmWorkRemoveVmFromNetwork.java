@@ -26,18 +26,18 @@ public class VmWorkRemoveVmFromNetwork extends VmWork {
     Network network;
     URI broadcastUri;
 
-    public VmWorkRemoveVmFromNetwork(long userId, long accountId, long vmId, Network network, URI broadcastUri) {
-        super(userId, accountId, vmId);
+    public VmWorkRemoveVmFromNetwork(long userId, long accountId, long vmId, String handlerName, Network network, URI broadcastUri) {
+        super(userId, accountId, vmId, handlerName);
 
         this.network = network;
         this.broadcastUri = broadcastUri;
     }
 
     public Network getNetwork() {
-        return this.network;
+        return network;
     }
 
     public URI getBroadcastUri() {
-        return this.broadcastUri;
+        return broadcastUri;
     }
 }

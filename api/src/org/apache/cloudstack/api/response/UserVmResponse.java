@@ -21,8 +21,6 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -32,6 +30,7 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.serializer.Param;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
+import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {VirtualMachine.class, UserVm.class, VirtualRouter.class})
@@ -140,6 +139,14 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @Param(description = "the name of the service offering of the virtual machine")
     private String serviceOfferingName;
 
+    @SerializedName(ApiConstants.DISK_OFFERING_ID)
+    @Param(description = "the ID of the disk offering of the virtual machine")
+    private String diskOfferingId;
+
+    @SerializedName("diskofferingname")
+    @Param(description = "the name of the disk offering of the virtual machine")
+    private String diskOfferingName;
+
     @SerializedName("forvirtualnetwork")
     @Param(description = "the virtual network for the service offering")
     private Boolean forVirtualNetwork;
@@ -229,7 +236,7 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     private Set<ResourceTagResponse> tags;
 
     @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "Template details in key/value pairs.", since = "4.2.1")
+    @Param(description = "Vm details in key/value pairs.", since = "4.2.1")
     private Map details;
 
     @SerializedName(ApiConstants.SSH_KEYPAIR)
@@ -247,9 +254,14 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE)
     @Param(description = "true if vm contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory.")
     private Boolean isDynamicallyScalable;
+
     @SerializedName(ApiConstants.SERVICE_STATE)
     @Param(description = "State of the Service from LB rule")
     private String serviceState;
+
+    @SerializedName(ApiConstants.OS_TYPE_ID)
+    @Param(description = "OS type id of the vm", since = "4.4")
+    private Long osTypeId;
 
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<SecurityGroupResponse>();
@@ -381,6 +393,14 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public String getServiceOfferingName() {
         return serviceOfferingName;
+    }
+
+    public String getDiskOfferingId() {
+        return diskOfferingId;
+    }
+
+    public String getDiskOfferingName() {
+        return diskOfferingName;
     }
 
     public Boolean getForVirtualNetwork() {
@@ -602,6 +622,14 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
         this.serviceOfferingName = serviceOfferingName;
     }
 
+    public void setDiskOfferingId(String diskOfferingId) {
+        this.diskOfferingId = diskOfferingId;
+    }
+
+    public void setDiskOfferingName(String diskOfferingName) {
+        this.diskOfferingName = diskOfferingName;
+    }
+
     public void setCpuNumber(Integer cpuNumber) {
         this.cpuNumber = cpuNumber;
     }
@@ -714,5 +742,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public void setDetails(Map details) {
         this.details = details;
+    }
+
+    public void setOsTypeId(Long osTypeId) {
+        this.osTypeId = osTypeId;
     }
 }

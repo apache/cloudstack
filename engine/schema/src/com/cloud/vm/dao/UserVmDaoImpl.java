@@ -175,6 +175,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         CountByAccount.and("account", CountByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
         CountByAccount.and("type", CountByAccount.entity().getType(), SearchCriteria.Op.EQ);
         CountByAccount.and("state", CountByAccount.entity().getState(), SearchCriteria.Op.NIN);
+        CountByAccount.and("displayVm", CountByAccount.entity().isDisplayVm(), SearchCriteria.Op.EQ);
         CountByAccount.done();
 
         SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
@@ -560,6 +561,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         sc.setParameters("account", accountId);
         sc.setParameters("type", VirtualMachine.Type.User);
         sc.setParameters("state", new Object[] {State.Destroyed, State.Error, State.Expunging});
+        sc.setParameters("displayVm", 1);
         return customSearch(sc, null).get(0);
     }
 

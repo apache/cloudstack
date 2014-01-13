@@ -151,21 +151,54 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             (!url.toLowerCase().endsWith("qcow2.bz2")) && (!url.toLowerCase().endsWith("qcow2.gz")) && (!url.toLowerCase().endsWith("ova")) &&
             (!url.toLowerCase().endsWith("ova.zip")) && (!url.toLowerCase().endsWith("ova.bz2")) && (!url.toLowerCase().endsWith("ova.gz")) &&
             (!url.toLowerCase().endsWith("tar")) && (!url.toLowerCase().endsWith("tar.zip")) && (!url.toLowerCase().endsWith("tar.bz2")) &&
-            (!url.toLowerCase().endsWith("tar.gz")) && (!url.toLowerCase().endsWith("img")) && (!url.toLowerCase().endsWith("raw"))) {
+            (!url.toLowerCase().endsWith("tar.gz")) && (!url.toLowerCase().endsWith("vmdk")) && (!url.toLowerCase().endsWith("vmdk.gz")) &&
+            (!url.toLowerCase().endsWith("vmdk.zip")) && (!url.toLowerCase().endsWith("vmdk.bz2")) && (!url.toLowerCase().endsWith("img")) &&
+            (!url.toLowerCase().endsWith("img.gz")) && (!url.toLowerCase().endsWith("img.zip")) && (!url.toLowerCase().endsWith("img.bz2")) &&
+            (!url.toLowerCase().endsWith("raw")) && (!url.toLowerCase().endsWith("raw.gz")) && (!url.toLowerCase().endsWith("raw.bz2")) &&
+            (!url.toLowerCase().endsWith("raw.zip"))) {
             throw new InvalidParameterValueException("Please specify a valid " + format.toLowerCase());
         }
 
-        if ((format.equalsIgnoreCase("vhd") && (!url.toLowerCase().endsWith("vhd") && !url.toLowerCase().endsWith("vhd.zip") && !url.toLowerCase().endsWith("vhd.bz2") && !url.toLowerCase()
-            .endsWith("vhd.gz"))) ||
-            (format.equalsIgnoreCase("vhdx") && (!url.toLowerCase().endsWith("vhdx") && !url.toLowerCase().endsWith("vhdx.zip") &&
-                !url.toLowerCase().endsWith("vhdx.bz2") && !url.toLowerCase()
-                .endsWith("vhdx.gz"))) ||
-            (format.equalsIgnoreCase("qcow2") && (!url.toLowerCase().endsWith("qcow2") && !url.toLowerCase().endsWith("qcow2.zip") &&
-                !url.toLowerCase().endsWith("qcow2.bz2") && !url.toLowerCase().endsWith("qcow2.gz"))) ||
-            (format.equalsIgnoreCase("ova") && (!url.toLowerCase().endsWith("ova") && !url.toLowerCase().endsWith("ova.zip") && !url.toLowerCase().endsWith("ova.bz2") && !url.toLowerCase()
-                .endsWith("ova.gz"))) ||
-            (format.equalsIgnoreCase("tar") && (!url.toLowerCase().endsWith("tar") && !url.toLowerCase().endsWith("tar.zip") && !url.toLowerCase().endsWith("tar.bz2") && !url.toLowerCase()
-                .endsWith("tar.gz"))) || (format.equalsIgnoreCase("raw") && (!url.toLowerCase().endsWith("img") && !url.toLowerCase().endsWith("raw")))) {
+        if ((format.equalsIgnoreCase("vhd")
+                 && (!url.toLowerCase().endsWith("vhd")
+                         && !url.toLowerCase().endsWith("vhd.zip")
+                         && !url.toLowerCase().endsWith("vhd.bz2")
+                         && !url.toLowerCase().endsWith("vhd.gz")))
+            || (format.equalsIgnoreCase("vhdx")
+                 && (!url.toLowerCase().endsWith("vhdx")
+                         && !url.toLowerCase().endsWith("vhdx.zip")
+                         && !url.toLowerCase().endsWith("vhdx.bz2")
+                         && !url.toLowerCase().endsWith("vhdx.gz")))
+            || (format.equalsIgnoreCase("qcow2")
+                 && (!url.toLowerCase().endsWith("qcow2")
+                         && !url.toLowerCase().endsWith("qcow2.zip")
+                         && !url.toLowerCase().endsWith("qcow2.bz2")
+                         && !url.toLowerCase().endsWith("qcow2.gz")))
+            || (format.equalsIgnoreCase("ova")
+                 && (!url.toLowerCase().endsWith("ova")
+                         && !url.toLowerCase().endsWith("ova.zip")
+                         && !url.toLowerCase().endsWith("ova.bz2")
+                         && !url.toLowerCase().endsWith("ova.gz")))
+            || (format.equalsIgnoreCase("tar")
+                 && (!url.toLowerCase().endsWith("tar")
+                         && !url.toLowerCase().endsWith("tar.zip")
+                         && !url.toLowerCase().endsWith("tar.bz2")
+                         && !url.toLowerCase().endsWith("tar.gz")))
+            || (format.equalsIgnoreCase("raw")
+                 && (!url.toLowerCase().endsWith("img")
+                         && !url.toLowerCase().endsWith("img.zip")
+                         && !url.toLowerCase().endsWith("img.bz2")
+                         && !url.toLowerCase().endsWith("img.gz")
+                         && !url.toLowerCase().endsWith("raw")
+                         && !url.toLowerCase().endsWith("raw.bz2")
+                         && !url.toLowerCase().endsWith("raw.zip")
+                         && !url.toLowerCase().endsWith("raw.gz")))
+            || (format.equalsIgnoreCase("vmdk")
+                 && (!url.toLowerCase().endsWith("vmdk")
+                         && !url.toLowerCase().endsWith("vmdk.zip")
+                         && !url.toLowerCase().endsWith("vmdk.bz2")
+                         && !url.toLowerCase().endsWith("vmdk.gz")))
+           ) {
             throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is an invalid for the format " + format.toLowerCase());
         }
 

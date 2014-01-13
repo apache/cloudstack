@@ -42,7 +42,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
@@ -104,7 +103,6 @@ import com.vmware.vim25.VirtualMachineRelocateSpecDiskLocator;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
@@ -338,9 +336,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected final long _opsTimeout = 900000;   // 15 minutes time out to time
 
     protected final int _shutdownWaitMs = 300000;  // wait up to 5 minutes for shutdown
-
-    @Inject
-    protected VolumeOrchestrationService volMgr;
 
     // out an operation
     protected final int _retry = 24;
@@ -4360,7 +4355,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.info("Executing resource MigrateVolumeCommand: " + _gson.toJson(cmd));
         }
 
-        final String vmName = volMgr.getVmNameFromVolumeId(cmd.getVolumeId());
+        final String vmName = cmd.getAttachedVmName();
 
         VirtualMachineMO vmMo = null;
         VmwareHypervisorHost srcHyperHost = null;
@@ -4372,13 +4367,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VirtualMachineRelocateSpecDiskLocator diskLocator = null;
 
         String srcDiskName = "";
-        String srcDsName = "";
         String tgtDsName = "";
 
         try {
             srcHyperHost = getHyperHost(getServiceContext());
             morDc = srcHyperHost.getHyperHostDatacenter();
-            srcDsName = volMgr.getStoragePoolOfVolume(cmd.getVolumeId());
             tgtDsName = poolTo.getUuid().replace("-", "");
 
             // find VM in this datacenter not just in this cluster.
@@ -4807,24 +4800,26 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         target.setPort(storagePortNumber);
         target.setIScsiName(iqn);
 
-        HostInternetScsiHbaAuthenticationProperties auth = new HostInternetScsiHbaAuthenticationProperties();
+        if (StringUtils.isNotBlank(chapName) && StringUtils.isNotBlank(chapSecret)) {
+            HostInternetScsiHbaAuthenticationProperties auth = new HostInternetScsiHbaAuthenticationProperties();
 
-        String strAuthType = "chapRequired";
+            String strAuthType = "chapRequired";
 
-        auth.setChapAuthEnabled(true);
-        auth.setChapInherited(false);
-        auth.setChapAuthenticationType(strAuthType);
-        auth.setChapName(chapName);
-        auth.setChapSecret(chapSecret);
+            auth.setChapAuthEnabled(true);
+            auth.setChapInherited(false);
+            auth.setChapAuthenticationType(strAuthType);
+            auth.setChapName(chapName);
+            auth.setChapSecret(chapSecret);
 
-        if (StringUtils.isNotBlank(mutualChapName) && StringUtils.isNotBlank(mutualChapSecret)) {
-            auth.setMutualChapInherited(false);
-            auth.setMutualChapAuthenticationType(strAuthType);
-            auth.setMutualChapName(mutualChapName);
-            auth.setMutualChapSecret(mutualChapSecret);
+            if (StringUtils.isNotBlank(mutualChapName) && StringUtils.isNotBlank(mutualChapSecret)) {
+                auth.setMutualChapInherited(false);
+                auth.setMutualChapAuthenticationType(strAuthType);
+                auth.setMutualChapName(mutualChapName);
+                auth.setMutualChapSecret(mutualChapSecret);
+            }
+
+            target.setAuthenticationProperties(auth);
         }
-
-        target.setAuthenticationProperties(auth);
 
         final List<HostInternetScsiHbaStaticTarget> lstTargets = new ArrayList<HostInternetScsiHbaStaticTarget>();
 
@@ -4945,9 +4940,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     if (cmd.isAttach()) {
                         vmMo.mountToolsInstaller();
                     } else {
-                        try {
-                            vmMo.unmountToolsInstaller();
-                        } catch (Throwable e) {
+                        try{
+                            if (!vmMo.unmountToolsInstaller()) {
+                                return new Answer(cmd, false,
+                                        "Failed to unmount vmware-tools installer ISO as the corresponding CDROM device is locked by VM. Please unmount the CDROM device inside the VM and ret-try.");
+                            }
+                        }catch(Throwable e){
                             vmMo.detachIso(null);
                         }
                     }
@@ -6058,9 +6056,32 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         cmd.setName(_url);
         cmd.setGuid(_guid);
         cmd.setDataCenter(_dcId);
+        cmd.setIqn(getIqn());
         cmd.setPod(_pod);
         cmd.setCluster(_cluster);
         cmd.setVersion(VmwareResource.class.getPackage().getImplementationVersion());
+    }
+
+    private String getIqn() {
+        try {
+            VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+
+            if (hyperHost instanceof HostMO) {
+                HostMO host = (HostMO)hyperHost;
+                HostStorageSystemMO hostStorageSystem = host.getHostStorageSystemMO();
+
+                for (HostHostBusAdapter hba : hostStorageSystem.getStorageDeviceInfo().getHostBusAdapter()) {
+                    if (hba instanceof HostInternetScsiHba) {
+                        return ((HostInternetScsiHba)hba).getIScsiName();
+                    }
+                }
+            }
+        }
+        catch (Exception ex) {
+            s_logger.info("Could not locate an IQN for this host.");
+        }
+
+        return null;
     }
 
     private void fillHostHardwareInfo(VmwareContext serviceContext, StartupRoutingCommand cmd) throws RuntimeFaultFaultMsg, RemoteException, Exception {

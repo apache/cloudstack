@@ -18,13 +18,23 @@ package vncclient;
 
 import streamer.PipelineImpl;
 import streamer.Queue;
-import common.AwtBellAdapter;
-import common.AwtCanvasAdapter;
-import common.AwtClipboardAdapter;
+import vncclient.adapter.AwtVncKeyboardAdapter;
+import vncclient.adapter.AwtVncMouseAdapter;
+import vncclient.vnc.EncodingsMessage;
+import vncclient.vnc.FrameBufferUpdateRequest;
+import vncclient.vnc.RGB888LE32PixelFormatRequest;
+import vncclient.vnc.RfbConstants;
+import vncclient.vnc.VncInitializer;
+import vncclient.vnc.VncMessageHandler;
+import vncclient.vnc.Vnc33Authentication;
+import vncclient.vnc.Vnc33Hello;
 import common.AwtKeyEventSource;
 import common.AwtMouseEventSource;
 import common.BufferedImageCanvas;
 import common.ScreenDescription;
+import common.adapter.AwtBellAdapter;
+import common.adapter.AwtCanvasAdapter;
+import common.adapter.AwtClipboardAdapter;
 
 public class VncClient extends PipelineImpl {
 
@@ -44,41 +54,41 @@ public class VncClient extends PipelineImpl {
         canvas.addKeyListener(keyEventSource);
 
         add(
-            // Handshake
+                // Handshake
 
-            // RFB protocol version exchanger
-            new Vnc33Hello("hello"),
-            // Authenticator
-            new Vnc33Authentication("auth", password),
-            // Initializer
-            new VncInitializer("init", true, screen),
+                // RFB protocol version exchanger
+                new Vnc33Hello("hello"),
+                // Authenticator
+                new Vnc33Authentication("auth", password),
+                // Initializer
+                new VncInitializer("init", true, screen),
 
-            new EncodingsMessage("encodings", RfbConstants.SUPPORTED_ENCODINGS_ARRAY),
+                new EncodingsMessage("encodings", RfbConstants.SUPPORTED_ENCODINGS_ARRAY),
 
-            new RGB888LE32PixelFormatRequest("pixel_format", screen),
+                new RGB888LE32PixelFormatRequest("pixel_format", screen),
 
-            // Main
+                // Main
 
-            // Packet receiver
-            new VncMessageHandler("message_handler", screen),
+                // Packet receiver
+                new VncMessageHandler("message_handler", screen),
 
-            new AwtBellAdapter("bell"),
+                new AwtBellAdapter("bell"),
 
-            new AwtClipboardAdapter("clipboard"),
+                new AwtClipboardAdapter("clipboard"),
 
-            new AwtCanvasAdapter("pixels", canvas, screen),
+                new AwtCanvasAdapter("pixels", canvas, screen),
 
-            new Queue("queue"),
+                new Queue("queue"),
 
-            new FrameBufferUpdateRequest("fbur", screen),
+                new FrameBufferUpdateRequest("fbur", screen),
 
-            new AwtKeyboardEventToVncAdapter("keyboard_adapter"),
+                new AwtVncKeyboardAdapter("keyboard_adapter"),
 
-            new AwtMouseEventToVncAdapter("mouse_adapter"),
+                new AwtVncMouseAdapter("mouse_adapter"),
 
-            mouseEventSource, keyEventSource
+                mouseEventSource, keyEventSource
 
-        );
+                );
 
         // Link handshake elements
         link("IN", "hello", "auth", "init", "message_handler");

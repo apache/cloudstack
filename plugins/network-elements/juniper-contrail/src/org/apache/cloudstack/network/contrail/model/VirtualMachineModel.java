@@ -337,8 +337,27 @@ public class VirtualMachineModel extends ModelObjectBase {
 
     @Override
     public boolean verify(ModelController controller) {
-        // TODO Auto-generated method stub
-        return false;
+        assert _initialized : "initialized is false";
+        assert _uuid != null : "uuid is not set";
+
+        ApiConnector api = controller.getApiAccessor();
+
+        try {
+            _vm = (VirtualMachine) api.findById(VirtualMachine.class, _uuid);
+        } catch (IOException e) {
+            s_logger.error("virtual-machine verify", e);
+        }
+
+        if (_vm == null) {
+            return false;
+        }
+
+        for (ModelObject successor: successors()) {
+            if (!successor.verify(controller)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

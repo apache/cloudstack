@@ -524,6 +524,19 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
+    public List<IPAddressVO> listPublicIpsAssignedToGuestNtwk(long associatedNetworkId, Boolean sourceNat) {
+        SearchCriteria<IPAddressVO> sc = IpAddressSearch.create();
+        sc.setParameters("associatedWithNetworkId", associatedNetworkId);
+
+        if (sourceNat != null) {
+            sc.addAnd("sourceNat", SearchCriteria.Op.EQ, sourceNat);
+        }
+        sc.setJoinParameters("virtualNetworkVlanSB", "vlanType", VlanType.VirtualNetwork);
+
+        return _ipAddressDao.search(sc, null);
+    }
+
+    @Override
     public List<IPAddressVO> listPublicIpsAssignedToAccount(long accountId, long dcId, Boolean sourceNat) {
         SearchCriteria<IPAddressVO> sc = IpAddressSearch.create();
         sc.setParameters("accountId", accountId);

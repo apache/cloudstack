@@ -45,7 +45,7 @@ ALTER TABLE `cloud`.`load_balancing_rules` ADD COLUMN `lb_protocol` VARCHAR(40);
 
 DROP TABLE IF EXISTS `cloud`.`vm_snapshot_details`;
 CREATE TABLE `cloud`.`vm_snapshot_details` (
-  `id` bigint unsigned UNIQUE NOT NULL,
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT,
   `vm_snapshot_id` bigint unsigned NOT NULL,
   `name` varchar(255) NOT NULL,
   `value` varchar(255) NOT NULL,
@@ -54,7 +54,7 @@ CREATE TABLE `cloud`.`vm_snapshot_details` (
 
 DROP TABLE IF EXISTS `cloud`.`snapshot_details`;
 CREATE TABLE `cloud`.`snapshot_details` (
-  `id` bigint unsigned UNIQUE NOT NULL,
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT,
   `snapshot_id` bigint unsigned NOT NULL,
   `name` varchar(255) NOT NULL,
   `value` varchar(255) NOT NULL,
@@ -126,6 +126,7 @@ ALTER TABLE `cloud`.`volumes` ADD COLUMN `hv_ss_reserve` int(32) unsigned DEFAUL
 UPDATE `cloud`.`disk_offering` SET `state`='Inactive' WHERE `removed` IS NOT NULL;
 UPDATE `cloud`.`disk_offering` SET `removed`=NULL;
 
+UPDATE `cloud`.`vm_template` SET `guest_os_id`= "142" WHERE `id` = "5";
 UPDATE `cloud`.`vm_template` SET `state`='Inactive' WHERE `removed` IS NOT NULL;
 UPDATE `cloud`.`vm_template` SET `state`='Active' WHERE `removed` IS NULL;
 UPDATE `cloud`.`vm_template` SET `removed`=NULL;
@@ -231,6 +232,7 @@ CREATE VIEW `cloud`.`template_view` AS
         vm_template.display_text,
         vm_template.enable_password,
         vm_template.dynamically_scalable,
+        vm_template.state template_state,
         vm_template.guest_os_id,
         guest_os.uuid guest_os_uuid,
         guest_os.display_name guest_os_name,
@@ -261,7 +263,7 @@ CREATE VIEW `cloud`.`template_view` AS
         data_center.name data_center_name,
         launch_permission.account_id lp_account_id,
         template_store_ref.store_id,
-		image_store.scope as store_scope,
+        image_store.scope as store_scope,
         template_store_ref.state,
         template_store_ref.download_state,
         template_store_ref.download_pct,
@@ -281,7 +283,7 @@ CREATE VIEW `cloud`.`template_view` AS
         resource_tags.resource_uuid tag_resource_uuid,
         resource_tags.resource_type tag_resource_type,
         resource_tags.customer tag_customer,
-		CONCAT(vm_template.id, '_', IFNULL(data_center.id, 0)) as temp_zone_pair
+        CONCAT(vm_template.id, '_', IFNULL(data_center.id, 0)) as temp_zone_pair
     from
         `cloud`.`vm_template`
             inner join
@@ -300,7 +302,7 @@ CREATE VIEW `cloud`.`template_view` AS
         `cloud`.`template_store_ref` ON template_store_ref.template_id = vm_template.id and template_store_ref.store_role = 'Image'
             left join
         `cloud`.`image_store` ON image_store.removed is NULL AND template_store_ref.store_id is not NULL AND image_store.id = template_store_ref.store_id 
-        	left join
+            left join
         `cloud`.`template_zone_ref` ON template_zone_ref.template_id = vm_template.id AND template_store_ref.store_id is NULL AND template_zone_ref.removed is null    
             left join
         `cloud`.`data_center` ON (image_store.data_center_id = data_center.id OR template_zone_ref.zone_id = data_center.id)
@@ -308,9 +310,7 @@ CREATE VIEW `cloud`.`template_view` AS
         `cloud`.`launch_permission` ON launch_permission.template_id = vm_template.id
             left join
         `cloud`.`resource_tags` ON resource_tags.resource_id = vm_template.id
-            and (resource_tags.resource_type = 'Template' or resource_tags.resource_type='ISO')
-    where
-        vm_template.state='Active';
+            and (resource_tags.resource_type = 'Template' or resource_tags.resource_type='ISO');
 
 DROP VIEW IF EXISTS `cloud`.`volume_view`;
 CREATE VIEW `cloud`.`volume_view` AS
@@ -611,12 +611,9 @@ INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, 
 CREATE TABLE `cloud`.`ldap_configuration` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `hostname` varchar(255) NOT NULL COMMENT 'the hostname of the ldap server',
-  `port` varchar(255) COMMENT 'port that the ldap server is listening on',
+  `port` int(10) COMMENT 'port that the ldap server is listening on',
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-INSERT INTO `cloud`.`ldap_configuration`(hostname) SELECT conf.value FROM `cloud`.`configuration` conf WHERE conf.name='ldap.hostname' ;
-UPDATE `cloud`.`ldap_configuration` SET port=(SELECT conf.value FROM `cloud`.`configuration` conf WHERE conf.name='ldap.port') WHERE hostname = (SELECT conf.value FROM `cloud` .`configuration` conf WHERE conf.name='ldap.hostname');
 
 UPDATE `cloud`.`volumes` SET display_volume=1 where id>0;
 
@@ -638,6 +635,15 @@ insert into cloud.monitoring_services(id, uuid, service, process_name,  service_
 ALTER TABLE `cloud`.`service_offering` CHANGE COLUMN `cpu` `cpu` INT(10) UNSIGNED NULL COMMENT '# of cores'  , CHANGE COLUMN `speed` `speed` INT(10) UNSIGNED NULL COMMENT 'speed per core in mhz'  , CHANGE COLUMN `ram_size` `ram_size` BIGINT(20) UNSIGNED NULL  ;
 
 CREATE TABLE `cloud`.`usage_event_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `usage_event_id` bigint unsigned NOT NULL COMMENT 'usage event id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(1024) NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_usage_event_details__usage_event_id` FOREIGN KEY `fk_usage_event_details__usage_event_id`(`usage_event_id`) REFERENCES `usage_event`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud_usage`.`usage_event_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `usage_event_id` bigint unsigned NOT NULL COMMENT 'usage event id',
   `name` varchar(255) NOT NULL,
@@ -771,6 +777,8 @@ CREATE VIEW `cloud`.`domain_router_view` AS
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'management-server', "vmware.vcenter.session.timeout", "1200", "VMware client timeout in seconds", "1200", NULL,NULL,0);
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'management-server', "mgt.server.vendor", "ACS", "the vendor of management server", "ACS", NULL,NULL,0);
+Update `cloud`.`configuration` set `component` = "VolumeOrchestrationService", `scope` = "Global" where `name`="custom.diskoffering.size.max";
+Update `cloud`.`configuration` set `component` = "VolumeOrchestrationService", `scope` = "Global" where `name`="custom.diskoffering.size.min";
 
 ALTER TABLE `cloud_usage`.`usage_vm_instance` ADD COLUMN `cpu_speed` INT(10) UNSIGNED NULL  COMMENT 'speed per core in Mhz',
     ADD COLUMN `cpu_cores` INT(10) UNSIGNED NULL  COMMENT 'number of cpu cores',
@@ -821,7 +829,7 @@ CREATE TABLE `cloud`.`network_acl_item_details` (
 ALTER TABLE `cloud`.`alert` ADD COLUMN `name` varchar(255) DEFAULT NULL COMMENT 'name of the alert';
 
 UPDATE `cloud`.`hypervisor_capabilities` SET `max_data_volumes_limit`=13 WHERE `hypervisor_type`='Vmware';
-INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, storage_motion_supported) VALUES (UUID(), 'Hyperv', '6.3', 1024, 0, 64, 0);
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, storage_motion_supported) VALUES (UUID(), 'Hyperv', '6.2', 1024, 0, 64, 0);
 
 ALTER TABLE `cloud`.`external_load_balancer_devices` ADD COLUMN `is_exclusive_gslb_provider` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if load balancer appliance is acting exclusively as gslb service provider in the zone and can not be used for LB';
 
@@ -842,6 +850,24 @@ CREATE TABLE `cloud`.`s2s_vpn_gateway_details` (
   CONSTRAINT `fk_s2s_vpn_gateway_details__s2s_vpn_gateway_id` FOREIGN KEY `fk_s2s_vpn_gateway_details__s2s_vpn_gateway_id`(`s2s_vpn_gateway_id`) REFERENCES `s2s_vpn_gateway`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Hidden', 'DEFAULT', 'management-server', 'hyperv.guest.network.device', null, 'Specify the virtual switch on host for guest network', NULL, NULL, NULL, 0);
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Hidden', 'DEFAULT', 'management-server', 'hyperv.private.network.device', null, 'Specify the virtual switch on host for private network', NULL, NULL, NULL, 0);
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Hidden', 'DEFAULT', 'management-server', 'hyperv.public.network.device', null, 'Specify the public virtual switch on host for public network', NULL, NULL, NULL, 0);
+
+DELETE FROM `cloud`.`configuration` WHERE `name` IN ("xen.update.url", "update.check.interval", "baremetal_dhcp_devices", "host.updates.enable");
+
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'VMSnapshotManager', "vmsnapshot.create.wait", "1800", "In second, timeout for create vm snapshot", NULL, NULL,NULL,0);
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Advanced", 'DEFAULT', 'VMSnapshotManager', "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", NULL, NULL,NULL,0);
+
+INSERT IGNORE INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type, state)
+    VALUES (9, UUID(), 'routing-9', 'SystemVM Template (HyperV)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/4.3/systemvm64template-2013-12-23-hyperv.vhd.bz2', '5df45ee6ebe1b703a8805f4e1f4d0818', 0, 'SystemVM Template (HyperV)', 'VHD', 15, 0, 1, 'Hyperv', 'Active' );
+
+UPDATE `cloud`.`vm_template` SET `bits` = "64", `url` = "http://download.cloud.com/templates/4.3/systemvm64template-2013-12-23-hyperv.vhd.bz2", `state` = "Active", `checksum` = "5df45ee6ebe1b703a8805f4e1f4d0818" WHERE `id` = "9";
+
+INSERT IGNORE INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable, state)
+    VALUES (6, UUID(), 'centos64-x64', 'CentOS 6.4(64-bit) GUI (Hyperv)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloud.com/releases/4.3/centos6_4_64bit.vhd.bz2', 'eef6b9940ea3ed01221d963d4a012d0a', 0, 'CentOS 6.4 (64-bit) GUI (Hyperv)', 'VHD', 182, 1, 1, 'Hyperv', 1, 'Active');
+
+UPDATE `cloud`.`configuration` SET `component` = 'VMSnapshotManager' WHERE `name` IN ("vmsnapshot.create.wait", "vmsnapshot.max");
 
 CREATE TABLE `cloud`.`s2s_customer_gateway_details` (
   `id` bigint unsigned NOT NULL auto_increment,
@@ -863,3 +889,10 @@ CREATE TABLE `cloud`.`s2s_vpn_connection_details` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_s2s_vpn_connection_details__s2s_vpn_connection_id` FOREIGN KEY `fk_s2s_vpn_connection_details__s2s_vpn_connection_id`(`s2s_vpn_connection_id`) REFERENCES `s2s_vpn_connection`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `cpu`;
+ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `ram`;
+ALTER TABLE `cloud`.`vm_instance` DROP COLUMN `speed`;
+
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled) VALUES (UUID(), 'VMware', '5.5', 128, 0, 13, 32, 1, 1);
+

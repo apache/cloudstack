@@ -1109,6 +1109,13 @@ public enum Config {
             "xenserver61",
             "default Xen PV driver version for registered template, valid value:xenserver56,xenserver61 ",
             "xenserver56,xenserver61"),
+    XenServerHotFix("Advanced",
+            ManagementServer.class,
+            Boolean.class,
+            "xen.hotfix.enabled",
+            "false",
+            "Enable/Disable xenserver hot fix",
+            null),
 
     // VMware
     VmwareUseNexusVSwitch(
@@ -1705,8 +1712,6 @@ public enum Config {
             "false",
             "Should be set to true, if there will be multiple NetScaler devices providing EIP service in a zone",
             null),
-    CustomDiskOfferingMinSize("Advanced", ManagementServer.class, Long.class, "custom.diskoffering.size.min", "1", "Minimum size in GB for custom disk offering", null),
-    CustomDiskOfferingMaxSize("Advanced", ManagementServer.class, Long.class, "custom.diskoffering.size.max", "1024", "Maximum size in GB for custom disk offering", null),
     ConsoleProxyServiceOffering(
             "Advanced",
             ManagementServer.class,

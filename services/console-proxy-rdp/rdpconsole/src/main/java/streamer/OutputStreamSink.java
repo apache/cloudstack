@@ -20,10 +20,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import streamer.debug.FakeSource;
+
 public class OutputStreamSink extends BaseElement {
 
     protected OutputStream os;
-    protected SocketWrapper socketWrapper;
+    protected SocketWrapperImpl socketWrapper;
 
     public OutputStreamSink(String id) {
         super(id);
@@ -34,7 +36,7 @@ public class OutputStreamSink extends BaseElement {
         this.os = os;
     }
 
-    public OutputStreamSink(String id, SocketWrapper socketWrapper) {
+    public OutputStreamSink(String id, SocketWrapperImpl socketWrapper) {
         super(id);
         this.socketWrapper = socketWrapper;
     }
@@ -68,26 +70,26 @@ public class OutputStreamSink extends BaseElement {
     @Override
     public void handleEvent(Event event, Direction direction) {
         switch (event) {
-            case SOCKET_UPGRADE_TO_SSL:
-                socketWrapper.upgradeToSsl();
-                break;
-            default:
-                super.handleEvent(event, direction);
+        case SOCKET_UPGRADE_TO_SSL:
+            socketWrapper.upgradeToSsl();
+            break;
+        default:
+            super.handleEvent(event, direction);
         }
     }
 
     @Override
     public void setLink(String padName, Link link, Direction direction) {
         switch (direction) {
-            case IN:
-                super.setLink(padName, link, direction);
+        case IN:
+            super.setLink(padName, link, direction);
 
-                if (os == null)
-                    // Pause links until data stream will be ready
-                    link.pause();
-                break;
-            case OUT:
-                throw new RuntimeException("Cannot assign link to output pad in sink element. Element: " + this + ", pad: " + padName + ", link: " + link + ".");
+            if (os == null)
+                // Pause links until data stream will be ready
+                link.pause();
+            break;
+        case OUT:
+            throw new RuntimeException("Cannot assign link to output pad in sink element. Element: " + this + ", pad: " + padName + ", link: " + link + ".");
         }
     }
 
@@ -126,10 +128,10 @@ public class OutputStreamSink extends BaseElement {
     public static void main(String args[]) {
         Element source = new FakeSource("source") {
             {
-                this.verbose = true;
-                this.numBuffers = 3;
-                this.incommingBufLength = 5;
-                this.delay = 100;
+                verbose = true;
+                numBuffers = 3;
+                incommingBufLength = 5;
+                delay = 100;
             }
         };
 

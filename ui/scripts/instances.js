@@ -43,7 +43,7 @@
                         isChecked: false
                     },
                     quiescevm: {
-                        label: 'Quiesce VM',
+                        label: 'label.quiesce.vm',
                         isBoolean: true,
                         isChecked: false
                     }
@@ -139,16 +139,19 @@
             },
             fields: {
                 name: {
-                    label: 'label.name'
+                    label: 'label.name',
+                    truncate: true
                 },
                 instancename: {
                     label: 'label.internal.name'
                 },
                 displayname: {
-                    label: 'label.display.name'
+                    label: 'label.display.name',
+                    truncate: true
                 },
                 zonename: {
-                    label: 'label.zone.name'
+                    label: 'label.zone.name',
+                    truncate: true
                 },
                 state: {
                     label: 'label.state',

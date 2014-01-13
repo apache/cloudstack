@@ -61,6 +61,7 @@ doHairpinNat () {
   local guestVmIp=$4
   local guestPort=$(echo $5 | sed 's/:/-/')
   local op=$6
+  local destPort=$5
   logger -t cloud "$(basename $0): create HairPin entry : public ip=$publicIp \
   instance ip=$guestVmIp proto=$proto portRange=$guestPort op=$op"
 
@@ -71,7 +72,7 @@ doHairpinNat () {
   		(sudo iptables -t nat $op POSTROUTING -s $vrGuestIPNetwork -d $guestVmIp -j SNAT -o eth0 --to-source $vrGuestIP &>> $OUTFILE || [ "$op" == "-D" ])
 	else
   		(sudo iptables -t nat $op PREROUTING -d $publicIp -i eth0 -p $prot --dport $port -j DNAT --to-destination $guestVmIp:$guestPort &>> $OUTFILE || [ "$op" == "-D" ]) &&
-  		(sudo iptables -t nat $op POSTROUTING -s $vrGuestIPNetwork -p $prot --dport $port -d $guestVmIp -j SNAT -o eth0 --to-source $vrGuestIP &>> $OUTFILE || [ "$op" == "-D" ])
+  		(sudo iptables -t nat $op POSTROUTING -s $vrGuestIPNetwork -p $prot --dport $destPort -d $guestVmIp -j SNAT -o eth0 --to-source $vrGuestIP &>> $OUTFILE || [ "$op" == "-D" ])
 	fi
 }
 

@@ -40,29 +40,20 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${cs.checkstyle.version}</version>
+        <executions>
+          <execution>
+            <phase>none</phase>
+          </execution>
+        </executions>
         <dependencies>
           <dependency>
             <groupId>org.apache.cloudstack</groupId>
-            <artifactId>build-checkstyle</artifactId>
-            <version>${parent.version}</version>
+            <artifactId>checkstyle</artifactId>
+            <!-- this project.version differs -->
+            <version>${project.parent.version}</version>
           </dependency>
         </dependencies>
-        <executions>
-          <execution>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution> 
-        </executions>
-        <configuration>
-          <failsOnError>true</failsOnError>
-          <configLocation>tooling/checkstyle.xml</configLocation>
-          <consoleOutput>true</consoleOutput>
-          <includeTestSourceDirectory>true</includeTestSourceDirectory>
-          <sourceDirectory>${project.basedir}</sourceDirectory>
-          <excludes>**\/*</excludes>
-        </configuration>
       </plugin>
     </plugins>
   </build>

@@ -18,6 +18,7 @@
  */
 package org.apache.cloudstack.storage.motion;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -37,6 +38,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageAction;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
@@ -191,9 +193,9 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         }
     }
 
-    protected DataObject cacheSnapshotChain(SnapshotInfo snapshot) {
+    protected DataObject cacheSnapshotChain(SnapshotInfo snapshot, Scope scope) {
         DataObject leafData = null;
-        DataStore store = cacheMgr.getCacheStorage(snapshot.getDataStore().getScope());
+        DataStore store = cacheMgr.getCacheStorage(scope);
         while (snapshot != null) {
             DataObject cacheData = cacheMgr.createCacheObject(snapshot, store);
             if (leafData == null) {
@@ -203,6 +205,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         }
         return leafData;
     }
+
 
     protected void deleteSnapshotCacheChain(SnapshotInfo snapshot) {
         while (snapshot != null) {
@@ -228,7 +231,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         DataObject srcData = snapObj;
         try {
             if (!(storTO instanceof NfsTO)) {
-                srcData = cacheSnapshotChain(snapshot);
+                // cache snapshot to zone-wide staging store for the volume to be created
+                srcData = cacheSnapshotChain(snapshot, new ZoneScope(pool.getDataCenterId()));
             }
 
             String value = configDao.getValue(Config.CreateVolumeFromSnapshotWait.toString());
@@ -360,7 +364,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     protected Answer migrateVolumeToPool(DataObject srcData, DataObject destData) {
         VolumeInfo volume = (VolumeInfo)srcData;
         StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(destData.getDataStore().getId(), DataStoreRole.Primary);
-        MigrateVolumeCommand command = new MigrateVolumeCommand(volume.getId(), volume.getPath(), destPool);
+        MigrateVolumeCommand command = new MigrateVolumeCommand(volume.getId(), volume.getPath(), destPool, volume.getAttachedVmName());
         EndPoint ep = selector.select(volume.getDataStore());
         Answer answer = null;
         if (ep == null) {
@@ -437,8 +441,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         boolean needCache = false;
         if (needCacheStorage(srcData, destData)) {
             needCache = true;
-            SnapshotInfo snapshot = (SnapshotInfo)srcData;
-            srcData = cacheSnapshotChain(snapshot);
+            SnapshotInfo snapshot = (SnapshotInfo) srcData;
+            srcData = cacheSnapshotChain(snapshot, snapshot.getDataStore().getScope());
         }
 
         EndPoint ep = null;
@@ -470,6 +474,14 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         int _backupsnapshotwait = NumbersUtil.parseInt(value, Integer.parseInt(Config.BackupSnapshotWait.getDefaultValue()));
 
         DataObject cacheData = null;
+        SnapshotInfo snapshotInfo = (SnapshotInfo)srcData;
+        Object payload = snapshotInfo.getPayload();
+        Boolean fullSnapshot = true;
+        if (payload != null) {
+            fullSnapshot = (Boolean)payload;
+        }
+        Map<String, String> options = new HashMap<String, String>();
+        options.put("fullSnapshot", fullSnapshot.toString());
         Answer answer = null;
         try {
             if (needCacheStorage(srcData, destData)) {
@@ -478,6 +490,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
                 CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
                 cmd.setCacheTO(cacheData.getTO());
+                cmd.setOptions(options);
                 EndPoint ep = selector.select(srcData, destData);
                 if (ep == null) {
                     String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
@@ -488,7 +501,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 }
             } else {
                 CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _backupsnapshotwait, VirtualMachineManager.ExecuteInSequence.value());
-                EndPoint ep = selector.select(srcData, destData);
+                cmd.setOptions(options);
+                EndPoint ep = selector.select(srcData, destData, StorageAction.BACKUPSNAPSHOT);
                 if (ep == null) {
                     String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
                     s_logger.error(errMsg);
@@ -496,12 +510,11 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 } else {
                     answer = ep.sendMessage(cmd);
                 }
+
             }
-            // clean up cache entry in case of failure
-            if (answer == null || !answer.getResult()) {
-                if (cacheData != null) {
-                    cacheMgr.deleteCacheObject(cacheData);
-                }
+            // clean up cache entry
+            if (cacheData != null) {
+                cacheMgr.deleteCacheObject(cacheData);
             }
             return answer;
         } catch (Exception e) {

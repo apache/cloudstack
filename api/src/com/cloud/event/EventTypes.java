@@ -455,6 +455,11 @@ public class EventTypes {
     //Alert generation
     public static final String ALERT_GENERATE = "ALERT.GENERATE";
 
+    // OpenDaylight
+    public static final String EVENT_EXTERNAL_OPENDAYLIGHT_ADD_CONTROLLER = "PHYSICAL.ODLCONTROLLER.ADD";
+    public static final String EVENT_EXTERNAL_OPENDAYLIGHT_DELETE_CONTROLLER = "PHYSICAL.ODLCONTROLLER.DELETE";
+    public static final String EVENT_EXTERNAL_OPENDAYLIGHT_CONFIGURE_CONTROLLER = "PHYSICAL.ODLCONTROLLER.CONFIGURE";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -760,6 +765,11 @@ public class EventTypes {
         entityEventDetails.put(EVENT_AUTOSCALEVMGROUP_DISABLE, AutoScaleVmGroup.class.getName());
         entityEventDetails.put(EVENT_GUEST_VLAN_RANGE_DEDICATE, GuestVlan.class.getName());
         entityEventDetails.put(EVENT_DEDICATED_GUEST_VLAN_RANGE_RELEASE, GuestVlan.class.getName());
+
+        // OpenDaylight
+        entityEventDetails.put(EVENT_EXTERNAL_OPENDAYLIGHT_ADD_CONTROLLER, "OpenDaylightController");
+        entityEventDetails.put(EVENT_EXTERNAL_OPENDAYLIGHT_DELETE_CONTROLLER, "OpenDaylightController");
+        entityEventDetails.put(EVENT_EXTERNAL_OPENDAYLIGHT_CONFIGURE_CONTROLLER, "OpenDaylightController");
     }
 
     public static String getEntityForEvent(String eventName) {

@@ -576,23 +576,13 @@
                                     desc: 'message.action.take.snapshot',
                                     fields: {
                                         quiescevm: {
-                                            label: 'Quiesce VM',
+                                            label: 'label.quiesce.vm',
                                             isBoolean: true,
                                             isHidden: function(args) {
-                                                var hidden = true;
-                                                $.ajax({
-                                                    url: createURL('listStoragePools&id='+args.context.volumes[0].storageid),
-                                                    dataType: "json",
-                                                    async: false,
-                                                    success: function(json) {
-                                                        if (json.liststoragepoolsresponse.storagepool[0].storagecapabilities.VOLUME_SNAPSHOT_QUIESCEVM == 'true')
-                                                            hidden = false;
+                                                if (args.context.volumes[0].quiescevm == true)
+                                                    return false;   
                                                         else
-                                                            hidden = true;
-                                                    }
-                                                });
-
-                                                return hidden;
+                                                	return true;
                                             }
                                         }
                                     }
@@ -1751,13 +1741,49 @@
                                 createForm: {
                                     title: 'label.action.create.volume',
                                     desc: '',
+                                    preFilter: function(args) {
+                                	    if (g_regionsecondaryenabled == true) {
+                                	    	args.$form.find('.form-item[rel=zoneid]').css('display', 'inline-block');
+                                	    } else {
+                                	    	args.$form.find('.form-item[rel=zoneid]').hide();
+                                	    }
+                                    },
                                     fields: {
                                         name: {
                                             label: 'label.name',
                                             validation: {
                                                 required: true
                                             }
-                                        }
+                                        },                                        
+                                        zoneid: {
+                                            label: 'label.availability.zone',  
+                                            isHidden: true,
+                                            select: function(args) {
+                                                $.ajax({
+                                                    url: createURL("listZones&available=true"),
+                                                    dataType: "json",
+                                                    async: true,
+                                                    success: function(json) {
+                                                        var zoneObjs = json.listzonesresponse.zone;                                                        
+                                                        var items = [{
+                                                            id: '',
+                                                            description: ''
+                                                        }];                                                        
+                                                        if (zoneObjs != null) {
+                                                        	for (i = 0; i < zoneObjs.length; i++) {
+                                                        		items.push({
+                                                        			id: zoneObjs[i].id,
+                                                        			description: zoneObjs[i].name
+                                                        		});
+                                                        	}
+                                                        }     
+                                                        args.response.success({                                                            
+                                                            data: items
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        }                                        
                                     }
                                 },
                                 action: function(args) {
@@ -1765,7 +1791,13 @@
                                         snapshotid: args.context.snapshots[0].id,
                                         name: args.data.name
                                     };
-
+                                    
+                                    if (args.$form.find('.form-item[rel=zoneid]').css("display") != "none" && args.data.zoneid != '') {                                    
+	                                    $.extend(data, {
+	                                    	zoneId: args.data.zoneid
+	                                    });   
+                                    }                                    
+                                    
                                     $.ajax({
                                         url: createURL('createVolume'),
                                         data: data,
@@ -1991,7 +2023,7 @@
             allowedActions.push("createTemplate");
             allowedActions.push("createVolume");
 
-            if (jsonObj.revertable && args.context.volumes[0].vmstate == "Stopped") {
+            if (jsonObj.revertable) {
                 allowedActions.push("revertSnapshot");
             }
         }

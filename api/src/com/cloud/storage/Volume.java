@@ -189,7 +189,5 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
 
     Long getVmSnapshotChainSize();
 
-    void setHypervisorSnapshotReserve(Integer hypervisorSnapshotReserve);
-
     Integer getHypervisorSnapshotReserve();
 }

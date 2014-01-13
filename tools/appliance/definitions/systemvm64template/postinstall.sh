@@ -19,7 +19,7 @@ set -x
 
 ROOTPW=password
 HOSTNAME=systemvm
-CLOUDSTACK_RELEASE=4.2.0
+CLOUDSTACK_RELEASE=4.3.0
 
 add_backports () {
     sed -i '/backports/d' /etc/apt/sources.list
@@ -79,6 +79,8 @@ install_packages() {
   # Download the hv kvp daemon 
   wget http://people.apache.org/~rajeshbattala/hv-kvp-daemon_3.1_amd64.deb
   dpkg -i hv-kvp-daemon_3.1_amd64.deb
+  #libraries required for rdp client (Hyper-V) 
+   apt-get --no-install-recommends -q -y --force-yes install libtcnative-1 libssl-dev libapr1-dev
 
   # vmware tools
   apt-get --no-install-recommends -q -y --force-yes install open-vm-tools
@@ -103,7 +105,7 @@ install_packages() {
   apt-get update
   apt-get --no-install-recommends -q -y --force-yes install links:i386 libuuid1:i386
 
-
+  apt-get --no-install-recommends -q -y --force-yes install radvd
 }
 
 setup_accounts() {
@@ -236,6 +238,8 @@ configure_services() {
   chkconfig --add cloud
   chkconfig cloud off
   chkconfig xl2tpd off
+  chkconfig hv_kvp_daemon off
+  chkconfig radvd off
 }
 
 do_signature() {

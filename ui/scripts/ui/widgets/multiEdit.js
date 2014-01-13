@@ -515,6 +515,8 @@
                 uiCustom: true
             });
 
+            instances.listView.multiSelect = false;
+
             instances.listView.actions = {
                 select: {
                     label: 'Select instance',

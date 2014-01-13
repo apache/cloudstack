@@ -32,6 +32,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
+import com.cloud.deploy.HAPlanner;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContext;
@@ -140,6 +141,16 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
     public void setFenceBuilders(List<FenceBuilder> fenceBuilders) {
         this.fenceBuilders = fenceBuilders;
     }
+
+    List<HAPlanner> _haPlanners;
+    public List<HAPlanner> getHaPlanners() {
+        return _haPlanners;
+    }
+
+    public void setHaPlanners(List<HAPlanner> haPlanners) {
+        this._haPlanners = haPlanners;
+    }
+
 
     @Inject
     AgentManager _agentMgr;
@@ -340,6 +351,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
 
             try {
                 _itMgr.advanceStop(vm.getUuid(), true);
+                vm = _instanceDao.findByUuid(vm.getUuid());
             } catch (ResourceUnavailableException e) {
                 assert false : "How do we hit this when force is true?";
                 throw new CloudRuntimeException("Caught exception even though it should be handled.", e);
@@ -548,7 +560,14 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             if (_haTag != null) {
                 params.put(VirtualMachineProfile.Param.HaTag, _haTag);
             }
-            _itMgr.advanceStart(vm.getUuid(), params);
+
+            try{
+                // First try starting the vm with its original planner, if it doesn't succeed send HAPlanner as its an emergency.
+                _itMgr.advanceStart(vm.getUuid(), params, null);
+            }catch (InsufficientCapacityException e){
+                s_logger.warn("Failed to deploy vm " + vmId + " with original planner, sending HAPlanner");
+                _itMgr.advanceStart(vm.getUuid(), params, _haPlanners.get(0));
+            }
 
             VMInstanceVO started = _instanceDao.findById(vm.getId());
             if (started != null && started.getState() == VirtualMachine.State.Running) {
@@ -591,8 +610,14 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             _haDao.update(work.getId(), work);
 
             VMInstanceVO vm = _instanceDao.findById(vmId);
-
-            _itMgr.migrateAway(vm.getUuid(), srcHostId);
+            // First try starting the vm with its original planner, if it doesn't succeed send HAPlanner as its an emergency.
+            boolean result = false;
+            try {
+                _itMgr.migrateAway(vm.getUuid(), srcHostId, null);
+            }catch (InsufficientServerCapacityException e) {
+                s_logger.warn("Failed to deploy vm " + vmId + " with original planner, sending HAPlanner");
+                _itMgr.migrateAway(vm.getUuid(), srcHostId, _haPlanners.get(0));
+            }
             return null;
         } catch (InsufficientServerCapacityException e) {
             s_logger.warn("Insufficient capacity for migrating a VM.");
