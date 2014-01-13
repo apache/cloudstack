@@ -71,6 +71,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.reflect.TypeToken;
 
+@SuppressWarnings("rawtypes")
 public class NiciraNvpApi {
     protected static final String GET_METHOD_TYPE = "get";
     protected static final String DELETE_METHOD_TYPE = "delete";
@@ -98,13 +99,26 @@ public class NiciraNvpApi {
 
     private final Gson gson;
 
-    @SuppressWarnings("rawtypes")
     protected static Map<Class, String> prefixMap;
 
-    @SuppressWarnings("rawtypes")
     protected static Map<Class, Type> listTypeMap;
 
     protected static Map<String, String> defaultListParams;
+
+    static {
+        prefixMap = new HashMap<Class, String>();
+        prefixMap.put(SecurityProfile.class, SEC_PROFILE_URI_PREFIX);
+        prefixMap.put(Acl.class, ACL_URI_PREFIX);
+
+        listTypeMap = new HashMap<Class, Type>();
+        listTypeMap.put(SecurityProfile.class, new TypeToken<NiciraNvpList<SecurityProfile>>() {
+        }.getType());
+        listTypeMap.put(Acl.class, new TypeToken<NiciraNvpList<Acl>>() {
+        }.getType());
+
+        defaultListParams = new HashMap<String, String>();
+        defaultListParams.put("fields", "*");
+    }
 
     /* This factory method is protected so we can extend this
      * in the unittests.
@@ -147,23 +161,6 @@ public class NiciraNvpApi {
         }
 
         gson = new GsonBuilder().registerTypeAdapter(NatRule.class, new NatRuleAdapter()).setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create();
-        buildTypeSpecificStructures();
-    }
-
-    @SuppressWarnings("rawtypes")
-    protected void buildTypeSpecificStructures() {
-        if (prefixMap == null || listTypeMap == null || defaultListParams == null) {
-            prefixMap = new HashMap<Class, String>();
-            prefixMap.put(SecurityProfile.class, SEC_PROFILE_URI_PREFIX);
-            prefixMap.put(Acl.class, ACL_URI_PREFIX);
-
-            listTypeMap = new HashMap<Class, Type>();
-            listTypeMap.put(SecurityProfile.class, new TypeToken<NiciraNvpList<SecurityProfile>>() {}.getType());
-            listTypeMap.put(Acl.class, new TypeToken<NiciraNvpList<Acl>>() {}.getType());
-
-            defaultListParams = new HashMap<String, String>();
-            defaultListParams.put("fields", "*");
-        }
     }
 
     public void setControllerAddress(final String address) {
