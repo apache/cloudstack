@@ -177,7 +177,7 @@ public class NetworkProviderTest extends TestCase {
                 _networkService.getIsolatedNetworksOwnedByAccountInZone(zone.getId(), system);
         for (Network net : list) {
             s_logger.debug("Delete network " + net.getName());
-            _networkService.deleteNetwork(net.getId());
+            _networkService.deleteNetwork(net.getId(), false);
         }
     }
 
