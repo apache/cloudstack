@@ -92,6 +92,9 @@ public class OpenDaylightControllerResourceManagerImpl implements OpenDaylightCo
 
         final String deviceName = NetworkDevice.OpenDaylightController.getName();
         NetworkDevice networkDevice = NetworkDevice.getNetworkDevice(deviceName);
+        if (networkDevice == null) {
+            throw new CloudRuntimeException("No network device found for name " + deviceName);
+        }
         final Long physicalNetworkId = cmd.getPhysicalNetworkId();
         PhysicalNetworkVO physicalNetwork = physicalNetworkDao.findById(physicalNetworkId);
         if (physicalNetwork == null) {
@@ -156,11 +159,13 @@ public class OpenDaylightControllerResourceManagerImpl implements OpenDaylightCo
             // Lets see if there are networks that use us
             List<NetworkVO> networkList = networkDao.listByPhysicalNetwork(physicalNetworkId);
 
-            // Networks with broadcast type lswitch are ours
-            for (NetworkVO network : networkList) {
-                if (network.getBroadcastDomainType() == Networks.BroadcastDomainType.OpenDaylight) {
-                    if ((network.getState() != Network.State.Shutdown) && (network.getState() != Network.State.Destroy)) {
-                        throw new CloudRuntimeException("This Controller can not be deleted as there are one or more logical networks provisioned by cloudstack.");
+            if (networkList != null) {
+                // Networks with broadcast type lswitch are ours
+                for (NetworkVO network : networkList) {
+                    if (network.getBroadcastDomainType() == Networks.BroadcastDomainType.OpenDaylight) {
+                        if ((network.getState() != Network.State.Shutdown) && (network.getState() != Network.State.Destroy)) {
+                            throw new CloudRuntimeException("This Controller can not be deleted as there are one or more logical networks provisioned by cloudstack.");
+                        }
                     }
                 }
             }
