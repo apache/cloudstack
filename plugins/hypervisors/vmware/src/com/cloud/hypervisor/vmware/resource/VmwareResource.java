@@ -6896,10 +6896,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public VmwareContext getServiceContext(Command cmd) {
-        if (s_serviceContext.get() != null)
-            return s_serviceContext.get();
-
         VmwareContext context = null;
+        if(s_serviceContext.get() != null) {
+            context = s_serviceContext.get();
+            if (context.validate()) {
+                return context;
+            } else {
+                s_logger.info("Validation of the context failed, dispose and use a new one");
+                invalidateServiceContext(context);
+            }
+        }
         try {
             context = VmwareContextFactory.getContext(_vCenterAddress, _username, _password);
             s_serviceContext.set(context);
