@@ -125,7 +125,7 @@ public interface NetworkOrchestrationService {
 
     boolean shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements);
 
-    boolean destroyNetwork(long networkId, ReservationContext context);
+    boolean destroyNetwork(long networkId, ReservationContext context, boolean forced);
 
     Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
         Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr,

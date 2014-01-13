@@ -203,7 +203,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      * @see com.cloud.network.NetworkService#deleteNetwork(long)
      */
     @Override
-    public boolean deleteNetwork(long networkId) {
+    public boolean deleteNetwork(long networkId, boolean forced) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -597,7 +597,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      * @see com.cloud.network.NetworkManager#destroyNetwork(long, com.cloud.vm.ReservationContext)
      */
     @Override
-    public boolean destroyNetwork(long networkId, ReservationContext context) {
+    public boolean destroyNetwork(long networkId, ReservationContext context, boolean forced) {
         // TODO Auto-generated method stub
         return false;
     }

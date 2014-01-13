@@ -679,7 +679,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
                     ReservationContext context = new ReservationContextImpl(null, null, getActiveUser(callerUserId), caller);
 
-                    if (!_networkMgr.destroyNetwork(network.getId(), context)) {
+                    if (!_networkMgr.destroyNetwork(network.getId(), context, false)) {
                         s_logger.warn("Unable to destroy network " + network + " as a part of account id=" + accountId + " cleanup.");
                         accountCleanupNeeded = true;
                         networksDeleted = false;

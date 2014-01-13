@@ -1762,7 +1762,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_DELETE, eventDescription = "deleting network", async = true)
-    public boolean deleteNetwork(long networkId) {
+    public boolean deleteNetwork(long networkId, boolean forced) {
 
         Account caller = CallContext.current().getCallingAccount();
 
@@ -1788,10 +1788,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         // Perform permission check
         _accountMgr.checkAccess(caller, null, true, network);
 
+        if (forced && !_accountMgr.isRootAdmin(caller.getType())) {
+            throw new InvalidParameterValueException("Delete network with 'forced' option can only be called by root admins");
+        }
+
         User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
 
-        return _networkMgr.destroyNetwork(networkId, context);
+        return _networkMgr.destroyNetwork(networkId, context, forced);
     }
 
     @Override

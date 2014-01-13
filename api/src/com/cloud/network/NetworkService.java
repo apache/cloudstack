@@ -64,7 +64,7 @@ public interface NetworkService {
 
     Pair<List<? extends Network>, Integer> searchForNetworks(ListNetworksCmd cmd);
 
-    boolean deleteNetwork(long networkId);
+    boolean deleteNetwork(long networkId, boolean forced);
 
     boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
