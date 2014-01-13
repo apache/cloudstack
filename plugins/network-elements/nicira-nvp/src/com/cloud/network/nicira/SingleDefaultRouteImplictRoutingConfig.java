@@ -21,7 +21,7 @@ package com.cloud.network.nicira;
  */
 public class SingleDefaultRouteImplictRoutingConfig extends RoutingConfig {
     public RouterNextHop defaultRouteNextHop;
-    public String type = "SingleDefaultRouteImplicitRoutingConfig";
+    public final String type = "SingleDefaultRouteImplicitRoutingConfig";
 
     public SingleDefaultRouteImplictRoutingConfig(RouterNextHop routerNextHop) {
         defaultRouteNextHop = routerNextHop;
