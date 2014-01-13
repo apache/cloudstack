@@ -73,7 +73,9 @@ public class XcpOssResource extends CitrixResourceBase {
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
     	if (stdType.equalsIgnoreCase("Debian GNU/Linux 6(64-bit)")) {
     		return "Debian Squeeze 6.0 (64-bit)";
-    	} else {
+    	} else if (stdType.equalsIgnoreCase("CentOS 5.6 (64-bit)")) {
+            return "CentOS 5 (64-bit)";
+        } else {
     		return CitrixHelper.getXcpGuestOsType(stdType);
     	}
     }
