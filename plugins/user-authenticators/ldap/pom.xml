@@ -90,39 +90,6 @@
       </plugin>
 
     </plugins>
-    <pluginManagement>
-        <plugins>
-            <plugin>
-                <groupId>org.eclipse.m2e</groupId>
-                <artifactId>lifecycle-mapping</artifactId>
-                <version>1.0.0</version>
-                <configuration>
-                    <lifecycleMappingMetadata>
-                        <pluginExecutions>
-                            <pluginExecution>
-                                <pluginExecutionFilter>
-                                    <groupId>
-                                        org.codehaus.gmaven
-                                    </groupId>
-                                    <artifactId>
-                                        gmaven-plugin
-                                    </artifactId>
-                                    <versionRange>[1.3,)</versionRange>
-                                    <goals>
-                                        <goal>compile</goal>
-                                        <goal>testCompile</goal>
-                                    </goals>
-                                </pluginExecutionFilter>
-                                <action>
-                                    <ignore></ignore>
-                                </action>
-                            </pluginExecution>
-                        </pluginExecutions>
-                    </lifecycleMappingMetadata>
-                </configuration>
-            </plugin>
-        </plugins>
-    </pluginManagement>
   </build>
   <dependencies>
     <!-- Mandatory dependencies for using Spock -->
