@@ -35,6 +35,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.routing.SetMonitorServiceCommand;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -169,6 +170,8 @@ public class VirtualRoutingResource implements Manager {
                 return execute((Site2SiteVpnCfgCommand)cmd);
             } else if (cmd instanceof CheckS2SVpnConnectionsCommand) {
                 return execute((CheckS2SVpnConnectionsCommand)cmd);
+            } else if (cmd instanceof SetMonitorServiceCommand) {
+                return execute((SetMonitorServiceCommand) cmd);
             } else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -954,6 +957,20 @@ public class VirtualRoutingResource implements Manager {
             s_logger.error(msg, e);
             return new SetStaticRouteAnswer(cmd, false, null);
         }
+    }
+
+    private Answer execute(SetMonitorServiceCommand cmd) {
+
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String config = cmd.getConfiguration();
+
+        String result = configureMonitor(routerIp, config);
+
+        if (result != null) {
+            return new Answer(cmd, false, "SetMonitorServiceCommand failed");
+        }
+        return new Answer(cmd);
+
     }
 
     public String assignPublicIpAddress(final String vmName, final String privateIpAddress, final String publicIpAddress, final boolean add, final boolean firstIP,

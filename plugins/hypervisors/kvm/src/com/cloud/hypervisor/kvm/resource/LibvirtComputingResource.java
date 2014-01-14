@@ -178,7 +178,6 @@ import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.api.routing.SetMonitorServiceCommand;
 import com.cloud.agent.api.routing.SetNetworkACLAnswer;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetSourceNatAnswer;
@@ -1291,8 +1290,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 return storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
             } else if (cmd instanceof PvlanSetupCommand) {
                 return execute((PvlanSetupCommand)cmd);
-            } else if (cmd instanceof SetMonitorServiceCommand) {
-                return execute((SetMonitorServiceCommand)cmd);
             } else if (cmd instanceof CheckOnHostCommand) {
                 return execute((CheckOnHostCommand)cmd);
             } else if (cmd instanceof OvsFetchInterfaceCommand) {
@@ -2031,19 +2028,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    private Answer execute(SetMonitorServiceCommand cmd) {
-
-        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String config = cmd.getConfiguration();
-
-        String result = _virtRouterResource.configureMonitor(routerIp, config);
-
-        if (result != null) {
-            return new Answer(cmd, false, "SetMonitorServiceCommand failed");
-        }
-        return new Answer(cmd);
-
-    }
 
     private SetNetworkACLAnswer execute(SetNetworkACLCommand cmd) {
         String[] results = new String[cmd.getRules().length];
