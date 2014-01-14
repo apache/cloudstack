@@ -52,7 +52,7 @@ import org.apache.cloudstack.iam.server.AclGroupVO;
 import org.apache.cloudstack.iam.server.AclPolicyPermissionVO;
 import org.apache.cloudstack.iam.server.AclPolicyVO;
 import org.apache.cloudstack.test.utils.SpringUtils;
-
+import org.apache.cloudstack.framework.messagebus.MessageBus;
 import com.cloud.api.ApiServerService;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -326,6 +326,11 @@ public class AclApiServiceTest {
         @Bean
         public AccountManager accountManager() {
             return Mockito.mock(AccountManager.class);
+        }
+        
+        @Bean
+        public MessageBus messageBus() {
+            return Mockito.mock(MessageBus.class);
         }
 
         @Bean

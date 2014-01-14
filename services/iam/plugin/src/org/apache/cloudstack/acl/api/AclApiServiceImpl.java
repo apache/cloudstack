@@ -17,10 +17,13 @@
 package org.apache.cloudstack.acl.api;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ejb.Local;
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
@@ -45,6 +48,8 @@ import org.apache.cloudstack.acl.api.response.AclPolicyResponse;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.iam.api.AclGroup;
 import org.apache.cloudstack.iam.api.AclPolicy;
 import org.apache.cloudstack.iam.api.AclPolicyPermission;
@@ -87,6 +92,39 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
 
     @Inject
     AccountManager _accountMgr;
+
+    @Inject
+    MessageBus _messageBus;
+
+    @Override
+    public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
+        _messageBus.subscribe(AccountManager.MESSAGE_ADD_ACCOUNT_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object obj) {
+                HashMap<Long, Long> acctGroupMap = (HashMap<Long, Long>) obj;
+                for (Long accountId : acctGroupMap.keySet()) {
+                    Long groupId = acctGroupMap.get(accountId);
+                    s_logger.debug("MessageBus message: new Account Added: " + accountId + ", adding it to groupId :"
+                            + groupId);
+                    addAccountToAclGroup(accountId, groupId);
+                }
+            }
+        });
+
+        _messageBus.subscribe(AccountManager.MESSAGE_REMOVE_ACCOUNT_EVENT, new MessageSubscriber() {
+            @Override
+            public void onPublishMessage(String senderAddress, String subject, Object obj) {
+                Long accountId = ((Long) obj);
+                if (accountId != null) {
+                    s_logger.debug("MessageBus message: Account removed: " + accountId
+                            + ", releasing the group associations");
+                    removeAccountFromAclGroups(accountId);
+                }
+            }
+        });
+
+        return super.configure(name, params);
+    }
 
     @DB
     @Override

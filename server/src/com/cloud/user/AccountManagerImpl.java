@@ -56,6 +56,8 @@ import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 
@@ -252,11 +254,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private GlobalLoadBalancerRuleDao _gslbRuleDao;
 
     @Inject
-    private AclProxyService _aclProxy;
-
-    @Inject
     QuerySelector _aclQuerySelector;  // we assume that there should be one type of QuerySelector adapter
 
+    @Inject
+    MessageBus _messageBus;
 
     @Inject
     public com.cloud.region.ha.GlobalLoadBalancingRulesService _gslbService;
@@ -635,7 +636,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             _projectAccountDao.removeAccountFromProjects(accountId);
 
             //delete the account from group
-            _aclProxy.removeAccountFromAclGroups(accountId);
+            _messageBus.publish(_name, MESSAGE_REMOVE_ACCOUNT_EVENT, PublishScope.LOCAL, accountId);
 
             // delete all vm groups belonging to accont
             List<InstanceGroupVO> groups = _vmGroupDao.listByAccountId(accountId);
@@ -988,7 +989,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
                 // create correct account and group association based on accountType
                 if (accountType != Account.ACCOUNT_TYPE_PROJECT) {
-                    _aclProxy.addAccountToAclGroup(accountId, accountType + 1);
+                    Map<Long, Long> accountGroupMap = new HashMap<Long, Long>();
+                    accountGroupMap.put(accountId, new Long(accountType + 1));
+                    _messageBus.publish(_name, MESSAGE_ADD_ACCOUNT_EVENT, PublishScope.LOCAL, accountGroupMap);
                 }
 
                 return new Pair<Long, Account>(user.getId(), account);

@@ -317,13 +317,6 @@
   <bean id="AffinityGroupVMMapDaoImpl" class="org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDaoImpl" />
   <bean id="AffinityGroupDomainMapDaoImpl" class="org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDaoImpl" />
   <bean id="FirewallRuleDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDaoImpl" />
-  <bean id="AclGroupDaoImpl" class="org.apache.cloudstack.acl.dao.AclGroupDaoImpl"/>
-  <bean id="AclGroupJoinDaoImpl" class="com.cloud.api.query.dao.AclGroupJoinDaoImpl"/>      
-  <bean id="AclPolicyDaoImpl" class="org.apache.cloudstack.acl.dao.AclPolicyDaoImpl"/>  
-  <bean id="AclPolicyJoinDaoImpl" class="com.cloud.api.query.dao.AclPolicyJoinDaoImpl"/>
-  <bean id="AclGroupAccountMapDaoImpl" class="org.apache.cloudstack.acl.dao.AclGroupAccountMapDaoImpl"/>
-  <bean id="AclGroupPolicyMapDaoImpl" class="org.apache.cloudstack.acl.dao.AclGroupPolicyMapDaoImpl"/> 
-  <bean id="AclPolicyPermissionDaoImpl" class="org.apache.cloudstack.acl.dao.AclPolicyPermissionDaoImpl"/>  
     
   <bean id="databaseIntegrityChecker" class="com.cloud.upgrade.DatabaseIntegrityChecker" />
 
