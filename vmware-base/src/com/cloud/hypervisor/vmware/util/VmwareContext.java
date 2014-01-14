@@ -37,6 +37,7 @@ import java.util.Map;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSession;
+import javax.xml.ws.soap.SOAPFaultException;
 
 import org.apache.log4j.Logger;
 
@@ -638,16 +639,18 @@ public class VmwareContext {
     public void close() {
         clearStockObjects();
         try {
+            s_logger.info("Disconnecting VMware session");
             _vimClient.disconnect();
+        } catch(SOAPFaultException sfe) {
+            s_logger.debug("Tried to disconnect a session that is no longer valid");
         } catch (Exception e) {
             s_logger.warn("Unexpected exception: ", e);
+        } finally {
+            if (_pool != null) {
+                _pool.unregisterOutstandingContext(this);
+            }
+            unregisterOutstandingContext();
         }
-
-        if (_pool != null) {
-            _pool.unregisterOutstandingContext(this);
-        }
-
-        unregisterOutstandingContext();
     }
 
     public static class TrustAllManager implements javax.net.ssl.TrustManager, javax.net.ssl.X509TrustManager {

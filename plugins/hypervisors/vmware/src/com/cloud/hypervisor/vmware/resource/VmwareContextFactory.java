@@ -89,7 +89,7 @@ public class VmwareContextFactory {
         } else {
             // Validate current context and verify if vCenter session timeout value of the context matches the timeout value set by Admin
             if (!context.validate() || (context.getVimClient().getVcenterSessionTimeout() != s_vmwareMgr.getVcenterSessionTimeout())) {
-                s_logger.info("Validation of the context faild. dispose and create a new one");
+                s_logger.info("Validation of the context failed, dispose and create a new one");
                 context.close();
                 context = create(vCenterAddress, vCenterUserName, vCenterPassword);
             }

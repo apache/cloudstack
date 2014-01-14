@@ -18,13 +18,31 @@
 """ Component tests VM life cycle in VPC network functionality
 """
 #Import Local Modules
-import marvin
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.cloudstackAPI import *
-from marvin.integration.lib.utils import *
-from marvin.integration.lib.base import *
-from marvin.integration.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.integration.lib.utils import cleanup_resources, validateList
+from marvin.integration.lib.base import (VirtualMachine,
+                                         NATRule,
+                                         LoadBalancerRule,
+                                         StaticNATRule,
+                                         PublicIPAddress,
+                                         VPC,
+                                         VpcOffering,
+                                         Network,
+                                         NetworkOffering,
+                                         NetworkACL,
+                                         Router,
+                                         Account,
+                                         ServiceOffering,
+                                         Host)
+from marvin.integration.lib.common import (get_domain,
+                                           get_zone,
+                                           get_template,
+                                           get_free_vlan,
+                                           wait_for_cleanup,
+                                           list_virtual_machines,
+                                           list_hosts)
+
 from marvin.codes import PASS
 
 import time
@@ -644,6 +662,13 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
                          True,
                          "List LB rules shall return a valid list"
                          )
+
+        #Recover the instances so that they don't get expunged before runing next test case in the suite
+        try:
+            self.vm_1.recover(self.apiclient)
+            self.vm_2.recover(self.apiclient)
+        except Exception as e:
+            self.fail("Failed to recover the virtual instances, %s" % e)
         return
 
     @attr(tags=["advanced", "intervlan"])
@@ -690,6 +715,11 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         #    works as expected.
         # 3. Make sure that we are able to access google.com from this user Vm
 
+        vm_list = VirtualMachine.list(self.apiclient, id=self.vm_1.id)
+        self.assertEqual(validateList(vm_list)[0], PASS, "vm list validation failed, vm list is %s" % vm_list)
+
+        vm_hostid = vm_list[0].hostid
+
         self.debug("Checking if the host is available for migration?")
         hosts = Host.list(
                           self.apiclient,
@@ -707,7 +737,7 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
             "No host available for migration. Test requires atleast 2 hosts")
 
         # Remove the host of current VM from the hosts list
-        hosts[:] = [host for host in hosts if host.id != self.vm_1.hostid]
+        hosts[:] = [host for host in hosts if host.id != vm_hostid]
 
         host = hosts[0]
 
@@ -847,17 +877,17 @@ class TestVMLifeCycleVPC(cloudstackTestCase):
         # Check if the network rules still exists after Vm stop
         self.debug("Checking if NAT rules existed")
         with self.assertRaises(Exception):
-            nat_rules = NATRule.list(
-                                     self.apiclient,
-                                     id=self.nat_rule.id,
-                                     listall=True
-                                     )
+            NATRule.list(
+                         self.apiclient,
+                         id=self.nat_rule.id,
+                         listall=True
+                         )
 
-            lb_rules = LoadBalancerRule.list(
-                                         self.apiclient,
-                                         id=self.lb_rule.id,
-                                         listall=True
-                                         )
+            LoadBalancerRule.list(
+                                  self.apiclient,
+                                  id=self.lb_rule.id,
+                                  listall=True
+                                  )
         return
 
 class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
@@ -1651,17 +1681,17 @@ class TestVMLifeCycleSharedNwVPC(cloudstackTestCase):
         # Check if the network rules still exists after Vm expunged
         self.debug("Checking if NAT rules existed ")
         with self.assertRaises(Exception):
-            nat_rules = NATRule.list(
-                                     self.apiclient,
-                                     id=self.nat_rule.id,
-                                     listall=True
-                                     )
+            NATRule.list(
+                         self.apiclient,
+                         id=self.nat_rule.id,
+                         listall=True
+                         )
 
-            lb_rules = LoadBalancerRule.list(
-                                         self.apiclient,
-                                         id=self.lb_rule.id,
-                                         listall=True
-                                         )
+            LoadBalancerRule.list(
+                                  self.apiclient,
+                                  id=self.lb_rule.id,
+                                  listall=True
+                                  )
         return
 
 class TestVMLifeCycleBothIsolated(cloudstackTestCase):
@@ -2687,17 +2717,17 @@ class TestVMLifeCycleStoppedVPCVR(cloudstackTestCase):
         # Check if the network rules still exists after Vm expunged
         self.debug("Checking if NAT rules existed ")
         with self.assertRaises(Exception):
-            nat_rules = NATRule.list(
-                                     self.apiclient,
-                                     id=self.nat_rule.id,
-                                     listall=True
-                                     )
+            NATRule.list(
+                         self.apiclient,
+                         id=self.nat_rule.id,
+                         listall=True
+                         )
 
-            lb_rules = LoadBalancerRule.list(
-                                         self.apiclient,
-                                         id=self.lb_rule.id,
-                                         listall=True
-                                         )
+            LoadBalancerRule.list(
+                                  self.apiclient,
+                                  id=self.lb_rule.id,
+                                  listall=True
+                                  )
         return
 
 class TestVMLifeCycleDiffHosts(cloudstackTestCase):

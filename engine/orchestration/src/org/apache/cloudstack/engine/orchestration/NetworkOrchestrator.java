@@ -2068,7 +2068,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     @DB
-    public boolean destroyNetwork(long networkId, final ReservationContext context) {
+    public boolean destroyNetwork(long networkId, final ReservationContext context, boolean forced) {
         final Account callerAccount = context.getAccount();
 
         NetworkVO network = _networksDao.findById(networkId);
@@ -2111,7 +2111,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         // get updated state for the network
         network = _networksDao.findById(networkId);
-        if (network.getState() != Network.State.Allocated && network.getState() != Network.State.Setup) {
+        if (network.getState() != Network.State.Allocated && network.getState() != Network.State.Setup && !forced) {
             s_logger.debug("Network is not not in the correct state to be destroyed: " + network.getState());
             return false;
         }

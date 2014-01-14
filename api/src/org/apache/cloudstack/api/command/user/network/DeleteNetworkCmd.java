@@ -45,12 +45,20 @@ public class DeleteNetworkCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkResponse.class, required = true, description = "the ID of the network")
     private Long id;
 
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, required = false, description = "Force delete a network." +
+            " Network will be marked as 'Destroy' even when commands to shutdown and cleanup to the backend fails.")
+    private Boolean forced;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getId() {
         return id;
+    }
+
+    public boolean isForced() {
+        return (forced != null) ? forced : false;
     }
 
     /////////////////////////////////////////////////////
@@ -65,7 +73,7 @@ public class DeleteNetworkCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         CallContext.current().setEventDetails("Network Id: " + id);
-        boolean result = _networkService.deleteNetwork(id);
+        boolean result = _networkService.deleteNetwork(id, isForced());
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
