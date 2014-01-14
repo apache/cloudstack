@@ -35,15 +35,20 @@ import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
+import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.resource.ServerResource;
+import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
@@ -72,6 +77,38 @@ public class XcpOssResource extends CitrixResourceBase {
     protected void fillHostInfo(Connection conn, StartupRoutingCommand cmd) {
         super.fillHostInfo(conn, cmd);
         cmd.setCaps(cmd.getCapabilities() + " , hvm");
+    }
+
+    protected StartupStorageCommand initializeLocalSR(Connection conn) {
+        SR extsr = getLocalEXTSR(conn);
+        if (extsr != null) {
+            try {
+                String extuuid = extsr.getUuid(conn);
+                _host.localSRuuid = extuuid;
+                long cap = extsr.getPhysicalSize(conn);
+                if (cap > 0) {
+                    long avail = cap - extsr.getPhysicalUtilisation(conn);
+                    String name = "Cloud Stack Local EXT Storage Pool for " + _host.uuid;
+                    extsr.setNameDescription(conn, name);
+                    Host host = Host.getByUuid(conn, _host.uuid);
+                    String address = host.getAddress(conn);
+                    StoragePoolInfo pInfo = new StoragePoolInfo(extsr.getNameLabel(conn), address, SRType.EXT.toString(), SRType.EXT.toString(), Storage.StoragePoolType.EXT, cap, avail);
+                    StartupStorageCommand cmd = new StartupStorageCommand();
+                    cmd.setPoolInfo(pInfo);
+                    cmd.setGuid(_host.uuid);
+                    cmd.setDataCenter(Long.toString(_dcId));
+                    cmd.setResourceType(Storage.StorageResourceType.STORAGE_POOL);
+                    return cmd;
+                }
+            } catch (XenAPIException e) {
+                String msg = "build local EXT info err in host:" + _host.uuid + e.toString();
+                s_logger.warn(msg);
+            } catch (XmlRpcException e) {
+                String msg = "build local EXT info err in host:" + _host.uuid + e.getMessage();
+                s_logger.warn(msg);
+            }
+        }
+        return null;
     }
 
     @Override
