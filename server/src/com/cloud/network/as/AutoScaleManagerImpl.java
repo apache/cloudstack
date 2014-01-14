@@ -95,9 +95,9 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.net.NetUtils;
 
@@ -409,7 +409,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         Long templateId = cmd.getTemplateId();
         String otherDeployParams = cmd.getOtherDeployParams();
 
-        SearchWrapper<AutoScaleVmProfileVO> searchWrapper = new SearchWrapper<AutoScaleVmProfileVO>(_autoScaleVmProfileDao, AutoScaleVmProfileVO.class, cmd, cmd.getId());
+        SearchWrapper<AutoScaleVmProfileVO> searchWrapper = new SearchWrapper<AutoScaleVmProfileVO>(_autoScaleVmProfileDao, AutoScaleVmProfileVO.class, cmd, cmd.getId(),
+                "listAutoScaleVmProfiles");
         SearchBuilder<AutoScaleVmProfileVO> sb = searchWrapper.getSearchBuilder();
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -561,11 +562,14 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         SearchCriteria<VO> searchCriteria;
         Long domainId;
         boolean isRecursive;
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
+
         ListProjectResourcesCriteria listProjectResourcesCriteria;
         Filter searchFilter;
 
-        public SearchWrapper(GenericDao<VO, Long> dao, Class<VO> entityClass, BaseListAccountResourcesCmd cmd, Long id)
+        public SearchWrapper(GenericDao<VO, Long> dao, Class<VO> entityClass, BaseListAccountResourcesCmd cmd, Long id, String action)
         {
             this.dao = dao;
             this.searchBuilder = dao.createSearchBuilder();
@@ -579,12 +583,12 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
             Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
                     ListProjectResourcesCriteria>(domainId, isRecursive, null);
-            _accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject,
-                    listAll, false);
-            domainId = domainIdRecursiveListProject.first();
+            _accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedDomains, permittedAccounts, permittedResources, domainIdRecursiveListProject, listAll,
+                    false, action);
+            //domainId = domainIdRecursiveListProject.first();
             isRecursive = domainIdRecursiveListProject.second();
             ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-            _accountMgr.buildACLSearchBuilder(searchBuilder, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            _accountMgr.buildACLSearchBuilder(searchBuilder, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
             searchFilter = new Filter(entityClass, "id", false, startIndex, pageSizeVal);
         }
 
@@ -595,7 +599,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         public SearchCriteria<VO> buildSearchCriteria()
         {
             searchCriteria = searchBuilder.create();
-            _accountMgr.buildACLSearchCriteria(searchCriteria, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            _accountMgr.buildACLSearchCriteria(searchCriteria, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
             return searchCriteria;
         }
 
@@ -606,7 +610,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
 
     @Override
     public List<? extends AutoScalePolicy> listAutoScalePolicies(ListAutoScalePoliciesCmd cmd) {
-        SearchWrapper<AutoScalePolicyVO> searchWrapper = new SearchWrapper<AutoScalePolicyVO>(_autoScalePolicyDao, AutoScalePolicyVO.class, cmd, cmd.getId());
+        SearchWrapper<AutoScalePolicyVO> searchWrapper = new SearchWrapper<AutoScalePolicyVO>(_autoScalePolicyDao, AutoScalePolicyVO.class, cmd, cmd.getId(),
+                "listAutoScalePolicies");
         SearchBuilder<AutoScalePolicyVO> sb = searchWrapper.getSearchBuilder();
         Long id = cmd.getId();
         Long conditionId = cmd.getConditionId();
@@ -805,7 +810,8 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         Long profileId = cmd.getProfileId();
         Long zoneId = cmd.getZoneId();
 
-        SearchWrapper<AutoScaleVmGroupVO> searchWrapper = new SearchWrapper<AutoScaleVmGroupVO>(_autoScaleVmGroupDao, AutoScaleVmGroupVO.class, cmd, cmd.getId());
+        SearchWrapper<AutoScaleVmGroupVO> searchWrapper = new SearchWrapper<AutoScaleVmGroupVO>(_autoScaleVmGroupDao, AutoScaleVmGroupVO.class, cmd, cmd.getId(),
+                "listAutoScaleVmGroups");
         SearchBuilder<AutoScaleVmGroupVO> sb = searchWrapper.getSearchBuilder();
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -1078,7 +1084,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
         Long id = cmd.getId();
         Long counterId = cmd.getCounterId();
         Long policyId = cmd.getPolicyId();
-        SearchWrapper<ConditionVO> searchWrapper = new SearchWrapper<ConditionVO>(_conditionDao, ConditionVO.class, cmd, cmd.getId());
+        SearchWrapper<ConditionVO> searchWrapper = new SearchWrapper<ConditionVO>(_conditionDao, ConditionVO.class, cmd, cmd.getId(), "listConditions");
         SearchBuilder<ConditionVO> sb = searchWrapper.getSearchBuilder();
         if (policyId != null) {
             SearchBuilder<AutoScalePolicyConditionMapVO> asPolicyConditionSearch = _autoScalePolicyConditionMapDao.createSearchBuilder();

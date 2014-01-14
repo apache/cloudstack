@@ -232,7 +232,17 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
         if (_entity == null || _specifiedAttrs == null || _specifiedAttrs.size() != 1) {
             throw new RuntimeException("Now now, better specify an attribute or else we can't help you");
         }
-        return _specifiedAttrs.get(0);
+        if (_specifiedAttrs.size() > 0) {
+            return _specifiedAttrs.get(0);
+        }
+        // look for attributes from joins
+        for (JoinBuilder<SearchBase<?, ?, ?>> join : _joins.values()) {
+            SearchBase<?, ?, ?> sb = join.getT();
+            if (sb.getSpecifiedAttribute() != null) {
+                return sb.getSpecifiedAttribute();
+            }
+        }
+        throw new CloudRuntimeException("Unable to find any specified attributes.  You sure you know what you're doing?");
     }
 
     protected List<Attribute> getSpecifiedAttributes() {

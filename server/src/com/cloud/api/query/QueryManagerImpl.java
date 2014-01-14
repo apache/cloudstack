@@ -1897,17 +1897,20 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
 
         Account caller = CallContext.current().getCallingAccount();
 
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), null, permittedAccounts,
-                domainIdRecursiveListProject, cmd.listAll(), false);
+        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), null, permittedDomains, permittedAccounts, permittedResources, domainIdRecursiveListProject,
+                cmd.listAll(), false, "listAsyncJobs");
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(AsyncJobJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        /*
         SearchBuilder<AsyncJobJoinVO> sb = _jobJoinDao.createSearchBuilder();
         sb.and("accountIdIN", sb.entity().getAccountId(), SearchCriteria.Op.IN);
         SearchBuilder<AccountVO> accountSearch = null;
@@ -1932,8 +1935,7 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
             }
         }
 
-        Object keyword = cmd.getKeyword();
-        Object startDate = cmd.getStartDate();
+
 
         SearchCriteria<AsyncJobJoinVO> sc = sb.create();
         if (listProjectResourcesCriteria != null) {
@@ -1950,6 +1952,17 @@ public class QueryManagerImpl extends ManagerBase implements QueryService {
                 sc.setParameters("domainId", domainId);
             }
         }
+        */
+
+        Object keyword = cmd.getKeyword();
+        Object startDate = cmd.getStartDate();
+
+        // populate the search criteria with the values passed in
+        SearchCriteria<AsyncJobJoinVO> sc = _jobJoinDao.createSearchCriteria();
+        SearchCriteria<AsyncJobJoinVO> aclSc = _jobJoinDao.createSearchCriteria();
+
+        // building ACL search criteria
+        _accountMgr.buildACLViewSearchCriteria(sc, aclSc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         if (keyword != null) {
             sc.addAnd("cmd", SearchCriteria.Op.LIKE, "%" + keyword + "%");

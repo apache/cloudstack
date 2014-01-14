@@ -26,6 +26,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;
 import org.apache.cloudstack.api.command.user.vpn.ListVpnUsersCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -81,10 +82,10 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.net.NetUtils;
@@ -202,7 +203,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         		throw new InvalidParameterValueException("Vpn service is not supported in network id=" + ipAddr.getAssociatedWithNetworkId());
         	}
         	cidr = NetUtils.getCidr(network.getCidr());
-        } else { // Don't need to check VPC because there is only one IP(source NAT IP) available for VPN 
+        } else { // Don't need to check VPC because there is only one IP(source NAT IP) available for VPN
         	Vpc vpc = _vpcDao.findById(vpcId);
         	cidr = NetUtils.getCidr(vpc.getCidr());
         }
@@ -553,24 +554,26 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         String username = cmd.getUsername();
         Long id = cmd.getId();
         Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
-        Long domainId = domainIdRecursiveListProject.first();
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
+                domainIdRecursiveListProject, cmd.listAll(), false, "listVpnUsers");
+        //Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         Filter searchFilter = new Filter(VpnUserVO.class, "username", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<VpnUserVO> sb = _vpnUsersDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
+        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("username", sb.entity().getUsername(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), Op.IN);
 
         SearchCriteria<VpnUserVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         //list only active users
         sc.setParameters("state", State.Active, State.Add);
@@ -592,7 +595,9 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         // do some parameter validation
         Account caller = CallContext.current().getCallingAccount();
         Long ipAddressId = cmd.getPublicIpId();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
 
         if (ipAddressId != null) {
             PublicIpAddress publicIp = _networkMgr.getPublicIpAddress(ipAddressId);
@@ -609,21 +614,21 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         }
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
-        Long domainId = domainIdRecursiveListProject.first();
+        _accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
+                domainIdRecursiveListProject, cmd.listAll(), false, "listRemoteAccessVpns");
+        //Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter filter = new Filter(RemoteAccessVpnVO.class, "serverAddressId", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<RemoteAccessVpnVO> sb = _remoteAccessVpnDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         sb.and("serverAddressId", sb.entity().getServerAddressId(), Op.EQ);
         sb.and("state", sb.entity().getState(), Op.EQ);
 
         SearchCriteria<RemoteAccessVpnVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-
+        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         sc.setParameters("state", RemoteAccessVpn.State.Running);
 

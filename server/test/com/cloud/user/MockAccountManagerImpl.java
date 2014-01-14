@@ -260,24 +260,6 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         return false;
     }
 
-    @Override
-    public void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-            ListProjectResourcesCriteria listProjectResourcesCriteria) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
-            ListProjectResourcesCriteria listProjectResourcesCriteria) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation) {
-        // TODO Auto-generated method stub
-    }
 
 
     /* (non-Javadoc)
@@ -351,5 +333,18 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
 
     }
 
+    @Override
+    public void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, boolean isRecursive, List<Long> permittedDomains, List<Long> permittedAccounts,
+            List<Long> permittedResources, ListProjectResourcesCriteria listProjectResourcesCriteria) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, boolean isRecursive, List<Long> permittedDomains, List<Long> permittedAccounts,
+            List<Long> permittedResources, ListProjectResourcesCriteria listProjectResourcesCriteria) {
+        // TODO Auto-generated method stub
+
+    }
 
 }

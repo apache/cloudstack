@@ -206,31 +206,6 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
         return null;
     }
 
-    @Override
-    public void buildACLSearchBuilder(
-            SearchBuilder<? extends ControlledEntity> arg0, Long arg1,
-            boolean arg2, List<Long> arg3, ListProjectResourcesCriteria arg4) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public void buildACLSearchCriteria(
-            SearchCriteria<? extends ControlledEntity> arg0, Long arg1,
-            boolean arg2, List<Long> arg3, ListProjectResourcesCriteria arg4) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public void buildACLSearchParameters(Account arg0, Long arg1, String arg2,
-            Long arg3, List<Long> arg4,
-            Ternary<Long, Boolean, ListProjectResourcesCriteria> arg5,
-            boolean arg6, boolean arg7) {
-        // TODO Auto-generated method stub
-        
-    }
-
 
     @Override
     public Long checkAccessAndSpecifyAuthority(Account arg0, Long arg1) {
@@ -383,6 +358,19 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
 
     }
 
+    @Override
+    public void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, boolean isRecursive, List<Long> permittedDomains, List<Long> permittedAccounts,
+            List<Long> permittedResources, ListProjectResourcesCriteria listProjectResourcesCriteria) {
+        // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    public void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, boolean isRecursive, List<Long> permittedDomains, List<Long> permittedAccounts,
+            List<Long> permittedResources, ListProjectResourcesCriteria listProjectResourcesCriteria) {
+        // TODO Auto-generated method stub
+
+    }
     
 
 }

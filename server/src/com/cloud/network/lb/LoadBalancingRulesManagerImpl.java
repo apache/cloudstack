@@ -1971,19 +1971,21 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         Map<String, String> tags = cmd.getTags();
 
         Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts,
-                domainIdRecursiveListProject, cmd.listAll(), false);
-        Long domainId = domainIdRecursiveListProject.first();
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
+                domainIdRecursiveListProject, cmd.listAll(), false, "listLoadBalancerRules");
+        //Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(LoadBalancerVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<LoadBalancerVO> sb = _lbDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
@@ -2019,7 +2021,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         SearchCriteria<LoadBalancerVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         if (keyword != null) {
             SearchCriteria<LoadBalancerVO> ssc = _lbDao.createSearchCriteria();

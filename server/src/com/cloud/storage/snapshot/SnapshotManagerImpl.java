@@ -466,7 +466,10 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         Map<String, String> tags = cmd.getTags();
         Long zoneId = cmd.getZoneId();
         Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
+
 
         // Verify parameters
         if (volumeId != null) {
@@ -477,14 +480,14 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         }
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-       _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
-       Long domainId = domainIdRecursiveListProject.first();
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources,
+                domainIdRecursiveListProject, cmd.listAll(), false, "listSnapshots");
        Boolean isRecursive = domainIdRecursiveListProject.second();
        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter searchFilter = new Filter(SnapshotVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<SnapshotVO> sb = _snapshotDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         sb.and("statusNEQ", sb.entity().getState(), SearchCriteria.Op.NEQ); //exclude those Destroyed snapshot, not showing on UI
         sb.and("volumeId", sb.entity().getVolumeId(), SearchCriteria.Op.EQ);
@@ -507,7 +510,7 @@ public class SnapshotManagerImpl extends ManagerBase implements SnapshotManager,
         }
 
         SearchCriteria<SnapshotVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         sc.setParameters("statusNEQ", Snapshot.State.Destroyed);
 

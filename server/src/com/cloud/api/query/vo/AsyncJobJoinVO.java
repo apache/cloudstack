@@ -25,15 +25,14 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.acl.AclEntityType;
 import org.apache.cloudstack.api.ApiCommandJobType;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name="async_job_view")
-public class AsyncJobJoinVO extends BaseViewVO implements InternalIdentity, Identity {
+public class AsyncJobJoinVO extends BaseViewVO implements ControlledViewEntity { //InternalIdentity, Identity {
 
     @Id
     @Column(name="id")
@@ -116,34 +115,42 @@ public class AsyncJobJoinVO extends BaseViewVO implements InternalIdentity, Iden
         return uuid;
     }
 
+    @Override
     public long getAccountId() {
         return accountId;
     }
 
+    @Override
     public String getAccountUuid() {
         return accountUuid;
     }
 
+    @Override
     public String getAccountName() {
         return accountName;
     }
 
+    @Override
     public short getAccountType() {
         return accountType;
     }
 
+    @Override
     public long getDomainId() {
         return domainId;
     }
 
+    @Override
     public String getDomainUuid() {
         return domainUuid;
     }
 
+    @Override
     public String getDomainName() {
         return domainName;
     }
 
+    @Override
     public String getDomainPath() {
         return domainPath;
     }
@@ -195,4 +202,22 @@ public class AsyncJobJoinVO extends BaseViewVO implements InternalIdentity, Iden
     public String getInstanceUuid() {
         return instanceUuid;
     }
+
+    @Override
+    public AclEntityType getEntityType() {
+        return AclEntityType.AsyncJob;
+    }
+
+    @Override
+    public String getProjectUuid() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String getProjectName() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }

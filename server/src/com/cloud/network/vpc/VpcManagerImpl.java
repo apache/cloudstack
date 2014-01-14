@@ -31,6 +31,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
@@ -39,7 +41,6 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -118,13 +119,13 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
-import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.net.NetUtils;
@@ -819,19 +820,20 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             String cidr, Long vpcOffId, String state, String accountName, Long domainId, String keyword,
             Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, Boolean restartRequired, Map<String, String> tags, Long projectId) {
         Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
         
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
                 ListProjectResourcesCriteria>(domainId, isRecursive, null);
-        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
-                listAll, false);
-        domainId = domainIdRecursiveListProject.first();
+        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedDomains, permittedAccounts, permittedResources, domainIdRecursiveListProject, listAll,
+                false, "listVPCs");
         isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         Filter searchFilter = new Filter(VpcVO.class, "created", false, startIndex, pageSizeVal);
 
         SearchBuilder<VpcVO> sb = _vpcDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -856,7 +858,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         
         // now set the SC criteria...
         SearchCriteria<VpcVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         if (keyword != null) {
             SearchCriteria<VpcVO> ssc = _vpcDao.createSearchCriteria();
@@ -1422,7 +1424,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         if (privateNtwk == null) {
             s_logger.info("creating new network for vpc " + vpc + " using broadcast uri: " + broadcastUri);
             String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
-                        privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkIdFinal, 
+                        privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkIdFinal,
                 broadcastUri, ipAddress, null, gateway, netmask, gatewayOwnerId, vpcId, isSourceNat, networkOfferingId);
         } else { // create the nic/ip as createPrivateNetwork doesn''t do that work for us now
                         DataCenterVO dc = _dcDao.lockRow(physNetFinal.getDataCenterId(), true);
@@ -1617,21 +1619,22 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
         String state = cmd.getState();
         Long projectId = cmd.getProjectId();
 
         Filter searchFilter = new Filter(VpcGatewayVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
                 ListProjectResourcesCriteria>(domainId, isRecursive, null);
-        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
-                listAll, false);
-        domainId = domainIdRecursiveListProject.first();
+        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedDomains, permittedAccounts, permittedResources, domainIdRecursiveListProject, listAll,
+                false, "listPrivateGateways");
         isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         SearchBuilder<VpcGatewayVO> sb = _vpcGatewayDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
         
         if (vlan != null) {
             SearchBuilder<NetworkVO> ntwkSearch = _ntwkDao.createSearchBuilder();
@@ -1640,7 +1643,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         
         SearchCriteria<VpcGatewayVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
         
         if (id != null) {
             sc.addAnd("id", Op.EQ, id);
@@ -1869,21 +1872,23 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Boolean listAll = cmd.listAll();
         String accountName = cmd.getAccountName();
         Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
+
         Map<String, String> tags = cmd.getTags();
         Long projectId = cmd.getProjectId();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
                 ListProjectResourcesCriteria>(domainId, isRecursive, null);
-        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
-                listAll, false);
-        domainId = domainIdRecursiveListProject.first();
+        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedDomains, permittedAccounts, permittedResources, domainIdRecursiveListProject, listAll,
+                false, "listStaticRoutes");
         isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         Filter searchFilter = new Filter(StaticRouteVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
         SearchBuilder<StaticRouteVO> sb = _staticRouteDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
@@ -1902,7 +1907,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         
         SearchCriteria<StaticRouteVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
         
         if (id != null) {
             sc.addAnd("id", Op.EQ, id);
@@ -2038,7 +2043,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         s_logger.debug("Associating ip " + ipToAssoc + " to vpc " + vpc);
 
-        final boolean isSourceNatFinal = isSourceNat; 
+        final boolean isSourceNatFinal = isSourceNat;
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {

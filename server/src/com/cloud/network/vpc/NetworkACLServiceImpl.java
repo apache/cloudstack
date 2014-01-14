@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network.vpc;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -42,14 +41,12 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
-import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
-import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
@@ -422,6 +419,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         Map<String, String> tags = cmd.getTags();
 
         Account caller = CallContext.current().getCallingAccount();
+        /* NetworkACLItem is not ControlledEntity, no ACL built criteria
         List<Long> permittedAccounts = new ArrayList<Long>();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
@@ -431,6 +429,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+        */
 
         Filter filter = new Filter(NetworkACLItemVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<NetworkACLItemVO> sb = _networkACLItemDao.createSearchBuilder();

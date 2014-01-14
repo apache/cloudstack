@@ -29,6 +29,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.command.user.firewall.ListEgressFirewallRulesCmd;
 import org.apache.cloudstack.api.command.user.firewall.ListFirewallRulesCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -70,7 +71,6 @@ import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.PortForwardingRuleVO;
-import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -88,11 +88,11 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
-import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.UserVmVO;
@@ -261,7 +261,9 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         FirewallRule.TrafficType trafficType = cmd.getTrafficType();
 
         Account caller = CallContext.current().getCallingAccount();
+        List<Long> permittedDomains = new ArrayList<Long>();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedResources = new ArrayList<Long>();
 
         if (ipId != null) {
             IPAddressVO ipAddressVO = _ipAddressDao.findById(ipId);
@@ -272,14 +274,13 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         }
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
-        Long domainId = domainIdRecursiveListProject.first();
+        _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedDomains, permittedAccounts, permittedResources, domainIdRecursiveListProject, cmd.listAll(), false, "listFirewallRules");
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
 
         Filter filter = new Filter(FirewallRuleVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<FirewallRuleVO> sb = _firewallDao.createSearchBuilder();
-        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchBuilder(sb, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.and("trafficType", sb.entity().getTrafficType(), Op.EQ);
@@ -305,7 +306,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         }
 
         SearchCriteria<FirewallRuleVO> sc = sb.create();
-        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        _accountMgr.buildACLSearchCriteria(sc, isRecursive, permittedDomains, permittedAccounts, permittedResources, listProjectResourcesCriteria);
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -942,7 +943,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
     @Inject
     public void setFirewallElements(List<FirewallServiceProvider> firewallElements) {
-        this._firewallElements = firewallElements;
+        _firewallElements = firewallElements;
     }
 
     public List<PortForwardingServiceProvider> getPfElements() {
@@ -951,7 +952,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
     @Inject
     public void setPfElements(List<PortForwardingServiceProvider> pfElements) {
-        this._pfElements = pfElements;
+        _pfElements = pfElements;
     }
 
     public List<StaticNatServiceProvider> getStaticNatElements() {
@@ -960,7 +961,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
     @Inject
     public void setStaticNatElements(List<StaticNatServiceProvider> staticNatElements) {
-        this._staticNatElements = staticNatElements;
+        _staticNatElements = staticNatElements;
     }
 
     public List<NetworkACLServiceProvider> getNetworkAclElements() {
@@ -969,7 +970,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
 
     @Inject
     public void setNetworkAclElements(List<NetworkACLServiceProvider> networkAclElements) {
-        this._networkAclElements = networkAclElements;
+        _networkAclElements = networkAclElements;
     }
 
 }
