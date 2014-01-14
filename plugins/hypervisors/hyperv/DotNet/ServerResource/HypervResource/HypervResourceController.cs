@@ -1474,15 +1474,8 @@ namespace HypervResource
                             {
                                 // TODO: thin provision instead of copying the full file.
                                 File.Copy(srcFile, destFile);
-                                VolumeObjectTO volume = new VolumeObjectTO();
-                                volume.path = destFile;
-                                volume.dataStore = destVolumeObjectTO.dataStore;
-                                volume.name = destVolumeObjectTO.name;
-                                volume.size = ulong.Parse(destVolumeObjectTO.size.ToString());
-                                volume.format = destVolumeObjectTO.format;
-                                volume.nfsDataStore = destVolumeObjectTO.nfsDataStore;
-                                volume.primaryDataStore = destVolumeObjectTO.primaryDataStore;
-                                JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.VolumeObjectTO, volume);
+                                destVolumeObjectTO.path = destFile;
+                                JObject ansObj = Utils.CreateCloudStackObject(CloudStackTypes.VolumeObjectTO, destVolumeObjectTO);
                                 newData = ansObj;
                                 result = true;
                             }
