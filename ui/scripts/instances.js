@@ -355,9 +355,9 @@
                     label: 'label.affinity.groups'
                 }, {
                     path: '_zone.hosts',
-                    label: 'label.hosts',
+                    label: 'label.host',
                     preFilter: function(args) {
-                        return isAdmin();
+                        return isAdmin() && args.context.instances[0].hostid;
                     },
                     updateContext: function(args) {
                         var instance = args.context.instances[0];
