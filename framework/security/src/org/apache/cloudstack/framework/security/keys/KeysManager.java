@@ -14,31 +14,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.uuididentity;
+package org.apache.cloudstack.framework.security.keys;
 
-import javax.ejb.Local;
-import javax.inject.Inject;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
-import org.springframework.stereotype.Component;
+/**
+ *
+ * Started this file to manage keys.  Will be needed by other services.
+ *
+ */
+public interface KeysManager {
+    final ConfigKey<String> EncryptionKey = new ConfigKey<String>("Hidden", String.class, "security.encryption.key", null, "base64 encoded key data", false);
+    final ConfigKey<String> EncryptionIV = new ConfigKey<String>("Hidden", String.class, "security.encryption.iv", null, "base64 encoded IV data", false);
+    final ConfigKey<String> HashKey = new ConfigKey<String>("Hidden", String.class, "security.hash.key", null, "for generic key-ed hash", false);
 
-import org.apache.cloudstack.api.IdentityService;
+    String getEncryptionKey();
 
-import com.cloud.utils.component.ManagerBase;
-import com.cloud.uuididentity.dao.IdentityDao;
+    String getEncryptionIV();
 
-@Component
-@Local(value = {IdentityService.class})
-public class IdentityServiceImpl extends ManagerBase implements IdentityService {
-    @Inject
-    private IdentityDao _identityDao;
+    void resetEncryptionKeyIV();
 
-    @Override
-    public Long getIdentityId(String tableName, String identityString) {
-        return _identityDao.getIdentityId(tableName, identityString);
-    }
-
-    @Override
-    public String getIdentityUuid(String tableName, String identityString) {
-        return _identityDao.getIdentityUuid(tableName, identityString);
-    }
+    String getHashKey();
 }

@@ -120,11 +120,7 @@
         <property name="hvGuruList" value="#{hypervisorGurusRegistry.registered}" />
     </bean>
 
-    <bean id="identityServiceImpl" class="com.cloud.uuididentity.IdentityServiceImpl" />
-
     <bean id="uUIDManagerImpl" class="com.cloud.uuididentity.UUIDManagerImpl" />
-
-    <bean id="keystoreManagerImpl" class="org.apache.cloudstack.framework.security.keystore.KeystoreManagerImpl" />
 
     <bean id="loadBalancingRulesManagerImpl" class="com.cloud.network.lb.LoadBalancingRulesManagerImpl" >
         <property name="lbProviders" value="#{loadBalancingServiceProvidersRegistry.registered}" />

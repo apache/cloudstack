@@ -119,8 +119,6 @@
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
-      <!--  TODO: Is this version override required -->
-      <version>4.2.2</version>
       <scope>compile</scope>
     </dependency>
     <dependency>

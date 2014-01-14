@@ -36,6 +36,7 @@ import com.google.gson.GsonBuilder;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.cloudstack.framework.security.keystore.KeystoreDao;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.framework.security.keystore.KeystoreVO;
@@ -54,7 +55,6 @@ import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.manager.Commands;
-import com.cloud.certificate.dao.CertificateDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ZoneConfig;
@@ -99,16 +99,13 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-import com.cloud.server.ManagementServer;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
@@ -182,56 +179,43 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     @Inject
     private ConfigurationDao _configDao;
     @Inject
-    private CertificateDao _certDao;
-    @Inject
     private VMInstanceDao _instanceDao;
     @Inject
     private TemplateDataStoreDao _vmTemplateStoreDao;
     @Inject
     private AgentManager _agentMgr;
     @Inject
-    private StorageManager _storageMgr;
+    private NetworkOrchestrationService _networkMgr;
     @Inject
-    NetworkOrchestrationService _networkMgr;
+    private NetworkModel _networkModel;
     @Inject
-    NetworkModel _networkModel;
+    private AccountManager _accountMgr;
     @Inject
-    AccountManager _accountMgr;
+    private ServiceOfferingDao _offeringDao;
     @Inject
-    ServiceOfferingDao _offeringDao;
+    private DiskOfferingDao _diskOfferingDao;
     @Inject
-    DiskOfferingDao _diskOfferingDao;
+    private NetworkOfferingDao _networkOfferingDao;
     @Inject
-    NetworkOfferingDao _networkOfferingDao;
+    private PrimaryDataStoreDao _storagePoolDao;
     @Inject
-    PrimaryDataStoreDao _storagePoolDao;
+    private UserVmDetailsDao _vmDetailsDao;
     @Inject
-    UserVmDetailsDao _vmDetailsDao;
+    private ResourceManager _resourceMgr;
     @Inject
-    ResourceManager _resourceMgr;
+    private NetworkDao _networkDao;
     @Inject
-    NetworkDao _networkDao;
+    private RulesManager _rulesMgr;
     @Inject
-    RulesManager _rulesMgr;
+    private IPAddressDao _ipAddressDao;
     @Inject
-    TemplateManager templateMgr;
+    private KeysManager _keysMgr;
     @Inject
-    IPAddressDao _ipAddressDao;
-    @Inject
-    ManagementServer _ms;
-    @Inject
-    ClusterManager _clusterMgr;
+    private VirtualMachineManager _itMgr;
 
     private ConsoleProxyListener _listener;
 
     private ServiceOfferingVO _serviceOffering;
-
-    NetworkOffering _publicNetworkOffering;
-    NetworkOffering _managementNetworkOffering;
-    NetworkOffering _linkLocalNetworkOffering;
-
-    @Inject
-    private VirtualMachineManager _itMgr;
 
     /*
      * private final ExecutorService _requestHandlerScheduler = Executors.newCachedThreadPool(new
@@ -267,8 +251,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     public class VmBasedAgentHook extends AgentHookBase {
 
-        public VmBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr, AgentManager agentMgr, ManagementServer ms) {
-            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr, ms);
+        public VmBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr, AgentManager agentMgr, KeysManager keysMgr) {
+            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr, keysMgr);
         }
 
         @Override
@@ -884,14 +868,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return l.size() < launchLimit;
     }
 
-    private HypervisorType currentHypervisorType(long dcId) {
-        List<ConsoleProxyVO> l =
-            _consoleProxyDao.getProxyListInStates(dcId, VirtualMachine.State.Starting, VirtualMachine.State.Running, VirtualMachine.State.Stopping,
-                VirtualMachine.State.Stopped, VirtualMachine.State.Migrating, VirtualMachine.State.Shutdowned, VirtualMachine.State.Unknown);
-
-        return l.size() > 0 ? l.get(0).getHypervisorType() : HypervisorType.Any;
-    }
-
     private boolean checkCapacity(ConsoleProxyLoadInfo proxyCountInfo, ConsoleProxyLoadInfo vmCountInfo) {
 
         if (proxyCountInfo.getCount() * _capacityPerProxy - vmCountInfo.getCount() <= _standbyCapacity) {
@@ -969,11 +945,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 }
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    if (template == null) {
-                        s_logger.debug("Zone host is ready, but console proxy template is null");
-                    } else {
-                        s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() + " is not ready on secondary storage.");
-                    }
+                    s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() + " is not ready on secondary storage.");
                 }
             }
         }
@@ -1262,7 +1234,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         value = agentMgrConfigs.get("port");
         _mgmtPort = NumbersUtil.parseInt(value, 8250);
 
-        _listener = new ConsoleProxyListener(new VmBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr, _agentMgr, _ms));
+        _listener = new ConsoleProxyListener(new VmBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr, _agentMgr, _keysMgr));
         _agentMgr.registerForHostEvents(_listener, true, true, false);
 
         _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
@@ -1677,13 +1649,11 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details, List<String> hostTags) {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -1704,7 +1674,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Inject
     public void setConsoleProxyAllocators(List<ConsoleProxyAllocator> consoleProxyAllocators) {
-        this._consoleProxyAllocators = consoleProxyAllocators;
+        _consoleProxyAllocators = consoleProxyAllocators;
     }
 
 }

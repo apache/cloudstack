@@ -61,12 +61,4 @@ public interface ManagementServer extends ManagementService, PluggableService {
 
     public long getMemoryOrCpuCapacityByHost(Long hostId, short capacityType);
 
-    String getHashKey();
-
-    String getEncryptionKey();
-
-    String getEncryptionIV();
-
-    void resetEncryptionKeyIV();
-
 }

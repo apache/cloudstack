@@ -172,7 +172,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
 
     @Inject
     public void setScopedStorages(List<ScopedConfigStorage> scopedStorages) {
-        this._scopedStorages = scopedStorages;
+        _scopedStorages = scopedStorages;
     }
 
     public List<Configurable> getConfigurables() {
@@ -181,7 +181,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
 
     @Inject
     public void setConfigurables(List<Configurable> configurables) {
-        this._configurables = configurables;
+        _configurables = configurables;
     }
 
     @Override
@@ -189,4 +189,8 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         return _scopeLevelConfigsMap.get(ConfigKey.Scope.valueOf(scope));
     }
 
+    @Override
+    public <T> void set(ConfigKey<T> key, T value) {
+        _configDao.update(key.key(), value.toString());
+    }
 }

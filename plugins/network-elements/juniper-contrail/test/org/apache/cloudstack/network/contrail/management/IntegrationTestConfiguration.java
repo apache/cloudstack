@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import javax.inject.Inject;
 
+import org.eclipse.jetty.security.IdentityService;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -42,7 +43,6 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDaoImpl;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDaoImpl;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDaoImpl;
-import org.apache.cloudstack.api.IdentityService;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.datacenter.entity.api.db.dao.DcDetailsDaoImpl;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -270,7 +270,6 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
-import com.cloud.uuididentity.dao.IdentityDaoImpl;
 import com.cloud.vm.ItWorkDaoImpl;
 import com.cloud.vm.dao.ConsoleProxyDaoImpl;
 import com.cloud.vm.dao.DomainRouterDaoImpl;
@@ -298,7 +297,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
     EventDaoImpl.class, EventJoinDaoImpl.class, EventUtils.class, EventUtils.class, FirewallManagerImpl.class, FirewallRulesCidrsDaoImpl.class,
     FirewallRulesDaoImpl.class, GuestOSCategoryDaoImpl.class, GuestOSDaoImpl.class, HostDaoImpl.class, HostDetailsDaoImpl.class, HostJoinDaoImpl.class,
     HostPodDaoImpl.class, HostTagsDaoImpl.class, HostTransferMapDaoImpl.class, HypervisorCapabilitiesDaoImpl.class, HypervisorGuruManagerImpl.class,
-    IdentityDaoImpl.class, ImageStoreDaoImpl.class, ImageStoreJoinDaoImpl.class, InstanceGroupDaoImpl.class, InstanceGroupJoinDaoImpl.class,
+ ImageStoreDaoImpl.class, ImageStoreJoinDaoImpl.class, InstanceGroupDaoImpl.class, InstanceGroupJoinDaoImpl.class,
     InstanceGroupVMMapDaoImpl.class, IpAddressManagerImpl.class, Ipv6AddressManagerImpl.class, ItWorkDaoImpl.class, LBHealthCheckPolicyDaoImpl.class,
     LBStickinessPolicyDaoImpl.class, LaunchPermissionDao.class, LoadBalancerDaoImpl.class, LoadBalancerVMMapDaoImpl.class, LoadBalancingRulesManagerImpl.class,
     ManagementServerHostDaoImpl.class, MockAccountManager.class, NetworkACLDaoImpl.class, NetworkACLItemDaoImpl.class, NetworkACLManagerImpl.class,

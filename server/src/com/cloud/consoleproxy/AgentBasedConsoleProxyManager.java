@@ -25,6 +25,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 
 import com.cloud.agent.AgentManager;
@@ -53,7 +54,6 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     protected HostDao _hostDao;
     @Inject
     protected UserVmDao _userVmDao;
-    private String _instance;
     protected String _consoleProxyUrlDomain;
     @Inject
     private VMInstanceDao _instanceDao;
@@ -74,11 +74,13 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     ConfigurationDao _configDao;
     @Inject
     ManagementServer _ms;
+    @Inject
+    KeysManager _keysMgr;
 
     public class AgentBasedAgentHook extends AgentHookBase {
 
-        public AgentBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr, AgentManager agentMgr, ManagementServer ms) {
-            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr, ms);
+        public AgentBasedAgentHook(VMInstanceDao instanceDao, HostDao hostDao, ConfigurationDao cfgDao, KeystoreManager ksMgr, AgentManager agentMgr, KeysManager keysMgr) {
+            super(instanceDao, hostDao, cfgDao, ksMgr, agentMgr, keysMgr);
         }
 
         @Override
@@ -119,11 +121,9 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
             _sslEnabled = true;
         }
 
-        _instance = configs.get("instance.name");
-
         _consoleProxyUrlDomain = configs.get("consoleproxy.url.domain");
 
-        _listener = new ConsoleProxyListener(new AgentBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr, _agentMgr, _ms));
+        _listener = new ConsoleProxyListener(new AgentBasedAgentHook(_instanceDao, _hostDao, _configDao, _ksMgr, _agentMgr, _keysMgr));
         _agentMgr.registerForHostEvents(_listener, true, true, false);
 
         if (s_logger.isInfoEnabled()) {
