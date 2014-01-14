@@ -760,7 +760,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
     @Override
     public Long fetchDomainId(String domainUUID) {
-        return _domainMgr.getDomain(domainUUID).getId();
+        Domain domain = _domainMgr.getDomain(domainUUID);
+        if (domain != null)
+            return domain.getId();
+        else 
+            return null; 
     }
 
     @Override
