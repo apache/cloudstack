@@ -63,6 +63,49 @@ public class Upgrade421to430 implements DbUpgrade {
     @Override
     public void performDataMigration(Connection conn) {
         encryptLdapConfigParams(conn);
+        upgradeMemoryOfSsvmOffering(conn);
+    }
+
+    private void upgradeMemoryOfSsvmOffering(Connection conn) {
+        PreparedStatement updatePstmt = null;
+        PreparedStatement selectPstmt = null;
+        ResultSet selectResultSet = null;
+        int newRamSize = 512; //512MB
+        long serviceOfferingId = 0;
+
+            /**
+             * Pick first row in service_offering table which has system vm type as secondary storage vm. User added offerings would start from 2nd row onwards.
+             * We should not update/modify any user-defined offering.
+             */
+
+        try {
+            selectPstmt = conn.prepareStatement("SELECT id FROM `cloud`.`service_offering` WHERE vm_type='secondarystoragevm'");
+            updatePstmt = conn.prepareStatement("UPDATE `cloud`.`service_offering` SET ram_size=? WHERE id=?'");
+            selectResultSet = selectPstmt.executeQuery();
+            if(selectResultSet.next()) {
+                serviceOfferingId = selectResultSet.getLong("id");
+            }
+
+            updatePstmt.setInt(1, newRamSize);
+            updatePstmt.setLong(2, serviceOfferingId);
+            updatePstmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to upgrade ram_size of service offering for secondary storage vm. ", e);
+        } finally {
+            try {
+                if (selectPstmt != null) {
+                    selectPstmt.close();
+                }
+                if (selectResultSet != null) {
+                    selectResultSet.close();
+                }
+                if (updatePstmt != null) {
+                    updatePstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+        s_logger.debug("Done upgrading RAM for service offering of Secondary Storage VM to " + newRamSize);
     }
 
     private void encryptLdapConfigParams(Connection conn) {
