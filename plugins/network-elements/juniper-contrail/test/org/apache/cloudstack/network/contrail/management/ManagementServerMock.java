@@ -331,7 +331,7 @@ public class ManagementServerMock {
             }
         } catch (InvalidParameterValueException e) {
             List<String> isolationMethods = new ArrayList<String>();
-            isolationMethods.add("GRE");
+            isolationMethods.add("L3VPN");
             _znet =
                 _networkService.createPhysicalNetwork(_zone.getId(), null, null, isolationMethods, BroadcastDomainRange.ZONE.toString(), _zone.getDomainId(), null,
                     "znet");

@@ -37,6 +37,9 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.network.Network;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkProfile;
@@ -47,6 +50,9 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.guru.NetworkGuru;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
@@ -68,12 +74,22 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
     ContrailManager _manager;
     @Inject
     NicDao _nicDao;
+    @Inject
+    PhysicalNetworkDao _physicalNetworkDao;
+    @Inject
+    DataCenterDao _dcDao;
 
     private static final Logger s_logger = Logger.getLogger(ContrailGuru.class);
     private static final TrafficType[] TrafficTypes = {TrafficType.Guest};
 
-    private boolean canHandle(NetworkOffering offering) {
-        return (offering.getName().equals(ContrailManager.offeringName));
+    private boolean canHandle(NetworkOffering offering, NetworkType networkType, PhysicalNetwork physicalNetwork) {
+        if (networkType == NetworkType.Advanced
+                && isMyTrafficType(offering.getTrafficType())
+                && offering.getGuestType() == Network.GuestType.Isolated
+                && physicalNetwork.getIsolationMethods().contains("L3VPN"))
+            return true;
+
+        return false;
     }
 
     @Override
@@ -83,7 +99,11 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
-        if (!canHandle(offering)) {
+        // Check of the isolation type of the related physical network is L3VPN
+        PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
+        DataCenter dc = _dcDao.findById(plan.getDataCenterId());
+        if (!canHandle(offering, dc.getNetworkType(),physnet)) {
+            s_logger.debug("Refusing to design this network");
             return null;
         }
         NetworkVO network =
