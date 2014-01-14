@@ -763,8 +763,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         Domain domain = _domainMgr.getDomain(domainUUID);
         if (domain != null)
             return domain.getId();
-        else 
-            return null; 
+        else
+            return null;
     }
 
     @Override
