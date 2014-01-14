@@ -2809,7 +2809,7 @@ public class JuniperSrxResource implements ServerResource {
                 if (type.equals(SecurityPolicyType.SECURITYPOLICY_EGRESS) || type.equals(SecurityPolicyType.SECURITYPOLICY_EGRESS_DEFAULT)) {
                     xml = replaceXmlValue(xml, "from-zone", _privateZone);
                     xml = replaceXmlValue(xml, "to-zone", _publicZone);
-                    if (cidrs == null) {
+                    if (cidrs == null || cidrs.size() == 0) {
                         srcAddrs = "<source-address>any</source-address>";
                     } else {
                         for (String cidr : cidrs) {
