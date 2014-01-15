@@ -19,7 +19,8 @@ set -x
 
 ROOTPW=password
 HOSTNAME=systemvm
-CLOUDSTACK_RELEASE=4.2.0
+CLOUDSTACK_RELEASE=4.3.0
+ARCH=32-bit
 
 add_backports () {
     sed -i '/backports/d' /etc/apt/sources.list
@@ -227,7 +228,7 @@ do_signature() {
   mkdir -p /var/cache/cloud/
   gzip -c /usr/share/cloud/cloud-scripts.tar > /usr/share/cloud/cloud-scripts.tgz
   md5sum /usr/share/cloud/cloud-scripts.tgz | awk '{print $1}' > /var/cache/cloud/cloud-scripts-signature
-  echo "Cloudstack Release $CLOUDSTACK_RELEASE $(date)" > /etc/cloudstack-release
+  echo "Cloudstack Release $CLOUDSTACK_RELEASE ($ARCH) $(date)" > /etc/cloudstack-release
 }
 
 begin=$(date +%s)
