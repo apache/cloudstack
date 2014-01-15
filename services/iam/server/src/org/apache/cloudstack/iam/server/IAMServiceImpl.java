@@ -449,7 +449,6 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     @DB
     @Override
     public AclGroup removeAclPoliciesFromGroup(final List<Long> policyIds, final Long groupId) {
-        final Account caller = CallContext.current().getCallingAccount();
         // get the Acl Group entity
         AclGroup group = _aclGroupDao.findById(groupId);
         if (group == null) {
@@ -548,7 +547,6 @@ public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
     @Override
     public AclPolicy addAclPermissionToAclPolicy(long aclPolicyId, String entityType, String scope, Long scopeId,
             String action, String accessType, Permission perm) {
-        Account caller = CallContext.current().getCallingAccount();
         // get the Acl Policy entity
         AclPolicy policy = _aclPolicyDao.findById(aclPolicyId);
         if (policy == null) {
