@@ -108,7 +108,11 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru 
                 if (volume.getVolumeType() == Volume.Type.DATADISK) {
                     StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
 
-                    if (storagePool.isManaged()) {
+                    // storagePool should be null if we are expunging a volume that was never
+                    // attached to a VM that was started (the "trick" for storagePool to be null
+                    // is that none of the VMs this volume may have been attached to were ever started,
+                    // so the volume was never assigned to a storage pool)
+                    if (storagePool != null && storagePool.isManaged()) {
                         DataTO volTO = _volFactory.getVolume(volume.getId()).getTO();
                         DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
 

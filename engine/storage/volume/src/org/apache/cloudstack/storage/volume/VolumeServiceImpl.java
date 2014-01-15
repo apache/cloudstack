@@ -158,8 +158,9 @@ public class VolumeServiceImpl implements VolumeService {
         return null;
     }
 
+    @Override
     public boolean connectVolumeToHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) {
-        DataStoreDriver dataStoreDriver = dataStore.getDriver();
+        DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
 
         if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
             return ((PrimaryDataStoreDriver)dataStoreDriver).connectVolumeToHost(volumeInfo, host, dataStore);
@@ -168,8 +169,9 @@ public class VolumeServiceImpl implements VolumeService {
         return false;
     }
 
+    @Override
     public void disconnectVolumeFromHost(VolumeInfo volumeInfo, Host host, DataStore dataStore) {
-        DataStoreDriver dataStoreDriver = dataStore.getDriver();
+        DataStoreDriver dataStoreDriver = dataStore != null ? dataStore.getDriver() : null;
 
         if (dataStoreDriver instanceof PrimaryDataStoreDriver) {
             ((PrimaryDataStoreDriver)dataStoreDriver).disconnectVolumeFromHost(volumeInfo, host, dataStore);

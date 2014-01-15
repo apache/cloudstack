@@ -1482,11 +1482,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        DataStore dataStore = dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
-
         if (!sendCommand || (answer != null && answer.getResult())) {
             // Mark the volume as detached
             _volsDao.detachVolume(volume.getId());
+
+            // volume.getPoolId() should be null if the VM we are attaching the disk to has never been started before
+            DataStore dataStore = volume.getPoolId() != null ? dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary) : null;
 
             volService.disconnectVolumeFromHost(volFactory.getVolume(volume.getId()), host, dataStore);
 
@@ -1955,10 +1956,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
 
-        DataStore dataStore = dataStoreMgr.getDataStore(volumeToAttachStoragePool.getId(), DataStoreRole.Primary);
+        // volumeToAttachStoragePool should be null if the VM we are attaching the disk to has never been started before
+        DataStore dataStore = volumeToAttachStoragePool != null ? dataStoreMgr.getDataStore(volumeToAttachStoragePool.getId(), DataStoreRole.Primary) : null;
 
         boolean queryForChap = true;
 
+        // if we don't have a host, the VM we are attaching the disk to has never been started before
         if (host != null) {
             try {
                 // if connectVolumeToHost returns true, then we do not want to use CHAP because the volume is already connected to the host(s)
