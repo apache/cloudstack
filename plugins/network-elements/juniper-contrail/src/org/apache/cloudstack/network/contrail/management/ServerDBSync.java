@@ -32,7 +32,7 @@ public interface ServerDBSync {
      * API for syncing all classes of vnc objects with cloudstack
      * Sync cloudstack and vnc objects.
      */
-    public short syncAll(short syncMode);
+    public short syncAll(short syncMode) throws Exception;
     public void syncClass(Class<?> cls);
     public void createProject(ProjectVO project, StringBuffer syncLogMesg) throws IOException;
     public void createDomain(DomainVO domain, StringBuffer logMesg)throws IOException;

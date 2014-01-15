@@ -70,6 +70,8 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     List<VMInstanceVO> findVMInTransition(Date time, State... states);
 
+    List<VMInstanceVO> listByHostAndState(long hostId, State... states);
+
     List<VMInstanceVO> listByTypes(VirtualMachine.Type... types);
 
     VMInstanceVO findByIdTypes(long id, VirtualMachine.Type... types);
@@ -123,8 +125,8 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     List<VMInstanceVO> listStartingWithNoHostId();
 
     boolean updatePowerState(long instanceId, long powerHostId, VirtualMachine.PowerState powerState);
-    
+
     void resetVmPowerStateTracking(long instanceId);
-    
+
     void resetHostPowerStateTracking(long hostId);
 }

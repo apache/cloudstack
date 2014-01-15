@@ -61,7 +61,7 @@ namespace HypervResource
             get
             {
                 string uncPath = null;
-                if (uri.Scheme.Equals("cifs") || uri.Scheme.Equals("networkfilesystem"))
+                if (uri != null && (uri.Scheme.Equals("cifs") || uri.Scheme.Equals("networkfilesystem")))
                 {
                     uncPath = @"\\" + uri.Host + uri.LocalPath;
                 }
@@ -73,8 +73,13 @@ namespace HypervResource
         {
             get
             {
-                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                return System.Web.HttpUtility.UrlDecode(queryDictionary["user"]);
+                string user = null;
+                if (uri != null)
+                {
+                    var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                    user = System.Web.HttpUtility.UrlDecode(queryDictionary["user"]);
+                }
+                return user;
             }
         }
 
@@ -82,8 +87,13 @@ namespace HypervResource
         {
             get
             {
-                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                return System.Web.HttpUtility.UrlDecode(queryDictionary["password"]);
+                string password = null;
+                if (uri != null)
+                {
+                    var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                    password = System.Web.HttpUtility.UrlDecode(queryDictionary["password"]);
+                }
+                return password;
             }
         }
 
@@ -91,12 +101,17 @@ namespace HypervResource
         {
             get
             {
-                var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
-                if (queryDictionary["domain"] != null)
+                string domain = null;
+                if (uri != null)
                 {
-                    return System.Web.HttpUtility.UrlDecode(queryDictionary["domain"]);
+                    var queryDictionary = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                    if (queryDictionary["domain"] != null)
+                    {
+                        domain = System.Web.HttpUtility.UrlDecode(queryDictionary["domain"]);
+                    }
+                    else domain = uri.Host;
                 }
-                else return uri.Host;
+                return domain;
             }
         }
 

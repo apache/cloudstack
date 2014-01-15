@@ -120,7 +120,7 @@ public class NetworkPolicyModel extends ModelObjectBase {
             }
             
             Integer portStart = rule.getSourcePortStart();
-            Integer portEnd = rule.getSourcePortStart();
+            Integer portEnd = rule.getSourcePortEnd();
             if (portStart == null) {
                 portStart = 0;                
             }

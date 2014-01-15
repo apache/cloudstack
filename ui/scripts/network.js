@@ -2222,7 +2222,11 @@
                                 }
                             }
 
-                            if (ipAddress.vpcid || ipAddress.issourcenat) {
+                            if (ipAddress.issourcenat) {
+                                disableIpRules = true;
+                            }
+                            
+                            if (('vpc' in args.context) == false && ipAddress.vpcid != null) { //from Guest Network section, don't show Configuration(ipRules) tab on VPC IP
                                 disableIpRules = true;
                             }
 

@@ -462,15 +462,19 @@ public class NetworkProviderTest extends TestCase {
         } catch (IOException ex) {
             fail(ex.getMessage());
         }
-        
+
         //now db sync
-        if (_dbSync.syncAll(DBSyncGeneric.SYNC_MODE_UPDATE) == ServerDBSync.SYNC_STATE_OUT_OF_SYNC) {
-            s_logger.info("# Cloudstack DB & VNC are out of sync - resync done");
-        }
-        
-        if (_dbSync.syncAll(DBSyncGeneric.SYNC_MODE_CHECK) == ServerDBSync.SYNC_STATE_OUT_OF_SYNC) {
-            s_logger.info("# Cloudstack DB & VNC are still out of sync");
-            fail("DB Sync failed"); 
+        try {
+            if (_dbSync.syncAll(DBSyncGeneric.SYNC_MODE_UPDATE) == ServerDBSync.SYNC_STATE_OUT_OF_SYNC) {
+                s_logger.info("# Cloudstack DB & VNC are out of sync - resync done");
+            }
+
+            if (_dbSync.syncAll(DBSyncGeneric.SYNC_MODE_CHECK) == ServerDBSync.SYNC_STATE_OUT_OF_SYNC) {
+                s_logger.info("# Cloudstack DB & VNC are still out of sync");
+                fail("DB Sync failed");
+            }
+        } catch (Exception ex) {
+            fail(ex.getMessage());
         }
     }
     

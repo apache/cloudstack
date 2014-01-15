@@ -54,7 +54,7 @@ public interface ContrailManager {
     public NetworkOffering getRouterOffering();
     public NetworkOffering getPublicRouterOffering();
 
-    public void syncNetworkDB(short syncMode) throws IOException;
+    public void syncNetworkDB(short syncMode) throws Exception;
 
     public boolean isManagedPhysicalNetwork(Network network);
 

@@ -30,6 +30,7 @@ import java.util.TimerTask;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import javax.ejb.Local;
 
 import net.juniper.contrail.api.ApiConnector;
 import net.juniper.contrail.api.ApiConnectorFactory;
@@ -99,7 +100,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import java.io.File;
 import java.io.FileInputStream;
 
-@Component
+@Local(value = { ContrailManager.class})
 public class ContrailManagerImpl extends ManagerBase implements ContrailManager {
     @Inject public ConfigurationService _configService;
     @Inject ConfigurationServer _configServer;
@@ -135,7 +136,6 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
     private ModelController _controller;
     
     ContrailManagerImpl() {
-        setRunLevel(ComponentLifecycle.RUN_LEVEL_COMPONENT);
         _database = new ModelDatabase();
     }
 
@@ -242,23 +242,32 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 
         File configFile = PropertiesUtil.findConfigFile(configuration);
-        final Properties configProps = new Properties();
         try {
-            configProps.load(new FileInputStream(configFile));
-            String value = configProps.getProperty("management.db_sync_interval");
-            if (value != null) {
-                _dbSyncInterval = Integer.valueOf(value);
-            }
-
-            String hostname = configProps.getProperty("api.hostname");
-            String portStr = configProps.getProperty("api.port");
+            String hostname = null;
             int port = 0;
-            if (portStr != null && portStr.length() > 0) {
-                port = Integer.parseInt(portStr);
+            if (configFile == null) {
+                hostname = "localhost";
+                port = 8082;
+            } else {
+                final Properties configProps = new Properties();
+                configProps.load(new FileInputStream(configFile));
+                String value = configProps.getProperty("management.db_sync_interval");
+                if (value != null) {
+                    _dbSyncInterval = Integer.valueOf(value);
+                }
+                hostname = configProps.getProperty("api.hostname");
+                String portStr = configProps.getProperty("api.port");
+                if (portStr != null && portStr.length() > 0) {
+                    port = Integer.parseInt(portStr);
+                }
             }
             _api = ApiConnectorFactory.build(hostname, port);
         } catch (IOException ex) {
             s_logger.warn("Unable to read " + configuration, ex);
+            throw new ConfigurationException();
+        } catch (Exception ex) {
+            s_logger.debug("Exception in configure: " + ex);
+            ex.printStackTrace();
             throw new ConfigurationException();
         }
 
@@ -416,7 +425,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
 
     }
 
-    public void syncNetworkDB(short syncMode) throws IOException {
+    public void syncNetworkDB(short syncMode) throws Exception {
         if (_dbSync.syncAll(syncMode) == ServerDBSync.SYNC_STATE_OUT_OF_SYNC) {
              if (syncMode == DBSyncGeneric.SYNC_MODE_CHECK) {
                 s_logger.info("# Cloudstack DB & VNC are out of sync #");
@@ -440,6 +449,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
             } catch (Exception ex) {
                 s_logger.debug(ex);
                 s_logger.info("Unable to sync network db");
+                //resync will be done after _dbSyncInterval seconds since _syncMode is still set to SYNC_MODE_UPDATE
             }
         }
     }
