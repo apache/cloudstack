@@ -33,6 +33,7 @@
         <property name="userPasswordEncoders"
             value="#{userPasswordEncodersRegistry.registered}" />
         <property name="securityCheckers" value="#{securityCheckersRegistry.registered}" />
+        <property name="querySelectors" value="#{querySelectorsRegistry.registered}" />        
     </bean>
 
     <bean id="managementServerImpl" class="com.cloud.server.ManagementServerImpl">

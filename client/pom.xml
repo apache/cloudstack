@@ -47,11 +47,6 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-plugin-acl-role-based-access-checkers</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-dedicated-resources</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -201,6 +196,16 @@
       <artifactId>cloud-mom-rabbitmq</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-iam</artifactId>
+      <version>${project.version}</version>
+    </dependency>   
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-iam</artifactId>
+      <version>${project.version}</version>
+    </dependency>         
     <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>

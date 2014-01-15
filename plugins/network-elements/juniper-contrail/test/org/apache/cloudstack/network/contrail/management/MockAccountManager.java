@@ -371,6 +371,12 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
         // TODO Auto-generated method stub
 
     }
+
+    @Override
+    public List<String> listAclGroupsByAccount(Long accountId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
     
 
 }

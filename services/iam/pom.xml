@@ -34,6 +34,7 @@
     <module>plugin</module>
     <module>server</module>
   </modules>
+  <!-- 
   <dependencies>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
@@ -53,5 +54,6 @@
       <scope>test</scope>      
     </dependency>	
   </dependencies>
+  -->
   
 </project>
