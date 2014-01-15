@@ -62,6 +62,7 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -574,6 +575,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         _nodeId = ManagementServerNode.getManagementServerId();
 
         _agentMgr.registerForHostEvents(this, true, true, true);
+
+        if (VmJobEnabled.value()) {
+            _messageBus.subscribe(VirtualMachineManager.Topics.VM_POWER_STATE, MessageDispatcher.getDispatcher(this));
+        }
 
         return true;
     }
@@ -3815,7 +3820,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     //
 
     @MessageHandler(topic = Topics.VM_POWER_STATE)
-    private void HandlePownerStateReport(Object target, String subject, String senderAddress, Object args) {
+    private void HandlePowerStateReport(String subject, String senderAddress, Object args) {
     	assert(args != null);
     	Long vmId = (Long)args;
 
@@ -3835,7 +3840,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     				break;
 
     			// PowerUnknown shouldn't be reported, it is a derived
-    			// VM power state from host state (host un-reachable
+                // VM power state from host state (host un-reachable)
     			case PowerUnknown :
     			default :
     				assert(false);
@@ -3845,8 +3850,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     			s_logger.warn("VM " + vmId + " no longer exists when processing VM state report");
     		}
     	} else {
-    		// TODO, do job wake-up signalling, since currently async job wake-up is not in use
-    		// we will skip it for nows
+            // reset VM power state tracking so that we won't lost signal when VM has
+            // been translated to
+            _vmDao.resetVmPowerStateTracking(vmId);
     	}
     }
 
@@ -3921,6 +3927,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     	switch(vm.getState()) {
     	case Starting :
     	case Stopping :
+        case Running:
     	case Stopped :
     	case Migrating :
     		try {
@@ -3933,7 +3940,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
       		// TODO: we need to forcely release all resource allocation
           	break;
 
-    	case Running :
     	case Destroyed :
     	case Expunging :
     		break;

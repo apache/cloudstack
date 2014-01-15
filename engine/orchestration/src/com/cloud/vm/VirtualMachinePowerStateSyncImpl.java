@@ -35,22 +35,22 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
     @Inject MessageBus _messageBus;
     @Inject VMInstanceDao _instanceDao;
     @Inject VirtualMachineManager _vmMgr;
-    
+
     public VirtualMachinePowerStateSyncImpl() {
     }
-    
+
     @Override
 	public void resetHostSyncState(long hostId) {
     	s_logger.info("Reset VM power state sync for host: " + hostId);
     	_instanceDao.resetHostPowerStateTracking(hostId);
     }
-    
+
     @Override
 	public void processHostVmStateReport(long hostId, Map<String, HostVmStateReportEntry> report) {
     	if(s_logger.isDebugEnabled())
     		s_logger.debug("Process host VM state report from ping process. host: " + hostId);
-    	
-    	Map<Long, VirtualMachine.PowerState> translatedInfo = convertToInfos(report);
+
+    	Map<Long, VirtualMachine.PowerState> translatedInfo = convertVmStateReport(report);
     	processReport(hostId, translatedInfo);
     }
 
@@ -58,39 +58,41 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
 	public void processHostVmStatePingReport(long hostId, Map<String, HostVmStateReportEntry> report) {
     	if(s_logger.isDebugEnabled())
     		s_logger.debug("Process host VM state report from ping process. host: " + hostId);
-    	
-    	Map<Long, VirtualMachine.PowerState> translatedInfo = convertToInfos(report);
+
+    	Map<Long, VirtualMachine.PowerState> translatedInfo = convertVmStateReport(report);
     	processReport(hostId, translatedInfo);
     }
-    
+
     private void processReport(long hostId, Map<Long, VirtualMachine.PowerState> translatedInfo) {
-    	
+
     	for(Map.Entry<Long, VirtualMachine.PowerState> entry : translatedInfo.entrySet()) {
-    		
+
         	if(s_logger.isDebugEnabled())
         		s_logger.debug("VM state report. host: " + hostId + ", vm id: " + entry.getKey() + ", power state: " + entry.getValue());
 
     		if(_instanceDao.updatePowerState(entry.getKey(), hostId, entry.getValue())) {
-    			
             	if(s_logger.isDebugEnabled())
             		s_logger.debug("VM state report is updated. host: " + hostId + ", vm id: " + entry.getKey() + ", power state: " + entry.getValue());
-    			
+
                 _messageBus.publish(null, VirtualMachineManager.Topics.VM_POWER_STATE, PublishScope.GLOBAL, entry.getKey());
+            } else {
+                if (s_logger.isDebugEnabled())
+                    s_logger.debug("VM power state does not change, skip DB writing. vm id: " + entry.getKey());
     		}
     	}
     }
-    	    
-    private Map<Long, VirtualMachine.PowerState> convertToInfos(Map<String, HostVmStateReportEntry> states) {
+
+    @Override
+    public Map<Long, VirtualMachine.PowerState> convertVmStateReport(Map<String, HostVmStateReportEntry> states) {
         final HashMap<Long, VirtualMachine.PowerState> map = new HashMap<Long, VirtualMachine.PowerState>();
         if (states == null) {
             return map;
         }
-        
+
         for (Map.Entry<String, HostVmStateReportEntry> entry : states.entrySet()) {
         	VMInstanceVO vm = findVM(entry.getKey());
         	if(vm != null) {
         		map.put(vm.getId(), entry.getValue().getState());
-        		break;
         	} else {
         		s_logger.info("Unable to find matched VM in CloudStack DB. name: " + entry.getKey());
         	}
@@ -98,7 +100,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
 
         return map;
     }
-    
+
     private VMInstanceVO findVM(String vmName) {
         return _instanceDao.findVMByInstanceName(vmName);
     }
