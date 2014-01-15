@@ -448,40 +448,47 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>cloudstack-checkstyle</id>
+              <phase>none</phase>
+              <inherited>false</inherited>
+            </execution>
+          </executions>
       </plugin>
     </plugins>
     <pluginManagement>
       <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
           <version>${cs.checkstyle.version}</version>
-        <dependencies>
-          <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>checkstyle</artifactId>
-            <version>${project.version}</version>
-          </dependency>
-        </dependencies>
-
-        <executions>
-          <execution>
-            <phase>validate</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <failsOnError>true</failsOnError>
-          <configLocation>cloud-style.xml</configLocation>
-          <consoleOutput>true</consoleOutput>
-          <includeTestSourceDirectory>true</includeTestSourceDirectory>
-          <sourceDirectory>${project.basedir}</sourceDirectory>
-          <includes>**\/*.java</includes>
-          <excludes>**\/deps\/,**\/test\/,**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat,**\/awsapi\/,**\/XenServerJava\/,**\/apidoc\/</excludes>
-        </configuration>
-      </plugin>
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.cloudstack</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>${project.version}</version>
+            </dependency>
+          </dependencies>
+          <executions>
+            <execution>
+              <id>cloudstack-checkstyle</id>
+              <phase>validate</phase>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <failsOnError>true</failsOnError>
+            <configLocation>cloud-style.xml</configLocation>
+            <consoleOutput>true</consoleOutput>
+            <includeTestSourceDirectory>true</includeTestSourceDirectory>
+            <sourceDirectory>${project.basedir}</sourceDirectory>
+            <includes>**\/*.java</includes>
+            <excludes>**\/deps\/,**\/test\/,**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat,**\/awsapi\/,**\/XenServerJava\/,**\/apidoc\/</excludes>
+          </configuration>
+        </plugin>
         <plugin>
           <artifactId>maven-clean-plugin</artifactId>
           <configuration>
