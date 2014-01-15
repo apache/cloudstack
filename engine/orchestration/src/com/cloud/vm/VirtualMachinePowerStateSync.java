@@ -28,4 +28,6 @@ public interface VirtualMachinePowerStateSync {
 
     // to adapt legacy ping report
     void processHostVmStatePingReport(long hostId, Map<String, HostVmStateReportEntry> report);
+
+    Map<Long, VirtualMachine.PowerState> convertVmStateReport(Map<String, HostVmStateReportEntry> states);
 }
