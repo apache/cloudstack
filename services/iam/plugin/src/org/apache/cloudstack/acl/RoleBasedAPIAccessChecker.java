@@ -28,10 +28,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.APIChecker;
-import org.apache.cloudstack.acl.AclEntityType;
-import org.apache.cloudstack.acl.PermissionScope;
-import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
@@ -207,11 +203,11 @@ public class RoleBasedAPIAccessChecker extends AdapterBase implements APIChecker
        
         if (entityTypes == null || entityTypes.length == 0) {
             _iamSrv.addAclPermissionToAclPolicy(new Long(role.ordinal()) + 1, null, permissionScope.toString(), new Long(-1),
-                    apiName, accessType.toString(), Permission.Allow);
+                    apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow);
         } else {
             for (AclEntityType entityType : entityTypes) {
                 _iamSrv.addAclPermissionToAclPolicy(new Long(role.ordinal()) + 1, entityType.toString(), permissionScope.toString(), new Long(-1),
-                        apiName, accessType.toString(), Permission.Allow);
+                        apiName, (accessType == null) ? null : accessType.toString(), Permission.Allow);
             }
          }
 
