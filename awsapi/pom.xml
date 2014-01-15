@@ -319,6 +319,7 @@
         <artifactId>maven-checkstyle-plugin</artifactId>
         <executions>
           <execution>
+            <id>cloudstack-checkstyle</id>
             <phase>none</phase>
           </execution>
         </executions>
