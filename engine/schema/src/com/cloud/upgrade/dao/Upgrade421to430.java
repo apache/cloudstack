@@ -80,7 +80,7 @@ public class Upgrade421to430 implements DbUpgrade {
 
         try {
             selectPstmt = conn.prepareStatement("SELECT id FROM `cloud`.`service_offering` WHERE vm_type='secondarystoragevm'");
-            updatePstmt = conn.prepareStatement("UPDATE `cloud`.`service_offering` SET ram_size=? WHERE id=?'");
+            updatePstmt = conn.prepareStatement("UPDATE `cloud`.`service_offering` SET ram_size=? WHERE id=?");
             selectResultSet = selectPstmt.executeQuery();
             if(selectResultSet.next()) {
                 serviceOfferingId = selectResultSet.getLong("id");
