@@ -62,4 +62,11 @@ public interface QuerySelector extends Adapter {
      */
     boolean isGrantedAll(Account caller, String action);
 
+    /**
+     * List of ACL group the given account belongs to
+     * @param accountId account id.
+     * @return ACL group names
+     */
+    List<String> listAclGroupsByAccount(long accountId);
+
 }

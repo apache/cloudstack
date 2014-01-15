@@ -27,9 +27,6 @@
     <version>4.3.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <build>
-    <defaultGoal>install</defaultGoal>
-  </build>
   <modules>
     <module>console-proxy</module>
     <module>secondary-storage</module>

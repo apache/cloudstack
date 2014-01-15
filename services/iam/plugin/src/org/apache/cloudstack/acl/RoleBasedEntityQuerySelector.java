@@ -23,6 +23,7 @@ import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.iam.api.AclGroup;
 import org.apache.cloudstack.iam.api.AclPolicy;
 import org.apache.cloudstack.iam.api.AclPolicyPermission;
 import org.apache.cloudstack.iam.api.IAMService;
@@ -110,6 +111,16 @@ public class RoleBasedEntityQuerySelector extends AdapterBase implements QuerySe
             }
         }
         return false;
+    }
+
+    @Override
+    public List<String> listAclGroupsByAccount(long accountId) {
+        List<AclGroup> groups = _iamService.listAclGroups(accountId);
+        List<String> groupNames = new ArrayList<String>();
+        for (AclGroup grp : groups) {
+            groupNames.add(grp.getName());
+        }
+        return groupNames;
     }
 
 }

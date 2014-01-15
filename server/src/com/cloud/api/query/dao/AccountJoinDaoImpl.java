@@ -24,7 +24,6 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import org.apache.cloudstack.acl.AclProxyService;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
@@ -48,9 +47,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
 
     private final SearchBuilder<AccountJoinVO> acctIdSearch;
     @Inject
-    public AccountManager _accountMgr;
-    @Inject
-    AclProxyService _aclProxy;
+    AccountManager _acctMgr;
 
     protected AccountJoinDaoImpl() {
 
@@ -106,7 +103,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         accountResponse.setObjectName("account");
         
         // add all the acl groups for an account
-        accountResponse.setGroups(_aclProxy.listAclGroupsByAccount(account.getId()));
+        accountResponse.setGroups(_acctMgr.listAclGroupsByAccount(account.getId()));
 
         return accountResponse;
     }

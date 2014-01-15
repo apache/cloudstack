@@ -150,15 +150,6 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
         return _iamSrv.listAclGroups(accountId);
     }
 
-    @Override
-    public List<String> listAclGroupsByAccount(long accountId) {
-        List<AclGroup> groups = listAclGroups(accountId);
-        List<String> groupNames = new ArrayList<String>();
-        for (AclGroup grp : groups) {
-            groupNames.add(grp.getName());
-        }
-        return groupNames;
-    }
 
     @DB
     @Override
@@ -167,8 +158,7 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
         return _iamSrv.addAccountsToGroup(acctIds, groupId);
     }
 
-    @Override
-    public void removeAccountFromAclGroups(long accountId) {
+    private void removeAccountFromAclGroups(long accountId) {
         List<AclGroup> groups = listAclGroups(accountId);
         List<Long> accts = new ArrayList<Long>();
         accts.add(accountId);
@@ -179,8 +169,7 @@ public class AclApiServiceImpl extends ManagerBase implements AclApiService, Man
         }
     }
 
-    @Override
-    public void addAccountToAclGroup(long accountId, long groupId) {
+    private void addAccountToAclGroup(long accountId, long groupId) {
         List<Long> accts = new ArrayList<Long>();
         accts.add(accountId);
         addAccountsToGroup(accts, groupId);

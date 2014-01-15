@@ -40,7 +40,6 @@ import javax.naming.ConfigurationException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.AclProxyService;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.RoleType;
@@ -253,8 +252,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Inject
     private GlobalLoadBalancerRuleDao _gslbRuleDao;
 
-    @Inject
-    QuerySelector _aclQuerySelector;  // we assume that there should be one type of QuerySelector adapter
+    List<QuerySelector> _querySelectors;
 
     @Inject
     MessageBus _messageBus;
@@ -302,6 +300,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 		_securityCheckers = securityCheckers;
 	}
     
+    public List<QuerySelector> getQuerySelectors() {
+        return _querySelectors;
+    }
+
+    public void setQuerySelectors(List<QuerySelector> querySelectors) {
+        _querySelectors = querySelectors;
+    }
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         _systemAccount = _accountDao.findById(AccountVO.ACCOUNT_ID_SYSTEM);
@@ -2249,16 +2255,21 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // search for policy permissions associated with caller to get all his authorized domains, accounts, and resources
             // Assumption: if a domain is in grantedDomains, then all the accounts under this domain will not be returned in "grantedAccounts". Similarly, if an account
             // is in grantedAccounts, then all the resources owned by this account will not be returned in "grantedResources".
-            boolean grantedAll = _aclQuerySelector.isGrantedAll(caller, action);
+            // assume that there is only one query selector adapter
+            if (_querySelectors == null || _querySelectors.size() == 0)
+                return; // no futher filtering
+
+            QuerySelector qs = _querySelectors.get(0);
+            boolean grantedAll = qs.isGrantedAll(caller, action);
             if ( grantedAll ){
                 if ( domainId != null ){
                     permittedDomains.add(domainId);
                 }
             }
             else {
-                List<Long> grantedDomains = _aclQuerySelector.getAuthorizedDomains(caller, action);
-                List<Long> grantedAccounts = _aclQuerySelector.getAuthorizedAccounts(caller, action);
-                List<Long> grantedResources = _aclQuerySelector.getAuthorizedResources(caller, action);
+                List<Long> grantedDomains = qs.getAuthorizedDomains(caller, action);
+                List<Long> grantedAccounts = qs.getAuthorizedAccounts(caller, action);
+                List<Long> grantedResources = qs.getAuthorizedResources(caller, action);
 
                 if (domainId != null) {
                     // specific domain is specified
@@ -2435,6 +2446,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         sc.addAnd("accountId", SearchCriteria.Op.SC, aclSc);
+    }
+
+    @Override
+    public List<String> listAclGroupsByAccount(Long accountId) {
+        if (_querySelectors == null || _querySelectors.size() == 0)
+            return new ArrayList<String>();
+
+        QuerySelector qs = _querySelectors.get(0);
+        return qs.listAclGroupsByAccount(accountId);
     }
 
 }

@@ -191,6 +191,8 @@ public interface AccountManager extends AccountService {
      */
     Account lockAccount(String accountName, Long domainId, Long accountId);
 
+    List<String> listAclGroupsByAccount(Long accountId);
+
     public static final String MESSAGE_ADD_ACCOUNT_EVENT = "Message.AddAccount.Event";
 
     public static final String MESSAGE_REMOVE_ACCOUNT_EVENT = "Message.RemoveAccount.Event";
