@@ -94,7 +94,7 @@ bzip2 $appliance-$build_date-$branch-vmware.vmdk
 echo "$appliance exported for VMWare: dist/$appliance-$build_date-$branch-vmware.vmdk.bz2"
 vboxmanage export $machine_uuid --output $appliance-$build_date-$branch-vmware.ovf
 mv $appliance-$build_date-$branch-vmware.ovf $appliance-$build_date-$branch-vmware.ovf-orig
-xsltproc convert_ovf_vbox_to_esx.xslt $appliance-$build_date-$branch-vmware.ovf-orig > $appliance-$build_date-$branch-vmware.ovf
+java -cp convert convert_ovf_vbox_to_esx.xslt $appliance-$build_date-$branch-vmware.ovf-orig $appliance-$build_date-$branch-vmware.ovf
 tar -cf $appliance-$build_date-$branch-vmware.ova $appliance-$build_date-$branch-vmware.ovf $appliance-$build_date-$branch-vmware-disk1.vmdk
 rm -f $appliance-$build_date-$branch-vmware.ovf $appliance-$build_date-$branch-vmware.ovf-orig $appliance-$build_date-$branch-vmware-disk1.vmdk
 echo "$appliance exported for VMWare: dist/$appliance-$build_date-$branch-vmware.ova"
