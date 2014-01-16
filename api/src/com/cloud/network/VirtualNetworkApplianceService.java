@@ -71,5 +71,5 @@ public interface VirtualNetworkApplianceService {
 
     List<Long> upgradeRouterTemplate(UpgradeRouterTemplateCmd cmd);
 
-    public static final String _minVRVersion = "4.2.0";
+    public static final String _minVRVersion = "4.3.0";
 }
