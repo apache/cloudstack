@@ -19,16 +19,19 @@ package com.cloud.hypervisor;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 
 @Local(value=HypervisorGuru.class)
 public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject GuestOSDao _guestOsDao;
-    
+
 	@Override
 	public HypervisorType getHypervisorType() {
 		return HypervisorType.KVM;
@@ -48,8 +51,17 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
 
 		return to;
 	}
-	
-	@Override
+
+    @Override
+    public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
+        if (cmd instanceof StorageSubSystemCommand) {
+            StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
+            c.setExecuteInSequence(false);
+        }
+        return new Pair<Boolean, Long>(false, new Long(hostId));
+    }
+
+        @Override
     public boolean trackVmHostChange() {
     	return false;
     }

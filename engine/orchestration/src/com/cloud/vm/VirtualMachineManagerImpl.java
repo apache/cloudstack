@@ -974,7 +974,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     handlePath(vmTO.getDisks(), vm.getHypervisorType());
 
                     cmds = new Commands(Command.OnError.Stop);
-                    cmds.addCommand(new StartCommand(vmTO, dest.getHost(), getExecuteInSequence()));
+                    cmds.addCommand(new StartCommand(vmTO, dest.getHost(), getExecuteInSequence(vm.getHypervisorType())));
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
 
@@ -1017,7 +1017,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                                 s_logger.info("The guru did not like the answers so stopping " + vm);
                             }
 
-                            StopCommand cmd = new StopCommand(vm, getExecuteInSequence());
+                            StopCommand cmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()));
                             StopAnswer answer = (StopAnswer) _agentMgr.easySend(destHostId, cmd);
                             if ( answer != null ) {
                                 if (vm.getType() == VirtualMachine.Type.User) {
@@ -1179,13 +1179,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
-    protected boolean getExecuteInSequence() {
-        return ExecuteInSequence.value();
+    protected boolean getExecuteInSequence(HypervisorType hypervisorType) {
+        if (HypervisorType.KVM == hypervisorType) {
+            return false;
+        } else {
+            return ExecuteInSequence.value();
+        }
     }
 
     protected boolean sendStop(VirtualMachineGuru guru, VirtualMachineProfile profile, boolean force) {
         VirtualMachine vm = profile.getVirtualMachine();
-        StopCommand stop = new StopCommand(vm, getExecuteInSequence());
+        StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()));
         try {
             StopAnswer answer = (StopAnswer) _agentMgr.send(vm.getHostId(), stop);
             if ( answer != null ) {
@@ -1431,7 +1435,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         vmGuru.prepareStop(profile);
-        StopCommand stop = new StopCommand(vm, getExecuteInSequence());
+        StopCommand stop = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()));
         boolean stopped = false;
         StopAnswer answer = null;
         try {
@@ -2325,11 +2329,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     public Command cleanup(VirtualMachine vm) {
-        return new StopCommand(vm, getExecuteInSequence());
+        return new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()));
     }
 
     public Command cleanup(String vmName) {
-        return new StopCommand(vmName, getExecuteInSequence());
+        return new StopCommand(vmName, getExecuteInSequence(null));
     }
 
     public Commands fullHostSync(final long hostId, StartupRoutingCommand startup) {
