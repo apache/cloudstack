@@ -408,6 +408,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @DB
     public VolumeInfo createVolume(VolumeInfo volume, VirtualMachine vm, VirtualMachineTemplate template, DataCenter dc, Pod pod, Long clusterId, ServiceOffering offering,
             DiskOffering diskOffering, List<StoragePool> avoids, long size, HypervisorType hyperType) {
+        // update the volume's hypervisor_ss_reserve from its disk offering (used for managed storage)
         volume = updateHypervisorSnapshotReserveForVolume(diskOffering, volume, hyperType);
 
         StoragePool pool = null;
@@ -1089,6 +1090,14 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             // retry one more time in case of template reload is required for Vmware case
             AsyncCallFuture<VolumeApiResult> future = null;
             if (templateId == null) {
+                DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, volume.getDiskOfferingId());
+                HypervisorType hyperType = vm.getVirtualMachine().getHypervisorType();
+
+                // update the volume's hypervisor_ss_reserve from its disk offering (used for managed storage)
+                updateHypervisorSnapshotReserveForVolume(diskOffering, volume, hyperType);
+
+                volume = volFactory.getVolume(newVol.getId(), destPool);
+
                 future = volService.createVolumeAsync(volume, destPool);
             } else {
                 TemplateInfo templ = tmplFactory.getTemplate(templateId, DataStoreRole.Image);
@@ -1106,6 +1115,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                         throw new StorageUnavailableException("Unable to create " + newVol + ":" + result.getResult(), destPool.getId());
                     }
                 }
+
+                StoragePoolVO storagePool = _storagePoolDao.findById(destPool.getId());
+
+                if (newVol.getVolumeType() == Type.DATADISK && storagePool.isManaged()) {
+                    long hostId = vm.getVirtualMachine().getHostId();
+                    Host host = _hostDao.findById(hostId);
+
+                    volService.connectVolumeToHost(volFactory.getVolume(newVol.getId()), host, destPool);
+                }
+
                 newVol = _volsDao.findById(newVol.getId());
                 break; //break out of template-redeploy retry loop
             } catch (InterruptedException e) {

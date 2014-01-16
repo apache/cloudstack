@@ -1127,15 +1127,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 Map<String, String> details = disk.getDetails();
                 boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
 
-                if (isManaged && disk.getPath() == null) {
+                if (isManaged) {
                     Long volumeId = disk.getData().getId();
                     VolumeVO volume = _volsDao.findById(volumeId);
                     String iScsiName = volume.get_iScsiName();
                     String path = iqnToPath.get(iScsiName);
 
-                    volume.setPath(path);
+                    if (path != null) {
+                        volume.setPath(path);
 
-                    _volsDao.update(volumeId, volume);
+                        _volsDao.update(volumeId, volume);
+                    }
                 }
             }
         }

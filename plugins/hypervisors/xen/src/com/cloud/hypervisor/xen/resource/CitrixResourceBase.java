@@ -1262,10 +1262,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected VBD createVbd(Connection conn, DiskTO volume, String vmName, VM vm, BootloaderType bootLoaderType) throws XmlRpcException, XenAPIException {
+    protected VBD createVbd(Connection conn, DiskTO volume, String vmName, VM vm, BootloaderType bootLoaderType, VDI vdi) throws XmlRpcException, XenAPIException {
         Volume.Type type = volume.getType();
 
-        VDI vdi = mount(conn, vmName, volume);
+        if (vdi == null) {
+            vdi = mount(conn, vmName, volume);
+        }
 
         if (vdi != null) {
             if ("detached".equals(vdi.getNameLabel(conn))) {
@@ -1754,7 +1756,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vm = createVmFromTemplate(conn, vmSpec, host);
 
             for (DiskTO disk : vmSpec.getDisks()) {
-                createVbd(conn, disk, vmName, vm, vmSpec.getBootloader());
+                VDI newVdi = prepareManagedDisk(conn, disk, vmName);
+
+                if (newVdi != null) {
+                    String path = newVdi.getUuid(conn);
+
+                    iqnToPath.put(disk.getDetails().get(DiskTO.IQN), path);
+                }
+
+                createVbd(conn, disk, vmName, vm, vmSpec.getBootloader(), newVdi);
             }
 
             if (vmSpec.getType() != VirtualMachine.Type.User) {
@@ -1864,6 +1874,53 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
             }
         }
+    }
+
+    // the idea here is to see if the DiskTO in question is from managed storage and
+    // does not yet have an SR
+    // if no SR, create it and create a VDI in it
+    private VDI prepareManagedDisk(Connection conn, DiskTO disk, String vmName) throws Exception {
+        Map<String, String> details = disk.getDetails();
+
+        if (details == null) {
+            return null;
+        }
+
+        boolean isManaged = new Boolean(details.get(DiskTO.MANAGED)).booleanValue();
+
+        if (!isManaged) {
+            return null;
+        }
+
+        String iqn = details.get(DiskTO.IQN);
+
+        Set<SR> srNameLabels = SR.getByNameLabel(conn, iqn);
+
+        if (srNameLabels.size() != 0) {
+            return null;
+        }
+
+        String vdiNameLabel = vmName + "-DATA";
+
+        return prepareManagedStorage(conn, details, null, vdiNameLabel);
+    }
+
+    protected VDI prepareManagedStorage(Connection conn, Map<String, String> details, String path, String vdiNameLabel) throws Exception {
+        String iScsiName = details.get(DiskTO.IQN);
+        String storageHost = details.get(DiskTO.STORAGE_HOST);
+        String chapInitiatorUsername = details.get(DiskTO.CHAP_INITIATOR_USERNAME);
+        String chapInitiatorSecret = details.get(DiskTO.CHAP_INITIATOR_SECRET);
+        Long volumeSize = Long.parseLong(details.get(DiskTO.VOLUME_SIZE));
+
+        SR sr = getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, true);
+
+        VDI vdi = getVDIbyUuid(conn, path, false);
+
+        if (vdi == null) {
+            vdi = createVdi(sr, vdiNameLabel, volumeSize);
+        }
+
+        return vdi;
     }
 
     protected Answer execute(ModifySshKeysCommand cmd) {
