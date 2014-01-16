@@ -4806,4 +4806,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {EnableDynamicallyScaleVm};
     }
+
+    @Override
+    public String getVmUserData(long vmId) {
+        UserVmVO vm = _vmDao.findById(vmId);
+        if (vm == null) {
+            throw new InvalidParameterValueException("Unable to find virual machine with id " + vmId);
+        }
+
+        //check permissions
+        _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+        return vm.getUserData();
+    }
 }
