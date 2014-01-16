@@ -68,6 +68,7 @@ import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanSpec;
 
+import com.cloud.exception.CloudException;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -1294,6 +1295,19 @@ public class HypervisorHostHelper {
             String msg = "createImportSpec() failed. ovfFilePath: " + ovfFilePath + ", vmName: " + vmName + ", diskOption: " + diskOption;
             s_logger.error(msg);
             throw new Exception(msg);
+        }
+
+        if(!ovfImportResult.getError().isEmpty()) {
+            for (LocalizedMethodFault fault : ovfImportResult.getError()) {
+                s_logger.error("createImportSpec error: " + fault.getLocalizedMessage());
+            }
+            throw new CloudException("Failed to create an import spec from " + ovfFilePath + ". Check log for details.");
+        }
+
+        if (!ovfImportResult.getWarning().isEmpty()) {
+            for (LocalizedMethodFault fault : ovfImportResult.getError()) {
+                s_logger.warn("createImportSpec warning: " + fault.getLocalizedMessage());
+            }
         }
 
         DatacenterMO dcMo = new DatacenterMO(context, host.getHyperHostDatacenter());
