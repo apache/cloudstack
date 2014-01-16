@@ -178,21 +178,6 @@ def savePassword(session, args):
     return txt
 
 @echo
-def saveDhcpEntry(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/cloud/bin/dhcp_entry.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-        txt = 'success'
-    except:
-        logging.debug(" save dhcp entry failed "  )
-        txt = '' 
-
-    return txt
-    
-@echo
 def setLinkLocalIP(session, args):
     brName = args['brName']
     try:
@@ -285,18 +270,6 @@ def setLoadBalancerRule(session, args):
         logging.debug(" set loadbalancer rule failed "  )
         txt = '' 
 
-    return txt
-@echo
-def configdnsmasq(session, args):
-    routerip = args['routerip']
-    args = args['args']
-    target   = "root@"+routerip
-    try:
-       util.pread2(['ssh','-p','3922','-q','-o','StrictHostKeyChecking=no','-i','/root/.ssh/id_rsa.cloud',target,'/root/dnsmasq.sh',args])
-       txt='success'
-    except:
-       logging.debug("failed to config dnsmasq server")
-       txt=''
     return txt
 
 @echo
@@ -1608,28 +1581,12 @@ def network_rules(session, args):
   except:
     logging.debug("Failed to network rule !")
 
-@echo
-def bumpUpPriority(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/cloud/bin/bumpUpPriority.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-        txt = 'success'
-    except:
-        logging.debug("bump up priority fail! ")
-        txt = ''
-
-    return txt
-
-
 if __name__ == "__main__":
      XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, 
                             "getgateway": getgateway, "preparemigration": preparemigration, 
                             "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
                             "savePassword": savePassword, 
-                            "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "routerProxy": routerProxy, 
+                            "setFirewallRule": setFirewallRule, "routerProxy": routerProxy, 
                             "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, 
                             "network_rules":network_rules, 
                             "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules,
@@ -1637,12 +1594,10 @@ if __name__ == "__main__":
                             "default_network_rules_systemvm":default_network_rules_systemvm, 
                             "network_rules_vmSecondaryIp":network_rules_vmSecondaryIp,
                             "createipAlias":createipAlias,
-                            "configdnsmasq":configdnsmasq,
                             "deleteipAlias":deleteipAlias,
                             "get_rule_logs_for_vms":get_rule_logs_for_vms, 
 			    "add_to_VCPUs_params_live":add_to_VCPUs_params_live,
                             "setLinkLocalIP":setLinkLocalIP,
                             "cleanup_rules":cleanup_rules,
-                            "bumpUpPriority":bumpUpPriority,
                             "createFileInDomr":createFileInDomr,
                             "kill_copy_process":kill_copy_process})

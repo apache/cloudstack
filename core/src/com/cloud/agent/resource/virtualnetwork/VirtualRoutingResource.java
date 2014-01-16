@@ -16,31 +16,6 @@
 // under the License.
 package com.cloud.agent.resource.virtualnetwork;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.InetSocketAddress;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.channels.SocketChannel;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-
-import com.cloud.agent.api.routing.SetMonitorServiceCommand;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckRouterAnswer;
@@ -66,6 +41,7 @@ import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetMonitorServiceCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
@@ -92,6 +68,27 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
+import com.google.gson.Gson;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
+import javax.ejb.Local;
+import javax.naming.ConfigurationException;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.InetSocketAddress;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.channels.SocketChannel;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * VirtualNetworkResource controls and configures virtual networking
@@ -107,14 +104,12 @@ public class VirtualRoutingResource implements Manager {
     private String _publicIpAddress;
     private String _firewallPath;
     private String _loadbPath;
-    private String _dhcpEntryPath;
     private String _publicEthIf;
     private String _privateEthIf;
     private String _bumpUpPriorityPath;
     private String _routerProxyPath;
     private String _createIpAliasPath;
     private String _deleteIpAliasPath;
-    private String _callDnsMasqPath;
 
     private int _timeout;
     private int _startTimeout;
@@ -559,35 +554,34 @@ public class VirtualRoutingResource implements Manager {
     }
 
     protected Answer execute(final DhcpEntryCommand cmd) {
-        final Script command = new Script(_dhcpEntryPath, _timeout, s_logger);
-        command.add("-r", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
+        String args = " -m " + cmd.getVmMac();
         if (cmd.getVmIpAddress() != null) {
-            command.add("-v", cmd.getVmIpAddress());
+            args += " -4 " + cmd.getVmIpAddress();
         }
-        command.add("-m", cmd.getVmMac());
-        command.add("-n", cmd.getVmName());
+        args += " -h " + cmd.getVmName();
 
         if (cmd.getDefaultRouter() != null) {
-            command.add("-d", cmd.getDefaultRouter());
-        }
-        if (cmd.getStaticRoutes() != null) {
-            command.add("-s", cmd.getStaticRoutes());
+            args += " -d " + cmd.getDefaultRouter();
         }
 
         if (cmd.getDefaultDns() != null) {
-            command.add("-N", cmd.getDefaultDns());
+            args += " -n " + cmd.getDefaultDns();
+        }
+
+        if (cmd.getStaticRoutes() != null) {
+            args += " -s " + cmd.getStaticRoutes();
         }
 
         if (cmd.getVmIp6Address() != null) {
-            command.add("-6", cmd.getVmIp6Address());
-            command.add("-u", cmd.getDuid());
+            args += " -6 " + cmd.getVmIp6Address();
+            args += " -u " + cmd.getDuid();
         }
 
         if (!cmd.isDefault()) {
-            command.add("-z");
+            args += " -N";
         }
 
-        final String result = command.execute();
+        final String result = routerProxy("edithosts.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
         return new Answer(cmd, result == null, result);
     }
 
@@ -625,16 +619,13 @@ public class VirtualRoutingResource implements Manager {
     }
 
     protected Answer execute(final DnsMasqConfigCommand cmd) {
-        final Script command = new Script(_callDnsMasqPath, _timeout, s_logger);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         List<DhcpTO> dhcpTos = cmd.getIps();
         String args = "";
         for (DhcpTO dhcpTo : dhcpTos) {
             args = args + dhcpTo.getRouterIp() + ":" + dhcpTo.getGateway() + ":" + dhcpTo.getNetmask() + ":" + dhcpTo.getStartIpOfSubnet() + "-";
         }
-        command.add(routerIp);
-        command.add(args);
-        final String result = command.execute();
+        final String result = routerProxy("dnsmasq.sh", routerIp, args);
         return new Answer(cmd, result == null, result);
     }
 
@@ -693,13 +684,9 @@ public class VirtualRoutingResource implements Manager {
     }
 
     protected Answer execute(BumpUpPriorityCommand cmd) {
-        final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        final Script command = new Script(_bumpUpPriorityPath, _timeout, s_logger);
-        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-        command.add(routerPrivateIPAddress);
-        String result = command.execute(parser);
+        String result = routerProxy("bumpup_priority.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), null);
         if (result != null) {
-            return new Answer(cmd, false, "BumpUpPriorityCommand failed: " + result);
+            return new Answer(cmd, false, "BumpUpPriorityCommand failed due to " + result);
         }
         return new Answer(cmd, true, null);
     }
@@ -1137,11 +1124,6 @@ public class VirtualRoutingResource implements Manager {
             throw new ConfigurationException("Unable to find the call_loadbalancer.sh");
         }
 
-        _dhcpEntryPath = findScript("dhcp_entry.sh");
-        if (_dhcpEntryPath == null) {
-            throw new ConfigurationException("Unable to find dhcp_entry.sh");
-        }
-
         _publicEthIf = (String)params.get("public.network.device");
         if (_publicEthIf == null) {
             _publicEthIf = "xenbr1";
@@ -1170,10 +1152,6 @@ public class VirtualRoutingResource implements Manager {
         _deleteIpAliasPath = findScript("deleteipAlias.sh");
         if (_deleteIpAliasPath == null) {
             throw new ConfigurationException("unable to find deleteipAlias.sh");
-        }
-        _callDnsMasqPath = findScript("call_dnsmasq.sh");
-        if (_callDnsMasqPath == null) {
-            throw new ConfigurationException("unable to find call_dnsmasq.sh");
         }
 
         return true;

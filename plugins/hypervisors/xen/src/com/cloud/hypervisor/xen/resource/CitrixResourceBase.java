@@ -2324,7 +2324,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected synchronized Answer execute(final DhcpEntryCommand cmd) {
-        String args = "";
+        String args = " -m " + cmd.getVmMac();
         if (cmd.getVmIpAddress() != null) {
             args += " -4 " + cmd.getVmIpAddress();
         }
