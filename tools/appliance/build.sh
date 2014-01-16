@@ -60,7 +60,7 @@ done
 vboxmanage modifyhd $hdd_uuid --compact
 
 # Start exporting
-rm -fr dist *.ova *.vhd *.vdi *.qcow* *.bz2
+rm -fr dist *.ova *.vhd *.vdi *.qcow* *.bz2 *.vmdk *.ovf
 mkdir dist
 
 # Export for Xen
@@ -92,7 +92,11 @@ echo "$appliance exported for KVM: dist/$appliance-$build_date-$branch-kvm.qcow2
 vboxmanage clonehd $hdd_uuid $appliance-$build_date-$branch-vmware.vmdk --format VMDK
 bzip2 $appliance-$build_date-$branch-vmware.vmdk
 echo "$appliance exported for VMWare: dist/$appliance-$build_date-$branch-vmware.vmdk.bz2"
-vboxmanage export $machine_uuid --output $appliance-$build_date-$branch-vmware.ova
+vboxmanage export $machine_uuid --output $appliance-$build_date-$branch-vmware.ovf
+mv $appliance-$build_date-$branch-vmware.ovf $appliance-$build_date-$branch-vmware.ovf-orig
+java -cp convert Convert convert_ovf_vbox_to_esx.xslt $appliance-$build_date-$branch-vmware.ovf-orig $appliance-$build_date-$branch-vmware.ovf
+tar -cf $appliance-$build_date-$branch-vmware.ova $appliance-$build_date-$branch-vmware.ovf $appliance-$build_date-$branch-vmware-disk1.vmdk
+rm -f $appliance-$build_date-$branch-vmware.ovf $appliance-$build_date-$branch-vmware.ovf-orig $appliance-$build_date-$branch-vmware-disk1.vmdk
 echo "$appliance exported for VMWare: dist/$appliance-$build_date-$branch-vmware.ova"
 
 # Export for HyperV
