@@ -29,7 +29,7 @@ import com.cloud.utils.fsm.StateObject;
 
 /**
  * VirtualMachine describes the properties held by a virtual machine
- * 
+ *
  */
 public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, InternalIdentity, StateObject<VirtualMachine.State> {
 
@@ -117,7 +117,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
             s_fsm.addTransition(State.Expunging, VirtualMachine.Event.ExpungeOperation, State.Expunging);
             s_fsm.addTransition(State.Error, VirtualMachine.Event.DestroyRequested, State.Expunging);
             s_fsm.addTransition(State.Error, VirtualMachine.Event.ExpungeOperation, State.Expunging);
-            			
+
             s_fsm.addTransition(State.Stopping, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
             s_fsm.addTransition(State.Stopped, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.FollowAgentPowerOnReport, State.Running);
@@ -126,8 +126,9 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
             s_fsm.addTransition(State.Stopping, VirtualMachine.Event.FollowAgentPowerOffReport, State.Stopped);
             s_fsm.addTransition(State.Running, VirtualMachine.Event.FollowAgentPowerOffReport, State.Stopped);
             s_fsm.addTransition(State.Migrating, VirtualMachine.Event.FollowAgentPowerOffReport, State.Stopped);
+            s_fsm.addTransition(State.Stopped, VirtualMachine.Event.FollowAgentPowerOffReport, State.Stopped);
         }
-        
+
         public static boolean isVmStarted(State oldState, Event e, State newState) {
             if (oldState == State.Starting && newState == State.Running) {
                 return true;
@@ -194,10 +195,10 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
         AgentReportMigrated,
         RevertRequested,
         SnapshotRequested,
-        
+
         // added for new VMSync logic
         FollowAgentPowerOnReport,
-        FollowAgentPowerOffReport,        
+        FollowAgentPowerOffReport,
     };
 
     public enum Type {
@@ -214,7 +215,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
          * VM with this type. UserBareMetal should treat exactly as User.
          */
         UserBareMetal(false),
-        
+
         /*
          * General VM type for queuing VM orchestration work
          */
@@ -274,7 +275,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
 
     /**
      * returns the guest OS ID
-     * 
+     *
      * @return guestOSId
      */
     long getGuestOSId();
@@ -313,7 +314,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
     Date getCreated();
 
     long getServiceOfferingId();
-    
+
     Long getDiskOfferingId();
 
     Type getType();
