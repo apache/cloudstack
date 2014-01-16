@@ -987,8 +987,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("unable to find a network with id " + networkId);
         }
 
-        Account vmOwner = _accountMgr.getAccount(vmInstance.getAccountId());
-        if (vmOwner.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             if (!(network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain)
                     && !(network.getAclType() == ACLType.Account && network.getAccountId() == vmInstance.getAccountId())) {
                 throw new InvalidParameterValueException("only shared network or isolated network with the same account_id can be added to vmId: " + vmId);
@@ -2799,8 +2798,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         + zone.getId());
             }
 
-            Account vmOwner = _accountMgr.getAccount(accountId);
-            if (vmOwner.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            //relax the check if the caller is admin account
+            if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
                 if (!(network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain)
                         && !(network.getAclType() == ACLType.Account && network.getAccountId() == accountId)) {
                     throw new InvalidParameterValueException("only shared network or isolated network with the same account_id can be added to vm");
