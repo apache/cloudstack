@@ -60,7 +60,7 @@ done
 vboxmanage modifyhd $hdd_uuid --compact
 
 # Start exporting
-rm -fr dist *.ova *.vhd *.vdi *.qcow* *.bz2
+rm -fr dist *.ova *.vhd *.vdi *.qcow* *.bz2 *.vmdk *.ovf
 mkdir dist
 
 # Export for Xen
