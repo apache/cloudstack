@@ -23,17 +23,17 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.response.ImageStoreDetailResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.storage.ImageStore;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.StringUtils;
 
 @Component
 @Local(value = {ImageStoreJoinDao.class})
@@ -67,7 +67,12 @@ public class ImageStoreJoinDaoImpl extends GenericDaoBase<ImageStoreJoinVO, Long
         osResponse.setName(ids.getName());
         osResponse.setProviderName(ids.getProviderName());
         osResponse.setProtocol(ids.getProtocol());
-        osResponse.setUrl(ids.getUrl());
+        String url = ids.getUrl();
+        //if store is type cifs, remove the password
+        if(ids.getProtocol().equals("cifs".toString())) {
+            url = StringUtils.cleanString(url);
+        }
+        osResponse.setUrl(url);
         osResponse.setScope(ids.getScope());
         osResponse.setZoneId(ids.getZoneUuid());
         osResponse.setZoneName(ids.getZoneName());

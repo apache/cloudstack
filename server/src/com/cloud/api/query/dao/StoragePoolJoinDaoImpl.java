@@ -34,6 +34,7 @@ import com.cloud.capacity.Capacity;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StorageStats;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -60,7 +61,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         spIdSearch.and("id", spIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         spIdSearch.done();
 
-        this._count = "select count(distinct id) from storage_pool_view WHERE ";
+        _count = "select count(distinct id) from storage_pool_view WHERE ";
     }
 
     @Override
@@ -69,7 +70,10 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setId(pool.getUuid());
         poolResponse.setName(pool.getName());
         poolResponse.setState(pool.getStatus());
-        poolResponse.setPath(pool.getPath());
+        String path = pool.getPath();
+        //cifs store may contain password entry, remove the password
+        path = StringUtils.cleanString(path);
+        poolResponse.setPath(path);
         poolResponse.setIpAddress(pool.getHostAddress());
         poolResponse.setZoneId(pool.getZoneUuid());
         poolResponse.setZoneName(pool.getZoneName());
@@ -129,7 +133,10 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setId(pool.getUuid());
         poolResponse.setName(pool.getName());
         poolResponse.setState(pool.getStatus());
-        poolResponse.setPath(pool.getPath());
+        String path = pool.getPath();
+        //cifs store may contain password entry, remove the password
+        path = StringUtils.cleanString(path);
+        poolResponse.setPath(path);
         poolResponse.setIpAddress(pool.getHostAddress());
         poolResponse.setZoneId(pool.getZoneUuid());
         poolResponse.setZoneName(pool.getZoneName());

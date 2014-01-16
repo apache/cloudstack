@@ -31,6 +31,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +43,7 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
@@ -130,7 +133,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineName;
-
 /**
  * Implementation of dummy resource to be returned from discoverer.
  **/
@@ -433,7 +435,8 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             // Only Answer instances are returned by remote agents.
             // E.g. see Response.getAnswers()
             Answer[] result = s_gson.fromJson(ansStr, Answer[].class);
-            s_logger.debug("executeRequest received response " + s_gson.toJson(result));
+            String logResult = cleanPassword(StringEscapeUtils.unescapeJava(result.toString()));
+            s_logger.debug("executeRequest received response " + logResult);
             if (result.length > 0) {
                 return result[0];
             }
@@ -1679,7 +1682,10 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         // comment to use Apache HttpClient
         // http://stackoverflow.com/a/2793153/939250, but final comment is to
         // use Apache.
-        s_logger.debug("POST request to" + agentUri.toString() + " with contents" + jsonCmd);
+        String logMessage = StringEscapeUtils.unescapeJava(jsonCmd);
+        logMessage = cleanPassword(logMessage);
+        s_logger.debug("POST request to " + agentUri.toString()
+                + " with contents " + logMessage);
 
         // Create request
         HttpClient httpClient = null;
@@ -1719,7 +1725,8 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             StringEntity cmdJson = new StringEntity(jsonCmd);
             request.addHeader("content-type", "application/json");
             request.setEntity(cmdJson);
-            s_logger.debug("Sending cmd to " + agentUri.toString() + " cmd data:" + jsonCmd);
+            s_logger.debug("Sending cmd to " + agentUri.toString()
+                    + " cmd data:" + logMessage);
             HttpResponse response = httpClient.execute(request);
 
             // Unsupported commands will not route.
@@ -1736,7 +1743,8 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
                 return null;
             } else {
                 result = EntityUtils.toString(response.getEntity());
-                s_logger.debug("POST response is" + result);
+                String logResult = cleanPassword(StringEscapeUtils.unescapeJava(result));
+                s_logger.debug("POST response is " + logResult);
             }
         } catch (ClientProtocolException protocolEx) {
             // Problem with HTTP message exchange
@@ -1862,4 +1870,22 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
         return "Unable to connect";
     }
 
+    public static String cleanPassword(String logString) {
+        String cleanLogString = null;
+        if (logString != null) {
+            cleanLogString = logString;
+            String[] temp = logString.split(",");
+            int i = 0;
+            if (temp != null) {
+                while (i < temp.length) {
+                    temp[i] = StringUtils.cleanString(temp[i]);
+                    i++;
+                }
+                List<String> stringList = new ArrayList<String>();
+                Collections.addAll(stringList, temp);
+                cleanLogString = StringUtils.join(stringList, ",");
+            }
+        }
+        return cleanLogString;
+    }
 }
