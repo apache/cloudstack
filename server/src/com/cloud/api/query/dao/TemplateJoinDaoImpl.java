@@ -24,17 +24,15 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.db.Filter;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
@@ -46,6 +44,8 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -95,7 +95,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
         activeTmpltSearch.done();
 
         // select distinct pair (template_id, zone_id)
-        this._count = "select count(distinct temp_zone_pair) from template_view WHERE ";
+        _count = "select count(distinct temp_zone_pair) from template_view WHERE ";
     }
 
 
@@ -404,6 +404,9 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
             DETAILS_BATCH_SIZE = Integer.parseInt(batchCfg);
         }
         // query details by batches
+        Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
+        isAscending = (isAscending == null ? true : isAscending);
+        Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", isAscending, null, null);
         List<TemplateJoinVO> uvList = new ArrayList<TemplateJoinVO>();
         // query details by batches
         int curr_index = 0;
@@ -418,7 +421,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
                     sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
                 }
                 sc.setParameters("tempZonePairIN", labels);
-                List<TemplateJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+                List<TemplateJoinVO> vms = searchIncludingRemoved(sc, searchFilter, null, false);
                 if (vms != null) {
                     uvList.addAll(vms);
                 }
@@ -436,7 +439,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBase<TemplateJoinVO, Long> im
                 sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
             }
             sc.setParameters("tempZonePairIN", labels);
-            List<TemplateJoinVO> vms = searchIncludingRemoved(sc, null, null, false);
+            List<TemplateJoinVO> vms = searchIncludingRemoved(sc, searchFilter, null, false);
             if (vms != null) {
                 uvList.addAll(vms);
             }
