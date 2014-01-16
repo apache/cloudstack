@@ -34,10 +34,6 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.capacity.Capacity;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -83,6 +79,8 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -102,6 +100,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -125,6 +124,7 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
+import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudException;
@@ -269,7 +269,6 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import com.cloud.event.UsageEventVO;
 
 @Local(value = { UserVmManager.class, UserVmService.class })
 public class UserVmManagerImpl extends ManagerBase implements UserVmManager, VirtualMachineGuru, UserVmService, Configurable {
@@ -987,10 +986,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if(network == null) {
             throw new InvalidParameterValueException("unable to find a network with id " + networkId);
         }
-        if (!(network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain)
-                && !(network.getAclType() == ACLType.Account && network.getAccountId() == vmInstance.getAccountId())) {
-            throw new InvalidParameterValueException("only shared network or isolated network with the same account_id can be added to vmId: " + vmId);
+
+        Account vmOwner = _accountMgr.getAccount(vmInstance.getAccountId());
+        if (vmOwner.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+            if (!(network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain)
+                    && !(network.getAclType() == ACLType.Account && network.getAccountId() == vmInstance.getAccountId())) {
+                throw new InvalidParameterValueException("only shared network or isolated network with the same account_id can be added to vmId: " + vmId);
+            }
         }
+
         List<NicVO> allNics = _nicDao.listByVmId(vmInstance.getId());
         for(NicVO nic : allNics){
             if(nic.getNetworkId() == network.getId())
@@ -2794,10 +2798,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         + network.getId() + " doesn't belong to zone "
                         + zone.getId());
             }
-            if (!(network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain)
-                    && !(network.getAclType() == ACLType.Account && network.getAccountId() == accountId)) {
-                throw new InvalidParameterValueException("only shared network or isolated network with the same account_id can be added to vm");
+
+            Account vmOwner = _accountMgr.getAccount(accountId);
+            if (vmOwner.getType() != Account.ACCOUNT_TYPE_ADMIN) {
+                if (!(network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain)
+                        && !(network.getAclType() == ACLType.Account && network.getAccountId() == accountId)) {
+                    throw new InvalidParameterValueException("only shared network or isolated network with the same account_id can be added to vm");
+                }
             }
+
             IpAddresses requestedIpPair = null;
             if (requestedIps != null && !requestedIps.isEmpty()) {
                 requestedIpPair = requestedIps.get(network.getId());
