@@ -211,8 +211,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     UserVmDetailsDao _vmDetailsDao;
     @Inject
     protected ResourceManager _resourceMgr;
-    //@Inject            // TODO this is a very strange usage, a singleton class need to inject itself?
-    protected SecondaryStorageVmManager _ssvmMgr;
     @Inject
     NetworkDao _networkDao;
     @Inject
@@ -250,7 +248,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     private final GlobalLock _allocLock = GlobalLock.getInternLock(getAllocLockName());
 
     public SecondaryStorageManagerImpl() {
-        _ssvmMgr = this;
     }
 
     @Override
@@ -825,7 +822,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         value = agentMgrConfigs.get("port");
         _mgmtPort = NumbersUtil.parseInt(value, 8250);
 
-        _listener = new SecondaryStorageListener(this, _agentMgr);
+        _listener = new SecondaryStorageListener(this);
         _agentMgr.registerForHostEvents(_listener, true, false, true);
 
         _itMgr.registerGuru(VirtualMachine.Type.SecondaryStorageVm, this);

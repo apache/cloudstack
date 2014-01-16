@@ -26,6 +26,8 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -38,14 +40,10 @@ import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationSer
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
@@ -68,37 +66,27 @@ import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
-import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.capacity.CapacityManager;
-import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.HostPodDao;
 import com.cloud.domain.Domain;
-import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
-import com.cloud.event.dao.EventDao;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -108,29 +96,15 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
-import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
-import com.cloud.network.NetworkModel;
 import com.cloud.org.Grouping;
-import com.cloud.resource.ResourceManager;
-import com.cloud.server.ManagementServer;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.SnapshotPolicyDao;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.StoragePoolWorkDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.storage.download.DownloadMonitor;
-import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotApiService;
 import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.storage.snapshot.SnapshotScheduler;
-import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -138,7 +112,6 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.VmDiskStatisticsDao;
 import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
@@ -155,20 +128,15 @@ import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
-import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmWork;
 import com.cloud.vm.VmWorkConstants;
 import com.cloud.vm.VmWorkJobHandler;
 import com.cloud.vm.VmWorkJobHandlerProxy;
 import com.cloud.vm.VmWorkSerializer;
-import com.cloud.vm.dao.ConsoleProxyDao;
-import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
@@ -180,153 +148,73 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public static final String VM_WORK_JOB_HANDLER = VolumeApiServiceImpl.class.getSimpleName();
 
     @Inject
-    VolumeOrchestrationService _volumeMgr;
+    private VolumeOrchestrationService _volumeMgr;
 
     @Inject
-    EntityManager _entityMgr;
+    private EntityManager _entityMgr;
     @Inject
-    protected UserVmManager _userVmMgr;
+    private AgentManager _agentMgr;
     @Inject
-    protected AgentManager _agentMgr;
+    private TemplateManager _tmpltMgr;
     @Inject
-    protected TemplateManager _tmpltMgr;
+    private AsyncJobManager _asyncMgr;
     @Inject
-    protected AsyncJobManager _asyncMgr;
+    private SnapshotManager _snapshotMgr;
     @Inject
-    protected SnapshotManager _snapshotMgr;
+    private AccountManager _accountMgr;
     @Inject
-    protected SnapshotScheduler _snapshotScheduler;
+    private ConfigurationManager _configMgr;
     @Inject
-    protected AccountManager _accountMgr;
+    private VolumeDao _volsDao;
     @Inject
-    protected ConfigurationManager _configMgr;
+    private HostDao _hostDao;
     @Inject
-    protected ConsoleProxyManager _consoleProxyMgr;
-    @Inject
-    protected SecondaryStorageVmManager _secStorageMgr;
-    @Inject
-    protected NetworkModel _networkMgr;
-    @Inject
-    protected ServiceOfferingDao _serviceOfferingDao;
-    @Inject
-    protected VolumeDao _volsDao;
-    @Inject
-    protected HostDao _hostDao;
-    @Inject
-    protected ConsoleProxyDao _consoleProxyDao;
-    @Inject
-    protected SnapshotDao _snapshotDao;
-    @Inject
-    protected SnapshotManager _snapMgr;
-    @Inject
-    protected SnapshotPolicyDao _snapshotPolicyDao;
-    @Inject
-    protected StoragePoolHostDao _storagePoolHostDao;
+    private SnapshotDao _snapshotDao;
     @Inject
     StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
-    protected AlertManager _alertMgr;
-    @Inject
-    protected TemplateDataStoreDao _vmTemplateStoreDao = null;
-    @Inject
-    protected VMTemplatePoolDao _vmTemplatePoolDao = null;
-    @Inject
-    protected VMTemplateDao _vmTemplateDao = null;
-    @Inject
-    protected StoragePoolHostDao _poolHostDao = null;
-    @Inject
-    protected UserVmDao _userVmDao;
+    private UserVmDao _userVmDao;
     @Inject
     VolumeDataStoreDao _volumeStoreDao;
     @Inject
-    protected VMInstanceDao _vmInstanceDao;
+    private VMInstanceDao _vmInstanceDao;
     @Inject
-    protected PrimaryDataStoreDao _storagePoolDao = null;
+    private final PrimaryDataStoreDao _storagePoolDao = null;
     @Inject
-    protected CapacityDao _capacityDao;
+    private DiskOfferingDao _diskOfferingDao;
     @Inject
-    protected CapacityManager _capacityMgr;
+    private AccountDao _accountDao;
     @Inject
-    protected DiskOfferingDao _diskOfferingDao;
+    private final DataCenterDao _dcDao = null;
     @Inject
-    protected AccountDao _accountDao;
+    private VMTemplateDao _templateDao;
     @Inject
-    protected EventDao _eventDao = null;
+    private VolumeDao _volumeDao;
     @Inject
-    protected DataCenterDao _dcDao = null;
+    private ResourceLimitService _resourceLimitMgr;
     @Inject
-    protected HostPodDao _podDao = null;
+    private VmDiskStatisticsDao _vmDiskStatsDao;
     @Inject
-    protected VMTemplateDao _templateDao;
+    private VMSnapshotDao _vmSnapshotDao;
+    private List<StoragePoolAllocator> _storagePoolAllocators;
     @Inject
-    protected ServiceOfferingDao _offeringDao;
+    private ConfigurationDao _configDao;
     @Inject
-    protected DomainDao _domainDao;
+    private DataStoreManager dataStoreMgr;
     @Inject
-    protected UserDao _userDao;
+    private VolumeService volService;
     @Inject
-    protected ClusterDao _clusterDao;
+    private VolumeDataFactory volFactory;
     @Inject
-    protected VirtualMachineManager _vmMgr;
+    private SnapshotApiService snapshotMgr;
     @Inject
-    protected DomainRouterDao _domrDao;
-    @Inject
-    protected SecondaryStorageVmDao _secStrgDao;
-    @Inject
-    protected StoragePoolWorkDao _storagePoolWorkDao;
-    @Inject
-    protected HypervisorGuruManager _hvGuruMgr;
-    @Inject
-    protected VolumeDao _volumeDao;
-    @Inject
-    protected OCFS2Manager _ocfs2Mgr;
-    @Inject
-    protected ResourceLimitService _resourceLimitMgr;
-    @Inject
-    protected SecondaryStorageVmManager _ssvmMgr;
-    @Inject
-    protected ResourceManager _resourceMgr;
-    @Inject
-    protected DownloadMonitor _downloadMonitor;
-    @Inject
-    protected ResourceTagDao _resourceTagDao;
-    @Inject
-    protected VmDiskStatisticsDao _vmDiskStatsDao;
-    @Inject
-    protected VMSnapshotDao _vmSnapshotDao;
-    protected List<StoragePoolAllocator> _storagePoolAllocators;
-    @Inject
-    ConfigurationDao _configDao;
-    @Inject
-    VolumeDetailsDao _volDetailDao;
-    @Inject
-    ManagementServer _msServer;
-    @Inject
-    DataStoreManager dataStoreMgr;
-    @Inject
-    DataStoreProviderManager dataStoreProviderMgr;
-    @Inject
-    VolumeService volService;
-    @Inject
-    VolumeDataFactory volFactory;
-    @Inject
-    TemplateDataFactory tmplFactory;
-    @Inject
-    SnapshotDataFactory snapshotFactory;
-    @Inject
-    SnapshotApiService snapshotMgr;
-    @Inject
-    SnapshotService snapshotSrv;
-    @Inject
-    UUIDManager _uuidMgr;
+    private UUIDManager _uuidMgr;
 
     @Inject
-    protected HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
-    @Inject
-    StorageManager storageMgr;
+    private HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
 
     @Inject
-    protected AsyncJobManager _jobMgr;
+    private AsyncJobManager _jobMgr;
 
     @Inject
     protected VmWorkJobDao _workJobDao;

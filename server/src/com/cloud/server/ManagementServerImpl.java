@@ -40,6 +40,9 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -438,7 +441,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -450,8 +452,6 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
@@ -468,7 +468,6 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.dc.AccountVlanMapVO;
@@ -553,7 +552,6 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
-import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
@@ -699,38 +697,28 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private ImageStoreDao _imgStoreDao;
 
     @Inject
-    ProjectManager _projectMgr;
+    private ProjectManager _projectMgr;
     @Inject
-    ResourceManager _resourceMgr;
+    private ResourceManager _resourceMgr;
     @Inject
-    SnapshotManager _snapshotMgr;
+    private HighAvailabilityManager _haMgr;
     @Inject
-    HighAvailabilityManager _haMgr;
+    private DataStoreManager dataStoreMgr;
     @Inject
-    TemplateManager templateMgr;
+    private HostTagsDao _hostTagsDao;
     @Inject
-    DataStoreManager dataStoreMgr;
+    private ConfigDepot _configDepot;
     @Inject
-    HostTagsDao _hostTagsDao;
+    private UserVmManager _userVmMgr;
     @Inject
-    ConfigurationServer _configServer;
+    private AccountService _accountService;
     @Inject
-    ConfigDepot _configDepot;
-    @Inject
-    UserVmManager _userVmMgr;
-    @Inject
-    VolumeDataFactory _volFactory;
-    @Inject
-    AccountService _accountService;
-    @Inject
-    ConfigurationManager _configMgr;
-    @Inject
-    ServiceOfferingDao _offeringDao;
+    private ServiceOfferingDao _offeringDao;
 
     @Inject
-    DeploymentPlanningManager _dpMgr;
+    private DeploymentPlanningManager _dpMgr;
 
-    LockMasterListener _lockMasterListener;
+    private LockMasterListener _lockMasterListener;
 
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
