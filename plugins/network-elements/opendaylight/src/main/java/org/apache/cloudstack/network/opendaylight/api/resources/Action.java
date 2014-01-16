@@ -31,6 +31,7 @@ import org.apache.cloudstack.network.opendaylight.api.NeutronRestApi;
 import org.apache.cloudstack.network.opendaylight.api.NeutronRestApiException;
 import org.apache.cloudstack.network.opendaylight.api.NeutronRestFactory;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpMethodBase;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.NameValuePair;
@@ -270,7 +271,8 @@ public abstract class Action {
     private String responseToErrorMessage(final HttpMethodBase method) {
         assert method.isRequestSent() : "no use getting an error message unless the request is sent";
 
-        if (TEXT_HTML_CONTENT_TYPE.equals(method.getResponseHeader(CONTENT_TYPE).getValue())) {
+        final Header contentTypeHeader = method.getResponseHeader(CONTENT_TYPE);
+        if (contentTypeHeader != null && TEXT_HTML_CONTENT_TYPE.equals(contentTypeHeader.getValue())) {
             // The error message is the response content
             // Safety margin of 1024 characters, anything longer is probably
             // useless and will clutter the logs
