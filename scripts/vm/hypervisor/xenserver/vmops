@@ -255,8 +255,6 @@ def routerProxy(session, args):
 
     return txt
 
-
-
 @echo
 def setLoadBalancerRule(session, args):
     sargs = args['args']
@@ -270,34 +268,6 @@ def setLoadBalancerRule(session, args):
         logging.debug(" set loadbalancer rule failed "  )
         txt = '' 
 
-    return txt
-
-@echo
-def createipAlias(session, args):
-    args = args['args']
-    cmd = args.split(' ')
-    cmd.insert(0, "/opt/cloud/bin/createipAlias.sh")
-    cmd.insert(0, "bin/bash")
-    try:
-       txt=util.pread2(cmd)
-       txt='success'
-    except:
-       logging.debug("failed to create ip alias on router vm")
-       txt=''
-    return txt
-
-@echo
-def deleteipAlias(session, args):
-    args = args['args']
-    cmd = args.split(' ')
-    cmd.insert(0, "/opt/cloud/bin/deleteipAlias.sh")
-    cmd.insert(0, "bin/bash")
-    try:
-       txt=util.pread2(cmd)
-       txt='success'
-    except:
-       logging.debug("failed to create ip alias on router vm")
-       txt=''
     return txt
 
 @echo
@@ -1593,8 +1563,6 @@ if __name__ == "__main__":
                             "destroy_network_rules_for_vm":destroy_network_rules_for_vm, 
                             "default_network_rules_systemvm":default_network_rules_systemvm, 
                             "network_rules_vmSecondaryIp":network_rules_vmSecondaryIp,
-                            "createipAlias":createipAlias,
-                            "deleteipAlias":deleteipAlias,
                             "get_rule_logs_for_vms":get_rule_logs_for_vms, 
 			    "add_to_VCPUs_params_live":add_to_VCPUs_params_live,
                             "setLinkLocalIP":setLinkLocalIP,

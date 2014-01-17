@@ -2194,14 +2194,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected Answer execute(final CreateIpAliasCommand cmd) {
-        Connection conn = getConnection();
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         List<IpAliasTO> ipAliasTOs = cmd.getIpAliasList();
-        String args = routerIp + " ";
+        String args = "";
         for (IpAliasTO ipaliasto : ipAliasTOs) {
             args = args + ipaliasto.getAlias_count() + ":" + ipaliasto.getRouterip() + ":" + ipaliasto.getNetmask() + "-";
         }
-        String result = callHostPlugin(conn, "vmops", "createipAlias", "args", args);
+        String result = routerProxy("createipAlias.sh", routerIp, args);
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "CreateIPAliasCommand failed\n");
         }
@@ -2210,10 +2209,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected Answer execute(final DeleteIpAliasCommand cmd) {
-        Connection conn = getConnection();
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         List<IpAliasTO> revokedIpAliasTOs = cmd.getDeleteIpAliasTos();
-        String args = routerIp + " ";
+        String args = "";
         for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
         }
@@ -2223,7 +2221,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
         }
-        String result = callHostPlugin(conn, "vmops", "deleteipAlias", "args", args);
+        String result = routerProxy("deleteipAlias", routerIp, args);
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "DeleteipAliasCommand failed\n");
         }

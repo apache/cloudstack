@@ -2181,14 +2181,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             args = args + ipaliasto.getAlias_count() + ":" + ipaliasto.getRouterip() + ":" + ipaliasto.getNetmask() + "-";
         }
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /root/createIpAlias " + args);
+            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /opt/cloud/bin/createIpAlias " + args);
         }
 
         try {
             VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
             String controlIp = getRouterSshControlIp(cmd);
             Pair<Boolean, String> result =
-                SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/root/createIpAlias.sh " + args);
+                SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/createIpAlias.sh " + args);
 
             if (!result.first()) {
                 s_logger.error("CreateIpAlias command on domr " + controlIp + " failed, message: " + result.second());
@@ -2225,14 +2225,14 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
         }
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /root/deleteIpAlias " + args);
+            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /opt/cloud/bin/deleteIpAlias " + args);
         }
 
         try {
             VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
             String controlIp = getRouterSshControlIp(cmd);
             Pair<Boolean, String> result =
-                SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/root/deleteIpAlias.sh " + args);
+                SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/deleteIpAlias.sh " + args);
 
             if (!result.first()) {
                 s_logger.error("deleteIpAlias command on domr " + controlIp + " failed, message: " + result.second());

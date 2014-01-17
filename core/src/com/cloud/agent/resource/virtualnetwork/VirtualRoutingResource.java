@@ -106,10 +106,7 @@ public class VirtualRoutingResource implements Manager {
     private String _loadbPath;
     private String _publicEthIf;
     private String _privateEthIf;
-    private String _bumpUpPriorityPath;
     private String _routerProxyPath;
-    private String _createIpAliasPath;
-    private String _deleteIpAliasPath;
 
     private int _timeout;
     private int _startTimeout;
@@ -587,23 +584,18 @@ public class VirtualRoutingResource implements Manager {
 
     protected Answer execute(final CreateIpAliasCommand cmd) {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        final Script command = new Script(_createIpAliasPath, _timeout, s_logger);
         List<IpAliasTO> ipAliasTOs = cmd.getIpAliasList();
         String args = "";
-        command.add(routerIp);
         for (IpAliasTO ipaliasto : ipAliasTOs) {
             args = args + ipaliasto.getAlias_count() + ":" + ipaliasto.getRouterip() + ":" + ipaliasto.getNetmask() + "-";
         }
-        command.add(args);
-        final String result = command.execute();
+        final String result = routerProxy("createipAlias.sh", routerIp, args);
         return new Answer(cmd, result == null, result);
     }
 
     protected Answer execute(final DeleteIpAliasCommand cmd) {
-        final Script command = new Script(_deleteIpAliasPath, _timeout, s_logger);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String args = "";
-        command.add(routerIp);
         List<IpAliasTO> revokedIpAliasTOs = cmd.getDeleteIpAliasTos();
         for (IpAliasTO ipAliasTO : revokedIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
@@ -613,8 +605,7 @@ public class VirtualRoutingResource implements Manager {
         for (IpAliasTO ipAliasTO : activeIpAliasTOs) {
             args = args + ipAliasTO.getAlias_count() + ":" + ipAliasTO.getRouterip() + ":" + ipAliasTO.getNetmask() + "-";
         }
-        command.add(args);
-        final String result = command.execute();
+        final String result = routerProxy("deleteipAlias.sh", routerIp, args);
         return new Answer(cmd, result == null, result);
     }
 
@@ -1136,24 +1127,10 @@ public class VirtualRoutingResource implements Manager {
         }
         _privateEthIf = _privateEthIf.toLowerCase();
 
-        _bumpUpPriorityPath = findScript("bumpUpPriority.sh");
-        if (_bumpUpPriorityPath == null) {
-            throw new ConfigurationException("Unable to find bumpUpPriority.sh");
-        }
-
         _routerProxyPath = findScript("router_proxy.sh");
         if (_routerProxyPath == null) {
             throw new ConfigurationException("Unable to find router_proxy.sh");
         }
-        _createIpAliasPath = findScript("createipAlias.sh");
-        if (_createIpAliasPath == null) {
-            throw new ConfigurationException("unable to find createipAlias.sh");
-        }
-        _deleteIpAliasPath = findScript("deleteipAlias.sh");
-        if (_deleteIpAliasPath == null) {
-            throw new ConfigurationException("unable to find deleteipAlias.sh");
-        }
-
         return true;
     }
 
