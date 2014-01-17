@@ -323,6 +323,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 while ((pool = findStoragePool(dskCh, dc, pod.first(), null, null, null, poolsToAvoid)) != null) {
                     break;
                 }
+
+                if (pool != null) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Found a suitable pool for create volume: " + pool.getId());
+                    }
+                    break;
+                }
             }
         }
 
