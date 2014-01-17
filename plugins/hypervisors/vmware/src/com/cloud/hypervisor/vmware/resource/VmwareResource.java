@@ -847,10 +847,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             try {
                 VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/root/firewall.sh " + args);
+                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/firewall_nat.sh " + args);
 
                 if (s_logger.isDebugEnabled())
-                    s_logger.debug("Executing script on domain router " + controlIp + ": /root/firewall.sh " + args);
+                    s_logger.debug("Executing script on domain router " + controlIp + ": /opt/cloud/bin/firewall_nat.sh " + args);
 
                 if (!result.first()) {
                     s_logger.error("SetPortForwardingRulesCommand failure on setting one rule. args: " + args);
@@ -905,16 +905,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             Pair<Boolean, String> result = null;
 
             if (trafficType == FirewallRule.TrafficType.Egress) {
-                result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/root/firewallRule_egress.sh " + args);
+                result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/firewall_egress.sh " + args);
             } else {
-                result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/root/firewall_rule.sh " + args);
+                result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/firewall_ingress.sh " + args);
             }
 
             if (s_logger.isDebugEnabled()) {
                 if (trafficType == FirewallRule.TrafficType.Egress) {
-                    s_logger.debug("Executing script on domain router " + controlIp + ": /root/firewallRule_egress.sh " + args);
+                    s_logger.debug("Executing script on domain router " + controlIp + ": /opt/cloud/bin/firewall_egress.sh " + args);
                 } else {
-                    s_logger.debug("Executing script on domain router " + controlIp + ": /root/firewall_rule.sh " + args);
+                    s_logger.debug("Executing script on domain router " + controlIp + ": /opt/cloud/bin/firewall_ingress.sh " + args);
                 }
             }
 
@@ -1012,10 +1012,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             try {
                 VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
                 String controlIp = getRouterSshControlIp(cmd);
-                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/root/firewall.sh " + args);
+                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DefaultDomRSshPort, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/firewall_nat.sh " + args);
 
                 if (s_logger.isDebugEnabled())
-                    s_logger.debug("Executing script on domain router " + controlIp + ": /root/firewall.sh " + args);
+                    s_logger.debug("Executing script on domain router " + controlIp + ": /opt/cloud/bin/firewall_nat.sh " + args);
 
                 if (!result.first()) {
                     s_logger.error("SetStaticNatRulesCommand failure on setting one rule. args: " + args);

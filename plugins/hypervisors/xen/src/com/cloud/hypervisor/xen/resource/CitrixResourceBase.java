@@ -2047,7 +2047,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         boolean endResult = true;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
             StringBuilder args = new StringBuilder();
-            args.append(routerIp);
             args.append(rule.revoked() ? " -D " : " -A ");
             args.append(" -P ").append(rule.getProtocol().toLowerCase());
             args.append(" -l ").append(rule.getSrcIp());
@@ -2055,7 +2054,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args.append(" -r ").append(rule.getDstIp());
             args.append(" -d ").append(rule.getStringDstPortRange());
 
-            String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args.toString());
+            String result = routerProxy("firewall_nat.sh", routerIp, args.toString());
 
             if (result == null || result.isEmpty()) {
                 results[i++] = "Failed";
@@ -2096,14 +2095,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
 
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        //String args = routerIp;
         String[] results = new String[cmd.getRules().length];
         int i = 0;
         boolean endResult = true;
         for (StaticNatRuleTO rule : cmd.getRules()) {
             //1:1 NAT needs instanceip;publicip;domrip;op
             StringBuilder args = new StringBuilder();
-            args.append(routerIp);
             args.append(rule.revoked() ? " -D " : " -A ");
             args.append(" -l ").append(rule.getSrcIp());
             args.append(" -r ").append(rule.getDstIp());
@@ -2115,7 +2112,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args.append(" -d ").append(rule.getStringSrcPortRange());
             args.append(" -G ");
 
-            String result = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args.toString());
+            String result = routerProxy("firewall_nat.sh", routerIp, args.toString());
 
             if (result == null || result.isEmpty()) {
                 results[i++] = "Failed";
@@ -7606,8 +7603,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
 
         String[][] rules = cmd.generateFwRules();
-        String args = "";
-        args += routerIp + " -F";
+        String args = " -F";
         if (trafficType == FirewallRule.TrafficType.Egress) {
             args += " -E";
             if (egressDefault.equals("true")) {
@@ -7627,7 +7623,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -a " + sb.toString();
         }
 
-        callResult = callHostPlugin(conn, "vmops", "setFirewallRule", "args", args);
+        if (trafficType == FirewallRule.TrafficType.Egress) {
+            callResult = routerProxy("firewall_egress.sh", routerIp, args);
+        } else {
+            callResult = routerProxy("firewall_ingress.sh", routerIp, args);
+        }
 
         if (callResult == null || callResult.isEmpty()) {
             //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails

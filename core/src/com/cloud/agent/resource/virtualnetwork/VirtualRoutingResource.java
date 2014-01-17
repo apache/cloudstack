@@ -102,7 +102,6 @@ import java.util.Map;
 public class VirtualRoutingResource implements Manager {
     private static final Logger s_logger = Logger.getLogger(VirtualRoutingResource.class);
     private String _publicIpAddress;
-    private String _firewallPath;
     private String _loadbPath;
     private String _publicEthIf;
     private String _privateEthIf;
@@ -232,18 +231,16 @@ public class VirtualRoutingResource implements Manager {
         FirewallRule.TrafficType trafficType = allrules[0].getTrafficType();
 
         String[][] rules = cmd.generateFwRules();
-        final Script command = new Script(_firewallPath, _timeout, s_logger);
-        command.add(routerIp);
-        command.add("-F");
+        String args = " -F";
 
         if (trafficType == FirewallRule.TrafficType.Egress) {
-            command.add("-E");
+            args += "-E";
             if (egressDefault.equals("true")) {
-                command.add("-P ", "1");
+                args += " -P 1";
             } else if (egressDefault.equals("System")) {
-                command.add("-P ", "2");
+                args += " -P 2";
             } else {
-                command.add("-P ", "0");
+                args += " -P 0";
             }
         }
 
@@ -253,10 +250,17 @@ public class VirtualRoutingResource implements Manager {
             for (int i = 0; i < fwRules.length; i++) {
                 sb.append(fwRules[i]).append(',');
             }
-            command.add("-a", sb.toString());
+            args += " -a " + sb.toString();
         }
 
-        String result = command.execute();
+        String result = null;
+
+        if (trafficType == FirewallRule.TrafficType.Egress) {
+            result = routerProxy("firewall_egress.sh", routerIp, args);
+        } else {
+            result = routerProxy("firewall_ingress.sh", routerIp, args);
+        }
+
         if (result != null) {
             return new SetFirewallRulesAnswer(cmd, false, results);
         }
@@ -270,22 +274,21 @@ public class VirtualRoutingResource implements Manager {
         int i = 0;
         boolean endResult = true;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
-            String result = null;
-            final Script command = new Script(_firewallPath, _timeout, s_logger);
+            StringBuilder args = new StringBuilder();
+            args.append(rule.revoked() ? " -D " : " -A ");
+            args.append(" -P ").append(rule.getProtocol().toLowerCase());
+            args.append(" -l ").append(rule.getSrcIp());
+            args.append(" -p ").append(rule.getStringSrcPortRange());
+            args.append(" -r ").append(rule.getDstIp());
+            args.append(" -d ").append(rule.getStringDstPortRange());
 
-            command.add(routerIp);
-            command.add(rule.revoked() ? "-D" : "-A");
-            command.add("-P ", rule.getProtocol().toLowerCase());
-            command.add("-l ", rule.getSrcIp());
-            command.add("-p ", rule.getStringSrcPortRange());
-            command.add("-r ", rule.getDstIp());
-            command.add("-d ", rule.getStringDstPortRange());
-            result = command.execute();
-            if (result == null) {
-                results[i++] = null;
-            } else {
+            String result = routerProxy("firewall_nat.sh", routerIp, args.toString());
+
+            if (result == null || result.isEmpty()) {
                 results[i++] = "Failed";
                 endResult = false;
+            } else {
+                results[i++] = null;
             }
         }
 
@@ -325,28 +328,26 @@ public class VirtualRoutingResource implements Manager {
         int i = 0;
         boolean endResult = true;
         for (StaticNatRuleTO rule : cmd.getRules()) {
-            String result = null;
-            final Script command = new Script(_firewallPath, _timeout, s_logger);
-            command.add(routerIp);
-            command.add(rule.revoked() ? "-D" : "-A");
-
             //1:1 NAT needs instanceip;publicip;domrip;op
-            command.add(" -l ", rule.getSrcIp());
-            command.add(" -r ", rule.getDstIp());
+            StringBuilder args = new StringBuilder();
+            args.append(rule.revoked() ? " -D " : " -A ");
+            args.append(" -l ").append(rule.getSrcIp());
+            args.append(" -r ").append(rule.getDstIp());
 
             if (rule.getProtocol() != null) {
-                command.add(" -P ", rule.getProtocol().toLowerCase());
+                args.append(" -P ").append(rule.getProtocol().toLowerCase());
             }
 
-            command.add(" -d ", rule.getStringSrcPortRange());
-            command.add(" -G ");
+            args.append(" -d ").append(rule.getStringSrcPortRange());
+            args.append(" -G ");
 
-            result = command.execute();
-            if (result == null) {
-                results[i++] = null;
-            } else {
+            String result = routerProxy("firewall_nat.sh", routerIp, args.toString());
+
+            if (result == null || result.isEmpty()) {
                 results[i++] = "Failed";
                 endResult = false;
+            } else {
+                results[i++] = null;
             }
         }
 
@@ -1103,11 +1104,6 @@ public class VirtualRoutingResource implements Manager {
         _publicIpAddress = (String)params.get("public.ip.address");
         if (_publicIpAddress != null) {
             s_logger.warn("Incoming public ip address is overriden.  Will always be using the same ip address: " + _publicIpAddress);
-        }
-
-        _firewallPath = findScript("call_firewall.sh");
-        if (_firewallPath == null) {
-            throw new ConfigurationException("Unable to find the call_firewall.sh");
         }
 
         _loadbPath = findScript("call_loadbalancer.sh");
