@@ -2960,6 +2960,10 @@
                                             'add-rule': {
                                                 label: 'label.add.rule',
                                                 addButton: true
+                                            },
+                                            'state' : {
+                                            	edit: 'ignore',
+                                            	label: 'label.state'
                                             }
                                         },
 
