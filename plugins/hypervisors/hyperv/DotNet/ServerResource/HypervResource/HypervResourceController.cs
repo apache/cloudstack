@@ -1590,6 +1590,11 @@ namespace HypervResource
             string templatePropFile = Path.Combine(path, "template.properties");
             using (StreamWriter sw = new StreamWriter(File.Open(templatePropFile, FileMode.Create), Encoding.GetEncoding("iso-8859-1")))
             {
+                if (format != null)
+                {
+                    format = format.ToLower();
+                }
+
                 sw.NewLine = "\n";
                 sw.WriteLine("id=" + templateId);
                 sw.WriteLine("filename=" + templateUuid + "." + format);
@@ -1599,7 +1604,7 @@ namespace HypervResource
                 sw.WriteLine("virtualsize=" + virtualSize);
                 sw.WriteLine(format + ".virtualsize=" + virtualSize);
                 sw.WriteLine("size=" + physicalSize);
-                sw.WriteLine("vhd.size=" + physicalSize);
+                sw.WriteLine(format + ".size=" + physicalSize);
                 sw.WriteLine("public=false");
             }
         }
