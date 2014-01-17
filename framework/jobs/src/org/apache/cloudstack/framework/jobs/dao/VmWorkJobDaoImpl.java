@@ -16,8 +16,11 @@
 // under the License.
 package org.apache.cloudstack.framework.jobs.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 import javax.annotation.PostConstruct;
 
@@ -31,24 +34,26 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.vm.VirtualMachine;
 
 public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implements VmWorkJobDao {
 
     protected SearchBuilder<VmWorkJobVO> PendingWorkJobSearch;
     protected SearchBuilder<VmWorkJobVO> PendingWorkJobByCommandSearch;
-    protected SearchBuilder<VmWorkJobVO> ExpungeWorkJobSearch;
-	
+
 	public VmWorkJobDaoImpl() {
 	}
-	
+
 	@PostConstruct
 	public void init() {
 		PendingWorkJobSearch = createSearchBuilder();
 		PendingWorkJobSearch.and("jobStatus", PendingWorkJobSearch.entity().getStatus(), Op.EQ);
 		PendingWorkJobSearch.and("vmType", PendingWorkJobSearch.entity().getVmType(), Op.EQ);
 		PendingWorkJobSearch.and("vmInstanceId", PendingWorkJobSearch.entity().getVmInstanceId(), Op.EQ);
-		PendingWorkJobSearch.and("step", PendingWorkJobSearch.entity().getStep(), Op.NEQ);
 		PendingWorkJobSearch.done();
 
 		PendingWorkJobByCommandSearch = createSearchBuilder();
@@ -58,54 +63,49 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
 		PendingWorkJobByCommandSearch.and("step", PendingWorkJobByCommandSearch.entity().getStep(), Op.NEQ);
 		PendingWorkJobByCommandSearch.and("cmd", PendingWorkJobByCommandSearch.entity().getCmd(), Op.EQ);
 		PendingWorkJobByCommandSearch.done();
-		
-		ExpungeWorkJobSearch = createSearchBuilder();
-		ExpungeWorkJobSearch.and("lastUpdated", ExpungeWorkJobSearch.entity().getLastUpdated(), Op.LT);
-		ExpungeWorkJobSearch.and("jobStatus", ExpungeWorkJobSearch.entity().getStatus(), Op.NEQ);
-		ExpungeWorkJobSearch.done();
 	}
-	
+
 	@Override
     public VmWorkJobVO findPendingWorkJob(VirtualMachine.Type type, long instanceId) {
-		
+
 		SearchCriteria<VmWorkJobVO> sc = PendingWorkJobSearch.create();
 		sc.setParameters("jobStatus", JobInfo.	Status.IN_PROGRESS);
 		sc.setParameters("vmType", type);
 		sc.setParameters("vmInstanceId", instanceId);
-		
+
 		Filter filter = new Filter(VmWorkJobVO.class, "created", true, null, null);
 		List<VmWorkJobVO> result = this.listBy(sc, filter);
 		if(result != null && result.size() > 0)
 			return result.get(0);
-		
+
 		return null;
 	}
-	
+
 	@Override
     public List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId) {
-		
+
 		SearchCriteria<VmWorkJobVO> sc = PendingWorkJobSearch.create();
 		sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
 		sc.setParameters("vmType", type);
 		sc.setParameters("vmInstanceId", instanceId);
-		
+
 		Filter filter = new Filter(VmWorkJobVO.class, "created", true, null, null);
 		return this.listBy(sc, filter);
 	}
 
 	@Override
     public List<VmWorkJobVO> listPendingWorkJobs(VirtualMachine.Type type, long instanceId, String jobCmd) {
-		
+
 		SearchCriteria<VmWorkJobVO> sc = PendingWorkJobByCommandSearch.create();
 		sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
 		sc.setParameters("vmType", type);
 		sc.setParameters("vmInstanceId", instanceId);
 		sc.setParameters("cmd", jobCmd);
-		
+
 		Filter filter = new Filter(VmWorkJobVO.class, "created", true, null, null);
 		return this.listBy(sc, filter);
 	}
-	
+
 	@Override
     public void updateStep(long workJobId, Step step) {
 		VmWorkJobVO jobVo = findById(workJobId);
@@ -113,13 +113,82 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
 		jobVo.setLastUpdated(DateUtil.currentGMTTime());
 		update(workJobId, jobVo);
 	}
-	
+
 	@Override
-    public void expungeCompletedWorkJobs(Date cutDate) {
-		SearchCriteria<VmWorkJobVO> sc = ExpungeWorkJobSearch.create();
-		sc.setParameters("lastUpdated",cutDate);
-        sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
-		
-		expunge(sc);
+    public void expungeCompletedWorkJobs(final Date cutDate) {
+        // current DAO machenism does not support following usage
+        /*
+        		SearchCriteria<VmWorkJobVO> sc = ExpungeWorkJobSearch.create();
+        		sc.setParameters("lastUpdated",cutDate);
+                sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
+
+        		expunge(sc);
+        */
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                TransactionLegacy txn = TransactionLegacy.currentTxn();
+
+                PreparedStatement pstmt = null;
+                try {
+                    pstmt = txn.prepareAutoCloseStatement(
+                            "DELETE FROM vm_work_job WHERE id IN (SELECT id FROM async_job WHERE job_dispatcher='VmWorkJobDispatcher' AND job_status != 0 AND last_updated < ?)");
+                    pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
+
+                    pstmt.execute();
+                } catch (SQLException e) {
+                } catch (Throwable e) {
+                }
+
+                try {
+                    pstmt = txn.prepareAutoCloseStatement(
+                            "DELETE FROM async_job WHERE job_dispatcher='VmWorkJobDispatcher' AND job_status != 0 AND last_updated < ?");
+                    pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), cutDate));
+
+                    pstmt.execute();
+                } catch (SQLException e) {
+                } catch (Throwable e) {
+                }
+            }
+        });
 	}
+
+    @Override
+    public void expungeLeftoverWorkJobs(final long msid) {
+        // current DAO machenism does not support following usage
+        /*
+                SearchCriteria<VmWorkJobVO> sc = ExpungePlaceHolderWorkJobSearch.create();
+                sc.setParameters("dispatcher", "VmWorkJobPlaceHolder");
+                sc.setParameters("msid", msid);
+
+                expunge(sc);
+        */
+        Transaction.execute(new TransactionCallbackNoReturn() {
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                TransactionLegacy txn = TransactionLegacy.currentTxn();
+
+                PreparedStatement pstmt = null;
+                try {
+                    pstmt = txn.prepareAutoCloseStatement(
+                            "DELETE FROM vm_work_job WHERE id IN (SELECT id FROM async_job WHERE (job_dispatcher='VmWorkJobPlaceHolder' OR job_dispatcher='VmWorkJobDispatcher') AND job_init_msid=?)");
+                    pstmt.setLong(1, msid);
+
+                    pstmt.execute();
+                } catch (SQLException e) {
+                } catch (Throwable e) {
+                }
+
+                try {
+                    pstmt = txn.prepareAutoCloseStatement(
+                            "DELETE FROM async_job WHERE (job_dispatcher='VmWorkJobPlaceHolder' OR job_dispatcher='VmWorkJobDispatcher') AND job_init_msid=?");
+                    pstmt.setLong(1, msid);
+
+                    pstmt.execute();
+                } catch (SQLException e) {
+                } catch (Throwable e) {
+                }
+            }
+        });
+    }
 }
